@@ -1,0 +1,84 @@
+﻿[Adblock Plus 2.0]
+! Version: 201708241314
+! Title: Mrs Cang List: 屏蔽高速(恶意)下载
+! This is a self-usage adblock list
+xiazai.zol.com.cn##.bgWhite > .detailSoft-box > .ad_001
+xiazai.zol.com.cn##.clearfix.wrapper > .main > .clearfix.downLoad > .down-left > .clearfix.down-alink
+www.cr173.com###download > .tab-cont.down_link_main > .ul_Address > .xiazaiqi.address_like
+www.xiazaiba.com###downlist > .dl-item:nth-of-type(1)
+www.xiazaiba.com##.container .soft-down-area
+www.pc6.com###gaosuxiazai
+www.pc141.com###down_one_a
+www.pc141.com###mainBody > .down_show > .top_recom
+www.hanzify.org##.mirrordock a:not([href*="/software/"])
+www.xz7.com##.address_like > .yinsu_xz
+www.xz7.com##.zjy
+www.xz7.com##.xzs
+www.xp85.com##div[class*="soft-box"] > div > p > a
+www.xp85.com###countdown > .dl-box:nth-of-type(1) > .xzq.tlcxaq.dl-bd
+www.xp85.com##div.mt10.mb10
+www.xp85.com##div#countdown > p
+www.52z.com###softdown > div
+www.52z.com##.wezMain .cBlack.syGaosuDaList > li > a:not([href*="52zsoft.com"])
+www.52z.com##.wezMain .syIcon5
+www.downza.cn###download > .clearfix.content > .on.address-wrap > .clearfix.ul_Address:nth-of-type(1)
+||res.njxzwh.com/downza/pc/v2015/images/*.gif
+soft.hao123.com##.container > .mt10.main-row.row > .fr.lay-790 > .main-detail-box:nth-of-type(1) > .clearfix.soft-info > .clearfix.soft-pic > .soft-dl-nobr.soft-dl-button
+soft.hao123.com##.container > .mt10.main-row.row > .fr.lay-790 > .main-detail-box:nth-of-type(1) > .clearfix.soft-info > .soft-text > .down_box
+www.onlinedown.net##body > .mwidth:nth-of-type(7) > .clearfix.softDownIf > .left > .clearfix.softinforel > .softinfoBox > .clearfix.meg
+www.onlinedown.net###down > .cont > .clearfix.cur.XZDZitem > .downDz > .clearfix.downgs
+mydown.yesky.com##.mainbody > .cpdown_mustsoft > .wth560 > .xzhez.xznr_box > .box_degest > .alldown > .xzCon:nth-of-type(1)
+mydown.yesky.com##.mainbody > .cpdown_mustsoft > .wth560 > .xzhez.xznr_box > .box_degest > .alldown > .nrall:nth-of-type(1)
+www.cncrk.com###bd > .wp > .box-azzty > .yd2
+www.cncrk.com###xzq > a
+www.cncrk.com###xzq > .download-address.box-xz1 > .new-durl > .xzq > a
+www.ddooo.com##.DownloadSfot a[href*="rm=2"]
+www.ucbug.cc###download > .clearfix.greena.content > .on.address-wrap > .ul_Address:nth-of-type(1)
+www.qqtn.com##.address_like > a:not([href*="qqtn.com"])
+www.7xdown.com###downinfo > .fix.wp > .col-r > .fix.info-row5 > .load-link1 > .a_addr a:not([href*="7xdown.com"])
+www.crsky.com##a[href*="count.crsky.com/tools"]
+www.xiazaizhijia.com##.main > .clearfix.wrap960 > .clearfix.detail-soft > .detail-soft-l > .soft-download-size > .clearfix.soft-download-size-con > .soft-dl-size-l > .soft-download-gs:nth-of-type(1)
+www.huacolor.com###down > .cp-main > table > tbody > tr > td:nth-of-type(2) > .download-list > div
+www.xp510.com###xzdz > .xzbox > .xzbox-lf > .clearfix:nth-of-type(1)
+||www.xp510.com/statics/swf/*.gif
+www.3987.com###main > .wrapper > .fl.lay-730 > .down_show_left
+www.3987.com##.show.xiazai_bj
+www.3987.com###down > .wrap-bd > .fl.dl-area > .tongyixzq
+www.3987.com###main > .wrapper > .fl.lay-730 > .like_bottom
+www.smzy.com###downAddress > .downlistbox > dl
+www.smzy.com###downAddress > .downlistbox > li:nth-of-type(1)
+www.smzy.com###downAddress > .downlistbox > li:nth-of-type(2)
+www.smzy.com###downAddress > .downlistbox > li:nth-of-type(3)
+www.smzy.com###downAddress > .downlistbox > li:nth-of-type(4)
+www.163disk.com###main:nth-of-type(10) > .key_right > .key_down
+rj.xiaopi.com###banner
+rj.xiaopi.com##.clearfix.down-list
+rj.xiaopi.com###.soft-detail-ad
+rj.xiaopi.com###downbar_bg
+rj.xiaopi.com###downbar
+www.newasp.net###downlist a:not([href*="newasp.net"])
+www.33lc.com###main1k > .xzbox a:not([href*="java"]):not([href*="33lc"])
+www.33lc.com###main1k .xzsbox,.ggzy1,.md_bt
+www.33lc.com###main1k .xzdzbox a:not([href*="33lc.com"])
+jsbpzx.net.cn###BannerZoneAD_Div10
+www.9553.com##.fl-lf.w-325 > .zm.mod-list:nth-of-type(1)
+dl.pconline.com.cn###\31   .links-wrap > .btn-org.btn[href*="javascript"]
+www.7edown.com##.main > .right > .clear > .contentright > .sinfo > .info > ul > .softto
+www.7edown.com##.softdownloadlinks .urltitle:nth-of-type(1)
+www.7edown.com##.softdownloadlinks .urltitle:nth-of-type(2)
+www.xdowns.com###download_box > .bd > ul:nth-of-type(1)
+www.downxia.com###gaosu_div0
+www.anxz.com##body div > a:not([href*="anxz.xom"])
+www.jisuxz.com###Template_jisuxz > .Down > .Content .xiazaiqi
+www.greenxf.com###BZlocationID2
+www.greenxf.com###relate > .download-list > li:nth-of-type(1)
+www.greenxf.com##.download-list a:not([href*="greenxf.com"])
+www.ucbug.com###download > .clearfix.greena.content > .address-wrap > .ul_Address:nth-of-type(1)
+www.jz5u.com##[id^=yingsu]
+www.jz5u.com##.down_url > a:not([href*="jz5u.com"])
+www.uzzf.com##.address_like > a[href*=".exe"]
+www.jb51.net###gaosu
+down.52pk.com###baizuxiazaiqi
+down.52pk.com##.down_txt1 a[href*=".exe"]
+down.52pk.com##.down_txt1 a[href*="thunder"]
+||down.52pk.com/downfiles/js/webThunderDetect.js
