@@ -81,3 +81,4 @@ down.52pk.com##.down_txt1 a[href*=".exe"]
 down.52pk.com##.down_txt1 a[href*="thunder"]
 ||down.52pk.com/downfiles/js/webThunderDetect.js
 ||497.com
+rj.baidu.com##.fast_download
