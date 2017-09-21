@@ -1,5 +1,5 @@
 ﻿[Adblock Plus 2.0]
-! Version: 201709211043
+! Version: 201709211054
 ! Title: Mrs Cang List: 屏蔽高速(恶意)下载
 ! This is a self-usage adblock list
 xiazai.zol.com.cn##.bgWhite > .detailSoft-box > .ad_001
@@ -29,9 +29,7 @@ www.onlinedown.net##body > .mwidth:nth-of-type(7) > .clearfix.softDownIf > .left
 www.onlinedown.net###down > .cont > .clearfix.cur.XZDZitem > .downDz > .clearfix.downgs
 mydown.yesky.com##.mainbody > .cpdown_mustsoft > .wth560 > .xzhez.xznr_box > .box_degest > .alldown > .xzCon:nth-of-type(1)
 mydown.yesky.com##.mainbody > .cpdown_mustsoft > .wth560 > .xzhez.xznr_box > .box_degest > .alldown > .nrall:nth-of-type(1)
-www.cncrk.com###bd > .wp > .box-azzty > .yd2
-www.cncrk.com###xzq > a
-www.cncrk.com###xzq > .download-address.box-xz1 > .new-durl > .xzq > a
+www.cncrk.com##div > a:not([href*="cncrk.com"])[href*="@"]
 www.ddooo.com##.DownloadSfot a[href*="rm=2"]
 www.ucbug.cc###download > .clearfix.greena.content > .on.address-wrap > .ul_Address:nth-of-type(1)
 www.qqtn.com##.address_like > a:not([href*="qqtn.com"])
