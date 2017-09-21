@@ -1,12 +1,12 @@
 ﻿[Adblock Plus 2.0]
-! Version: 201709211054
+! Version: 201709211057
 ! Title: Mrs Cang List: 屏蔽高速(恶意)下载
 ! This is a self-usage adblock list
 xiazai.zol.com.cn##.bgWhite > .detailSoft-box > .ad_001
 xiazai.zol.com.cn##.clearfix.wrapper > .main > .clearfix.downLoad > .down-left > .clearfix.down-alink
 www.cr173.com###download > .tab-cont.down_link_main > .ul_Address > .xiazaiqi.address_like
-www.xiazaiba.com###downlist > .dl-item:nth-of-type(1)
-www.xiazaiba.com##.container .soft-down-area
+www.xiazaiba.com##.dl-item a[href="javascript:void(0);"]
+www.xiazaiba.com##.soft-down
 www.pc6.com###gaosuxiazai
 www.pc141.com###down_one_a
 www.pc141.com###mainBody > .down_show > .top_recom
