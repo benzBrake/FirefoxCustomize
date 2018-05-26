@@ -167,7 +167,7 @@
     .switch,
     #allattch a,
     #allattch a:visited,
-	.addrtitle	{
+	#SetInfo .addrtitle	{
         color: #fff !important;
     }
     .newmailNotifyItem {
