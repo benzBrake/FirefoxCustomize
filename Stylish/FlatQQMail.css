@@ -41,76 +41,98 @@
 		border: none;
 		padding: 20px 36px 20px 28px;
 	}
+	
+	/* button */
 	.dialog_operate .btn, .dialog_operate .btn_blue, .dialog_operate .btn_gray {
-		padding: 5px 30px;
 		margin-left: 20px;
-		font-size: 14px;
+	}
+	.tules_top .btn_blue {
+		margin-top: 2px;
 	}
     .btn, button, .qm_btn {
         background: unset;
     }
-    .btn_gray {
-        background: #f4f4f4
+    .btn_blue, .btn_red, .btn_gray, .qui_btn {
+		height: 24px;
+		line-height: 24px;
+		padding: 5px 12px !important;
+		font-size: 14px;
     }
+	.btn_gray {
+        background: #f4f4f4;
+	}
+	.btn_blue, .qui_btn_Blue {
+		background: rgb(0, 120, 215);
+		color: rgb(255, 255, 255);
+		font-weight: bold;
+		-moz-user-select: none;
+	}
+	.btn_select_limiting {
+		width: unset !important;
+	}
+	.btn_select_limiting, .btn_select_txt {
+		padding: 0 25px 0 5px;
+	}
+	.btn_select .ico_select_s {
+		right: 15px;
+		top: 10px;
+	}
     .bd {
         border: 0px;
     }
-    .div_txt,
-    .lm_sbar > div,
-	.readmailinfo td.qmEditorContent {
-		background: unset;
-        border: 2px solid rgba(0, 0, 0, .4) !important;
-    }
-    .frame_class {
+	.frame_class {
         border-left: 0;
     }
-	
-    /*header*/
-    #topDataTd {
-        height: 50px !important;
+
+	/* input */
+	input.txt,
+    .div_txt,
+    .lm_sbar > div,
+	.readmailinfo td.qmEditorContent,
+	.addAccount_ipt{
+		background: transparent;
+        border: 2px solid rgba(0, 0, 0, .4) !important;
     }
-    #topDataTd,
-    #topDataTd .topbg,
-    .topdata {
-        background: #0078d7 !important;
-        color: #fff;
+	/* menu */
+	[id$=QMMenu]:not([id=select_QMMenu]) {
+        min-width: 150px;
     }
-    .imglogo::before {
-        content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MEJFODBCNEZDQkQ0MTFFNEE1RTZCQ0U1NDAxRUI5RUIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MEJFODBCNTBDQkQ0MTFFNEE1RTZCQ0U1NDAxRUI5RUIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowQkU4MEI0RENCRDQxMUU0QTVFNkJDRTU0MDFFQjlFQiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowQkU4MEI0RUNCRDQxMUU0QTVFNkJDRTU0MDFFQjlFQiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgR8ts0AAACOSURBVHja7NjBCQIxEAXQjHiNdmIDNmUDnmxgm9oGtpPdFDDi0ZtgDm58cwkEEngMfyCJzCwj1KEMUiAgICAgICAgICAgu6tjj0u21t5eZ+f7Eq91fVw+2j/VGjoC8qMVPT4f4jZ/dT6nq4507YipJewyYmqZWsIOMlJGdAQEBAQEBAQEBAQE5J8hTwEGAJxNPE8HR8BNAAAAAElFTkSuQmCC);
-    }
-    .imglogo,
-    .imglogo:hover {
-        text-decoration: none;
-    }
-    .imglogo::after {
-        content: 'QQMail';
-        color: #fff;
-        font-size: 30px;
-        line-height: 30px;
-        position: relative;
-        top: -15px;
-    }
-    .lgoo {
-        width: 100%;
-        height: 50px
-    }
-    .search_subject {
+	[id^=select_QMMenu__menuitem] {
+		height: 30px !important;
+		line-height: 30px !important;
+	}
+	.qmpanel_shadow {
+		border: none;
+	}
+	/* search */
+	.search_subject {
         position: absolute;
         height: 38px;
         width: 205px !important;
         z-index: 10;
         right: 5px;
         top: 6px;
-        background: #eef7ff
+        background: #c7e0f4
     }
+	.ft_searchbar {
+		padding: 5px;
+	}
     .search_subject .smartsearch {
         height: 30px;
         border: 0 !important;
         background-color: transparent;
 		box-shadow: none;
     }
+	.ft_searchbar .search_input {
+		margin: 0;
+		padding: 0;
+		border: none;
+		box-shadow: none;
+		height: 25px;
+		line-height: 25px;
+	}
     .search_subject .smartsearch input.searchinput {
-        height: 28px;
+        height: 30px;
         background-color: transparent
     }
     .search_subject .smartsearch {
@@ -142,6 +164,35 @@
         left: -1px;
         font-weight: bold;
         color: #0078d7;
+    }
+    /*header*/
+    #topDataTd {
+        height: 50px !important;
+    }
+    #topDataTd,
+    #topDataTd .topbg,
+    .topdata {
+        background: #0078d7 !important;
+        color: #fff;
+    }
+    .imglogo::before {
+        content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MEJFODBCNEZDQkQ0MTFFNEE1RTZCQ0U1NDAxRUI5RUIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MEJFODBCNTBDQkQ0MTFFNEE1RTZCQ0U1NDAxRUI5RUIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowQkU4MEI0RENCRDQxMUU0QTVFNkJDRTU0MDFFQjlFQiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowQkU4MEI0RUNCRDQxMUU0QTVFNkJDRTU0MDFFQjlFQiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgR8ts0AAACOSURBVHja7NjBCQIxEAXQjHiNdmIDNmUDnmxgm9oGtpPdFDDi0ZtgDm58cwkEEngMfyCJzCwj1KEMUiAgICAgICAgICAgu6tjj0u21t5eZ+f7Eq91fVw+2j/VGjoC8qMVPT4f4jZ/dT6nq4507YipJewyYmqZWsIOMlJGdAQEBAQEBAQEBAQE5J8hTwEGAJxNPE8HR8BNAAAAAElFTkSuQmCC);
+    }
+    .imglogo,
+    .imglogo:hover {
+        text-decoration: none;
+    }
+    .imglogo::after {
+        content: 'QQMail';
+        color: #fff;
+        font-size: 30px;
+        line-height: 30px;
+        position: relative;
+        top: -15px;
+    }
+    .lgoo {
+        width: 100%;
+        height: 50px
     }
     .switch {
         float: right;
@@ -196,6 +247,7 @@
     #mainFrameContainer {
         top: 50px !important;
         left: 200px !important;
+		right: 0;
     }
 	.todayMain .updateInfo {
 		padding: 10px;
@@ -205,10 +257,15 @@
 	}
 	.todaybottominfo {
 		margin: 10px 20px;
+		position: absolute;
+		bottom: 0;
 	}
 	.today_linkPanel {
         background: #f4f4f4;
     }
+	.mailinfo1 {
+		margin-left: -24px;
+	}
 	#errorinfo_pop {
 		color: #000;
 	}
@@ -216,7 +273,7 @@
 		padding: 0;
 		margin: 0;
 	}
-		#rightPanelTitle_normal .tab_list {
+	#rightPanelTitle_normal .tab_list {
 		margin: 0;
 		width: 50%;
 		box-sizing: border-box;
@@ -225,7 +282,7 @@
 		background: #f4f4f4;
 	}
 	#rightPanelTitle_normal .first .actived, #rightPanelTitle_normal .actived, #pannelBirthday {
-		background: #eef7ff;
+		background: #e0ecf9;
 	}
     /*left sidebar*/
     #leftPanel {
@@ -242,8 +299,21 @@
     .folderDiv li.fs {
         border: 0 !important;
     }
+	.folder_nav li a {
+		font-size: 14px;
+		height: 30px;
+		line-height: 30px;
+	}
+	.folder_nav li.fn a {
+		color: #fff !important;
+		background: #c7e0f4;
+	}
+	.folder_nav li.fs a {
+		background: #f4f4f4 !important;
+	}
     ul.fdul > li.fs > a:not([class*="fdleft"]),
-    ul.fdul > li.fn > a {
+    ul.fdul > li.fn > a,
+	ul#poptopfolders > li.fs > a {
         font-size: 14px;
         margin: 0;
         padding: 5px 0px 5px 40px !important;
@@ -390,7 +460,7 @@
         color: #000 !important;
     }
     ul.fdul > li.fn,.fn_list {
-        background: #eef7ff;
+        background: #c7e0f4;
     }
     li.fs,
     li.fn,
@@ -398,9 +468,15 @@
         height: 30px;
         line-height: 20px;
     }
+	.newskinbody li a.fdleft {
+		margin-right: 10px !important;
+	}
+	.newskinbody li.fs a, .newskinbody li.fn a {
+		line-height: 22px;
+	}
     .newskinbody li.fs a:focus,
     .newskinbody li.fs_sep a:focus {
-        background: #eef7ff !important;
+        background: #c7e0f4 !important;
     }
     .newskinbody li.fs a:hover,
     .newskinbody li.fs_sep a:hover {
@@ -410,20 +486,16 @@
 	.newskinbody #my_note li.fs_sep a, .newskinbody #my_note li.fs_sep .fn_list a {
 		padding: 5px 10px;
 	}
-    .attbg {
-        background-color: #eef7ff
-    }
-	[id$=QMMenu]:not([id=select_QMMenu]) {
-        min-width: 150px;
-    }
+
     /* INBOX */
     .toolbgline {
-        background: #eef7ff;
+        background: #c7e0f4;
         position: fixed;
         bottom: 0px;
         left: 0px;
         right: 0px;
         border: 0 !important;
+		height: 30px;
     }
     .toolbgline .btn_gray,
     .toolbgline .btn_blue {
@@ -446,6 +518,9 @@
     }
 	.table.O2 {
 		display:none;
+	}
+	td.o_title2 a {
+		font-size: 14px;
 	}
     .toolbgline,
     .tabtitle td,
@@ -478,7 +553,7 @@
     }
     .B {
         color: #000;
-        background: #eef7ff;
+        background: #c7e0f4;
     }
     .B .black {
         color: #000;
@@ -487,17 +562,33 @@
 		white-space: nowrap;
 		font-size: 14px;
 	}
+	.sbar_padd .sbar_padd_content li {
+		padding: 0 10px;
+	}
+	.sbar_padd .sbar_padd_content li.fn {
+		background: #0078d7;
+	}
+	.sbar_padd .sbar_padd_content li.fn a:link,
+	.sbar_padd .sbar_padd_content li.fn a:hover,
+	.sbar_padd .sbar_padd_content li.fn a:visited,
+	.sbar_padd .sbar_padd_content li.fn a:active {
+		color: #fff !important;
+	}
+	li.fs, li.fn, li.f_calender {
+		height: 30px;
+		line-height: 30px;
+	}
+	.mysidebar > div:nth-child(2) {
+		margin:0 20px !important
+	}
     /* Compose */
     #rightAreaBtnWarp + div {
-        margin-top: 10px;
+        margin-top: 0 !important;
     }
     #rightArea,
     #groupname + div,
     #indexpart > .systemSection {
-        margin-top: 30px !important;
-    }
-    #addrsDiv {
-        margin-top: 15px !important;
+        margin-top: 5px !important;
     }
 	.composetab {
 		position: relative;
@@ -507,6 +598,8 @@
 		display: block;
 		z-index: 6;
 		background: #fff;
+		margin: 0 0 20px;
+		height: 28px;
 	}
 	#frm .composetab {
 		position: unset;
@@ -517,11 +610,16 @@
         background: #fff;
     }
     .composetab_sel div, .composetab_unsel div {
-        padding-top: 8px;
+		font-size: 21px;
+		font-weight: 400;
+		padding-top: 0;
     }
     .composetab_unsel a {
         padding-top: 0px !important;
     }
+	.composetab_unsel a:hover {
+		text-decoration: none;
+	}
     .readmailinfo {
         background: #fff;
         margin-bottom: 30px;
@@ -548,7 +646,9 @@
 		background-color: #5db2ff !important;
 		color: #fff;
 	}
-	
+	.toolheight .right, .toolheight .qm_right {
+		margin: 10px 10px 0 0;
+	}
     /*Setting*/
     .txt_title {
         font-size: 24px;
@@ -581,12 +681,14 @@
     .addr_line,
     .skinsetting fieldset legend {
         border-bottom-width: 0;
-        background: #eef7ff;
+        background: #c7e0f4;
         padding: 5px;
         margin-top: 5px;
         height: 20px !important;
-        width: 100%;
     }
+	.addr_line.tules_top {
+		height: 40px !important;
+	}
     .settingtd {
         border-bottom: 0;
     }
@@ -596,6 +698,84 @@
     #postop1 {
         background: #fff
     }
+	
+	/* rss */
+	.book_tag {
+		float: none !important;
+		position: absolute;
+		right: 20px;
+		top: 20px;
+		z-index: 7;
+	}
+	
+	/* calendar */
+	.g_title {
+		padding: 5px;
+	}
+	
+	/* attachement */
+	.qui_toolbar_top,.ft_l_sidebar {
+		margin-top: 15px;
+	}
+	
+	/* contacts */
+	.panel_list {
+		padding: 10px 20px 10px 20px;
+	}
+	.panel_list h2 {
+		font-size: 21px;
+		font-weight: 400;
+		margin-bottom: 10px;
+		border: none;
+	}
+}
+@-moz-document domain('xui.ptlogin2.qq.com') {
+	.login_no_qlogin .header, .login .header {
+		border-bottom: 0 !important;
+	}
+	.header .switch .switch_btn_focus {
+		font-weight: 600;
+		border-bottom: 2px solid #0078d7;
+	}
+}
+@-moz-document regexp('https:\/\/mail\.qq\.com\/?$') {
+	/* login frame */
+	body.vsc-initialized {
+		background: url(http://bingimg.cg.tn/);
+		background-size: cover;
+		margin: 0;
+		padding: 0;
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	}
+	body.vsc-initialized .container .header, body.vsc-initialized .container .footer {
+		display: none;
+	}
+	body.vsc-initialized .container {
+		height: 100%;
+	}
+	.content {
+		margin-top: 0;
+	}
+	.content .content_wrapper {
+		margin: -50% 0 0 0;
+		padding: 0;
+		height: 100%;
+	}
+	.login_pictures {
+		display:none;
+	}
+	.content, .login_container {
+		width: 334px !important;
+		position: relative;
+		top: 50%;
+	}
+	.header .switch .switch_btn_focus {
+		border-bottom: 2px solid;
+	}
 }
 @-moz-document regexp('https:\/\/mail\.qq\.com\/cgi-bin\/frame_html.*?t=newwin_frame.*') {
 	#mainFrameContainer {
@@ -605,11 +785,11 @@
 }
 @-moz-document regexp('https:\/\/mail\.qq\.com\/cgi-bin\/laddr_friend.*') {
 	body.vsc-initialized {
-		background: #eef7ff;
+		background: #e0ecf9;
 	}
 }
 @-moz-document regexp('https:\/\/mail\.qq\.com\/cgi-bin\/today.*') {
 	#panelPersonInfo {
-		background: #eef7ff;
+		background: #e0ecf9;
 	}
 }
