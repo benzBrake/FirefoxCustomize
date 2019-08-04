@@ -1,5 +1,5 @@
 ﻿[Adblock Plus 2.0]
-! Version: 201908021316
+! Version: 201908021440
 ! Title: Mrs Cang List: 屏蔽高速(恶意)下载
 ! This is a self-usage adblock list
 xiazai.zol.com.cn##.bgWhite > .detailSoft-box > .ad_001
@@ -86,3 +86,4 @@ down.52pk.com##.down_txt1 a[href*="thunder"]
 rj.baidu.com##.fast_download
 www.sdbeta.com##.file_urlsnew.file_urls > ul:nth-of-type(1)
 www.sdbeta.com##div.txtfont:nth-of-type(1)
+www.7down.com###downlist a:not([href*="7down"])
