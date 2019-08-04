@@ -1,5 +1,5 @@
 ﻿[Adblock Plus 2.0]
-! Version: 201710181035
+! Version: 201908021316
 ! Title: Mrs Cang List: 屏蔽高速(恶意)下载
 ! This is a self-usage adblock list
 xiazai.zol.com.cn##.bgWhite > .detailSoft-box > .ad_001
@@ -73,6 +73,7 @@ www.greenxf.com###BZlocationID2
 www.greenxf.com###relate > .download-list > li:nth-of-type(1)
 www.greenxf.com##.download-list a:not([href*="greenxf.com"])
 www.ucbug.com###download > .clearfix.greena.content > .address-wrap > .ul_Address:nth-of-type(1)
+www.jb51.net##.gsdw
 www.jz5u.com##[id^=yingsu]
 www.jz5u.com##.down_url > a:not([href*="jz5u.com"])
 www.uzzf.com##.address_like > a[href*=".exe"]
