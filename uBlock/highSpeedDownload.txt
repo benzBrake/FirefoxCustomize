@@ -83,3 +83,5 @@ down.52pk.com##.down_txt1 a[href*="thunder"]
 ||down.52pk.com/downfiles/js/webThunderDetect.js
 ||497.com
 rj.baidu.com##.fast_download
+www.sdbeta.com##.file_urlsnew.file_urls > ul:nth-of-type(1)
+www.sdbeta.com##div.txtfont:nth-of-type(1)
