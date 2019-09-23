@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name		   downloadPlus.uc.js
+// @name		downloadPlus.uc.js
 // @description	下载窗口添加:另存为、双击复制链接、第三方工具下载
 // @include		chrome://mozapps/content/downloads/unknownContentType.xul
 // @version		2019.09.18
 // @startup		window.MDownloadPlus.init();
-// @note		   新增链接类型不支持提示，新增第三方应用调用参数 by Ryan Lieu<github-benzBrake@woai.ru>
-// @note		   适配Firefox57+
+// @note		新增链接类型不支持提示，新增第三方应用调用参数 by Ryan Lieu<github-benzBrake@woai.ru>
+// @note		适配Firefox57+
 // ==/UserScript==
 
 (location == "chrome://mozapps/content/downloads/unknownContentType.xul") &&
@@ -14,7 +14,7 @@
 
 	let config = {
 		defaultActionToSave:true,//默认选择下载文件
-		addSaveAsButton:true,//添加另存为按钮，只在选择了默认保存位置时添加
+		addSaveAsButton:false,//添加另存为按钮，只在选择了默认保存位置时添加（此功能FF68+）无效
 		copySourceByDbClick:true,//来源显示完整目录并支持双击复制完整地址
 		useExtraAppDownload:true,//使用第三方下载工具下载
 		extraAppName:"IDM",//下载工具名称
