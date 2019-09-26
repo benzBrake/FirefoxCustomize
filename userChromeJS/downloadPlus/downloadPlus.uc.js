@@ -8,7 +8,6 @@
 // @note		适配Firefox57+
 // ==/UserScript==
 
-(location == "chrome://mozapps/content/downloads/unknownContentType.xul") &&
 (function () {
 	const PREF_BD_USEDOWNLOADDIR = "browser.download.useDownloadDir";
 
@@ -110,13 +109,16 @@
 			}
 		}
 	}
+	
 
 	function isUsableDirectory(aDirectory)
 	{
 		return aDirectory.exists() && aDirectory.isDirectory() &&
 			aDirectory.isWritable();
 	}
-
-	MDownloadPlus.init();
-	window.MDownloadPlus = MDownloadPlus;
+	
+	if (location.href.startsWith("chrome://mozapps/content/downloads/unknownContentType.x")) {
+		MDownloadPlus.init();
+		window.MDownloadPlus = MDownloadPlus;
+	}
 })()
