@@ -2,8 +2,9 @@
 // @name		downloadPlus.uc.js
 // @description	下载窗口添加:另存为、双击复制链接、第三方工具下载
 // @include		chrome://mozapps/content/downloads/unknownContentType.xul
-// @version		2019.09.18
+// @version		2019.09.28
 // @startup		window.MDownloadPlus.init();
+// @note		双击直接下载 by 52think
 // @note		新增链接类型不支持提示，新增第三方应用调用参数 by Ryan Lieu<github-benzBrake@woai.ru>
 // @note		适配Firefox57+
 // ==/UserScript==
@@ -13,12 +14,17 @@
 
 	let config = {
 		defaultActionToSave:true,//默认选择下载文件
-		addSaveAsButton:true,//添加另存为按钮，只在选择了默认保存位置时添加（此功能FF68+）无效
+		addSaveAsButton:true,//添加另存为按钮，只在选择了默认保存位置时添加
 		copySourceByDbClick:true,//来源显示完整目录并支持双击复制完整地址
 		useExtraAppDownload:true,//使用第三方下载工具下载
+		directDownloadByDbClick:true, //双击直接下载
 		extraAppName:"IDM",//下载工具名称
 		extraAppPath:"C:\\Program\ Files\ (x86)\\Internet\ Download\ Manager\\IDMan.exe", //下载工具路径
-		extraAppParameter: ["/d"],//下载工具参数
+		extraAppParameter:"/d {{url}}",//下载工具参数
+		/* 迅雷示例 */
+		// extraAppName:"迅雷",//下载工具名称
+		// extraAppPath:"C:\\Program\ Files\ (x86)\\Thunder\ Network\\Program\\Thunder.exe", //下载工具路径
+		// extraAppParameter: "{{url}}",//下载工具参数
 		_:false
 	};
 
@@ -41,24 +47,19 @@
 				alert("此类链接不支持调用第三方工具下载");
 				return;
 			}
-			let parameter = config.extraAppParameter;
-			parameter.push(url);
+			parameter = config.extraAppParameter.replace("{{url}}", url);
 			let extraApp = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
 			extraApp.initWithPath(config.extraAppPath);
 			if (!extraApp.exists()) {
 				alert(config.extraAppName+ "不存在: " + config.extraAppPath);
 				return;
 			}
-			try {
-				let ss = Components.classes["@mozilla.org/browser/shell-service;1"]
-					.getService(Components.interfaces.nsIShellService);
-				ss.openApplicationWithURI(extraApp, parameter.join(" "));
-			} catch (e) {
-				let p = Components.classes["@mozilla.org/process/util;1"]
-					.createInstance(Components.interfaces.nsIProcess);
-				p.init(extraApp);
-				p.run(false, parameter, parameter.length);
-			}
+
+			let p = Components.classes["@mozilla.org/process/util;1"]
+				.createInstance(Components.interfaces.nsIProcess);
+			let commandArgs = parameter.split(" ");
+			p.init(extraApp);
+			p.run(false, commandArgs, commandArgs.length);
 			dialog.mDialog.dialog = null;
 			window.close();
 		},
@@ -82,6 +83,11 @@
 			mainWindow.eval("(" + mainWindow.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, null, null, null, null, mainWindow.document, 0, null);
 			close();
 		},
+		directDownloadByDbClick:function () {
+			addEventListener("dblclick", function(event) {
+				event.target.nodeName === "radio" && document.documentElement.getButton("accept").click();
+			}, false);
+		},
 		copySourceByDbClick:function () {
 			var source = document.querySelector("#source");
 			source.value = dialog.mSourcePath;
@@ -90,7 +96,6 @@
 			source.setAttribute("ondblclick", 'Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper).copyString(dialog.mLauncher.source.spec)');
 		},
 		init:function () {
-
 			if(config.defaultActionToSave){
 				var modeGroup = dialog.dialogElement("mode");
 				modeGroup.selectedItem = dialog.dialogElement("save");
@@ -98,6 +103,10 @@
 
 			if(config.addSaveAsButton){
 				this.createSaveAsButton();
+			}
+
+			if(config.directDownloadByDbClick) {
+				this.directDownloadByDbClick();
 			}
 
 			if(config.copySourceByDbClick){
