@@ -15,4 +15,6 @@
 
 [Firefox_ToolBarButtons.uc.js]()：给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等。
 
+[setViewSourceEditor.uc.js]()：打开Firefox自动设置编辑器路径（用于便携版FF）
+
 [Tabplus.uc.js](Tabplus/Tabplus.uc.js):TabMixPlus 极度简陋userChromeJS版本，来自于RunningCheese Firefox V10（FF68）
