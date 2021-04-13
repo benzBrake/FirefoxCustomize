@@ -1,6 +1,5 @@
 // ==UserScript==
-// @name           自定义菜单
-// @filename       addMenuPlus.uc.js
+// @name           addMenuPlus.uc.js
 // @description    通过配置文件增加修改菜单，修复版
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
@@ -8,15 +7,15 @@
 // @license        MIT License
 // @compatibility  Firefox 69+
 // @charset        UTF-8
-// @version        2020.11.21
+// @version        2021.4.13
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
-// @reviewURL      https://bbs.kafan.cn/thread-1554431-1-1.html
-// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.2 修正 Firefox 72 + 因 Scratchpad 被移除而无法编辑配置的问题
+// @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
+// @note           0.1.2 修正 Firefox 70 + 因 API 变化导致的无法编辑配置文件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
 // @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
@@ -136,10 +135,15 @@
 
 location.href.startsWith('chrome://browser/content/browser.x') && (function (css) {
 
-    var useScraptchpad = true;  // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
-    var enableFileRefreshing = false;  // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
+    var useScraptchpad = false; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
+    var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
 
-    let {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+    let {
+        classes: Cc,
+        interfaces: Ci,
+        utils: Cu,
+        results: Cr
+    } = Components;
 
     if (window.addMenu) {
         window.addMenu.destroy();
@@ -163,7 +167,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 alert('目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。');
 
                 var url = 'http://ywzhaiqi.github.io/addMenu_creator/';
-                openUILinkIn(url, 'tab', false, null);
+                openTrustedLinkIn(url, 'tab', false, null);
             }
 
             this._modifiedTime = aFile.lastModifiedTime;
@@ -174,7 +178,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
         },
         init: function () {
- 
+
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -191,7 +195,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             let rExt = "%EOL" + he + "%";
 
             let rFAVICON_BASE64 = "%FAVICON_BASE64" + he + "%";
-            let rRLT_OR_UT = "%RLT_OR_UT" + he + "%";  // 链接文本或网页标题
+            let rRLT_OR_UT = "%RLT_OR_UT" + he + "%"; // 链接文本或网页标题
 
             this.rTITLE = new RegExp(rTITLE, "i");
             this.rTITLES = new RegExp(rTITLES, "i");
@@ -214,18 +218,31 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
 
             var ins;
-            ins = $("context-viewinfo");
+            ins = $("context-viewsource");
             ins.parentNode.insertBefore(
-                $C("menuseparator", {id: "addMenu-page-insertpoint", class: "addMenu-insert-point"}), ins.nextSibling);
+                $C("menuseparator", {
+                    id: "addMenu-page-insertpoint",
+                    class: "addMenu-insert-point"
+                }), ins.nextSibling);
             ins = $("context_closeTab");
+            $("context_undoCloseTab").after(ins);
             ins.parentNode.insertBefore(
-                $C("menuseparator", {id: "addMenu-tab-insertpoint", class: "addMenu-insert-point"}), ins.nextSibling);
+                $C("menuseparator", {
+                    id: "addMenu-tab-insertpoint",
+                    class: "addMenu-insert-point"
+                }), ins.nextSibling);
             ins = $("prefSep") || $("webDeveloperMenu");
             ins.parentNode.insertBefore(
-                $C("menuseparator", {id: "addMenu-tool-insertpoint", class: "addMenu-insert-point"}), ins.nextSibling);
+                $C("menuseparator", {
+                    id: "addMenu-tool-insertpoint",
+                    class: "addMenu-insert-point"
+                }), ins.nextSibling);
             ins = $("appmenu-quit") || $("menu_FileQuitItem");
             ins.parentNode.insertBefore(
-                $C("menuseparator", {id: "addMenu-app-insertpoint", class: "addMenu-insert-point"}), ins);
+                $C("menuseparator", {
+                    id: "addMenu-app-insertpoint",
+                    class: "addMenu-insert-point"
+                }), ins);
             ins = $("devToolsSeparator");
             ins.parentNode.insertBefore($C("menuitem", {
                 id: "addMenu-rebuild",
@@ -236,6 +253,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }), ins);
 
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
+            $("contentAreaContextMenu").addEventListener("popuphiding", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
 
@@ -244,6 +262,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         uninit: function () {
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
+            $("contentAreaContextMenu").removeEventListener("popuphiding", this, false);
             $("tabContextMenu").removeEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
         },
@@ -258,6 +277,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         handleEvent: function (event) {
             switch (event.type) {
+                case "popuphiding":
+                    if (event.target.id == 'contentAreaContextMenu') {
+                        event.target.querySelectorAll(':scope > .addMenu').forEach(m => {
+                            m.hidden = true;
+                        });
+                    }
+                    break;
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
 
@@ -280,11 +306,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
+                        state.length > 0 && event.target.querySelectorAll(
+                            state.map(s => `.addMenu[condition~="${s}"]`).join(', ')
+                        ).forEach(m => {
+                            m.hidden = false;
+                        });
 
                         this.customShowings.forEach(function (obj) {
                             var curItem = obj.item;
                             try {
-                                JSON.parse((obj.fnSource).call(curItem, curItem));
+                                eval('(' + obj.fnSource + ').call(curItem, curItem)');
                             } catch (ex) {
                                 console.error('addMenuPlus 自定义显示错误', obj.fnSource);
                             }
@@ -328,8 +359,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         this.openCommand(event, newurl, where);
                     });
                 }
-            }
-            else if (url)
+            } else if (url)
                 this.openCommand(event, this.convertText(url), where);
             else if (exec)
                 this.exec(exec, this.convertText(text));
@@ -346,7 +376,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (uri.scheme === "javascript")
                 loadURI(url);
             else if (where)
-                openUILinkIn(uri.spec, where, false, postData || null);
+                openTrustedLinkIn(uri.spec, where, false, postData || null);
             else if (event.button == 1)
                 openNewTabWith(uri.spec);
             else openUILink(uri.spec, event);
@@ -399,12 +429,31 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
-            var aiueo = [
-                {current: "page", submenu: "PageMenu", insertId: "addMenu-page-insertpoint"},
-                {current: "tab", submenu: "TabMenu", insertId: "addMenu-tab-insertpoint"},
-                {current: "tool", submenu: "ToolMenu", insertId: "addMenu-tool-insertpoint"},
-                {current: "app", submenu: "AppMenu", insertId: "addMenu-app-insertpoint"},
-                {current: "group", submenu: "GroupMenu", insertId: "addMenu-page-insertpoint"},
+            var aiueo = [{
+                current: "page",
+                submenu: "PageMenu",
+                insertId: "addMenu-page-insertpoint"
+            },
+            {
+                current: "tab",
+                submenu: "TabMenu",
+                insertId: "addMenu-tab-insertpoint"
+            },
+            {
+                current: "tool",
+                submenu: "ToolMenu",
+                insertId: "addMenu-tool-insertpoint"
+            },
+            {
+                current: "app",
+                submenu: "AppMenu",
+                insertId: "addMenu-app-insertpoint"
+            },
+            {
+                current: "group",
+                submenu: "GroupMenu",
+                insertId: "addMenu-page-insertpoint"
+            },
             ];
 
             var data = loadText(aFile);
@@ -417,13 +466,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             sandbox.Cr = Cr;
             sandbox.Cu = Cu;
             sandbox.Services = Services;
-            try{
-            	sandbox.locale = Services.prefs.getCharPref("general.useragent.locale","zh-CN");
-            }catch(e){
-            	
+            try {
+                sandbox.locale = Services.prefs.getCharPref("general.useragent.locale", "zh-CN");
+            } catch (e) {
+
             }
-            
-      
+
+
             var includeSrc = "";
             sandbox.include = function (aLeafName) {
                 var data = loadFile(aLeafName);
@@ -432,7 +481,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             };
             sandbox._css = [];
 
-            aiueo.forEach(function ({current, submenu}) {
+            aiueo.forEach(function ({
+                current,
+                submenu
+            }) {
                 sandbox["_" + current] = [];
                 if (submenu != 'GroupMenu') {
                     sandbox[current] = function (itemObj) {
@@ -453,8 +505,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }, this);
 
             function ps(item, array) {
-                ("join" in item && "unshift" in item) ?
-                    [].push.apply(array, item) :
+                ("join" in item && "unshift" in item) ? [].push.apply(array, item) :
                     array.push(item);
             }
 
@@ -477,7 +528,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             this.customShowings = [];
 
-            aiueo.forEach(function ({current, submenu, insertId}) {
+            aiueo.forEach(function ({
+                current,
+                submenu,
+                insertId
+            }) {
                 if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
                 let insertPoint = $(insertId);
                 this.createMenuitem(sandbox["_" + current], insertPoint);
@@ -503,7 +558,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.setCondition(group, menuObj.condition);
 
             menuObj._items.forEach(function (obj) {
-                group.appendChild(this.newMenuitem(obj, {isMenuGroup: true}));
+                group.appendChild(this.newMenuitem(obj, {
+                    isMenuGroup: true
+                }));
             }, this);
             return group;
         },
@@ -647,11 +704,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             /** obj を属性にする
              for (let [key, val] in Iterator(obj)) {
-			if (key === "command") continue;
-			if (typeof val == "function")
-				obj[key] = val = "(" + val.toString() + ").call(this, event);";
-			menuitem.setAttribute(key, val);
-		}**/
+            if (key === "command") continue;
+            if (typeof val == "function")
+                obj[key] = val = "(" + val.toString() + ").call(this, event);";
+            menuitem.setAttribute(key, val);
+        }**/
             var cls = menuitem.classList;
             cls.add("addMenu");
             cls.add("menuitem-iconic");
@@ -740,7 +797,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
 
 
-                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, {isTopMenuitem: true});
+                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, {
+                    isTopMenuitem: true
+                });
 
                 insertMenuItem(obj, menuitem);
 
@@ -813,8 +872,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let uri, iconURI;
                 try {
                     uri = Services.io.newURI(url, null, null);
-                } catch (e) {
-                }
+                } catch (e) { }
                 if (!uri) return;
 
                 menu.setAttribute("scheme", uri.scheme);
@@ -825,8 +883,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             menu.setAttribute("image", aURI && aURI.spec ?
                                 "moz-anno:favicon:" + aURI.spec :
                                 "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-                        } catch (e) {
-                        }
+                        } catch (e) { }
                     }
                 });
             }
@@ -840,8 +897,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 setIconCallback(url);
             }, e => {
                 console.log(e)
-            }).catch(e => {
-            });
+            }).catch(e => { });
         },
         setCondition: function (menu, condition) {
 
@@ -855,19 +911,26 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     return a.indexOf(c) === i
                 });
                 menu.setAttribute("condition", match.join(" "));
+                menu.hidden = true;
             }
         },
         convertText: function (text) {
             var that = this;
             var context = gContextMenu || { // とりあえずエラーにならないようにオブジェクトをでっち上げる
-                link: {href: "", host: ""},
-                target: {alt: "", title: ""},
+                link: {
+                    href: "",
+                    host: ""
+                },
+                target: {
+                    alt: "",
+                    title: ""
+                },
                 __noSuchMethod__: function (id, args) {
                     return ""
                 },
             };
-            let tab = document.popupNode ? TabContextMenu.contextTab : null;
-            var bw = (tab && tab.linkedBrowser)||context.browser;
+            let tab = TabContextMenu.contextTab;
+            var bw = (tab && tab.linkedBrowser) || context.browser;
 
             return text.replace(this.regexp, function (str) {
                 str = str.toUpperCase().replace("%LINK", "%RLINK");
@@ -882,61 +945,61 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             function convert(str) {
                 switch (str) {
-                    case "%T"            :
+                    case "%T":
                         return bw.contentTitle;
-                    case "%TITLE%"       :
+                    case "%TITLE%":
                         return bw.contentTitle;
-                    case "%TITLES%"      :
+                    case "%TITLES%":
                         return bw.contentTitle.replace(/\s-\s.*/i, "").replace(/_[^\[\]【】]+$/, "");
-                    case "%U"            :
+                    case "%U":
                         return bw.documentURI.spec;
-                    case "%URL%"         :
+                    case "%URL%":
                         return bw.documentURI.spec;
-                    case "%H"            :
+                    case "%H":
                         return bw.documentURI.spec;
-                    case "%HOST%"        :
+                    case "%HOST%":
                         return bw.documentURI.spec;
-                    case "%S"            :
+                    case "%S":
                         return context.textSelected || "";
-                    case "%SEL%"         :
+                    case "%SEL%":
                         return context.textSelected || "";
-                    case "%L"            :
+                    case "%L":
                         return context.linkURL || "";
-                    case "%RLINK%"       :
+                    case "%RLINK%":
                         return context.linkURL || "";
-                    case "%RLINK_HOST%"  :
+                    case "%RLINK_HOST%":
                         return context.link.host || "";
-                    case "%RLINK_TEXT%"  :
+                    case "%RLINK_TEXT%":
                         return context.linkText() || "";
                     case "%RLINK_OR_URL%":
                         return context.linkURL || bw.documentURI.spec;
-                    case "%RLT_OR_UT%"   :
-                        return context.onLink && context.linkText() || bw.contentTitle;  // 链接文本或网页标题
-                    case "%IMAGE_ALT%"   :
+                    case "%RLT_OR_UT%":
+                        return context.onLink && context.linkText() || bw.contentTitle; // 链接文本或网页标题
+                    case "%IMAGE_ALT%":
                         return context.target.alt || "";
-                    case "%IMAGE_TITLE%" :
+                    case "%IMAGE_TITLE%":
                         return context.target.title || "";
-                    case "%I"            :
+                    case "%I":
                         return context.imageURL || "";
-                    case "%IMAGE_URL%"   :
+                    case "%IMAGE_URL%":
                         return context.imageURL || "";
                     case "%IMAGE_BASE64%":
                         return img2base64(context.imageURL);
-                    case "%M"            :
+                    case "%M":
                         return context.mediaURL || "";
-                    case "%MEDIA_URL%"   :
+                    case "%MEDIA_URL%":
                         return context.mediaURL || "";
-                    case "%P"            :
+                    case "%P":
                         return readFromClipboard() || "";
-                    case "%CLIPBOARD%"   :
+                    case "%CLIPBOARD%":
                         return readFromClipboard() || "";
-                    case "%FAVICON%"     :
+                    case "%FAVICON%":
                         return gBrowser.getIcon(tab ? tab : null) || "";
-                    case "%FAVICON_BASE64%" :
+                    case "%FAVICON_BASE64%":
                         return img2base64(gBrowser.getIcon(tab ? tab : null));
-                    case "%EMAIL%"       :
+                    case "%EMAIL%":
                         return getEmailAddress() || "";
-                    case "%EOL%"         :
+                    case "%EOL%":
                         return "\r\n";
                 }
                 return str;
@@ -954,8 +1017,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     var characterSet = context.target.ownerDocument.characterSet;
                     const textToSubURI = Cc['@mozilla.org/intl/texttosuburi;1'].getService(Ci.nsITextToSubURI);
                     addresses = textToSubURI.unEscapeURIForUI(characterSet, addresses);
-                } catch (ex) {
-                }
+                } catch (ex) { }
                 return addresses;
             }
 
@@ -970,7 +1032,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 img.onload = function () {
                     var width = this.naturalWidth,
                         height = this.naturalHeight;
-                    canvas = document.createXULElementNS(NSURI, "canvas");
+                    canvas = document.createElementNS(NSURI, "canvas");
                     canvas.width = width;
                     canvas.height = height;
                     var ctx = canvas.getContext("2d");
@@ -1023,8 +1085,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var res = [];
             for (var i = 0; i < sel.rangeCount; i++) {
                 res.push(sel.getRangeAt(i));
-            }
-            ;
+            };
             return res;
         },
         getInputSelection: function (elem) {
@@ -1032,25 +1093,71 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return elem.value.substring(elem.selectionStart, elem.selectionEnd);
             return "";
         },
-        
         edit: function (aFile, aLineNumber) {
-            let editor = xPref.get('view_source.editor.path');
-            if (!editor) {
-                editor = prompt('编辑器未设置。 请填入编辑器完整路径', 'C:\\WINDOWS\\system32\\notepad.exe');
-                if (editor)
-                    xPref.set('view_source.editor.path', editor);
+            if (!aFile || !aFile.exists() || !aFile.isFile()) return;
+            var editor;
+            if (useScraptchpad) {
+                this.openScriptInScratchpad(window, aFile);
+                return;
             }
             try {
-                let appfile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
-                appfile.initWithPath(editor);
-                let process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-                process.init(appfile);
-                process.run(false, [aFile.path], 1, {});
-            } catch {
-                alert('无法打开编辑器。 请打开 about:config 页面并设置 view_source.editor.path 的值为浏览器路径。');
-            }
-        },
+                editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
+            } catch (e) { }
 
+            if (!editor) {
+                alert("请先设置编辑器的路径!!!");
+                var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                fp.init(window, "设置全局脚本编辑器", Ci.nsIFilePicker.modeOpen);
+                fp.appendFilter("执行文件", "*.exe");
+                fp.open(res => {
+                    if (res != Ci.nsIFilePicker.returnOK)
+                        return;
+                    Services.prefs.setCharPref("view_source.editor.path", editor);
+                });
+                editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
+            }
+
+            if (editor) {
+                try {
+                    let appfile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
+                    appfile.initWithPath(editor.path);
+                    let process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+                    process.init(appfile);
+                    process.run(false, [aFile.path], 1, {});
+                } catch {
+                    alert('无法打开编辑器。 请打开 about:config 页面并设置 view_source.editor.path 的值为文本编辑器路径。');
+                }
+                return;
+            } else {
+                // 调用自带的
+                var aURL = userChrome.getURLSpecFromFile(aFile);
+                var aDocument = null;
+                var aCallBack = null;
+                var aPageDescriptor = null;
+                gViewSourceUtils.openInExternalEditor({
+                    URL: aURL,
+                    lineNumber: aLineNumber
+                }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
+            }
+
+        },
+        openScriptInScratchpad: function (parentWindow, file) {
+
+            let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,resizable=yes,centerscreen,dependent");
+
+            spWin.addEventListener("load", function spWinLoaded() {
+                spWin.removeEventListener("load", spWinLoaded, false);
+
+                let Scratchpad = spWin.Scratchpad;
+                Scratchpad.setFilename(file.path);
+                Scratchpad.addObserver({
+                    onReady: function () {
+                        Scratchpad.removeObserver(this);
+                        Scratchpad.importFromFile.call(Scratchpad, file);
+                    }
+                });
+            }, false);
+        },
         copy: function (aText) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
             StatusPanel._label = "Copy: " + aText;
@@ -1129,7 +1236,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }
 
     function log() {
-        Application.console.log(Array.prototype.slice(arguments));
+        Application.console.log(Array.slice(arguments));
     }
 
     function U(text) {
@@ -1153,8 +1260,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         var data = sstream.read(sstream.available());
         try {
             data = decodeURIComponent(escape(data));
-        } catch (e) {
-        }
+        } catch (e) { }
         sstream.close();
         fstream.close();
         return data;
@@ -1174,8 +1280,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         var data = sstream.read(sstream.available());
         try {
             data = decodeURIComponent(escape(data));
-        } catch (e) {
-        }
+        } catch (e) { }
         sstream.close();
         fstream.close();
         return data;
