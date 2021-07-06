@@ -5,7 +5,7 @@
 ## 说明
 自从2020年11月开始就基于 xiaoxiaoflood 的 userChromeJS 来修改脚本。
 
-我的当前 Firefox 版本 Firefox 84b3 Developer Edition
+我的当前 Firefox 版本 Firefox 90b9 Developer Edition
 
 ⛔ 为不可用状态
 
@@ -20,3 +20,5 @@
 [setViewSourceEditor.uc.js]()：打开Firefox自动设置编辑器路径（用于便携版FF），尽可以在 xiaoxiaoflood 的 userChromeJS 环境中使用。
 
 [Tabplus.uc.js](Tabplus/Tabplus.uc.js):TabMixPlus 极度简陋userChromeJS版本，来自于RunningCheese Firefox V10（FF68）
+
+[saveUCJS.uc.js]():快速保存 github 上的 UC 脚本
