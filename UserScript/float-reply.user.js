@@ -2,6 +2,7 @@
 // @name        论坛悬浮回复框(修改版)
 // @description 常用论坛的悬浮回复框，点击固定，再次点击缩回
 // @namespace   K
+// @homepage    https://github.com/benzBrake/FirefoxCustomize/tree/master/UserScript
 // @include     *
 // @version     2.8
 // @note        反馈地址 https://kkp.disk.st/
