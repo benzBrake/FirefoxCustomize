@@ -24,3 +24,5 @@
 [saveUCJS.uc.js](saveUCJS.uc.js):快速保存 github 上的 UC 脚本
 
 [rebuild_userChrome.uc.js](rebuild_userChrome.uc.js): 汉化版脚本管理器
+
+[extensionOptionsMenu.uc.js](extensionOptionsMenu.uc.js): 汉化版拓展管理器
