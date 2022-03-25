@@ -23,3 +23,5 @@
 ### 更新日志
 
 2021.08.24 新增西瓜视频 UA修改，去除优酷内嵌视频广告（感谢 [star-ray](https://bbs.kafan.cn/thread-2215438-1-1.html)）
+
+2022.03.25 新增 reCaptcha 优化
