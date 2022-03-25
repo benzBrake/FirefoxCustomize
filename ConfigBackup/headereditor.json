@@ -35,43 +35,6 @@
 			"group": "未分组"
 		},
 		{
-			"name": "Google加密",
-			"ruleType": "redirect",
-			"pattern": "^http://((?:[\\w-]+\\.)?google\\..+)",
-			"action": "redirect",
-			"to": "https://$1",
-			"matchType": "regexp",
-			"isFunction": false,
-			"enable": false,
-			"exclude": "",
-			"group": "未分组"
-		},
-		{
-			"enable": true,
-			"name": "Google Redirection",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?://www\\.google(?:\\.\\w+)+/url\\?.*&url=(http[^&]+)",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "$1",
-			"group": "未分组"
-		},
-		{
-			"enable": true,
-			"name": "gg >> HK",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?://www\\.google(?:\\.\\w{2,3}){1,2}/(.*)$",
-			"exclude": "^https?://www\\.google\\.com\\.hk/",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://www.google.com.hk/$1",
-			"group": "未分组",
-			"_exclude": {}
-		},
-		{
 			"enable": true,
 			"name": "FT中文网--全文阅读",
 			"ruleType": "redirect",
@@ -83,18 +46,6 @@
 			"to": "http://www.ftchinese.com/story/$1?full=y",
 			"group": "未分组",
 			"_exclude": {}
-		},
-		{
-			"enable": true,
-			"name": "音悦台自动跳html5播放",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?://(?:v|www)\\.yinyuetai\\.com/video/(\\d+)",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "http://v.yinyuetai.com/video/h5/$1",
-			"group": "未分组"
 		},
 		{
 			"enable": true,
@@ -119,6 +70,18 @@
 			"action": "redirect",
 			"to": "http://weibo.com/",
 			"group": "未分组"
+		},
+		{
+			"enable": true,
+			"name": "reCaptcha",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^http(s?)://(?:www\\.|recaptcha\\.|)google\\.com/recaptcha/(.*)",
+			"exclude": "",
+			"group": "未分组",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://recaptcha.net/recaptcha/$2"
 		}
 	],
 	"sendHeader": [
@@ -262,7 +225,7 @@
 		},
 		{
 			"enable": true,
-			"name": "搜狐视频UA",
+			"name": "搜狐视频 UA",
 			"ruleType": "modifySendHeader",
 			"matchType": "regexp",
 			"pattern": "^https?://my\\.tv\\.sohu\\.com/.+?\\.shtml",
@@ -276,7 +239,7 @@
 		},
 		{
 			"enable": true,
-			"name": "有道笔记UA",
+			"name": "有道笔记 UA",
 			"ruleType": "modifySendHeader",
 			"matchType": "regexp",
 			"pattern": "^https?://note\\.youdao\\.com/",
@@ -290,7 +253,7 @@
 		},
 		{
 			"enable": true,
-			"name": "工商银行UA",
+			"name": "工商银行 UA",
 			"ruleType": "modifySendHeader",
 			"matchType": "regexp",
 			"pattern": "http(s?)://(.*?)(\\.?)icbc\\.com\\.cn/",
@@ -317,7 +280,19 @@
 			}
 		}
 	],
-	"receiveHeader": [],
+	"receiveHeader": [
+		{
+			"enable": true,
+			"name": "Content Security Policy Header Modification",
+			"ruleType": "modifyReceiveHeader",
+			"matchType": "all",
+			"pattern": "",
+			"exclude": "",
+			"group": "未分组",
+			"isFunction": true,
+			"code": "let rt = detail.type;\nif (rt === 'script' || rt === 'stylesheet' || rt === 'main_frame' || rt === 'sub_frame') {\n  for (let i in val) {\n    if (val[i].name.toLowerCase() === 'content-security-policy') {\n      let s = val[i].value;\n      s = s.replace(/googleapis\\.com/g, '$& https://gapis.geekzu.org');\n      s = s.replace(/recaptcha\\.google\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/google\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/gstatic\\.com/g, '$& https://*.gstatic.cn');\n      val[i].value = s;\n    }\n  }\n}"
+		}
+	],
 	"receiveBody": [
 		{
 			"enable": true,
