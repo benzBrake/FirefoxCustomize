@@ -5,7 +5,7 @@
 ## 说明
 自从2020年11月开始就基于 xiaoxiaoflood 的 userChromeJS 来修改脚本。
 
-我的当前 Firefox 版本 Firefox 97b9 Developer Edition
+我的当前 Firefox 版本 Firefox 99b8 Developer Edition
 
 ⛔ 为不可用状态
 
@@ -26,3 +26,5 @@
 [rebuild_userChrome.uc.js](rebuild_userChrome.uc.js): 汉化版脚本管理器
 
 [extensionOptionsMenu.uc.js](extensionOptionsMenu.uc.js): 汉化版拓展管理器
+
+[setViewSourceEditor.uc.js](setViewSourceEditor.uc.js): 还原清除历史记录为旧版对话框（来自 卡饭 ycls006）
