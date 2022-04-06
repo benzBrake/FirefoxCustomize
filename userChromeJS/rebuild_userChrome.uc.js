@@ -40,7 +40,7 @@ UC.rebuild = {
       }
 
       mi = event.target.appendChild(this.elBuilder(document, 'menuitem', {
-        label: script.name ? script.name : script.filename,
+        label: script.description ? script.description : (script.name ? script.name : script.filename),
         onclick: 'UC.rebuild.clickScriptMenu(event)',
         onmouseup: 'UC.rebuild.shouldPreventHide(event)',
         type: 'checkbox',
