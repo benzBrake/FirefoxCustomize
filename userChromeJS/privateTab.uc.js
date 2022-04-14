@@ -1,38 +1,39 @@
 // ==UserScript==
 // @name            PrivateTab
-// @description     无痕标签
-// @author          Ryan, xiaoxiaoflood
+// @description     无痕标签页
+// @author          xiaoxiaoflood
 // @include         main
 // @include         chrome://browser/content/places/bookmarksSidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/places.xhtml
 // @startup         UC.privateTab.exec(win);
 // @shutdown        UC.privateTab.destroy();
-// @note            2020-11-29 修改右键功能，汉化
 // @onlyonce
 // ==/UserScript==
 
 UC.privateTab = {
   config: {
-    neverClearData: false, // 关闭标签后是否保留数据 开启这个功能就不是无痕标签了 if you want to not record history but don't care about other data, maybe even want to keep private logins
+    neverClearData: false, // if you want to not record history but don't care about other data, maybe even want to keep private logins
     restoreTabsOnRestart: true,
     doNotClearDataUntilFxIsClosed: true,
     deleteContainerOnDisable: false,
     clearDataOnDisable: false,
-    profileName: '无痕',
+    profileName: '无痕'
   },
 
   openTabs: new Set(),
+  
   strstr: function(str) {
       return str.replace('%s', this.config.profileName);
   },
+  
   exec: function (win) {
     if (win.PrivateBrowsingUtils.isWindowPrivate(win))
       return;
 
     let {document} = win;
 
-    let openAll = document.getElementById('placesContext_openContainer:tabs');
+    let openAll = document.getElementById('placesContext_openBookmarkContainer:tabs');
     let openAllPrivate = _uc.createElement(document, 'menuitem', {
       id: 'openAllPrivate',
       label: this.strstr('在%s标签中全部打开'),
@@ -105,6 +106,7 @@ UC.privateTab = {
       label: this.strstr('在%s标签中打开'),
       accesskey: 'v',
       class: 'menuitem-iconic privatetab-icon',
+      hidden: true
     });
 
     openLink.addEventListener('command', (e) => {
@@ -116,6 +118,7 @@ UC.privateTab = {
     }, false);
 
     document.getElementById('contentAreaContextMenu').addEventListener('popupshowing', this.contentContext);
+    document.getElementById('contentAreaContextMenu').addEventListener('popuphidden', this.hideContext);
     document.getElementById('context-openlinkintab').insertAdjacentElement('afterend', openLink);
 
     let toggleTab = _uc.createElement(document, 'menuitem', {
@@ -143,10 +146,9 @@ UC.privateTab = {
       if (e.button == 0) {
         UC.privateTab.BrowserOpenTabPrivate(win);
       } else if (e.button == 2) {
-        document.popupNode = document.getElementById(UC.privateTab.BTN_ID);
-        document.getElementById('new-tab-button-popup').openPopup(this, 'after_start', 14, -10, false, false);
-        document.getElementsByClassName('customize-context-removeFromToolbar')[0].disabled = false;
-        document.getElementsByClassName('customize-context-moveToPanel')[0].disabled = false;
+        document.getElementById('toolbar-context-menu').openPopup(this, 'after_start', 14, -10, false, false);
+        //document.getElementsByClassName('customize-context-removeFromToolbar')[0].disabled = false;
+        //document.getElementsByClassName('customize-context-moveToPanel')[0].disabled = false;
         e.preventDefault();
       }
     });
@@ -156,28 +158,25 @@ UC.privateTab = {
     gBrowser.tabContainer.addEventListener('TabSelect', this.onTabSelect);
 
     gBrowser.privateListener = (e) => {
-        let browser = e.target;
-        let tab = gBrowser.getTabForBrowser(browser);
-        if (!tab)
-          return;
-        let isPrivate = this.isPrivate(tab);
-      
-        if (!isPrivate) {
-          if (this.observePrivateTabs) {
-            this.openTabs.delete(tab);
-            if (!this.openTabs.size)
-              this.clearData();
-          }
-          return;
+      let browser = e.target;
+      let tab = gBrowser.getTabForBrowser(browser);
+      if (!tab)
+        return;
+      let isPrivate = this.isPrivate(tab);
+    
+      if (!isPrivate) {
+        if (this.observePrivateTabs) {
+          this.openTabs.delete(tab);
+          if (!this.openTabs.size)
+            this.clearData();
         }
+        return;
+      }
 
-        if (this.observePrivateTabs)
-          this.openTabs.add(tab)
+      if (this.observePrivateTabs)
+        this.openTabs.add(tab)
 
-        if ('useGlobalHistory' in browser.browsingContext) // fx78+
-          browser.browsingContext.useGlobalHistory = false;
-        else // fx77-
-          browser.messageManager.loadFrameScript(this.frameScript, false);
+      browser.browsingContext.useGlobalHistory = false;
     }
 
     win.addEventListener('XULFrameLoaderCreated', gBrowser.privateListener);
@@ -188,7 +187,8 @@ UC.privateTab = {
     MozElements.MozTab.prototype.getAttribute = function (att) {
       if (att == 'usercontextid' && this.isToggling) {
         delete this.isToggling;
-        return UC.privateTab.orig_getAttribute.call(this, att) ? 0 : UC.privateTab.container.userContextId;
+        return UC.privateTab.orig_getAttribute.call(this, att) ==
+               UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
       } else {
         return UC.privateTab.orig_getAttribute.call(this, att);
       }
@@ -260,16 +260,19 @@ UC.privateTab = {
 
   init: function () {
     ContextualIdentityService.ensureDataReady();
-    this.container = ContextualIdentityService._identities.find(container => container.name == this.config.profileName);
+    this.container = ContextualIdentityService._identities.find(container => container.name ==  this.config.profileName);
     if (!this.container) {
       ContextualIdentityService.create(this.config.profileName, 'fingerprint', 'purple');
-      this.container = ContextualIdentityService._identities.find(container => container.name == this.config.profileName);
+      this.container = ContextualIdentityService._identities.find(container => container.name ==  this.config.profileName);
     } else if (!this.config.neverClearData) {
       this.clearData();
     }
 
     this.setStyle();
     _uc.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+
+    ChromeUtils.import('resource:///modules/sessionstore/TabStateFlusher.jsm', this);
+    ChromeUtils.import('resource:///modules/sessionstore/TabStateCache.jsm', this);
 
     let { gSeenWidgets } = Cu.import('resource:///modules/CustomizableUI.jsm');
     let firstRun = !gSeenWidgets.has(this.BTN_ID);
@@ -362,6 +365,12 @@ UC.privateTab = {
     tab.isToggling = true;
     let shouldSelect = tab == win.gBrowser.selectedTab;
     let newTab = gBrowser.duplicateTab(tab);
+    let newBrowser = newTab.linkedBrowser;
+    this.TabStateFlusher.flush(newBrowser).then(() => {
+      this.TabStateCache.update(newBrowser.permanentKey, {
+        userContextId: newTab.userContextId
+      });
+    });
     if (shouldSelect) {
       let gURLBar = win.gURLBar;
       let focusUrlbar = gURLBar.focused;
@@ -401,6 +410,11 @@ UC.privateTab = {
       gContextMenu.showItem('context-openlinkincontainertab', false);
   },
 
+  hideContext: function (e) {
+    if (e.target == this)
+      e.view.document.getElementById('openLinkInPrivateTab').hidden = true;
+  },
+
   tabContext: function (e) {
     let win = e.view;
     win.document.getElementById('toggleTabPrivateState').setAttribute('checked', win.TabContextMenu.contextTab.userContextId == UC.privateTab.container.userContextId);
@@ -411,8 +425,8 @@ UC.privateTab = {
     let {document} = win;
     document.getElementById('openPrivate').disabled = document.getElementById('placesContext_open:newtab').disabled;
     document.getElementById('openPrivate').hidden = document.getElementById('placesContext_open:newtab').hidden;
-    document.getElementById('openAllPrivate').disabled = document.getElementById('placesContext_openContainer:tabs').disabled;
-    document.getElementById('openAllPrivate').hidden = document.getElementById('placesContext_openContainer:tabs').hidden;
+    document.getElementById('openAllPrivate').disabled = document.getElementById('placesContext_openBookmarkContainer:tabs').disabled;
+    document.getElementById('openAllPrivate').hidden = document.getElementById('placesContext_openBookmarkContainer:tabs').hidden;
     document.getElementById('openAllLinksPrivate').disabled = document.getElementById('placesContext_openLinks:tabs').disabled;
     document.getElementById('openAllLinksPrivate').hidden = document.getElementById('placesContext_openLinks:tabs').hidden;
   },
@@ -445,17 +459,13 @@ UC.privateTab = {
   orig_openTabset: PlacesUIUtils.openTabset,
   orig__openNodeIn: PlacesUIUtils._openNodeIn,
 
-  frameScript: 'data:application/javascript;charset=UTF-8,' + encodeURIComponent('(' + (() => {
-    content.docShell.useGlobalHistory = false;
-  }).toString() + ')();'),
-
   BTN_ID: 'privateTab-button',
   BTN2_ID: 'newPrivateTab-button',
 
   setStyle: function () {
     this.STYLE = {
       url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
-        @-moz-document url('${_uc.BROWSERCHROME}') {
+        @-moz-document url('${_uc.BROWSERCHROME}'), url-prefix('chrome://browser/content/places/') {
           #private-mask[enabled="true"] {
             display: block !important;
           }
@@ -465,7 +475,7 @@ UC.privateTab = {
           }
 
           #${UC.privateTab.BTN_ID}, #${UC.privateTab.BTN2_ID} {
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNTAgNTAiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTIxLjk4MDQ2OSAyQzE4LjEzNjcxOSAyLjA4NTkzOCAxNS4zNzUgMy4xOTkyMTkgMTMuNzY1NjI1IDUuMzEyNUMxMS45NDkyMTkgNy43MDMxMjUgMTEuNjMyODEzIDExLjI2NTYyNSAxMi43OTY4NzUgMTYuMTk1MzEzQzEyLjM4NjcxOSAxNi43MjY1NjMgMTIuMDExNzE5IDE3LjU3NDIxOSAxMi4xMDkzNzUgMTguNzM0Mzc1QzEyLjQwMjM0NCAyMC44OTg0MzggMTMuMjI2NTYzIDIxLjc4OTA2MyAxMy44OTg0MzggMjIuMTUyMzQ0QzE0LjIzNDM3NSAyMy45NTMxMjUgMTUuMjE4NzUgMjUuODYzMjgxIDE2LjEwMTU2MyAyNi43NjU2MjVDMTYuMTA1NDY5IDI2Ljk4ODI4MSAxNi4xMDkzNzUgMjcuMjAzMTI1IDE2LjExMzI4MSAyNy40MTc5NjlDMTYuMTMyODEzIDI4LjM3NSAxNi4xNDQ1MzEgMjkuMjAzMTI1IDE2LjAxOTUzMSAzMC4yNjU2MjVDMTUuNDcyNjU2IDMxLjY3MTg3NSAxMy40NDE0MDYgMzIuNDc2NTYzIDExLjA5Mzc1IDMzLjQwNjI1QzcuMTkxNDA2IDM0Ljk1MzEyNSAyLjMzNTkzOCAzNi44Nzg5MDYgMiA0Mi45NDkyMTlMMS45NDUzMTMgNDRMMjUuMzcxMDk0IDQ0QzI1LjE3OTY4OCA0My42MDU0NjkgMjUuMDE1NjI1IDQzLjE5NTMxMyAyNC44NTkzNzUgNDIuNzgxMjVDMjQuNTY2NDA2IDM5LjI1IDIyLjUgMzUuODAwNzgxIDIyLjUgMzUuODAwNzgxTDI0LjY2Nzk2OSAzMy45MDIzNDRDMjQuMzkwNjI1IDMzLjM0NzY1NiAyNC4wNTg1OTQgMzIuOTI1NzgxIDIzLjczMDQ2OSAzMi41ODIwMzFMMjUuNTg5ODQ0IDMxLjU1MDc4MUMyNS43MzgyODEgMzEuMjY1NjI1IDI1LjkwNjI1IDMwLjk5MjE4OCAyNi4wNzQyMTkgMzAuNzE4NzVDMjYuMjgxMjUgMzAuMzc4OTA2IDI2LjUwMzkwNiAzMC4wNTA3ODEgMjYuNzM0Mzc1IDI5LjczNDM3NUMyNi43ODkwNjMgMjkuNjY0MDYzIDI2LjgzNTkzOCAyOS41ODk4NDQgMjYuODkwNjI1IDI5LjUxOTUzMUMyNy4xNzk2ODggMjkuMTQwNjI1IDI3LjQ4ODI4MSAyOC43NzM0MzggMjcuODEyNSAyOC40MjU3ODFDMjcuODA0Njg4IDI3Ljg3ODkwNiAyNy44MDA3ODEgMjcuMzQzNzUgMjcuODAwNzgxIDI2Ljc1MzkwNkMyOC42Njc5NjkgMjUuODM5ODQ0IDI5LjU4OTg0NCAyMy45MjU3ODEgMjkuOTcyNjU2IDIyLjE5MTQwNkMzMC42OTE0MDYgMjEuODUxNTYzIDMxLjU4OTg0NCAyMC45Njg3NSAzMS43OTY4NzUgMTguNjgzNTk0QzMxLjg5MDYyNSAxNy41NTg1OTQgMzEuNTgyMDMxIDE2LjczMDQ2OSAzMS4xNTYyNSAxNi4xOTkyMTlDMzEuODE2NDA2IDE0LjEyODkwNiAzMi45Mzc1IDkuNTM1MTU2IDMxLjA5Mzc1IDYuNDg4MjgxQzMwLjI1MzkwNiA1LjEwMTU2MyAyOC45NDE0MDYgNC4yMzA0NjkgMjcuMTgzNTk0IDMuODgyODEzQzI2LjIxODc1IDIuNjY0MDYzIDI0LjM5ODQzOCAyIDIxLjk4MDQ2OSAyIFogTSAyMiA0QzIzLjg5MDYyNSA0IDI1LjI1MzkwNiA0LjQ3NjU2MyAyNS43MzQzNzUgNS4zMDQ2ODhMMjUuOTgwNDY5IDUuNzIyNjU2TDI2LjQ1NzAzMSA1Ljc4OTA2M0MyNy44MzU5MzggNS45ODQzNzUgMjguNzkyOTY5IDYuNTUwNzgxIDI5LjM3ODkwNiA3LjUyMzQzOEMzMC42NjQwNjMgOS42NDA2MjUgMzAuMDA3ODEzIDEzLjUgMjkuMDU4NTk0IDE2LjE2MDE1NkwyOC43NDIxODggMTYuOTg0Mzc1TDI5LjUzNTE1NiAxNy4zODI4MTNDMjkuNjI1IDE3LjQ0NTMxMyAyOS44NjMyODEgMTcuNzg5MDYzIDI5LjgwNDY4OCAxOC41MDc4MTNDMjkuNjY3OTY5IDE5Ljk4ODI4MSAyOS4xOTkyMTkgMjAuMzgyODEzIDI5LjA5NzY1NiAyMC40MDIzNDRMMjguMjM0Mzc1IDIwLjQwMjM0NEwyOC4xMDkzNzUgMjEuMjYxNzE5QzI3LjgzNTkzOCAyMy4xODM1OTQgMjYuNjgzNTk0IDI1LjE1NjI1IDI2LjMwNDY4OCAyNS40MzM1OTRMMjUuODAwNzgxIDI1LjcxODc1TDI1LjgwMDc4MSAyNi4zMDA3ODFDMjUuODAwNzgxIDI3LjMyMDMxMyAyNS44MTI1IDI4LjE5NTMxMyAyNS44NDM3NSAyOS4xMjEwOTRMMjIgMzEuMjUzOTA2TDE4LjEwNTQ2OSAyOS4wOTM3NUMxOC4xMjUgMjguNTAzOTA2IDE4LjEyMTA5NCAyNy45NDUzMTMgMTguMTA5Mzc1IDI3LjM3ODkwNkMxOC4xMDU0NjkgMjcuMDM1MTU2IDE4LjA5NzY1NiAyNi42Nzk2ODggMTguMDk3NjU2IDI2LjI5Njg3NUwxOC4wMzUxNTYgMjUuNzM0Mzc1TDE3LjYwOTM3NSAyNS40Mzc1QzE3LjIxNDg0NCAyNS4xNjc5NjkgMTUuOTcyNjU2IDIzLjE3MTg3NSAxNS43OTY4NzUgMjEuMzA0Njg4TDE1Ljc4MTI1IDIwLjQwNjI1TDE0Ljg3NSAyMC40MDYyNUMxNC43MzA0NjkgMjAuMzUxNTYzIDE0LjI4NTE1NiAxOS44Nzg5MDYgMTQuMDkzNzUgMTguNTE1NjI1QzE0LjAyNzM0NCAxNy42Nzk2ODggMTQuNDUzMTI1IDE3LjMzMjAzMSAxNC40NTMxMjUgMTcuMzMyMDMxTDE1LjA0Njg3NSAxNi45Mzc1TDE0Ljg3MTA5NCAxNi4yNTM5MDZDMTMuNzA3MDMxIDExLjY2Nzk2OSAxMy44NjcxODggOC40ODQzNzUgMTUuMzU5Mzc1IDYuNTIzNDM4QzE2LjU3ODEyNSA0LjkyMTg3NSAxOC44MjAzMTMgNC4wNzAzMTMgMjIgNCBaIE0gMzggMjZDMzEuMzkwNjI1IDI2IDI2IDMxLjM5NDUzMSAyNiAzOEMyNiA0NC42MDU0NjkgMzEuMzkwNjI1IDUwIDM4IDUwQzQ0LjYwOTM3NSA1MCA1MCA0NC42MDU0NjkgNTAgMzhDNTAgMzEuMzk0NTMxIDQ0LjYwOTM3NSAyNiAzOCAyNiBaIE0gMzggMjhDNDMuNTIzNDM4IDI4IDQ4IDMyLjQ3NjU2MyA0OCAzOEM0OCA0My41MjM0MzggNDMuNTIzNDM4IDQ4IDM4IDQ4QzMyLjQ3NjU2MyA0OCAyOCA0My41MjM0MzggMjggMzhDMjggMzIuNDc2NTYzIDMyLjQ3NjU2MyAyOCAzOCAyOCBaIE0gMTcuNzczNDM4IDMxLjE5NTMxM0wyMC4yNjk1MzEgMzIuNTgyMDMxTDE3Ljk4ODI4MSAzNS40MTc5NjlMMTYuMTIxMDk0IDMzLjE1MjM0NEMxNi44NDM3NSAzMi42MTcxODggMTcuNDE0MDYzIDMxLjk4NDM3NSAxNy43NzM0MzggMzEuMTk1MzEzIFogTSAzNyAzMkwzNyAzN0wzMiAzN0wzMiAzOUwzNyAzOUwzNyA0NEwzOSA0NEwzOSAzOUw0NCAzOUw0NCAzN0wzOSAzN0wzOSAzMiBaIE0gMTQuMzc1IDM0LjE3OTY4OEwxNy4yMzA0NjkgMzcuNjM2NzE5QzE3LjQxNzk2OSAzNy44NjcxODggMTcuNzA3MDMxIDM4LjAwMzkwNiAxOC4wMDc4MTMgMzhDMTguMzA4NTk0IDM4IDE4LjU4OTg0NCAzNy44NTkzNzUgMTguNzgxMjUgMzcuNjI1TDIwLjc0MjE4OCAzNS4xODc1TDIxLjUgMzUuODAwNzgxQzIxLjUgMzUuODAwNzgxIDE5Ljc0NjA5NCAzOC44MTI1IDE5LjI0MjE4OCA0Mkw0LjEyMTA5NCA0MkM0Ljg1NTQ2OSAzOC4wMjczNDQgOC4zOTg0MzggMzYuNjI1IDExLjgyODEyNSAzNS4yNjU2MjVDMTIuNzE0ODQ0IDM0LjkxNDA2MyAxMy41NzgxMjUgMzQuNTY2NDA2IDE0LjM3NSAzNC4xNzk2ODhaIi8+PC9zdmc+);
+            list-style-image: url(chrome://browser/skin/privateBrowsing.svg);
           }
 
           #tabbrowser-tabs[hasadjacentnewprivatetabbutton]:not([overflow="true"]) ~ #${UC.privateTab.BTN_ID},
@@ -540,6 +550,7 @@ UC.privateTab = {
       gBrowser.tabContainer.removeEventListener('TabClose', this.onTabClose);
       win.addEventListener('XULFrameLoaderCreated', gBrowser.privateListener);
       doc.getElementById('contentAreaContextMenu').removeEventListener('popupshowing', this.contentContext);
+      doc.getElementById('contentAreaContextMenu').removeEventListener('popuphidden', this.hideContext);
       doc.getElementById('tabContextMenu').removeEventListener('popupshowing', this.tabContext);
       win.MozElements.MozTab.prototype.getAttribute = this.orig_getAttribute;
       win.Object.defineProperty(gBrowser.tabContainer, 'allTabs', {
