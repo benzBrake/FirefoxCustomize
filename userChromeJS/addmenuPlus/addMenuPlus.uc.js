@@ -1142,7 +1142,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
         },
         openScriptInScratchpad: function (parentWindow, file) {
-
             let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,resizable=yes,centerscreen,dependent");
 
             spWin.addEventListener("load", function spWinLoaded() {
