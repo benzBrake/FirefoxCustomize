@@ -32,3 +32,5 @@
 ❌[rightClickOpenClipboard.uc.js](rightClickOpenClipboard.uc.js) 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）
 
 [QuickSnapshot_Mod.uc.js](QuickSnapshot_Mod.uc.js): 可移动多功能截图按钮(修改版) RunningCheese Firefox V11（FF99）
+
+[AddonsPage_fx72.uc.js](AddonsPage_fx72.uc.js): 附件页面显示 userChromeJS 脚本列表（xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理）
