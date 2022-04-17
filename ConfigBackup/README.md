@@ -3,6 +3,7 @@
 * Selection Context Search.json Selection Context Search 配置备份
 * TMPpref.txt TabMixPlus 配置备份
 * headereditor.json  HeaderEditor 规则
+* SSS settings backup.json Swift Selection Search 配置备份
 
 
 
