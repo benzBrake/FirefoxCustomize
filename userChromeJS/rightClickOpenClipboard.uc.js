@@ -7,25 +7,39 @@
 // @include         chrome://browser/content/browser.xul
 // @shutdown        UC.rightClickOpenClipboard.unload();
 // @compatibility   Firefox 70 +
+// @update          2022-04-17 剪贴板为空时弹出原来的菜单
 // @onlyonce
 // ==/UserScript==
 UC.rightClickOpenClipboard = {
     clickNewTab: function(e) {
         if (e.button === 2) {
             let url = readFromClipboard();
-            try {
-                switchToTabHavingURI(url, true);
-            } catch (ex) {
-                if (url) {
-                    url = 'https://www.baidu.com/s?wd='+ encodeURIComponent(url);;
+            if (!url) {
+                if(xPref.get('userChromeJS.rightClickOpenClipboard.openNewTab')) {
+                    BrowserOpenTab(event);
                 } else {
-                    url = 'https://www.baidu.com/';
+                    return;
                 }
-                gBrowser.loadOneTab(url, {
-                    inBackground: false,
-                        relatedToCurrent: false,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
-                });
+            } else {
+                try {
+                    switchToTabHavingURI(url, true);
+                } catch (ex) {
+                    let reg = /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?/;
+                    if (!reg.test(url)) {
+                        url = 'https://www.baidu.com/s?wd=' + encodeURIComponent(url);
+                    } else {
+                        if (url.substring(4, 0).toLowerCase() == "http") {
+                            url = encodeURIComponent(url);
+                        } else {
+                            url = 'http://' + encodeURIComponent(url);
+                        }
+                    }
+                    gBrowser.loadOneTab(url, {
+                        inBackground: false,
+                            relatedToCurrent: false,
+                            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
+                    });
+                }
             }
             e.preventDefault();
             e.stopPropagation();
