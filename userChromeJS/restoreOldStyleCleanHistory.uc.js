@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		restoreOldStyleCleanHistory.uc.js
-// @author		ycls006
+// @author		ylcs006
 // @onlyonce
 // ==/UserScript==
 location.href == 'chrome://browser/content/browser.xhtml' && setTimeout(() => {
