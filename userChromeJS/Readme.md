@@ -24,6 +24,7 @@
 |      | [downloadPlus](downloadPlus/)                                | 下载功能增强，第三方工具，另存为，复制下载连接。(FF98版有 BUG) |
 | ❌    | [extensionOptionsMenu](extensionOptionsMenu.uc.js)           | 汉化版拓展管理器                                             |
 | ⛔    | [Firefox_ToolBarButtons](Firefox_ToolBarButtons.uc.js)       | 给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等  |
+|      | [movablePanelUIButton](movablePanelUIButton.uc.js)           | 可移动 PanelUI 按钮                                          |
 | ❌    | [privateTab](privateTab.uc.js)                               | 添加无痕标签功能，支持自定义无痕身份的名字                   |
 |      | [QuickSnapshot](QuickSnapshot_Mod.uc.js)                     | 可移动多功能截图按钮(修改版)                                 |
 | ❌    | [rebuild_userChrome](rebuild_userChrome.uc.js)               | 汉化版脚本管理器                                             |
