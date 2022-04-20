@@ -33,6 +33,8 @@ Ryan 的 Firefox 自定义资源收藏夹
 
 ### 其他 FF 集散地
 
+> https://u6.getuploader.com/script/
+>
 > https://www.camp-firefox.de/
 >
 > https://www.firefox.net.cn/
