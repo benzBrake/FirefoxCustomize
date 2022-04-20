@@ -20,6 +20,7 @@
 |      | [AddBookmarkHere](AddBookmarkHere.uc.js)                     | 添加 "添加书签到此处" 到书签栏右键菜单（仅在 Firefox 100 中测试过），如果想使用 WebExtension 版[看这里](https://github.com/benzBrake/FirefoxCustomize/tree/master/extensions/addbookmarkhere) |
 |      | [addMenuPlus](addMenuPlus/addMenuPlus.uc.js)                 | 自定义火狐菜单，也支持工具按钮移动                           |
 |      | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附件页面显示 userChromeJS 脚本列表（xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理，仅在 Firefox 100 中测试过） |
+|      | [browsertoolbox](browsertoolbox.uc.js)                       | 新增一个打开“浏览器内容工具箱”的按钮                         |
 |      | [downloadPlus](downloadPlus/)                                | 下载功能增强，第三方工具，另存为，复制下载连接。(FF98版有 BUG) |
 | ❌    | [extensionOptionsMenu](extensionOptionsMenu.uc.js)           | 汉化版拓展管理器                                             |
 | ⛔    | [Firefox_ToolBarButtons](Firefox_ToolBarButtons.uc.js)       | 给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等  |
