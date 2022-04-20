@@ -7,6 +7,8 @@
 
 我的当前 Firefox 版本 Firefox 100b2 Developer Edition
 
+仅支持 101 版本就会放 101 目录里
+
 ### 标志
 
 ⛔ 为不可用状态
@@ -33,4 +35,5 @@
 |      | [saveUCJS](saveUCJS.uc.js)                                   | 快速保存 github 上的 UC 脚本                                 |
 | ❌    | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |
 | ⛔    | [Tabplus](Tabplus/Tabplus.uc.js)                             | TabMixPlus 极度简陋userChromeJS版本，来自于RunningCheese Firefox V10（FF68），TabMiXPlus 已经复活，支持 FF78+ https://github.com/onemen/TabMixPlus |
+|      | [textZoomPerDomain](textZoomPerDomain_e10s.uc.js)            | 分域名设定字体大小                                           |
 |      | [UndoCloseTabButtonN](UndoCloseTabButtonN.uc.js)             | 查看已关闭的标签页和窗口                                     |
