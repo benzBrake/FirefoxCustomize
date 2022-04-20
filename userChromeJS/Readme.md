@@ -32,4 +32,4 @@
 |      | [saveUCJS](saveUCJS.uc.js)                                   | 快速保存 github 上的 UC 脚本                                 |
 | ❌    | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |
 | ⛔    | [Tabplus](Tabplus/Tabplus.uc.js)                             | TabMixPlus 极度简陋userChromeJS版本，来自于RunningCheese Firefox V10（FF68），TabMiXPlus 已经复活，支持 FF78+ https://github.com/onemen/TabMixPlus |
-
+|      | [UndoCloseTabButtonN](UndoCloseTabButtonN.uc.js)             | 查看已关闭的标签页和窗口                                     |
