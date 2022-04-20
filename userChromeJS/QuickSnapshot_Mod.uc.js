@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name            QuickSnapshot_Mod.uc.js
-// @description     可移动多功能截图按钮(修改版)
+// @name            可移动多功能截图按钮
+// @description     修改自 QuickSnapshot.uc.js，可热插拔
 // @author          Ryan, Runningcheese
 // @include         main
 // @shutdown        UC.QuickSnapshot.unload();
@@ -21,7 +21,7 @@ UC.QuickSnapshot = {
         }],
         ['xul:menuitem', {
             label: '滚动截图工具',
-            oncommand: 'event.stopPropagation(); window.document.getElementById("screenshot-button").click()',
+            oncommand: 'event.stopPropagation(); ScreenshotsUtils.notify(window, "shortcut")',
             class: 'menuitem-iconic',
             image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhNWE1YSIgc3Ryb2tlLXdpZHRoPSI0IiB0cmFuc2Zvcm09Im1hdHJpeCgwLjQ2MjQ2LCAwLCAwLCAwLjQ2MTE2NiwgLTEuMjMyMjc5LCAtMS4wMTUzNjIpIiBzdHlsZT0iIj4KICAgIDxwYXRoIGQ9Ik0xNiA2SDhhMiAyIDAgMCAwLTIgMnY4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0eWxlPSJzdHJva2U6IHJnYigwLCAwLCAwKTsiLz4KICAgIDxwYXRoIGQ9Ik0xNiA0Mkg4YTIgMiAwIDAgMS0yLTJ2LTgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3R5bGU9InN0cm9rZTogcmdiKDAsIDAsIDApOyIvPgogICAgPHBhdGggZD0iTTMyIDQyaDhhMiAyIDAgMCAwIDItMnYtOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHlsZT0ic3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgICA8cGF0aCBkPSJNMzIgNmg4YTIgMiAwIDAgMSAyIDJ2OCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHlsZT0ic3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgICA8cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcng9IjIiIHN0eWxlPSJzdHJva2U6IHJnYigwLCAwLCAwKTsiLz4KICA8L2c+Cjwvc3ZnPg=='
         }],
@@ -152,6 +152,7 @@ UC.QuickSnapshot = {
         this.launchPath(this.getSysPath("mspaint.exe"));
     },
     init: function() {
+        this.sss = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
         CustomizableUI.createWidget({
             id: 'QuickSnapshot',
             defaultArea: CustomizableUI.AREA_NAVBAR,
@@ -164,7 +165,7 @@ UC.QuickSnapshot = {
             }
         });
         this.setStyle();
-        _uc.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+        this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
     },
     setStyle: function() {
         this.STYLE = {
@@ -180,7 +181,7 @@ UC.QuickSnapshot = {
     },
     unload: function() {
         CustomizableUI.destroyWidget('QuickSnapshot');
-        _uc.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
+        this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         delete UC.QuickSnapshot;
     }
 }
