@@ -5,9 +5,10 @@
 // @author         Griever
 // @include        main
 // @license        MIT License
-// @compatibility  Firefox 69+
+// @compatibility  Firefox 75+
 // @charset        UTF-8
-// @version        2021.4.13
+// @version        2019.03.12
+// @version        2019.03.20
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -15,7 +16,6 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.2 修正 Firefox 70 + 因 API 变化导致的无法编辑配置文件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
 // @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
@@ -135,39 +135,78 @@
 
 location.href.startsWith('chrome://browser/content/browser.x') && (function (css) {
 
-    var useScraptchpad = false; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
+    var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
 
-    let {
-        classes: Cc,
-        interfaces: Ci,
-        utils: Cu,
-        results: Cr
-    } = Components;
-
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (window.addMenu) {
         window.addMenu.destroy();
         delete window.addMenu;
     }
 
     window.addMenu = {
+        STR: {
+            'zh-CN': {
+                'addMenuExample': '// 这是一个 addMenuPlus 配置文件\n' +
+                    '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
+                    '\n\n' +
+                    'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+                'exampleEmptyNotice': '目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。',
+                'addMenuPlus': '自定义菜单',
+                'addMenuPlusTooltip': '左键：重载配置\n右键：编辑配置',
+                'customPopshowingError': 'addMenuPlus 自定义显示错误',
+                'urlIsInvalid': 'URL 不正确: %s',
+                'configFile': '配置文件',
+                'notExists': ' 不存在',
+                'checkLine': '\n请重新检查配置文件第 %s 行',
+                'fileNotFound': '文件不存在: %s',
+                'configHasReloaded': '配置已经重新载入',
+                'pleaseSetEditor': '请先设置编辑器的路径!!!',
+                'setGlobalPath': '设置全局脚本编辑器',
+                'executableFiles': '执行文件'
+            },
+            'en-US': {
+                'addMenuExample': '// This is an addMenuPlus configuration file.\n' +
+                    '// Please visit http://ywzhaiqi.github.io/addMenu_creator/ to generate configuration.' +
+                    '\n\n' +
+                    'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+                'exampleEmptyNotice': 'The configuration file for addMenuPlus is currently empty, please generate the configuration and put it in the configuration file in the open link. \nOpen the configuration file by right-clicking the tab.',
+                'addMenuPlus': 'addMenuPlus',
+                'addMenuPlusTooltip': 'Left Click：Reload configuration\nRight Click：Edit configuration',
+                'customPopshowingError': 'addMenuPlus customize popupshow error',
+                'urlIsInvalid': 'URL is invalid: %s',
+                'configFile': 'Configuration file',
+                'notExists': ' not exists',
+                'checkLine': '\nPlease recheck line %s of the configuration file',
+                'fileNotFound': 'File not found: %s',
+                'configHasReloaded': 'The configuration has been reloaded',
+                'pleaseSetEditor': 'Please set the path to the editor first!!!',
+                'setGlobalPath': 'Setting up the global script editor',
+                'executableFiles': 'Executable files'
+            },
+        },
+        t: function (key, replace) {
+            let str = this.STR[this.locale].hasOwnProperty(key) ? this.STR[this.locale][key] : (this.STR['en-US'].hasOwnProperty(key) ? this.STR['en-US'][key] : "undefined");
+            if (typeof replace !== "undefined") {
+                str = str.replace("%s", replace);
+            }
+            return str;
+        },
         get prefs() {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("addMenu.")
+        },
+        get appVersion() {
+            return Services.appinfo.version.split(".")[0]
         },
         get FILE() {
 
             var aFile = FileUtils.getFile("UChrm", ["local", "_addmenu.js"], false);
             if (!aFile.exists()) {
-                saveFile(aFile, '// 这是一个 addMenuPlus 配置文件\n' +
-                    '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
-                    '\n\n' +
-                    'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});');
-
-                alert('目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。');
-
+                saveFile(aFile, this.t('addMenuExample'));
+                alert(this.t('exampleEmptyNotice'));
                 var url = 'http://ywzhaiqi.github.io/addMenu_creator/';
-                openTrustedLinkIn(url, 'tab', false, null);
+                openUILinkIn(url, 'tab', false, null);
             }
 
             this._modifiedTime = aFile.lastModifiedTime;
@@ -178,7 +217,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
         },
         init: function () {
-
+            let locale = Services.locale.appLocaleAsBCP47;
+            this.locale = this.STR.hasOwnProperty(locale) ? locale : 'en-US';
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -220,40 +260,26 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var ins;
             ins = $("context-viewsource");
             ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-page-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
+                $C("menuseparator", { id: "addMenu-page-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
             ins = $("context_closeTab");
-            $("context_undoCloseTab").after(ins);
             ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-tab-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
+                $C("menuseparator", { id: "addMenu-tab-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
             ins = $("prefSep") || $("webDeveloperMenu");
             ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-tool-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
+                $C("menuseparator", { id: "addMenu-tool-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
             ins = $("appmenu-quit") || $("menu_FileQuitItem");
             ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-app-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins);
+                $C("menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins);
             ins = $("devToolsSeparator");
             ins.parentNode.insertBefore($C("menuitem", {
                 id: "addMenu-rebuild",
-                label: "自定义菜单",
-                tooltiptext: "左键：重载配置\n右键：编辑配置",
+                label: this.t('addMenuPlus'),
+                tooltiptext: this.t('addMenuPlusTooltip'),
                 oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
             }), ins);
 
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
-            $("contentAreaContextMenu").addEventListener("popuphiding", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
 
@@ -262,7 +288,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         uninit: function () {
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
-            $("contentAreaContextMenu").removeEventListener("popuphiding", this, false);
             $("tabContextMenu").removeEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
         },
@@ -277,13 +302,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         handleEvent: function (event) {
             switch (event.type) {
-                case "popuphiding":
-                    if (event.target.id == 'contentAreaContextMenu') {
-                        event.target.querySelectorAll(':scope > .addMenu').forEach(m => {
-                            m.hidden = true;
-                        });
-                    }
-                    break;
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
 
@@ -306,18 +324,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
-                        state.length > 0 && event.target.querySelectorAll(
-                            state.map(s => `.addMenu[condition~="${s}"]`).join(', ')
-                        ).forEach(m => {
-                            m.hidden = false;
-                        });
 
                         this.customShowings.forEach(function (obj) {
                             var curItem = obj.item;
                             try {
                                 eval('(' + obj.fnSource + ').call(curItem, curItem)');
                             } catch (ex) {
-                                console.error('addMenuPlus 自定义显示错误', obj.fnSource);
+                                console.error(this.t('customPopshowingError'), obj.fnSource);
                             }
                         });
                     }
@@ -371,12 +384,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             try {
                 uri = Services.io.newURI(url, null, null);
             } catch (e) {
-                return this.log(U("URL 不正确: ") + url);
+                return this.log(U(this.t('urlIsInvalid')).replace("%s", url));
             }
             if (uri.scheme === "javascript")
                 loadURI(url);
             else if (where)
-                openTrustedLinkIn(uri.spec, where, false, postData || null);
+                openUILinkIn(uri.spec, where, false, postData || null);
             else if (event.button == 1)
                 openNewTabWith(uri.spec);
             else openUILink(uri.spec, event);
@@ -396,7 +409,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
                 file.initWithPath(path);
                 if (!file.exists()) {
-                    Cu.reportError('File Not Found: ' + path);
+                    Cu.reportError(this.t("fileNotFound").replace("%s", path));
                     return;
                 }
 
@@ -425,35 +438,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var aFile = this.FILE;
 
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
-                this.log(aFile ? aFile.path : U("配置文件") + U(" 不存在"));
+                this.log(aFile ? aFile.path : U(this.t('configFile')) + U(this.t('notExists')));
                 return;
             }
 
-            var aiueo = [{
-                current: "page",
-                submenu: "PageMenu",
-                insertId: "addMenu-page-insertpoint"
-            },
-            {
-                current: "tab",
-                submenu: "TabMenu",
-                insertId: "addMenu-tab-insertpoint"
-            },
-            {
-                current: "tool",
-                submenu: "ToolMenu",
-                insertId: "addMenu-tool-insertpoint"
-            },
-            {
-                current: "app",
-                submenu: "AppMenu",
-                insertId: "addMenu-app-insertpoint"
-            },
-            {
-                current: "group",
-                submenu: "GroupMenu",
-                insertId: "addMenu-page-insertpoint"
-            },
+            var aiueo = [
+                { current: "page", submenu: "PageMenu", insertId: "addMenu-page-insertpoint" },
+                { current: "tab", submenu: "TabMenu", insertId: "addMenu-tab-insertpoint" },
+                { current: "tool", submenu: "ToolMenu", insertId: "addMenu-tool-insertpoint" },
+                { current: "app", submenu: "AppMenu", insertId: "addMenu-app-insertpoint" },
+                { current: "group", submenu: "GroupMenu", insertId: "addMenu-page-insertpoint" },
             ];
 
             var data = loadText(aFile);
@@ -481,10 +475,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             };
             sandbox._css = [];
 
-            aiueo.forEach(function ({
-                current,
-                submenu
-            }) {
+            aiueo.forEach(function ({ current, submenu }) {
                 sandbox["_" + current] = [];
                 if (submenu != 'GroupMenu') {
                     sandbox[current] = function (itemObj) {
@@ -515,7 +506,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 Cu.evalInSandbox(includeSrc, sandbox, "1.8");
             } catch (e) {
                 let line = e.lineNumber - lineFinder.lineNumber - 1;
-                this.alert(e + "\n请重新检查配置文件第 " + line + " 行", null, function () {
+                this.alert(e + this.t("checkLine", line), null, function () {
                     addMenu.edit(addMenu.FILE, line);
                 });
                 return this.log(e);
@@ -528,17 +519,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             this.customShowings = [];
 
-            aiueo.forEach(function ({
-                current,
-                submenu,
-                insertId
-            }) {
+            aiueo.forEach(function ({ current, submenu, insertId }) {
                 if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
                 let insertPoint = $(insertId);
                 this.createMenuitem(sandbox["_" + current], insertPoint);
             }, this);
 
-            if (isAlert) this.alert(U("配置已经重新载入"));
+            if (isAlert) this.alert(U(this.t('configHasReloaded')));
         },
         newGroupMenu: function (menuObj) {
             var group = document.createXULElement('menugroup');
@@ -558,9 +545,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.setCondition(group, menuObj.condition);
 
             menuObj._items.forEach(function (obj) {
-                group.appendChild(this.newMenuitem(obj, {
-                    isMenuGroup: true
-                }));
+                group.appendChild(this.newMenuitem(obj, { isMenuGroup: true }));
             }, this);
             return group;
         },
@@ -797,9 +782,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
 
 
-                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, {
-                    isTopMenuitem: true
-                });
+                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true });
 
                 insertMenuItem(obj, menuitem);
 
@@ -911,25 +894,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     return a.indexOf(c) === i
                 });
                 menu.setAttribute("condition", match.join(" "));
-                menu.hidden = true;
             }
         },
         convertText: function (text) {
             var that = this;
             var context = gContextMenu || { // とりあえずエラーにならないようにオブジェクトをでっち上げる
-                link: {
-                    href: "",
-                    host: ""
-                },
-                target: {
-                    alt: "",
-                    title: ""
-                },
+                link: { href: "", host: "" },
+                target: { alt: "", title: "" },
                 __noSuchMethod__: function (id, args) {
                     return ""
                 },
             };
-            let tab = TabContextMenu.contextTab;
+            let tab = document.popupNode ? TabContextMenu.contextTab : null;
             var bw = (tab && tab.linkedBrowser) || context.browser;
 
             return text.replace(this.regexp, function (str) {
@@ -1032,7 +1008,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 img.onload = function () {
                     var width = this.naturalWidth,
                         height = this.naturalHeight;
-                    canvas = document.createElementNS(NSURI, "canvas");
+                    canvas = document.createXULElementNS(NSURI, "canvas");
                     canvas.width = width;
                     canvas.height = height;
                     var ctx = canvas.getContext("2d");
@@ -1095,54 +1071,64 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         edit: function (aFile, aLineNumber) {
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
+
             var editor;
-            if (useScraptchpad) {
-                this.openScriptInScratchpad(window, aFile);
-                return;
-            }
             try {
                 editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
-            } catch (e) { }
+            } catch (e) {
 
-            if (!editor) {
-                alert("请先设置编辑器的路径!!!");
-                var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                fp.init(window, "设置全局脚本编辑器", Ci.nsIFilePicker.modeOpen);
-                fp.appendFilter("执行文件", "*.exe");
-                fp.open(res => {
-                    if (res != Ci.nsIFilePicker.returnOK)
-                        return;
-                    Services.prefs.setCharPref("view_source.editor.path", editor);
-                });
-                editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
             }
 
-            if (editor) {
-                try {
-                    let appfile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
-                    appfile.initWithPath(editor.path);
-                    let process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-                    process.init(appfile);
-                    process.run(false, [aFile.path], 1, {});
-                } catch {
-                    alert('无法打开编辑器。 请打开 about:config 页面并设置 view_source.editor.path 的值为文本编辑器路径。');
+            if (!editor || !editor.exists()) {
+                if (useScraptchpad && this.appVersion <= 72) {
+                    this.openScriptInScratchpad(window, aFile);
+                    return;
+                } else {
+                    alert(this.t('pleaseSetEditor'));
+                    var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                    fp.init(window, this.t('setGlobalPath'), fp.modeOpen);
+                    fp.appendFilter(this.t('executableFiles'), "*.exe");
+
+                    if (typeof fp.show !== 'undefined') {
+                        if (fp.show() == fp.returnCancel || !fp.file)
+                            return;
+                        else {
+                            editor = fp.file;
+                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                        }
+                    } else {
+                        fp.open(res => {
+                            if (res != Ci.nsIFilePicker.returnOK) return;
+                            editor = fp.file;
+                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                        });
+                    }
+
+
                 }
-                return;
-            } else {
-                // 调用自带的
-                var aURL = userChrome.getURLSpecFromFile(aFile);
-                var aDocument = null;
-                var aCallBack = null;
-                var aPageDescriptor = null;
-                gViewSourceUtils.openInExternalEditor({
-                    URL: aURL,
-                    lineNumber: aLineNumber
-                }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
             }
 
+            var aURL = "";
+            if (typeof userChrome !== "undefined") {
+                aURL = userChrome.getURLSpecFromFile(aFile);
+            } else {
+                var fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
+                aURL = fph.getURLSpecFromActualFile(aFile);
+            }
+
+            var aDocument = null;
+            var aCallBack = null;
+            var aPageDescriptor = null;
+            gViewSourceUtils.openInExternalEditor({
+                URL: aURL,
+                lineNumber: aLineNumber
+            }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
         },
         openScriptInScratchpad: function (parentWindow, file) {
-            let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,resizable=yes,centerscreen,dependent");
+
+            let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,dialog,centerscreen,dependent");
+            spWin.top.moveTo(0, 0);
+            spWin.top.resizeTo(screen.availWidth, screen.availHeight);
 
             spWin.addEventListener("load", function spWinLoaded() {
                 spWin.removeEventListener("load", spWinLoaded, false);
@@ -1159,7 +1145,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         copy: function (aText) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
-            StatusPanel._label = "Copy: " + aText;
+            //XULBrowserWindow.statusTextField.label = "Copy: " + aText;
         },
         copyLink: function (copyURL, copyLabel) {
             // generate the Unicode and HTML versions of the Link
@@ -1235,7 +1221,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }
 
     function log() {
-        Application.console.log(Array.slice(arguments));
+        console.log(Array.slice(arguments));
     }
 
     function U(text) {
@@ -1363,23 +1349,26 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])\
 }\
 \
 menugroup.addMenu {\
-  background-color: menu;\
-  padding-bottom: 4px;\
+  padding-bottom: 2px;\
 }\
+\
 menugroup.addMenu > .menuitem-iconic {\
   -moz-box-flex: 1;\
   -moz-box-pack: center;\
   -moz-box-align: center;\
+  padding-block: 0.5em; \
+  padding-inline-start: 1em; \
 }\
 menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {\
   -moz-appearance: none;\
+  padding-top: 2px;\
 }\
 menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {\
   width: 16px;\
   height: 16px;\
-  margin: 7px;\
 }\
-menugroup.addMenu > .menuitem-iconic > .menu-iconic-text,\
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,\
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,\
 menugroup.addMenu > .menuitem-iconic > .menu-accel-container {\
   display: none;\
 }\
