@@ -3,23 +3,23 @@
 // @description     添加一个快捷打开浏览器内容工具箱的按钮
 // @author          Endor8
 // @include         main
-// @compatibility   Firefox 100+
+// @compatibility   Firefox 100
 // @homepage        https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js
 // ==/UserScript==
-(function() {
+(function () {
 
     if (location != 'chrome://browser/content/browser.xhtml')
         return;
-        
+
     ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
-    
+
     try {
-        
+
         CustomizableUI.createWidget({
             id: 'browser-toolbox-button',
             type: 'custom',
             defaultArea: CustomizableUI.AREA_NAVBAR,
-            onBuild: function(aDocument) {
+            onBuild: function (aDocument) {
                 var toolbaritem = aDocument.createElementNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'toolbarbutton');
                 var props = {
                     id: 'browser-toolbox-button',
@@ -35,7 +35,7 @@
                 return toolbaritem;
             }
         });
-       } catch(e) { };  
+    } catch (e) { };
 
     function onCommand() {
         var document = event.target.ownerDocument;

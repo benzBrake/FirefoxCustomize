@@ -24,7 +24,7 @@
 // @note         - 图标请自行添加样式，详细信息见主页
 // @note         其它信息见主页
 // ==/UserScript==
-(function() {
+(function () {
     "use strict";
 
     const iconURL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";  // uc 脚本列表的图标
@@ -132,7 +132,7 @@
                 } catch (ex) {
                     var uri = Services.io.newFileURI(addonDir);
                     var protSvc = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
-                    getService(Ci.nsIExternalProtocolService);
+                        getService(Ci.nsIExternalProtocolService);
                     protSvc.loadUrl(uri);
                 }
             }
@@ -143,7 +143,7 @@
                 this.launchEditor(path);
             }
         },
-        launchEditor(path){
+        launchEditor(path) {
             var editor = Services.prefs.getCharPref("view_source.editor.path");
             if (!editor) {
                 alert('请打开 about:config 页面并设置 view_source.editor.path 的值为编辑器路径。');
@@ -152,7 +152,7 @@
 
             var UI = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
             var platform = window.navigator.platform.toLowerCase();
-            UI.charset = platform.indexOf('win') > -1 ? 'Shift_JIS': 'UTF-8';
+            UI.charset = platform.indexOf('win') > -1 ? 'Shift_JIS' : 'UTF-8';
             path = UI.ConvertFromUnicode(path);
 
             var appfile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
@@ -199,11 +199,11 @@
                 if (addon.type === "userchromejs") {
                     // 有効・無効スイッチを追加
                     const input = $C(doc, "input", {
-                        type            : "checkbox",
-                        action          : "AM-switch",
-                        class           : "toggle-button extension-enable-button",
-                        "data-l10n-id"  : "extension-enable-addon-button-label",
-                        "aria-label"    : "Enable",
+                        type: "checkbox",
+                        action: "AM-switch",
+                        class: "toggle-button extension-enable-button",
+                        "data-l10n-id": "extension-enable-addon-button-label",
+                        "aria-label": "Enable",
                     });
                     input.checked = !addon.userDisabled;
                     input.addEventListener("click", this, true);
@@ -221,29 +221,29 @@
 
                     if (addon.type === "userchromejs") {
                         item = $C(doc, "panel-item", {
-                            action  : "AM-edit-script",
-                            "#text" : "编辑",
+                            action: "AM-edit-script",
+                            "#text": "编辑",
                         }, optionMenu);
                         item.addEventListener("click", this, true);
                     }
 
                     item = $C(doc, "panel-item", {
-                        action  : "AM-browse-dir",
-                        "#text" : "浏览路径"
+                        action: "AM-browse-dir",
+                        "#text": "浏览路径"
                     }, optionMenu);
                     item.addEventListener("click", this, true);
 
                     if (this.getInstallURL(addon)) {
                         item = $C(doc, "panel-item", {
-                            action  : "AM-open-url",
-                            "#text" : "Open Install URL"
+                            action: "AM-open-url",
+                            "#text": "Open Install URL"
                         }, optionMenu);
                         item.addEventListener("click", this, true);
                     }
 
                     item = $C(doc, "panel-item", {
-                        action      : "AM-copy-name",
-                        "#text"     : "复制名称"
+                        action: "AM-copy-name",
+                        "#text": "复制名称"
                     }, optionMenu);
                     item.addEventListener("click", this, true);
                 }
@@ -266,8 +266,8 @@
                 ucjsBtn.setAttribute("title", "userChrome JS");
 
                 $C(doc, "span", {
-                    class   : "category-name",
-                    "#text" : "userChrome JS"
+                    class: "category-name",
+                    "#text": "userChrome JS"
                 }, ucjsBtn);
 
                 const localeBtn = cat.querySelector('.category[name="locale"]');
@@ -278,7 +278,7 @@
 
         getTargetAddon(target) {
             const card = target.closest("[addon-id]");
-            return (card && card.addon)? card.addon: null;
+            return (card && card.addon) ? card.addon : null;
         },
 
         onClick(event) {
@@ -288,22 +288,22 @@
             const addon = this.getTargetAddon(target);
             if (action && addon) {
                 switch (action) {
-                case "AM-edit-script":
-                    this.editScript(addon);
-                    break;
-                case "AM-browse-dir":
-                    this.browseDir(addon);
-                    break;
-                case "AM-open-url":
-                    event.preventDefault();
-                    this.openUrl(target.href? target.href: this.getInstallURL(addon));
-                    break;
-                case "AM-copy-name":
-                    this.copyName(addon);
-                    break;
+                    case "AM-edit-script":
+                        this.editScript(addon);
+                        break;
+                    case "AM-browse-dir":
+                        this.browseDir(addon);
+                        break;
+                    case "AM-open-url":
+                        event.preventDefault();
+                        this.openUrl(target.href ? target.href : this.getInstallURL(addon));
+                        break;
+                    case "AM-copy-name":
+                        this.copyName(addon);
+                        break;
 
-                case "AM-switch":
-                    break;
+                    case "AM-switch":
+                        break;
                 }
             }
 
@@ -391,18 +391,18 @@
 
                 if (!!value && !!label) {
                     const row = $C(doc, "div", {
-                        id      : "detail-InstallURL-row",
-                        class   : "addon-detail-row",
+                        id: "detail-InstallURL-row",
+                        class: "addon-detail-row",
                     });
                     $C(doc, "label", {
-                        class   : "detail-row-label",
-                        "#text" : label
+                        class: "detail-row-label",
+                        "#text": label
                     }, row);
 
                     const link = $C(doc, "a", {
-                        href    : value,
-                        action  : "AM-open-url",
-                        "#text" : value
+                        href: value,
+                        action: "AM-open-url",
+                        "#text": value
                     }, row);
                     link.addEventListener("click", this);
 
@@ -439,14 +439,14 @@
         init() {
             if (AddonManager.hasAddonType && AddonManager.hasAddonType("userchromejs") ||
                 AddonManager.addonTypes && 'userchromejs' in AddonManager.addonTypes)
-                    return;
+                return;
 
             this.initScripts();
             this.registerProvider();
             this.addStyle();
         },
         uninit() {
-            this.unloads.forEach(function(func) { func(); });
+            this.unloads.forEach(function (func) { func(); });
         },
         initScripts() {
             let scripts;
@@ -484,18 +484,18 @@
             };
 
             AddonManagerPrivate.registerProvider(provider, [
-                AddonManagerPrivate.AddonType?
+                AddonManagerPrivate.AddonType ?
                     new AddonManagerPrivate.AddonType(
                         "userchromejs",
                         "",
                         "userChrome JS",
                         AddonManager.VIEW_TYPE_LIST,
                         9000
-                    ):
+                    ) :
                     "userchromejs"
             ]);
 
-            this.unloads.push(function() {
+            this.unloads.push(function () {
                 AddonManagerPrivate.unregisterProvider(provider);
             });
         },
@@ -516,7 +516,7 @@
             let styleURI = Services.io.newURI("data:text/css," + encodeURIComponent(data), null, null);
             styleService.loadAndRegisterSheet(styleURI, Ci.nsIStyleSheetService.USER_SHEET);
 
-            this.unloads.push(function() {
+            this.unloads.push(function () {
                 styleService.unregisterSheet(styleURI, Ci.nsIStyleSheetService.USER_SHEET);
             });
         },
@@ -565,10 +565,10 @@
         },
 
         get isActive() {
-            return !this.userDisabled? true: false;
+            return !this.userDisabled ? true : false;
         },
         get userDisabled() {
-            return !this.enabled? true: false;
+            return !this.enabled ? true : false;
         },
         set userDisabled(val) {
             if (val == this.userDisabled) {

@@ -1,6 +1,8 @@
 // ==UserScript==
 // @name		restoreOldStyleCleanHistory.uc.js
-// @author		ylcs006
+// @description         还原清除历史记录为旧版对话
+// @author		ylcs006         
+// @compatibility       Firefox 98
 // @onlyonce
 // ==/UserScript==
 location.href == 'chrome://browser/content/browser.xhtml' && setTimeout(() => {

@@ -3,7 +3,7 @@
 // @author          Ryan, firefox
 // @include         main
 // @shutdown        UC.movablePanelUIButton.unload()
-// @compatibility   Firefox 90 +
+// @compatibility   Firefox 90
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
 // @note            2022.04.20 修改为可热插拔（不知道非 xiaoxiaoflood 的 userChrome 环境是否可用）
 // @onlyonce
@@ -15,7 +15,7 @@ if (typeof Services === "undefined") {
 }
 UC.movablePanelUIButton = {
     widgetId: "movable-PanelUI-button",
-    init: function() {
+    init: function () {
         this.sss = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
 
         CustomizableUI.createWidget({
@@ -25,12 +25,12 @@ UC.movablePanelUIButton = {
             label: "主菜单",
             tooltiptext: "打开应用程序菜单",
             image: "chrome://browser/skin/menu.svg",
-            onCreated: function(node) {
+            onCreated: function (node) {
                 let originalMenu = node.ownerDocument.defaultView.PanelUI;
 
                 // helper function to not repeat so much code
                 function setEvent(event) {
-                    node.addEventListener(event, function() {
+                    node.addEventListener(event, function () {
                         originalMenu.menuButton = node;
                     }, { "capture": true });
                     node.addEventListener(event, originalMenu);
@@ -42,7 +42,7 @@ UC.movablePanelUIButton = {
         });
         this.setStyle();
     },
-    setStyle: function() {
+    setStyle: function () {
         this.STYLE = {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
             @-moz-document url('chrome://browser/content/browser.xhtml') {
@@ -58,7 +58,7 @@ UC.movablePanelUIButton = {
         }
         this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
     },
-    unload: function() {
+    unload: function () {
         CustomizableUI.destroyWidget(this.widgetId);
         this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         gBrowser.ownerDocument.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');

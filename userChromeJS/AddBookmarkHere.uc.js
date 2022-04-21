@@ -2,6 +2,7 @@
 // @name            添加书签到此处
 // @namespace       about:userchromejs/addbookmarkhere
 // @description     添加 "添加书签到此处" 到书签栏右键菜单
+// @compatibility   Firefox 68
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/places/places.xhtml
 // @shutdown        window.AddBookmarkHere.uninit()

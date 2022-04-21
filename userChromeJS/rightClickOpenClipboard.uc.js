@@ -5,17 +5,18 @@
 // @include         main
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
+// @homepage        https://github.com/benzBrake/FirefoxCustomize
 // @shutdown        UC.rightClickOpenClipboard.unload();
-// @compatibility   Firefox 70 +
+// @compatibility   Firefox 70
 // @update          2022-04-17 剪贴板为空时弹出原来的菜单
 // @onlyonce
 // ==/UserScript==
 UC.rightClickOpenClipboard = {
-    clickNewTab: function(e) {
+    clickNewTab: function (e) {
         if (e.button === 2) {
             let url = readFromClipboard();
             if (!url) {
-                if(xPref.get('userChromeJS.rightClickOpenClipboard.openNewTab')) {
+                if (xPref.get('userChromeJS.rightClickOpenClipboard.openNewTab')) {
                     BrowserOpenTab(event);
                 } else {
                     return;
@@ -36,8 +37,8 @@ UC.rightClickOpenClipboard = {
                     }
                     gBrowser.loadOneTab(url, {
                         inBackground: false,
-                            relatedToCurrent: false,
-                            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
+                        relatedToCurrent: false,
+                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
                     });
                 }
             }
@@ -45,22 +46,22 @@ UC.rightClickOpenClipboard = {
             e.stopPropagation();
         }
     },
-    init: function() {
+    init: function () {
         let btn1 = document.getElementById('tabs-newtab-button');
         if (btn1) {
             btn1.addEventListener("click", UC.rightClickOpenClipboard.clickNewTab, false);
         }
-        let btn2 =  document.getElementById('new-tab-button');
+        let btn2 = document.getElementById('new-tab-button');
         if (btn2) {
             btn2.addEventListener("click", UC.rightClickOpenClipboard.clickNewTab, false);
         }
     },
-    unload: function() {
+    unload: function () {
         let btn1 = document.getElementById('tabs-newtab-button');
         if (btn1) {
             btn1.removeEventListener("click", UC.rightClickOpenClipboard.clickNewTab);
         }
-        let btn2 =  document.getElementById('new-tab-button');
+        let btn2 = document.getElementById('new-tab-button');
         if (btn2) {
             btn2.removeEventListener("click", UC.rightClickOpenClipboard.clickNewTab);
         }

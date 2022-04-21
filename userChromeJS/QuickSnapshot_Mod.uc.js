@@ -4,7 +4,7 @@
 // @author          Ryan, Runningcheese
 // @include         main
 // @shutdown        UC.QuickSnapshot.unload();
-// @compatibility   Firefox 90 +
+// @compatibility   Firefox 90
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
 // @update          2022-04-17 修改为可热插拔（不知道非 xiaoxiaoflood 的 userChrome 环境是否可用）
 // @onlyonce
@@ -51,7 +51,7 @@ UC.QuickSnapshot = {
             image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTguMzY3IDkuOTIyIEMgMTguMzY3IDkuNjc0IDE4LjI2OSA5LjQzOCAxOC4wOTQgOS4yNjMgTCA5Ljc1MiAwLjkyMSBDIDkuMzg5IDAuNTU3IDguNzk5IDAuNTU3IDguNDM1IDAuOTIxIEwgNS41NDMgMy44MTIgTCAzLjcyOCAxLjk5NyBDIDMuMjIgMS40OSAyLjM1NSAxLjcyMiAyLjE2OSAyLjQxNSBDIDIuMDgzIDIuNzM2IDIuMTc1IDMuMDc5IDIuNDExIDMuMzE0IEwgNC4yMjYgNS4xMjkgTCAwLjk3MSA4LjM4NSBDIDAuMTI0IDkuMjM0IDAuMTI0IDEwLjYwOSAwLjk3MSAxMS40NTggTCA3LjU1OCAxOC4wNDQgQyA4LjQwNiAxOC44OTMgOS43ODIgMTguODkzIDEwLjYzMSAxOC4wNDQgTCAxOC4wOTQgMTAuNTggQyAxOC4yNjkgMTAuNDA1IDE4LjM2NyAxMC4xNjkgMTguMzY3IDkuOTIyIFogTSA5LjMxNCAxNi43MjcgQyA5LjE5MiAxNi44NDggOC45OTYgMTYuODQ4IDguODc1IDE2LjcyNyBMIDIuMjg4IDEwLjE0MSBDIDIuMTY3IDEwLjAyIDIuMTY3IDkuODIzIDIuMjg4IDkuNzAyIEwgNS41NDMgNi40NDcgTCA3LjIzNCA4LjEzNyBDIDYuMzA4IDEwLjA3OCA3LjgzMiAxMi4yOTQgOS45NzcgMTIuMTI1IEMgMTAuNjM5IDEyLjA3MiAxMS4yNjEgMTEuNzg2IDExLjczMSAxMS4zMTcgQyAxMy4yNTIgOS43OTYgMTIuNTU2IDcuMTk5IDEwLjQ3OCA2LjY0MiBDIDkuODM1IDYuNDcgOS4xNTIgNi41MzMgOC41NTEgNi44MiBMIDYuODYxIDUuMTI5IEwgOS4wOTMgMi44OTcgTCAxNi4xMTkgOS45MjIgWiBNIDkuNzU1IDguNDEgQyAxMC40NzIgOC40MSAxMC45MTkgOS4xODcgMTAuNTYgOS44MDcgQyAxMC4yMDEgMTAuNDI3IDkuMzA1IDEwLjQyNiA4Ljk0OCA5LjgwNiBDIDguNzM3IDkuNDQxIDguNzk5IDguOTggOS4wOTcgOC42ODMgQyA5LjI3MSA4LjUwNyA5LjUwOCA4LjQwOSA5Ljc1NSA4LjQwOSBaIE0gMTguMTc1IDEzLjM0IEMgMTcuODExIDEyLjk3NSAxNy4yMjIgMTIuOTc1IDE2Ljg1NyAxMy4zNCBDIDE2LjY3MSAxMy41MjYgMTUuMDMzIDE1LjIxOSAxNS4wMzMgMTcuMTAyIEMgMTUuMDMzIDE5LjAxNCAxNy4xMDIgMjAuMjA5IDE4Ljc1OCAxOS4yNTMgQyAxOS41MjYgMTguODA5IDIwIDE3Ljk5IDIwIDE3LjEwMiBDIDIwIDE1LjIxOSAxOC4zNjIgMTMuNTI2IDE4LjE3NSAxMy4zNCBaIE0gMTcuNTE2IDE3LjcyMyBDIDE3LjE3NCAxNy43MjMgMTYuODk1IDE3LjQ0NSAxNi44OTUgMTcuMTAyIEMgMTYuODk1IDE2LjU2NSAxNy4xOTMgMTUuOTY1IDE3LjUxNSAxNS40ODEgQyAxNy44MzcgMTUuOTY1IDE4LjEzNyAxNi41NjcgMTguMTM3IDE3LjEwMiBDIDE4LjEzNiAxNy40NDUgMTcuODU5IDE3LjcyMyAxNy41MTYgMTcuNzIzIFoiIHN0eWxlPSIiLz4KPC9zdmc+'
         }]
     ],
-    jsonToDom: function(json, doc, nodes) {
+    jsonToDom: function (json, doc, nodes) {
         var namespaces = {
             html: 'http://www.w3.org/1999/xhtml',
             xul: 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul'
@@ -66,11 +66,11 @@ UC.QuickSnapshot = {
         function tag(name, attr) {
             if (Array.isArray(name)) {
                 var frag = doc.createDocumentFragment();
-                Array.prototype.forEach.call(arguments, function(arg) {
+                Array.prototype.forEach.call(arguments, function (arg) {
                     if (!Array.isArray(arg[0]))
                         frag.appendChild(tag.apply(null, arg));
                     else
-                        arg.forEach(function(arg) {
+                        arg.forEach(function (arg) {
                             frag.appendChild(tag.apply(null, arg));
                         });
                 });
@@ -92,14 +92,14 @@ UC.QuickSnapshot = {
                 else
                     elem.setAttributeNS(vals[0] || '', vals[1], val);
             }
-            args.forEach(function(e) {
+            args.forEach(function (e) {
                 try {
                     elem.appendChild(
                         Object.prototype.toString.call(e) == '[object Array]' ?
-                        tag.apply(null, e) :
-                        e instanceof doc.defaultView.Node ?
-                        e :
-                        doc.createTextNode(e)
+                            tag.apply(null, e) :
+                            e instanceof doc.defaultView.Node ?
+                                e :
+                                doc.createTextNode(e)
                     );
                 } catch (ex) {
                     elem.appendChild(doc.createTextNode(ex));
@@ -109,7 +109,7 @@ UC.QuickSnapshot = {
         }
         return tag.apply(null, json);
     },
-    getToolsPath: function(uri) {
+    getToolsPath: function (uri) {
         // 获取工具路径
         let path = Services.dirsvc.get('UChrm', Ci.nsIFile).parent.parent.path + "\\Tools";
         if (uri) {
@@ -127,38 +127,38 @@ UC.QuickSnapshot = {
         }
         return path + uri;
     },
-    launchPath: function(path) {
+    launchPath: function (path) {
         // 运行文件
         let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
         file.initWithPath(path.replace(/^\./, path));
         file.launch();
     },
-    takeSnapshot: function(minimize = false) {
+    takeSnapshot: function (minimize = false) {
         if (minimize) {
             window.minimize();
         }
         this.launchPath(this.getToolsPath("Snapshot.exe"));
     },
-    pickColor: function() {
+    pickColor: function () {
         this.launchPath(this.getToolsPath("Colors\\Colors.exe"));
     },
-    captuerGif: function() {
+    captuerGif: function () {
         this.launchPath(this.getToolsPath("ScreenToGif.exe"));
     },
-    fsCapture: function() {
+    fsCapture: function () {
         this.launchPath(this.getToolsPath("FSCapture\\FSCapture.exe"));
     },
-    msPaint: function() {
+    msPaint: function () {
         this.launchPath(this.getSysPath("mspaint.exe"));
     },
-    init: function() {
+    init: function () {
         this.sss = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
         CustomizableUI.createWidget({
             id: 'QuickSnapshot',
             defaultArea: CustomizableUI.AREA_NAVBAR,
             label: '截图',
             tooltiptext: '左键：截图\n右键：截图菜单',
-            onCreated: function(aNode) {
+            onCreated: function (aNode) {
                 aNode.setAttribute('oncommand', 'UC.QuickSnapshot.takeSnapshot();');
                 aNode.appendChild(UC.QuickSnapshot.jsonToDom(UC.QuickSnapshot.menuJson, aNode.ownerDocument, {}));
                 aNode.setAttribute('contextmenu', 'QuickSnapshot_pop');
@@ -167,7 +167,7 @@ UC.QuickSnapshot = {
         this.setStyle();
         this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
     },
-    setStyle: function() {
+    setStyle: function () {
         this.STYLE = {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
             @-moz-document url('${_uc.BROWSERCHROME}') {
@@ -179,7 +179,7 @@ UC.QuickSnapshot = {
             type: _uc.sss.USER_SHEET
         }
     },
-    unload: function() {
+    unload: function () {
         CustomizableUI.destroyWidget('QuickSnapshot');
         this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         delete UC.QuickSnapshot;

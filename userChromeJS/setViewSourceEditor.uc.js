@@ -11,10 +11,10 @@
 // 需要把 Notepad2 放在 local 目录下的 Notepad2 文件夹内
 (function () {
     UC.setViewSourceEditor = {
-        init: function() {
+        init: function () {
             xPref.set('view_source.editor.path', _uc.chromedir.path + "\\Local\\Notepad2\\Notepad2.exe");
         },
-        destroy: function() {
+        destroy: function () {
             xPref.clear('view_source.editor.path');
         }
     }

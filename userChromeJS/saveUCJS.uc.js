@@ -5,7 +5,7 @@
 // @include      main
 // @note         Nightlyで使っているSaveUserChromeJS.uc.jsが60で動かなかったので作成
 // ==/UserScript==
-(function() {
+(function () {
     "use strict";
     // config
     const addToolMenu = false // Menüeintrag zum aktualisieren des Subscriptloaders dem Menü Extra hinzufügen
@@ -13,7 +13,7 @@
     const addCxtMenu = true // Menüeintrag dem Hauptkontextmenü hinzufügen 
     const skipDialogCxt = false // Beim Speichern aus dem Kontextmenü, Dialogfeld "Speichern unter" nicht anzeigen
     const urgeRestart = true // Nach dem runter laden, Neustarten Dialog mit OK anzeigen
-        //	config ここまで
+    //	config ここまで
     const subloader = 'https://github.com/alice0775/userChrome.js/blob/master/userChrome.js';
     const areaMenu = document.getElementById('contentAreaContextMenu');
     const toolMenu = document.getElementById('menu_ToolsPopup');
@@ -24,7 +24,7 @@
     let file;
 
     if (addCxtMenu) {
-        areaMenu.addEventListener('popupshowing', function() {
+        areaMenu.addEventListener('popupshowing', function () {
             const _areaMenu = document.getElementById('ucjs_getUCJS_areamenu');
             if (_areaMenu) this.removeChild(_areaMenu);
             if (!gBrowser.currentURI.spec.startsWith(github)) return;
@@ -49,7 +49,7 @@
         menu.setAttribute('id', tool ? 'ucjs_getUCJS_toolmenu' : 'ucjs_getUCJS_areamenu');
         menu.setAttribute('label', tool ? '更新userChrome.js文件' : '保存UC脚本');
         menu.setAttribute('tooltiptext', tool ? 'Alice 0775的下标加载程序脚本 ' : '保存为uc.js');
-        menu.addEventListener('click', function() { getFile(skip, url, check) }, false);
+        menu.addEventListener('click', function () { getFile(skip, url, check) }, false);
         tool ? parentMenu.appendChild(menu) : parentMenu.insertBefore(menu, saveLink ? saveLink : parentMenu.firstChild);
     }
 
@@ -61,7 +61,7 @@
         xhr.responseType = '';
         xhr.open('GET', url + stamp);
         xhr.send();
-        xhr.onload = function() {
+        xhr.onload = function () {
             if (check) {
                 const version = xhr.responseText.split(/\r\n/)[0].match(/(\d+\.\d+\.\d{2})/)[0]
                 if (PresentVer == version) {
@@ -118,7 +118,7 @@
         converterStream.writeString(string);
         converterStream.close();
         fileStream.close();
-        setTimeout(function() {
+        setTimeout(function () {
             if (urgeRestart && window.confirm('UC脚本保存完成，重启后生效. Firefox要立即重启吗？')) restart();
         }, 100);
     }
@@ -135,7 +135,7 @@
         let data = sstream.read(sstream.available());
         try {
             data = decodeURIComponent(escape(data));
-        } catch (e) {}
+        } catch (e) { }
         sstream.close();
         fstream.close();
         if (data === 'undefined') return false;
