@@ -201,7 +201,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         get FILE() {
 
-            var aFile = FileUtils.getFile("UChrm", ["resources", "config", "_addmenu.js"], false);
+            var aFile = FileUtils.getFile("UChrm", ["local", "_addmenu.js"], false);
             if (!aFile.exists()) {
                 saveFile(aFile, this.t('addMenuExample'));
                 alert(this.t('exampleEmptyNotice'));
