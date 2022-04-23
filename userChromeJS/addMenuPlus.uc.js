@@ -5,7 +5,7 @@
 // @author         Griever
 // @include        main
 // @license        MIT License
-// @compatibility  Firefox 75+
+// @compatibility  Firefox 68+
 // @charset        UTF-8
 // @version        2019.03.12
 // @version        2019.03.20
@@ -399,6 +399,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             try {
                 var a;
+                if (typeof arg == "undefined") arg = []; // fix slice error
                 if (typeof arg == 'string' || arg instanceof String) {
                     a = arg.split(/\s+/)
                 } else if (Array.isArray(arg)) {
