@@ -7,8 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 68+
 // @charset        UTF-8
-// @version        2019.03.12
-// @version        2019.03.20
+// @version        0.1.2
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -16,6 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
+// @note           0.1.2 修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
 // @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
@@ -201,7 +201,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         get FILE() {
 
-            var aFile = FileUtils.getFile("UChrm", ["local", "_addmenu.js"], false);
+            var aFile = FileUtils.getFile("UChrm", ["resources", "config", "_addmenu.js"], false);
             if (!aFile.exists()) {
                 saveFile(aFile, this.t('addMenuExample'));
                 alert(this.t('exampleEmptyNotice'));
@@ -957,11 +957,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%IMAGE_TITLE%":
                         return context.target.title || "";
                     case "%I":
-                        return context.imageURL || "";
+                        return context.imageURL || context.mediaURL || "";
                     case "%IMAGE_URL%":
-                        return context.imageURL || "";
+                        return context.imageURL || context.mediaURL || "";
                     case "%IMAGE_BASE64%":
-                        return img2base64(context.imageURL);
+                        return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
@@ -1000,7 +1000,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             function img2base64(imgsrc) {
                 if (typeof imgsrc == 'undefined') return "";
-
                 const NSURI = "http://www.w3.org/1999/xhtml";
                 var img = new Image();
                 var that = this;
@@ -1009,7 +1008,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 img.onload = function () {
                     var width = this.naturalWidth,
                         height = this.naturalHeight;
-                    canvas = document.createXULElementNS(NSURI, "canvas");
+                    if (that.appVersion <= 72) {
+                        canvas = document.createXULElementNS(NSURI, "canvas");
+                    } else {
+                        canvas = document.createElementNS(NSURI, "canvas")
+                    }
                     canvas.width = width;
                     canvas.height = height;
                     var ctx = canvas.getContext("2d");
@@ -1222,7 +1225,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }
 
     function log() {
-        console.log(Array.slice(arguments));
+        console.log(Array.prototype.slice.call(arguments));
     }
 
     function U(text) {
@@ -1372,5 +1375,8 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
 menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,\
 menugroup.addMenu > .menuitem-iconic > .menu-accel-container {\
   display: none;\
+}\
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) { \
+    -moz-box-flex: 0; \
 }\
 ');
