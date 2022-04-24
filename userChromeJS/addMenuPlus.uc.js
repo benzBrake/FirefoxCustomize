@@ -15,7 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.2 修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串
+// @note           0.1.2 修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串 this.t is not function
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
 // @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
@@ -301,6 +301,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
         },
         handleEvent: function (event) {
+            let that = this;
             switch (event.type) {
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
@@ -330,7 +331,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             try {
                                 eval('(' + obj.fnSource + ').call(curItem, curItem)');
                             } catch (ex) {
-                                console.error(this.t('customPopshowingError'), obj.fnSource);
+                                console.error(that.t('customPopshowingError'), obj.fnSource);
                             }
                         });
                     }
