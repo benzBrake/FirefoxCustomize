@@ -15,7 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.2 修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串 this.t is not function
+// @note           0.1.2 修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串 this.t is not function，GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
 // @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
@@ -531,6 +531,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         newGroupMenu: function (menuObj) {
             var group = document.createXULElement('menugroup');
+
+            // 增加 onshowing 事件
+            if (menuObj.onshowing) {
+                this.customShowings.push({
+                    item: group,
+                    fnSource: menuObj.onshowing
+                });
+                delete menuObj.onshowing;
+            }
+
             Object.keys(menuObj).map(function (key) {
                 var val = menuObj[key];
                 if (key === "_items") return;
@@ -545,6 +555,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             // 表示 / 非表示の設定
             if (menuObj.condition)
                 this.setCondition(group, menuObj.condition);
+
+
 
             menuObj._items.forEach(function (obj) {
                 group.appendChild(this.newMenuitem(obj, { isMenuGroup: true }));
@@ -1378,6 +1390,11 @@ menugroup.addMenu > .menuitem-iconic > .menu-accel-container {\
   display: none;\
 }\
 menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) { \
+    padding-left: 0;\
     -moz-box-flex: 0; \
+}\
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left { \
+    margin-inline-start: 8px; \
+    margin-inline-end: 8px; \
 }\
 ');
