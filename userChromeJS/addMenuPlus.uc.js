@@ -387,13 +387,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } catch (e) {
                 return this.log(U(this.t('urlIsInvalid')).replace("%s", url));
             }
-            if (uri.scheme === "javascript")
+            if (uri.scheme === "javascript") {
                 loadURI(url);
-            else if (where)
-                openUILinkIn(uri.spec, where, false, postData || null);
-            else if (event.button == 1)
+            } else if (where) {
+                // 可能是 78 以后改调用了，不记得了
+                if (this.appVersion >= 78) {
+                    let aAllowThirdPartyFixup = {
+                        postData: postData || null,
+                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                    }
+                    openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                } else {
+                    openUILinkIn(uri.spec, where, false, postData || null);
+                }
+            } else if (event.button == 1) {
                 openNewTabWith(uri.spec);
-            else openUILink(uri.spec, event);
+            } else { openUILink(uri.spec, event); }
         },
         exec: function (path, arg) {
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
