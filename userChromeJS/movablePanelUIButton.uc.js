@@ -35,6 +35,7 @@ UC.movablePanelUIButton = {
 
                 setEvent("mousedown");
                 setEvent("keypress");
+                document.getElementById('appMenu-popup').setAttribute('position', 'bottomcenter topleft');
             }
         });
         this.setStyle();
@@ -59,6 +60,7 @@ UC.movablePanelUIButton = {
         CustomizableUI.destroyWidget(this.widgetId);
         this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         gBrowser.ownerDocument.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
+        document.getElementById('appMenu-popup').setAttribute('position', 'bottomcenter topright');
         delete UC.movablePanelUIButton;
     }
 }
