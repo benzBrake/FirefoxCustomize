@@ -3,16 +3,13 @@
 // @author          Ryan, firefox
 // @include         main
 // @shutdown        UC.movablePanelUIButton.unload()
-// @compatibility   Firefox 90
+// @compatibility   Firefox 78
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
 // @note            2022.04.20 修改为可热插拔（不知道非 xiaoxiaoflood 的 userChrome 环境是否可用）
 // @onlyonce
 // ==/UserScript==
 
 Components.utils.import("resource:///modules/CustomizableUI.jsm");
-if (typeof Services === "undefined") {
-    const { Services } = Components.utils.import("resource://gre/modules/Services.jsm", {});
-}
 UC.movablePanelUIButton = {
     widgetId: "movable-PanelUI-button",
     init: function () {
