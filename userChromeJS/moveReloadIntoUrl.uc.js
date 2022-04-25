@@ -26,6 +26,7 @@ UC.moveReloadIntoURL = {
             let img = document.createXULElement('image');
             btn.setAttribute("id", "new-stop-reload-button");
             btn.setAttribute("class", "urlbar-page-action urlbar-addon-page-action");
+            btn.setAttribute("tooltiptext", Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page')
             img.setAttribute('class', 'urlbar-icon');
             btn.appendChild(img);
 
@@ -34,7 +35,12 @@ UC.moveReloadIntoURL = {
                 if (r && r.getAttribute('displaystop'))
                     BrowserStop();
                 else
-                    BrowserReloadOrDuplicate();
+                    if (e.button == 2) {
+                        BrowserReloadSkipCache();
+                    } else {
+                        BrowserReloadOrDuplicate();
+                    }
+
             }, false);
             this.paBtns.parentNode.appendChild(btn);
             this.btn = document.getElementById('new-stop-reload-button');
