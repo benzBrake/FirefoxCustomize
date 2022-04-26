@@ -38,7 +38,8 @@ UC.moveReloadIntoURL = {
                     if (e.button == 2) {
                         BrowserReloadSkipCache();
                     } else {
-                        BrowserReloadOrDuplicate();
+                        // BrowserReloadOrDuplicate();
+                        BrowserReload();
                     }
 
             }, false);
