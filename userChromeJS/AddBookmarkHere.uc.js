@@ -8,12 +8,15 @@
 // @shutdown        window.AddBookmarkHere.uninit()
 // @author          Ryan, zbinlin
 // @homepage        http://mozcp.com
-// @version         0.0.3
+// @version         0.0.4
 // ==/UserScript==
 
 /**
+ * 点击菜单同时按下 Shift 键会添加到文件夹最上方或者当前书签的前面
  * ******************************** Changelog ********************************
- * version: 0.0.3
+ *  version: 0.0.4
+ *  * 修复书签条目右键添加失败
+ *  version: 0.0.3
  *  * 修复新版 Firefox 兼容性，仅在 Firefox 100 中测试过
  * version: 0.0.2
  *  * 兼容 Firefox 21+
@@ -68,7 +71,7 @@
             }
         },
         handleEvent: function (e) {
-            var popupNode = e.currentTarget.parentNode.triggerNode;
+            var popupNode = PlacesUIUtils.lastContextMenuTriggerNode || document.popupNode;
             if (!popupNode) return;
             var view = PlacesUIUtils.getViewForNode(popupNode);
             if (!view) return;
@@ -81,7 +84,7 @@
                     aid = e.shiftKey ? 0 : bookmarks.DEFAULT_INDEX;
                 } else {
                     iid = bookmarks.getFolderIdForItem(selectedNode.itemId);
-                    var id = bookmarks.getItemIndex(selectedNode.itemId);
+                    var id = selectedNode.itemId;
                     aid = e.shiftKey ? id : id + 1;
                 }
             } else {
