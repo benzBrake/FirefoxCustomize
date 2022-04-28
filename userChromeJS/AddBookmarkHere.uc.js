@@ -34,6 +34,7 @@
         PARENT_NODE: "placesContext",
         REF_NODE: "",
         init: function () {
+            if (!location.href.startsWith('chrome://browser/content/browser.x')) return;
             var parentNode = document.getElementById(this.PARENT_NODE);
             if (!parentNode) return;
             var self = this;
