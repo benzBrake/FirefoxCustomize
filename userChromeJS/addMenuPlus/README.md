@@ -112,7 +112,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %XXX_ENCODE%     encodeURIComponent 后的变量
 
 简短的变量
-
+```
     %h               当前网页(域名)
     %i               图片的 URL
     %l               链接的 URL
@@ -123,62 +123,62 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %u               URL
 
 ### 隐藏菜单右侧的 tab 提示
-
-    css('.addMenu .menu-iconic-accel[value="tab"] { display: none; }');
-    css('.addMenu .menu-iconic-accel[value="tabshifted"] { display: none; }');
-    css('.addMenu .menu-iconic-accel[value="window"] { display: none; }');
-    css('.addMenu .menu-iconic-accel[value="current"] { display: none; }');
-
+```
+css('.addMenu .menu-iconic-accel[value="tab"] { display: none; }');
+css('.addMenu .menu-iconic-accel[value="tabshifted"] { display: none; }');
+css('.addMenu .menu-iconic-accel[value="window"] { display: none; }');
+css('.addMenu .menu-iconic-accel[value="current"] { display: none; }');
+```
 示例
 -----
 
 打开方式(默认当前页面)，通过`where` 更改，具体`tab`(前台)、`tabshifted`(后台)、`window`(窗口)、`current`(当前页面)
 
 示例：Google 相似图片搜索
-
-    page({
-        label: 'Google 相似图片搜索',
-        url : 'https://www.google.com/searchbyimage?safe=off&image_url=%IMAGE_URL%',
-        insertAfter: "context-viewimageinfo",
-        condition: "image",
-        where: 'tab',
-    });
-
+```
+page({
+    label: 'Google 相似图片搜索',
+    url : 'https://www.google.com/searchbyimage?safe=off&image_url=%IMAGE_URL%',
+    insertAfter: "context-viewimageinfo",
+    condition: "image",
+    where: 'tab',
+});
+```
 示例：四引擎搜图
-
-    page({
-        label: '四引擎搜图',
-        condition: "image",
-        image: 'http://www.tineye.com/favicon.ico',
-        where: 'tabshifted',
-        oncommand: function(event) {
-        	const engineList = [
-                'https://www.google.com/searchbyimage?safe=off&image_url=%IMAGE_URL%',
-                'https://yandex.com/images/search?source=collections&&url=%IMAGE_URL%&rpt=imageview',
-                'https://www.tineye.com/search?url=%IMAGE_URL%',
-                'https://image.baidu.com/pcdutu?queryImageUrl=%IMAGE_URL%'
-            ];
-            engineList.forEach(e => {
-            	addMenu.openCommand(event, addMenu.convertText(e), this.where);
-            });
-        }
-    });
-
-示例：短网址，分别为当前网页和链接上（相关 API 已经无法使用，并且现在更推荐使用生成二维码）。
-
-    // addMenu 专用
-    page([{
-        label: '短网址',
-        condition: 'nolink',
-        url: 'javascript:function iprl5(l){var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%URL%");void (0);'
-    },
-    {
-        label: '短网址（链接）',
-        condition: 'link',
-        url: 'javascript:function iprl5(l){if(l.startsWith("javascript:")){alert("该网址无效："+l);return;}var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%RLINK%");void (0);'
+```
+page({
+    label: '四引擎搜图',
+    condition: "image",
+    image: 'http://www.tineye.com/favicon.ico',
+    where: 'tabshifted',
+    oncommand: function(event) {
+        const engineList = [
+            'https://www.google.com/searchbyimage?safe=off&image_url=%IMAGE_URL%',
+            'https://yandex.com/images/search?source=collections&&url=%IMAGE_URL%&rpt=imageview',
+            'https://www.tineye.com/search?url=%IMAGE_URL%',
+            'https://image.baidu.com/pcdutu?queryImageUrl=%IMAGE_URL%'
+        ];
+        engineList.forEach(e => {
+            addMenu.openCommand(event, addMenu.convertText(e), this.where);
+        });
     }
-    ])
-
+});
+```
+示例：短网址，分别为当前网页和链接上（相关 API 已经无法使用，并且现在更推荐使用生成二维码）。
+```
+// addMenu 专用
+page([{
+    label: '短网址',
+    condition: 'nolink',
+    url: 'javascript:function iprl5(l){var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%URL%");void (0);'
+},
+{
+    label: '短网址（链接）',
+    condition: 'link',
+    url: 'javascript:function iprl5(l){if(l.startsWith("javascript:")){alert("该网址无效："+l);return;}var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%RLINK%");void (0);'
+}
+]);
+```
 示例：二维码
 
 ```
@@ -190,133 +190,133 @@ page([{
     label: '生成二维码',
     condition: 'link',
     url: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=%LINK%"
-}])
+}]);
 ```
 
 
 
 示例：页面右键添加一个复制链接文本的菜单
-
-    page({
-        label: "复制链接文本",
-        accesskey: "C",
-        text: "%LINK_TEXT%",
-        insertAfter: "context-copylink",
-        condition: "link noimage"
-    });
-
+```
+page({
+    label: "复制链接文本",
+    accesskey: "C",
+    text: "%LINK_TEXT%",
+    insertAfter: "context-copylink",
+    condition: "link noimage"
+});
+```
 示例：右键添加 Google Translate 菜单
-
-    page({label: "Google Translate",
-        url: "http://translate.google.cn/translate?u=%u",
-        accesskey: "t",
-        where: "tab",
-    })
-
+```
+page({label: "Google Translate",
+    url: "http://translate.google.cn/translate?u=%u",
+    accesskey: "t",
+    where: "tab",
+});
+```
 示例：右键添加 `翻译整个页面` 菜单（可用于 https），[来源](https://www.runningcheese.com/bookmarklet)。*注：github.com 由于服务器限制，无法直接插入 js，故无效。*
-
-    page({
-        label: "翻译整个页面",
-        insertAfter: "context-selectall",
-        image: "moz-anno:favicon:http://translate.google.cn/favicon.ico",
-    	url: 'javascript:(function(){var%20s=document.getElementById(%22tongwenlet_cn%22);if(s!=null){document.body.removeChild(s);}var%20s=document.createElement(%22script%22);s.language=%22javascript%22;s.type=%22text/javascript%22;s.src=%22https://caiyunapp.com/dest/trs.js%22;s.id=%22tongwenlet_cn%22;document.body.appendChild(s);%20})();'
-    });
-
+```
+page({
+    label: "翻译整个页面",
+    insertAfter: "context-selectall",
+    image: "moz-anno:favicon:http://translate.google.cn/favicon.ico",
+    url: 'javascript:(function(){var%20s=document.getElementById(%22tongwenlet_cn%22);if(s!=null){document.body.removeChild(s);}var%20s=document.createElement(%22script%22);s.language=%22javascript%22;s.type=%22text/javascript%22;s.src=%22https://caiyunapp.com/dest/trs.js%22;s.id=%22tongwenlet_cn%22;document.body.appendChild(s);%20})();'
+});
+```
 示例：页面右键添加多个菜单
-
-    page([
-        {
-            label: "复制链接文本",
-            text: "%LINK_TEXT%",
-        },
-        { },  // 分隔条
-        {
-            label: '复制图像base64',
-            text: "%IMAGE_BASE64%",
-            condition: "image",
-        }
-    ]);
-
+```
+page([
+    {
+        label: "复制链接文本",
+        text: "%LINK_TEXT%",
+    },
+    { },  // 分隔条
+    {
+        label: '复制图像base64',
+        text: "%IMAGE_BASE64%",
+        condition: "image",
+    }
+]);
+```
 示例：标签右键菜单
 
 ```js
-	tab([
-	    {
-	        label: "复制标题",
-	        text: "%TITLE%",
-	    },
-	    {
-	        label: "复制标题+URL",
-	        text: "%TITLE%\n%URL%",
-	    },
-	    {
-	        label: "复制标题（MD）",
-	        accesskey: "D",
-	        text: "[%TITLE%](%URL%)",
-	    },
-	    {
-	        label: "复制标题（BBS）",
-	        text: "[url=%URL%]%TITLE%[/url]",
-	    },
-	    {
-	        label: "复制标题（Html）",
-	        text: '<a href="%URL%">%TITLE%</a>',
-	    },
-	    {
-            label: "复制标题（Link）",
-            class: "copy",
-            oncommand: function(){
-                var url = addMenu.convertText('%URL%'),
-                    label = addMenu.convertText('%TITLE%');
-                addMenu.copyLink(url, label);
-            }
+tab([
+    {
+        label: "复制标题",
+        text: "%TITLE%",
+    },
+    {
+        label: "复制标题+URL",
+        text: "%TITLE%\n%URL%",
+    },
+    {
+        label: "复制标题（MD）",
+        accesskey: "D",
+        text: "[%TITLE%](%URL%)",
+    },
+    {
+        label: "复制标题（BBS）",
+        text: "[url=%URL%]%TITLE%[/url]",
+    },
+    {
+        label: "复制标题（Html）",
+        text: '<a href="%URL%">%TITLE%</a>',
+    },
+    {
+        label: "复制标题（Link）",
+        class: "copy",
+        oncommand: function(){
+            var url = addMenu.convertText('%URL%'),
+                label = addMenu.convertText('%TITLE%');
+            addMenu.copyLink(url, label);
+        }
+    },
+    {},
+    {
+        label: "复制 Favicon 的 URL",
+        text: "%FAVICON%",
+    }, 
+    {
+        label: "复制 Favicon 的 Base64",
+        text: "%FAVICON_BASE64%",
+    },
+    {
+        label: "切换编码（gbk、utf-8）",
+        accesskey: "e",
+        oncommand: function () {
+            // 不能用，找大佬修复吧
+            var charset = gBrowser.mCurrentBrowser._docShell.charset;
+            BrowserSetForcedCharacterSet(charset == "gbk" ? "utf-8" : "gbk");
+        }
+    },
+    {
+        label: "关闭所有标签页",
+        oncommand: function() {
+            // gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab'));
+            gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab', { triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) })); // 没记错是 FF 78+
         },
-	    {},
-	    {
-	        label: "复制 Favicon 的 URL",
-	        text: "%FAVICON%",
-	    }, 
-	    {
-	        label: "复制 Favicon 的 Base64",
-	        text: "%FAVICON_BASE64%",
-	    },
-	    {
-	        label: "切换编码（gbk、utf-8）",
-	        accesskey: "e",
-	        oncommand: function () {
-                // 不能用，找大佬修复吧
-	            var charset = gBrowser.mCurrentBrowser._docShell.charset;
-	            BrowserSetForcedCharacterSet(charset == "gbk" ? "utf-8" : "gbk");
-	        }
-	    },
-	    {
-	        label: "关闭所有标签页",
-	        oncommand: function() {
-                // gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab'));
-                gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab', { triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) })); // 没记错是 FF 78+
-            },
-	        insertAfter:"context_closeOtherTabs",
-	        accesskey: "Q"
-	    },
-	    {
-	        label: "复制所有标签标题+地址",
-	        class: "copy",
-	        oncommand: function(){
-	            var text = "";
-	            var tabs = gBrowser.mTabContainer ? gBrowser.mTabContainer.childNodes : gBrowser.tabs;
-	            for (var i = 0, l = tabs.length, doc; i < l; i++) {
-	                doc = tabs[i].linkedBrowser.contentDocument;
-                    if (doc) {
-                        text += doc.title + "\n" + doc.location.href + "\n";
-                    } else {
-                        doc = tabs[i].linkedBrowser
-                        text += doc.contentTitle + "\n" + doc.currentURI.spec + "\n";
-                    }
+        insertAfter:"context_closeOtherTabs",
+        accesskey: "Q"
+    },
+    {
+        label: "复制所有标签标题+地址",
+        class: "copy",
+        oncommand: function(){
+            var text = "";
+            var tabs = gBrowser.mTabContainer ? gBrowser.mTabContainer.childNodes : gBrowser.tabs;
+            for (var i = 0, l = tabs.length, doc; i < l; i++) {
+                doc = tabs[i].linkedBrowser.contentDocument;
+                if (doc) {
+                    text += doc.title + "\n" + doc.location.href + "\n";
+                } else {
+                    doc = tabs[i].linkedBrowser
+                    text += doc.contentTitle + "\n" + doc.currentURI.spec + "\n";
                 }
-				addMenu.copy(text);
-	        }
-	    },
-	]);
+            }
+            addMenu.copy(text);
+        }
+    },
+]);
 ```
 
 示例：页面右键添加多功能子菜单
