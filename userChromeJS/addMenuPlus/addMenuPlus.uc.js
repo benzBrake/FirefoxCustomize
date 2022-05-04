@@ -200,13 +200,28 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return Services.appinfo.version.split(".")[0]
         },
         get FILE() {
+            try {
+                // addMenu.FILE_PATH があればそれを使う
+                path = this.prefs.getStringPref("FILE_PATH")
+            } catch (e) {
+                path = 'local\\_addmenu.js';
+            }
 
-            var aFile = FileUtils.getFile("UChrm", ["local", "_addmenu.js"], false);
+            aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
+            aFile.appendRelativePath(path);
+
             if (!aFile.exists()) {
                 saveFile(aFile, this.t('addMenuExample'));
                 alert(this.t('exampleEmptyNotice'));
-                var url = 'http://ywzhaiqi.github.io/addMenu_creator/';
-                openUILinkIn(url, 'tab', false, null);
+                if (this.appVersion >= 78) {
+                    gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/', {
+                        inBackground: false,
+                        relatedToCurrent: true,
+                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                    });
+                } else {
+                    gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/');
+                }
             }
 
             this._modifiedTime = aFile.lastModifiedTime;
@@ -391,7 +406,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 loadURI(url);
             } else if (where) {
                 // 可能是 78 以后改调用了，不记得了
-                if (this.appVersion >= 78) {
+                if (addMenu.appVersion >= 78) {
                     let aAllowThirdPartyFixup = {
                         postData: postData || null,
                         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
@@ -401,8 +416,31 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     openUILinkIn(uri.spec, where, false, postData || null);
                 }
             } else if (event.button == 1) {
-                openNewTabWith(uri.spec);
-            } else { openUILink(uri.spec, event); }
+                if (typeof (eval(openNewTabWith)) == "function") {
+                    openNewTabWith(uri.spec);
+                } else {
+                    where = where || 'tab';
+                    let aAllowThirdPartyFixup = {
+                        inBackground: true,
+                        postData: postData || null,
+                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                    }
+                    openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                }
+            } else {
+                // 可能是 78 以后改调用了，不记得了
+                if (addMenu.appVersion >= 78) {
+                    let aAllowThirdPartyFixup = {
+                        inBackground: false,
+                        postData: postData || null,
+                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                    }
+                    openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
+                } else {
+                    openUILink(uri.spec, event);
+                }
+
+            }
         },
         exec: function (path, arg) {
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
