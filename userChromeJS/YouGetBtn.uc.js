@@ -281,7 +281,6 @@ window.youGetBtn = {
                         val = that.arguments[k];
                         args.push(typeof val == "function" ? val() : val);
                     }
-                    console.log(args);
                     p.init(youGet);
                     p.run(false, args, args.length);
                 } catch (e) {
