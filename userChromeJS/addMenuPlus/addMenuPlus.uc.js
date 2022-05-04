@@ -213,14 +213,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (!aFile.exists()) {
                 saveFile(aFile, this.t('addMenuExample'));
                 alert(this.t('exampleEmptyNotice'));
-                if (this.appVersion >= 78) {
-                    gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/', {
-                        inBackground: false,
-                        relatedToCurrent: true,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
-                    });
-                } else {
+                try {
                     gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/');
+                } catch (e) {
+                    gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/', { triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) });
                 }
             }
 
@@ -403,29 +399,31 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return this.log(U(this.t('urlIsInvalid')).replace("%s", url));
             }
             if (uri.scheme === "javascript") {
-                loadURI(url);
+                try {
+                    loadURI(url);
+                } catch (e) {
+                    gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                }
             } else if (where) {
-                // 可能是 78 以后改调用了，不记得了
-                if (addMenu.appVersion >= 78) {
+                try {
+                    openUILinkIn(uri.spec, where, false, postData || null);
+                } catch (e) {
                     let aAllowThirdPartyFixup = {
                         postData: postData || null,
                         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
                     }
                     openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
-                } else {
-                    openUILinkIn(uri.spec, where, false, postData || null);
                 }
             } else if (event.button == 1) {
                 if (typeof (eval(openNewTabWith)) == "function") {
                     openNewTabWith(uri.spec);
                 } else {
-                    where = where || 'tab';
                     let aAllowThirdPartyFixup = {
                         inBackground: true,
                         postData: postData || null,
                         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
                     }
-                    openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                    gBrowser.addTab(uri.spec, aAllowThirdPartyFixup);
                 }
             } else {
                 // 可能是 78 以后改调用了，不记得了
@@ -899,8 +897,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (!aFile.exists()) {
                     menu.setAttribute("disabled", "true");
                 } else {
-                    let fileURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
-                    menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                    if (aFile.isFile()) {
+                        let fileURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
+                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                    } else {
+                        menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
+                    }
                 }
                 return;
             }
