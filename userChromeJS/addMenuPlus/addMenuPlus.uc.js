@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 68+
 // @charset        UTF-8
-// @version        0.1.2
+// @version        0.1.3
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -15,6 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
+// @note           0.1.3 还原不知道被谁删掉的配置文件路径配置项，修复 openCommand bug，修复 exec 目录读取图标报错
 // @note           0.1.2 修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串 this.t is not function，GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
@@ -204,7 +205,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 // addMenu.FILE_PATH があればそれを使う
                 path = this.prefs.getStringPref("FILE_PATH")
             } catch (e) {
-                path = 'local\\_addmenu.js';
+                path = '_addmenu.js';
             }
 
             aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
