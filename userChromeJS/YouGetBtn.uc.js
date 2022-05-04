@@ -331,7 +331,7 @@ window.youGetBtn = {
         this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         delete window.youGetBtn;
     },
-    PREF_BIN: 'userChromeJS.addMenuPlus.youGetPath',
-    PREF_SAVE: 'userChromeJS.addMenuPlus.youGetSavePath',
+    PREF_BIN: 'youGetBtn.binPath',
+    PREF_SAVE: 'youGetBtn.binSavePath',
 }
 window.youGetBtn.init();
