@@ -947,7 +947,7 @@ pagesub([
             goDoCommand('cmd_paste'); 
         },
         onshowing: function(menuitem) {
-            var isHidden = !(content.location.host == 'bbs.kafan.cn');
+            var isHidden = !(addMenu.convertText("%HOST%") == 'bbs.kafan.cn');
             this.hidden = isHidden;
         },
     })
