@@ -795,8 +795,9 @@ pagesub([
                     browser = prefs.getStringPref("chooseBrowser");
                 }
             } catch (e) { addMenu.log(e); }
-    
-    
+
+
+​    
             function chooseBrowser() {
                 alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "请先设置浏览器的路径!!!" : "Please set browser path first!!!");
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
@@ -838,39 +839,35 @@ pagesub([
 示例：快速保存选定文本为 txt 并打开。
 
     page({
+        label: 'page({
         label: '快速保存选定文本',
         condition: 'select',
-        oncommand: function() {
+        oncommand: function () {
             if (!window.NetUtil) Cu.import("resource://gre/modules/NetUtil.jsm");
             if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
     
-            goDoCommand('cmd_copy');
-            var data = readFromClipboard();
+            var data = addMenu.convertText("%SEL%");
     
-            var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+            var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
             fp.init(window, "另存为", Ci.nsIFilePicker.modeSave);
             fp.appendFilter("文本文件", "*.txt");
-            fp.defaultString = content.document.title + '.txt';
-      
-            var res = fp.show();
-            if (res != Ci.nsIFilePicker.returnCancel) {
+            fp.defaultString = addMenu.convertText("%TITLES%") + '.txt';
+            fp.open(res => {
+                if (res != Ci.nsIFilePicker.returnOK) return;
                 var aFile = fp.file;
-      
                 var ostream = FileUtils.openSafeFileOutputStream(aFile);
-      
                 var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
                 converter.charset = "gbk";
                 var istream = converter.convertToInputStream(data);
-      
-                NetUtil.asyncCopy(istream, ostream, function(status) {
+                NetUtil.asyncCopy(istream, ostream, function (status) {
                     if (!Components.isSuccessCode(status)) {
                         // Handle error!
                         return;
                     }
-      
+    
                     aFile.launch();
                 });
-            }
+            });
         }
     })
 
@@ -1008,7 +1005,7 @@ pagesub([
         clone: false
     });
 
-示例：修改错误控制台的按键（Ctrl + Shift + J）为以前的版本的控制台
+示例：修改错误控制台的按键（Ctrl + Shift + J）为以前的版本的控制台（无效了）
 
     page({
         id: "key_browserConsole",
@@ -1121,51 +1118,9 @@ pagesub([
                         fileStream.close();
                         return file.path;
                     }
-    
-    
-                    if (!binPath) {
-                        setYouGetPath();
-                        binPath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetPath", "");
-                        return;
-                    }
-                    if (!savePath) {
-                        setSavePath();
-                        savePath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetSavePath", "");
-                        return;
-                    }
-                    let youGet = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-                    try {
-                        youGet.initWithPath(binPath);
-                    } catch (E) {
-                        alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "you-get.exe 不存在，需要重新设置 you-get.exe 路径" : "you-get.exe not exists, please reset you-get.exe path");
-                        setYouGetPath();
-                        return;
-                    }
-                    let p = Components.classes["@mozilla.org/process/util;1"].createInstance(Components.interfaces.nsIProcess);
-    
-                    // 自行修改系统编码 Please change text encoding
-                    if (Services.locale.appLocaleAsBCP47.includes("zh-CN")) {
-                        let converter = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
-                        converter.charset = 'gbk';
-                        savePath = converter.ConvertFromUnicode(savePath) + converter.Finish();
-                    }
-                    let commandArgs = ['-c', getCookiePathForSite(uri.host), '-o', savePath, uri.spec];
-    
-                    p.init(youGet);
-                    p.run(false, commandArgs, commandArgs.length);
-                }
-            } else if (e.button == 2 && !e.shiftKey) {
-                // 右键打开下载历史，同时按下 CTRL 会弹出原来的菜单
-                e.preventDefault();
-                e.stopPropagation();
-                DownloadsPanel.showDownloadsHistory();
-            }
-        }
-    });
 
 
-使用了其它皮肤，右键错位的情况
-----------------------------
+ 使用了其它皮肤，右键错位的情况
 
 把代码最后几行的css删除，请不要保留空行。
 
