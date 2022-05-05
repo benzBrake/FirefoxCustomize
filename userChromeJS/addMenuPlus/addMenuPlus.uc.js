@@ -226,7 +226,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return this.FILE = aFile;
         },
         get focusedWindow() {
-            return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
+            return (gContextMenu && gContextMenu.target) ? gContextMenu.target.ownerDocument.defaultView || gBrowser.selectedTab.ownerDocument.defaultView : gBrowser.selectedTab.ownerDocument.defaultView || content;
         },
         init: function () {
             let locale = Services.locale.appLocaleAsBCP47;
@@ -1098,6 +1098,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return data;
             }
         },
+        convertUnicode(text) {
+            // 来自 addOpenChrome.uc.js
+            var UI = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"].
+                createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+
+            UI.charset = "UTF-8";
+            try {
+                text = UI.ConvertToUnicode(text);
+            } catch (e) {
+            }
+            return text;
+        },
         getSelection: function (win) {
             // from getBrowserSelection Fx19
             win || (win = this.focusedWindow);
@@ -1142,9 +1154,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var editor;
             try {
                 editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
-            } catch (e) {
-
-            }
+            } catch (e) { }
 
             if (!editor || !editor.exists()) {
                 if (useScraptchpad && this.appVersion <= 72) {
@@ -1170,8 +1180,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             Services.prefs.setCharPref("view_source.editor.path", editor.path);
                         });
                     }
-
-
                 }
             }
 
