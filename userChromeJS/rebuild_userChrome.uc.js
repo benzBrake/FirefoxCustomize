@@ -41,7 +41,7 @@ UC.rebuild = {
       }
 
       mi = event.target.appendChild(this.elBuilder(document, 'menuitem', {
-        label: script.description ? script.description : (script.name ? script.name : script.filename),
+        label: script.name ? script.name : script.filename,
         onclick: 'UC.rebuild.clickScriptMenu(event)',
         onmouseup: 'UC.rebuild.shouldPreventHide(event)',
         type: 'checkbox',
@@ -61,7 +61,7 @@ UC.rebuild = {
         Ctrl + 中键: 打开主页
         Ctrl + 右键: 卸载
       `.replace(/^\n| {2,}/g, '') + (script.description ? '\n简介: ' + script.description : '')
-                                  + (homepage ? '\n主页: ' + homepage : ''));
+        + (homepage ? '\n主页: ' + homepage : ''));
 
       event.target.appendChild(mi);
     });
@@ -102,7 +102,7 @@ UC.rebuild = {
         Ctrl + 中键: 打开主页
         Ctrl + 右键: 卸载
       `.replace(/^\n| {2,}/g, '') + (script.description ? '\n简介: ' + script.description : '')
-                                  + (homepage ? '\n主页: ' + homepage : ''));      
+        + (homepage ? '\n主页: ' + homepage : ''));
       scriptMenuItems.push(scriptMenuItem);
     });
 
@@ -155,7 +155,7 @@ UC.rebuild = {
     let editor = xPref.get('view_source.editor.path');
     let useSystemDefault = xPref.get(this.PREF_OPENWITHSYSTEMDEFAULT);
     if (!editor && !useSystemDefault) {
-      editor = prompt('编辑器未设置。 请填入编辑器完整路径或者点击取消使用默认编辑器。', 'C:\\WINDOWS\\system32\\notepad.exe');
+      editor = prompt('编辑器未设置。 请填入编辑器完整路径或者点击取消使用系统默认编辑器', 'C:\\WINDOWS\\system32\\notepad.exe');
       if (editor)
         xPref.set('view_source.editor.path', editor);
       else
@@ -180,7 +180,7 @@ UC.rebuild = {
         process.init(appfile);
         process.run(false, editorArgs, editorArgs.length, {});
       } catch {
-        alert('无法打开编辑器。 请打开 about:config 页面并设置 view_source.editor.path 的值为浏览器路径。');
+        alert('无法打开编辑器。 请打开 about:config 页面并设置 view_source.editor.path 的值为编辑器路径。');
       }
     }
   },
@@ -227,6 +227,7 @@ UC.rebuild = {
         doc.getElementById('userChromejs_Tools_Menu').appendChild(doc.getElementById('userChromejs_options'));
       } else if (!startup) {
         doc.getElementById('userChromebtnMenu').appendChild(doc.getElementById('userChromejs_options'));
+        doc.getElementById('uc-manageMenu').firstChild.setAttribute('label', '设置');
       }
     });
   },
@@ -253,7 +254,7 @@ UC.rebuild = {
     }, false);
   },
 
-  uninstall: function(script) {
+  uninstall: function (script) {
     if (!confirm('确认卸载此脚本? 脚本文件将被删除。'))
       return;
 
@@ -374,7 +375,7 @@ UC.rebuild = {
 
     let tb = UC.rebuild.elBuilder(aDocument, 'toolbarbutton', {
       id: 'userChromejs_restartApp',
-      tooltiptext: 'Restart ' + _uc.BROWSERNAME,
+      tooltiptext: '重启 ' + _uc.BROWSERNAME,
       style: 'list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB20lEQVQ4jY2Tv2sUURDHZ/bX7eW0ChJBRFKIRRCRIEHuzVvfrYmkSiFXSSoLERERy5B/wcIuqG9mN5VecUWwCqkOEQsLKysLsQgSxEJEgsVYeJfsHXuY4tvN9zMzzHxBVXFS8Gy1kRaZi8U+iCV7HIq73Xqez9XWThoDsRvg6QDY6Ji8+RMK9dLSztcCoMhnkc27YxPth0I7oVAPhT5WYD9ScfkYALYWYxQa/OvU/h5ztg5bi3G1U2vbXUFPb4fT/EzELRwBYraPRvSE7eW6XVUV4en1JjLtARtFoYGqInRfd0Nk8wXYaCzZ/WnmkZrengc2v4GNNr1bglPiFoaj/5orV1r/A6gqhkI9YKMB0yY0OF9GsV/jIts9iVlVMeJscwhgOKmpqoDpGNDg5YuB0HYg9lUotINCuxFn/bN+9czUFZj6wEYDsRsQle7W+NPQ/uhEdUpLOw/cPgQ2OlPcvAoJZ90qICnc2tQzlist9GYAbDRk2lNVhFDs3YmXPUjkxp3JR2qWbgk9fRj9S+Olu6SqCJHYJ+DN5xnOryHT+wrsG7J9g0x9ZPup2iAS1z6aKi076+mLzoVRmKJpYeL2YSC2aBadc1PTOB7n3AXe3guYHiberZ0u8tm62r99Gyd0lo7sIAAAAABJRU5ErkJggg==)',
       oncommand: 'UC.rebuild.restart();'
     });
@@ -404,7 +405,7 @@ UC.rebuild = {
 
     let mi = UC.rebuild.elBuilder(aDocument, 'menu', {
       id: 'userChromejs_Tools_Menu',
-      label: 'userChromeJS 管理器',
+      label: 'userChromeJS',
       tooltiptext: 'UC 脚本管理器',
       class: 'menu-iconic',
       image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABeSURBVDhPY6AKSCms+x+SkPMfREOFwACXOAYYNQBVITrGJQ7CUO0IA0jFUO0QA3BhkEJs4iAM1Y4bgBTBDIAKkQYGlwHYMFQZbgBSBDIAF4Yqww3QbUTHUGWUAAYGAEyi7ERKirMnAAAAAElFTkSuQmCC',
@@ -441,7 +442,7 @@ UC.rebuild = {
       subviewBody.appendChild(UC.rebuild.createMenuItem(aDocument, 'openChrome', 'url(chrome://browser/skin/folder.svg)', '打开 Chrome 目录', 'Services.dirsvc.get(\'UChrm\', Ci.nsIFile).launch();'));
       subviewBody.appendChild(UC.rebuild.createMenuItem(aDocument, 'restart', 'url(chrome://browser/skin/reload.svg)', '重启 ' + _uc.BROWSERNAME, 'UC.rebuild.restart();'));
       subviewBody.appendChild(aDocument.createXULElement('toolbarseparator'));
-      const enabledMenuItem = UC.rebuild.createMenuItem(aDocument, 'enabled', null, 'Enabled', 'xPref.set(_uc.PREF_ENABLED, !!this.checked)');
+      const enabledMenuItem = UC.rebuild.createMenuItem(aDocument, 'enabled', null, '启用', 'xPref.set(_uc.PREF_ENABLED, !!this.checked)');
       enabledMenuItem.type = 'checkbox';
       subviewBody.appendChild(enabledMenuItem);
       const scriptsSeparator = aDocument.createXULElement('toolbarseparator');
