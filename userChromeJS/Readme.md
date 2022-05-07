@@ -15,6 +15,8 @@
 
 ❌ 仅可以在 xiaoxiaoflood 的 userChromeJS 环境中使用。
 
+Ⓜ️ 仅可以在 MrOtherGuy 的 userChromeJS 环境中使用。
+
 ### 脚本列表
 
 PS：源链接不代表真正出处，只是说明原版从哪下载的，没有的就是我写的或者忘记了
@@ -44,10 +46,11 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 | ❌    | 96   | [rightClickOpenClipboard](rightClickOpenClipboard.uc.js)     | 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）           |                                                              |
 |      | 68   | [saveUCJS](saveUCJS.uc.js)                                   | 快速保存 github 上的 UC 脚本                                 |                                                              |
 | ❌    | 96   | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |                                                              |
-| ⛔    | 70   | [Tabplus](70/Tabplus/Tabplus.uc.js)                          | TabMixPlus 极度简陋userChromeJS版本<br />PS: Tab Mix Plus 复活了，支持 FF78+ https://github.com/onemen/TabMixPlus | [📃](https://github.com/runningcheese/RunningCheese-Firefox/blob/master/userChrome.js/Tabplus.uc.js) |
+| ⛔    | 70   | [Tabplus](70/Tabplus/Tabplus.uc.js)                          | TabMixPlus 极度简陋 userChromeJS 版本<br />PS: Tab Mix Plus 复活了，支持 FF78+ https://github.com/onemen/TabMixPlus | [📃](https://github.com/runningcheese/RunningCheese-Firefox/blob/master/userChrome.js/Tabplus.uc.js) |
 |      | 100  | [textZoomPerDomain](textZoomPerDomain_e10s.uc.js)            | 分域名设定字体大小                                           | [📃](https://github.com/alice0775/userChrome.js/blob/master/100/textZoomPerDomain_e10s.uc.js) |
 |      | 100  | [ToolbarAutoHide](ToolbarAutoHide.uc.js)                     | 自动隐藏 标签栏/工具栏/书签栏                                | [📃](https://u6.getuploader.com/script/download/2061)         |
 |      | 100  | [UndoCloseTabButtonN](UndoCloseTabButtonN.uc.js)             | 查看已关闭的标签页和窗口                                     | [📃](https://u6.getuploader.com/script/download/2043)         |
 |      | 100  | [UpdateBookmarkLite](UpdateBookmarkLite.uc.js)               | 给工具栏书签新增替换书签功能                                 | [📃](https://bbs.kafan.cn/thread-2233641-1-1.html)            |
 |      | 70   | [verticalAddOnBar](verticalAddOnBar.uc.js)                   | 增加一个类似 vivaldi 的侧边工具栏                            |                                                              |
+|      | 100  | [verticalTabsPane](verticalTabsPane.uc.js)                   | 垂直标签栏，原版只能在 MrOtherGuy 的 UC 环境使用，修改版应该通用了，并且把默认快捷键修改为 Ctrl+F1 了 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/verticalTabsPane.uc.js) |
 |      | 100  | [YouGetBtn](YouGetBtn.uc.js)                                 | 鉴于 Video DownloadHelper 下载高清需要付费<br />就做了这个小脚本调用 you-get.exe 下载视频 |                                                              |
