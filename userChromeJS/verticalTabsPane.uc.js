@@ -42,12 +42,12 @@
             "Pin button tooltip": `扩大标签栏`,
             // labels for the context menu
             context: {
-                "Move Pane to Right": "移动到左边",
-                "Move Pane to Left": "移动到右边",
-                "Expand Pane": "标签栏自动缩小",
+                "Move Pane to Right": "移动到右边",
+                "Move Pane to Left": "移动到左边",
+                "Expand Pane": "标签栏自动变窄",
                 "Reverse Tab Order": "翻转标签顺序",
                 "Configure Hover Delay": "设置显示完整标签栏延迟",
-                "Configure Hover Out Delay": "设置标签栏自动缩小延迟",
+                "Configure Hover Out Delay": "设置标签栏自动变窄延迟",
             },
             // strings for the hover delay config prompt
             prompt: {
