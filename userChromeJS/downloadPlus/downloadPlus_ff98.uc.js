@@ -9,7 +9,8 @@
 // @include        chrome://mozapps/content/downloads/unknownContentType.xhtml
 // @include        chrome://mozapps/content/downloads/downloads.xul
 // @include        chrome://mozapps/content/downloads/downloads.xhtml
-// @version        2022.05.01 修正 因为我这里 Bug 1750484 用不了， 暂时修一修从硬盘删除文件
+// @version        2022.05.06 移除 显示下载速度（Firefox 好久之前就可以显示了），移除新建下载功能
+// @version        2022.05.01 修正 从硬盘删除文件，不再依赖 DownloadsSubview.jsm
 // @version        2022.04.09 修正 保存并且打开
 // @version        2022.04.06 修正 另存为功能
 // @version        2022.03.18 修正 FF98 下完全不能用，加入第三方下载工具功能
@@ -19,17 +20,14 @@
 
 (function () {
     var dpConfig = {
-        addDownload: false, // 新建下载 (不能用，不会修)
-        addDownloadEncoding: true, //(新建下载)弹窗             false,不弹窗
         removeFile: true, // 从硬盘中删除
-        downloadNotice: false, // 下载完成通知
+        downloadNotice: true, // 下载完成通知(声音提醒)
         showExtractSize: true, // 精确显示文件大小
         closeBlankTab: true, // 自动关闭下载产生的空白标签
         showSaveAndOpen: true, // 保存并且打开
         enableReName: true, // 启用改名功能
         renameLockSave: false, //true,(下载改名)自动锁定保存文件 false,不锁定 (不知道有什么用没修)
         reNameEncodingConvert: false, //true,(下载改名)开启下拉菜单选项 false,关闭下拉菜单选项
-        showDownloadSpeed: false, // 显示下载速度 (不能用了)
         showSaveAs: true, // 另存为
         enableExtraApp: true, // 启用第三方工具下载
         extraAppPath: "C:\\Program\ Files\ (x86)\\Internet\ Download\ Manager\\IDMan.exe", // 下载工具路径
@@ -59,14 +57,12 @@
     switch (location.href) {
         case "chrome://browser/content/browser.xhtml":
             setTimeout(function () {
-                if (dpConfig.addDownload) addDownload(); // 新建下载
-                if (dpConfig.removeFile) downloadsPanelRemoveFile(); // 从硬盘中删除
+                // if (dpConfig.removeFile) downloadsPanelRemoveFile(); // 从硬盘中删除, FF 98 已新增
                 if (dpConfig.downloadNotice) downloadSoundPlay(); // 下载完成提示音
                 if (dpConfig.showExtractSize) downloadFileSize(); // 精确显示文件大小
                 if (dpConfig.closeBlankTab) autoCloseBlankTab(); // 自动关闭下载产生的空白标签
                 if (dpConfig.showSaveAndOpen) saveAndOpenMain(); // 跟下面的 saveAndOpen 配合使用
                 if (dpConfig.enableReName) downloadReNameMain(); // 跟下面的 downloadRename 配合使用
-                if (dpConfig.showDownloadSpeed) downloadSpeed(); //下载面板显示下载速度
             }, 200);
             break;
         case "chrome://mozapps/content/downloads/unknownContentType.xul":
@@ -86,13 +82,16 @@
         case "chrome://browser/content/places/places.xul":
         case "chrome://browser/content/places/places.xhtml":
             setTimeout(function () {
-                if (dpConfig.addDownload) addDownload(); // 新建下载(我的足迹)
-                if (dpConfig.removeFile) downloadsPanelRemoveFile(); // 从硬盘中删除(我的足迹)
+                if (dpConfig.removeFile) downloadsPanelRemoveFile(); // 从硬盘中删除(我的足迹) FF 98 已新增，但是有 BUG 故留着
             }, 200);
             break;
     }
 
     const dialogElement = document.documentElement.getButton ? document.documentElement : document.getElementById('unknownContentType');
+
+    function getAppVersion() {
+        return Services.appinfo.version.split(".")[0];
+    }
 
     // 下载完成提示音
     function downloadSoundPlay() {
@@ -179,42 +178,6 @@
         downloadPlaySound.init();
     }
 
-    //新建下载
-    function addDownload() {
-        var createDownloadDialog = function () {
-            let win = Services.wm.getMostRecentBrowserWindow();
-            if (dpConfig.encoding)
-                win.openDialog("data:application/vnd.mozilla.xul+xml;charset=UTF-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPD94bWwtc3R5bGVzaGVldCBocmVmPSJjaHJvbWU6Ly9nbG9iYWwvc2tpbi8iIHR5cGU9InRleHQvY3NzIj8+Cjx3aW5kb3cgeG1sbnM9Imh0dHA6Ly93d3cubW96aWxsYS5vcmcva2V5bWFzdGVyL2dhdGVrZWVwZXIvdGhlcmUuaXMub25seS54dWwiIHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiB0aXRsZT0i5paw5bu65LiL6L295Lu75YqhIj4KCTxoYm94IGFsaWduPSJjZW50ZXIiIHRvb2x0aXB0ZXh0PSJodHRwOi8vd3d3LmV4YW1wbGUuY29tL1sxLTEwMC0zXSAgKFvlvIDlp4st57uT5p2fLeS9jeaVsF0pIj4KCQk8bGFiZWwgdmFsdWU9IuaJuemHj+S7u+WKoSI+PC9sYWJlbD4KCQk8dGV4dGJveCBmbGV4PSIxIi8+Cgk8L2hib3g+Cgk8dGV4dGJveCBpZD0idXJscyIgbXVsdGlsaW5lPSJ0cnVlIiBmbGV4PSIxIi8+Cgk8aGJveCBkaXI9InJldmVyc2UiPgoJCTxidXR0b24gbGFiZWw9IuW8gOWni+S4i+i9vSIvPgoJPC9oYm94PgoJPHNjcmlwdD4KCQk8IVtDREFUQVsKCQlmdW5jdGlvbiBQYXJzZVVSTHMoKSB7CgkJCXZhciBiYXRjaHVybCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoInRleHRib3giKS52YWx1ZTsKCQkJaWYgKC9cW1xkKy1cZCsoLVxkKyk/XF0vLnRlc3QoYmF0Y2h1cmwpKSB7CgkJCQlmb3IgKHZhciBtYXRjaCA9IGJhdGNodXJsLm1hdGNoKC9cWyhcZCspLShcZCspLT8oXGQrKT9cXS8pLCBpID0gbWF0Y2hbMV0sIGogPSBtYXRjaFsyXSwgayA9IG1hdGNoWzNdLCB1cmxzID0gW107IGkgPD0gajsgaSsrKSB7CgkJCQkJdXJscy5wdXNoKGJhdGNodXJsLnJlcGxhY2UoL1xbXGQrLVxkKygtXGQrKT9cXS8sIChpICsgIiIpLmxlbmd0aCA8IGsgPyAoZXZhbCgiMTBlIiArIChrIC0gKGkgKyAiIikubGVuZ3RoKSkgKyAiIikuc2xpY2UoMikgKyBpIDogaSkpOwoJCQkJfQoJCQkJZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VybHMiKS52YWx1ZSA9IHVybHMuam9pbigiXG4iKTsKCQkJfSBlbHNlIHsKCQkJCWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1cmxzIikudmFsdWUgPSBiYXRjaHVybDsKCQkJfQoJCX0KCQl2YXIgb3duZXIgPSB3aW5kb3cub3BlbmVyOwoJCXdoaWxlKG93bmVyLm9wZW5lciAmJiAhb3duZXIubG9jYXRpb24uc3RhcnRXaXRoKCJjaHJvbWU6Ly9icm93c2VyL2NvbnRlbnQvYnJvd3Nlci54IikpewoJCQlvd25lciA9IG93bmVyLm9wZW5lcjsKCQl9CnZhciBtYWlud2luID0gQ29tcG9uZW50cy5jbGFzc2VzWyJAbW96aWxsYS5vcmcvYXBwc2hlbGwvd2luZG93LW1lZGlhdG9yOzEiXS5nZXRTZXJ2aWNlKENvbXBvbmVudHMuaW50ZXJmYWNlcy5uc0lXaW5kb3dNZWRpYXRvcikuZ2V0TW9zdFJlY2VudFdpbmRvdygibmF2aWdhdG9yOmJyb3dzZXIiKTsJCQlkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCJ0ZXh0Ym94IikuYWRkRXZlbnRMaXN0ZW5lcigia2V5dXAiLCBQYXJzZVVSTHMsIGZhbHNlKTsKCQlkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCJidXR0b24iKS5hZGRFdmVudExpc3RlbmVyKCJjb21tYW5kIiwgZnVuY3Rpb24gKCkgewkJZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VybHMiKS52YWx1ZS5zcGxpdCgiXG4iKS5mb3JFYWNoKGZ1bmN0aW9uICh1cmwpIHsKCQkJCW93bmVyLnNhdmVVUkwodXJsICwgbnVsbCwgbnVsbCwgbnVsbCwgbnVsbCwgbnVsbCwgbWFpbndpbi5kb2N1bWVudCk7CgkJCX0pOwoJCQljbG9zZSgpCgkJfSwgZmFsc2UpOwoJCWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoInRleHRib3giKS52YWx1ZSA9IG93bmVyLnJlYWRGcm9tQ2xpcGJvYXJkKCk7CgkJUGFyc2VVUkxzKCk7CgkJXV0+Cgk8L3NjcmlwdD4KPC93aW5kb3c+", "name", "top=" + (window.screenY + window.innerHeight / 4 - 50) + ",left=" + (window.screenX + window.innerWidth / 2 - 250));
-            else
-                win.openDialog("data:application/vnd.mozilla.xul+xml;charset=UTF-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPD94bWwtc3R5bGVzaGVldCBocmVmPSJjaHJvbWU6Ly9nbG9iYWwvc2tpbi8iIHR5cGU9InRleHQvY3NzIj8+Cjx3aW5kb3cgeG1sbnM9Imh0dHA6Ly93d3cubW96aWxsYS5vcmcva2V5bWFzdGVyL2dhdGVrZWVwZXIvdGhlcmUuaXMub25seS54dWwiIHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiB0aXRsZT0i5paw5bu65LiL6L295Lu75YqhIj4KCTxoYm94IGFsaWduPSJjZW50ZXIiIHRvb2x0aXB0ZXh0PSJodHRwOi8vd3d3LmV4YW1wbGUuY29tL1sxLTEwMC0zXSAgKFvlvIDlp4st57uT5p2fLeS9jeaVsF0pIj4KCQk8bGFiZWwgdmFsdWU9IuaJuemHj+S7u+WKoSI+PC9sYWJlbD4KCQk8dGV4dGJveCBmbGV4PSIxIi8+Cgk8L2hib3g+Cgk8dGV4dGJveCBpZD0idXJscyIgbXVsdGlsaW5lPSJ0cnVlIiBmbGV4PSIxIi8+Cgk8aGJveCBkaXI9InJldmVyc2UiPgoJCTxidXR0b24gbGFiZWw9IuW8gOWni+S4i+i9vSIvPgoJPC9oYm94PgoJPHNjcmlwdD4KCQk8IVtDREFUQVsKCQlmdW5jdGlvbiBQYXJzZVVSTHMoKSB7CgkJCXZhciBiYXRjaHVybCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoInRleHRib3giKS52YWx1ZTsKCQkJaWYgKC9cW1xkKy1cZCsoLVxkKyk/XF0vLnRlc3QoYmF0Y2h1cmwpKSB7CgkJCQlmb3IgKHZhciBtYXRjaCA9IGJhdGNodXJsLm1hdGNoKC9cWyhcZCspLShcZCspLT8oXGQrKT9cXS8pLCBpID0gbWF0Y2hbMV0sIGogPSBtYXRjaFsyXSwgayA9IG1hdGNoWzNdLCB1cmxzID0gW107IGkgPD0gajsgaSsrKSB7CgkJCQkJdXJscy5wdXNoKGJhdGNodXJsLnJlcGxhY2UoL1xbXGQrLVxkKygtXGQrKT9cXS8sIChpICsgIiIpLmxlbmd0aCA8IGsgPyAoZXZhbCgiMTBlIiArIChrIC0gKGkgKyAiIikubGVuZ3RoKSkgKyAiIikuc2xpY2UoMikgKyBpIDogaSkpOwoJCQkJfQoJCQkJZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VybHMiKS52YWx1ZSA9IHVybHMuam9pbigiXG4iKTsKCQkJfSBlbHNlIHsKCQkJCWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1cmxzIikudmFsdWUgPSBiYXRjaHVybDsKCQkJfQoJCX0KCQl2YXIgb3duZXIgPSB3aW5kb3cub3BlbmVyOwoJCXdoaWxlKG93bmVyLm9wZW5lciAmJiBvd25lci5sb2NhdGlvbiAhPSAiY2hyb21lOi8vYnJvd3Nlci9jb250ZW50L2Jyb3dzZXIueHVsIil7CgkJCW93bmVyID0gb3duZXIub3BlbmVyOwoJCX0KdmFyIG1haW53aW4gPSBDb21wb25lbnRzLmNsYXNzZXNbIkBtb3ppbGxhLm9yZy9hcHBzaGVsbC93aW5kb3ctbWVkaWF0b3I7MSJdLmdldFNlcnZpY2UoQ29tcG9uZW50cy5pbnRlcmZhY2VzLm5zSVdpbmRvd01lZGlhdG9yKS5nZXRNb3N0UmVjZW50V2luZG93KCJuYXZpZ2F0b3I6YnJvd3NlciIpOwkJCWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoInRleHRib3giKS5hZGRFdmVudExpc3RlbmVyKCJrZXl1cCIsIFBhcnNlVVJMcywgZmFsc2UpOwoJCWRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoImJ1dHRvbiIpLmFkZEV2ZW50TGlzdGVuZXIoImNvbW1hbmQiLCBmdW5jdGlvbiAoKSB7CQlkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCIjdXJscyIpLnZhbHVlLnNwbGl0KCJcbiIpLmZvckVhY2goZnVuY3Rpb24gKHVybCkgewoJCQkJb3duZXIuc2F2ZVVSTCh1cmwgLCBudWxsLCBudWxsLCBudWxsLCB0cnVlLCBudWxsLCBtYWlud2luLmRvY3VtZW50KTsKCQkJfSk7CgkJCWNsb3NlKCkKCQl9LCBmYWxzZSk7CgkJZG9jdW1lbnQucXVlcnlTZWxlY3RvcigidGV4dGJveCIpLnZhbHVlID0gb3duZXIucmVhZEZyb21DbGlwYm9hcmQoKTsKCQlQYXJzZVVSTHMoKTsKCQldXT4KCTwvc2NyaXB0Pgo8L3dpbmRvdz4=", "name", "top=" + (window.screenY + window.innerHeight / 4 - 50) + ",left=" + (window.screenX + window.innerWidth / 2 - 250));
-        }
-
-        location.href.startsWith('chrome://browser/content/browser.x') && (function () {
-            document.getElementById('downloads-button').parentNode.addEventListener('click', function (e) {
-                if (e.target.id == "downloads-button" || e.target.id == "downloads-indicator") {
-                    if (e.button == 2) {
-                        if (!(e.ctrlKey || e.shiftKey || e.altKey || e.metaKey)) {
-                            createDownloadDialog();
-                            e.stopPropagation();
-                            e.preventDefault();
-                        }
-                    }
-                }
-            }, false);
-        })();
-
-        location.href.startsWith("chrome://browser/content/places/places.x") && (function () {
-            var button = document.querySelector("#placesToolbar").insertBefore(document.createXULElement("toolbarbutton"), document.querySelector("#clearDownloadsButton"));
-            button.id = "createNewDownload";
-            button.label = dpText.newDownload;
-            button.style.paddingRight = "9px";
-            button.addEventListener("command", createDownloadDialog, false);
-            window.addEventListener("mouseover", function (e) {
-                button.style.display = (document.getElementById("searchFilter").attributes.getNamedItem("collection").value == "downloads") ? "-moz-box" : "none";
-            }, false);
-        })();
-    }
-
     function dpCreateElement(doc, tag, props, isHTML = false) {
         let el = isHTML ? doc.createElement(tag) : doc.createXULElement(tag);
         for (let prop in props) {
@@ -243,27 +206,18 @@
             }
         }
 
-        if (location.href == 'chrome://browser/content/places/places.xhtml') {
-            var ddBox = document.getElementById("downloadsRichListBox");
-            if (!(ddBox && ddBox._placesView)) {
-                ddBox = document.getElementById("downloadsListBox");
-            }
-            if (!ddBox) return;
-            var len = ddBox.selectedItems.length;
+        var ddBox = document.getElementById("downloadsRichListBox");
+        if (!(ddBox && ddBox._placesView)) {
+            ddBox = document.getElementById("downloadsListBox");
+        }
+        if (!ddBox) return;
+        var len = ddBox.selectedItems.length;
 
-            for (var i = len - 1; i >= 0; i--) {
-                let sShell = ddBox.selectedItems[i]._shell;
-                let path = sShell.download.target.path;
-                removeSelectFile(path);
-                sShell.doCommand("cmd_delete");
-            }
-        } else {
-            try {
-                let sShell = document.getElementById("panelDownloadsContextMenu")._anchorNode._shell;
-                let path = sShell.download.target.path;
-                removeSelectFile(path);
-                sShell.doCommand("cmd_delete");
-            } catch (e) { }
+        for (var i = len - 1; i >= 0; i--) {
+            let sShell = ddBox.selectedItems[i]._shell;
+            let path = sShell.download.target.path;
+            removeSelectFile(path);
+            sShell.doCommand("cmd_delete");
         }
     }
 
@@ -353,6 +307,11 @@
 
     // 从硬盘中删除
     function downloadsPanelRemoveFile() {
+        if (getAppVersion() >= 101) {
+            // 98 新增这个功能，但是我这实测 101 beta 才能无 BUG 使用
+            Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", 2);
+            return;
+        }
         if ("gBrowserInit" in window) {
             if (gBrowserInit.delayedStartupFinished) removeFileInit();
             else {
@@ -699,16 +658,5 @@
         addEventListener("dblclick", function (event) {
             event.target.nodeName === "radio" && dialogElement.getButton("accept").click()
         }, false)
-    }
-
-    function downloadSpeed() {
-        var appVersion = Services.appinfo.version.split(".")[0];
-        if (appVersion >= 38 && DownloadsViewItem.prototype._updateProgress) {
-            eval("DownloadsViewItem.prototype._updateProgress = " +
-                DownloadsViewItem.prototype._updateProgress.toString().replace('status.text', 'status.tip'));
-        } else if (appVersion < 38 && DownloadsViewItem.prototype._updateStatusLine) {
-            eval("DownloadsViewItem.prototype._updateStatusLine = " +
-                DownloadsViewItem.prototype._updateStatusLine.toString().replace('[statusTip', '[status'));
-        }
     }
 })()
