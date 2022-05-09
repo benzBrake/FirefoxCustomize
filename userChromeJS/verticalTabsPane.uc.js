@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           垂直标签栏
-// @version        1.5.8
+// @version        1.5.9
 // @author         aminomancer
 // @homepage       https://github.com/aminomancer/uc.css.js
 // @description    Create a vertical pane across from the sidebar that functions like the vertical
@@ -2049,6 +2049,7 @@
 }
 #vertical-tabs-pane .subviewbutton-iconic > .toolbarbutton-icon {
     -moz-context-properties: fill, fill-opacity;
+    fill: var(--toolbarbutton-icon-fill);
 }
 #vertical-tabs-pane .subviewbutton.no-label .toolbarbutton-text {
     display: none;
