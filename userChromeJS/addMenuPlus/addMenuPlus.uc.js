@@ -391,6 +391,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.exec(exec, this.convertText(text));
             else if (text)
                 this.copy(this.convertText(text));
+
+            this.convertText(text);
         },
         openCommand: function (event, url, where, postData) {
             var uri;
@@ -899,7 +901,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     menu.setAttribute("disabled", "true");
                 } else {
                     if (aFile.isFile()) {
-                        let fileURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
+                        let fileURL = this.getURLSpecFromFile(aFile);
                         menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
                     } else {
                         menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
@@ -1148,6 +1150,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return elem.value.substring(elem.selectionStart, elem.selectionEnd);
             return "";
         },
+        getURLSpecFromFile(aFile) {
+            var aURL;
+            if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
+                aURL = userChrome.getURLSpecFromFile(aFile);
+            } else if (this.appVersion < 92) {
+                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
+            } else {
+                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
+            }
+            return aURL;
+        },
         edit: function (aFile, aLineNumber) {
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
 
@@ -1183,13 +1196,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             }
 
-            var aURL = "";
-            if (typeof userChrome !== "undefined") {
-                aURL = userChrome.getURLSpecFromFile(aFile);
-            } else {
-                var fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-                aURL = fph.getURLSpecFromActualFile(aFile);
-            }
+            var aURL = this.getURLSpecFromFile(aFile);
 
             var aDocument = null;
             var aCallBack = null;
