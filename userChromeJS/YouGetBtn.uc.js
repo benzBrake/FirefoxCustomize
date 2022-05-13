@@ -321,7 +321,7 @@ window.youGetBtn = {
                 }
             }
           `)),
-            type: _uc.sss.USER_SHEET
+            type: 1
         }
         this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
     },
