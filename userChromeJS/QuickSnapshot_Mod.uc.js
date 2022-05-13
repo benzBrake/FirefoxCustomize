@@ -170,13 +170,13 @@ UC.QuickSnapshot = {
     setStyle: function () {
         this.STYLE = {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
-            @-moz-document url('${_uc.BROWSERCHROME}') {
+            @-moz-document url('chrome://browser/content/browser.xhtml') {
                 #QuickSnapshot .toolbarbutton-icon {
                     list-style-image:url(data:image/svg+xml;base64,PHN2ZyB0PSIxNjQ2Nzg2NTg2NTc4IiBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjE0MjMiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNODg5LjQ3MiAxNDguMjY2NjY3YTQyLjY2NjY2NyA0Mi42NjY2NjcgMCAwIDEtMTMuNTY4IDU4Ljc5NDY2NmwtMjgyLjg4IDE3Ni43MjUzMzQgMTcxLjMwNjY2NyAxMDcuMDA4IDIuMjYxMzMzIDAuMDg1MzMzYTIwMi42NjY2NjcgMjAyLjY2NjY2NyAwIDEgMS0xMTUuNDEzMzMzIDI5Ljc4MTMzM2wtMTM4LjYyNC04Ni41NzA2NjYtMTM5LjE3ODY2NyA4Ni45MTJhMjAyLjY2NjY2NyAyMDIuNjY2NjY3IDAgMSAxLTExMi41NTQ2NjctMzAuMjkzMzM0bDE3MS4yMjEzMzQtMTA2LjkyMjY2Ni0yODIuNzk0NjY3LTE3Ni43MjUzMzRhNDIuNjY2NjY3IDQyLjY2NjY2NyAwIDAgMS0xNS45NTczMzMtNTQuNGwyLjM4OTMzMy00LjM5NDY2NmE0Mi42NjY2NjcgNDIuNjY2NjY3IDAgMCAxIDU4Ljc5NDY2Ny0xMy41NjhsMzE4LjA4IDE5OC43ODQgMzE4LjEyMjY2Ni0xOTguNzg0YTQyLjY2NjY2NyA0Mi42NjY2NjcgMCAwIDEgNTguNzk0NjY3IDEzLjU2OHpNMjY2LjY2NjY2NyA1NzZhMTE3LjMzMzMzMyAxMTcuMzMzMzMzIDAgMSAwIDAgMjM0LjY2NjY2NyAxMTcuMzMzMzMzIDExNy4zMzMzMzMgMCAwIDAgMC0yMzQuNjY2NjY3eiBtNDkwLjY2NjY2NiAwYTExNy4zMzMzMzMgMTE3LjMzMzMzMyAwIDEgMCAwIDIzNC42NjY2NjcgMTE3LjMzMzMzMyAxMTcuMzMzMzMzIDAgMCAwIDAtMjM0LjY2NjY2N3oiIHAtaWQ9IjE0MjQiPjwvcGF0aD48L3N2Zz4=);
                 }
             }
           `)),
-            type: _uc.sss.USER_SHEET
+            type: 1
         }
     },
     unload: function () {
