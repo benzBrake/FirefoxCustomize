@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name           垂直标签栏
+// @name           verticalTabsPane.uc.js
 // @version        1.5.9
 // @author         aminomancer
 // @homepage       https://github.com/aminomancer/uc.css.js
-// @description    Create a vertical pane across from the sidebar that functions like the vertical
-// tab pane in Microsoft Edge. It doesn't hide the tab bar since people have different preferences
+// @description    垂直标签栏 
+// Create a vertical pane across from the sidebar that functions like the vertical tab pane in Microsoft Edge. It doesn't hide the tab bar since people have different preferences
 // on how to do that, but it sets an attribute on the root element that you can use to hide the
 // regular tab bar while the vertical pane is open, for example :root[vertical-tabs] #TabsToolbar...
 // By default, the pane is resizable just like the sidebar is. And like the pane in Edge, you can
