@@ -225,7 +225,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             if (event.target.id == "placesContext") {
                 var isFloder = false;
                 try {
-                    let selectedNode = PlacesUIUtils.getViewForNode(event.target.ownerDocument.popupNode).selectedNode;
+                    let selectedNode = PlacesUIUtils.getViewForNode(event.target.triggerNode).selectedNode;
                     isFloder = !selectedNode || selectedNode.hasChildren;
                 } catch (e) {}
                 let menus = $("placesContext").querySelectorAll(".open-place");
@@ -345,7 +345,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
                     }
                     break;
                 case "place":
-                    url = PlacesUIUtils.getViewForNode(document.popupNode).selectedNode.uri;
+                    url = PlacesUIUtils.getViewForNode(PlacesUIUtils.lastContextMenuTriggerNode).selectedNode.uri;
                     break;
             }
             if (url) {
