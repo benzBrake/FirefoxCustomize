@@ -294,6 +294,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
                     #OpenWithManager-Group > menuitem:not(:first-child) > .menu-accel-container {
                         display: none;
                     }
+                    #OpenWithManager-Group > menuitem:first-child {
+                        -moz-box-flex: 1
+                    }
                 }
               `)),
                 type: 1
