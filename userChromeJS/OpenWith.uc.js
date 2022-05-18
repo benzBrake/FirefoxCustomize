@@ -142,6 +142,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             if (MENU_GROUP) {
                 let newAnchorNode = document.createXULElement('menugroup');
                 newAnchorNode.setAttribute('id', 'OpenWithManager-Group')
+                newAnchorNode.classList.add('openwith-menu');
                 this.attachNode(anchorNode, newAnchorNode);
                 anchorNode = newAnchorNode;
             }
