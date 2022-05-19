@@ -6,7 +6,7 @@
 // @startup        UC.moveReloadIntoURL.init();
 // @shutdown       UC.moveReloadIntoURL.unload();
 // @homepage       https://github.com/benzBrake/FirefoxCustomize
-// @version        1.2
+// @version        1.2.1
 // @note           1.2 改成可热插拔，兼容夜间模式，图片内置到脚本
 // @note           1.1 20220424 修复，兼容性未知，FF 100 测试通过
 // @note           1.0 20171104
@@ -33,13 +33,12 @@ UC.moveReloadIntoURL = {
             btn.addEventListener("click", function (e) {
                 let r = UC.moveReloadIntoURL.reloadBtn;
                 if (r && r.getAttribute('displaystop'))
-                    BrowserStop();
+                    e.target.ownerGlobal.BrowserStop();
                 else
                     if (e.button == 2) {
-                        BrowserReloadSkipCache();
+                        e.target.ownerGlobal.BrowserReloadSkipCache();
                     } else {
-                        // BrowserReloadOrDuplicate();
-                        BrowserReload();
+                        e.target.ownerGlobal.BrowserReload();
                     }
 
             }, false);
