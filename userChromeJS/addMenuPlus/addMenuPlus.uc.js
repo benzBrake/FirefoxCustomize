@@ -15,7 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.3 还原不知道被谁删掉的配置文件路径配置项，修复 openCommand bug，修复 exec 目录读取图标报错，修复标签操作报错
+// @note           0.1.3 还原不知道被谁删掉的配置文件路径配置项，修复 openCommand bug，修复 exec 目录读取图标报错，修复标签操作报错，修复 app 菜单添加一级菜单（二级菜单还空没修）
 // @note           0.1.2 增加多语言，修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串 this.t is not function，GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
@@ -279,9 +279,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             ins = $("prefSep") || $("webDeveloperMenu");
             ins.parentNode.insertBefore(
                 $C("menuseparator", { id: "addMenu-tool-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
-            ins = $("appmenu-quit") || $("menu_FileQuitItem");
+            PanelUI._initialized || PanelUI.init(shouldSuppressPopupNotifications);
+            ins = $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem");
             ins.parentNode.insertBefore(
-                $C("menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins);
+                $C(ins.localName === "toolbarbutton" ? "toolbarseparator" : "menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins);
             ins = $("devToolsSeparator");
             ins.parentNode.insertBefore($C("menuitem", {
                 id: "addMenu-rebuild",
@@ -290,10 +291,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
             }), ins);
-
+            this.panelInitialized = false;
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
+
+
+            PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
 
             this.style = addStyle(css);
             this.rebuild();
@@ -337,6 +341,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
+
+
+                        state.length > 0 && event.target.querySelectorAll(
+                            state.map(s => `.addMenu[condition~="${s}"]`).join(', ')
+                        ).forEach(m => {
+                            m.hidden = false;
+                        });
 
                         this.customShowings.forEach(function (obj) {
                             var curItem = obj.item;
@@ -391,8 +402,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.exec(exec, this.convertText(text));
             else if (text)
                 this.copy(this.convertText(text));
-
-            this.convertText(text);
         },
         openCommand: function (event, url, where, postData) {
             var uri;
@@ -413,7 +422,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 } catch (e) {
                     let aAllowThirdPartyFixup = {
                         postData: postData || null,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                        triggeringPrincipal: where === 'current' ?
+                            gBrowser.selectedBrowser.contentPrincipal : (
+                                /^(f|ht)tps?:/.test(uri.spec) ?
+                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.getSystemPrincipal()
+                            )
                     }
                     openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
                 }
@@ -422,11 +436,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     openNewTabWith(uri.spec);
                 } else {
                     let aAllowThirdPartyFixup = {
-                        inBackground: true,
                         postData: postData || null,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
+                            Services.scriptSecurityManager.createNullPrincipal({}) :
+                            Services.scriptSecurityManager.getSystemPrincipal()
                     }
-                    gBrowser.addTab(uri.spec, aAllowThirdPartyFixup);
+                    openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
                 }
             } else {
                 // 可能是 78 以后改调用了，不记得了
@@ -481,6 +496,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     return ffdir + path;
                 } else {
                     return path;
+                }
+            }
+        },
+        moveToAppMenu: async function (_e) {
+            let doc = _e.target.ownerDocument,
+                ins = doc.getElementById('addMenu-app-insertpoint');
+            if (ins?.localName === 'menuseparator') {
+                let separator = $('appMenu-quit-button2').previousSibling;
+                if (separator) {
+                    ins.remove();
+                    ins = $C('toolbarseparator', {
+                        'id': 'addMenu-app-insertpoint'
+                    });
+                    separator.parentNode.insertBefore(ins, separator);
+                    addMenu.panelInitialized = true;
+                    addMenu.rebuild();
                 }
             }
         },
@@ -678,24 +709,28 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         newMenuitem: function (obj, opt) {
             opt || (opt = {});
 
-            var menuitem;
+            var menuitem,
+                isAppMenu = addMenu.panelInitialized || false && opt.isPanelUI || false,
+                separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
+                menuitemType = isAppMenu ? "toolbarbutton" : "menuitem";
+
             // label == separator か必要なプロパティが足りない場合は区切りとみなす
             if (obj.label === "separator" ||
                 (!obj.label && !obj.image && !obj.text && !obj.keyword && !obj.url && !obj.oncommand && !obj.command)) {
-                menuitem = document.createXULElement("menuseparator");
+                menuitem = document.createXULElement(separatorType);
             } else if (obj.oncommand || obj.command) {
                 let org = obj.command ? document.getElementById(obj.command) : null;
-                if (org && org.localName === "menuseparator") {
-                    menuitem = document.createXULElement("menuseparator");
+                if (org && org.localName === separatorType) {
+                    menuitem = document.createXULElement(separatorType);
                 } else {
-                    menuitem = document.createXULElement("menuitem");
+                    menuitem = document.createXULElement(menuitemType);
                     if (obj.command)
                         menuitem.setAttribute("command", obj.command);
                     if (!obj.label)
                         obj.label = obj.command || obj.oncommand;
                 }
             } else {
-                menuitem = document.createXULElement("menuitem");
+                menuitem = document.createXULElement(menuitemType);
                 // property fix
                 if (!obj.label)
                     obj.label = obj.exec || obj.keyword || obj.url || obj.text;
@@ -758,8 +793,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }**/
             var cls = menuitem.classList;
             cls.add("addMenu");
-            cls.add("menuitem-iconic");
 
+            if (isAppMenu) {
+                cls.add("subviewbutton");
+            } else {
+                cls.add("menuitem-iconic");
+            }
             // 表示 / 非表示の設定
             if (obj.condition)
                 this.setCondition(menuitem, obj.condition);
@@ -790,7 +829,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         createMenuitem: function (itemArray, insertPoint) {
 
             var chldren = $A(insertPoint.parentNode.children);
-
             //Symbol.iterator
             for (let obj of itemArray) {
 
@@ -844,7 +882,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
 
 
-                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true });
+                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true, isPanelUI: insertPoint === 'addMenu-app-insertpoint' });
 
                 insertMenuItem(obj, menuitem);
 
@@ -1271,7 +1309,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } : null;
             var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
             alertsService.showAlertNotification(
-                "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",
+                this.appVersion >= 78 ? "chrome://global/skin/icons/info.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",
                 aMsg + "", !!callback, "", callback);
         },
         $$: function (exp, context, aPartly) {
@@ -1288,7 +1326,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         log: log,
     };
 
-    window.addMenu.init();
+    if (gBrowserInit.delayedStartupFinished) window.addMenu.init();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.addMenu.init();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
 
     function $(id) {
         return document.getElementById(id);
@@ -1434,6 +1481,13 @@ menugroup.addMenu {\
   padding-bottom: 2px;\
 }\
 \
+menugroup.addMenu > .menuitem-iconic.fixedSize { \
+    -moz-box-flex: 0; \
+} \
+\
+menugroup.addMenu > .menuitem-iconic.noIcon > .menu-iconic-left { \
+    display: none !important; \
+} \
 menugroup.addMenu > .menuitem-iconic {\
   -moz-box-flex: 1;\
   -moz-box-pack: center;\
@@ -1462,4 +1516,7 @@ menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showTe
     margin-inline-start: 8px; \
     margin-inline-end: 8px; \
 }\
+#addMenu-app-insertpoint+toolbarseparator { \
+    display: none; \
+} \
 ');
