@@ -15,14 +15,14 @@
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
-// @note         - 附件组件页面右键新增查看所在目录（支持扩展、主题、插件）、复制名字。Greasemonkey、Scriptish 自带已经存在
-// @note         - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制
-// @note         - 新增 uc脚本管理页面
-// @note         uc脚本管理界面
-// @note         - 启用禁用需要 rebuild_userChrome.uc.js
-// @note         - 编辑命令需要首先设置 view_source.editor.path 的路径
-// @note         - 图标请自行添加样式，详细信息见主页
-// @note         其它信息见主页
+// @note            - 附件组件页面右键新增查看所在目录（支持扩展、主题、插件）、复制名字。Greasemonkey、Scriptish 自带已经存在
+// @note            - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制
+// @note            - 新增 uc脚本管理页面
+// @note            - uc脚本管理界面
+// @note            - 启用禁用需要 rebuild_userChrome.uc.js
+// @note            - 编辑命令需要首先设置 view_source.editor.path 的路径
+// @note            - 图标请自行添加样式，详细信息见主页
+// @note            其它信息见主页
 // ==/UserScript==
 (function () {
     "use strict";
@@ -236,7 +236,7 @@
                     if (this.getInstallURL(addon)) {
                         item = $C(doc, "panel-item", {
                             action: "AM-open-url",
-                            "#text": "Open Install URL"
+                            "#text": "打开安装网址"
                         }, optionMenu);
                         item.addEventListener("click", this, true);
                     }
@@ -452,9 +452,13 @@
             let scripts;
             if (window.userChrome_js) {
                 scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
-            } else {
+            } else if (window._uc) {
                 this.isXXF = true;
                 scripts = Object.values(_uc.scripts);
+            } else {
+                // 不支持其他环境
+                window.AM_Helper.uninit();
+                delete window.AM_Helper;
             }
 
             scripts.forEach((script, i) => {
@@ -612,10 +616,45 @@
 
         // Fx62.0-
         async enable() {
-            this.userDisabled = false;
+            if (typeof _uc !== "undefined") {
+                let script = _uc.scripts[this.name];
+                xPref.set(_uc.PREF_SCRIPTSDISABLED, xPref.get(_uc.PREF_SCRIPTSDISABLED).replace(new RegExp('^' + script.filename + ',|,' + script.filename), ''));
+                if (!_uc.everLoaded.includes(script.id)) {
+                    script = _uc.getScriptData(script.file);
+                    Services.obs.notifyObservers(null, 'startupcache-invalidate');
+                    _uc.windows((doc, win, loc) => {
+                        if (win._uc && script.regex.test(loc.href)) {
+                            _uc.loadScript(script, win);
+                        }
+                    }, false);
+                }
+            } else {
+                this.userDisabled = false;
+            }
+
         },
         async disable() {
-            this.userDisabled = true;
+            if (typeof _uc !== "undefined") {
+                let script = _uc.scripts[this.name];
+                xPref.set(_uc.PREF_SCRIPTSDISABLED, script.filename + ',' + xPref.get(_uc.PREF_SCRIPTSDISABLED));
+                if (script.isRunning && !!script.shutdown) {
+                    _uc.windows((doc, win, loc) => {
+                        if (script.regex.test(loc.href)) {
+                            try {
+                                eval(script.shutdown);
+                            } catch (ex) {
+                                Cu.reportError(ex);
+                            }
+                            if (script.onlyonce)
+                                return true;
+                        }
+                    }, false);
+                    script.isRunning = false;
+                }
+            } else {
+                this.userDisabled = true;
+            }
+
         },
     };
 
