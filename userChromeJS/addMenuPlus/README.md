@@ -208,7 +208,7 @@ page({label: "Google Translate",
     where: "tab",
 });
 ```
-示例：右键添加 `翻译整个页面` 菜单（菜单嗲用 Bookmarklet 例子），[来源](https://www.runningcheese.com/bookmarklet)。
+示例：右键添加 `翻译整个页面` 菜单（菜单调用 Bookmarklet 例子），[来源](https://www.runningcheese.com/bookmarklet)。
 
 *注：github.com 由于服务器限制，无法直接插入 js，故无效。*
 ```js
