@@ -990,6 +990,53 @@ menu([
     },
 ]);
 ```
+示例：动态读取内置搜索引擎，来自[Firefox 添加右键搜索选中文本（自动读取内置搜索引擎）](https://kkp.disk.st/firefox-adds-rightclick-search-to-select-text-automatically-read-the-builtin-search-engine.html)
+
+```
+new function () {
+    var items = [{
+        id: 'addMenu-sitesearch-insertpoint',
+        label: 'separator',
+        hidden: true
+    }, {
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '生成二维码' : 'Generate QR code',
+        where: 'tab',
+        url: "https://my.tv.sohu.com/user/a/wvideo/getQRCode.do?text=%s",
+        image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTMgM0wzIDlMOSA5TDkgM0wzIDMgeiBNIDExIDNMMTEgNUwxMyA1TDEzIDNMMTEgMyB6IE0gMTUgM0wxNSA5TDIxIDlMMjEgM0wxNSAzIHogTSA1IDVMNyA1TDcgN0w1IDdMNSA1IHogTSAxNyA1TDE5IDVMMTkgN0wxNyA3TDE3IDUgeiBNIDExIDdMMTEgOUwxMyA5TDEzIDdMMTEgNyB6IE0gMyAxMUwzIDEzTDUgMTNMNSAxMUwzIDExIHogTSA3IDExTDcgMTNMOSAxM0w5IDExTDcgMTEgeiBNIDExIDExTDExIDEzTDEzIDEzTDEzIDExTDExIDExIHogTSAxMyAxM0wxMyAxNUwxNSAxNUwxNSAxM0wxMyAxMyB6IE0gMTUgMTNMMTcgMTNMMTcgMTFMMTUgMTFMMTUgMTMgeiBNIDE3IDEzTDE3IDE1TDE5IDE1TDE5IDEzTDE3IDEzIHogTSAxOSAxM0wyMSAxM0wyMSAxMUwxOSAxMUwxOSAxMyB6IE0gMTkgMTVMMTkgMTdMMjEgMTdMMjEgMTVMMTkgMTUgeiBNIDE5IDE3TDE3IDE3TDE3IDE5TDE5IDE5TDE5IDE3IHogTSAxOSAxOUwxOSAyMUwyMSAyMUwyMSAxOUwxOSAxOSB6IE0gMTcgMTlMMTUgMTlMMTUgMjFMMTcgMjFMMTcgMTkgeiBNIDE1IDE5TDE1IDE3TDEzIDE3TDEzIDE5TDE1IDE5IHogTSAxMyAxOUwxMSAxOUwxMSAyMUwxMyAyMUwxMyAxOSB6IE0gMTMgMTdMMTMgMTVMMTEgMTVMMTEgMTdMMTMgMTcgeiBNIDE1IDE3TDE3IDE3TDE3IDE1TDE1IDE1TDE1IDE3IHogTSAzIDE1TDMgMjFMOSAyMUw5IDE1TDMgMTUgeiBNIDUgMTdMNyAxN0w3IDE5TDUgMTlMNSAxNyB6IiAvPg0KPC9zdmc+"
+    }];
+    var menu = PageMenu({
+        id: 'addMenu-search-select',
+        condition: 'select',
+        image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTMgNC41IEEgMS41IDEuNSAwIDAgMCAxLjUgNiBBIDEuNSAxLjUgMCAwIDAgMyA3LjUgQSAxLjUgMS41IDAgMCAwIDQuNSA2IEEgMS41IDEuNSAwIDAgMCAzIDQuNSB6IE0gNyA1TDcgN0wyMiA3TDIyIDVMNyA1IHogTSAzIDEwLjUgQSAxLjUgMS41IDAgMCAwIDEuNSAxMiBBIDEuNSAxLjUgMCAwIDAgMyAxMy41IEEgMS41IDEuNSAwIDAgMCA0LjUgMTIgQSAxLjUgMS41IDAgMCAwIDMgMTAuNSB6IE0gNyAxMUw3IDEzTDEzLjEwNTQ2OSAxM0MxNC4zNjc0NjkgMTEuNzY0IDE2LjA5NCAxMSAxOCAxMUw3IDExIHogTSAxOCAxM0MxNS4yIDEzIDEzIDE1LjIgMTMgMThDMTMgMjAuOCAxNS4yIDIzIDE4IDIzQzE5IDIzIDIwLjAwMDc4MSAyMi42OTkyMTkgMjAuODAwNzgxIDIyLjE5OTIxOUwyMi41OTk2MDkgMjRMMjQgMjIuNTk5NjA5TDIyLjE5OTIxOSAyMC44MDA3ODFDMjIuNjk5MjE5IDIwLjAwMDc4MSAyMyAxOSAyMyAxOEMyMyAxNS4yIDIwLjggMTMgMTggMTMgeiBNIDE4IDE1QzE5LjcgMTUgMjEgMTYuMyAyMSAxOEMyMSAxOS43IDE5LjcgMjEgMTggMjFDMTYuMyAyMSAxNSAxOS43IDE1IDE4QzE1IDE2LjMgMTYuMyAxNSAxOCAxNSB6IE0gMyAxNi41IEEgMS41IDEuNSAwIDAgMCAxLjUgMTggQSAxLjUgMS41IDAgMCAwIDMgMTkuNSBBIDEuNSAxLjUgMCAwIDAgNC41IDE4IEEgMS41IDEuNSAwIDAgMCAzIDE2LjUgeiBNIDcgMTdMNyAxOUwxMS4wODAwNzggMTlDMTEuMDMzMDc4IDE4LjY3MyAxMSAxOC4zNCAxMSAxOEMxMSAxNy42NiAxMS4wMzMwNzggMTcuMzI3IDExLjA4MDA3OCAxN0w3IDE3IHoiIC8+DQo8L3N2Zz4=",
+        onshowing: function (e) {
+            var sel = addMenu.convertText(Services.locale.appLocaleAsBCP47.includes("zh-") ? "搜索: %SEL%" : "Search %SEL% by");
+            if (sel && sel.length > 15)
+                sel = sel.substr(0, 15) + "...";
+            this.label = sel;
+            let popupNode = this.querySelector('menupopup');
+            while (popupNode?.firstChild?.id !== 'addMenu-sitesearch-insertpoint') {
+                popupNode.firstChild.remove();
+            }
+            let ins = popupNode.firstChild;
+            Services.search.getEngines().then(
+                engines => engines.forEach((item) => {
+                    let searchUrl = item.__searchForm.includes('{searchTerms}') ? item.__searchForm.replace("{searchTerms}", "%s") : item.__searchForm + '?q=%s'
+                    let menuitem = addMenu.newMenuitem({
+                        label: item._name,
+                        where: 'tab',
+                        url: searchUrl
+                    });
+                    ins.parentNode.insertBefore(menuitem, ins);
+                }))
+        },
+    });
+    menu(items);
+    css("#context-searchselect { display: none } #contentAreaContextMenu #addMenu-search-select .menu-accel-container { visibility: hidden; }");
+};
+```
+
+
+
 ### 特殊的示例
 
 示例："字符编码" 移动到 "web开发者" 的位置
