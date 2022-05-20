@@ -211,6 +211,43 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             fstream.close();
             return data;
         },
+        openCommand: function (url, where, postData) {
+            var uri;
+            try {
+                uri = Services.io.newURI(url, null, null);
+            } catch (e) {
+                return this.log(U(this.t('urlIsInvalid')).replace("%s", url));
+            }
+            if (uri.scheme === "javascript") {
+                try {
+                    loadURI(url);
+                } catch (e) {
+                    gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                }
+            } else if (where) {
+                try {
+                    openUILinkIn(uri.spec, where, false, postData || null);
+                } catch (e) {
+                    let aAllowThirdPartyFixup = {
+                        postData: postData || null,
+                        triggeringPrincipal: where === 'current' ?
+                            gBrowser.selectedBrowser.contentPrincipal : (
+                                /^(f|ht)tps?:/.test(uri.spec) ?
+                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.getSystemPrincipal()
+                            )
+                    }
+                    openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                }
+            } else {
+                let aAllowThirdPartyFixup = {
+                    inBackground: false,
+                    postData: postData || null,
+                    triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                }
+                openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
+            }
+        },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
                 observe: function (subject, topic, data) {
@@ -238,25 +275,28 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                     this.openScriptInScratchpad(window, aFile);
                     return;
                 } else {
-                    alert("请先设置编辑器的路径!!!");
-                    var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
-                    fp.appendFilter("执行文件", "*.exe");
+                    function setPath() {
+                        var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                        fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
+                        fp.appendFilter("执行文件", "*.exe");
 
-                    if (typeof fp.show !== 'undefined') {
-                        if (fp.show() == fp.returnCancel || !fp.file)
-                            return;
-                        else {
-                            editor = fp.file;
-                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                        if (typeof fp.show !== 'undefined') {
+                            if (fp.show() == fp.returnCancel || !fp.file)
+                                return;
+                            else {
+                                editor = fp.file;
+                                Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                            }
+                        } else {
+                            fp.open(res => {
+                                if (res != Ci.nsIFilePicker.returnOK) return;
+                                editor = fp.file;
+                                Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                            });
                         }
-                    } else {
-                        fp.open(res => {
-                            if (res != Ci.nsIFilePicker.returnOK) return;
-                            editor = fp.file;
-                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                        });
                     }
+                    KeyChanger.alert("请先设置编辑器的路径!!!", "提示", setPath);
+
                 }
             }
 
