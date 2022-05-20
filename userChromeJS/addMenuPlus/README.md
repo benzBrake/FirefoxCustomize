@@ -831,12 +831,9 @@ page({
 示例：使用 Everything 搜索选中的文字，需要自行设置路径。
 ```js
 page({
-    label: "Everything 搜索",
-    oncommand: function(){
-        var str = addMenu.convertText('%s');
-
-        addMenu.exec("D:\\Program Files\\Everything\\Everything.exe", ['-search', str]);
-    }
+    label: 'Everything 搜索',
+    text: '-search %s',
+    exec: 'C:\\Program Files\\Everything\\Everything.exe'
 })
 ```
 示例：快速保存选定文本为 txt 并打开。
