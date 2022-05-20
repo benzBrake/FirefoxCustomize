@@ -48,7 +48,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - page: 页面右键菜单
  - tab: 标签右键
  - tool: 工具菜单
- - app: 左上角橙色菜单（firefox 29 以下版本）
+ - app: 左上角橙色菜单（firefox 29 以下版本）/ 汉堡菜单 firefox 29 以上版本
 
 二级子菜单
 
@@ -234,6 +234,19 @@ page([
     }
 ]);
 ```
+示例：汉堡菜单添加重启菜单
+
+```js
+app([{
+    'id': 'appMenu-restart-button',
+    'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
+    'insertBefore': 'appMenu-quit-button2',
+    'image': 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMy42NyAxMS4xNDggQyAzLjY3IDEwLjI3MiAzLjg0OCA5LjQzNiA0LjE3MSA4LjY3NCBDIDQuNDkzIDcuOTEyIDQuOTYxIDcuMjI1IDUuNTM5IDYuNjQ2IEwgNC43ODUgNS44OTMgTCA0LjAzMSA1LjEzOSBDIDMuMjM2IDUuOTM3IDIuNjE1IDYuODc2IDIuMTkzIDcuODk3IEMgMS43NzEgOC45MTggMS41NDcgMTAuMDIyIDEuNTQ3IDExLjE0OCBDIDEuNTQ3IDEzLjMxNCAyLjM1NyAxNS4yODggMy42OSAxNi43ODYgQyA1LjAyNCAxOC4yODQgNi44ODIgMTkuMzA3IDguOTc5IDE5LjU2NyBMIDguOTc5IDE4LjQ5NSBMIDguOTc5IDE3LjQyMiBDIDcuNDc3IDE3LjE2NyA2LjE0OSAxNi4zODcgNS4xOTggMTUuMjc2IEMgNC4yNDYgMTQuMTY1IDMuNjcgMTIuNzI0IDMuNjcgMTEuMTQ4IFogTSAxOC41MzQgMTEuMTQ4IEMgMTguNTM0IDguODAyIDE3LjU4NCA2LjY3OCAxNi4wNDcgNS4xNDEgQyAxNC41MSAzLjYwNCAxMi4zODcgMi42NTQgMTAuMDQgMi42NTQgQyAxMC4wMDkgMi42NTQgOS45NzcgMi42NTcgOS45NDUgMi42NTkgQyA5LjkxMyAyLjY2MiA5Ljg4MSAyLjY2NSA5Ljg0OSAyLjY2NSBMIDEwLjQyOCAyLjA4NyBMIDExLjAwNyAxLjUwOCBMIDEwLjI1OSAwLjc1NCBMIDkuNTEgMCBMIDcuNjUyIDEuODU4IEwgNS43OTQgMy43MTYgTCA3LjY1MiA1LjU3NCBMIDkuNTEgNy40MzIgTCAxMC4yNTkgNi42ODQgTCAxMS4wMDcgNS45MzUgTCAxMC40MzQgNS4zNjIgTCA5Ljg2IDQuNzg4IEMgOS44OTIgNC43ODggOS45MjQgNC43ODYgOS45NTQgNC43ODMgQyA5Ljk4NSA0Ljc4MSAxMC4wMTQgNC43NzggMTAuMDQgNC43NzggQyAxMS43OTggNC43NzggMTMuMzkgNS40OTIgMTQuNTQzIDYuNjQ1IEMgMTUuNjk2IDcuNzk4IDE2LjQxIDkuMzkxIDE2LjQxIDExLjE0OCBDIDE2LjQxIDEyLjcyNCAxNS44MzQgMTQuMTY2IDE0Ljg4MyAxNS4yNzYgQyAxMy45MzIgMTYuMzg3IDEyLjYwNSAxNy4xNjcgMTEuMTAyIDE3LjQyMiBMIDExLjEwMiAxOC40OTUgTCAxMS4xMDIgMTkuNTY3IEMgMTMuMTk5IDE5LjMwNyAxNS4wNTcgMTguMjg1IDE2LjM5MSAxNi43ODYgQyAxNy43MjUgMTUuMjg4IDE4LjUzNCAxMy4zMTQgMTguNTM0IDExLjE0OCBaIiBzdHlsZT0iIiB0cmFuc2Zvcm09Im1hdHJpeCgxLCAwLCAwLCAxLCAwLjEyMDQ0MSwgMC4yNTc5MzEpIi8+Cjwvc3ZnPg==',
+    'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+    'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+}]);
+```
+
 示例：标签右键菜单
 
 ```js
