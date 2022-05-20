@@ -987,7 +987,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }).catch(e => { });
         },
         setCondition: function (menu, condition) {
-
             if (/\bnormal\b/i.test(condition)) {
                 menu.setAttribute("condition", "normal");
             } else {
