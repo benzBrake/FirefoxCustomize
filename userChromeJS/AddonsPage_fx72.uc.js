@@ -628,10 +628,8 @@
                         }
                     }, false);
                 }
-            } else {
-                this.userDisabled = false;
             }
-
+            this.userDisabled = false;
         },
         async disable() {
             if (typeof _uc !== "undefined") {
@@ -651,10 +649,8 @@
                     }, false);
                     script.isRunning = false;
                 }
-            } else {
-                this.userDisabled = true;
             }
-
+            this.userDisabled = true;
         },
     };
 
