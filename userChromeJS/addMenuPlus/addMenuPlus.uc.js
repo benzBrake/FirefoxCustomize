@@ -504,8 +504,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (ins?.localName === 'menuseparator') {
                 let separator = $('appMenu-quit-button2').previousSibling;
                 if (separator) {
-                    // ins.remove();
-                    addMenu.removeMenuitem();
+                    ins.remove();
+                    // addMenu.removeMenuitem();
                     ins = $C('toolbarseparator', {
                         'id': 'addMenu-app-insertpoint'
                     });
