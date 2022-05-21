@@ -313,8 +313,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                 e.parentNode.removeChild(e)
             });
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
-            if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
+            if (this.style) removeStyle(this.style);
+            if (this.style2) removeStyle(this.style2);
         },
         handleEvent: function (event) {
             let that = this;
@@ -500,12 +500,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
         },
         moveToAppMenu: async function (_e) {
-            let doc = _e.target.ownerDocument,
-                ins = doc.getElementById('addMenu-app-insertpoint');
+            let ins = document.getElementById('addMenu-app-insertpoint');
             if (ins?.localName === 'menuseparator') {
                 let separator = $('appMenu-quit-button2').previousSibling;
                 if (separator) {
-                    ins.remove();
+                    // ins.remove();
+                    addMenu.removeMenuitem();
                     ins = $C('toolbarseparator', {
                         'id': 'addMenu-app-insertpoint'
                     });
@@ -592,8 +592,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 });
                 return this.log(e);
             }
-            if (this.style2 && this.style2.parentNode)
-                this.style2.parentNode.removeChild(this.style2);
+            if (this.style2)
+                removeStyle(this.style2);
             if (sandbox._css.length)
                 this.style2 = addStyle(sandbox._css.join("\n"));
             this.removeMenuitem();
@@ -710,7 +710,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             opt || (opt = {});
 
             var menuitem,
-                isAppMenu = addMenu.panelInitialized || false && opt.isPanelUI || false,
+                isAppMenu = this.panelInitialized && opt.insertPoint?.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
                 menuitemType = isAppMenu ? "toolbarbutton" : "menuitem";
 
@@ -882,7 +882,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
 
 
-                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true, isPanelUI: insertPoint === 'addMenu-app-insertpoint' });
+                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true, insertPoint: insertPoint });
 
                 insertMenuItem(obj, menuitem);
 
@@ -1399,14 +1399,24 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return data;
     }
 
+    const sss = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
+
     function addStyle(css) {
-        var pi = document.createProcessingInstruction(
-            'xml-stylesheet',
-            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-        );
-        return document.insertBefore(pi, document.documentElement);
+        let style = {
+            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
+            @-moz-document url('chrome://browser/content/browser.xhtml') {
+                ${css}
+            }
+          `)),
+            type: 1
+        }
+        sss.loadAndRegisterSheet(style.url, style.type);
+        return style;
     }
 
+    function removeStyle(style) {
+        sss.unregisterSheet(style.url, style.type);
+    }
 
     function saveFile(fileOrName, data) {
         var file;
@@ -1427,95 +1437,86 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         foStream.close();
     }
 
-})('\
-.addMenuHide\
-  { display: none !important; }\
-\
-#contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="select"],\
-#contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="link"],\
-#contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="mailto"],\
-#contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="image"],\
-#contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="canvas"],\
-#contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="media"],\
-#contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="input"],\
-#contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],\
-#contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],\
-#contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],\
-#contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="noimage"],\
-#contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],\
-#contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],\
-#contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],\
-#contentAreaContextMenu:not([addMenu=""])  .addMenu[condition~="normal"]\
-  { display: none; }\
-\
-.addMenu-insert-point\
-  { display: none !important; }\
-\
-\
-.addMenu[url] {\
-  list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");\
-}\
-\
-.addMenu.exec,\
-.addMenu[exec] {\
-  list-style-image: url("chrome://browser/skin/aboutSessionRestore-window-icon.png");\
-}\
-\
-.addMenu.copy,\
-menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])\
-{\
-  list-style-image: url(data:image/png;base64,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);\
-  -moz-image-region: rect(0pt, 32px, 16px, 16px);\
-}\
-\
-.addMenu.checkbox .menu-iconic-icon {\
-  -moz-appearance: checkbox;\
-}\
-\
-.addMenu > .menu-iconic-left {\
-  -moz-appearance: menuimage;\
-}\
-\
-menugroup.addMenu {\
-  padding-bottom: 2px;\
-}\
-\
-menugroup.addMenu > .menuitem-iconic.fixedSize { \
-    -moz-box-flex: 0; \
-} \
-\
-menugroup.addMenu > .menuitem-iconic.noIcon > .menu-iconic-left { \
-    display: none !important; \
-} \
-menugroup.addMenu > .menuitem-iconic {\
-  -moz-box-flex: 1;\
-  -moz-box-pack: center;\
-  -moz-box-align: center;\
-  padding-block: 0.5em; \
-  padding-inline-start: 1em; \
-}\
-menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {\
-  -moz-appearance: none;\
-  padding-top: 2px;\
-}\
-menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {\
-  width: 16px;\
-  height: 16px;\
-}\
-menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,\
-menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,\
-menugroup.addMenu > .menuitem-iconic > .menu-accel-container {\
-  display: none;\
-}\
-menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) { \
-    padding-left: 0;\
-    -moz-box-flex: 0; \
-}\
-menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left { \
-    margin-inline-start: 8px; \
-    margin-inline-end: 8px; \
-}\
-#addMenu-app-insertpoint+toolbarseparator { \
-    display: none; \
-} \
-');
+})(`
+.addMenuHide
+  { display: none !important; }
+#contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="select"],
+#contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="link"],
+#contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="mailto"],
+#contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="image"],
+#contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="canvas"],
+#contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="media"],
+#contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="input"],
+#contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],
+#contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],
+#contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],
+#contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="noimage"],
+#contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],
+#contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],
+#contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],
+#contentAreaContextMenu:not([addMenu=""])  .addMenu[condition~="normal"]
+  { display: none; }
+.addMenu-insert-point
+  { display: none !important; }
+.addMenu[url] {
+  list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
+}
+.addMenu.exec,
+.addMenu[exec] {
+  list-style-image: url("chrome://browser/skin/aboutSessionRestore-window-icon.png");
+}
+.addMenu.copy,
+menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
+{
+  list-style-image: url(data:image/png;base64,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);
+  -moz-image-region: rect(0pt, 32px, 16px, 16px);
+}
+
+.addMenu.checkbox .menu-iconic-icon {
+  -moz-appearance: checkbox;
+}
+
+.addMenu > .menu-iconic-left {
+  -moz-appearance: menuimage;
+}
+menugroup.addMenu {
+  padding-bottom: 2px;
+}
+menugroup.addMenu > .menuitem-iconic.fixedSize {
+    -moz-box-flex: 0;
+}
+menugroup.addMenu > .menuitem-iconic.noIcon > .menu-iconic-left {
+    display: none !important;
+}
+menugroup.addMenu > .menuitem-iconic {
+  -moz-box-flex: 1;
+  -moz-box-pack: center;
+  -moz-box-align: center;
+  padding-block: 0.5em;
+  padding-inline-start: 1em; 
+}
+menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
+  -moz-appearance: none;
+  padding-top: 2px;
+}
+menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
+  width: 16px;
+  height: 16px;
+}
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,
+menugroup.addMenu > .menuitem-iconic > .menu-accel-container {
+  display: none;
+}
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) {
+    padding-left: 0;
+    -moz-box-flex: 0;
+}
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left {
+    margin-inline-start: 8px;
+    margin-inline-end: 8px;
+}
+#addMenu-app-insertpoint+toolbarseparator {
+    display: none;
+}
+`);
