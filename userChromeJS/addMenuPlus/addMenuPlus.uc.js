@@ -145,54 +145,52 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         delete window.addMenu;
     }
 
+    const LANG = {
+        'zh-CN': {
+            'config example': '// 这是一个 addMenuPlus 配置文件\n' +
+                '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
+                '\n\n' +
+                'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+            'example is empty': '目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。',
+            'addmenuplus label': 'addMenuPlus',
+            'addmenuplus tooltip': '左键：重载配置\n右键：编辑配置',
+            'custom showing method error': 'addMenuPlus 自定义显示错误',
+            'url is invalid': 'URL 不正确: %s',
+            'config file': '配置文件',
+            'not exists': ' 不存在',
+            'check config file with line': '\n请重新检查配置文件第 %s 行',
+            'file not found': '文件不存在: %s',
+            'config has reload': '配置已经重新载入',
+            'please set editor path': '请先设置编辑器的路径!!!',
+            'set global editor': '设置全局脚本编辑器',
+            'executable files': '执行文件',
+            'could not load': '无法载入：%s'
+        },
+        'en-US': {
+            'config example': '// This is an addMenuPlus configuration file.\n' +
+                '// Please visit http://ywzhaiqi.github.io/addMenu_creator/ to generate configuration.' +
+                '\n\n' +
+                'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+            'example is empty': 'The configuration file for addMenuPlus is currently empty, please generate the configuration and put it in the configuration file in the open link. \nOpen the configuration file by right-clicking the tab.',
+            'addmenuplus label': 'addMenuPlus',
+            'addmenuplus tooltip': 'Left Click：Reload configuration\nRight Click：Edit configuration',
+            'custom showing method error': 'addMenuPlus customize popupshow error',
+            'url is invalid': 'URL is invalid: %s',
+            'config file': 'Configuration file',
+            'not exists': ' not exists',
+            'check config file with line': '\nPlease recheck line %s of the configuration file',
+            'file not found': 'File not found: %s',
+            'config has reload': 'The configuration has been reloaded',
+            'please set editor path': 'Please set the path to the editor first!!!',
+            'set global editor': 'Setting up the global script editor',
+            'executable files': 'Executable files',
+            'could not load': 'Could not load：%s'
+        },
+    }
+
+    const _LOCALE = LANG.hasOwnProperty(Services.locale.appLocaleAsBCP47) ? Services.locale.appLocaleAsBCP47 : 'en-US';
+
     window.addMenu = {
-        STR: {
-            'zh-CN': {
-                'addMenuExample': '// 这是一个 addMenuPlus 配置文件\n' +
-                    '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
-                    '\n\n' +
-                    'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
-                'exampleEmptyNotice': '目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。',
-                'addMenuPlus': '自定义菜单',
-                'addMenuPlusTooltip': '左键：重载配置\n右键：编辑配置',
-                'customPopshowingError': 'addMenuPlus 自定义显示错误',
-                'urlIsInvalid': 'URL 不正确: %s',
-                'configFile': '配置文件',
-                'notExists': ' 不存在',
-                'checkLine': '\n请重新检查配置文件第 %s 行',
-                'fileNotFound': '文件不存在: %s',
-                'configHasReloaded': '配置已经重新载入',
-                'pleaseSetEditor': '请先设置编辑器的路径!!!',
-                'setGlobalPath': '设置全局脚本编辑器',
-                'executableFiles': '执行文件'
-            },
-            'en-US': {
-                'addMenuExample': '// This is an addMenuPlus configuration file.\n' +
-                    '// Please visit http://ywzhaiqi.github.io/addMenu_creator/ to generate configuration.' +
-                    '\n\n' +
-                    'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
-                'exampleEmptyNotice': 'The configuration file for addMenuPlus is currently empty, please generate the configuration and put it in the configuration file in the open link. \nOpen the configuration file by right-clicking the tab.',
-                'addMenuPlus': 'addMenuPlus',
-                'addMenuPlusTooltip': 'Left Click：Reload configuration\nRight Click：Edit configuration',
-                'customPopshowingError': 'addMenuPlus customize popupshow error',
-                'urlIsInvalid': 'URL is invalid: %s',
-                'configFile': 'Configuration file',
-                'notExists': ' not exists',
-                'checkLine': '\nPlease recheck line %s of the configuration file',
-                'fileNotFound': 'File not found: %s',
-                'configHasReloaded': 'The configuration has been reloaded',
-                'pleaseSetEditor': 'Please set the path to the editor first!!!',
-                'setGlobalPath': 'Setting up the global script editor',
-                'executableFiles': 'Executable files'
-            },
-        },
-        t: function (key, replace) {
-            let str = this.STR[this.locale].hasOwnProperty(key) ? this.STR[this.locale][key] : (this.STR['en-US'].hasOwnProperty(key) ? this.STR['en-US'][key] : "undefined");
-            if (typeof replace !== "undefined") {
-                str = str.replace("%s", replace);
-            }
-            return str;
-        },
         get prefs() {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("addMenu.")
@@ -212,8 +210,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             aFile.appendRelativePath(path);
 
             if (!aFile.exists()) {
-                saveFile(aFile, this.t('addMenuExample'));
-                alert(this.t('exampleEmptyNotice'));
+                saveFile(aFile, $L('config example'));
+                alert($L('example is empty'));
                 try {
                     gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/');
                 } catch (e) {
@@ -229,8 +227,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return (gContextMenu && gContextMenu.target) ? gContextMenu.target.ownerDocument.defaultView || gBrowser.selectedTab.ownerDocument.defaultView : gBrowser.selectedTab.ownerDocument.defaultView || content;
         },
         init: function () {
-            let locale = Services.locale.appLocaleAsBCP47;
-            this.locale = this.STR.hasOwnProperty(locale) ? locale : 'en-US';
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -286,8 +282,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             ins = $("devToolsSeparator");
             ins.parentNode.insertBefore($C("menuitem", {
                 id: "addMenu-rebuild",
-                label: this.t('addMenuPlus'),
-                tooltiptext: this.t('addMenuPlusTooltip'),
+                label: $L('addmenuplus label'),
+                tooltiptext: $L('addmenuplus tooltip'),
                 oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
             }), ins);
@@ -295,7 +291,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
-
 
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
 
@@ -317,7 +312,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (this.style2) removeStyle(this.style2);
         },
         handleEvent: function (event) {
-            let that = this;
             switch (event.type) {
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
@@ -354,7 +348,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             try {
                                 eval('(' + obj.fnSource + ').call(curItem, curItem)');
                             } catch (ex) {
-                                console.error(that.t('customPopshowingError'), obj.fnSource);
+                                console.error($L('custom showing method error'), obj.fnSource);
                             }
                         });
                     }
@@ -408,7 +402,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             try {
                 uri = Services.io.newURI(url, null, null);
             } catch (e) {
-                return this.log(U(this.t('urlIsInvalid')).replace("%s", url));
+                return this.log(U($L('url is invalid')).replace("%s", url));
             }
             if (uri.scheme === "javascript") {
                 try {
@@ -474,7 +468,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
                 file.initWithPath(path);
                 if (!file.exists()) {
-                    Cu.reportError(this.t("fileNotFound").replace("%s", path));
+                    Cu.reportError($L("file not found").replace("%s", path));
                     return;
                 }
 
@@ -519,7 +513,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var aFile = this.FILE;
 
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
-                this.log(aFile ? aFile.path : U(this.t('configFile')) + U(this.t('notExists')));
+                this.log(aFile ? aFile.path : U($L('config file')) + U($L('not exists')));
                 return;
             }
 
@@ -587,7 +581,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 Cu.evalInSandbox(includeSrc, sandbox, "1.8");
             } catch (e) {
                 let line = e.lineNumber - lineFinder.lineNumber - 1;
-                this.alert(e + this.t("checkLine", line), null, function () {
+                this.alert(e + $L("check config file with line", line), null, function () {
                     addMenu.edit(addMenu.FILE, line);
                 });
                 return this.log(e);
@@ -606,7 +600,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.createMenuitem(sandbox["_" + current], insertPoint);
             }, this);
 
-            if (isAlert) this.alert(U(this.t('configHasReloaded')));
+            if (isAlert) this.alert(U($L('config has reload')));
         },
         newGroupMenu: function (menuObj) {
             var group = document.createXULElement('menugroup');
@@ -881,7 +875,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     continue;
                 }
 
-
                 menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true, insertPoint: insertPoint });
 
                 insertMenuItem(obj, menuitem);
@@ -1122,7 +1115,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     isCompleted = true;
                 };
                 img.onerror = function () {
-                    Components.utils.reportError("Count not load: " + imgsrc);
+                    Components.utils.reportError($L('could not load', imgsrc));
                     isCompleted = true;
                 };
                 img.src = imgsrc;
@@ -1211,10 +1204,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     this.openScriptInScratchpad(window, aFile);
                     return;
                 } else {
-                    alert(this.t('pleaseSetEditor'));
+                    alert($L('please set editor path'));
                     var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, this.t('setGlobalPath'), fp.modeOpen);
-                    fp.appendFilter(this.t('executableFiles'), "*.exe");
+                    fp.init(window, $L('set global editor'), fp.modeOpen);
+                    fp.appendFilter($L('executable files'), "*.exe");
 
                     if (typeof fp.show !== 'undefined') {
                         if (fp.show() == fp.returnCancel || !fp.file)
@@ -1435,6 +1428,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
         foStream.write(data, data.length);
         foStream.close();
+    }
+
+    function $L(key, replace) {
+        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
+        if (typeof replace !== "undefined") {
+            str = str.replace("%s", replace);
+        }
+        return str || "";
     }
 
 })(`
