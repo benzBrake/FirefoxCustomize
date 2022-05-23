@@ -1,170 +1,216 @@
 // ==UserScript==
-// @name             Tabplus.uc.js
-// @description      设置标签的打开方式
-// @update           2022-05-11 Mod for CopyCat
-// @update           2021-07-28 for ff90
-// @update           2019-09-23
-// @update           2019-09-14
-// @update           2018-04-20
-// @license          MIT License
-// @compatibility    Firefox 90+
-// @charset          UTF-8
-// @include          chrome://browser/content/browser.xhtml
-// @include          chrome://browser/content/browser.xul
+// @name            TabPlus.uc.js
+// @description     设置标签的打开方式
+// @license         MIT License
+// @startup         window.TabPlus.init();
+// @shutdown        window.TabPlus.unload();
+// @compatibility   Firefox 90
+// @charset         UTF-8
+// @include         chrome://browser/content/browser.xhtml
+// @include         chrome://browser/content/browser.xul
+// @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
-
-
-// 01. 双击标签页关闭标签页
-gBrowser.tabContainer.addEventListener("dblclick",
-  function (event) {
-    let triggerClose = Services.prefs.getBoolPref('browser.tabs.closeTabByDblclick', 0);
-    if (event.button == 0 && !event.ctrlKey && triggerClose) {
-      const tab = event.target.closest('.tabbrowser-tab');
-      if (!tab) return;
-      gBrowser.removeTab(tab);
-      gBrowser.removeTab(tab, { animate: true });
-    }
-  },
-  false);
-
-// 02. 自动切换到鼠标移动到的标签页 
-((g, w) => {
-  class TabPlus {
-    constructor() {
-      this.SelectedTabOnMouseover();
-    }
-    SelectedTabOnMouseover(timeout) {
-      g.tabContainer.addEventListener('mouseover', e => {
-        let triggerSwitch = Services.prefs.getBoolPref('browser.tabs.swithOnHover', 0);
-        if (!triggerSwitch) return;
-        const tab = e.target.closest('.tabbrowser-tab');
-        if (!tab) return;
-        timeout = setTimeout(() => g.selectedTab = tab, 150);
-      }, false);
-      g.tabContainer.addEventListener('mouseout', () => clearTimeout(timeout), false);
-    }
-  }
-  new TabPlus();
-})(gBrowser, window);
-
-
-// 03. 右键关闭标签页
-
-gBrowser.tabContainer.addEventListener("click",
-  function (event) {
-    let triggerClose = Services.prefs.getBoolPref('browser.tabs.closeTabByRightClick', 0);
-    if (event.button == 2 && !event.shiftKey && triggerClose) {
-      const tab = event.target.closest('.tabbrowser-tab');
-      if (!tab) return;
-      gBrowser.removeTab(tab);
-      gBrowser.removeTab(tab, { animate: false });
-      event.stopPropagation();
-      event.preventDefault();
-    }
-  },
-  false);
-
-// 04. 标签栏鼠标滚轮切换标签页
-
 (function () {
-  if (!location.href.startsWith('chrome://browser/content/browser.x'))
-    return;
-  const scrollRight = true;
-  const wrap = true;
-  gBrowser.tabContainer.addEventListener("wheel", function (event) {
-    if (!Services.prefs.getBoolPref('browser.tabs.swithOnScroll', 0)) return;
-    let dir = (scrollRight ? 1 : -1) * Math.sign(event.deltaY);
-    setTimeout(function () {
-      gBrowser.tabContainer.advanceSelectedTab(dir, wrap);
-    }, 0);
-  }, true);
-})();
 
-// 05. 在新标签页前台查看图片 
-location.href == 'chrome://browser/content/browser.xhtml' && setTimeout(function () {
-  const viewImage = document.getElementById('context-viewimage');
-  if (!viewImage) return;
-  viewImage.removeAttribute('oncommand');
-  viewImage.addEventListener('command', function (e) {
-    if (!Services.prefs.getBoolPref('browser.tabs.loadImageInBackground', 1)) {
-      gContextMenu.viewMedia(e);
-      return;
+    if (typeof _uc === "undefined") alert('仅支持 xiaoxiaoflood 的 UC 环境');
+    if (typeof xPref === "undefined") alert('需要安装 xPref 组件');
+
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+
+    if (window.TabPlus) {
+        window.TabPlus.unload();
+        delete window.TabPlus;
     }
-    let where = whereToOpenLink(e, false, false);
-    if (where == "current") {
-      where = "tab";
+
+    const OPTIONS = {
+        autoSwitchTabDelay: 150
     }
-    let referrerInfo = gContextMenu.contentData.referrerInfo;
-    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    if (gContextMenu.onCanvas) {
-      gContextMenu._canvasToBlobURL(gContextMenu.targetIdentifier).then(function (blobURL) {
-        openLinkIn(blobURL, where, {
-          referrerInfo,
-          triggeringPrincipal: systemPrincipal,
-          inBackground: e.button !== 0
-        });
-      }, Cu.reportError);
-    } else {
-      urlSecurityCheck(
-        gContextMenu.mediaURL,
-        gContextMenu.principal,
-        Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT
-      );
 
-      // Default to opening in a new tab.
-      openLinkIn(gContextMenu.mediaURL, where, {
-        referrerInfo,
-        forceAllowDataURI: true,
-        triggeringPrincipal: gContextMenu.principal,
-        csp: gContextMenu.csp,
-        inBackground: e.button !== 0
-      });
+    window.TabPlus = {
+        funcList: {
+            'browser.tabs.closeTabByDblclick': {
+                el: gBrowser.tabContainer,
+                event: 'dblclick',
+                callback: function (event) {
+                    // 双击标签页关闭标签页
+                    if (event.button == 0 && !event.ctrlKey) {
+                        const tab = event.target.closest('.tabbrowser-tab');
+                        if (!tab) return;
+                        gBrowser.removeTab(tab);
+                        gBrowser.removeTab(tab, { animate: true });
+                    }
+                }
+            },
+            'browser.tabs.swithOnHover': {
+                el: gBrowser.tabContainer,
+                event: 'mouseover',
+                callback: function (event) {
+                    // 自动切换到鼠标移动到的标签页
+                    if (!window.TabPlus && !xPref.get('browser.tabs.swithOnHover')) return;
+                    const tab = event.target.closest('.tabbrowser-tab');
+                    if (!tab) return;
+                    timeout = setTimeout(() => gBrowser.selectedTab = tab, OPTIONS.autoSwitchTabDelay);
+                }
+            },
+            'browser.tabs.closeTabByRightClick': {
+                el: gBrowser.tabContainer,
+                event: 'click',
+                callback: function (event) {
+                    // 右键关闭标签页
+                    if (event.button == 2 && !event.shiftKey) {
+                        const tab = event.target.closest('.tabbrowser-tab');
+                        if (!tab) return;
+                        gBrowser.removeTab(tab);
+                        gBrowser.removeTab(tab, { animate: false });
+                        event.stopPropagation();
+                        event.preventDefault();
+                    }
+                }
+            },
+            'browser.tabs.swithOnScroll': {
+                el: gBrowser.tabContainer,
+                event: 'wheel',
+                callback: function (event) {
+                    // 标签栏鼠标滚轮切换标签页
+                    let dir = -1 * Math.sign(event.deltaY);
+                    setTimeout(function () {
+                        gBrowser.tabContainer.advanceSelectedTab(dir, true);
+                    }, 0);
+                }
+            },
+            'browser.tabs.loadImageInBackground': {
+                trigger: false,
+                el: document.getElementById('context-viewimage'),
+                event: 'command',
+                init: function () {
+                    document.getElementById('context-viewimage').setAttribute('oncommand', null);
+                },
+                destroy: function () {
+                    document.getElementById('context-viewimage').setAttribute('oncommand', 'gContextMenu.viewMedia(event);');
+                },
+                callback: function (e) {
+                    // 在新标签页前台查看图片
+                    e.preventDefault();
+                    let where = whereToOpenLink(e, false, false);
+                    if (where == "current") {
+                        where = "tab";
+                    }
+                    let referrerInfo = gContextMenu.contentData.referrerInfo;
+                    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+                    if (gContextMenu.onCanvas) {
+                        gContextMenu._canvasToBlobURL(gContextMenu.targetIdentifier).then(function (blobURL) {
+                            openLinkIn(blobURL, where, {
+                                referrerInfo,
+                                triggeringPrincipal: systemPrincipal,
+                                inBackground: e.button !== 0
+                            });
+                        }, Cu.reportError);
+                    } else {
+                        urlSecurityCheck(
+                            gContextMenu.mediaURL,
+                            gContextMenu.principal,
+                            Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT
+                        );
+
+                        // Default to opening in a new tab.
+                        openLinkIn(gContextMenu.mediaURL, where, {
+                            referrerInfo,
+                            forceAllowDataURI: true,
+                            triggeringPrincipal: gContextMenu.principal,
+                            csp: gContextMenu.csp,
+                            inBackground: e.button !== 0
+                        });
+                    }
+                }
+            },
+            'browser.tabs.selectLeftTabOnClose': {
+                el: gBrowser.tabContainer,
+                event: "TabClose",
+                callback: function (event) {
+                    // 关闭标签页后选择左侧标签
+                    var tab = event.target;
+                    gBrowser.selectedTab = tab;
+                    if (gBrowser.selectedTab._tPos != 0) {
+                        gBrowser.tabContainer.advanceSelectedTab(-1, true);
+                    }
+                }
+            },
+            'browser.places.loadInTab': {
+                init: function () {
+                    TabPlus.orgList['openNodeWithEvent'] = PlacesUIUtils.openNodeWithEvent.toString();
+                    PlacesUIUtils['openNodeWithEvent'] = PlacesUIUtils.openNodeWithEvent.toString()
+                        .replace(' && PlacesUtils.nodeIsBookmark(aNode);', 'console.log(aEvent);');
+                },
+                destroy: function () {
+                    eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString());
+                }
+            }
+        },
+        lsnList: {},
+        orgList: {},
+        callback: (obj, pref) => {
+            if (!!TabPlus.funcList[pref]) {
+                let val = TabPlus.funcList[pref];
+                let trigger = typeof val.trigger === "boolean" ? val.trigger : true;
+                if (obj === trigger) {
+                    if (typeof val.init === "function") val.init();
+                    if (typeof TabPlus.funcList[pref].callback === "function") val.el.addEventListener(val.event, TabPlus.funcList[pref].callback, val.args || false);
+                } else {
+                    if (typeof TabPlus.funcList[pref].callback === "function") val.el.removeEventListener(val.event, TabPlus.funcList[pref].callback);
+                    if (typeof val.destroy === "function") val.destroy();
+                }
+            }
+        },
+        removeObs: (pref) => {
+            if (TabPlus.lsnList[pref]) {
+                let { obs } = TabPlus.lsnList[pref],
+                    val = TabPlus.funcList[pref];
+                val.el.removeEventListener(val.event, TabPlus.funcList[pref].callback);
+                if (typeof val.destroy === "function") val.destroy();
+                xPref.removeListener(obs);
+            }
+        },
+        init: function () {
+            Object.keys(this.funcList).forEach((pref) => {
+                try {
+                    let val = this.funcList[pref];
+                    if (typeof val.callback === "function") {
+                        let trigger = typeof val.trigger === "boolean" ? val.trigger : true;
+                        if (trigger === xPref.get(pref, false, false)) {
+                            if (typeof val.init === "function") val.init();
+                            val.el.addEventListener(val.event, TabPlus.funcList[pref].callback, val.arg || false);
+                        }
+
+                        let obs = xPref.addListener(pref, this.callback);
+                        this.lsnList[pref] = {
+                            obs: obs
+                        }
+                    }
+                } catch (e) { log(e); }
+            });
+        },
+        unload: function () {
+            Object.keys(this.lsnList).forEach((pref) => {
+                this.removeObs(pref);
+            })
+            delete window.TabPlus;
+        }
     }
-  });
-}, 1000);
 
-
-// 06. 关闭标签页后选择左侧标签   
-(function () {
-  gBrowser.tabContainer.addEventListener("TabClose", tabCloseHandler, false);
-  function tabCloseHandler(event) {
-    if (!Services.prefs.getBoolPref('browser.tabs.selectLeftTabOnClose', 0)) return;
-    var tab = event.target;
-    gBrowser.selectedTab = tab;
-    if (gBrowser.selectedTab._tPos != 0) {
-      gBrowser.tabContainer.advanceSelectedTab(-1, true);
-    }
-  }
-})();
-
-
-
-// 07.  新标签打开侧边栏历史页面 
-(function () {
-  if (!location.href.startsWith('chrome://browser/content/browser.x'))
-    return;
-
-  eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString()
-    .replace(' && PlacesUtils.nodeIsBookmark(aNode)', '')
-    .replace('getBrowserWindow(window)',
-      '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
-  );
-
-  let onPopupshowing = function () {
-    let historyMenu = document.getElementById('history-menu');
-    if (!historyMenu._placesView) {
-      new HistoryMenu(event);
-      historyMenu._placesView._onCommand = function HM__onCommand(aEvent) {
-        let placesNode = aEvent.target._placesNode;
-        if (placesNode) {
-          PlacesUIUtils.openNodeWithEvent(placesNode, aEvent);
+    if (gBrowserInit.delayedStartupFinished) window.TabPlus.init();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.TabPlus.init();
+            }
         };
-      };
-    };
-  };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
 
-  let historyPopup = document.getElementById('goPopup');
-  if (historyPopup) historyPopup.setAttribute('onpopupshowing', '(' + onPopupshowing.toString() + ')()');
+    function log(e) {
+        Cu.reportError(e);
+    }
+
+
 })();
-
-
