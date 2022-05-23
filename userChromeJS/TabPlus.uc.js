@@ -135,16 +135,6 @@
                     }
                 }
             },
-            'browser.places.loadInTab': {
-                init: function () {
-                    TabPlus.orgList['openNodeWithEvent'] = PlacesUIUtils.openNodeWithEvent.toString();
-                    PlacesUIUtils['openNodeWithEvent'] = PlacesUIUtils.openNodeWithEvent.toString()
-                        .replace(' && PlacesUtils.nodeIsBookmark(aNode);', 'console.log(aEvent);');
-                },
-                destroy: function () {
-                    eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString());
-                }
-            }
         },
         lsnList: {},
         orgList: {},
