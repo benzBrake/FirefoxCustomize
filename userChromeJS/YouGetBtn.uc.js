@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name            可移动 You-Get 视频下载按钮
+// @name            YouGetBtn.uc.js
 // @description     调用 You-Get 下载网页视频
 // @author          Ryan
 // @include         main
 // @aversion        0.0.1
 // @shutdown        window.youGetBtn.unload();
 // @compatibility   Firefox 70 +
-// @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            感谢 ylcs006 帮忙解决路径乱码问题
 // @onlyonce
 // ==/UserScript==
@@ -101,7 +101,8 @@ window.youGetBtn = {
         }
         return false;
     },
-    createMenu(config) {
+    createMenu(config, aDoc) {
+        let doc = aDoc || document;
         // 递归构建菜单
         let item, that = this, classList = new Array(), type = config.type;
         if (!youGetBtn.inArray(['menupopup', 'menugroup'], type)) {
@@ -117,7 +118,7 @@ window.youGetBtn = {
             }
         }
 
-        item = document.createXULElement(type);
+        item = doc.createXULElement(type);
 
         children = config.children;
         delete config.type;
@@ -141,7 +142,7 @@ window.youGetBtn = {
 
         if (children) {
             children.forEach(config => {
-                item.appendChild(that.createMenu(config));
+                item.appendChild(that.createMenu(config, doc));
             });
         }
         return item;
@@ -281,6 +282,7 @@ window.youGetBtn = {
                         val = that.arguments[k];
                         args.push(typeof val == "function" ? val() : val);
                     }
+                    console.log(args);
                     p.init(youGet);
                     p.run(false, args, args.length);
                 } catch (e) {
@@ -303,7 +305,7 @@ window.youGetBtn = {
             onCreated: function (aNode) {
                 aNode.setAttribute('onclick', "window.youGetBtn.handleClick(event);");
                 aNode.setAttribute('contextmenu', 'YouGetBtn_pop');
-                aNode.appendChild(window.youGetBtn.createMenu(window.youGetBtn.menuObject));
+                aNode.appendChild(window.youGetBtn.createMenu(window.youGetBtn.menuObject, aNode.ownerGlobal.document));
             }
         });
         this.binPath = Services.prefs.getStringPref(this.PREF_BIN, "");
@@ -330,7 +332,7 @@ window.youGetBtn = {
         this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         delete window.youGetBtn;
     },
-    PREF_BIN: 'youGetBtn.binPath',
-    PREF_SAVE: 'youGetBtn.binSavePath',
+    PREF_BIN: 'userChromeJS.youGetBtn.BINPATH',
+    PREF_SAVE: 'userChromeJS.youGetBtn.SAVEPATH',
 }
 window.youGetBtn.init();
