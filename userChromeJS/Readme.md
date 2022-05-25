@@ -43,7 +43,7 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 | ❌    | 96   | [rebuild_userChrome](rebuild_userChrome.uc.js)               | 汉化版脚本管理器                                             | [📃]()                                                        |
 |      | 98   | [restoreOldStyleCleanHistory](restoreOldStyleCleanHistory.uc.js) | 还原清除历史记录为旧版对话框                                 |                                                              |
 |      | 98   | [restoreOldStyleLaunchApp](restoreOldStyleLaunchApplication.uc.js) | 还原调用第三方软件为旧版对话框                               | [📃](https://bbs.kafan.cn/thread-2231355-1-1.html)            |
-| ❌    | 96   | [rightClickOpenClipboard](rightClickOpenClipboard.uc.js)     | 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）           |                                                              |
+|      |      |                                                              |                                                              |                                                              |
 |      | 68   | [saveUCJS](saveUCJS.uc.js)                                   | 快速保存 github 上的 UC 脚本                                 |                                                              |
 | ❌    | 96   | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |                                                              |
 |      | 100  | [showLimitedTimeTheme](showLimitedTimeTheme.uc.js)           | 主题中心显示过期的限时主题                                   | [📃](https://bbs.kafan.cn/thread-2234549-1-1.html)            |
@@ -57,9 +57,10 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 
 下面的不能用了的话，请一定不要找我，因为我不用了，你们可以顺着源链接过去找原作者修复
 
-| ℹ️    | V    | 脚本                                                      | 说明                                                         | 源                                                |
-| ---- | ---- | --------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- |
-|      | 68   | [AddBookmarkHere](68/AddBookmarkHere.uc.js)               | 添加 "添加书签到此处" 到书签栏右键菜单（仅在 Firefox 100 中测试过），如果想使用 WebExtension 版[看这里](https://github.com/benzBrake/FirefoxCustomize/tree/master/extensions/addbookmarkhere) |                                                   |
-| ⛔    | 70   | [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js) | 给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等  |                                                   |
-|      | 100  | [PersonalToolbarAutoHide](PersonalToolbarAutoHide.uc.js)  | 自动隐藏书签栏                                               |                                                   |
-|      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)         | 给工具栏书签新增替换书签功能                                 | [📃](https://bbs.kafan.cn/thread-2233641-1-1.html) |
+| ℹ️    | V    | 脚本                                                        | 说明                                                         | 源                                                |
+| ---- | ---- | ----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- |
+|      | 68   | [AddBookmarkHere](68/AddBookmarkHere.uc.js)                 | 添加 "添加书签到此处" 到书签栏右键菜单（仅在 Firefox 100 中测试过），如果想使用 WebExtension 版[看这里](https://github.com/benzBrake/FirefoxCustomize/tree/master/extensions/addbookmarkhere)，已经被 BookmarkOpt.uc.js 替代 |                                                   |
+| ⛔    | 70   | [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js)   | 给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等  |                                                   |
+|      | 100  | [PersonalToolbarAutoHide](90/PersonalToolbarAutoHide.uc.js) | 自动隐藏书签栏                                               |                                                   |
+| ❌    | 96   | [rightClickOpenClipboard](90/rightClickOpenClipboard.uc.js) | 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）<br />新窗口不生效，已经被 TabPlus.uc.js 替代 |                                                   |
+|      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)           | 给工具栏书签新增替换书签功能，已经被 BookmarkOpt.uc.js 替代  | [📃](https://bbs.kafan.cn/thread-2233641-1-1.html) |

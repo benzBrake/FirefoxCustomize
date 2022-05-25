@@ -135,9 +135,50 @@
                     }
                 }
             },
+            'browser.tabs.newTabBtn.rightClickLoadFromClipboard': {
+                el: gBrowser.tabContainer,
+                event: 'click',
+                callback: function (e) {
+                    if (e.target.id === 'tabs-newtab-button' && e.button === 2 && !e.shiftKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let win = e.target.ownerGlobal;
+                        let url = win.readFromClipboard();
+                        if (!url) {
+                            win.BrowserOpenTab();
+                        } else {
+                            try {
+                                switchToTabHavingURI(url, true);
+                            } catch (ex) {
+                                if (/((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
+                                    win.gBrowser.loadOneTab(encodeURIComponent(url), {
+                                        inBackground: false,
+                                        relatedToCurrent: false,
+                                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
+                                    });
+                                } else {
+                                    Services.search.getDefault().then(
+                                        engine => {
+                                            let submission = engine.getSubmission(url, null, 'search');
+                                            win.openLinkIn(submission.uri.spec, 'tab', {
+                                                private: false,
+                                                postData: submission.postData,
+                                                inBackground: false,
+                                                relatedToCurrent: true,
+                                                triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
+                                            });
+                                        }
+                                    );
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
         },
         lsnList: {},
-        orgList: {},
+        List: {},
         callback: (obj, pref) => {
             if (!!TabPlus.funcList[pref]) {
                 let val = TabPlus.funcList[pref];
@@ -155,7 +196,7 @@
             if (TabPlus.lsnList[pref]) {
                 let { obs } = TabPlus.lsnList[pref],
                     val = TabPlus.funcList[pref];
-                val.el.removeEventListener(val.event, TabPlus.funcList[pref].callback);
+                val.el.removeEventListener(val.event, TabPlus.funcList[pref].callback, val.arg || false);
                 if (typeof val.destroy === "function") val.destroy();
                 xPref.removeListener(obs);
             }
