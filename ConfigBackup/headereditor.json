@@ -22,7 +22,7 @@
 			"isFunction": false,
 			"action": "redirect",
 			"to": "http://www.ftchinese.com/story/$1?full=y",
-			"group": "未分组",
+			"group": "重定向",
 			"_exclude": {}
 		},
 		{
