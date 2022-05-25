@@ -107,7 +107,7 @@
                 let state = ['all'],
                     triggerNode = event.currentTarget.triggerNode,
                     view = PlacesUIUtils.getViewForNode(triggerNode);
-                console.log(triggerNode.id);
+
                 if (triggerNode.id === "PlacesToolbarItems") { state.push('toolbar'); }
                 else if (view?.selectedNode.type == 0) {
                     if (BookmarkOpt.isBookarmkSidebar) state.push('bookmark')
@@ -161,6 +161,12 @@
             }
             for (let menuseparator of menuseparators) {
                 menuseparator.parentNode.removeChild(menuseparator);
+            }
+        },
+        handleUrlbar: function (e) {
+            if (e.button == 0) {
+                var bar = e.target.ownerGlobal.document.getElementById("PersonalToolbar");
+                setToolbarVisibility(bar, bar.collapsed);
             }
         },
         get window() {
@@ -236,14 +242,21 @@
         init: function () {
             this.bmService = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].getService(Ci.nsINavBookmarksService);
             this.addPlaceContextItem();
-            if (location.href == "chrome://browser/content/browser.xhtml") this.addPanelItem();
+            if (location.href == "chrome://browser/content/browser.xhtml") {
+                this.addPanelItem();
+                this.urlbar = document.getElementById('urlbar');
+                this.urlbar?.addEventListener('dblclick', this.handleUrlbar, false);
+
+            }
             this.style = addStyle(css);
+
         },
         destroy: function () {
             this.clearPanelItems();
             this.items.array.forEach(element => {
                 element.remove();
             });
+            this.urlbar?.removeEventListener('dblclick', this.handleUrlbar, false);
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             delete window.BookmarkOpt;
         },
