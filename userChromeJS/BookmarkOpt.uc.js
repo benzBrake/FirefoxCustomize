@@ -7,7 +7,6 @@
 // @include        chrome://browser/content/places/bookmarksSidebar.xhtml
 // @include        chrome://browser/content/places/historySidebar.xhtml
 // @version        1.0
-// @startup        window.BookmarkOpt.init();
 // @shutdown       window.BookmarkOpt.destroy();
 // @homepage       https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note           合并 AddBookmarkHere 和 UpdateBookmarkLite，支持复制书签链接和标题
@@ -110,7 +109,8 @@
 
                 if (triggerNode.id === "PlacesToolbarItems") { state.push('toolbar'); }
                 else if (view?.selectedNode.type == 0) {
-                    if (BookmarkOpt.isBookarmkSidebar) state.push('bookmark')
+                    if (BookmarkOpt.isMain) state.push('bookmark')
+                    else if (BookmarkOpt.isBookarmkSidebar) state.push('bookmark')
                     else if (BookmarkOpt.isHistorySidebar) state.push('history')
                 }
                 else if (view.selectedNode.type == 6) state.push('folder');
@@ -179,6 +179,9 @@
         get isHistorySidebar() {
             return location.href === "chrome://browser/content/places/historySidebar.xhtml"
         },
+        get isMain() {
+            return location.href === "chrome://browser/content/browser.xhtml"
+        },
         handleEvent: function (event, aMethod, aTriggerNode) {
             let popupNode = aTriggerNode || PlacesUIUtils.lastContextMenuTriggerNode || document.popupNode;
             if (!popupNode) return;
@@ -245,7 +248,7 @@
             if (location.href == "chrome://browser/content/browser.xhtml") {
                 this.addPanelItem();
                 this.urlbar = document.getElementById('urlbar');
-                this.urlbar?.addEventListener('dblclick', this.handleUrlbar, false);
+                this.urlbar?.addEventListener('dblclick', BookmarkOpt.handleUrlbar, false);
 
             }
             this.style = addStyle(css);
@@ -256,7 +259,7 @@
             this.items.array.forEach(element => {
                 element.remove();
             });
-            this.urlbar?.removeEventListener('dblclick', this.handleUrlbar, false);
+            this.urlbar?.removeEventListener('dblclick', BookmarkOpt.handleUrlbar, false);
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             delete window.BookmarkOpt;
         },
