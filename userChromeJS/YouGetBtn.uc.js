@@ -18,7 +18,7 @@ window.youGetBtn = {
         },
         '-o',
         function () {
-            return window.youGetBtn.convertEncoding(window.youGetBtn.savePath);
+            return window.youGetBtn.savePath;
         },
         function () {
             return gBrowser.currentURI.spec;
@@ -147,6 +147,16 @@ window.youGetBtn = {
         }
         return item;
     },
+    get binPath() {
+        return Services.prefs.getStringPref(this.PREF_BIN, "");
+    },
+    get savePath() {
+        return Services.prefs.getStringPref(window.youGetBtn.PREF_SAVE, "");
+    },
+    get window() {
+        const wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+        return wm.getMostRecentWindow("navigator:browser");
+    },
     convertEncoding: function (str) {
         if (Services.locale.appLocaleAsBCP47.includes("zh-CN")) {
             // 针对简体中文转换编码
@@ -260,16 +270,18 @@ window.youGetBtn = {
     },
     handleClick(e) {
         if (e.target.id !== 'YouGetBtn') return;
+        let win = youGetBtn.window;
         if (e.button == 0) {
             // 非网页不响应，可以细化为匹配 you-get.exe 支持的网站，我懒得写正则了
-            let uri = gBrowser.selectedBrowser.currentURI,
-                that = window.youGetBtn;
-            if (!that.binPath || !that.isFileExists(that.binPath)) {
-                that.setYouGetPath();
+            let uri = win.gBrowser.selectedBrowser.currentURI,
+                youget = win.youGetBtn;
+            if (!youget.binPath || !youget.isFileExists(youget.binPath)) {
+                youget.setYouGetPath();
                 return;
             }
-            if (!that.savePath || !that.isFileExists(that.savePath)) {
-                that.setSavePath();
+            console.log(youget.savePath);
+            if (!youget.savePath || !youget.isFileExists(youget.savePath)) {
+                youget.setSavePath();
                 return;
             }
             if (uri.spec.startsWith('http')) {
@@ -278,13 +290,12 @@ window.youGetBtn = {
                     youGet.initWithPath(this.binPath);
                     let p = Components.classes["@mozilla.org/process/util;1"].createInstance(Components.interfaces.nsIProcess);
                     let args = new Array();
-                    for (let k in that.arguments) {
-                        val = that.arguments[k];
+                    for (let k in youget.arguments) {
+                        val = youget.arguments[k];
                         args.push(typeof val == "function" ? val() : val);
                     }
-                    console.log(args);
                     p.init(youGet);
-                    p.run(false, args, args.length);
+                    p.runw(false, args, args.length);
                 } catch (e) {
                     alert(e);
                     return;
@@ -308,8 +319,6 @@ window.youGetBtn = {
                 aNode.appendChild(window.youGetBtn.createMenu(window.youGetBtn.menuObject, aNode.ownerGlobal.document));
             }
         });
-        this.binPath = Services.prefs.getStringPref(this.PREF_BIN, "");
-        this.savePath = Services.prefs.getStringPref(this.PREF_SAVE, "");
         this.setStyle();
     },
     setStyle: function () {
@@ -332,7 +341,7 @@ window.youGetBtn = {
         this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
         delete window.youGetBtn;
     },
-    PREF_BIN: 'userChromeJS.youGetBtn.BINPATH',
-    PREF_SAVE: 'userChromeJS.youGetBtn.SAVEPATH',
+    PREF_BIN: 'userChrome.youGetBtn.BINPATH',
+    PREF_SAVE: 'userChrome.youGetBtn.SAVEPATH',
 }
 window.youGetBtn.init();
