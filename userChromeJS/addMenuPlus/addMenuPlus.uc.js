@@ -308,8 +308,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                 e.parentNode.removeChild(e)
             });
-            if (this.style) removeStyle(this.style);
-            if (this.style2) removeStyle(this.style2);
+            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
         },
         handleEvent: function (event) {
             switch (event.type) {
@@ -586,8 +586,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 });
                 return this.log(e);
             }
-            if (this.style2)
-                removeStyle(this.style2);
+            if (this.style2 && this.style2.parentNode)
+                this.style2.parentNode.removeChild(this.style2);
             if (sandbox._css.length)
                 this.style2 = addStyle(sandbox._css.join("\n"));
             this.removeMenuitem();
@@ -1392,23 +1392,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return data;
     }
 
-    const sss = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
-
     function addStyle(css) {
-        let style = {
-            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
-            @-moz-document url('chrome://browser/content/browser.xhtml') {
-                ${css}
-            }
-          `)),
-            type: 1
-        }
-        sss.loadAndRegisterSheet(style.url, style.type);
-        return style;
-    }
-
-    function removeStyle(style) {
-        sss.unregisterSheet(style.url, style.type);
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
     }
 
     function saveFile(fileOrName, data) {
