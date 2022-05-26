@@ -106,6 +106,8 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %HOST%           当前网页的域名
     %LINK_HOST%      链接的域名
     %RLINK_HOST%     链接的域名（同上）
+    %LINK_OR_URL%    优先获取链接URL，不行就获取页面URL
+    %RLINK_OR_URL%   优先获取页面URL，不行就获取链接URL
     
     %XXX_HTMLIFIED%  转义后的变量 （XXX 为 上面的 TITLE 等）
     %XXX_HTML%       转义后的变量
@@ -183,10 +185,12 @@ page([{
 page([{
     label: '生成二维码',
     condition: 'normal',
+    where: 'tab',
     url: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=%URL%"
 }, {
     label: '生成二维码',
     condition: 'link',
+    where: 'tab',
     url: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=%LINK%"
 }]);
 ```
@@ -210,7 +214,8 @@ page({label: "Google Translate",
 ```
 示例：右键添加 `翻译整个页面` 菜单（菜单调用 Bookmarklet 例子），[来源](https://www.runningcheese.com/bookmarklet)。
 
-*注：github.com 由于服务器限制，无法直接插入 js，故无效。*
+*注：github.com 由于服务器限制，无法直接插入 js，故无效。*现在建议使用扩展翻译：[翻译网页 – 下载 🦊 Firefox 扩展（zh-CN）](https://addons.mozilla.org/zh-CN/firefox/addon/traduzir-paginas-web/)
+
 ```js
 page({
     label: "翻译整个页面",
@@ -226,15 +231,32 @@ page([
         label: "复制链接文本",
         text: "%LINK_TEXT%",
     },
-    { },  // 分隔条
+    {},  // 分隔条
     {
         label: '复制图像base64',
         text: "%IMAGE_BASE64%",
         condition: "image",
+    },
+    {
+        label: "复制 SVG Base64",
+        condition: "normal",
+        class: "copy",
+        oncommand: function (event) {
+            // 只能在 2022.05.26 以后的版本调用
+            addMenu.copy(addMenu.svg2base64(gBrowser.currentURI.spec));
+        },
+        onshowing: function () {
+            let uri = gBrowser.currentURI.spec;
+            if (!uri.endsWith(".svg")) {
+                this.hidden = true;
+            } else {
+                this.hidden = false;
+            }
+        }
     }
 ]);
 ```
-示例：汉堡菜单添加重启菜单
+示例：汉堡菜单添加重启菜单（必须是 2022.05.20 以后的版本调用）
 
 ```js
 app([{
@@ -1017,7 +1039,7 @@ menu([
 ```
 示例：动态读取内置搜索引擎，来自[Firefox 添加右键搜索选中文本（自动读取内置搜索引擎）](https://kkp.disk.st/firefox-adds-rightclick-search-to-select-text-automatically-read-the-builtin-search-engine.html)
 
-```
+```js
 new function () {
     var items = [{
         id: 'addMenu-sitesearch-insertpoint',
