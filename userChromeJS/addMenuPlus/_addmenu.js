@@ -22,189 +22,31 @@
 //     }
 // }]);
 app([{
-    'id': 'appMenu-restart-button',
+    'id': 'appMenu-restart-button2',
     'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
     'insertBefore': 'appMenu-quit-button2',
-    'image': 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMy42NyAxMS4xNDggQyAzLjY3IDEwLjI3MiAzLjg0OCA5LjQzNiA0LjE3MSA4LjY3NCBDIDQuNDkzIDcuOTEyIDQuOTYxIDcuMjI1IDUuNTM5IDYuNjQ2IEwgNC43ODUgNS44OTMgTCA0LjAzMSA1LjEzOSBDIDMuMjM2IDUuOTM3IDIuNjE1IDYuODc2IDIuMTkzIDcuODk3IEMgMS43NzEgOC45MTggMS41NDcgMTAuMDIyIDEuNTQ3IDExLjE0OCBDIDEuNTQ3IDEzLjMxNCAyLjM1NyAxNS4yODggMy42OSAxNi43ODYgQyA1LjAyNCAxOC4yODQgNi44ODIgMTkuMzA3IDguOTc5IDE5LjU2NyBMIDguOTc5IDE4LjQ5NSBMIDguOTc5IDE3LjQyMiBDIDcuNDc3IDE3LjE2NyA2LjE0OSAxNi4zODcgNS4xOTggMTUuMjc2IEMgNC4yNDYgMTQuMTY1IDMuNjcgMTIuNzI0IDMuNjcgMTEuMTQ4IFogTSAxOC41MzQgMTEuMTQ4IEMgMTguNTM0IDguODAyIDE3LjU4NCA2LjY3OCAxNi4wNDcgNS4xNDEgQyAxNC41MSAzLjYwNCAxMi4zODcgMi42NTQgMTAuMDQgMi42NTQgQyAxMC4wMDkgMi42NTQgOS45NzcgMi42NTcgOS45NDUgMi42NTkgQyA5LjkxMyAyLjY2MiA5Ljg4MSAyLjY2NSA5Ljg0OSAyLjY2NSBMIDEwLjQyOCAyLjA4NyBMIDExLjAwNyAxLjUwOCBMIDEwLjI1OSAwLjc1NCBMIDkuNTEgMCBMIDcuNjUyIDEuODU4IEwgNS43OTQgMy43MTYgTCA3LjY1MiA1LjU3NCBMIDkuNTEgNy40MzIgTCAxMC4yNTkgNi42ODQgTCAxMS4wMDcgNS45MzUgTCAxMC40MzQgNS4zNjIgTCA5Ljg2IDQuNzg4IEMgOS44OTIgNC43ODggOS45MjQgNC43ODYgOS45NTQgNC43ODMgQyA5Ljk4NSA0Ljc4MSAxMC4wMTQgNC43NzggMTAuMDQgNC43NzggQyAxMS43OTggNC43NzggMTMuMzkgNS40OTIgMTQuNTQzIDYuNjQ1IEMgMTUuNjk2IDcuNzk4IDE2LjQxIDkuMzkxIDE2LjQxIDExLjE0OCBDIDE2LjQxIDEyLjcyNCAxNS44MzQgMTQuMTY2IDE0Ljg4MyAxNS4yNzYgQyAxMy45MzIgMTYuMzg3IDEyLjYwNSAxNy4xNjcgMTEuMTAyIDE3LjQyMiBMIDExLjEwMiAxOC40OTUgTCAxMS4xMDIgMTkuNTY3IEMgMTMuMTk5IDE5LjMwNyAxNS4wNTcgMTguMjg1IDE2LjM5MSAxNi43ODYgQyAxNy43MjUgMTUuMjg4IDE4LjUzNCAxMy4zMTQgMTguNTM0IDExLjE0OCBaIiBzdHlsZT0iIiB0cmFuc2Zvcm09Im1hdHJpeCgxLCAwLCAwLCAxLCAwLjEyMDQ0MSwgMC4yNTc5MzEpIi8+Cjwvc3ZnPg==',
     'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
     'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
 }])
-// 使用 addMenuPlus 代替 ButtonEventListener.uc.js
-tool([{
-    id: 'downloads-button',
-    tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：显示下载进度\n中键：下载视频\n右键：打开下载历史（CTRL + J）' : 'Left click: show download progress\nMiddle click: download video\nRight click: open download management(CTRL + J)',
-    onclick: function (e) {
-        if (e.button == 1) {
-            e.preventDefault();
-            e.stopPropagation();
-            let binPath, savePath, uri = gBrowser.selectedBrowser.currentURI;
-
-            // 自定修改 cookies 存储路径
-            const cookiesPath = FileUtils.getDir("UChrm", ["resources", "cookies"], true);
-
-            // 非网页不响应，可以细化为匹配 you-get.exe 支持的网站，我懒得写正则了
-            if (uri.spec.startsWith('http')) {
-
-                binPath = Services.prefs.getStringPref("addMenu.youGetPath", "");
-                savePath = Services.prefs.getStringPref("addMenu.youGetSavePath", "");
-
-                function setYouGetPath() {
-                    alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "请先设置 you-get.exe 的路径!!!" : "Please set you-get.exe path first!!!");
-                    if (Services.locale.appLocaleAsBCP47.includes("zh-")) {
-                        addMenu.openCommand({ 'target': this }, 'https://lussac.lanzoui.com/b00nc5aab', 'tab');
-                    } else {
-                        addMenu.openCommand({ 'target': this }, 'https://github.com/LussacZheng/you-get.exe/releases', 'tab');
-                    }
-                    let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置 you-get.exe 路径" : "Set you-get.exe path", Ci.nsIFilePicker.modeOpen);
-                    fp.appendFilter(Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file", "*.exe");
-                    fp.open(res => {
-                        if (res != Ci.nsIFilePicker.returnOK) return;
-                        Services.prefs.setStringPref("addMenu.youGetPath", fp.file.path);
-                    });
-                }
-
-                function setSavePath() {
-                    let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置视频保存路径" : "Set video save path", Ci.nsIFilePicker.modeGetFolder);
-                    fp.open(res => {
-                        if (res != Ci.nsIFilePicker.returnOK) return;
-                        Services.prefs.setStringPref("addMenu.youGetSavePath", fp.file.path + '\\');
-                    });
-                }
-
-                // 转换成 netscape 格式，抄袭自 cookie_txt 扩展
-                function formatCookie(co) {
-                    return [
-                        [
-                            co.isHttpOnly ? '#HttpOnly_' : '',
-                            co.host
-                        ].join(''),
-                        co.isDomain ? 'TRUE' : 'FALSE',
-                        co.path,
-                        co.isSecure ? 'TRUE' : 'FALSE',
-                        co.expires,
-                        co.name,
-                        co.value + '\n'
-                    ].join('\t');
-                }
-
-                // 保存 cookie 并返回路径
-                function getCookiePathForSite(host) {
-                    if (!host) return;
-                    let cookies = Services.cookies.getCookiesFromHost(host, {});
-                    let string = cookies.map(formatCookie).join('');
-
-                    let file = cookiesPath.clone();
-                    file.append(`${host}.txt`);
-                    if (file.exists()) {
-                        file.remove(0);
-                    }
-                    file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
-
-                    // 保存文件，抄袭自 saveUCJS.uc.js
-                    const charset = 'UTF-8';
-                    const fileStream = Components.classes['@mozilla.org/network/file-output-stream;1']
-                        .createInstance(Components.interfaces.nsIFileOutputStream);
-                    fileStream.init(file, 0x02 | 0x08 | 0x20, -1, 0);
-
-                    const converterStream = Components.classes['@mozilla.org/intl/converter-output-stream;1']
-                        .createInstance(Components.interfaces.nsIConverterOutputStream);
-                    converterStream.init(
-                        fileStream,
-                        charset,
-                        string.length,
-                        Components.interfaces.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER
-                    );
-
-                    converterStream.writeString(string);
-                    converterStream.close();
-                    fileStream.close();
-                    return file.path;
-                }
-
-
-                if (!binPath) {
-                    setYouGetPath();
-                    binPath = Services.prefs.getStringPref("addMenu.youGetPath", "");
-                    return;
-                }
-                if (!savePath) {
-                    setSavePath();
-                    savePath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetSavePath", "");
-                    return;
-                }
-                let youGet = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-                try {
-                    youGet.initWithPath(binPath);
-                } catch (E) {
-                    alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "you-get.exe 不存在，需要重新设置 you-get.exe 路径" : "you-get.exe not exists, please reset you-get.exe path");
-                    setYouGetPath();
-                    return;
-                }
-                let p = Components.classes["@mozilla.org/process/util;1"].createInstance(Components.interfaces.nsIProcess);
-
-                // 自行修改系统编码 Please change text encoding
-                if (Services.locale.appLocaleAsBCP47.includes("zh-CN")) {
-                    let converter = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
-                    converter.charset = 'gbk';
-                    savePath = converter.ConvertFromUnicode(savePath) + converter.Finish();
-                }
-                let commandArgs = ['-c', getCookiePathForSite(uri.host), '-o', savePath, uri.spec];
-
-                p.init(youGet);
-                p.run(false, commandArgs, commandArgs.length);
+page({
+    label: "复制所有标签标题+地址",
+    insertAfter: 'toolbar-context-openANewTab',
+    class: "copy",
+    oncommand: function () {
+        var text = "";
+        var tabs = gBrowser.mTabContainer ? gBrowser.mTabContainer.childNodes : gBrowser.tabs; // Firefox 61 删除了 mTabContainer
+        for (var i = 0, l = tabs.length, doc; i < l; i++) {
+            doc = tabs[i].linkedBrowser.contentDocument;
+            if (doc) {
+                text += doc.title + "\n" + doc.location.href + "\n";
+            } else {
+                doc = tabs[i].linkedBrowser
+                text += doc.contentTitle + "\n" + doc.currentURI.spec + "\n";
             }
-        } else if (e.button == 2 && !e.shiftKey) {
-            // 右键打开下载历史
-            e.preventDefault();
-            e.stopPropagation();
-            DownloadsPanel.showDownloadsHistory();
         }
-    },
-    clone: false
-},
-{
-    id: 'star-button',
-    tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：将此页加入书签\n右键：打开书签管理器' : 'Left click: bookmark this tab\nRight click: open bookmarks management.',
-    onclick: function (event) {
-        if (event.button == 2) {
-            event.preventDefault();
-            PlacesCommandHook.showPlacesOrganizer('AllBookmarks');
-        }
-    },
-    clone: false
-}, {
-    id: 'reload-button',
-    tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
-    onclick: function (event) {
-        if (event.button == 2) {
-            event.preventDefault();
-            event.target.ownerGlobal.BrowserReloadSkipCache();
-        }
-    },
-    clone: false
-}, {
-    id: 'eom-button',
-    tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management',
-    onclick: function (event) {
-        if (event.button == 2 && event.target.localName == 'toolbarbutton') {
-            event.preventDefault();
-            event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
-        }
-    },
-    clone: false
-}, {
-    id: 'styloaix-button',
-    tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：管理 Styloaix 样式\n右键：主题管理' : 'Left click: show extensions options menu\nRight click: open themes management',
-    onclick: function (event) {
-        if (event.button == 2 && event.target.localName == 'toolbarbutton') {
-            event.preventDefault();
-            event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/theme');
-        }
-    },
-    clone: false
-}]);
+        addMenu.copy(text);
+    }
+})
 // 标签右键菜单 Start ============================================================
 new function () {
     var groupMenu = new GroupMenu({
@@ -616,13 +458,27 @@ new function () {
     }]);
 };
 // 链接右键菜单 End ==============================================================
-// 图片右键菜单 Start ============================================================
-// 复制图片
+// 图像右键菜单 Start ============================================================
+// 复制图像
+page([{
+    label: "复制 SVG Base64",
+    condition: "normal",
+    class: "copy",
+    text: "%SVG_BASE64%",
+    onshowing: function () {
+        let uri = gBrowser.currentURI.spec;
+        if (!uri.endsWith(".svg")) {
+            this.hidden = true;
+        } else {
+            this.hidden = false;
+        }
+    }
+}])
 new function () {
     var groupMenu = GroupMenu({
         id: 'context-copy-image',
         class: 'showFirstText',
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '复制图片...' : 'Copy image...',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '复制图像...' : 'Copy image...',
         condition: 'image',
         insertBefore: 'context-copyimage-contents',
         onshowing: syncHiddenForGroup
@@ -631,7 +487,7 @@ new function () {
         command: 'context-copyimage-contents',
         image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDE2IDE2Ij4KICA8cGF0aCBzdHlsZT0iZmlsbDpjb250ZXh0LWZpbGw7ZmlsbC1vcGFjaXR5OmNvbnRleHQtZmlsbC1vcGFjaXR5IiBkPSJNNiAwYTIgMiAwIDAgMC0yIDJ2LjVhLjUuNSAwIDAgMCAxIDBWMmExIDEgMCAwIDEgMS0xaC41YS41LjUgMCAwIDAgMC0xSDZ6bTIuNSAwYS41LjUgMCAwIDAgMCAxaDNhLjUuNSAwIDAgMCAwLTFoLTN6bTUgMGEuNS41IDAgMCAwIDAgMWguNWExIDEgMCAwIDEgMSAxdi41YS41LjUgMCAwIDAgMSAwVjJhMiAyIDAgMCAwLTItMmgtLjV6TTIgNGEyIDIgMCAwIDAtMiAydjYuNUEzLjUgMy41IDAgMCAwIDMuNSAxNkgxMGEyIDIgMCAwIDAgMi0ydi0xaC0xdjFhMSAxIDAgMCAxLTEgMUgzLjVBMi41IDIuNSAwIDAgMSAxIDEyLjVWNmExIDEgMCAwIDEgMS0xaDFWNEgyem0yLjUgMGEuNS41IDAgMCAwLS41LjV2M2EuNS41IDAgMCAwIDEgMHYtM2EuNS41IDAgMCAwLS41LS41em0xMSAwYS41LjUgMCAwIDAtLjUuNXYzYS41LjUgMCAwIDAgMSAwdi0zYS41LjUgMCAwIDAtLjUtLjV6bS0xMSA1YS41LjUgMCAwIDAtLjUuNXYuNWEyIDIgMCAwIDAgMiAyaC41YS41LjUgMCAwIDAgMC0xSDZhMSAxIDAgMCAxLTEtMXYtLjVhLjUuNSAwIDAgMC0uNS0uNXptMTEgMGEuNS41IDAgMCAwLS41LjV2LjVhMSAxIDAgMCAxLTEgMWgtLjVhLjUuNSAwIDAgMCAwIDFoLjVhMiAyIDAgMCAwIDItMnYtLjVhLjUuNSAwIDAgMC0uNS0uNXptLTcgMmEuNS41IDAgMCAwIDAgMWgzYS41LjUgMCAwIDAgMC0xaC0zeiIvPgo8L3N2Zz4K"
     }, {
-        label: '图片链接',
+        label: '图像链接',
         text: '%IMAGE_URL%',
         accesskey: 'O',
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPgogIDxwYXRoIGQ9Ik02IDdDMy4yMzkgNyAxIDkuMjM5IDEgMTJDMSAxNC43NjEgMy4yMzkgMTcgNiAxN0wxMCAxN0wxMCAxNUw2IDE1QzQuMzQzIDE1IDMgMTMuNjU3IDMgMTJDMyAxMC4zNDMgNC4zNDMgOSA2IDlMMTAgOUwxMCA3TDYgNyB6IE0gMTQgN0wxNCA5TDE4IDlDMTkuNjU3IDkgMjEgMTAuMzQzIDIxIDEyQzIxIDEzLjY1NyAxOS42NTcgMTUgMTggMTVMMTQgMTVMMTQgMTdMMTggMTdDMjAuNzYxIDE3IDIzIDE0Ljc2MSAyMyAxMkMyMyA5LjIzOSAyMC43NjEgNyAxOCA3TDE0IDcgeiBNIDcgMTFMNyAxM0wxNyAxM0wxNyAxMUw3IDExIHoiIC8+Cjwvc3ZnPg=="
@@ -644,22 +500,22 @@ new function () {
     css("#context-copyimage-contents, #context-copyimage { display: none }");
 };
 
-// 打开图片
+// 打开图像
 new function () {
     var groupMenu = GroupMenu({
         id: 'context-view-image',
         class: 'showText',
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '新标签打开图片...' : 'View image in new tab',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '新标签打开图像...' : 'View image in new tab',
         condition: 'image',
         insertBefore: 'context-viewimage'
     });
     groupMenu([{
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '打开图片' : 'View image in new tab',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '打开图像' : 'View image in new tab',
         oncommand: "gContextMenu.viewMedia(event);",
         accesskey: 'I',
         image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0xMy41MjQgMi4yODZBMi40NzYgMi40NzYgMCAwIDEgMTYgNC43NjJ2OC43NjJBMi40NzcgMi40NzcgMCAwIDEgMTMuNTI0IDE2SDQuNzYyYTIuNDc2IDIuNDc2IDAgMCAxLTIuNDc2LTIuNDc2VjguNzYzYy4zNjEuMTUxLjc0NC4yNiAxLjE0My4zMjJ2NC40MzljMCAuMTU5LjAyNy4zMTEuMDc4LjQ1Mmw0LjQzNi00LjM0M2ExLjcxNCAxLjcxNCAwIDAgMSAyLjMwMS0uMDg5bC4wOTguMDg5IDQuNDM2IDQuMzQ0Yy4wNTEtLjE0Mi4wNzktLjI5NC4wNzktLjQ1M1Y0Ljc2MmMwLS43MzYtLjU5Ny0xLjMzMy0xLjMzMy0xLjMzM0g5LjA4NWE0LjkxNiA0LjkxNiAwIDAgMC0uMzIyLTEuMTQzaDQuNzYxWm0tNC43MTcgOC4xMDktLjA2NC4wNTQtNC40MjQgNC4zMzNjLjEzOC4wNDkuMjg4LjA3NS40NDMuMDc1aDguNzYyYy4xNTUgMCAuMzA0LS4wMjYuNDQyLS4wNzVsLTQuNDIzLTQuMzMzYS41NzQuNTc0IDAgMCAwLS43MzYtLjA1NFptMi44MTQtNS40NDNhMS43MTcgMS43MTcgMCAxIDEtLjAwMiAzLjQzNCAxLjcxNyAxLjcxNyAwIDAgMSAuMDAyLTMuNDM0Wk00LjE5IDBhNC4xOSA0LjE5IDAgMSAxIC4wMDEgOC4zOEE0LjE5IDQuMTkgMCAwIDEgNC4xOSAwWm03LjQzMSA2LjA5NWEuNTczLjU3MyAwIDEgMCAwIDEuMTQ2LjU3My41NzMgMCAwIDAgMC0xLjE0NlpNNC4xOSAxLjUyM2wtLjA2OC4wMDZhLjM4MS4zODEgMCAwIDAtLjMwNi4zMDdsLS4wMDYuMDY4LS4wMDEgMS45MDUtMS45MDYuMDAxLS4wNjkuMDA2YS4zOC4zOCAwIDAgMC0uMzA2LjMwNmwtLjAwNi4wNjguMDA2LjA2OWEuMzgxLjM4MSAwIDAgMCAuMzA2LjMwNmwuMDY5LjAwNkgzLjgxdjEuOTA4bC4wMDcuMDY4Yy4wMjguMTU2LjE1LjI3OC4zMDYuMzA3bC4wNjguMDA2LjA2OS0uMDA2YS4zODIuMzgyIDAgMCAwIC4zMDYtLjMwN2wuMDA2LS4wNjhWNC41NzFINi40OGwuMDY4LS4wMDZhLjM4LjM4IDAgMCAwIC4zMDYtLjMwNmwuMDA3LS4wNjktLjAwNy0uMDY4YS4zNzkuMzc5IDAgMCAwLS4zMDYtLjMwNkw2LjQ4IDMuODFsLTEuOTA5LS4wMDFWMS45MDRsLS4wMDYtLjA2OGEuMzgyLjM4MiAwIDAgMC0uMzA2LS4zMDdsLS4wNjktLjAwNloiLz4KPC9zdmc+Cg=="
     }, {
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '发送图片' : 'Send image by email',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '发送图像' : 'Send image by email',
         accesskey: 'G',
         oncommand: 'gContextMenu.sendMedia();',
         image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTAuMDAzOTA2MjUgM0wwLjAwMzkwNjI1IDM1TDIgMzVMMiA1TDQ1IDVMNDUgMyBaIE0gNCA3TDQgMzlMMjcgMzlMMjcgMzdMNiAzN0w2IDM0Ljk4MDQ2OUwxOC44MDg1OTQgMjQuODUxNTYzQzE5Ljg0Mzc1IDI1Ljc1NzgxMyAyMS43NTc4MTMgMjcuNDIxODc1IDIyIDI3LjYzMjgxM0MyMy41MjM0MzggMjguOTYwOTM4IDI1LjE0MDYyNSAyOS4yOTY4NzUgMjYuMTc1NzgxIDI5LjI5Njg3NUMyNy4yMTA5MzggMjkuMjk2ODc1IDI4LjgyODEyNSAyOC45NjA5MzggMzAuMzU1NDY5IDI3LjYzMjgxM0MzMS41MzkwNjMgMjYuNjAxNTYzIDQzLjE3OTY4OCAxNi40NTMxMjUgNDYgMTMuOTk2MDk0TDQ2IDMxTDQ4IDMzTDQ4IDcgWiBNIDYgOUw0NiA5TDQ2IDExLjM0Mzc1QzQ0Ljk2NDg0NCAxMi4yNDYwOTQgMzAuMzEyNSAyNS4wMTk1MzEgMjkuMDQyOTY5IDI2LjEyNUMyNy45MjE4NzUgMjcuMTAxNTYzIDI2Ljc4MTI1IDI3LjI5Njg3NSAyNi4xNzU3ODEgMjcuMjk2ODc1QzI1LjU3MDMxMyAyNy4yOTY4NzUgMjQuNDMzNTk0IDI3LjA5NzY1NiAyMy4zMTI1IDI2LjEyNUMyMi4wMDc4MTMgMjQuOTg4MjgxIDYuNDQxNDA2IDExLjQyMTg3NSA2IDExLjAzNTE1NiBaIE0gNiAxMy42ODc1QzcuNjk1MzEzIDE1LjE2Nzk2OSAxMi43MTg3NSAxOS41NDY4NzUgMTcuMjczNDM4IDIzLjUxNTYyNUw2IDMyLjQyOTY4OCBaIE0gMzkuOTg4MjgxIDI5Ljk4ODI4MUMzOS41ODIwMzEgMjkuOTkyMTg4IDM5LjIxODc1IDMwLjIzODI4MSAzOS4wNjI1IDMwLjYxMzI4MUMzOC45MTAxNTYgMzAuOTkyMTg4IDM5IDMxLjQyMTg3NSAzOS4yOTI5NjkgMzEuNzA3MDMxTDQ0LjU4NTkzOCAzN0wzMSAzN0wzMSAzOUw0NC41ODU5MzggMzlMMzkuMjkyOTY5IDQ0LjI5Mjk2OUMzOS4wMzEyNSA0NC41NDI5NjkgMzguOTI1NzgxIDQ0LjkxNzk2OSAzOS4wMTk1MzEgNDUuMjY1NjI1QzM5LjEwOTM3NSA0NS42MTcxODggMzkuMzgyODEzIDQ1Ljg5MDYyNSAzOS43MzQzNzUgNDUuOTgwNDY5QzQwLjA4MjAzMSA0Ni4wNzQyMTkgNDAuNDU3MDMxIDQ1Ljk2ODc1IDQwLjcwNzAzMSA0NS43MDcwMzFMNDguNDE0MDYzIDM4TDQwLjcwNzAzMSAzMC4yOTI5NjlDNDAuNTE5NTMxIDMwLjA5NzY1NiA0MC4yNjE3MTkgMjkuOTkyMTg4IDM5Ljk4ODI4MSAyOS45ODgyODFaIiAvPg0KPC9zdmc+"
@@ -667,17 +523,17 @@ new function () {
     css("#context-viewimage, #context-sendimage { display: none }");
 };
 
-// 保存图片
+// 保存图像
 new function () {
     var groupMenu = GroupMenu({
         id: 'context-save-image',
         class: 'showText',
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '保存图片...' : 'Save image...',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '保存图像...' : 'Save image...',
         condition: 'image',
         insertBefore: 'context-saveimage'
     });
     groupMenu([{
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '保存图片' : 'Save image',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '保存图像' : 'Save image',
         oncommand: 'document.getElementById("context-saveimage").doCommand();',
         accesskey: 'v',
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMS40MDQgMy45NDggQyAxLjQwNCAzLjIxMiAxLjcwMiAyLjU0NSAyLjE4NSAyLjA2MyBDIDIuNjY3IDEuNTggMy4zMzQgMS4yODIgNC4wNyAxLjI4MiBMIDguODk5IDEuMjgyIEwgMTMuNzI4IDEuMjgyIEMgMTQuMTQ2IDEuMjgyIDE0LjU1NSAxLjM2NSAxNC45MzQgMS41MjIgQyAxNS4zMTMgMS42NzggMTUuNjYxIDEuOTA5IDE1Ljk1NyAyLjIwNSBMIDE2Ljk0MyAzLjE5MSBMIDE3LjkyOSA0LjE3NyBDIDE4LjIyNSA0LjQ3MyAxOC40NTYgNC44MjEgMTguNjEzIDUuMiBDIDE4Ljc2OSA1LjU3OSAxOC44NTIgNS45ODggMTguODUyIDYuNDA2IEwgMTguODUyIDExLjIzNSBMIDE4Ljg1MiAxNi4wNjQgQyAxOC44NTIgMTYuODAxIDE4LjU1NCAxNy40NjcgMTguMDcxIDE3Ljk0OSBDIDE3LjU4OSAxOC40MzIgMTYuOTIyIDE4LjczIDE2LjE4NiAxOC43MyBMIDEwLjEyOCAxOC43MyBMIDQuMDcgMTguNzMgQyAzLjMzNCAxOC43MyAyLjY2NyAxOC40MzIgMi4xODUgMTcuOTQ5IEMgMS43MDIgMTcuNDY3IDEuNDA0IDE2LjggMS40MDQgMTYuMDY0IEwgMS40MDQgMTAuMDA2IFogTSA0LjA3IDIuNzM2IEMgMy43MzYgMi43MzYgMy40MzMgMi44NzIgMy4yMTMgMy4wOTEgQyAyLjk5NCAzLjMxMSAyLjg1OCAzLjYxNCAyLjg1OCAzLjk0OCBMIDIuODU4IDEwLjAwNiBMIDIuODU4IDE2LjA2NCBDIDIuODU4IDE2LjM5OSAyLjk5NCAxNi43MDIgMy4yMTMgMTYuOTIxIEMgMy40MzMgMTcuMTQgMy43MzYgMTcuMjc2IDQuMDcgMTcuMjc2IEwgNC4xOTEgMTcuMjc2IEwgNC4zMTIgMTcuMjc2IEwgNC4zMTIgMTQuNzMyIEwgNC4zMTIgMTIuMTg3IEMgNC4zMTIgMTEuNTg1IDQuNTU2IDExLjAzOSA0Ljk1MSAxMC42NDUgQyA1LjM0NSAxMC4yNSA1Ljg5MSAxMC4wMDYgNi40OTMgMTAuMDA2IEwgMTAuMTI4IDEwLjAwNiBMIDEzLjc2MyAxMC4wMDYgQyAxNC4zNjYgMTAuMDA2IDE0LjkxMSAxMC4yNSAxNS4zMDUgMTAuNjQ1IEMgMTUuNyAxMS4wMzkgMTUuOTQ0IDExLjU4NSAxNS45NDQgMTIuMTg3IEwgMTUuOTQ0IDE0LjczMiBMIDE1Ljk0NCAxNy4yNzYgTCAxNi4wNjUgMTcuMjc2IEwgMTYuMTg2IDE3LjI3NiBDIDE2LjUyMSAxNy4yNzYgMTYuODI0IDE3LjE0IDE3LjA0MyAxNi45MjEgQyAxNy4yNjIgMTYuNzAyIDE3LjM5OCAxNi4zOTkgMTcuMzk4IDE2LjA2NCBMIDE3LjM5OCAxMS4yMzUgTCAxNy4zOTggNi40MDYgQyAxNy4zOTggNi4xODEgMTcuMzU0IDUuOTYgMTcuMjY5IDUuNzU2IEMgMTcuMTg1IDUuNTUyIDE3LjA2MSA1LjM2NSAxNi45MDEgNS4yMDYgTCAxNS45MTUgNC4yMiBMIDE0LjkyOCAzLjIzMyBDIDE0LjgwMyAzLjEwOCAxNC42NiAzLjAwMyAxNC41MDQgMi45MjMgQyAxNC4zNDggMi44NDMgMTQuMTggMi43ODcgMTQuMDA1IDIuNzU4IEwgMTQuMDA1IDQuMDggTCAxNC4wMDUgNS40MDIgQyAxNC4wMDUgNi4wMDQgMTMuNzYxIDYuNTQ5IDEzLjM2NiA2Ljk0NCBDIDEyLjk3MiA3LjMzOSAxMi40MjcgNy41ODMgMTEuODI0IDcuNTgzIEwgOS42NDMgNy41ODMgTCA3LjQ2MiA3LjU4MyBDIDYuODYgNy41ODMgNi4zMTQgNy4zMzkgNS45MiA2Ljk0NCBDIDUuNTI1IDYuNTQ5IDUuMjgxIDYuMDA0IDUuMjgxIDUuNDAyIEwgNS4yODEgNC4wNjkgTCA1LjI4MSAyLjczNiBMIDQuNjc2IDIuNzM2IFogTSAxNC40OSAxNy4yNzYgTCAxNC40OSAxNC43MzIgTCAxNC40OSAxMi4xODcgQyAxNC40OSAxMS45ODcgMTQuNDA5IDExLjgwNSAxNC4yNzcgMTEuNjczIEMgMTQuMTQ1IDExLjU0MiAxMy45NjQgMTEuNDYgMTMuNzYzIDExLjQ2IEwgMTAuMTI4IDExLjQ2IEwgNi40OTMgMTEuNDYgQyA2LjI5MyAxMS40NiA2LjExMSAxMS41NDIgNS45NzkgMTEuNjczIEMgNS44NDggMTEuODA1IDUuNzY2IDExLjk4NyA1Ljc2NiAxMi4xODcgTCA1Ljc2NiAxNC43MzIgTCA1Ljc2NiAxNy4yNzYgTCAxMC4xMjggMTcuMjc2IFogTSA2LjczNSAyLjczNiBMIDYuNzM1IDQuMDY5IEwgNi43MzUgNS40MDIgQyA2LjczNSA1LjYwMyA2LjgxNyA1Ljc4NCA2Ljk0OCA1LjkxNiBDIDcuMDggNi4wNDcgNy4yNjIgNi4xMjkgNy40NjIgNi4xMjkgTCA5LjY0MyA2LjEyOSBMIDExLjgyNCA2LjEyOSBDIDEyLjAyNSA2LjEyOSAxMi4yMDcgNi4wNDcgMTIuMzM4IDUuOTE2IEMgMTIuNDcgNS43ODQgMTIuNTUxIDUuNjAzIDEyLjU1MSA1LjQwMiBMIDEyLjU1MSA0LjA2OSBMIDEyLjU1MSAyLjczNiBMIDkuNjQzIDIuNzM2IFoiIHN0eWxlPSIiLz4KPC9zdmc+",
@@ -689,7 +545,7 @@ new function () {
     }]);
     css("#context-saveimage, #context-setDesktopBackground, #context-sep-setbackground { display: none }");
 };
-// 搜索图片
+// 搜索图像
 new function () {
     var items = [{
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "以图搜图" : "Search image",
@@ -729,7 +585,7 @@ new function () {
     });
     menu(items);
 };
-// 图片右键菜单 End ==============================================================
+// 图像右键菜单 End ==============================================================
 // 文本右键菜单 Start ============================================================
 // 搜索文本
 new function () {
@@ -760,12 +616,22 @@ new function () {
             let ins = popupNode.firstChild;
             Services.search.getEngines().then(
                 engines => engines.forEach((item) => {
-                    let searchUrl = item.__searchForm.includes('{searchTerms}') ? item.__searchForm.replace("{searchTerms}", "%s") : item.__searchForm + '?q=%s'
-                    let menuitem = addMenu.newMenuitem({
-                        label: item._name,
-                        where: 'tab',
-                        url: searchUrl
-                    });
+                    let menuitem;
+                    if (item._definedAliases) {
+                        menuitem = addMenu.newMenuitem({
+                            label: item._name,
+                            where: 'tab',
+                            keyword: item._definedAliases[0],
+                            text: "%s"
+                        });
+                    } else {
+                        let searchUrl = item.__searchForm.includes('{searchTerms}') ? item.__searchForm.replace("{searchTerms}", "%s") : item.__searchForm + '?q=%s'
+                        menuitem = addMenu.newMenuitem({
+                            label: item._name,
+                            where: 'tab',
+                            url: searchUrl
+                        });
+                    }
                     ins.parentNode.insertBefore(menuitem, ins);
                 }))
         },
