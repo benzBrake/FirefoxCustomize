@@ -58,7 +58,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
     label       菜单的名称
     accesskey   快捷键
-    exec        启动外部应用程序。（我新增相对路径。 \\ 代表当前配置的路径，例：\\Chrome 代表配置下的Chrome文件夹）
+    exec        启动外部应用程序。（ywzhaiqi新增相对路径。 \\ 代表当前配置的路径，例：\\Chrome 代表配置下的Chrome文件夹）
     keyword     指定了关键字的书签或搜索引擎
     text        复制你想要的字符串到剪贴板，可与 keyword, exec 一起使用
     url         打开你想要的网址
@@ -71,7 +71,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     style       添加样式
     ...         Firefox 菜单的其它属性
     
-    id          标签的ID（我新增的，修改原菜单用）
+    id          标签的ID（ywzhaiqi新增的，修改原菜单用）
     position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口
     onshowing   新增的，当页面右键显示时会执行该函数，可用于动态更改标签标题，详见下面的示例。
@@ -87,21 +87,22 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
     %EOL%            换行(\r\n)
     %TITLE%          标题
-    %TITLES%         简化标题（我新增的，来自 faviconContextMenu.uc.xul.css）
+    %TITLES%         简化标题（ywzhaiqi 新增的，来自 faviconContextMenu.uc.xul.css）
     %URL%            地址
     %SEL%            选取范围内的文字
     %RLINK%          链接的地址
     %IMAGE_URL%      图片的 URL
-    %IMAGE_BASE64%   图片的 Base64（我新增的，不支持 gif 动态图片）
+    %IMAGE_BASE64%   图片的 Base64（ywzhaiqi 新增的，不支持 gif 动态图片）
     %IMAGE_ALT%      图片的 alt 属性
     %IMAGE_TITLE%    图片的 title 属性
+    %SVG_BASE64%	 SVG 的 Base64（我新增的，支持 SVG 链接和打开的 SVG 展示页面）
     %LINK%           链接的地址
     %LINK_TEXT%      链接的文本
     %RLINK_TEXT%     链接的文本（上面那个的别名）
     %MEDIA_URL%      媒体 URL
     %CLIPBOARD%      剪贴板的内容
     %FAVICON%        Favicon（站点图标） 的 URL
-    %FAVICON_BASE64% Favicon 的 Base64（我新增的）
+    %FAVICON_BASE64% Favicon 的 Base64（ywzhaiqi 新增的）
     %EMAIL%          E-mail 链接
     %HOST%           当前网页的域名
     %LINK_HOST%      链接的域名
