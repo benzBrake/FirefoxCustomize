@@ -236,6 +236,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             let rLINK = "%R?LINK(?:_TEXT|_HOST)?" + he + "%|%l\\b";
             let rIMAGE = "%IMAGE(?:_URL|_ALT|_TITLE)" + he + "%|%i\\b";
             let rIMAGE_BASE64 = "%IMAGE_BASE64" + he + "%|%i\\b";
+            let rSVG_BASE64 = "%SVG_BASE64" + he + "%|%i\\b";
             let rMEDIA = "%MEDIA_URL" + he + "%|%m\\b";
             let rCLIPBOARD = "%CLIPBOARD" + he + "%|%p\\b";
             let rFAVICON = "%FAVICON" + he + "%";
@@ -259,10 +260,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.rExt = new RegExp(rExt, "i");
             this.rFAVICON_BASE64 = new RegExp(rFAVICON_BASE64, "i");
             this.rIMAGE_BASE64 = new RegExp(rIMAGE_BASE64, "i");
+            this.rSVG_BASE64 = new RegExp(rSVG_BASE64, "i");
             this.rRLT_OR_UT = new RegExp(rRLT_OR_UT, "i");
 
             this.regexp = new RegExp(
-                [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
+                [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
 
 
             var ins;
@@ -1071,6 +1073,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         return context.imageURL || context.mediaURL || "";
                     case "%IMAGE_BASE64%":
                         return typeof context.imageURL === "undefined" ? addMenu.img2base64(context.mediaURL) : addMenu.img2base64(context.imageURL);
+                    case "%SVG_BASE64%":
+                        let url = context.linkURL || bw.documentURI.spec || "";
+                        return url.endsWith("svg") ? addMenu.svg2base64(url) : "";
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
