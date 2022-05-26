@@ -1126,40 +1126,45 @@ tool({
         if (e.button == 1) {
             e.preventDefault();
             e.stopPropagation();
-            let binPath, savePath, uri = gBrowser.selectedBrowser.currentURI;
+            let cookiesPath, binPath, savePath, win = e.target.ownerGlobal, uri = win.gBrowser.selectedBrowser.currentURI;
+            const PREF_BRANCH = "userChrome.navbar.youGetBtn.", PREF_COOKIES = "COOKIESPATH", PREF_BIN = "BINPATH", PREF_SAVE = "SAVEPATH";
+            const prefs = Services.prefs.getBranch(PREF_BRANCH);
 
-            // 自定修改 cookies 存储路径
-            const cookiesPath = FileUtils.getDir("UChrm", ["resources", "cookies"], true);
+            // 请在 about:config 中修改 cookies 存储路径 Please change cookies store path in about:config
+            try {
+                cookiesPath = prefs.getStringPref(PREF_COOKIES);
+            } catch (e) {
+                cookiesPath = "cookies";
+            }
+
+            cookiesPath = handleRelativePath(cookiesPath);
+            const aCookiesDir = Services.dirsvc.get("UChrm", Ci.nsIFile);
+            aCookiesDir.appendRelativePath(cookiesPath);
+
+            if (!aCookiesDir.exists()) aCookiesDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o666);
+
+            if (!aCookiesDir.isReadable() || !aCookiesDir.isWritable()) {
+                alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "Cookies 保存目录不可读写" : "Cookies storage directory cannot be read or written");
+                return;
+            }
 
             // 非网页不响应，可以细化为匹配 you-get.exe 支持的网站，我懒得写正则了
             if (uri.spec.startsWith('http')) {
-
-                binPath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetPath", "");
-                savePath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetSavePath", "");
+                binPath = prefs.getStringPref(PREF_BIN, "");
+                savePath = prefs.getStringPref(PREF_SAVE, "");
 
                 function setYouGetPath() {
                     alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "请先设置 you-get.exe 的路径!!!" : "Please set you-get.exe path first!!!");
                     if (Services.locale.appLocaleAsBCP47.includes("zh-")) {
-                        addMenu.openCommand({ 'target': this }, 'https://lussac.lanzoui.com/b00nc5aab', 'tab');
+                        openUrl({ 'target': this }, 'https://lussac.lanzoui.com/b00nc5aab', 'tab');
                     } else {
-                        addMenu.openCommand({ 'target': this }, 'https://github.com/LussacZheng/you-get.exe/releases', 'tab');
+                        openUrl({ 'target': this }, 'https://github.com/LussacZheng/you-get.exe/releases', 'tab');
                     }
-                    let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置 you-get.exe 路径" : "Set you-get.exe path", Ci.nsIFilePicker.modeOpen);
-                    fp.appendFilter(Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file", "*.exe");
-                    fp.open(res => {
-                        if (res != Ci.nsIFilePicker.returnOK) return;
-                        Services.prefs.setStringPref("userChromeJS.addMenuPlus.youGetPath", fp.file.path);
-                    });
-                }
 
-                function setSavePath() {
-                    let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置视频保存路径" : "Set video save path", Ci.nsIFilePicker.modeGetFolder);
-                    fp.open(res => {
-                        if (res != Ci.nsIFilePicker.returnOK) return;
-                        Services.prefs.setStringPref("userChromeJS.addMenuPlus.youGetSavePath", fp.file.path + '\\');
-                    });
+                    choosePathAndSave(Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置 you-get.exe 路径" : "Set you-get.exe path", PREF_BRANCH + PREF_BIN, Ci.nsIFilePicker.modeOpen, {
+                        title: Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file",
+                        param: "*.exe"
+                    })
                 }
 
                 // 转换成 netscape 格式，抄袭自 cookie_txt 扩展
@@ -1179,12 +1184,12 @@ tool({
                 }
 
                 // 保存 cookie 并返回路径
-                function getCookiePathForSite(host) {
+                function saveCookie(host) {
                     if (!host) return;
                     let cookies = Services.cookies.getCookiesFromHost(host, {});
                     let string = cookies.map(formatCookie).join('');
 
-                    let file = cookiesPath.clone();
+                    let file = aCookiesDir.clone();
                     file.append(`${host}.txt`);
                     if (file.exists()) {
                         file.remove(0);
@@ -1215,34 +1220,34 @@ tool({
 
                 if (!binPath) {
                     setYouGetPath();
-                    binPath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetPath", "");
-                    return;
+                    try {
+                        binPath = prefs.getStringPref(PREF_BIN);
+                    } catch (e) {
+                        return;
+                    }
                 }
                 if (!savePath) {
-                    setSavePath();
-                    savePath = Services.prefs.getStringPref("userChromeJS.addMenuPlus.youGetSavePath", "");
-                    return;
+                    choosePathAndSave(Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置视频保存路径" : "Set video save path", PREF_BRANCH + PREF_SAVE)
+                    try {
+                        savePath = prefs.getStringPref(PREF_SAVE);
+                    } catch (e) {
+                        return;
+                    }
                 }
-                let youGet = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                let youGet = Services.dirsvc.get("UChrm", Ci.nsIFile);
                 try {
-                    youGet.initWithPath(binPath);
-                } catch (E) {
-                    alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "you-get.exe 不存在，需要重新设置 you-get.exe 路径" : "you-get.exe not exists, please reset you-get.exe path");
+                    binPath = handleRelativePath(binPath);
+                    youGet.appendRelativePath(binPath);
+                } catch (e) {
                     setYouGetPath();
                     return;
                 }
                 let p = Components.classes["@mozilla.org/process/util;1"].createInstance(Components.interfaces.nsIProcess);
 
-                // 自行修改系统编码 Please change text encoding
-                if (Services.locale.appLocaleAsBCP47.includes("zh-CN")) {
-                    let converter = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
-                    converter.charset = 'gbk';
-                    savePath = converter.ConvertFromUnicode(savePath) + converter.Finish();
-                }
-                let commandArgs = ['-c', getCookiePathForSite(uri.host), '-o', savePath, uri.spec];
+                let commandArgs = ['-c', saveCookie(uri.host), '-o', savePath, uri.spec];
 
                 p.init(youGet);
-                p.run(false, commandArgs, commandArgs.length);
+                p.runw(false, commandArgs, commandArgs.length);
             }
         } else if (e.button == 2 && !e.shiftKey) {
             // 右键打开下载历史
