@@ -241,7 +241,7 @@ page([
         label: "复制 SVG Base64",
         condition: "normal",
         class: "copy",
-		text: "%SVG_BASE64%",
+		text: "%SVG_BASE64%", // 必须是 2022.05.26 以后的版本调用
         onshowing: function () {
             let uri = gBrowser.currentURI.spec;
             if (!uri.endsWith(".svg")) {
