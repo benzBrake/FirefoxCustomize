@@ -241,10 +241,7 @@ page([
         label: "复制 SVG Base64",
         condition: "normal",
         class: "copy",
-        oncommand: function (event) {
-            // 只能在 2022.05.26 以后的版本调用
-            addMenu.copy(addMenu.svg2base64(gBrowser.currentURI.spec));
-        },
+		text: "%SVG_BASE64%",
         onshowing: function () {
             let uri = gBrowser.currentURI.spec;
             if (!uri.endsWith(".svg")) {
