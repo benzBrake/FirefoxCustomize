@@ -15,7 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app 一级菜单自动移动到汉堡菜单（二级菜单还没空处理）
+// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app 一级菜单自动移动到汉堡菜单（二级菜单还没空处理）, 修复 keyword 调用搜索引擎失效的问题
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
@@ -224,7 +224,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return this.FILE = aFile;
         },
         get focusedWindow() {
-            return (gContextMenu && gContextMenu.target) ? gContextMenu.target.ownerDocument.defaultView || gBrowser.selectedTab.ownerDocument.defaultView : gBrowser.selectedTab.ownerDocument.defaultView || content;
+            return (gContextMenu && gContextMenu.target) ? gContextMenu.target.ownerDocument.defaultView : document.commandDispatcher.focusedWindow || content;
         },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
@@ -380,8 +380,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let param = (text ? (text = this.convertText(text)) : "");
                 let engine = Services.search.getEngineByAlias(keyword);
                 if (engine) {
-                    let submission = engine.getSubmission(param);
-                    this.openCommand(event, submission.uri.spec, where);
+                    if (isPromise(engine)) {
+                        engine.then(function (engine) {
+                            let submission = engine.getSubmission(param);
+                            addMenu.openCommand(event, submission.uri.spec, where);
+                        });
+                    } else {
+                        let submission = engine.getSubmission(param);
+                        this.openCommand(event, submission.uri.spec, where);
+                    }
                 } else {
                     PlacesUtils.keywords.fetch(keyword || '').then(entry => {
                         if (!entry) return;
@@ -943,8 +950,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             if (obj.keyword) {
                 let engine = Services.search.getEngineByAlias(obj.keyword);
-                if (engine && engine.iconURI) {
-                    menu.setAttribute("image", engine.iconURI.spec);
+                if (engine) {
+                    if (isPromise(engine)) {
+                        engine.then(function (engine) {
+                            if (engine.iconURI) menu.setAttribute("image", engine.iconURI.spec);
+                        });
+
+                    } else if (engine.iconURI) {
+                        menu.setAttribute("image", engine.iconURI.spec);
+                    }
                     return;
                 }
             }
@@ -1425,6 +1439,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             str = str.replace("%s", replace);
         }
         return str || "";
+    }
+
+    function isDef(v) {
+        return v !== undefined && v !== null
+    }
+
+    function isPromise(val) {
+        return (
+            isDef(val) &&
+            typeof val.then === 'function' &&
+            typeof val.catch === 'function'
+        )
     }
 
 })(`
