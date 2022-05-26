@@ -380,7 +380,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             if (keyword) {
                 let param = (text ? (text = this.convertText(text)) : "");
-                let engine = Services.search.getEngineByAlias(keyword);
+                let engine = keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(keyword);
                 if (engine) {
                     if (isPromise(engine)) {
                         engine.then(function (engine) {
