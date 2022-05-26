@@ -1070,7 +1070,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%IMAGE_URL%":
                         return context.imageURL || context.mediaURL || "";
                     case "%IMAGE_BASE64%":
-                        return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
+                        return typeof context.imageURL === "undefined" ? addMenu.img2base64(context.mediaURL) : addMenu.img2base64(context.imageURL);
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
@@ -1082,7 +1082,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%FAVICON%":
                         return gBrowser.getIcon(tab ? tab : null) || "";
                     case "%FAVICON_BASE64%":
-                        return img2base64(gBrowser.getIcon(tab ? tab : null));
+                        return addMenu.img2base64(gBrowser.getIcon(tab ? tab : null));
                     case "%EMAIL%":
                         return getEmailAddress() || "";
                     case "%EOL%":
@@ -1106,43 +1106,53 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 } catch (ex) { }
                 return addresses;
             }
-
-            function img2base64(imgsrc) {
-                if (typeof imgsrc == 'undefined') return "";
-                const NSURI = "http://www.w3.org/1999/xhtml";
-                var img = new Image();
-                var that = this;
-                var canvas,
-                    isCompleted = false;
-                img.onload = function () {
-                    var width = this.naturalWidth,
-                        height = this.naturalHeight;
-                    if (that.appVersion <= 72) {
-                        canvas = document.createXULElementNS(NSURI, "canvas");
-                    } else {
-                        canvas = document.createElementNS(NSURI, "canvas")
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    var ctx = canvas.getContext("2d");
-                    ctx.drawImage(this, 0, 0);
-                    isCompleted = true;
-                };
-                img.onerror = function () {
-                    Components.utils.reportError($L('could not load', imgsrc));
-                    isCompleted = true;
-                };
-                img.src = imgsrc;
-
-                var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-                while (!isCompleted) {
-                    thread.processNextEvent(true);
+        },
+        img2base64(imgSrc, imgType) {
+            if (typeof imgSrc == 'undefined') return "";
+            imgType = imgType || "image/png";
+            const NSURI = "http://www.w3.org/1999/xhtml";
+            var img = new Image();
+            var that = this;
+            var canvas,
+                isCompleted = false;
+            img.onload = function () {
+                var width = this.naturalWidth,
+                    height = this.naturalHeight;
+                if (that.appVersion <= 72) {
+                    canvas = document.createXULElementNS(NSURI, "canvas");
+                } else {
+                    canvas = document.createElementNS(NSURI, "canvas")
                 }
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(this, 0, 0);
+                isCompleted = true;
+            };
+            img.onerror = function () {
+                Cu.reportError($L('could not load', imgSrc));
+                isCompleted = true;
+            };
+            img.src = imgSrc;
 
-                var data = canvas ? canvas.toDataURL("image/png") : "";
-                canvas = null;
-                return data;
+            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+            while (!isCompleted) {
+                thread.processNextEvent(true);
             }
+
+            var data = canvas ? canvas.toDataURL(imgType) : "";
+            canvas = null;
+            return data;
+        },
+        svg2base64(svgSrc) {
+            if (typeof svgSrc == 'undefined') return "";
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("GET", svgSrc, false);
+            xmlhttp.send();
+            var svg = xmlhttp.responseText;
+            // svg string to data url
+            var svg64 = "data:image/svg+xml;base64," + btoa(svg);
+            return svg64;
         },
         convertUnicode(text) {
             // 来自 addOpenChrome.uc.js
