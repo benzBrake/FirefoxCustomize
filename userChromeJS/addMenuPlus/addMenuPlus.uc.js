@@ -744,7 +744,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (noDefaultLabel)
                     obj.label = obj.exec || obj.keyword || obj.url || obj.text;
 
-
                 if (obj.keyword && !obj.text) {
                     let index = obj.keyword.search(/\s+/);
                     if (index > 0) {
@@ -794,7 +793,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 menuitem.setAttribute(key, val);
             }
 
-            if (noDefaultLabel) {
+            if (noDefaultLabel && menuitem.localName !== separatorType) {
                 if (obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
                     // Localization 支持
                     let strings = new Localization([obj["data-l10n-href"]]);
