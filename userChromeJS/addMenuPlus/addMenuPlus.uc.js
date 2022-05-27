@@ -1009,7 +1009,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
         },
         convertText: function (text) {
-            var that = this;
             var context = gContextMenu || { // とりあえずエラーにならないようにオブジェクトをでっち上げる
                 link: { href: "", host: "" },
                 target: { alt: "", title: "" },
@@ -1044,9 +1043,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%URL%":
                         return bw.documentURI.spec;
                     case "%H":
-                        return bw.documentURI.spec;
+                        return bw.documentURI.host;
                     case "%HOST%":
-                        return bw.documentURI.spec;
+                        return bw.documentURI.host;
                     case "%S":
                         return context.textSelected || "";
                     case "%SEL%":
