@@ -214,11 +214,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (!aFile.exists()) {
                 saveFile(aFile, $L('config example'));
                 alert($L('example is empty'));
-                try {
-                    gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/');
-                } catch (e) {
-                    gBrowser.addTab('https://ywzhaiqi.github.io/addMenu_creator/', { triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) });
-                }
+                addMenu.openCommand({ target: this }, 'https://ywzhaiqi.github.io/addMenu_creator/', 'tab');
             }
 
             this._modifiedTime = aFile.lastModifiedTime;
@@ -267,7 +263,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             this.regexp = new RegExp(
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
-
 
             var ins;
             ins = $("context-viewsource");
