@@ -342,6 +342,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         state.length > 0 && event.target.querySelectorAll(
                             state.map(s => `.addMenu[condition~="${s}"]`).join(', ')
                         ).forEach(m => {
+                            // 显示时自动更新标签
+                            if (m.hasAttribute('onshowinglabel')) m.setAttribute('label', addMenu.convertText(m.getAttribute('onshowinglabel')));
                             m.hidden = false;
                         });
 
