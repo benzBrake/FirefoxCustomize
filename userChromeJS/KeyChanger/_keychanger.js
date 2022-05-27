@@ -25,7 +25,7 @@ keys['F3'] = function () {
             i = (i + 1) % tabs.length;
             gBrowser.selectTabAtIndex(i);
         } else {
-            document.querySelector('.findbar-find-next').click();
+            findBar.getElement('find-next').doCommand();
         }
     });
 }; // 下一个标签页
