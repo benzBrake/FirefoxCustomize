@@ -715,7 +715,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var menuitem,
                 isAppMenu = this.panelInitialized && opt.insertPoint?.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
-                menuitemType = isAppMenu ? "toolbarbutton" : "menuitem";
+                menuitemType = isAppMenu ? "toolbarbutton" : "menuitem",
+                noDefaultLabel = false;
 
             // label == separator か必要なプロパティが足りない場合は区切りとみなす
             if (obj.label === "separator" ||
@@ -734,9 +735,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             } else {
                 menuitem = document.createXULElement(menuitemType);
+
                 // property fix
-                if (!obj.label)
+                noDefaultLabel = !obj.label;
+                if (!obj.label) {
                     obj.label = obj.exec || obj.keyword || obj.url || obj.text;
+                }
 
                 if (obj.keyword && !obj.text) {
                     let index = obj.keyword.search(/\s+/);
@@ -785,6 +789,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (typeof val == "function")
                     obj[key] = val = "(" + val.toString() + ").call(this, event);";
                 menuitem.setAttribute(key, val);
+            }
+
+            if (obj.keyword && noDefaultLabel) {
+                // 调用搜索引擎 hack Label
+                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
+                if (isPromise(engine)) {
+                    engine.then(s => {
+                        if (s && s._name) menuitem.setAttribute('label', s._name);
+                    });
+                } else {
+                    if (engine && engine._name) menuitem.setAttribute('label', engine._name);
+                }
             }
 
             /** obj を属性にする
@@ -951,13 +967,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
 
             if (obj.keyword) {
-                let engine = Services.search.getEngineByAlias(obj.keyword);
+                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
                 if (engine) {
                     if (isPromise(engine)) {
                         engine.then(function (engine) {
                             if (engine.iconURI) menu.setAttribute("image", engine.iconURI.spec);
                         });
-
                     } else if (engine.iconURI) {
                         menu.setAttribute("image", engine.iconURI.spec);
                     }
@@ -1495,17 +1510,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 .addMenu[exec] {
   list-style-image: url("chrome://browser/skin/aboutSessionRestore-window-icon.png");
 }
+
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
 {
   list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAm0lEQVQ4T2NkoBAwQvUbAOl8IFYgYN4FoHwhshqYAQuAggFADFKAD4DkC7AZcAAq6ECqj2AuQDYA5Jp4IgwKBKrZgM2A/1B/4vPOBKCaByBv4zLAESgJcxU2x8BdPGoAgwMsDEChCgKgRAKKBZIDETmkqWIAKA18wJOYQHlnIxAnwLyArBaUJ1DSOxaDQImoAZSYsBlARCpGKAEAQigwEfvl9ZkAAAAASUVORK5CYII=);
   -moz-image-region: rect(0pt, 16px, 16px, 0px);
 }
-
 .addMenu.checkbox .menu-iconic-icon {
   -moz-appearance: checkbox;
 }
-
 .addMenu > .menu-iconic-left {
   -moz-appearance: menuimage;
 }
