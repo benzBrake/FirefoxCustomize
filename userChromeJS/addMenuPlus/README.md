@@ -59,7 +59,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     label       菜单的名称
     accesskey   快捷键
     exec        启动外部应用程序。（ywzhaiqi新增相对路径。 \\ 代表当前配置的路径，例：\\Chrome 代表配置下的Chrome文件夹）
-    keyword     指定了关键字的书签或搜索引擎
+    keyword     指定了关键字的书签或搜索引擎（我新增了@default调用默认搜索引擎）
     text        复制你想要的字符串到剪贴板，可与 keyword, exec 一起使用
     url         打开你想要的网址
     where       打开的位置 (current, tab, tabshifted, window)
@@ -72,9 +72,12 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     ...         Firefox 菜单的其它属性
     
     id          标签的ID（ywzhaiqi新增的，修改原菜单用）
-    position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
+    position/insertBefore/insertAfter 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口
-    onshowing   新增的，当页面右键显示时会执行该函数，可用于动态更改标签标题，详见下面的示例。
+    onshowing   ywzhaiqi新增的，当页面右键显示时会执行该函数，可用于动态更改标签标题，详见下面的示例。
+    onshowinglabel 我新增的，显示的时候根据模板设置 label
+    "data-l10n-href" （我新增的，因JS语法问题配置里请用双引号括起来，本地化语言文件 ftl 后缀）
+    "data-l10n-id"  （我新增的，因JS语法问题配置里请用双引号括起来，本地化关联 id）
 
 参考链接：
 
@@ -254,17 +257,25 @@ page([
     }
 ]);
 ```
-示例：汉堡菜单添加重启菜单（必须是 2022.05.20 以后的版本调用）
+示例：汉堡菜单添加重启菜单（必须是 2022.05.20 以后的版本调用，`data-l10n-href`和`data-l10n-id`必须是2022.05.27以后的版本才能用）
 
 ```js
 app([{
-    'id': 'appMenu-restart-button',
-    'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
+    'id': 'appMenu-advanced-settings-button',
+    'data-l10n-href': 'toolkit/about/config.ftl',
+    'data-l10n-id': 'about-config-page-title',
+    'insertAfter': 'appMenu-settings-button',
+    'image': 'chrome://global/skin/icons/settings.svg',
+    'oncommand': `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
+}, {
+    'id': 'appMenu-restart-button2',
+    //'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
+    'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
+    'data-l10n-id': 'restart-button-label',
     'insertBefore': 'appMenu-quit-button2',
-    'image': 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMy42NyAxMS4xNDggQyAzLjY3IDEwLjI3MiAzLjg0OCA5LjQzNiA0LjE3MSA4LjY3NCBDIDQuNDkzIDcuOTEyIDQuOTYxIDcuMjI1IDUuNTM5IDYuNjQ2IEwgNC43ODUgNS44OTMgTCA0LjAzMSA1LjEzOSBDIDMuMjM2IDUuOTM3IDIuNjE1IDYuODc2IDIuMTkzIDcuODk3IEMgMS43NzEgOC45MTggMS41NDcgMTAuMDIyIDEuNTQ3IDExLjE0OCBDIDEuNTQ3IDEzLjMxNCAyLjM1NyAxNS4yODggMy42OSAxNi43ODYgQyA1LjAyNCAxOC4yODQgNi44ODIgMTkuMzA3IDguOTc5IDE5LjU2NyBMIDguOTc5IDE4LjQ5NSBMIDguOTc5IDE3LjQyMiBDIDcuNDc3IDE3LjE2NyA2LjE0OSAxNi4zODcgNS4xOTggMTUuMjc2IEMgNC4yNDYgMTQuMTY1IDMuNjcgMTIuNzI0IDMuNjcgMTEuMTQ4IFogTSAxOC41MzQgMTEuMTQ4IEMgMTguNTM0IDguODAyIDE3LjU4NCA2LjY3OCAxNi4wNDcgNS4xNDEgQyAxNC41MSAzLjYwNCAxMi4zODcgMi42NTQgMTAuMDQgMi42NTQgQyAxMC4wMDkgMi42NTQgOS45NzcgMi42NTcgOS45NDUgMi42NTkgQyA5LjkxMyAyLjY2MiA5Ljg4MSAyLjY2NSA5Ljg0OSAyLjY2NSBMIDEwLjQyOCAyLjA4NyBMIDExLjAwNyAxLjUwOCBMIDEwLjI1OSAwLjc1NCBMIDkuNTEgMCBMIDcuNjUyIDEuODU4IEwgNS43OTQgMy43MTYgTCA3LjY1MiA1LjU3NCBMIDkuNTEgNy40MzIgTCAxMC4yNTkgNi42ODQgTCAxMS4wMDcgNS45MzUgTCAxMC40MzQgNS4zNjIgTCA5Ljg2IDQuNzg4IEMgOS44OTIgNC43ODggOS45MjQgNC43ODYgOS45NTQgNC43ODMgQyA5Ljk4NSA0Ljc4MSAxMC4wMTQgNC43NzggMTAuMDQgNC43NzggQyAxMS43OTggNC43NzggMTMuMzkgNS40OTIgMTQuNTQzIDYuNjQ1IEMgMTUuNjk2IDcuNzk4IDE2LjQxIDkuMzkxIDE2LjQxIDExLjE0OCBDIDE2LjQxIDEyLjcyNCAxNS44MzQgMTQuMTY2IDE0Ljg4MyAxNS4yNzYgQyAxMy45MzIgMTYuMzg3IDEyLjYwNSAxNy4xNjcgMTEuMTAyIDE3LjQyMiBMIDExLjEwMiAxOC40OTUgTCAxMS4xMDIgMTkuNTY3IEMgMTMuMTk5IDE5LjMwNyAxNS4wNTcgMTguMjg1IDE2LjM5MSAxNi43ODYgQyAxNy43MjUgMTUuMjg4IDE4LjUzNCAxMy4zMTQgMTguNTM0IDExLjE0OCBaIiBzdHlsZT0iIiB0cmFuc2Zvcm09Im1hdHJpeCgxLCAwLCAwLCAxLCAwLjEyMDQ0MSwgMC4yNTc5MzEpIi8+Cjwvc3ZnPg==',
     'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
     'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-}]);
+}])
 ```
 
 示例：标签右键菜单
@@ -398,28 +409,12 @@ pagesub([
         label: "破解右键防复制",
         url: "javascript:alert(document.body.oncontextmenu=document.body.onmouseup=document.body.onmousemove=document.body.onclick=document.body.onselectstart%20=document.body.oncopy=document.onmousedown%20=%20document.onkeydown%20=null)",
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEZSURBVDhPjZExisJQEIYfrIW4HsBOq8VLLCoiKjYeQNAykHZBRQW9gPZewkJBiwVLL7B3sBRLC2c2M5mJL9FH/OEneZP//5L3Ykjj6Rxd5kCaXhVtS8wtDSb1NsQG2KWkJf4sDaQByFKJSx/aANjvEQYDnpFodqjVcdPuPEOSgNloglAoYJBEWK14vu71eX37yODS8+OQJIDvj8cQkM0i7HZ4/czzettoRhmpOwCBfr8r0VsZ1u3yXDNSdwNIUCyG5VwO8XLhmWak7gbovu8ECEyfT9KM1B8A23g+Pw7S98MrncfpFGWk/hoA1SqX/r7KvNbzgFIJFz9Dnkk9LnrAv9HzOKz7JhEUWq10gFqDrrVU4rIDaTbGmH8Vxu1dx2qGHAAAAABJRU5ErkJggg==",
-    }, 
+    },
     {
-        label: "站内搜索",
-        accesskey: "s",
-        oncommand: function () {
-            // 调用默认搜索引擎
-            var text = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '站内搜索:' : 'Site search:', '');
-            if (text.length > 0) {
-                Services.search.getDefault().then(
-                    engine => {
-                        let submission = engine.getSubmission(encodeURIComponent(gBrowser.currentURI.host) + ' ' + encodeURIComponent(text), null, 'search');
-                        openLinkIn(submission.uri.spec, 'tab', {
-                            private: false,
-                            postData: submission.postData,
-                            inBackground: false,
-                            relatedToCurrent: true,
-                            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
-                        });
-                    }
-                );
-            }
-        }
+        onshowinglabel: "站内搜索 %s", // 显示时修改 label，必须 2022.05.27 以后的版本才能这么用
+		text: 'site:%h %s',
+        condition: 'select',
+        keyword: '@default' // 调用默认搜索引擎，必须 2022.05.27 以后的版本才能这么用
     },
     {
         label: "明文显示密码",
