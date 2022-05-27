@@ -731,7 +731,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     menuitem = document.createXULElement(menuitemType);
                     if (obj.command)
                         menuitem.setAttribute("command", obj.command);
-                    if (!obj.label)
+
+                    noDefaultLabel = !obj.label;
+                    if (noDefaultLabel)
                         obj.label = obj.command || obj.oncommand;
                 }
             } else {
@@ -739,9 +741,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
                 // property fix
                 noDefaultLabel = !obj.label;
-                if (!obj.label) {
+                if (noDefaultLabel)
                     obj.label = obj.exec || obj.keyword || obj.url || obj.text;
-                }
+
 
                 if (obj.keyword && !obj.text) {
                     let index = obj.keyword.search(/\s+/);
@@ -792,15 +794,25 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 menuitem.setAttribute(key, val);
             }
 
-            if (obj.keyword && noDefaultLabel) {
-                // 调用搜索引擎 hack Label
-                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                if (isPromise(engine)) {
-                    engine.then(s => {
-                        if (s && s._name) menuitem.setAttribute('label', s._name);
-                    });
-                } else {
-                    if (engine && engine._name) menuitem.setAttribute('label', engine._name);
+            if (noDefaultLabel) {
+                if (obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
+                    // Localization 支持
+                    let strings = new Localization([obj["data-l10n-href"]]);
+                    strings.formatValue([obj['data-l10n-id']]).then(
+                        text => {
+                            menuitem.setAttribute('label', text || menuitem.getAttribute("label"));
+                        }
+                    )
+                } else if (obj.keyword) {
+                    // 调用搜索引擎 Label hack 
+                    let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
+                    if (isPromise(engine)) {
+                        engine.then(s => {
+                            if (s && s._name) menuitem.setAttribute('label', s._name);
+                        });
+                    } else {
+                        if (engine && engine._name) menuitem.setAttribute('label', engine._name);
+                    }
                 }
             }
 
@@ -809,8 +821,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (key === "command") continue;
             if (typeof val == "function")
                 obj[key] = val = "(" + val.toString() + ").call(this, event);";
-            menuitem.setAttribute(key, val);
-        }**/
+                menuitem.setAttribute(key, val);
+            }**/
+
             var cls = menuitem.classList;
             cls.add("addMenu");
 
