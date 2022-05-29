@@ -7,7 +7,6 @@
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
-// @include         chrome://browser/content/browser.xul
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
@@ -175,10 +174,27 @@
                         }
                     }
                 }
+            },
+            'browser.tabs.warnOnClose': {
+                init: function () {
+                    // 关闭窗口时需要确认 Thanks ylcs006 https://bbs.kafan.cn/thread-2235927-1-1.html
+                    // 默认时两个或以上标签才提示，改成一个
+                    const { BrowserGlue } = ChromeUtils.import('resource:///modules/BrowserGlue.jsm');
+                    const gTabbrowserBundle = Services.strings.createBundle('chrome://browser/locale/tabbrowser.properties');
+                    TabPlus.orgList['_onQuitRequest'] = BrowserGlue.prototype._onQuitRequest.toString();
+                    eval('BrowserGlue.prototype._onQuitRequest = ' +
+                        BrowserGlue.prototype._onQuitRequest.toString()
+                            .replace('pagecount >= 2', 'pagecount >= 1')
+                    );
+                },
+                destroy: function () {
+                    eval('BrowserGlue.prototype._onQuitRequest = ' +
+                        TabPlus.orgList['_onQuitRequest']);
+                }
             }
         },
         lsnList: {},
-        List: {},
+        orgList: {},
         callback: (obj, pref) => {
             if (!!TabPlus.funcList[pref]) {
                 let val = TabPlus.funcList[pref];
