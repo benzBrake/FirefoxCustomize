@@ -1352,7 +1352,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } : null;
             var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
             alertsService.showAlertNotification(
-                this.appVersion >= 78 ? "chrome://global/skin/icons/info.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",
+                "chrome://global/skin/icons/info.svg", aTitle || "addMenu",
                 aMsg + "", !!callback, "", callback);
         },
         $$: function (exp, context, aPartly) {
@@ -1522,7 +1522,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
 {
-  list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAm0lEQVQ4T2NkoBAwQvUbAOl8IFYgYN4FoHwhshqYAQuAggFADFKAD4DkC7AZcAAq6ECqj2AuQDYA5Jp4IgwKBKrZgM2A/1B/4vPOBKCaByBv4zLAESgJcxU2x8BdPGoAgwMsDEChCgKgRAKKBZIDETmkqWIAKA18wJOYQHlnIxAnwLyArBaUJ1DSOxaDQImoAZSYsBlARCpGKAEAQigwEfvl9ZkAAAAASUVORK5CYII=);
+  list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik00IDJDMi44OTUgMiAyIDIuODk1IDIgNEwyIDE3QzIgMTcuNTUyIDIuNDQ4IDE4IDMgMThDMy41NTIgMTggNCAxNy41NTIgNCAxN0w0IDRMMTcgNEMxNy41NTIgNCAxOCAzLjU1MiAxOCAzQzE4IDIuNDQ4IDE3LjU1MiAyIDE3IDJMNCAyIHogTSA4IDZDNi44OTUgNiA2IDYuODk1IDYgOEw2IDIwQzYgMjEuMTA1IDYuODk1IDIyIDggMjJMMjAgMjJDMjEuMTA1IDIyIDIyIDIxLjEwNSAyMiAyMEwyMiA4QzIyIDYuODk1IDIxLjEwNSA2IDIwIDZMOCA2IHogTSA4IDhMMjAgOEwyMCAyMEw4IDIwTDggOCB6Ii8+PC9zdmc+);
   -moz-image-region: rect(0pt, 16px, 16px, 0px);
 }
 .addMenu.checkbox .menu-iconic-icon {
