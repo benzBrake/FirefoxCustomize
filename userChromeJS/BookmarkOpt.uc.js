@@ -170,7 +170,7 @@
             }
         },
         handleUrlbar: function (e) {
-            if (e.button == 0) {
+            if (e.target.id === "urlbar-input" && e.button == 0) {
                 var bar = e.target.ownerGlobal.document.getElementById("PersonalToolbar");
                 setToolbarVisibility(bar, bar.collapsed);
             }
