@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Vertical Tabs Pane
-// @version        1.6.2
+// @version        1.6.3
 // @author         aminomancer
 // @homepage       https://github.com/aminomancer/uc.css.js
 // @description    垂直标签栏
@@ -1668,8 +1668,8 @@
             tab.hasAttribute("activemedia-blocked")
               ? "blockedString"
               : linkedBrowser.audioMuted
-                ? "mutedString"
-                : "playingString"
+              ? "mutedString"
+              : "playingString"
           ].toLowerCase()})`;
       }
       // align to the row
@@ -1678,11 +1678,17 @@
         e.target.moveToAnchor(row, "after_start");
       }
       let title = e.target.querySelector(".places-tooltip-title");
-      let url = e.target.querySelector(".places-tooltip-uri");
-      let icon = e.target.querySelector("#places-tooltip-insecure-icon");
       title.textContent = label;
-      url.value = linkedBrowser?.currentURI?.spec.replace(/^https:\/\//, "");
+      if (tab.getAttribute("customizemode") === "true") {
+        e.target.querySelector(".places-tooltip-box").setAttribute("desc-hidden", "true");
+        return;
+      } else {
+        let url = e.target.querySelector(".places-tooltip-uri");
+        url.value = linkedBrowser?.currentURI?.spec.replace(/^https:\/\//, "");
+        e.target.querySelector(".places-tooltip-box").removeAttribute("desc-hidden");
+      }
       // show a lock icon to show tab security/encryption
+      let icon = e.target.querySelector("#places-tooltip-insecure-icon");
       let pending = tab.hasAttribute("pending") || !linkedBrowser.browsingContext;
       let docURI = pending
         ? linkedBrowser?.currentURI
@@ -2332,9 +2338,9 @@
     SidebarUI.setPosition();
     eval(
       `gBrowserInit.onUnload = function ` +
-      gBrowserInit.onUnload
-        .toSource()
-        .replace(/(SidebarUI\.uninit\(\))/, `$1; verticalTabsPane.uninit()`)
+        gBrowserInit.onUnload
+          .toSource()
+          .replace(/(SidebarUI\.uninit\(\))/, `$1; verticalTabsPane.uninit()`)
     );
     // reset the event handler since it used the bind method, which creates an
     // anonymous version of the function that we can't change. just re-bind our
@@ -2350,25 +2356,25 @@
     if (!handleRequestSrc.includes("_tabAttrModified"))
       eval(
         `PictureInPicture.handlePictureInPictureRequest = async function ` +
-        handleRequestSrc
-          .replace(/async handlePictureInPictureRequest/, "")
-          .replace(/\sServices\.telemetry.*\s*.*\s*.*\s*.*/, "")
-          .replace(/gCurrentPlayerCount.*/g, "")
-          .replace(
-            /(tab\.setAttribute\(\"pictureinpicture\".*)/,
-            `$1 parentWin.gBrowser._tabAttrModified(tab, ["pictureinpicture"]);`
-          )
+          handleRequestSrc
+            .replace(/async handlePictureInPictureRequest/, "")
+            .replace(/\sServices\.telemetry.*\s*.*\s*.*\s*.*/, "")
+            .replace(/gCurrentPlayerCount.*/g, "")
+            .replace(
+              /(tab\.setAttribute\(\"pictureinpicture\".*)/,
+              `$1 parentWin.gBrowser._tabAttrModified(tab, ["pictureinpicture"]);`
+            )
       );
     let clearIconSrc = PictureInPicture.clearPipTabIcon.toSource();
     if (!clearIconSrc.includes("_tabAttrModified"))
       eval(
         `PictureInPicture.clearPipTabIcon = function ` +
-        clearIconSrc
-          .replace(/WINDOW\_TYPE/, `"Toolkit:PictureInPicture"`)
-          .replace(
-            /(tab\.removeAttribute\(\"pictureinpicture\".*)/,
-            `$1 gBrowser._tabAttrModified(tab, ["pictureinpicture"]);`
-          )
+          clearIconSrc
+            .replace(/WINDOW\_TYPE/, `"Toolkit:PictureInPicture"`)
+            .replace(
+              /(tab\.removeAttribute\(\"pictureinpicture\".*)/,
+              `$1 gBrowser._tabAttrModified(tab, ["pictureinpicture"]);`
+            )
       );
   }
 
