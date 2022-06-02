@@ -516,13 +516,13 @@ new function () {
     var groupMenu = GroupMenu({
         id: 'context-view-image',
         class: 'showText',
-        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '新标签打开图像...' : 'View image in new tab',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '打开图像...' : 'View image...',
         condition: 'image',
         insertBefore: 'context-viewimage'
     });
     groupMenu([{
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '打开图像' : 'View image in new tab',
-        oncommand: "gContextMenu.viewMedia(event);",
+        oncommand: "document.getElementById('context-viewimage').click();",
         accesskey: 'I',
         image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0xMy41MjQgMi4yODZBMi40NzYgMi40NzYgMCAwIDEgMTYgNC43NjJ2OC43NjJBMi40NzcgMi40NzcgMCAwIDEgMTMuNTI0IDE2SDQuNzYyYTIuNDc2IDIuNDc2IDAgMCAxLTIuNDc2LTIuNDc2VjguNzYzYy4zNjEuMTUxLjc0NC4yNiAxLjE0My4zMjJ2NC40MzljMCAuMTU5LjAyNy4zMTEuMDc4LjQ1Mmw0LjQzNi00LjM0M2ExLjcxNCAxLjcxNCAwIDAgMSAyLjMwMS0uMDg5bC4wOTguMDg5IDQuNDM2IDQuMzQ0Yy4wNTEtLjE0Mi4wNzktLjI5NC4wNzktLjQ1M1Y0Ljc2MmMwLS43MzYtLjU5Ny0xLjMzMy0xLjMzMy0xLjMzM0g5LjA4NWE0LjkxNiA0LjkxNiAwIDAgMC0uMzIyLTEuMTQzaDQuNzYxWm0tNC43MTcgOC4xMDktLjA2NC4wNTQtNC40MjQgNC4zMzNjLjEzOC4wNDkuMjg4LjA3NS40NDMuMDc1aDguNzYyYy4xNTUgMCAuMzA0LS4wMjYuNDQyLS4wNzVsLTQuNDIzLTQuMzMzYS41NzQuNTc0IDAgMCAwLS43MzYtLjA1NFptMi44MTQtNS40NDNhMS43MTcgMS43MTcgMCAxIDEtLjAwMiAzLjQzNCAxLjcxNyAxLjcxNyAwIDAgMSAuMDAyLTMuNDM0Wk00LjE5IDBhNC4xOSA0LjE5IDAgMSAxIC4wMDEgOC4zOEE0LjE5IDQuMTkgMCAwIDEgNC4xOSAwWm03LjQzMSA2LjA5NWEuNTczLjU3MyAwIDEgMCAwIDEuMTQ2LjU3My41NzMgMCAwIDAgMC0xLjE0NlpNNC4xOSAxLjUyM2wtLjA2OC4wMDZhLjM4MS4zODEgMCAwIDAtLjMwNi4zMDdsLS4wMDYuMDY4LS4wMDEgMS45MDUtMS45MDYuMDAxLS4wNjkuMDA2YS4zOC4zOCAwIDAgMC0uMzA2LjMwNmwtLjAwNi4wNjguMDA2LjA2OWEuMzgxLjM4MSAwIDAgMCAuMzA2LjMwNmwuMDY5LjAwNkgzLjgxdjEuOTA4bC4wMDcuMDY4Yy4wMjguMTU2LjE1LjI3OC4zMDYuMzA3bC4wNjguMDA2LjA2OS0uMDA2YS4zODIuMzgyIDAgMCAwIC4zMDYtLjMwN2wuMDA2LS4wNjhWNC41NzFINi40OGwuMDY4LS4wMDZhLjM4LjM4IDAgMCAwIC4zMDYtLjMwNmwuMDA3LS4wNjktLjAwNy0uMDY4YS4zNzkuMzc5IDAgMCAwLS4zMDYtLjMwNkw2LjQ4IDMuODFsLTEuOTA5LS4wMDFWMS45MDRsLS4wMDYtLjA2OGEuMzgyLjM4MiAwIDAgMC0uMzA2LS4zMDdsLS4wNjktLjAwNloiLz4KPC9zdmc+Cg=="
     }, {
