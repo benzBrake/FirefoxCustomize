@@ -1,6 +1,9 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
+// funcList 数组里定义所有功能，key 是高级首选项的 pref key
+// 需要设置指定 pref 为 true 或者 false 才能启用指定功能
+// 默认是设置为 true，有 trigger: false 属性的要设置为 false 才生效
 // @license         MIT License
 // @startup         window.TabPlus.init();
 // @shutdown        window.TabPlus.unload();
@@ -258,6 +261,4 @@
     function log(e) {
         Cu.reportError(e);
     }
-
-
 })();
