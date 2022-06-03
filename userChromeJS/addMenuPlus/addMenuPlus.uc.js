@@ -292,6 +292,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
 
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
+            gBrowser.tabpanels.addEventListener("mouseup", this, false);
 
             this.style = addStyle(css);
             this.rebuild();
@@ -303,6 +304,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         destroy: function () {
             this.uninit();
+            gBrowser.tabpanels.removeEventListener("mouseup", this, false);
             this.removeMenuitem();
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                 e.parentNode.removeChild(e)
@@ -351,9 +353,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         });
                     }
                     break;
+                case 'mouseup':
+                    try {
+                        gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
+                            this._selectedTXT = r.selectedText;
+                        })
+                    } catch (e) { }
+                    break;
             }
         },
-
         updateModifiedFile: function () {
             if (!this.FILE.exists()) return;
 
@@ -365,7 +373,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }, 10);
             }
         },
-
         onCommand: function (event) {
             var menuitem = event.target;
             var text = menuitem.getAttribute("text") || "";
@@ -1070,9 +1077,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%HOST%":
                         return bw.documentURI.host;
                     case "%S":
-                        return context.textSelected || "";
+                        return context.textSelected || addMenu.getSelectedText() || "";
                     case "%SEL%":
-                        return context.textSelected || "";
+                        return context.textSelected || addMenu.getSelectedText() || "";
                     case "%L":
                         return context.linkURL || "";
                     case "%RLINK%":
@@ -1193,6 +1200,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
             return text;
         },
+        getSelectedText() {
+            return this._selectedTXT;
+        },
+        /**
+         * 获取选区
+         * @param {*} win 
+         * @returns 
+         * @deprecated
+         */
         getSelection: function (win) {
             // from getBrowserSelection Fx19
             win || (win = this.focusedWindow);
@@ -1217,6 +1233,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
             return selection;
         },
+        /**
+         * 
+         * @param {*} win 
+         * @returns
+         * @deprecated 
+         */
         getRangeAll: function (win) {
             win || (win = this.focusedWindow);
             var sel = win.getSelection();
