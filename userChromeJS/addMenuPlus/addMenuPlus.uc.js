@@ -287,7 +287,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
             }), ins);
-            this.panelInitialized = false;
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
@@ -522,10 +521,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     ins.remove();
                     // addMenu.removeMenuitem();
                     ins = $C('toolbarseparator', {
-                        'id': 'addMenu-app-insertpoint'
+                        'id': 'addMenu-app-insertpoint',
+                        class: "addMenu-insert-point"
                     });
                     separator.parentNode.insertBefore(ins, separator);
-                    addMenu.panelInitialized = true;
                     addMenu.rebuild();
                 }
             }
@@ -650,8 +649,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (menuObj.condition)
                 this.setCondition(group, menuObj.condition);
 
-
-
             menuObj._items.forEach(function (obj) {
                 group.appendChild(this.newMenuitem(obj, { isMenuGroup: true }));
             }, this);
@@ -662,7 +659,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (menuObj._group) {
                 return this.newGroupMenu(menuObj);
             }
-            var isAppMenu = this.panelInitialized && opt.insertPoint?.id === 'addMenu-app-insertpoint',
+            var isAppMenu = opt.insertPoint?.localName === "toolbarseparator" && opt.insertPoint?.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
                 menuitemType = isAppMenu ? "toolbarbutton" : "menu",
                 menu = document.createXULElement(menuitemType),
@@ -755,7 +752,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             opt || (opt = {});
 
             var menuitem,
-                isAppMenu = this.panelInitialized && opt.insertPoint?.id === 'addMenu-app-insertpoint',
+                isAppMenu = opt.insertPoint?.localName === "toolbarseparator" && opt.insertPoint?.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
                 menuitemType = isAppMenu ? "toolbarbutton" : "menuitem",
                 noDefaultLabel = false;
@@ -1337,6 +1334,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
                 }
             }
+
 
             var aURL = this.getURLSpecFromFile(aFile);
 
