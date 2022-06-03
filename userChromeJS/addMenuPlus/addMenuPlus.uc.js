@@ -15,7 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app 一级菜单自动移动到汉堡菜单（二级菜单还没空处理）, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称，增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id
+// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
@@ -140,6 +140,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
+    var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (window.addMenu) {
@@ -291,6 +292,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
 
+            // 单击三杠按钮时移动菜单到 AppMenu
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
             gBrowser.tabpanels.addEventListener("mouseup", this, false);
 
@@ -340,7 +342,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
                         event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
                             // 显示时自动更新标签
-                            if (m.hasAttribute('onshowinglabel')) m.setAttribute('label', addMenu.convertText(m.getAttribute('onshowinglabel')));
+                            if (m.hasAttribute('onshowinglabel')) {
+                                onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
+                                var sel = addMenu.convertText(m.getAttribute('onshowinglabel'))
+                                if (sel && sel.length > 15)
+                                    sel = sel.substr(0, 15) + "...";
+                                m.setAttribute('label', sel);
+                            }
                         });
 
                         this.customShowings.forEach(function (obj) {
@@ -354,6 +362,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
                     break;
                 case 'mouseup':
+                    // 鼠标按键释放时读取选中文本
                     try {
                         gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
                             this._selectedTXT = r.selectedText;
@@ -648,17 +657,39 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }, this);
             return group;
         },
-        newMenu: function (menuObj) {
+        newMenu: function (menuObj, opt) {
+            opt || (opt = {});
             if (menuObj._group) {
                 return this.newGroupMenu(menuObj);
             }
-            var menu = document.createXULElement("menu");
-            var popup = menu.appendChild(document.createXULElement("menupopup"));
+            var isAppMenu = this.panelInitialized && opt.insertPoint?.id === 'addMenu-app-insertpoint',
+                separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
+                menuitemType = isAppMenu ? "toolbarbutton" : "menu",
+                menu = document.createXULElement(menuitemType),
+                popup,
+                panelId;
+
+            // fix for appmenu
+            const viewCache = $('appMenu-viewCache')?.content || $('appMenu-multiView');
+            if (isAppMenu && viewCache) {
+                menu.setAttribute('closemenu', "none");
+                panelId = menuObj.id ? menuObj.id + "-panel" : "addMenu-panel-" + Math.floor(Math.random() * 900000 + 99999);
+                popup = viewCache.appendChild($C('panelview', {
+                    'id': panelId,
+                    'class': 'addMenu PanelUI-subView'
+                }));
+                popup = popup.appendChild($C('vbox', {
+                    class: 'panel-subview-body',
+                    panelId: panelId
+                }));
+            } else {
+                popup = menu.appendChild(document.createXULElement("menupopup"));
+            }
             for (let key in menuObj) {
                 let val = menuObj[key];
                 if (key === "_items") continue;
 
-                if (key === 'onshowing') {
+                if (!isAppMenu && key === 'onshowing') {
                     this.customShowings.push({
                         item: menu,
                         fnSource: menuObj.onshowing.toString()
@@ -675,19 +706,27 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             let cls = menu.classList;
             cls.add("addMenu");
-            cls.add("menu-iconic");
+            if (isAppMenu) {
+                cls.add("subviewbutton");
+                cls.add("subviewbutton-nav");
+            } else {
+                cls.add("menu-iconic");
+            }
+
 
             // 表示 / 非表示の設定
             if (menuObj.condition)
                 this.setCondition(menu, menuObj.condition);
 
             menuObj._items.forEach(function (obj) {
-                popup.appendChild(this.newMenuitem(obj));
+                popup.appendChild(this.newMenuitem(obj, opt));
             }, this);
 
             // menu に label が無い場合、最初の menuitem の label 等を持ってくる
             // menu 部分をクリックで実行できるようにする(splitmenu みたいな感じ)
-            if (!menu.hasAttribute('label')) {
+            if (isAppMenu) {
+                menu.setAttribute('oncommand', `PanelUI.showSubView('${panelId}', this)`);
+            } else if (!menu.hasAttribute('label')) {
                 let firstItem = menu.querySelector('menuitem');
                 if (firstItem) {
                     let command = firstItem.getAttribute('command');
@@ -915,7 +954,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     continue;
                 }
 
-                menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true, insertPoint: insertPoint });
+                menuitem = obj._items ? this.newMenu(obj, { insertPoint: insertPoint }) : this.newMenuitem(obj, { isTopMenuitem: true, insertPoint: insertPoint });
 
                 insertMenuItem(obj, menuitem);
 
@@ -998,7 +1037,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let uri, iconURI;
                 try {
                     uri = Services.io.newURI(url, null, null);
-                } catch (e) { }
+                } catch (e) { this.log(e) }
                 if (!uri) return;
 
                 menu.setAttribute("scheme", uri.scheme);
@@ -1022,7 +1061,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
                 setIconCallback(url);
             }, e => {
-                console.log(e)
+                this.log(e)
             }).catch(e => { });
         },
         setCondition: function (menu, condition) {
@@ -1423,6 +1462,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     };
 
     function $C(name, attr) {
+        attr || (attr = {});
         var el = document.createXULElement(name);
         if (attr) Object.keys(attr).forEach(function (n) {
             el.setAttribute(n, attr[n])
