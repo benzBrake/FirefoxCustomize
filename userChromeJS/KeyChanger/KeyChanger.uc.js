@@ -6,7 +6,8 @@
 // @description    Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
-// @version        2022.05.05
+// @version        2022.06.03
+// @note           2022.06.03 新增 getSelctionText()，修增 saveFile 不存在
 // @note           0.0.2 メニューを右クリックで設定ファイルを開けるようにした
 // @note           0.0.2 Meta キーを装飾キーに使えるようになったかもしれない（未テスト）
 // @note           0.0.2 Windows キーを装飾キーに使えるようになったかもしれない（未テスト Firefox 17 以降）
@@ -38,7 +39,29 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         get FILE() {
             return this.file;
         },
+        get prefs() {
+            delete this.prefs;
+            return this.prefs = Services.prefs.getBranch("keyChanger.")
+        },
         isBuilding: false,
+        selectedText: "",
+        addEventListener: function () {
+            gBrowser.tabpanels.addEventListener("mouseup", this, false);
+        },
+        handleEvent: function (event) {
+            switch (event.type) {
+                case 'mouseup':
+                    try {
+                        gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
+                            this.selectedText = r.selectedText;
+                        })
+                    } catch (e) { }
+                    break;
+            }
+        },
+        getSelectedText: function () {
+            return this.selectedText;
+        },
         makeKeyset: function (isAlert) {
             KeyChanger.isBuilding = true;
             var s = new Date();
@@ -346,16 +369,35 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                 this.log(e);
             }
         },
-        get prefs() {
-            delete this.prefs;
-            return this.prefs = Services.prefs.getBranch("keyChanger.")
-        },
         log: function () {
             Services.console.logStringMessage("[KeyChanger] " + Array.prototype.slice.call(arguments));
         },
+        init: function () {
+            this.createMenuitem();
+            this.makeKeyset();
+            this.addEventListener();
+        }
     };
 
-    window.KeyChanger.createMenuitem();
-    window.KeyChanger.makeKeyset();
+    window.KeyChanger.init();
 
+
+    function saveFile(fileOrName, data) {
+        var file;
+        if (typeof fileOrName == "string") {
+            file = Services.dirsvc.get('UChrm', Ci.nsIFile);
+            file.appendRelativePath(fileOrName);
+        } else {
+            file = fileOrName;
+        }
+
+        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        suConverter.charset = 'UTF-8';
+        data = suConverter.ConvertFromUnicode(data);
+
+        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
+        foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+        foStream.write(data, data.length);
+        foStream.close();
+    }
 })();
