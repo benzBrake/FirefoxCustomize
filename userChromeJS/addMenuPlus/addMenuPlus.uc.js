@@ -15,7 +15,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本
+// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单）
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
@@ -83,14 +83,22 @@
  ○condition
  メニューを表示する条件を指定します。（Copy URL Lite+ 互換）
  省略すると url や text プロパティから自動的に表示/非表示が決まります。
- select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput から組み合わせて使います。
+
+ ○onshowing
+ 菜单显示时执行的函数
+
+ ○onshowinglabel
+ 菜单显示时更新标签
+
+ page/pagemenu: select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput から組み合わせて使います。
+ nav/navmenu: menubar, tabs, navbar, personal, nomenubar, notabs, nonavbar, nopersonal 配合使用
 
  ○oncommand, command
  これらがある時は condition 以外の特殊なプロパティは無視されます。
 
 
  ◆ サブメニュー ◆
- PageMenu, TabMenu, ToolMenu, AppMenu 関数を使って自由に追加できます。
+ PageMenu, TabMenu, ToolMenu, AppMenu, NavMenu 関数を使って自由に追加できます。
 
 
  ◆ 利用可能な変数 ◆
@@ -265,6 +273,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.regexp = new RegExp(
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
 
+            // 增加菜单类型请在这里加入插入点，同时修改 rebuild 函数里的菜单类型
             var ins;
             ins = $("context-viewsource");
             ins.parentNode.insertBefore(
@@ -275,6 +284,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             ins = $("prefSep") || $("webDeveloperMenu");
             ins.parentNode.insertBefore(
                 $C("menuseparator", { id: "addMenu-tool-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
+            ins = $("toolbar-context-undoCloseTab") || $("toolbarItemsMenuSeparator");
+            ins.parentNode.insertBefore(
+                $C("menuseparator", { id: "addMenu-nav-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
             PanelUI._initialized || PanelUI.init(shouldSuppressPopupNotifications);
             ins = $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem");
             ins.parentNode.insertBefore(
@@ -289,10 +301,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }), ins);
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
+            $("toolbar-context-menu").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
 
             // 单击三杠按钮时移动菜单到 AppMenu
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
+
+            // 响应鼠标键释放事件（eg：获取选中文本）
             gBrowser.tabpanels.addEventListener("mouseup", this, false);
 
             this.style = addStyle(css);
@@ -301,6 +316,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         uninit: function () {
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             $("tabContextMenu").removeEventListener("popupshowing", this, false);
+            $("toolbar-context-menu").removeEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
         },
         destroy: function () {
@@ -338,7 +354,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
 
-
                         event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
                             // 显示时自动更新标签
                             if (m.hasAttribute('onshowinglabel')) {
@@ -358,6 +373,24 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                                 console.error($L('custom showing method error'), obj.fnSource);
                             }
                         });
+                    }
+
+                    if (event.target.id === "toolbar-context-menu") {
+                        if (event.target != event.currentTarget) return;
+
+                        let triggerNode = event.currentTarget.triggerNode;
+                        var state = [];
+                        const map = {
+                            'toolbar-menubar': 'menubar',
+                            'TabsToolbar': 'tabs',
+                            'nav-bar': 'navbar',
+                            'PersonalToolbar': 'personal',
+                        }
+                        Object.keys(map).map(e => $(e).contains(triggerNode) && state.push(map[e]));
+                        if (triggerNode.localName === "button") {
+                            state.push("button");
+                        }
+                        event.currentTarget.setAttribute("addMenu", state.join(" "));
                     }
                     break;
                 case 'mouseup':
@@ -537,10 +570,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
+            // 增加菜单类型需要修改这里
             var aiueo = [
                 { current: "page", submenu: "PageMenu", insertId: "addMenu-page-insertpoint" },
                 { current: "tab", submenu: "TabMenu", insertId: "addMenu-tab-insertpoint" },
                 { current: "tool", submenu: "ToolMenu", insertId: "addMenu-tool-insertpoint" },
+                { current: "nav", submenu: "NavMenu", insertId: "addMenu-nav-insertpoint" },
                 { current: "app", submenu: "AppMenu", insertId: "addMenu-app-insertpoint" },
                 { current: "group", submenu: "GroupMenu", insertId: "addMenu-page-insertpoint" },
             ];
@@ -944,10 +979,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     //     obj.insertAfter = obj.id;
                     // }
                     let noMove = !isDupMenu;
-
-
                     insertMenuItem(obj, dupMenuitem, noMove);
-
                     continue;
                 }
 
@@ -1335,9 +1367,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             }
 
-
             var aURL = this.getURLSpecFromFile(aFile);
-
             var aDocument = null;
             var aCallBack = null;
             var aPageDescriptor = null;
@@ -1347,7 +1377,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
         },
         openScriptInScratchpad: function (parentWindow, file) {
-
             let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,dialog,centerscreen,dependent");
             spWin.top.moveTo(0, 0);
             spWin.top.resizeTo(screen.availWidth, screen.availHeight);
@@ -1569,6 +1598,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],
 #contentAreaContextMenu:not([addMenu=""])  .addMenu[condition~="normal"]
   { display: none; }
+#toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
+#toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
+#toolbar-context-menu:not([addMenu~="navbar"]) .addMenu[condition~="navbar"],
+#toolbar-context-menu:not([addMenu~="personal"]) .addMenu[condition~="personal"],
+#toolbar-context-menu:not([addMenu~="button"]) .addMenu[condition~="button"],
+#toolbar-context-menu[addMenu~="menubar"] .addMenu[condition~="menubar"],
+#toolbar-context-menu[addMenu~="tabs"] .addMenu[condition~="notabs"],
+#toolbar-context-menu[addMenu~="navbar"] .addMenu[condition~="nonavbar"],
+#toolbar-context-menu[addMenu~="personal"] .addMenu[condition~="nopersonal"],
+#toolbar-context-menu[addMenu~="button"] .addMenu[condition~="nobutton"],
+#toolbar-context-menu:not([addMenu=""]) .addMenu[condition~="normal"]
+  { display: none !important; }
 .addMenu-insert-point
   { display: none !important; }
 .addMenu[url] {
@@ -1578,7 +1619,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 .addMenu[exec] {
   list-style-image: url("chrome://browser/skin/aboutSessionRestore-window-icon.png");
 }
-
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
 {
