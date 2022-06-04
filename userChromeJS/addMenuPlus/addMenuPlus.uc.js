@@ -865,7 +865,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             cls.add("addMenu");
 
             if (isAppMenu) {
-                cls.add("subviewbutton");
+                if (menuitem.localName == "toolbarbutton") cls.add("subviewbutton");
             } else {
                 cls.add("menuitem-iconic");
             }
