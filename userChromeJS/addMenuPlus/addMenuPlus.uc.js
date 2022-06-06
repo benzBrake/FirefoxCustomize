@@ -90,8 +90,8 @@
  ○onshowinglabel
  菜单显示时更新标签
 
- page/pagemenu: select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput から組み合わせて使います。
- nav/navmenu: menubar, tabs, navbar, personal, nomenubar, notabs, nonavbar, nopersonal 配合使用
+ page/PageMenu: select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput から組み合わせて使います。
+ nav/NavMenu: menubar, tabs, navbar, personal, nomenubar, notabs, nonavbar, nopersonal 配合使用
 
  ○oncommand, command
  これらがある時は condition 以外の特殊なプロパティは無視されます。
@@ -464,10 +464,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
                 }
             } else if (where) {
-                try {
+                if (this.appVersion < 78) {
                     openUILinkIn(uri.spec, where, false, postData || null);
-                } catch (e) {
-                    let aAllowThirdPartyFixup = {
+                } else {
+                    openUILinkIn(uri.spec, where, {
                         postData: postData || null,
                         triggeringPrincipal: where === 'current' ?
                             gBrowser.selectedBrowser.contentPrincipal : (
@@ -475,34 +475,26 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                                     Services.scriptSecurityManager.createNullPrincipal({}) :
                                     Services.scriptSecurityManager.getSystemPrincipal()
                             )
-                    }
-                    openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                    });
                 }
             } else if (event.button == 1) {
-                if (typeof (eval(openNewTabWith)) == "function") {
+                if (this.appVersion < 78) {
                     openNewTabWith(uri.spec);
                 } else {
-                    let aAllowThirdPartyFixup = {
-                        postData: postData || null,
+                    openNewTabWith(uri.spec, 'tab', {
                         triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
                             Services.scriptSecurityManager.createNullPrincipal({}) :
                             Services.scriptSecurityManager.getSystemPrincipal()
-                    }
-                    openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
+                    });
                 }
             } else {
-                // 可能是 78 以后改调用了，不记得了
-                if (addMenu.appVersion >= 78) {
-                    let aAllowThirdPartyFixup = {
-                        inBackground: false,
-                        postData: postData || null,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
-                    }
-                    openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
-                } else {
+                if (addMenu.appVersion < 78)
                     openUILink(uri.spec, event);
+                else {
+                    openUILink(uri.spec, event, {
+                        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                    });
                 }
-
             }
         },
         exec: function (path, arg) {
