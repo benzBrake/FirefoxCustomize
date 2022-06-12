@@ -1,102 +1,527 @@
 // ==UserScript==
-// @name           下载增强(FF98+)
-// @description    下载增强整合修复版
-// @author         Ryan 再次修改整合 (w13998686967、ywzhaiqi、黒仪大螃蟹、Alice0775、紫云飞)
-// @include        chrome://browser/content/browser.xhtml
-// @include        chrome://browser/content/places/places.xul
-// @include        chrome://browser/content/places/places.xhtml
-// @include        chrome://mozapps/content/downloads/unknownContentType.xul
-// @include        chrome://mozapps/content/downloads/unknownContentType.xhtml
-// @include        chrome://mozapps/content/downloads/downloads.xul
-// @include        chrome://mozapps/content/downloads/downloads.xhtml
-// @version        2022.05.06 移除 显示下载速度（Firefox 好久之前就可以显示了），移除新建下载功能
-// @version        2022.05.01 修正 从硬盘删除文件，不再依赖 DownloadsSubview.jsm
-// @version        2022.04.09 修正 保存并且打开
-// @version        2022.04.06 修正 另存为功能
-// @version        2022.03.18 修正 FF98 下完全不能用，加入第三方下载工具功能
-// @version        2014.11.02 增加多个功能
-// @version        2014.06.06 add delay to fix for new userChrome.js
+// @name            DownloadPlus_ff98.uc.js
+// @description     下载增强
+// @author          Ryan
+// @include         main
+// @include         chrome://browser/content/places/places.xhtml
+// @include         chrome://mozapps/content/downloads/unknownContentType.xhtml
+// @version         2022.06.12
+// @startup         window.DownloadPlus.init();
+// @compatibility   Firefox 98 +
+// @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            更新修复，增加带 Cookie 调用 Aria2 的功能
 // ==/UserScript==
+(function (globalConfig, globalCss) {
+    if (window.DownloadPlus) return;
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-(function () {
-    var dpConfig = {
-        removeFile: true, // 从硬盘中删除
-        downloadNotice: true, // 下载完成通知(声音提醒)
-        showExtractSize: true, // 精确显示文件大小
-        closeBlankTab: true, // 自动关闭下载产生的空白标签
-        showSaveAndOpen: true, // 保存并且打开
-        enableReName: true, // 启用改名功能
-        renameLockSave: false, //true,(下载改名)自动锁定保存文件 false,不锁定 (不知道有什么用没修)
-        reNameEncodingConvert: false, //true,(下载改名)开启下拉菜单选项 false,关闭下拉菜单选项
-        showSaveAs: true, // 另存为
-        enableExtraApp: true, // 启用第三方工具下载
-        extraAppPath: "C:\\Program\ Files\ (x86)\\Internet\ Download\ Manager\\IDMan.exe", // 下载工具路径
-        extraAppParam: "/d {{url}}", // 下载工具参数 {{url}} 代表传递的下载链接
-        showSaveTo: false, //保存到...
-        showCompeleteUrl: true, // 显示完整下载链接
-        dobuleClickToSave: true, // 下载弹出窗口双击保存文件项执行下载 (这个也没修)
+    if (!window.CustomizableUI) Cu.import("resource:///modules/CustomizableUI.jsm");
+    if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
+
+    Cu.import("resource://gre/modules/FileUtils.jsm");
+
+    const LANG = {
+        'zh-CN': {
+            "save and open": "保存并打开",
+            "save as": "另存为",
+            "save to": "保存到",
+            "dobule click to copy link": "双击复制链接",
+            "convert tooltip": "Ctrl+点击转换url编码\n左键:UNICODE\n右键:GB2312",
+            "remove from disk": "从硬盘删除",
+            "button aria2": "Aria2",
+            "button idm": "IDM",
+            "button thunder": "迅雷",
+            "file not found": "文件未找到 %s",
+        }
     }
 
-    var dpText = {
-        newDownload: "新建下载",
-        extraAppName: "IDM",
-        canNotUseExtra: "此类链接不支持调用第三方工具下载",
-        notExist: " 不存在: ",
-        removeFromDisk: "从硬盘中删除",
-        saveAndOpen: "保存并打开",
-        ctrlToConvertEncode: "Ctrl+点击转换url编码\n左键:UNICODE\n右键:GB2312",
-        saveAs: "另存为",
-        dobuleClickToCopy: "双击复制链接"
+    const QUICK_SAVE_LIST = [
+        [Services.dirsvc.get('Desk', Ci.nsIFile).path, "桌面"],
+        ["C:\\", "C盘"],
+        ["D:\\", "D盘"],
+        ["E:\\", "E盘"],
+        ["F:\\", "F盘"]
+    ]; // 快捷保存列表
+
+    const _LOCALE = LANG.hasOwnProperty(Services.locale.appLocaleAsBCP47) ? Services.locale.appLocaleAsBCP47 : 'zh-CN';
+
+    const EXTRA_APP = {
+        "aria2": {
+            "config": "enable aria2 button",
+            "label": $L("button aria2"),
+            "exec": "\\chrome\\resources\\bin\\Aria2\\aria2c.bat",
+            "text": '-x 8 -k 10M --load-cookies={cookiePath} --header="Referer: {referer}" -d {path} {link}',
+        },
+        "idm": {
+            config: "enable idm button",
+            label: $L("button idm"),
+            exec: "C:\\Program\ Files\ (x86)\\Internet\ Download\ Manager\\IDMan.exe", // 需要修改 IDM 路径
+            text: '/d {link}',
+        },
+        "thunder": {
+            config: "enable thunder button",
+            label: $L("button thunder"),
+            exec: "C:\\Program\ Files\ (x86)\\Thunder\\Thunder.exe", // 需要修改迅雷路径
+            text: '{link}',
+        }
     }
 
-    if (!window.Services) Components.utils.import("resource://gre/modules/Services.jsm");
-    if (!window.DownloadUtils) Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
+    window.DownloadPlus = {
+        _urls: [],
+        get appVersion() {
+            return Services.appinfo.version.split(".")[0]
+        },
+        get dialogElement() {
+            return document.documentElement.getButton ? document.documentElement : document.getElementById('unknownContentType');
+        },
+        get topWin() {
+            return Services.wm.getMostRecentWindow("navigator:browser");
+        },
+        init: function () {
+            if (this.appVersion < 98) {
+                this.log("仅支持 Firefox 98（包括） 以上");
+                this.destroy();
+            }
+            switch (location.href) {
+                case 'chrome://browser/content/browser.xhtml':
+                    if (globalConfig["enable save and open"]) this.saveAndOpenMain.init();
+                    if (globalConfig["download complete notice"]) this.downloadCompleteNotice.init();
+                    if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.init();
+                    if (globalConfig["enable rename"]) this.changeNameMainInit();
+                    break;
+                case 'chrome://mozapps/content/downloads/unknownContentType.xhtml':
+                    this.addExtraAppButtons();
+                    if (globalConfig["enable double click to copy link"]) this.dblClickToCopyLink();
+                    if (globalConfig["enable rename"]) this.downloadDialogChangeName();
+                    if (globalConfig["show extract size"]) this.downloadDialogShowExtractSize();
+                    window.sizeToContent();
+                    break;
+                case 'chrome://browser/content/places/places.xhtml':
+                    if (globalConfig["remove file menuitem"]) this.removeFileEnhance.init();
+                    break;
+            }
+            this.style = addStyle(globalCss);
+        },
+        destroy: function () {
+            switch (location.href) {
+                case 'chrome://browser/content/browser.xhtml':
+                    if (globalConfig["enable save and open"]) this.saveAndOpenMain.destroy();
+                    if (globalConfig["download complete notice"]) this.downloadCompleteNotice.destroy();
+                    if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.destroy();
+                    break;
+                case 'chrome://mozapps/content/downloads/unknownContentType.xhtml':
+                    break;
+                case 'chrome://browser/content/places/places.xhtml':
+                    if (globalConfig["remove file menuitem"]) this.removeFileEnhance.destroy();
+                    break;
+            }
+            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+        },
+        handleRelativePath: function (path) {
+            let OS = this.topWin.OS;
+            if (path) {
+                let handled = false;
+                Object.keys(OS.Constants.Path).forEach(key => {
+                    if (path.includes("{" + key + "}")) {
+                        path = path.replace("{" + key + "}", OS.Constants.Path[key]);
+                        handled = true;
+                    }
+                })
+                if (!handled) {
+                    path = path.replace(/\//g, '\\').toLocaleLowerCase();
+                    var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
+                    if (/^(\\)/.test(path)) {
+                        path = ffdir + path;
+                    }
+                }
+                return path;
+            }
+        },
+        exec: function (path, arg) {
+            var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
+            var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+            try {
+                var a;
+                if (typeof arg == "undefined") arg = []; // fix slice error
+                if (typeof arg == 'string' || arg instanceof String) {
+                    a = arg.split(/\s+/)
+                } else if (Array.isArray(arg)) {
+                    a = arg;
+                } else {
+                    a = [arg];
+                }
 
-    Services.prefs.setBoolPref("browser.download.improvements_to_download_panel", false);
+                file.initWithPath(path);
+                if (!file.exists()) {
+                    DownloadPlus.alert($L("file not found", path), "error");
+                    Cu.reportError($L("file not found", path));
+                    return;
+                }
 
-    switch (location.href) {
-        case "chrome://browser/content/browser.xhtml":
-            setTimeout(function () {
-                // if (dpConfig.removeFile) downloadsPanelRemoveFile(); // 从硬盘中删除, FF 98 已新增
-                if (dpConfig.downloadNotice) downloadSoundPlay(); // 下载完成提示音
-                if (dpConfig.showExtractSize) downloadFileSize(); // 精确显示文件大小
-                if (dpConfig.closeBlankTab) autoCloseBlankTab(); // 自动关闭下载产生的空白标签
-                if (dpConfig.showSaveAndOpen) saveAndOpenMain(); // 跟下面的 saveAndOpen 配合使用
-                if (dpConfig.enableReName) downloadReNameMain(); // 跟下面的 downloadRename 配合使用
-            }, 200);
-            break;
-        case "chrome://mozapps/content/downloads/unknownContentType.xul":
-        case "chrome://mozapps/content/downloads/unknownContentType.xhtml":
-            setTimeout(function () {
-                if (dpConfig.showSaveAndOpen) saveAndOpen(); // 保存并打开
-                if (dpConfig.enableReName) downloadReName(); // 下载改名
-                if (dpConfig.showSaveAs) downloadSaveAs(); // 另存为...
-                if (dpConfig.enableExtraApp) downloadDialogExtraApp(); // 第三方工具下载
-                if (dpConfig.showSaveTo) downloadSaveTo(); // 保存到...
-                if (dpConfig.showCompeleteUrl) downloadShowCompleteURL(); // 下载弹出窗口双击链接复制完整链接
-                if (dpConfig.dobuleClickToSave) doubleClickToSave(); // 下载弹出窗口双击保存文件项执行下载
-                if (dpConfig.defaultActionToSave) defaultActionToSave(); // 默认选中下载
-                window.sizeToContent(); // 下载弹出窗口大小自适应(确保在添加的按钮之后加载)
-            }, 200);
-            break;
-        case "chrome://browser/content/places/places.xul":
-        case "chrome://browser/content/places/places.xhtml":
-            setTimeout(function () {
-                if (dpConfig.removeFile) downloadsPanelRemoveFile(); // 从硬盘中删除(我的足迹) FF 98 已新增，但是有 BUG 故留着
-            }, 200);
-            break;
-    }
+                if (file.isExecutable()) {
+                    process.init(file);
+                    process.runw(false, a, a.length);
+                } else {
+                    file.launch();
+                }
+            } catch (e) {
+                this.log(e);
+            }
+        },
+        copy: function (aText) {
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
+        },
+        dblClickToCopyLink: function (e) {
+            var s = document.querySelector("#source"),
+                l = s.previousSibling;
+            l.innerHTML = l.innerHTML + "(" + $L("dobule click to copy link") + ")";
+            s.value = dialog.mLauncher.source.spec;
+            s.setAttribute("crop", "center");
+            s.setAttribute("tooltiptext", $L("dobule click to copy link"));
+            s.style.setProperty('cursor', 'pointer');
+            l.setAttribute("ondblclick", 'DownloadPlus.copy(dialog.mLauncher.source.spec);');
+            s.setAttribute("ondblclick", 'DownloadPlus.copy(dialog.mLauncher.source.spec);');
+        },
+        changeNameMainInit: function () {
+            const obsService = Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverService);
+            const RESPONSE_TOPIC = 'http-on-examine-response';
 
-    const dialogElement = document.documentElement.getButton ? document.documentElement : document.getElementById('unknownContentType');
+            var respObserver = {
+                observing: false,
+                observe: function (subject, topic, data) {
+                    try {
+                        let channel = subject.QueryInterface(Ci.nsIHttpChannel);
+                        let header = channel.contentDispositionHeader;
+                        let associatedWindow = channel.notificationCallbacks
+                            .getInterface(Components.interfaces.nsILoadContext)
+                            .associatedWindow;
+                        associatedWindow.localStorage.setItem(channel.URI.spec, header.split("=")[1]);
+                    } catch (ex) { };
+                },
+                start: function () {
+                    if (!this.observing) {
+                        obsService.addObserver(this, RESPONSE_TOPIC, false);
+                        this.observing = true;
+                    }
+                },
+                stop: function () {
+                    if (this.observing) {
+                        obsService.removeObserver(this, RESPONSE_TOPIC, false);
+                        this.observing = false;
+                    }
+                }
+            };
 
-    function getAppVersion() {
-        return Services.appinfo.version.split(".")[0];
-    }
+            respObserver.start();
+            addEventListener("beforeunload", function () {
+                respObserver.stop();
+            })
+        },
+        downloadDialogChangeName: function () {
+            document.querySelector("#mode").addEventListener("select", function () {
+                if (dialog.dialogElement("save").selected) {
+                    let rename = globalConfig["enable rename"],
+                        encodingConvert = globalConfig["enable encoding convert"];
+                    if (!document.querySelector("#locationtext")) {
+                        if (rename || encodingConvert) {
+                            var orginalString = "";
+                            if (encodingConvert) {
+                                try {
+                                    orginalString = (opener.localStorage.getItem(dialog.mLauncher.source.spec) ||
+                                        dialog.mLauncher.source.asciiSpec.substring(dialog.mLauncher.source.asciiSpec.lastIndexOf("/"))).replace(/[\/:*?"<>|]/g, "");
+                                    opener.localStorage.removeItem(dialog.mLauncher.source.spec)
+                                } catch (e) {
+                                    orginalString = dialog.mLauncher.suggestedFileName;
+                                }
+                            }
+                            var location = document.querySelector("#location"), locationtext;
+                            if (encodingConvert)
+                                locationtext = document.createXULElement("menulist");
+                            else
+                                locationtext = document.createElementNS("http://www.w3.org/1999/xhtml", "html:input");
+                            locationtext.id = "locationtext";
+                            if (rename && encodingConvert)
+                                locationtext.setAttribute("editable", "true");
+                            locationtext.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
+                            locationtext.setAttribute("tooltiptext", $L("convert tooltip"));
+                            location.parentNode.insertBefore(locationtext, location);
+                            locationtext.addEventListener("click", function (e) {
+                                if (e.ctrlKey) {
+                                    if (e.button == 0)
+                                        this.value = decodeURIComponent(this.value);
+                                    if (e.button == 2) {
+                                        e.preventDefault();
+                                        converter.charset = "GB2312";
+                                        this.value = converter.ConvertToUnicode(unescape(this.value));
+                                    }
+                                }
+                            }, false);
+                            if (rename)
+                                locationtext.value = dialog.mLauncher.suggestedFileName;
+                            if (encodingConvert) {
+                                locationtext.addEventListener("command", function (e) {
+                                    if (rename)
+                                        locationtext.value = e.target.value;
+                                    document.title = "Opening " + e.target.value;
+                                });
+                                let menupopup = locationtext.appendChild(document.createXULElement("menupopup"));
+                                let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
+                                menuitem.value = dialog.mLauncher.suggestedFileName;
+                                menuitem.label = "Original: " + menuitem.value;
+                                if (!rename)
+                                    locationtext.value = menuitem.value;
+                                let converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
+                                    .getService(Components.interfaces.nsIScriptableUnicodeConverter);
 
-    // 下载完成提示音
-    function downloadSoundPlay() {
-        var downloadPlaySound = {
+                                function createMenuitem(encoding) {
+                                    converter.charset = encoding;
+                                    let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
+                                    menuitem.value = converter.ConvertToUnicode(orginalString).replace(/^"(.+)"$/, "$1");
+                                    menuitem.label = encoding + ": " + menuitem.value;
+                                }
+                                ["GB18030", "BIG5", "Shift-JIS"].forEach(function (item) {
+                                    createMenuitem(item)
+                                });
+                            }
+                        }
+                    }
+                    document.querySelector("#location").hidden = true;
+                    document.querySelector("#locationtext").hidden = false;
+                } else {
+                    document.querySelector("#locationtext").hidden = true;
+                    document.querySelector("#location").hidden = false;
+                }
+            }, false)
+            dialog.dialogElement("save").selected && dialog.dialogElement("save").click();
+            window.addEventListener("dialogaccept", function (event) {
+                if ((document.querySelector("#locationtext").value != dialog.mLauncher.suggestedFileName) && dialog.dialogElement("save").selected) {
+                    event.stopPropagation();
+                    var mainwin = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser");
+                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, document.querySelector("#locationtext").value, null, null, false, null, null, null, null, Services.prefs.getBoolPref("browser.download.useDownloadDir", false), null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                    document.documentElement.removeAttribute("ondialogaccept");
+                }
+            }, true);
+        },
+        downloadDialogShowExtractSize: () => {
+            Cu.import("resource://gre/modules/DownloadUtils.jsm");
+            function DU_convertByteUnits(aBytes) {
+                let unitIndex = 0;
+                while ((aBytes >= 999.5) && (unitIndex < 3)) {
+                    aBytes /= 1024;
+                    unitIndex++;
+                }
+                return [(aBytes > 0) && (aBytes < 100) && (unitIndex != 0) ? (aBytes < 10 ? (parseInt(aBytes * 100) / 100).toFixed(2) : (parseInt(aBytes * 10) / 10).toFixed(1)) : parseInt(aBytes), ['bytes', 'KB', 'MB', 'GB'][unitIndex]];
+            }
+            eval("DownloadUtils.convertByteUnits = " + DU_convertByteUnits.toString());
+        },
+        saveAndOpenView: {
+            onDownloadChanged: function (dl) {
+                if (dl.progress != 100) return;
+                if (window.DownloadPlus._urls.indexOf(dl.source.url) > -1) {
+                    let target = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                    target.initWithPath(dl.target.path);
+                    target.launch();
+                    window.DownloadPlus._urls[window.DownloadPlus._urls.indexOf(dl.source.url)] = "";
+                }
+            },
+            onDownloadAdded: function (dl) { },
+            onDownloadRemoved: function (dl) { },
+        },
+        saveAndOpenMain: {
+            init: function () {
+                Cu.import("resource://gre/modules/Downloads.jsm");
+                Downloads.getList(Downloads.ALL).then(list => { list.addView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
+            },
+            destroy: function () {
+                window.DownloadPlus._urls = [];
+                Cu.import("resource://gre/modules/Downloads.jsm");
+                Downloads.getList(Downloads.ALL).then(list => { list.removeView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
+            }
+        },
+        addExtraAppButtons: function () {
+            let refEl = this.dialogElement.getButton("accept").nextSibling;
+            if (globalConfig["enable save and open"]) {
+                let saveAndOpen = this.dialogElement.getButton('extra1');
+                saveAndOpen.parentNode.insertBefore(saveAndOpen, this.dialogElement.getButton("accept").nextSibling);
+                saveAndOpen.setAttribute("hidden", "false");
+                saveAndOpen.setAttribute("label", $L("save and open"));
+                saveAndOpen.addEventListener("command", () => {
+                    Services.wm.getMostRecentWindow("navigator:browser").DownloadPlus._urls.push(dialog.mLauncher.source.asciiSpec);
+                    document.querySelector("#save").click();
+                    window.DownloadPlus.dialogElement.getButton("accept").disabled = 0;
+                    window.DownloadPlus.dialogElement.getButton("accept").click()
+                });
+                refEl = saveAndOpen;
+            }
+            if (globalConfig["enable save as"]) {
+                let saveAs = this.dialogElement.getButton('extra2');
+                saveAs.setAttribute("hidden", "false");
+                saveAs.setAttribute("label", $L("save as"));
+                saveAs.addEventListener("command", () => {
+                    var mainwin = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser");
+                    // 感谢 ycls006
+                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                    close();
+                });
+                refEl.insertAdjacentElement('afterend', saveAs);
+                refEl = saveAs;
+            }
+            refEl || (refEl = this.dialogElement.getButton("accept").nextSibling);
+            if (globalConfig["enable save to"]) {
+                let shadowRoot = document.getElementById('unknownContentType').shadowRoot,
+                    link = $CNS(document, 'http://www.w3.org/1999/xhtml', 'html:link', {
+                        rel: 'stylesheet',
+                        href: 'chrome://global/content/widgets.css'
+                    });
+                shadowRoot.insertBefore(link, shadowRoot.firstChild);
+                let saveTo = $C(document, 'button', {
+                    label: $L("save to"),
+                    hidde: false,
+                    type: 'menu'
+                }),
+                    saveToMenu = $C(document, 'menupopup', {});
+                // saveTo.appendChild(document.createXULElement('dropmarker'));
+                saveTo.appendChild(saveToMenu);
+                QUICK_SAVE_LIST.forEach(function (dir) {
+                    var [name, dir] = [dir[1], dir[0]];
+                    var item = saveToMenu.appendChild(document.createXULElement("menuitem"));
+                    item.setAttribute("label", (name || (dir.match(/[^\\/]+$/) || [dir])[0]));
+                    item.setAttribute("image", "moz-icon:file:///" + dir + "\\");
+                    item.setAttribute("class", "menuitem-iconic");
+                    item.onclick = function () {
+                        var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                        var path = dir.replace(/^\./, Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path);
+                        path = path.endsWith("\\") ? path : path + "\\";
+                        file.initWithPath(path + (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : document.querySelector("#location").value).trim());
+                        if (typeof dialog.mLauncher.saveToDisk === 'function') {
+                            dialog.mLauncher.saveToDisk(file, 1);
+                        } else {
+                            dialog.mLauncher.MIMEInfo.preferredAction = dialog.mLauncher.MIMEInfo.saveToDisk;
+                            dialog.mLauncher.saveDestinationAvailable(file);
+                        }
+                        dialog.onCancel = function () { };
+                        close();
+                    };
+                })
+                refEl.insertAdjacentElement('afterend', saveTo);
+                refEl = saveTo;
+            }
+            Object.keys(EXTRA_APP).forEach(function (key) {
+                let app = EXTRA_APP[key];
+                if (app.label && app.exec && app.text && app.config && globalConfig[app.config]) {
+                    let btn = $C(document, 'button', app);
+                    btn.setAttribute("hidden", "false");
+                    btn.setAttribute("onclick", "window.DownloadPlus.handleExtraAppBtnClick(event);");
+                    refEl.insertAdjacentElement('afterend', btn);
+                    refEl = btn;
+                }
+            });
+        },
+        handleExtraAppBtnClick: async function (event) {
+            let target = event.target;
+            let exec = DownloadPlus.handleRelativePath(target.getAttribute('exec')) || exec || "",
+                text = target.getAttribute('text') || text || "",
+                header = "",
+                cookie = $Cookie(dialog.mLauncher.source.asciiSpec || link) || "",
+                referer = dialog.mSourcePath || gBrowser?.currentURI?.spec || "",
+                link = dialog.mLauncher.source.asciiSpec || link,
+                path = Services.prefs.getStringPref("browser.download.lastDir", ""),
+                regEx = new RegExp("^data");
+            if (regEx.test(link)) {
+                internalSave(link, null, "", null, null, false, null, null, null, null, null, false, null, PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                return;
+            }
+            if (exec.length) {
+                if (path.length == 0) {
+                    let [title] = await document.l10n.formatValues([
+                        { id: "choose-download-folder-title" },
+                    ]);
+                    // firefox 选择保存目录对话框
+                    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+                    fp.init(window, title, Ci.nsIFilePicker.modeGetFolder);
+                    let result = await new Promise(resolve => fp.open(resolve));
+                    if (result != Ci.nsIFilePicker.returnOK) {
+                        return;
+                    }
+                    path = fp.file.path;
+                    Services.prefs.setStringPref("browser.download.lastDir", path);
+                }
+                if (text.indexOf("{cookiePath}") >= 0) {
+                    // 无法读取 Firefox 的 cookies.sqlite
+                    // text = text.replace("{cookiePath}", FileUtils.getDir("ProfD", ["cookies.sqlite"], true).path);
+                    text = text.replace("{cookiePath}", $Cookie(dialog.mLauncher.source.asciiSpec, true));
+                }
 
+                if (cookie.length) {
+                    header += "Cookie: " + cookie + "\r\n";
+                }
+
+                if (referer.length) {
+                    header += "Referer: " + referer + "\r\n";
+                }
+
+                text = text.replace("{header}", header).replace("{cookie}", cookie).replace("{referer}", referer).replace("{link}", link).replace("{path}", path);
+
+                window.DownloadPlus.exec(exec, text);
+            }
+            window.close();
+        },
+        removeFile: function (event) {
+            function removeSelectFile(path) {
+                let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                try {
+                    file.initWithPath(path);
+                } catch (e) {
+
+                }
+                if (!file.exists()) {
+                    if (/\..{0,10}(\.part)$/.test(file.path))
+                        file.initWithPath(file.path.replace(".part", ""));
+                    else
+                        file.initWithPath(file.path + ".part");
+                }
+                if (file.exists()) {
+                    file.permissions |= 0666;
+                    file.remove(0);
+                }
+            }
+
+            var ddBox = document.getElementById("downloadsRichListBox");
+            if (!(ddBox && ddBox._placesView)) {
+                ddBox = document.getElementById("downloadsListBox");
+            }
+            if (!ddBox) return;
+            var len = ddBox.selectedItems.length;
+
+            for (var i = len - 1; i >= 0; i--) {
+                let sShell = ddBox.selectedItems[i]._shell;
+                let path = sShell.download.target.path;
+                removeSelectFile(path);
+                sShell.doCommand("cmd_delete");
+            }
+        },
+        removeFileEnhance: {
+            init: function () {
+                window.DownloadPlus.clearHistoryOnDelete = Services.prefs.getIntPref("browser.download.clearHistoryOnDelete");
+                Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", 2);
+                let context = $("downloadsContextMenu");
+                context.insertBefore(
+                    $C(document, "menuitem", {
+                        id: 'downloadRemoveFromHistoryEnhanceMenuItem',
+                        class: 'downloadRemoveFromHistoryMenuItem',
+                        onclick: "window.DownloadPlus.removeFile()",
+                        label: $L("remove from disk")
+                    }),
+                    context.querySelector(".downloadRemoveFromHistoryMenuItem")
+                );
+            },
+            destroy: function () {
+                Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", window.DownloadPlus.clearHistoryOnDelete);
+                let context = $("downloadsContextMenu");
+                context.removeChild(context.querySelector("#downloadRemoveFromHistoryEnhanceMenuItem"));
+            }
+        },
+        downloadCompleteNotice: {
             DL_START: null,
             DL_DONE: "file:///C:/WINDOWS/Media/chimes.wav",
             DL_CANCEL: null,
@@ -174,11 +599,84 @@
                         break;
                 }
             }
-        }
-        downloadPlaySound.init();
+        },
+        autoCloseBlankTab: {
+            eventListener: {
+                onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+                    if (!aRequest || !aWebProgress.isTopLevel) return;
+                    let location;
+                    try {
+                        aRequest.QueryInterface(Ci.nsIChannel);
+                        location = aRequest.URI;
+                    } catch (ex) { }
+                    if ((aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) &&
+                        (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) &&
+                        location && location.spec !== 'about:blank' &&
+                        aBrowser.documentURI && aBrowser.documentURI.spec === 'about:blank' &&
+                        Components.isSuccessCode(aStatus) && !aWebProgress.isLoadingDocument
+                    ) {
+                        setTimeout(() => {
+                            gBrowser.removeTab(gBrowser.getTabForBrowser(aBrowser));
+                        }, 100);
+                    }
+                }
+            },
+            init: function () {
+                gBrowser.addProgressListener(this.eventListener);
+            },
+            destroy: function () {
+                gBrowser.removeProgressListener(this.eventListener);
+            }
+        },
+        alert: function (aMsg, aTitle, aCallback) {
+            var callback = aCallback ? {
+                observe: function (subject, topic, data) {
+                    if ("alertclickcallback" != topic)
+                        return;
+                    aCallback.call(null);
+                }
+            } : null;
+            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+            alertsService.showAlertNotification(
+                this.appVersion >= 78 ? "chrome://global/skin/icons/info.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "DownloadPlus",
+                aMsg + "", !!callback, "", callback);
+        },
+        log: function () {
+            Cu.reportError(Array.prototype.slice.call(arguments));
+        },
     }
 
-    function dpCreateElement(doc, tag, props, isHTML = false) {
+    if (typeof gBrowserInit !== "undefined") {
+        if (gBrowserInit.delayedStartupFinished) window.DownloadPlus.init();
+        else {
+            let delayedListener = (subject, topic) => {
+                if (topic == "browser-delayed-startup-finished" && subject == window) {
+                    Services.obs.removeObserver(delayedListener, topic);
+                    window.DownloadPlus.init();
+                }
+            };
+            Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+        }
+    } else {
+        window.DownloadPlus.init();
+    }
+
+    function inArray(arr, obj) {
+        var i = arr.length;
+        while (i--) {
+            if (arr[i] === obj) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function $(id, aDoc) {
+        aDoc || (aDoc = document);
+        return aDoc.getElementById(id);
+    }
+
+    function $C(doc, tag, props, isHTML = false) {
         let el = isHTML ? doc.createElement(tag) : doc.createXULElement(tag);
         for (let prop in props) {
             el.setAttribute(prop, props[prop])
@@ -186,477 +684,96 @@
         return el;
     }
 
-    function removeFileFromDisk() {
-        function removeSelectFile(path) {
+    function $CNS(doc, namespace, type, props) {
+        if (!type) return null;
+        doc || (doc = document);
+        namespace || (namespace = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+        let el = doc.createElementNS(namespace, type);
+        for (let prop in props) {
+            el.setAttribute(prop, props[prop])
+        }
+        return el;
+    }
+
+    function $L(key, replace) {
+        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
+        if (typeof replace !== "undefined") {
+            str = str.replace("%s", replace);
+        }
+        return str || "";
+    }
+
+
+    function $Cookie(link, saveToFile) {
+        if (!link) return "";
+        let uri = Services.io.newURI(link, null, null),
+            cookies = Services.cookies.getCookiesFromHost(uri.host, {}),
+            cookieSavePath = DownloadPlus.handleRelativePath(globalConfig["cookie save path"]);
+        if (saveToFile) {
+            let string = cookies.map(formatCookie).join('');
             let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-            try {
-                file.initWithPath(path);
-            } catch (e) {
-
-            }
+            file.initWithPath(cookieSavePath);
+            file.append(uri.host + ".txt");
             if (!file.exists()) {
-                if (/\..{0,10}(\.part)$/.test(file.path))
-                    file.initWithPath(file.path.replace(".part", ""));
-                else
-                    file.initWithPath(file.path + ".part");
+                file.create(0, 0644);
             }
-            if (file.exists()) {
-                file.permissions |= 0666;
-                file.remove(0);
-            }
-        }
-
-        var ddBox = document.getElementById("downloadsRichListBox");
-        if (!(ddBox && ddBox._placesView)) {
-            ddBox = document.getElementById("downloadsListBox");
-        }
-        if (!ddBox) return;
-        var len = ddBox.selectedItems.length;
-
-        for (var i = len - 1; i >= 0; i--) {
-            let sShell = ddBox.selectedItems[i]._shell;
-            let path = sShell.download.target.path;
-            removeSelectFile(path);
-            sShell.doCommand("cmd_delete");
-        }
-    }
-
-    function removeFileInit() {
-        // 来自 https://github.com/aminomancer/uc.css.js/blob/master/JS/downloadsDeleteFileCommand.uc.js
-        // if (!("DownloadsViewUI" in window)) return;
-        // Make the menuitem.
-        let context = document.getElementById("downloadsContextMenu");
-        context.insertBefore(
-            dpCreateElement(document, "menuitem", {
-                onclick: '(' + removeFileFromDisk.toString() + ')()',
-                class: "downloadDeleteFileMenuItem",
-                label: dpText.removeFromDisk
-            }),
-            context.querySelector(".downloadRemoveFromHistoryMenuItem")
-        );
-        let clearDownloads = context.querySelector(
-            `[data-l10n-id="downloads-cmd-clear-downloads"]`
-        );
-        if (clearDownloads.getAttribute("accesskey") === "D")
-            clearDownloads.setAttribute("accesskey", "C");
-
-        // Add the class method for the command.
-        if (
-            !DownloadsViewUI.DownloadElementShell.prototype.hasOwnProperty(
-                "downloadsCmd_deleteFile"
-            )
-        )
-            DownloadsViewUI.DownloadElementShell.prototype.downloadsCmd_deleteFile =
-                async function downloadsCmd_deleteFile() {
-                    let { download } = this;
-                    let { path } = download.target;
-                    let { succeeded } = download;
-                    let indicator = DownloadsCommon.getIndicatorData(this.element.ownerGlobal);
-                    // Remove the download view.
-                    await DownloadsCommon.deleteDownload(download);
-                    if (succeeded) {
-                        // Temp files are made "read-only" by DownloadIntegration.downloadDone, so reset the permission bits to read/write.
-                        // This won't be necessary after 1733587 since Downloads won't ever be temporary.
-                        let info = await IOUtils.stat(path);
-                        await IOUtils.setPermissions(path, 0o660);
-                        await IOUtils.remove(path, {
-                            ignoreAbsent: true,
-                            recursive: info.type === "directory",
-                        });
-                    }
-                    if (!indicator._hasDownloads)
-                        indicator.attention = DownloadsCommon.ATTENTION_NONE;
-                };
-        // Add a class method for the panel's class (extends the class above) to handle a special case.
-        if (
-            "DownloadsViewItem" in window &&
-            !DownloadsViewItem.prototype.hasOwnProperty("downloadsCmd_deleteFile")
-        ) {
-            DownloadsViewItem.prototype.downloadsCmd_deleteFile =
-                async function downloadsCmd_deleteFile() {
-                    await DownloadsViewUI.DownloadElementShell.prototype.downloadsCmd_deleteFile.call(
-                        this
-                    );
-                    // Protects against an unusual edge case where the user:
-                    // 1) downloads a file with Firefox; 2) deletes the file from outside of Firefox, e.g., a file manager;
-                    // 3) downloads the same file from the same source; 4) opens the downloads panel and uses the menuitem to delete one of those 2 files;
-                    // Under those conditions, Firefox will make 2 view items even though there's only 1 file.
-                    // Using this method will only delete the view item it was called on, because this instance is not aware of other view items with identical targets.
-                    // So the remaining view item needs to be refreshed to hide the "Delete" option.
-                    // That example only concerns 2 duplicate view items but you can have an arbitrary number, so iterate over all items...
-                    for (let viewItem of DownloadsView._visibleViewItems.values()) {
-                        viewItem.download.refresh().catch(Cu.reportError);
-                    }
-                    // Don't use DownloadsPanel.hidePanel for this method because it will remove
-                    // the view item from the list, which is already sufficient feedback.
-                };
-        }
-        // Show/hide the menuitem based on whether there's any file to delete.
-        if (DownloadsViewUI.updateContextMenuForElement.name === "updateContextMenuForElement")
-            eval(
-                `DownloadsViewUI.updateContextMenuForElement = function ` +
-                DownloadsViewUI.updateContextMenuForElement
-                    .toSource()
-                    .replace(/^updateContextMenuForElement/, "")
-                    .replace(
-                        /(let download = element\._shell\.download;)/,
-                        `$1\n    contextMenu.querySelector(".downloadDeleteFileMenuItem").hidden =\n      !(download.target.exists || download.target.partFileExists);\n`
-                    )
-            );
-    }
-
-    // 从硬盘中删除
-    function downloadsPanelRemoveFile() {
-        if (getAppVersion() >= 101) {
-            // 98 新增这个功能，但是我这实测 101 beta 才能无 BUG 使用
-            Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", 2);
-            return;
-        }
-        if ("gBrowserInit" in window) {
-            if (gBrowserInit.delayedStartupFinished) removeFileInit();
-            else {
-                let delayedListener = (subject, topic) => {
-                    if (topic == "browser-delayed-startup-finished" && subject == window) {
-                        Services.obs.removeObserver(delayedListener, topic);
-                        removeFileInit();
-                    }
-                };
-                Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-            }
-        } else removeFileInit();
-    }
-
-    //精确显示文件大小
-    function downloadFileSize() {
-        location.href.startsWith('chrome://browser/content/browser.x') && (DownloadUtils.convertByteUnits =
-            function DU_convertByteUnits(aBytes) {
-                let unitIndex = 0;
-                while ((aBytes >= 999.5) && (unitIndex < 3)) {
-                    aBytes /= 1024;
-                    unitIndex++;
-                }
-                return [(aBytes > 0) && (aBytes < 100) && (unitIndex != 0) ? (aBytes < 10 ? (parseInt(aBytes * 100) / 100).toFixed(2) : (parseInt(aBytes * 10) / 10).toFixed(1)) : parseInt(aBytes), ['bytes', 'KB', 'MB', 'GB'][unitIndex]];
-            });
-    }
-
-    // 自动关闭下载产生的空白标签
-    function autoCloseBlankTab() {
-        gBrowser.addTabsProgressListener({
-            onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-                if (!aRequest || !aWebProgress.isTopLevel) return;
-                let location;
-                try {
-                    aRequest.QueryInterface(Ci.nsIChannel);
-                    location = aRequest.URI;
-                } catch (ex) { }
-                if ((aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) &&
-                    (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) &&
-                    location && location.spec !== 'about:blank' &&
-                    aBrowser.documentURI && aBrowser.documentURI.spec === 'about:blank' &&
-                    Components.isSuccessCode(aStatus) && !aWebProgress.isLoadingDocument
-                ) {
-                    setTimeout(() => {
-                        gBrowser.removeTab(gBrowser.getTabForBrowser(aBrowser));
-                    }, 100);
-                }
-            }
-        });
-    }
-
-    // 保存并打开
-    function saveAndOpen() {
-        var saveAndOpen = dialogElement.getButton("extra2");
-        saveAndOpen.parentNode.insertBefore(saveAndOpen, dialogElement.getButton("accept").nextSibling);
-        saveAndOpen.setAttribute("hidden", "false");
-        saveAndOpen.setAttribute("label", dpText.saveAndOpen);
-        saveAndOpen.addEventListener("command", () => {
-            Services.wm.getMostRecentWindow("navigator:browser").saveAndOpen.urls.push(dialog.mLauncher.source.asciiSpec);
-            document.querySelector("#save").click();
-            dialogElement.getButton("accept").disabled = 0;
-            dialogElement.getButton("accept").click()
-        });
-    }
-
-    //作用于 main 窗口
-    function saveAndOpenMain() {
-        Components.utils.import("resource://gre/modules/Downloads.jsm");
-        window.saveAndOpen = {
-            urls: [],
-            init: function () {
-                Downloads.getList(Downloads.ALL).then(list => {
-                    list.addView({
-                        onDownloadChanged: function (dl) {
-                            if (dl.progress != 100) return;
-                            if (window.saveAndOpen.urls.indexOf(dl.source.url) > -1) {
-                                let target = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-                                target.initWithPath(dl.target.path);
-                                target.launch();
-                                window.saveAndOpen.urls[window.saveAndOpen.urls.indexOf(dl.source.url)] = "";
-                            }
-                        },
-                        onDownloadAdded: function () { },
-                        onDownloadRemoved: function () { },
-                    });
-                }).then(null, Cu.reportError);
-            }
-
-        }
-        window.saveAndOpen.init();
-    }
-
-    // 下载改名
-    function downloadReName() {
-        //注:同时关闭改名和下拉菜单会导致下载文件的文件名不显示(非要关闭请默认在28行最前面加//来注释掉该功能)
-        if (!location.href.startsWith("chrome://mozapps/content/downloads/unknownContentType.x")) return;
-        document.querySelector("#mode").addEventListener("select", function () {
-            if (dialog.dialogElement("save").selected) {
-                if (!document.querySelector("#locationtext")) {
-                    if (dpConfig.enableReName || dpConfig.reNameEncodingConvert) {
-                        var orginalString = "";
-                        if (dpConfig.reNameEncodingConvert) {
-                            try {
-                                orginalString = (opener.localStorage.getItem(dialog.mLauncher.source.spec) ||
-                                    dialog.mLauncher.source.asciiSpec.substring(dialog.mLauncher.source.asciiSpec.lastIndexOf("/"))).replace(/[\/:*?"<>|]/g, "");
-                                opener.localStorage.removeItem(dialog.mLauncher.source.spec)
-                            } catch (e) {
-                                orginalString = dialog.mLauncher.suggestedFileName;
-                            }
-                        }
-                        var location = document.querySelector("#location"),
-                            locationtext;
-                        if (dpConfig.reNameEncodingConvert)
-                            locationtext = document.createXULElement("menulist");
-                        else
-                            locationtext = document.createElementNS("http://www.w3.org/1999/xhtml", "html:input");
-                        locationtext.id = "locationtext";
-                        if (dpConfig.enableReName && dpConfig.reNameEncodingConvert)
-                            locationtext.setAttribute("editable", "true");
-                        locationtext.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
-                        locationtext.setAttribute("tooltiptext", dpText.ctrlToConvertEncode);
-                        location.parentNode.insertBefore(locationtext, location);
-                        locationtext.addEventListener("click", function (e) {
-                            if (e.ctrlKey) {
-                                if (e.button == 0)
-                                    this.value = decodeURIComponent(this.value);
-                                if (e.button == 2) {
-                                    e.preventDefault();
-                                    converter.charset = "GB2312";
-                                    this.value = converter.ConvertToUnicode(unescape(this.value));
-                                }
-                            }
-                        }, false);
-                        if (dpConfig.enableReName)
-                            locationtext.value = dialog.mLauncher.suggestedFileName;
-                        if (dpConfig.reNameEncodingConvert) {
-                            locationtext.addEventListener("command", function (e) {
-                                if (dpConfig.enableReName)
-                                    locationtext.value = e.target.value;
-                                document.title = "Opening " + e.target.value;
-                            });
-                            let menupopup = locationtext.appendChild(document.createXULElement("menupopup"));
-                            let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
-                            menuitem.value = dialog.mLauncher.suggestedFileName;
-                            menuitem.label = "Original: " + menuitem.value;
-                            if (!dpConfig.enableReName)
-                                locationtext.value = menuitem.value;
-                            let converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
-                                .getService(Components.interfaces.nsIScriptableUnicodeConverter);
-
-                            function createMenuitem(encoding) {
-                                converter.charset = encoding;
-                                let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
-                                menuitem.value = converter.ConvertToUnicode(orginalString).replace(/^"(.+)"$/, "$1");
-                                menuitem.label = encoding + ": " + menuitem.value;
-                            }
-                            ["GB18030", "BIG5", "Shift-JIS"].forEach(function (item) {
-                                createMenuitem(item)
-                            });
-                        }
-                    }
-                }
-                document.querySelector("#location").hidden = true;
-                document.querySelector("#locationtext").hidden = false;
-            } else {
-                document.querySelector("#locationtext").hidden = true;
-                document.querySelector("#location").hidden = false;
-            }
-        }, false)
-        if (dpConfig.renameLockSave)
-            dialog.dialogElement("save").click();
-        else
-            dialog.dialogElement("save").selected && dialog.dialogElement("save").click();
-        window.addEventListener("dialogaccept", function (event) {
-            if ((document.querySelector("#locationtext").value != dialog.mLauncher.suggestedFileName) && dialog.dialogElement("save").selected) {
-                event.stopPropagation();
-                var mainwin = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser");
-                // 感谢 ycls006
-                mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, document.querySelector("#locationtext").value, null, null, false, null, null, null, null, null, Services.prefs.getBoolPref("browser.download.useDownloadDir", false), null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
-                document.documentElement.removeAttribute("ondialogaccept");
-            }
-        }, true);
-    }
-
-    //作用于 main 窗口
-    function downloadReNameMain() {
-        const obsService = Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverService);
-        const RESPONSE_TOPIC = 'http-on-examine-response';
-
-        var respObserver = {
-            observing: false,
-            observe: function (subject, topic, data) {
-                try {
-                    let channel = subject.QueryInterface(Ci.nsIHttpChannel);
-                    let header = channel.contentDispositionHeader;
-                    let associatedWindow = channel.notificationCallbacks
-                        .getInterface(Components.interfaces.nsILoadContext)
-                        .associatedWindow;
-                    associatedWindow.localStorage.setItem(channel.URI.spec, header.split("=")[1]);
-                } catch (ex) { };
-            },
-            start: function () {
-                if (!this.observing) {
-                    obsService.addObserver(this, RESPONSE_TOPIC, false);
-                    this.observing = true;
-                }
-            },
-            stop: function () {
-                if (this.observing) {
-                    obsService.removeObserver(this, RESPONSE_TOPIC, false);
-                    this.observing = false;
-                }
-            }
-        };
-
-        respObserver.start();
-        addEventListener("beforeunload", function () {
-            respObserver.stop();
-        })
-    }
-
-    // 另存为...
-    function downloadSaveAs() {
-        var saveas = dialogElement.getButton("extra1");
-        saveas.setAttribute("hidden", "false");
-        saveas.setAttribute("label", dpText.saveAs);
-        saveas.addEventListener("command", function () {
-            var mainwin = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser");
-            // 感谢 ycls006
-            mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
-            close();
-        }, false);
-    }
-
-    function downloadDialogExtraApp() {
-        var extra = dialogElement._buttons.cancel.parentNode.insertBefore(document.createXULElement("button"), dialogElement._buttons.cancel);
-        let url = dialog.mLauncher.source.spec;
-        extra.classList.toggle("dialog-button");
-        extra.label = dpText.extraAppName;
-        extra.addEventListener("command", function () {
-            let regEx = new RegExp("^data");
-            if (regEx.test(url)) {
-                alert(dpText.canNotUseExtra);
-                return;
-            }
-            parameter = dpConfig.extraAppParam.replace("{{url}}", url);
-            let extraApp = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-            try {
-                extraApp.initWithPath(dpConfig.extraAppPath);
-            } catch (E) {
-                alert(dpText.extraAppName + dpText.notExist + dpConfig.extraAppPath);
-                return;
-            }
-
-            let p = Components.classes["@mozilla.org/process/util;1"]
-                .createInstance(Components.interfaces.nsIProcess);
-            let commandArgs = parameter.split(" ");
-            p.init(extraApp);
-            p.run(false, commandArgs, commandArgs.length);
-            dialog.mDialog.dialog = null;
-            window.close();
-        });
-    }
-
-    // 保存到...
-    function downloadSaveTo() {
-        //目录路径的反斜杠\要双写\\
-        //第一次使用要修改路径，否则无法下载
-        //如果使用Firefox3.6 + userChromeJS v1.2,则路径中的汉字要转义为\u6C49\u5B57编码类型,否则会出现乱码
-        var cssStr = (function () {
-            /*
-                        button[label="\4FDD\5B58\5230"] .box-inherit.button-box{
-                            position: relative;
-                        }
-                        button[label="\4FDD\5B58\5230"] dropmarker{
-                            position: absolute;
-                            top: 0px;
-                            right: 2px;
-                        }
-                    */
-        }).toString().replace(/^.+\s|.+$/g, "");
-        var shadowRoot = document.getElementById('unknownContentType').shadowRoot;
-        if (shadowRoot) {
-            var style = document.createElementNS('http://www.w3.org/1999/xhtml', 'html:style');
-            style.textContent = cssStr;
-            shadowRoot.insertBefore(style, shadowRoot.firstChild);
+            let foStream = Components.classes["@mozilla.org/network/file-output-stream;1"].createInstance(Components.interfaces.nsIFileOutputStream);
+            foStream.init(file, 0x02 | 0x08 | 0x20, 0666, 0);
+            foStream.write(string, string.length);
+            foStream.close();
+            return file.path;
         } else {
-            var style = document.createProcessingInstruction("xml-stylesheet", "type=\"text/css\"" + " href=\"data:text/css;base64," + btoa(cssStr) + "\"");
-            document.insertBefore(style, document.firstChild);
+            return cookies.map((el) => el.name + ':' + el.value).join("; ");
         }
-        var link = document.createElementNS('http://www.w3.org/1999/xhtml', 'html:link');
-        link.setAttribute('rel', 'stylesheet');
-        link.setAttribute('href', 'chrome://global/content/widgets.css');
-        shadowRoot.insertBefore(link, shadowRoot.firstChild);
 
-        var dir = [
-            [Services.dirsvc.get('Desk', Ci.nsIFile).path, "桌面"],
-            ["C:\\", "C盘"],
-            ["D:\\", "D盘"],
-            ["E:\\", "E盘"],
-            ["F:\\", "F盘"]
-        ];
-        var saveTo = dialogElement._buttons.cancel.parentNode.insertBefore(document.createXULElement("button"), dialogElement._buttons.cancel);
-        var saveToMenu = saveTo.appendChild(document.createXULElement("menupopup"));
-        saveTo.classList.toggle("dialog-button");
-        saveTo.label = "\u4FDD\u5B58\u5230";
-        saveTo.type = "menu";
-        saveTo.querySelector('.box-inherit.button-box').appendChild(document.createXULElement('dropmarker'));
-        dir.forEach(function (dir) {
-            var [name, dir] = [dir[1], dir[0]];
-            var item = saveToMenu.appendChild(document.createXULElement("menuitem"));
-            item.setAttribute("label", (name || (dir.match(/[^\\/]+$/) || [dir])[0]));
-            item.setAttribute("image", "moz-icon:file:///" + dir + "\\");
-            item.setAttribute("class", "menuitem-iconic");
-            item.onclick = function () {
-                var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-                var path = dir.replace(/^\./, Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path);
-                path = path.endsWith("\\") ? path : path + "\\";
-                file.initWithPath(path + (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : document.querySelector("#location").value).trim());
-                if (typeof dialog.mLauncher.saveToDisk === 'function') {
-                    dialog.mLauncher.saveToDisk(file, 1);
-                } else {
-                    dialog.mLauncher.MIMEInfo.preferredAction = dialog.mLauncher.MIMEInfo.saveToDisk;
-                    dialog.mLauncher.saveDestinationAvailable(file);
-                }
-                dialog.onCancel = function () { };
-                close();
-            };
-        })
+        function formatCookie(co) {
+            // 转换成 netscape 格式，抄袭自 cookie_txt 扩展
+            return [
+                [
+                    co.isHttpOnly ? '#HttpOnly_' : '',
+                    co.host
+                ].join(''),
+                co.isDomain ? 'TRUE' : 'FALSE',
+                co.path,
+                co.isSecure ? 'TRUE' : 'FALSE',
+                co.expires,
+                co.name,
+                co.value + '\n'
+            ].join('\t');
+        }
+
     }
 
-    // 下载弹出窗口双击链接复制完整链接
-    function downloadShowCompleteURL() {
-        var s = document.querySelector("#source");
-        s.value = dialog.mLauncher.source.spec;
-        s.setAttribute("crop", "center");
-        s.setAttribute("tooltiptext", dpText.dobuleClickToCopy);
-        s.style.setProperty('cursor', 'pointer');
-        s.setAttribute("ondblclick", 'Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper).copyString(dialog.mLauncher.source.spec)')
+    function addStyle(css) {
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
     }
 
-    // 下载弹出窗口双击保存文件项执行下载
-    function doubleClickToSave() {
-        addEventListener("dblclick", function (event) {
-            event.target.nodeName === "radio" && dialogElement.getButton("accept").click()
-        }, false)
+})({
+    "remove file menuitem": true, // 下载管理增加超级删除菜单
+    "download complete notice": true, // 下载完成后播放提示音
+    "auto close blank tab": true, // 自动关闭空白的标签页
+    "enable rename": true, // 启用重命名
+    "enable encoding convert": false, // 启用编码转换
+    "enable double click to copy link": true, // 下载对话框双击来源复制链接
+    "show extract size": false, // 下载对话框显示文件精确大小 不知道哪个版本开始自带显示
+    "default select save button": true, // 下载对话框默认选择保存按钮
+    "enable save and open": true, // 下载对话框新增保存并打开按钮
+    "enable save as": true, // 下载对话框增加另存为按钮
+    "enable save to": true, // 显示快捷保存按钮
+    "cookie save path": "\\chrome\\resources\\cookies", // cookie 保存路径，可以是相对路径，相对于配置目录
+    "enable aria2 button": true, // 下载对话框增加aria2按钮
+    "enable idm button": false, // 下载对话框增加idm按钮
+    "enable thunder button": false, // 下载对话框增加thunder按钮
+}, `
+@-moz-document url("chrome://mozapps/content/downloads/unknownContentType.xhtml") {
+    #locationtext {
+        outline: none;
+        margin-left: 10px;
+        border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
     }
-})()
+}
+`);
