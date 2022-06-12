@@ -1,15 +1,14 @@
 // ==UserScript==
-// @name            DownloadPlus_ff98.uc.js
-// @description     下载增强
+// @name            下载增强(FF98+)
+// @description     修改整合自（w13998686967、ywzhaiqi、黒仪大螃蟹、Alice0775、紫云飞）
 // @author          Ryan
 // @include         main
 // @include         chrome://browser/content/places/places.xhtml
 // @include         chrome://mozapps/content/downloads/unknownContentType.xhtml
 // @version         2022.06.12
 // @startup         window.DownloadPlus.init();
-// @compatibility   Firefox 98 +
+// @compatibility   Firefox 102 +
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
-// @note            更新修复，增加带 Cookie 调用 Aria2 的功能
 // ==/UserScript==
 (function (globalConfig, globalCss) {
     if (window.DownloadPlus) return;
@@ -49,8 +48,8 @@
         "aria2": {
             "config": "enable aria2 button",
             "label": $L("button aria2"),
-            "exec": "\\chrome\\resources\\bin\\Aria2\\aria2c.bat",
-            "text": '-x 8 -k 10M --load-cookies={cookiePath} --header="Referer: {referer}" -d {path} {link}',
+            "exec": "\\chrome\\resources\\bin\\aria2c.exe",
+            "text": '-x 8 -k 10M --load-cookies={cookiePath} --referer={referer} -d {path} {link}',
         },
         "idm": {
             config: "enable idm button",
@@ -97,7 +96,7 @@
                     window.sizeToContent();
                     break;
                 case 'chrome://browser/content/places/places.xhtml':
-                    if (globalConfig["enable remove file menuitem"]) this.removeFileEnhance.init();
+                    if (globalConfig["remove file menuitem"]) this.removeFileEnhance.init();
                     break;
             }
             this.style = addStyle(globalCss);
@@ -112,7 +111,7 @@
                 case 'chrome://mozapps/content/downloads/unknownContentType.xhtml':
                     break;
                 case 'chrome://browser/content/places/places.xhtml':
-                    if (globalConfig["enable remove file menuitem"]) this.removeFileEnhance.destroy();
+                    if (globalConfig["remove file menuitem"]) this.removeFileEnhance.destroy();
                     break;
             }
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
@@ -411,20 +410,20 @@
                 if (app.label && app.exec && app.text && app.config && globalConfig[app.config]) {
                     let btn = $C(document, 'button', app);
                     btn.setAttribute("hidden", "false");
-                    btn.setAttribute("onclick", "window.DownloadPlus.handleExtraAppClick(event);");
+                    btn.setAttribute("onclick", "window.DownloadPlus.handleExtraAppBtnClick(event);");
                     refEl.insertAdjacentElement('afterend', btn);
                     refEl = btn;
                 }
             });
         },
-        handleExtraAppClick: async function (event) {
+        handleExtraAppBtnClick: async function (event) {
             let target = event.target;
-            let exec = DownloadPlus.handleRelativePath(target.getAttribute('exec')) || exec || "",
-                text = target.getAttribute('text') || text || "",
+            let exec = DownloadPlus.handleRelativePath(target.getAttribute('exec')) || "",
+                text = target.getAttribute('text') || "",
                 header = "",
-                cookie = $Cookie(dialog.mLauncher.source.asciiSpec || link) || "",
+                cookie = $Cookie(dialog.mLauncher.source.asciiSpec) || "",
                 referer = dialog.mSourcePath || gBrowser?.currentURI?.spec || "",
-                link = dialog.mLauncher.source.asciiSpec || link,
+                link = dialog.mLauncher.source.asciiSpec,
                 path = Services.prefs.getStringPref("browser.download.lastDir", ""),
                 regEx = new RegExp("^data");
             if (regEx.test(link)) {
@@ -681,7 +680,6 @@
         for (let prop in props) {
             el.setAttribute(prop, props[prop])
         }
-        if (app[image]) el.classList.add('hasImage');
         return el;
     }
 
@@ -754,7 +752,7 @@
     }
 
 })({
-    "enable remove file menuitem": true, // 下载管理增加超级删除菜单
+    "remove file menuitem": true, // 下载管理增加超级删除菜单
     "download complete notice": true, // 下载完成后播放提示音
     "auto close blank tab": true, // 自动关闭空白的标签页
     "enable rename": true, // 启用重命名
@@ -770,11 +768,6 @@
     "enable idm button": false, // 下载对话框增加idm按钮
     "enable thunder button": false, // 下载对话框增加thunder按钮
 }, `
-@-moz-document url("chrome://browser/content/browser.xhtml") {
-    .DownloadsPlus-ContextMenu-extraApp:not(.hasImage) {
-        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTMgMTJoM2wtNCA0LTQtNGgzVjhoMnY0em0yLThINXYxNmgxNFY4aC00VjR6TTMgMi45OTJDMyAyLjQ0NCAzLjQ0NyAyIDMuOTk5IDJIMTZsNSA1djEzLjk5M0ExIDEgMCAwIDEgMjAuMDA3IDIySDMuOTkzQTEgMSAwIDAgMSAzIDIxLjAwOFYyLjk5MnoiLz48L3N2Zz4=);
-    }
-}
 @-moz-document url("chrome://mozapps/content/downloads/unknownContentType.xhtml") {
     #locationtext {
         outline: none;
