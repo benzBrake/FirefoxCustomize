@@ -21,12 +21,11 @@
 //         });
 //     }
 // }]);
-app([{
+app([{}, {
     'id': 'appMenu-advanced-settings-button',
     'data-l10n-href': 'toolkit/about/config.ftl',
     'data-l10n-id': 'about-config-page-title',
     'insertAfter': 'appMenu-settings-button',
-    'image': 'chrome://global/skin/icons/settings.svg',
     'oncommand': `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
 }, {
     'id': 'appMenu-restart-button2',
@@ -37,10 +36,11 @@ app([{
     'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
     'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
 }])
-page({
+nav({
     label: "复制所有标签标题+地址",
-    insertAfter: 'toolbar-context-openANewTab',
+    // insertAfter: 'toolbar-context-openANewTab',
     class: "copy",
+    condition: "tabs",
     oncommand: function () {
         var text = "";
         var tabs = gBrowser.mTabContainer ? gBrowser.mTabContainer.childNodes : gBrowser.tabs; // Firefox 61 删除了 mTabContainer
@@ -209,7 +209,7 @@ new function () {
         insertBefore: 'context-savepage',
         accesskey: 'M',
         onpopupshowing: syncHidden,
-        image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2aWV3Qm94PSIwIDAgMjAgMjAiIHdpZHRoPSIyMHB4IiBoZWlnaHQ9IjIwcHgiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNIDE3LjgwNyAzLjIwNSBMIDEuNTkgMy4yMDUgQyAxLjQ5OSAzLjIwNSAxLjQyNSAzLjI4NSAxLjQyNSAzLjM4IEwgMS40MjUgNC43ODQgQyAxLjQyNSA0Ljg4IDEuNDk5IDQuOTU4IDEuNTkgNC45NTggTCAxNy44MDcgNC45NTggQyAxNy44MDcgNS4yMzIgMTcuOTczIDQuODggMTcuOTczIDQuNzg0IEwgMTcuOTczIDMuMzggQyAxNy45NzMgMy4yODUgMTcuODk4IDMuMjA1IDE3LjgwNyAzLjIwNSBaIE0gMTcuODA3IDE1LjYwOCBMIDEuNTkgMTUuNjA4IEMgMS40OTkgMTUuNjA4IDEuNDI1IDE1LjY4NyAxLjQyNSAxNS43ODQgTCAxLjQyNSAxNy4xODcgQyAxLjQyNSAxNy4yODMgMS40OTkgMTcuMzYxIDEuNTkgMTcuMzYxIEwgMTcuODA3IDE3LjM2MSBDIDE3Ljg5OCAxNy4zNjEgMTcuOTczIDE3LjI4MyAxNy45NzMgMTcuMTg3IEwgMTcuOTczIDE1Ljc4NCBDIDE3Ljk3MyAxNS42ODcgMTcuODk4IDE1LjYwOCAxNy44MDcgMTUuNjA4IFogTSAxNy44MDcgOS40NzMgTCAxLjU5IDkuNDczIEMgMS40OTkgOS40NzMgMS40MjUgOS41NTMgMS40MjUgOS42NSBMIDEuNDI1IDExLjA1MyBDIDEuNDI1IDExLjE1IDEuNDk5IDExLjIyOSAxLjU5IDExLjIyOSBMIDE3LjgwNyAxMS4yMjkgQyAxNy44OTggMTEuMjI5IDE3Ljk3MyAxMS4xNSAxNy45NzMgMTEuMDUzIEwgMTcuOTczIDkuNjUgQyAxNy45NzMgOS41NTMgMTcuODk4IDkuNDczIDE3LjgwNyA5LjQ3MyBaIiBzdHlsZT0ic3Ryb2tlLXdpZHRoOiAwcHg7Ii8+Cjwvc3ZnPg=="
+        image: "chrome://browser/skin/menu.svg"
     });
     menu(items);
     css('#context-savepage { display: none }');
@@ -227,17 +227,17 @@ new function () {
     groupMenu([{
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '检查页面' : 'Inspect node',
         oncommand: 'gContextMenu.inspectNode();',
-        image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxjaXJjbGUgY3g9IjkuODE3IiBjeT0iOS45NTciIHI9IjguMTk5IiBzdHlsZT0iIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0gMTkuMDE2IDkuOTU3IEMgMTkuMDE2IDEyLjQyNSAxNy45MzEgMTQuODUyIDE2LjMyMiAxNi40NjIgQyAxNC43MTIgMTguMDcxIDEyLjI4NSAxOS4xNTYgOS44MTcgMTkuMTU2IEMgNy4zNDkgMTkuMTU2IDQuOTIyIDE4LjA3MSAzLjMxMiAxNi40NjIgQyAxLjcwMyAxNC44NTIgMC42MTggMTIuNDI1IDAuNjE4IDkuOTU3IEMgMC42MTggNy40ODkgMS43MDMgNS4wNjIgMy4zMTIgMy40NTIgQyA0LjkyMiAxLjg0MyA3LjM0OSAwLjc1OCA5LjgxNyAwLjc1OCBDIDEyLjI4NSAwLjc1OCAxNC43MTIgMS44NDMgMTYuMzIyIDMuNDUyIEMgMTcuOTMxIDUuMDYyIDE5LjAxNiA3LjQ4OSAxOS4wMTYgOS45NTcgWiBNIDE0LjkwNyA0Ljg2NyBDIDEzLjU1IDMuNTA5IDExLjg3NyAyLjc1OCA5LjgxNyAyLjc1OCBDIDcuNzU3IDIuNzU4IDYuMDg0IDMuNTA5IDQuNzI3IDQuODY3IEMgMy4zNjkgNi4yMjQgMi42MTggNy44OTcgMi42MTggOS45NTcgQyAyLjYxOCAxMi4wMTcgMy4zNjkgMTMuNjkgNC43MjcgMTUuMDQ3IEMgNi4wODQgMTYuNDA1IDcuNzU3IDE3LjE1NiA5LjgxNyAxNy4xNTYgQyAxMS44NzcgMTcuMTU2IDEzLjU1IDE2LjQwNSAxNC45MDcgMTUuMDQ3IEMgMTYuMjY1IDEzLjY5IDE3LjAxNiAxMi4wMTcgMTcuMDE2IDkuOTU3IEMgMTcuMDE2IDcuODk3IDE2LjI2NSA2LjIyNCAxNC45MDcgNC44NjcgWiIgc3R5bGU9IiIvPgogIDxwYXRoIGQ9Ik0gOS44MTcgMS43NTggTCA5LjgxNyAyLjY2OSBMIDkuODE3IDMuNTggTCA5LjgxNyA0LjQ5MSBMIDkuODE3IDUuNDAyIiBzdHlsZT0iIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0gOC44MTcgMi43NTggTCA4LjgxNyAzLjY2OSBMIDguODE3IDQuNTggTCA4LjgxNyA1LjQ5MSBMIDguODE3IDYuNDAyIEwgMTAuODE3IDYuNDAyIEwgMTAuODE3IDUuNDkxIEwgMTAuODE3IDQuNTggTCAxMC44MTcgMy42NjkgTCAxMC44MTcgMi43NTggWiIgc3R5bGU9IiIvPgogIDxwYXRoIGQ9Ik0gOS44MTcgMTguMTU2IEwgOS44MTcgMTYuNzkgTCA5LjgxNyAxNS40MjMiIHN0eWxlPSIiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTSA4LjgxNyAxNy4xNTYgTCA4LjgxNyAxNS43OSBMIDguODE3IDE0LjQyMyBMIDEwLjgxNyAxNC40MjMgTCAxMC44MTcgMTUuNzkgTCAxMC44MTcgMTcuMTU2IFoiIHN0eWxlPSIiLz4KICA8cGF0aCBkPSJNIDEuNjE3IDkuOTU3IEwgMy40MzkgOS45NTcgTCA1LjI2MSA5Ljk1NyIgc3R5bGU9IiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cGF0aCBkPSJNIDIuNjE3IDEwLjk1NyBMIDQuNDM5IDEwLjk1NyBMIDYuMjYxIDEwLjk1NyBMIDYuMjYxIDguOTU3IEwgNC40MzkgOC45NTcgTCAyLjYxNyA4Ljk1NyBaIiBzdHlsZT0iIi8+CiAgPHBhdGggZD0iTSAxOC4wMTYgOS45NTcgTCAxNi42NSA5Ljk1NyBMIDE1LjI4MyA5Ljk1NyIgc3R5bGU9IiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cGF0aCBkPSJNIDE0LjI4MyA4Ljk1NyBMIDE1LjY1IDguOTU3IEwgMTcuMDE2IDguOTU3IEwgMTcuMDE2IDEwLjk1NyBMIDE1LjY1IDEwLjk1NyBMIDE0LjI4MyAxMC45NTcgWiIgc3R5bGU9IiIvPgogIDxjaXJjbGUgc3R5bGU9InN0cm9rZS13aWR0aDogMHB4OyIgY3g9IjkuNDEiIGN5PSIxMC4zNjQiIHI9IjEuNDA3Ii8+Cjwvc3ZnPg==",
+        image: "chrome://devtools/skin/images/tool-inspector.svg",
         accesskey: 'i'
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '查看页面代码' : 'View page source',
         oncommand: 'BrowserViewSource(gContextMenu.browser);',
-        image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNS43MjQgMTQuMzUgQyA1LjQ3OSAxNC4zNSA1LjI0MyAxNC4yNjEgNS4wNiAxNC4wOTggTCAwIDkuNiBMIDUuMzQxIDQuODUyIEMgNS45MjYgNC4zNTIgNi44MzQgNC42NzIgNi45NzQgNS40MjkgQyA3LjAzNyA1Ljc2NyA2LjkyMiA2LjExNCA2LjY2OSA2LjM0NyBMIDMuMDEgOS42IEwgNi4zODggMTIuNjAyIEMgNi45NjQgMTMuMTEzIDYuNzcxIDE0LjA1NiA2LjA0IDE0LjI5OSBDIDUuOTM5IDE0LjMzMyA1LjgzMiAxNC4zNSA1LjcyNCAxNC4zNSBaIE0gMTQuNjY5IDE0LjM0OCBMIDIwLjAxIDkuNiBMIDE0Ljk1IDUuMTAyIEMgMTQuMzc1IDQuNTkxIDEzLjQ2MiA0Ljg5NCAxMy4zMDcgNS42NDggQyAxMy4yMzUgNS45OTggMTMuMzU1IDYuMzYgMTMuNjIyIDYuNTk3IEwgMTcgOS42IEwgMTMuMzQxIDEyLjg1MiBDIDEyLjc2NSAxMy4zNjMgMTIuOTU5IDE0LjMwNiAxMy42ODkgMTQuNTQ5IEMgMTQuMDI5IDE0LjY2MiAxNC40MDIgMTQuNTg1IDE0LjY2OSAxNC4zNDggWiBNIDkuOTkxIDE1Ljc2NSBMIDExLjk5MSAzLjc2NSBDIDEyLjEzOSAzLjAwOSAxMS40MTMgMi4zNzggMTAuNjg1IDIuNjI4IEMgMTAuMzI4IDIuNzUgMTAuMDcxIDMuMDYzIDEwLjAxOSAzLjQzNiBMIDguMDE5IDE1LjQzNiBDIDcuODcyIDE2LjE5MiA4LjU5OCAxNi44MjMgOS4zMjYgMTYuNTczIEMgOS42ODIgMTYuNDUxIDkuOTM5IDE2LjEzOCA5Ljk5MSAxNS43NjUgWiIgc3R5bGU9InN0cm9rZS13aWR0aDogMHB4OyIvPgo8L3N2Zz4=",
+        image: "chrome://devtools/skin/images/tool-styleeditor.svg",
         accesskey: 'v'
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '查看页面信息' : 'View page info',
         oncommand: 'gContextMenu.viewInfo();',
-        image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMC45OSAyLjY1OSBDIDAuOTk0IDIuMTcxIDEuMzg5IDEuNzc1IDEuODc3IDEuNzcxIEwgMTcuOTc5IDEuNzcxIEMgMTguNDY5IDEuNzcxIDE4Ljg2NiAyLjE2OSAxOC44NjYgMi42NTkgTCAxOC44NjYgMTYuOTcyIEMgMTguODYyIDE3LjQ2IDE4LjQ2OCAxNy44NTYgMTcuOTc5IDE3Ljg1OSBMIDEuODc3IDE3Ljg1OSBDIDEuMzg3IDE3Ljg1OCAwLjk5IDE3LjQ2MSAwLjk5IDE2Ljk3MiBMIDAuOTkgMi42NTkgWiBNIDIuNzc4IDMuNTU5IEwgMi43NzggMTYuMDcyIEwgMTcuMDc4IDE2LjA3MiBMIDE3LjA3OCAzLjU1OSBMIDIuNzc4IDMuNTU5IFogTSA0LjU2NSA1LjM0NiBMIDkuOTI4IDUuMzQ2IEwgOS45MjggMTAuNzA5IEwgNC41NjUgMTAuNzA5IEwgNC41NjUgNS4zNDYgWiBNIDYuMzUzIDcuMTM0IEwgNi4zNTMgOC45MjEgTCA4LjE0IDguOTIxIEwgOC4xNCA3LjEzNCBMIDYuMzUzIDcuMTM0IFogTSA0LjU2NSAxMi40OTYgTCAxNS4yOTEgMTIuNDk2IEwgMTUuMjkxIDE0LjI4NCBMIDQuNTY1IDE0LjI4NCBMIDQuNTY1IDEyLjQ5NiBaIE0gMTEuNzE1IDUuMzQ2IEwgMTUuMjkxIDUuMzQ2IEwgMTUuMjkxIDcuMTM0IEwgMTEuNzE1IDcuMTM0IEwgMTEuNzE1IDUuMzQ2IFogTSAxMS43MTUgOC45MjEgTCAxNS4yOTEgOC45MjEgTCAxNS4yOTEgMTAuNzA5IEwgMTEuNzE1IDEwLjcwOSBMIDExLjcxNSA4LjkyMSBaIiBzdHlsZT0iIi8+Cjwvc3ZnPg==",
+        image: "chrome://global/skin/icons/info.svg",
         accesskey: 'o'
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "检查无障碍环境属性" : "Checking accessibility properties",
@@ -249,24 +249,33 @@ new function () {
 };
 // 站内搜索
 new function () {
-    var groupMenu = new GroupMenu({
+    var groupMenuNormal = new GroupMenu({
         id: 'addMenu-site-search-normal',
         class: 'showFirstText',
-        insertAfter: 'context-selectall',
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '站内搜索...' : 'Site search...',
         condition: 'normal',
         onshowing: function () {
             this.hidden = !gBrowser.currentURI.spec.startsWith('http');
         }
-    });
+    }),
+        groupMenuSelect = new GroupMenu({
+            id: 'addMenu-site-search-selected',
+            class: 'showFirstText',
+            label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '站内搜索...' : 'Site search...',
+            condition: 'select',
+            onshowing: function () {
+                this.hidden = !gBrowser.currentURI.spec.startsWith('http');
+            }
+        });
     var items = [{
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '站内搜索' : 'Site search',
-        oncommand: function () {
-            var text = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '站内搜索:' : 'Site search:', '');
-            if (text.length > 0) {
+        oncommand: function (e) {
+            var sel = (gContextMenu || { textSelected: "" }).textSelected;
+            if (!e.shiftKey && sel.length == 0) sel = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '站内搜索:' : 'Site search:', '');
+            if (sel) {
                 Services.search.getDefault().then(
                     engine => {
-                        let submission = engine.getSubmission('site:' + encodeURIComponent(gBrowser.currentURI.host) + ' ' + encodeURIComponent(text), null, 'search');
+                        let submission = engine.getSubmission('site:' + encodeURIComponent(gBrowser.currentURI.host) + ' ' + encodeURIComponent(sel), null, 'search');
                         openLinkIn(submission.uri.spec, 'tab', {
                             private: false,
                             postData: submission.postData,
@@ -278,31 +287,35 @@ new function () {
                 );
             }
         },
-        image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTMgNC41IEEgMS41IDEuNSAwIDAgMCAxLjUgNiBBIDEuNSAxLjUgMCAwIDAgMyA3LjUgQSAxLjUgMS41IDAgMCAwIDQuNSA2IEEgMS41IDEuNSAwIDAgMCAzIDQuNSB6IE0gNyA1TDcgN0wyMiA3TDIyIDVMNyA1IHogTSAzIDEwLjUgQSAxLjUgMS41IDAgMCAwIDEuNSAxMiBBIDEuNSAxLjUgMCAwIDAgMyAxMy41IEEgMS41IDEuNSAwIDAgMCA0LjUgMTIgQSAxLjUgMS41IDAgMCAwIDMgMTAuNSB6IE0gNyAxMUw3IDEzTDEzLjEwNTQ2OSAxM0MxNC4zNjc0NjkgMTEuNzY0IDE2LjA5NCAxMSAxOCAxMUw3IDExIHogTSAxOCAxM0MxNS4yIDEzIDEzIDE1LjIgMTMgMThDMTMgMjAuOCAxNS4yIDIzIDE4IDIzQzE5IDIzIDIwLjAwMDc4MSAyMi42OTkyMTkgMjAuODAwNzgxIDIyLjE5OTIxOUwyMi41OTk2MDkgMjRMMjQgMjIuNTk5NjA5TDIyLjE5OTIxOSAyMC44MDA3ODFDMjIuNjk5MjE5IDIwLjAwMDc4MSAyMyAxOSAyMyAxOEMyMyAxNS4yIDIwLjggMTMgMTggMTMgeiBNIDE4IDE1QzE5LjcgMTUgMjEgMTYuMyAyMSAxOEMyMSAxOS43IDE5LjcgMjEgMTggMjFDMTYuMyAyMSAxNSAxOS43IDE1IDE4QzE1IDE2LjMgMTYuMyAxNSAxOCAxNSB6IE0gMyAxNi41IEEgMS41IDEuNSAwIDAgMCAxLjUgMTggQSAxLjUgMS41IDAgMCAwIDMgMTkuNSBBIDEuNSAxLjUgMCAwIDAgNC41IDE4IEEgMS41IDEuNSAwIDAgMCAzIDE2LjUgeiBNIDcgMTdMNyAxOUwxMS4wODAwNzggMTlDMTEuMDMzMDc4IDE4LjY3MyAxMSAxOC4zNCAxMSAxOEMxMSAxNy42NiAxMS4wMzMwNzggMTcuMzI3IDExLjA4MDA3OCAxN0w3IDE3IHoiIC8+DQo8L3N2Zz4=",
+        image: "chrome://devtools/content/debugger/images/search.svg",
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '百度站内搜索' : 'Baidu site search',
-        oncommand: function () {
-            var text = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '百度站内搜索:' : 'Baidu site search:', '');
-            if (text.length > 0) {
-                let url = 'https://www.baidu.com/s?wd=site:' + encodeURIComponent(gBrowser.currentURI.host) + ' ' + encodeURIComponent(text);
+        onshowing: function () {
+            this.hidden == gBrowser.currentURI.host.includes("www.baidu.com");
+        },
+        oncommand: function (e) {
+            var sel = (gContextMenu || { textSelected: "" }).textSelected;
+            if (!e.shiftKey && sel.length == 0) sel = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '百度站内搜索:' : 'Baidu site search:', '');
+            if (sel) {
+                let url = 'https://www.baidu.com/s?wd=site:' + encodeURIComponent(gBrowser.currentURI.host) + ' ' + encodeURIComponent(sel);
                 addMenu.openCommand({ 'target': this }, url, 'tab');
             }
         },
         image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiI+DQogIDxwYXRoIGZpbGw9IiMxNTY1YzAiIGQ9Ik0zNi4wOTQgMzEuMzVjLTEuNjk1LTEuNS0zLjc1NC0zLjIyNS02LjY2LTcuMzUtMS44NjUtMi42NDctMy41MTItNC01LjkzNC00LTIuNjY0IDAtNC4xMTcgMS4yNS01LjU1MiAzLjI3OS0yLjEgMi45NzEtMi45MjUgMy45NzEtNS4wODggNS42NzUtLjc4Ni42MTktNC44NjEgMy4xNzItNC44NiA3LjY3MUM4LjAwMSA0MS44NzUgMTEuNzUzIDQ0IDE1LjE1NSA0NGM0LjQ2OSAwIDUuNDM5LTEgOC4zNDUtMSAzLjYzMyAwIDUuNTcgMSA4LjQ3NiAxQzM3Ljc4OSA0NCAzOSAzOS42MjUgMzkgMzYuODcyIDM5IDM0LjI1IDM3Ljc4OSAzMi44NSAzNi4wOTQgMzEuMzV6TTExLjM4OSAyNC44ODVjMy4xMjQtLjY5NCAzLjYxNi0zLjczOSAzLjYxMS01LjczMi0uMDAyLS42OTYtLjA2NC0xLjI2My0uMDk2LTEuNTU4LS4xOTgtMS42NzgtMi4wMjctNC41NS00LjU1MS00LjU5NC0uMTItLjAwMi0uMjQyLjAwMi0uMzY1LjAxMy0zLjQxMi4zMTQtMy45MTEgNS40MTItMy45MTEgNS40MTItLjA1Ni4yODctLjA4Mi42MTMtLjA3OC45NjMuMDMxIDIuMjYzIDEuMzU2IDUuNTI3IDQuMjc0IDUuNjFDMTAuNjIzIDI1LjAwOCAxMC45OTQgMjQuOTczIDExLjM4OSAyNC44ODVNMTkuNTAzIDE2QzIxLjk5IDE2IDI0IDEzLjMxNSAyNCA5Ljk5OCAyNCA2LjY4MSAyMS45OSA0IDE5LjUwMyA0IDE3LjAxNSA0IDE1IDYuNjgxIDE1IDkuOTk4IDE1IDEzLjMxNSAxNy4wMTUgMTYgMTkuNTAzIDE2TTI5LjUyMiAxNi45NjRjLjIyMS4wMzEuNDM2LjA0MS42NDUuMDMzIDIuNjk2LS4xMDMgNC40MTYtMy4yNzYgNC43ODEtNS43MjMuMDM3LS4yNDEuMDU0LS40ODYuMDUyLS43MzMtLjAxNS0yLjQ0MS0xLjgzMS01LjAxMi0zLjc5OS01LjQ5LTIuMTc3LS41MzItNC44OTMgMy4xNzMtNS4xMzggNS41OS0uMDM3LjM3LS4wNTkuNzM5LS4wNjMgMS4xMDNDMjUuOTc1IDE0LjI5NiAyNi44NDEgMTYuNTk5IDI5LjUyMiAxNi45NjRNNDEuOTg0IDIxLjE0MmMwLTEuMjgxLTEuMDA0LTUuMTQyLTQuNzQyLTUuMTQyQzMzLjQ5NiAxNiAzMyAxOS42NDQgMzMgMjIuMjE5YzAgMi40MS4xODcgNS43NTIgNC41NzggNS43ODEuMDg3LjAwMS4xNzYgMCAuMjY3LS4wMDIgNC4wMjctLjA5NCA0LjE4My00LjIwMyA0LjE1Mi02LjEzOEM0MS45OTMgMjEuNTYxIDQxLjk4NCAyMS4zMTUgNDEuOTg0IDIxLjE0MiIgLz4NCiAgPHBhdGggZmlsbD0iI2ZmZiIgZD0iTTI0IDMxdjcuNWMwIDAgMCAxLjg3NSAyLjYyNSAyLjVIMzNWMzFoLTIuNjI1djcuNWgtMi43NWMwIDAtLjg3NS0uMTI1LTEtLjc1VjMxSDI0ek0yMCAyN3Y0aC0zYy0yLjEyNS4zNzUtNCAyLjI1LTMuOTk5IDQuODc1QzEzLjAwMSAzNS45MTcgMTMgMzUuOTU4IDEzIDM2YzAgMi43NSAxLjg3NSA0LjYyNSA0IDVoNS42MjVWMjdIMjB6TTIwIDM4Ljc1aC0yLjM3NWMtLjc1IDAtMi0xLjEyNS0yLTIuNzVzMS4yNS0yLjc1IDItMi43NUgyMFYzOC43NXoiIC8+DQo8L3N2Zz4="
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? '谷歌站内搜索' : 'Google site search',
-        condition: 'normal',
-        oncommand: function () {
+        oncommand: function (e) {
             var sel = (gContextMenu || { textSelected: "" }).textSelected;
-            if (sel.length == 0) sel = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '谷歌站内搜索:' : 'Google site search:', '');
-            if (sel.length > 0) {
+            if (!e.shiftKey && sel.length == 0) sel = prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '谷歌站内搜索:' : 'Google site search:', '');
+            if (sel) {
                 let url = 'https://www.google.com/search?q=site:' + encodeURIComponent(gBrowser.currentURI.host) + ' ' + encodeURIComponent(sel);
                 addMenu.openCommand({ 'target': this }, url, 'tab');
             }
         },
         image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA0OCA0OCI+DQogIDxwYXRoIGZpbGw9IiNGRkMxMDciIGQ9Ik00My42MTEsMjAuMDgzSDQyVjIwSDI0djhoMTEuMzAzYy0xLjY0OSw0LjY1Ny02LjA4LDgtMTEuMzAzLDhjLTYuNjI3LDAtMTItNS4zNzMtMTItMTJjMC02LjYyNyw1LjM3My0xMiwxMi0xMmMzLjA1OSwwLDUuODQyLDEuMTU0LDcuOTYxLDMuMDM5bDUuNjU3LTUuNjU3QzM0LjA0Niw2LjA1MywyOS4yNjgsNCwyNCw0QzEyLjk1NSw0LDQsMTIuOTU1LDQsMjRjMCwxMS4wNDUsOC45NTUsMjAsMjAsMjBjMTEuMDQ1LDAsMjAtOC45NTUsMjAtMjBDNDQsMjIuNjU5LDQzLjg2MiwyMS4zNSw0My42MTEsMjAuMDgzeiIgLz4NCiAgPHBhdGggZmlsbD0iI0ZGM0QwMCIgZD0iTTYuMzA2LDE0LjY5MWw2LjU3MSw0LjgxOUMxNC42NTUsMTUuMTA4LDE4Ljk2MSwxMiwyNCwxMmMzLjA1OSwwLDUuODQyLDEuMTU0LDcuOTYxLDMuMDM5bDUuNjU3LTUuNjU3QzM0LjA0Niw2LjA1MywyOS4yNjgsNCwyNCw0QzE2LjMxOCw0LDkuNjU2LDguMzM3LDYuMzA2LDE0LjY5MXoiIC8+DQogIDxwYXRoIGZpbGw9IiM0Q0FGNTAiIGQ9Ik0yNCw0NGM1LjE2NiwwLDkuODYtMS45NzcsMTMuNDA5LTUuMTkybC02LjE5LTUuMjM4QzI5LjIxMSwzNS4wOTEsMjYuNzE1LDM2LDI0LDM2Yy01LjIwMiwwLTkuNjE5LTMuMzE3LTExLjI4My03Ljk0NmwtNi41MjIsNS4wMjVDOS41MDUsMzkuNTU2LDE2LjIyNyw0NCwyNCw0NHoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTc2RDIiIGQ9Ik00My42MTEsMjAuMDgzSDQyVjIwSDI0djhoMTEuMzAzYy0wLjc5MiwyLjIzNy0yLjIzMSw0LjE2Ni00LjA4Nyw1LjU3MWMwLjAwMS0wLjAwMSwwLjAwMi0wLjAwMSwwLjAwMy0wLjAwMmw2LjE5LDUuMjM4QzM2Ljk3MSwzOS4yMDUsNDQsMzQsNDQsMjRDNDQsMjIuNjU5LDQzLjg2MiwyMS4zNSw0My42MTEsMjAuMDgzeiIgLz4NCjwvc3ZnPg=="
     }];
-    groupMenu(items);
+    groupMenuNormal(items);
+    groupMenuSelect(items);
 }
 // 页面右键菜单 End ==============================================================
 // 链接右键菜单 Start ============================================================
@@ -612,11 +625,8 @@ new function () {
         condition: 'select',
         image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTMgNC41IEEgMS41IDEuNSAwIDAgMCAxLjUgNiBBIDEuNSAxLjUgMCAwIDAgMyA3LjUgQSAxLjUgMS41IDAgMCAwIDQuNSA2IEEgMS41IDEuNSAwIDAgMCAzIDQuNSB6IE0gNyA1TDcgN0wyMiA3TDIyIDVMNyA1IHogTSAzIDEwLjUgQSAxLjUgMS41IDAgMCAwIDEuNSAxMiBBIDEuNSAxLjUgMCAwIDAgMyAxMy41IEEgMS41IDEuNSAwIDAgMCA0LjUgMTIgQSAxLjUgMS41IDAgMCAwIDMgMTAuNSB6IE0gNyAxMUw3IDEzTDEzLjEwNTQ2OSAxM0MxNC4zNjc0NjkgMTEuNzY0IDE2LjA5NCAxMSAxOCAxMUw3IDExIHogTSAxOCAxM0MxNS4yIDEzIDEzIDE1LjIgMTMgMThDMTMgMjAuOCAxNS4yIDIzIDE4IDIzQzE5IDIzIDIwLjAwMDc4MSAyMi42OTkyMTkgMjAuODAwNzgxIDIyLjE5OTIxOUwyMi41OTk2MDkgMjRMMjQgMjIuNTk5NjA5TDIyLjE5OTIxOSAyMC44MDA3ODFDMjIuNjk5MjE5IDIwLjAwMDc4MSAyMyAxOSAyMyAxOEMyMyAxNS4yIDIwLjggMTMgMTggMTMgeiBNIDE4IDE1QzE5LjcgMTUgMjEgMTYuMyAyMSAxOEMyMSAxOS43IDE5LjcgMjEgMTggMjFDMTYuMyAyMSAxNSAxOS43IDE1IDE4QzE1IDE2LjMgMTYuMyAxNSAxOCAxNSB6IE0gMyAxNi41IEEgMS41IDEuNSAwIDAgMCAxLjUgMTggQSAxLjUgMS41IDAgMCAwIDMgMTkuNSBBIDEuNSAxLjUgMCAwIDAgNC41IDE4IEEgMS41IDEuNSAwIDAgMCAzIDE2LjUgeiBNIDcgMTdMNyAxOUwxMS4wODAwNzggMTlDMTEuMDMzMDc4IDE4LjY3MyAxMSAxOC4zNCAxMSAxOEMxMSAxNy42NiAxMS4wMzMwNzggMTcuMzI3IDExLjA4MDA3OCAxN0w3IDE3IHoiIC8+DQo8L3N2Zz4=",
         accesskey: 'S',
+        onshowinglabel: Services.locale.appLocaleAsBCP47.includes("zh-") ? "搜索: %SEL%" : "Search %SEL% by",
         onshowing: function (e) {
-            var sel = addMenu.convertText(Services.locale.appLocaleAsBCP47.includes("zh-") ? "搜索: %SEL%" : "Search %SEL% by");
-            if (sel && sel.length > 15)
-                sel = sel.substr(0, 15) + "...";
-            this.label = sel;
             let popupNode = this.querySelector('menupopup');
             popupNode.querySelectorAll('.auto-generated').forEach(m => { m.parentNode.removeChild(m); })
             let ins = popupNode.firstChild;
@@ -1134,3 +1144,29 @@ function syncHiddenForGroup(target) {
         elem.disabled = original.disabled;
     });
 };
+
+// 复制对象
+function cloneObj(o) {
+    if (typeof (o) === typeof (1) || typeof ('') === typeof (o) || typeof (o) === typeof (true) ||
+        typeof (o) === typeof (undefined)) {
+        return o
+    }
+    if (Array.isArray(o)) {
+        let arr = []
+        for (let key in o) {
+            arr.push(cloneObj(o[key]))
+        }
+        return arr
+    }
+    if (typeof (o) === typeof ({})) {
+        if (o === null) {
+            return o
+        }
+        let obj = {}
+        for (let key in o) {
+            obj[key] = cloneObj(o[key])
+        }
+        return obj
+    }
+    return o;
+}
