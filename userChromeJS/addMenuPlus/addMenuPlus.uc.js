@@ -39,6 +39,8 @@
 
 
 /***** 説明 *****
+ * 
+ * _addMenu.js Demo: https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 
  ◆ 脚本说明 ◆
  通过配置文件自定义菜单
@@ -1161,10 +1163,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%IMAGE_URL%":
                         return context.imageURL || context.mediaURL || "";
                     case "%IMAGE_BASE64%":
-                        return typeof context.imageURL === "undefined" ? addMenu.img2base64(context.mediaURL) : addMenu.img2base64(context.imageURL);
+                        return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
                     case "%SVG_BASE64%":
                         let url = context.linkURL || bw.documentURI.spec || "";
-                        return url.endsWith("svg") ? addMenu.svg2base64(url) : "";
+                        return url.endsWith("svg") ? svg2base64(url) : "";
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
@@ -1176,7 +1178,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%FAVICON%":
                         return gBrowser.getIcon(tab ? tab : null) || "";
                     case "%FAVICON_BASE64%":
-                        return addMenu.img2base64(gBrowser.getIcon(tab ? tab : null));
+                        return img2base64(gBrowser.getIcon(tab ? tab : null));
                     case "%EMAIL%":
                         return getEmailAddress() || "";
                     case "%EOL%":
@@ -1187,7 +1189,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             function htmlEscape(s) {
                 return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
-            };
+            }
 
             function getEmailAddress() {
                 var url = context.linkURL;
@@ -1200,65 +1202,55 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 } catch (ex) { }
                 return addresses;
             }
-        },
-        img2base64(imgSrc, imgType) {
-            if (typeof imgSrc == 'undefined') return "";
-            imgType = imgType || "image/png";
-            const NSURI = "http://www.w3.org/1999/xhtml";
-            var img = new Image();
-            var that = this;
-            var canvas,
-                isCompleted = false;
-            img.onload = function () {
-                var width = this.naturalWidth,
-                    height = this.naturalHeight;
-                if (that.appVersion <= 72) {
-                    canvas = document.createXULElementNS(NSURI, "canvas");
-                } else {
-                    canvas = document.createElementNS(NSURI, "canvas")
+
+            function img2base64(imgSrc, imgType) {
+                if (typeof imgSrc == 'undefined') return "";
+                imgType = imgType || "image/png";
+                const NSURI = "http://www.w3.org/1999/xhtml";
+                var img = new Image();
+                var that = this;
+                var canvas,
+                    isCompleted = false;
+                img.onload = function () {
+                    var width = this.naturalWidth,
+                        height = this.naturalHeight;
+                    if (that.appVersion <= 72) {
+                        canvas = document.createXULElementNS(NSURI, "canvas");
+                    } else {
+                        canvas = document.createElementNS(NSURI, "canvas")
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(this, 0, 0);
+                    isCompleted = true;
+                };
+                img.onerror = function () {
+                    Cu.reportError($L('could not load', imgSrc));
+                    isCompleted = true;
+                };
+                img.src = imgSrc;
+
+                var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+                while (!isCompleted) {
+                    thread.processNextEvent(true);
                 }
-                canvas.width = width;
-                canvas.height = height;
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(this, 0, 0);
-                isCompleted = true;
-            };
-            img.onerror = function () {
-                Cu.reportError($L('could not load', imgSrc));
-                isCompleted = true;
-            };
-            img.src = imgSrc;
 
-            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-            while (!isCompleted) {
-                thread.processNextEvent(true);
+                var data = canvas ? canvas.toDataURL(imgType) : "";
+                canvas = null;
+                return data;
             }
 
-            var data = canvas ? canvas.toDataURL(imgType) : "";
-            canvas = null;
-            return data;
-        },
-        svg2base64(svgSrc) {
-            if (typeof svgSrc == 'undefined') return "";
-            var xmlhttp = new XMLHttpRequest();
-            xmlhttp.open("GET", svgSrc, false);
-            xmlhttp.send();
-            var svg = xmlhttp.responseText;
-            // svg string to data url
-            var svg64 = "data:image/svg+xml;base64," + btoa(svg);
-            return svg64;
-        },
-        convertUnicode(text) {
-            // 来自 addOpenChrome.uc.js
-            var UI = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"].
-                createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
-
-            UI.charset = "UTF-8";
-            try {
-                text = UI.ConvertToUnicode(text);
-            } catch (e) {
+            function svg2base64(svgSrc) {
+                if (typeof svgSrc == 'undefined') return "";
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("GET", svgSrc, false);
+                xmlhttp.send();
+                var svg = xmlhttp.responseText;
+                // svg string to data url
+                var svg64 = "data:image/svg+xml;base64," + btoa(svg);
+                return svg64;
             }
-            return text;
         },
         getSelectedText() {
             return this._selectedTXT;
@@ -1267,7 +1259,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
          * 获取选区
          * @param {*} win 
          * @returns 
-         * @deprecated
+         * @deprecated use getSelectedText instead
          */
         getSelection: function (win) {
             // from getBrowserSelection Fx19
@@ -1368,6 +1360,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 lineNumber: aLineNumber
             }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
         },
+        /**
+         * 使用 Scratchpad 编辑
+         * @param {*} parentWindow 
+         * @param {*} file
+         * @deprecated 
+         */
         openScriptInScratchpad: function (parentWindow, file) {
             let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,dialog,centerscreen,dependent");
             spWin.top.moveTo(0, 0);
@@ -1609,7 +1607,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 }
 .addMenu.exec,
 .addMenu[exec] {
-  list-style-image: url("chrome://browser/skin/aboutSessionRestore-window-icon.png");
+  list-style-image: url("chrome://devtools/content/debugger/images/window.svg");
 }
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
