@@ -1,0 +1,4886 @@
+/* ==UserStyle==
+ * @name            Sidra
+ * @description     Ryan 自用 Firefox 主题
+ * @author          Ryan
+ * @version         0.1.0
+ * @compatibility   Firefox 90
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+ * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.fixed': '侧边栏浮在网页上方', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '主题应用到扩展元素', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏' }
+==/UserStyle== */
+
+:root,
+window {
+    --tab-min-height: 32px;
+    --findbar-height: 22px;
+    --search-box-color: var(--toolbar-field-background-color);
+    --search-box-focus: var(--toolbar-field-focus-background-color);
+    --search-box-null: hsl(336, 69%, 71%);
+    --sidra-panel-padding-x: 4px;
+    --sidra-panel-padding-y: 4px;
+    --sidra-panel-padding: var(--sidra-panel-padding-y) var(--sidra-panel-padding-x);
+    --sidra-panel-item-padding-start: 4px;
+    --sidra-panel-item-padding-end: 6px;
+    --sidra-panel-item-padding-top: 4px;
+    --sidra-panel-item-padding-bottom: 4px;
+    --sidra-panel-margin-before-icon: 4px;
+    --sidra-panel-margin-after-icon: 8px;
+    --sidra-panel-icon-width: 16px;
+    --sidra-panel-icon-height: 16px;
+    --sidra-panel-margin-before-text: 0px;
+    --sidra-panel-margin-after-text: 0px;
+    --sidra-panel-padding-no-iconic: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon) + var(--sidra-panel-icon-width) + var(--sidra-panel-margin-after-icon) + var(--sidra-panel-margin-before-text));
+    --sidra-panel-text-margin: var(--sidra-panel-item-padding-top) var(--sidra-panel-margin-after-text) var(--sidra-panel-item-padding-bottom) var(--sidra-panel-margin-before-text);
+    --sidra-separator-padding-top: 3px;
+    --sidra-separator-padding-bottom: 3px;
+    --sidra-menu-color: #262626;
+    /** 弹出菜单上下留白 */
+    --sidra-menuitem-padding-start: 6px;
+    --sidra-menuitem-padding-end: 6px;
+    --sidra-menuitem-padding-top: 6px;
+    --sidra-menuitem-padding-bottom: 6px;
+    --sidra-menuitem-padding: var(--sidra-menuitem-padding-top) var(--sidra-menuitem-padding-end) var(--sidra-menuitem-padding-bottom) var(--sidra-menuitem-padding-start);
+    --sidra-menuitem-margin-before-icon: 6px;
+    --sidra-menuitem-padding-before-icon: 0px;
+    --sidra-menuitem-icon-width: 16px;
+    --sidra-menuitem-icon-height: 16px;
+    --sidra-menuitem-padding-after-icon: 0px;
+    --sidra-menuitem-margin-after-icon: 8px;
+    --sidra-menuitem-text-height: var(--sidra-menuitem-icon-height);
+    --sidra-menuitem-text-padding-top: 0px;
+    --sidra-menuitem-text-padding-end: 0px;
+    --sidra-menuitem-text-padding-bottom: 0px;
+    --sidra-menuitem-text-padding-start: 0px;
+    --sidra-menuitem-text-padding: var(--sidra-menuitem-text-padding-top) var(--sidra-menuitem-text-padding-end) var(--sidra-menuitem-text-padding-bottom) var(--sidra-menuitem-text-padding-start);
+    --sidra-menuitem-padding-no-iconic: calc(var(--sidra-menuitem-padding-start) + var(--sidra-menuitem-margin-before-icon) +var(--sidra-menuitem-padding-before-icon) + var(--sidra-menuitem-icon-width) + var(--sidra-menuitem-padding-after-icon) + var(--sidra-menuitem-margin-after-icon) + var(--sidra-menuitem-text-padding-start));
+    --sidra-places-menu-padding: 4px;
+    --fix-margin-for-text: 0 calc(var(--sidra-menuitem-padding-after-icon) + var(--sidra-menuitem-margin-after-icon) + var(--sidra-menuitem-text-padding-start));
+    /** 菜单仿 Edge 颜色 Like Edge style menupopup */
+    --sidra-menu-background: #f2f2f2;
+    --sidra-menu-disabled-color: color-mix(in srgb, currentColor 50%, transparent);
+    --sidra-menu-separator-color: #b4b4b4;
+    --sidra-menu-border-color: transparent;
+    --sidra-menu-border-radius: 0;
+    --sidra-menu-border-width: 5px;
+    --sidra-menu-border-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAA7EAAAOxAGVKw4bAAA5z2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS41LWMwMjEgNzkuMTU0OTExLCAyMDEzLzEwLzI5LTExOjQ3OjE2ICAgICAgICAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgICAgICAgICAgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIgogICAgICAgICAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgICAgICAgICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIj4KICAgICAgICAgPHhtcDpDcmVhdG9yVG9vbD5BZG9iZSBQaG90b3Nob3AgQ0MgKFdpbmRvd3MpPC94bXA6Q3JlYXRvclRvb2w+CiAgICAgICAgIDx4bXA6Q3JlYXRlRGF0ZT4yMDE0LTEwLTE3VDIwOjIwOjQwKzA4OjAwPC94bXA6Q3JlYXRlRGF0ZT4KICAgICAgICAgPHhtcDpNb2RpZnlEYXRlPjIwMTQtMTAtMTdUMjA6NTk6NDArMDg6MDA8L3htcDpNb2RpZnlEYXRlPgogICAgICAgICA8eG1wOk1ldGFkYXRhRGF0ZT4yMDE0LTEwLTE3VDIwOjU5OjQwKzA4OjAwPC94bXA6TWV0YWRhdGFEYXRlPgogICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3BuZzwvZGM6Zm9ybWF0PgogICAgICAgICA8cGhvdG9zaG9wOkNvbG9yTW9kZT4zPC9waG90b3Nob3A6Q29sb3JNb2RlPgogICAgICAgICA8eG1wTU06SW5zdGFuY2VJRD54bXAuaWlkOmFjNjdiODNiLTYyN2MtMDI0MS04ZTM5LTZhYmNlOGQwMDhjMjwveG1wTU06SW5zdGFuY2VJRD4KICAgICAgICAgPHhtcE1NOkRvY3VtZW50SUQ+eG1wLmRpZDphZDJmMjliNy1hYTc5LTE5NDAtOGIxZC05N2JjYTE4ODQyM2Q8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDphZDJmMjliNy1hYTc5LTE5NDAtOGIxZC05N2JjYTE4ODQyM2Q8L3htcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD4KICAgICAgICAgPHhtcE1NOkhpc3Rvcnk+CiAgICAgICAgICAgIDxyZGY6U2VxPgogICAgICAgICAgICAgICA8cmRmOmxpIHJkZjpwYXJzZVR5cGU9IlJlc291cmNlIj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0OmFjdGlvbj5jcmVhdGVkPC9zdEV2dDphY3Rpb24+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDppbnN0YW5jZUlEPnhtcC5paWQ6YWQyZjI5YjctYWE3OS0xOTQwLThiMWQtOTdiY2ExODg0MjNkPC9zdEV2dDppbnN0YW5jZUlEPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6d2hlbj4yMDE0LTEwLTE3VDIwOjIwOjQwKzA4OjAwPC9zdEV2dDp3aGVuPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6c29mdHdhcmVBZ2VudD5BZG9iZSBQaG90b3Nob3AgQ0MgKFdpbmRvd3MpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgICAgPHJkZjpsaSByZGY6cGFyc2VUeXBlPSJSZXNvdXJjZSI+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDphY3Rpb24+c2F2ZWQ8L3N0RXZ0OmFjdGlvbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0Omluc3RhbmNlSUQ+eG1wLmlpZDphYzY3YjgzYi02MjdjLTAyNDEtOGUzOS02YWJjZThkMDA4YzI8L3N0RXZ0Omluc3RhbmNlSUQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDp3aGVuPjIwMTQtMTAtMTdUMjA6NTk6NDArMDg6MDA8L3N0RXZ0OndoZW4+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpzb2Z0d2FyZUFnZW50PkFkb2JlIFBob3Rvc2hvcCBDQyAoV2luZG93cyk8L3N0RXZ0OnNvZnR3YXJlQWdlbnQ+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDpjaGFuZ2VkPi88L3N0RXZ0OmNoYW5nZWQ+CiAgICAgICAgICAgICAgIDwvcmRmOmxpPgogICAgICAgICAgICA8L3JkZjpTZXE+CiAgICAgICAgIDwveG1wTU06SGlzdG9yeT4KICAgICAgICAgPHRpZmY6T3JpZW50YXRpb24+MTwvdGlmZjpPcmllbnRhdGlvbj4KICAgICAgICAgPHRpZmY6WFJlc29sdXRpb24+OTYwMDAwLzEwMDAwPC90aWZmOlhSZXNvbHV0aW9uPgogICAgICAgICA8dGlmZjpZUmVzb2x1dGlvbj45NjAwMDAvMTAwMDA8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDxleGlmOkNvbG9yU3BhY2U+NjU1MzU8L2V4aWY6Q29sb3JTcGFjZT4KICAgICAgICAgPGV4aWY6UGl4ZWxYRGltZW5zaW9uPjE2PC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxZRGltZW5zaW9uPjE2PC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz5exXdKAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAC6SURBVHjapFNBDsMgDDOB3veSsv+/Yu1Ldm8hu4TNRN1oNUsRtMLGIUnAB8GtvFf6p7wmOthCaA9HVACVRZIjCoBoIc5BBVAsqkXnQOx7smgiIPJmsTdHicgRwPRYlid+4J7zjdJRdhDtZuR5PiQv6wo701J5W2QXI3TvI658ckKg45whDNXUlWqErg/koM4jFBZJJNDq3F77GzY7q3BdGC82UgFQk0thJzejVlY/gVeHSQFo+HecXwMA2iBQj2AiCbgAAAAASUVORK5CYII=') 5 stretch !important;
+    --sidra-menuitem-hover-background: #dadada;
+    --sidra-tab-hover: color-mix(in srgb, #dadada 50%, transparent);
+    --sidra-tab-selected: #dadada;
+    --sidra-multiselected-color: hsl(241, 50%, 51%);
+}
+
+:root[uidensity="compact"] {
+    --tab-min-height: 26px;
+    --sidra-panel-padding-x: 2px;
+    --sidra-panel-padding-y: 2px;
+    --sidra-panel-item-padding-start: 2px;
+    --sidra-panel-item-padding-end: 2px;
+    --sidra-panel-item-padding-top: 2px;
+    --sidra-panel-item-padding-bottom: 2px;
+    --sidra-separator-padding-top: 2px;
+    --sidra-separator-padding-bottom: 2px;
+    --sidra-menuitem-padding-start: 4px;
+    --sidra-menuitem-padding-end: 4px;
+    --sidra-menuitem-padding-top: 4px;
+    --sidra-menuitem-padding-bottom: 4px;
+    --sidra-menuitem-margin-before-icon: 4px;
+    --sidra-menuitem-padding-before-icon: 0px;
+    --sidra-menuitem-icon-width: 16px;
+    --sidra-menuitem-icon-height: 16px;
+    --sidra-menuitem-padding-after-icon: 0px;
+    --sidra-menuitem-margin-after-icon: 6px;
+    --sidra-menuitem-text-padding-top: 0px;
+    --sidra-menuitem-text-padding-end: 0px;
+    --sidra-menuitem-text-padding-bottom: 0px;
+    --sidra-menuitem-text-padding-start: 0px;
+}
+
+:root[uidensity="touch"] {
+    --tab-min-height: 41px;
+    --sidra-panel-padding-x: 6px;
+    --sidra-panel-padding-y: 6px;
+    --sidra-panel-item-padding-start: 8px;
+    --sidra-panel-item-padding-end: 8px;
+    --sidra-panel-item-padding-top: 6px;
+    --sidra-panel-item-padding-bottom: 6px;
+    --sidra-separator-padding-top: 6px;
+    --sidra-separator-padding-bottom: 6px;
+    --sidra-menuitem-padding-start: 8px;
+    --sidra-menuitem-padding-end: 8px;
+    --sidra-menuitem-padding-top: 8px;
+    --sidra-menuitem-padding-bottom: 8px;
+    --sidra-menuitem-margin-before-icon: 8px;
+    --sidra-menuitem-padding-before-icon: 0px;
+    --sidra-menuitem-icon-width: 16px;
+    --sidra-menuitem-icon-height: 16px;
+    --sidra-menuitem-padding-after-icon: 0px;
+    --sidra-menuitem-margin-after-icon: 10px;
+    --sidra-menuitem-text-padding-top: 0px;
+    --sidra-menuitem-text-padding-end: 0px;
+    --sidra-menuitem-text-padding-bottom: 0px;
+    --sidra-menuitem-text-padding-start: 0px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --sidra-menu-background: #2b2a33;
+        --sidra-menu-separator-color: #5b5b66;
+        --sidra-menu-color: #fbfbfe;
+        --sidra-menuitem-hover-background: #52525e;
+    }
+}
+
+/**======== 紧凑导航栏 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.navbar.compact") {
+    .titlebar-spacer[type="pre-tabs"] {
+        display: none;
+    }
+
+    .titlebar-spacer[type="post-tabs"],
+    #toolbar-menubar>spacer {
+        width: var(--titlebar-spacer-width, 32px) !important;
+        display: -moz-box !important;
+    }
+
+    toolbarpaletteitem>toolbarspring {
+        margin-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2) !important;
+        outline: none !important;
+        border: 1px solid var(--arrowpanel-dimmed-even-further) !important;
+        outline-offset: 0 !important;
+        border-radius: var(--toolbarbutton-border-radius) !important;
+    }
+
+    toolbarpaletteitem[place="palette"]>toolbarspring {
+        min-height: var(--urlbar-height) !important;
+        max-height: var(--urlbar-height) !important;
+        padding-block: 0 !important;
+        margin-block: 5px !important;
+    }
+
+    #PersonalToolbar>toolbarpaletteitem>toolbarspring {
+        margin-block: revert !important;
+        margin-inline: 2px !important;
+    }
+
+    #wrapper-urlbar-container+toolbarpaletteitem>#search-container,
+    #nav-bar[customizing="true"] #urlbar-container+#search-container,
+    #wrapper-search-container+toolbarpaletteitem>#urlbar-container,
+    #nav-bar[customizing="true"] #search-container+#urlbar-container {
+        margin-inline-start: 1px !important;
+    }
+
+    /* 工具栏按钮上标 */
+    :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):not([attention])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background-color: var(--uc-toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
+        color: var(--toolbar-color, white) !important;
+        box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026,
+            0 1px 3px #1e1e2033 !important;
+        min-width: 10.5px !important;
+        height: 10.5px !important;
+        -moz-box-align: end !important;
+        font-size: 9px !important;
+        font-weight: var(--uc-font-weight-bold, 600) !important;
+        line-height: 10px !important;
+        filter: none !important;
+        margin: -6px -6px 0 -6px !important;
+    }
+
+    :is(.customization-target, .widget-overflow-list) #downloads-button[attention]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        margin-right: -5.5px !important;
+        margin-top: -5.5px !important;
+        width: 10px !important;
+        height: 10px !important;
+        box-shadow: none !important;
+        background-image: url(chrome://userchrome/content/devtools/error.svg) !important;
+        background-size: contain !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+    }
+
+    :is(.customization-target, .widget-overflow-list) #downloads-button[attention="info"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background-color: transparent !important;
+        -moz-context-properties: none !important;
+        border-radius: revert !important;
+        background-image: url(chrome://userchrome/content/indicator-tab-attention-purple.svg) !important;
+    }
+
+    :is(.customization-target, .widget-overflow-list) #downloads-button[attention="warning"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background-color: var(--low-warning-icon-detail) !important;
+        fill: var(--low-warning-icon-background) !important;
+        border-radius: 50% !important;
+    }
+
+    :is(.customization-target, .widget-overflow-list) #downloads-button[attention="severe"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background-color: var(--warning-icon-detail) !important;
+        fill: var(--warning-icon-background) !important;
+        border-radius: 50% !important;
+    }
+
+    :is(.customization-target, .widget-overflow-list) #fxa-toolbar-menu-button[badge-status="login_failed"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: url(chrome://userchrome/content/skin/controlcenter/warning.svg) no-repeat center/contain !important;
+        stroke: var(--low-warning-icon-detail) !important;
+        fill: var(--low-warning-icon-background) !important;
+        box-shadow: none !important;
+        -moz-context-properties: fill, stroke !important;
+        padding: 0 !important;
+        margin: -7px 0 0 !important;
+        margin-inline-end: -6px !important;
+        filter: none !important;
+    }
+
+    .widget-overflow-list .toolbarbutton-1>.toolbarbutton-text {
+        padding-inline-start: var(--arrowpanel-subviewbutton-iconic-gap, 8px) !important;
+    }
+
+    .widget-overflow-list .toolbaritem-combined-buttons .toolbarbutton-1>.toolbarbutton-text {
+        padding-inline-end: 4px !important;
+    }
+
+    .widget-overflow-list #zoom-controls[cui-areatype="toolbar"]>#zoom-reset-button>.toolbarbutton-text {
+        min-width: calc(5ch + 4px) !important;
+        padding-inline: 0 !important;
+    }
+
+    toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional {
+        margin-inline: 0 !important;
+    }
+
+    toolbar :not(toolbarpaletteitem)>.toolbaritem-combined-buttons.chromeclass-toolbar-additional {
+        -moz-box-align: stretch !important;
+    }
+
+    toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional:not(:hover)>separator {
+        content: "";
+        display: block;
+        width: 0.67px !important;
+        height: 20px !important;
+        margin-inline-end: -0.67px !important;
+        background-image: linear-gradient(currentColor 0, currentColor 100%);
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 1px 20px !important;
+        opacity: 0.2;
+    }
+
+    toolbar .toolbarbutton-combined-buttons-dropmarker>.toolbarbutton-icon {
+        padding-inline: 2px !important;
+        padding-block: 2px !important;
+        height: 20px !important;
+        width: 16px !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #edit-controls>#cut-button,
+    toolbar #profiler-button>#profiler-button-button {
+        padding-left: 2px !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #edit-controls>#paste-button,
+    toolbar #profiler-button>#profiler-button-dropmarker {
+        padding-right: 2px !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button) {
+        margin-block: var(--toolbarbutton-inner-padding) !important;
+        width: unset !important;
+        padding: 0 !important;
+        padding-inline: 2px !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button)>.toolbarbutton-icon {
+        height: 20px !important;
+        width: 20px !important;
+        padding: 4px !important;
+    }
+
+    #zoom-in-button>.toolbarbutton-icon {
+        padding-inline-start: 0 !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button {
+        margin-block: var(--toolbarbutton-inner-padding) !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button:not([disabled]):is(:hover, :focus-visible)>.toolbarbutton-text {
+        border-color: transparent;
+    }
+
+    toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button>.toolbarbutton-text {
+        height: 20px !important;
+        min-height: 20px !important;
+        font-size: 0.98em;
+        padding-block: 1px !important;
+        background: hsla(0, 0%, 100%, 0.045);
+        border: 1px solid var(--toolbarbutton-hover-background);
+        border-radius: 10px !important;
+    }
+
+    toolbar:not(#PersonalToolbar) #zoom-controls separator {
+        display: none !important;
+    }
+
+    :root:not([customizing]) #stop-reload-button>.toolbarbutton-1 {
+        opacity: 1 !important;
+    }
+
+    :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:not([checked], [open], :active):hover>.toolbarbutton-icon {
+        background-color: var(--toolbarbutton-hover-background);
+    }
+
+    :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:is(:focus-visible, [checked="true"]):not([open], :hover, :active)>.toolbarbutton-icon {
+        background-color: var(--toolbarbutton-checked-background);
+    }
+
+    :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:is([open], [checked], :hover:active)>.toolbarbutton-icon {
+        background-color: var(--toolbarbutton-active-background);
+    }
+
+    /* fix a little visual bug (maybe related to window scaling) where the stop button appears to move half a pixel to the left between animations.
+this is because the reload button is replaced with a step animation for a few moments, and the step animation is then replaced with a static stop icon.
+the stop icon sticks around until the page finishes loading, then it's hidden again and the step animation returns and plays in reverse.
+unfortunately the way the static icon is rendered is not identical to the step animation for every given scaling factor.
+to fix this we can just replace the static icon's path entirely with a path pulled directly from the step animation.
+i haven't tested this on every scaling factor, if it makes things worse on your setup then just delete or override this. */
+    #stop-button .toolbarbutton-icon {
+        background-image: url(chrome://userchrome/content/skin/stop-button-fix.svg) !important;
+        background-repeat: no-repeat;
+        background-position: left 5px center;
+        list-style-image: none;
+    }
+
+    #nav-bar[brighttext] #panic-button[open] {
+        fill: var(--warning-color) !important;
+    }
+
+    #nav-bar {
+        padding-inline: 3px !important;
+    }
+
+    #TabsToolbar-customization-target>#back-button {
+        margin-inline-start: 2px !important;
+    }
+
+    #stop-reload-button {
+        pointer-events: none !important;
+    }
+
+    #stop-reload-button>* {
+        pointer-events: auto !important;
+    }
+
+    #main-window[uidensity="compact"] {
+        --toolbarbutton-inner-padding: 5px !important;
+    }
+
+    #main-window[uidensity="compact"] #nav-bar #nav-bar-overflow-button,
+    #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target>toolbarbutton,
+    #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target>toolbaritem textbox,
+    #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target #stop-reload-button>toolbarbutton {
+        margin: 1px 0px !important;
+        padding: 0 !important;
+    }
+
+    #main-window[uidensity="compact"] #nav-bar .toolbarbutton-1 .toolbarbutton-badge {
+        margin-inline-end: -5px !important;
+    }
+
+    #main-window[uidensity="compact"] toolbar .toolbarbutton-1 {
+        padding: 0;
+    }
+
+    /* 导航栏阴影 */
+    #navigator-toolbox {
+        position: relative;
+        box-shadow: 0px 0px 8px -5px hsla(240, 4%, 0%, 0.5), 0px 0px 15px 0px hsla(0, 0%, 0%, 0.2) !important;
+    }
+
+    toolbar .toolbarbutton-1:not([disabled])[open]:hover>.toolbarbutton-icon {
+        background-color: var(--toolbarbutton-active-background) !important;
+    }
+
+    #PersonalToolbar toolbarbutton.bookmark-item {
+        padding-inline: var(--toolbarbutton-inner-padding) !important;
+    }
+
+    #PersonalToolbar .toolbarbutton-1:is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active),
+    toolbarbutton.bookmark-item:not(.subviewbutton):is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active),
+    toolbar .toolbarbutton-1:is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active)> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+        background-color: var(--toolbarbutton-checked-background) !important;
+        transition: none !important;
+    }
+
+    #PersonalToolbar .toolbarbutton-1>.toolbarbutton-icon,
+    #PersonalToolbar .toolbarbutton-1>.toolbarbutton-text,
+    #PersonalToolbar .toolbarbutton-1>.toolbarbutton-badge-stack {
+        background: none !important;
+    }
+
+    toolbar .toolbarbutton-1:not([disabled], [open])[checked]> :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+        background-color: var(--toolbarbutton-checked-background) !important;
+    }
+
+    toolbar .toolbarbutton-1:not([disabled], [open])[checked]:hover>.toolbarbutton-icon {
+        background-color: var(--toolbarbutton-hover-background) !important;
+    }
+
+    toolbar .toolbarbutton-1:not([disabled], [open])[checked]:hover:active>.toolbarbutton-icon {
+        background-color: var(--toolbarbutton-active-background) !important;
+    }
+
+    .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked] {
+        background-color: var(--button-bgcolor) !important;
+    }
+
+    .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]:is(:hover, :focus-visible) {
+        background-color: var(--button-hover-bgcolor) !important;
+    }
+
+    .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]:hover:active {
+        background-color: var(--button-active-bgcolor) !important;
+    }
+
+    toolbar[customizing="true"] toolbarpaletteitem>#sidebar-button:not([disabled], [open])[checked]> :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+        background-color: revert !important;
+        transition: transform var(--drag-drop-transition-duration) cubic-bezier(.6, 2, .75, 1.5) !important;
+    }
+
+    toolbarpaletteitem[place="palette"]:not([mousedown="true"]):focus-visible,
+    toolbarpaletteitem[place="menu-panel"]:not([mousedown="true"]):focus-visible,
+    toolbarpaletteitem[place="toolbar"]:not([mousedown="true"]):focus-visible {
+        transition: outline-width .01s linear var(--drag-drop-transition-duration);
+        outline: revert !important;
+    }
+
+    .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]::after {
+        content: "";
+        display: -moz-inline-box;
+        background: url(chrome://userchrome/content/check.svg) no-repeat center/contain;
+        fill: currentColor;
+        width: 16px;
+        height: 16px;
+        margin-inline-start: 6px;
+    }
+
+    #PersonalToolbar {
+        visibility: visible !important;
+        padding-inline: 2px !important;
+        min-height: var(--urlbar-height) !important;
+        transition: min-height 200ms ease-in-out, max-height 200ms ease-in-out,
+            opacity 200ms ease-in-out, transform 200ms ease-in-out !important;
+        overflow-y: visible !important;
+        padding-block: 0 var(--bookmark-block-padding) !important;
+        outline: none !important;
+    }
+
+    #PersonalToolbar>* {
+        transition: opacity 200ms ease-in-out, transform 200ms ease-in-out !important;
+        overflow-y: visible !important;
+    }
+
+    #PersonalToolbar>toolbarpaletteitem:not([notransition])[place="toolbar"] {
+        transition: opacity 200ms ease-in-out, transform 200ms ease-in-out, border-width var(--drag-drop-transition-duration) ease-in-out !important;
+    }
+
+    #PersonalToolbar[customizing][draggingover] {
+        z-index: 4 !important;
+    }
+
+    #PersonalToolbar #personal-bookmarks {
+        flex-grow: 1;
+    }
+
+    :root[inFullscreen]:not([macOSNativeFullscreen], [customizing]) #PersonalToolbar:not([fullscreentoolbar="true"]),
+    #PersonalToolbar[collapsed="true"] {
+        overflow-y: clip !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+    }
+
+    :root[inFullscreen]:not([macOSNativeFullscreen], [customizing]) #PersonalToolbar:not([fullscreentoolbar="true"])>*,
+    #PersonalToolbar[collapsed="true"]>* {
+        overflow-y: clip !important;
+        opacity: 0 !important;
+        transform: translateY(-16px);
+    }
+
+    #personal-toolbar-empty,
+    #PersonalToolbar .toolbarbutton-1,
+    toolbarbutton.bookmark-item:not(.subviewbutton) {
+        margin-block: 0 !important;
+        padding: var(--bookmark-block-padding) 4px;
+        min-height: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+        min-width: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+        -moz-box-align: center !important;
+    }
+
+    #personal-toolbar-empty-description,
+    #PersonalToolbar .toolbarbutton-1,
+    toolbarbutton.bookmark-item:not(.subviewbutton) {
+        margin: 2px;
+        padding: var(--bookmark-block-padding) 4px;
+    }
+
+    #personal-toolbar-empty-description {
+        min-height: 0 !important;
+        margin: 0 var(--bookmark-block-padding) !important;
+        padding: 0 !important;
+    }
+
+    #PersonalToolbar a {
+        color: var(--uc-parent-link-color) !important;
+    }
+
+    #PersonalToolbar a:is(:active, :focus-visible) {
+        color: var(--uc-parent-link-color-active) !important;
+    }
+
+    #PersonalToolbar #profiler-button>#profiler-button-dropmarker,
+    #PersonalToolbar .toolbaritem-combined-buttons .toolbarbutton-combined-buttons-dropmarker {
+        min-height: 20px !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    #PersonalToolbar .toolbaritem-combined-buttons {
+        min-height: 31.5px !important;
+    }
+
+    #PersonalToolbar #profiler-button>#profiler-button-dropmarker {
+        margin-inline-start: 0 !important;
+    }
+
+    #PersonalToolbar[mode="icons"] #import-button>.toolbarbutton-icon {
+        margin-inline: 0 !important;
+    }
+
+    #PersonalToolbar[mode="icons"] #import-button>.toolbarbutton-text {
+        display: none !important;
+    }
+
+    #PlacesToolbarDropIndicator {
+        list-style-image: none !important;
+        list-style-image: url(../images/sidra/tab-drag-indicator.svg) !important;
+        -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
+        fill: var(--lwt-toolbarbutton-icon-fill, currentColor) !important;
+        margin-top: 22px !important;
+        translate: -2.5px !important;
+        z-index: 2500 !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    #customization-header {
+        margin-top: 40px !important;
+    }
+
+    #customization-panel-container {
+        z-index: 3 !important;
+    }
+
+    #navigator-toolbox {
+        z-index: 3 !important;
+    }
+
+    #nav-bar {
+        z-index: 11 !important;
+        box-shadow: none !important;
+    }
+
+    /* fullscreen button */
+    #fullscreen-button[checked="true"]:hover .toolbarbutton-icon {
+        background-color: var(--toolbarbutton-hover-background) !important;
+    }
+
+    #fullscreen-button[checked="true"]:hover:active .toolbarbutton-icon {
+        background-color: var(--toolbarbutton-active-background) !important;
+    }
+
+    /* fix a bug that occurs when pre-proton downloads button is installed along with navbar toolbarbutton slider script */
+    #nav-bar-toolbarbutton-slider {
+        overflow: -moz-hidden-unscrollable !important;
+    }
+
+    /** 修正提示位置 */
+    #tab-notification-deck,
+    #PersonalToolbar~div {
+        -moz-box-ordinal-group: 4;
+    }
+}
+
+/**======== 紧凑标签 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.tabs.compact") {
+    :root {
+        --tab-border-radius: 0 !important;
+        --tab-block-margin: 0 !important;
+    }
+
+    /** 去除标签栏上方的空白 */
+    :root[uidensity="compact"][tabsintitlebar][sizemode="maximized"] #titlebar {
+        appearance: none;
+    }
+
+    /** 注释这个会让标签栏更像 edge */
+    :root[uidensity="compact"][tabsintitlebar]:not([sizemode="maximized"]) #titlebar {
+        appearance: none;
+    }
+
+    /** 缩小标签栏前的空格 */
+    .titlebar-spacer[type="pre-tabs"] {
+        width: 0px;
+    }
+
+    /** 调整标签栏后面的空格大小 */
+    #toolbar-menubar:not([inactive="true"])+#TabsToolbar .titlebar-spacer,
+    #toolbar-menubar:not([inactive="true"])>spacer {
+        width: calc(var(--titlebar-spacer-width, 32px) / 2) !important;
+    }
+
+    #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
+        visibility: collapse !important;
+    }
+
+    :root:not([chromehidden~="menubar"], [operatingsystem="linux"], [operatingsystem="macosx"]) #toolbar-menubar:not([inactive])+#TabsToolbar .titlebar-spacer {
+        display: none;
+    }
+
+    #titlebar {
+        -moz-box-orient: horizontal !important;
+    }
+
+    #tabbrowser-tabs {
+        background-color: var(--lwt-accent-color) !important;
+    }
+
+    /** 移动菜单栏到标签栏后边 */
+    #TabsToolbar {
+        -moz-box-ordinal-group: 1;
+    }
+
+    #toolbar-menubar {
+        -moz-box-ordinal-group: 3;
+    }
+
+    #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+        max-width: 0 !important;
+        min-width: 0 !important;
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        opacity: 0 !important;
+    }
+
+    /** 主菜单垂直居中 */
+    #main-menubar {
+        -moz-box-flex: 1 !important;
+    }
+
+    /** 主菜单按钮横向居中 */
+    #toolbar-menubar #menubar-items {
+        -moz-box-pack: center !important;
+    }
+
+    #main-menubar>menu>menupopup {
+        margin-block: calc(0px - var(--menupopup-inner-box-margin) - ((var(--tab-min-height) - 16px - 4px - 5px) / 2)) !important;
+        margin-inline: calc(0px - var(--menupopup-inner-box-margin) + 2px) !important;
+    }
+
+    #toolbar-menubar #main-menubar>menu {
+        appearance: none !important;
+        background-color: transparent !important;
+        padding-inline: 2px;
+    }
+
+    #toolbar-menubar #main-menubar>menu>label {
+        -moz-box-flex: 1000 !important;
+        margin: 0 !important;
+        padding: 4px 8px 5px 8px !important;
+        border-radius: var(--toolbarbutton-border-radius) !important;
+    }
+
+    #toolbar-menubar #main-menubar>menu[_moz-menuactive="true"]>label {
+        background-color: var(--toolbarbutton-hover-background) !important;
+    }
+
+    #toolbar-menubar #main-menubar>menu[open]>label {
+        background-color: var(--toolbarbutton-active-background) !important;
+    }
+
+    .tabbrowser-arrowscrollbox>.arrowscrollbox-overflow-start-indicator {
+        visibility: collapse !important;
+    }
+
+
+    #tabs-newtab-button {
+        padding-left: 4px !important;
+        z-index: 1 !important;
+        position: relative !important;
+    }
+
+    #tabbrowser-tabs {
+        margin-inline-end: 2px !important;
+    }
+
+    :is(toolbarbutton, toolbaritem)+#tabbrowser-tabs {
+        margin-inline-start: 2px !important;
+    }
+
+    #tabbrowser-tabs:not([overflow]) #tabs-newtab-button {
+        z-index: 5 !important;
+    }
+
+    #TabsToolbar .customization-target {
+        min-width: 0 !important;
+        overflow-x: clip !important;
+    }
+
+    :root:not([sizemode="normal"]) .arrowscrollbox-overflow-end-indicator,
+    :root:not([sizemode="normal"]) .tabbrowser-arrowscrollbox>.arrowscrollbox-overflow-start-indicator {
+        visibility: collapse !important;
+    }
+
+    :is(tabbrowser, #TabsToolbar) toolbarbutton[class^="scrollbutton"] {
+        display: none !important;
+    }
+
+    /* 隐藏标签分隔符 */
+    .tabbrowser-tab::after,
+    .tabbrowser-tab::before {
+        opacity: 0 !important;
+        border-image: unset !important;
+        border-image-slice: unset !important;
+        width: unset !important;
+    }
+
+    .tabbrowser-tab::after,
+    .tabbrowser-tab::before {
+        border-left: none !important;
+    }
+
+    #TabsToolbar .toolbarbutton-1> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+        border-radius: var(--toolbarbutton-border-radius) !important;
+    }
+
+    .private-browsing-indicator {
+        visibility: collapse;
+    }
+
+    /* 所有标签按钮 */
+    #alltabs-button {
+        visibility: visible !important;
+        display: unset !important;
+    }
+
+    /* 右上角控制按钮 最小化最大化还原关闭 */
+    .titlebar-button {
+        display: -moz-box !important;
+        border: none;
+        margin: 0 !important;
+        padding: 8px 17px;
+        -moz-context-properties: fill, stroke !important;
+        stroke: none !important;
+        fill: none !important;
+    }
+
+    :root:not([sizemode="maximized"],
+        [inFullscreen]) :is(.titlebar-restore,
+        .uc-titlebar-restore),
+    :root:is([sizemode="maximized"],
+        [inFullscreen]) :is(.titlebar-max,
+        .uc-titlebar-max) {
+        display: none !important;
+    }
+
+    /* Firefox 不在最前面时 */
+    :root:-moz-window-inactive:not([customizing]) .titlebar-buttonbox>toolbarbutton:not(:hover) {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCgyMjcsIDE5JSwgNDglKSIgcj0iNTciIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    .titlebar-buttonbox .toolbarbutton-icon {
+        opacity: 1 !important;
+    }
+
+    .titlebar-button>.toolbarbutton-icon {
+        appearance: none !important;
+        width: 15.3px !important;
+        height: 15.3px !important;
+        stroke: inherit !important;
+    }
+
+    .titlebar-buttonbox {
+        appearance: none !important;
+    }
+
+    /** 最大化/还原 */
+    .titlebar-max,
+    .uc-titlebar-max,
+    .titlebar-restore,
+    .uc-titlebar-restore {
+        appearance: none !important;
+        padding: 0px !important;
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        background-color: transparent !important;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+        grid-column: 1 !important;
+        order: 1 !important;
+        -moz-box-ordinal-group: 2 !important;
+    }
+
+    /** 最大化 鼠标悬浮 */
+    :is(.titlebar-max,
+        .uc-titlebar-max):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNMjcuNyA0N3YzMC45YzAgNC43IDMuOSA4LjYgOC42IDguNmgzMC45YzEuOCAwIDIuNy0yLjIgMS40LTMuNEwzMS4xIDQ1LjZjLTEuMi0xLjMtMy40LS40LTMuNCAxLjR6bTUwLjQtMTguNEg0Ny4zYy0xLjggMC0yLjcgMi4yLTEuNCAzLjRsMzcuNCAzNy40YzEuMyAxLjMgMy40LjQgMy40LTEuNFYzNy4yYzAtNC44LTMuOS04LjYtOC42LTguNnoiIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    /** 还原 鼠标悬浮 */
+    :root:is([sizemode="maximized"],
+        [inFullscreen]) :is(.titlebar-max,
+        .uc-titlebar-max):hover,
+    :is(.titlebar-restore,
+        .uc-titlebar-restore):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNNzcuNSAyNy4xSDM3LjRjLTYuMyAwLTExLjQgNS4xLTExLjQgMTEuNHYzOWMwIDYuMyA1LjEgMTEuNCAxMS40IDExLjRoNDAuMWM2LjMgMCAxMS40LTUuMSAxMS40LTExLjR2LTM5YzAtNi4zLTUuMS0xMS40LTExLjQtMTEuNHptLTUuNCA0OC40SDQyLjljLTEuNiAwLTIuOS0xLjMtMi45LTIuOVY0My40YzAtMS42IDEuMy0yLjkgMi45LTIuOWgyOS4yYzEuNiAwIDIuOSAxLjMgMi45IDIuOXYyOS4yYzAgMS42LTEuMyAyLjktMi45IDIuOXoiIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    /** 最小化 */
+    :is(.titlebar-min,
+        .uc-titlebar-min) {
+        appearance: none !important;
+        padding: 0px !important;
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        background-color: transparent !important;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KPC9zdmc+) !important;
+        -moz-box-ordinal-group: 1 !important;
+    }
+
+    /** 最小化 鼠标悬浮 */
+    :is(.titlebar-min,
+        .uc-titlebar-min):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KICAgIDxwYXRoIGQ9Ik04OC4yIDUwLjJIMjUuOGMtMy43IDAtNi44IDMtNi44IDYuOCAwIDMuNyAzIDYuOCA2LjggNi44aDYyLjRjMy43IDAgNi44LTMgNi44LTYuOC0uMS0zLjctMy4xLTYuOC02LjgtNi44eiIKICAgICAgICBmaWxsPSJjb250ZXh0LXN0cm9rZSBoc2woMzIsIDYyJSwgMzglKSIgLz4KPC9zdmc+) !important;
+    }
+
+    /** 关闭 */
+    .titlebar-close,
+    .uc-titlebar-close {
+        appearance: none !important;
+        padding: 0px !important;
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        background-color: transparent !important;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+        -moz-box-ordinal-group: 3 !important;
+    }
+
+    /** 关闭 鼠标悬浮 */
+    :is(.titlebar-close,
+        .uc-titlebar-close):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNODMuOCA3NC4zTDM5LjcgMzAuMmMtMi42LTIuNi02LjktMi42LTkuNiAwLTIuNiAyLjYtMi42IDYuOSAwIDkuNmw0NC4xIDQ0LjFjMi42IDIuNiA2LjkgMi42IDkuNiAwIDIuNy0yLjcgMi43LTcgMC05LjZ6IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNMzkuNyA4My44bDQ0LjEtNDQuMWMyLjYtMi42IDIuNi02LjkgMC05LjYtMi42LTIuNi02LjktMi42LTkuNiAwbC00NCA0NC4yYy0yLjYgMi42LTIuNiA2LjkgMCA5LjYgMi42IDIuNiA2LjkgMi42IDkuNS0uMXoiIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    /* 容器标签彩色下划线 */
+    .tabbrowser-tab[usercontextid] .tab-context-line {
+        background: var(--identity-tab-color) !important;
+        height: 2px !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* 去除当前标签 outline 边框 */
+    #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon:-moz-lwtheme, .tab-background[selected]:-moz-lwtheme {
+        outline: none;
+    }
+
+    /* purple line on multiselected tabs */
+    #TabsToolbar .tabbrowser-tab[multiselected="true"] .tab-context-line {
+        min-height: 2px !important;
+        background-color: var(--sidra-multiselected-color, var(--toolbar-bgcolor)) !important;
+    }
+
+    .tabbrowser-tab .tab-context-line {
+        display: -moz-box !important;
+        -moz-box-ordinal-group: 2 !important;
+        height: 2px !important;
+        margin: 0 !important;
+        opacity: 1 !important;
+        transition: none !important;
+    }
+
+    .tabbrowser-tab:not([usercontextid], [multiselected]) .tab-context-line {
+        display: none !important;
+    }
+
+    .tab-label-container {
+        height: revert !important;
+    }
+
+    .tab-label[attention]:not([selected="true"]) {
+        font-weight: unset !important;
+    }
+
+    /* highlight unread tabs; requires italicizeUnreadTabs.uc.js */
+    :root[italic-unread-tabs] .tabbrowser-tab[notselectedsinceload]:not([pending]),
+    :root[italic-unread-tabs] .tabbrowser-tab[notselectedsinceload][pending][busy] {
+        font-style: italic !important;
+    }
+
+    #TabsToolbar .tabbrowser-tab,
+    #TabsToolbar .tabbrowser-tab :is(.tab-stack, .tab-background, .tab-content, .tab-loading-burst) {
+        border-top-right-radius: 5px !important;
+        border-top-left-radius: 5px !important;
+        overflow: hidden;
+    }
+
+    /* pinned tabs should style just like regular tabs except without labels and buttons */
+    #tabbrowser-tabs[positionpinnedtabs]>#tabbrowser-arrowscrollbox>.tabbrowser-tab[pinned]>.tab-stack {
+        border-inline: none !important;
+    }
+
+    #tabbrowser-tabs[positionpinnedtabs]>.tabbrowser-arrowscrollbox>.tabbrowser-tab[pinned]>.tab-stack {
+        border: none !important;
+    }
+
+    /* 固定标签页宽度 仅留下图标 */
+    .tabbrowser-tab[pinned] {
+        width: var(--tab-min-height, 32px) !important;
+    }
+
+    .tabbrowser-tab[pinned] .tab-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #main-window[uidensity="compact"] .tabbrowser-tab[pinned] {
+        width: var(--tab-min-height, 26px) !important;
+    }
+
+    #main-window[uidensity="touch"] .tabbrowser-tab[pinned] {
+        width: var(--tab-min-height, 41px) !important;
+    }
+
+    .tabbrowser-tab[pinned] .tab-label-container {
+        display: none;
+    }
+
+    /* get rid of drop shadow drawn on leftmost visible tab */
+    .tabbrowser-arrowscrollbox>.arrowscrollbox-overflow-start-indicator {
+        visibility: collapse !important;
+    }
+
+    /* tab dragging and dropping icon */
+    .tab-drop-indicator {
+        background-image: url(../images/sidra/tab-drag-indicator.svg) !important;
+        -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
+        fill: var(--lwt-toolbarbutton-icon-fill, currentColor) !important;
+        margin-bottom: -40px !important;
+        z-index: 2500 !important;
+        margin-inline-start: -20px !important;
+        background-size: contain !important;
+        width: 20px !important;
+    }
+
+    #tabs-newtab-button {
+        padding-left: 4px !important;
+        z-index: 1 !important;
+        position: relative !important;
+    }
+
+    #TabsToolbar #tabs-newtab-button,
+    #TabsToolbar #newPrivateTab-button {
+        height: var(--tab-min-height);
+        width: var(--tab-min-height);
+        margin: 0 !important;
+    }
+
+    #TabsToolbar #tabs-newtab-button>.toolbarbutton-icon,
+    #TabsToolbar #newPrivateTab-button>.toolbarbutton-icon {
+        --toolbarbutton-inner-padding: calc((var(--tab-min-height) - 16px) / 2);
+    }
+
+    /* 隐藏标签分隔符 */
+    .tabbrowser-tab::after,
+    .tabbrowser-tab::before {
+        opacity: 0 !important;
+        border-image: unset !important;
+        border-image-slice: unset !important;
+        width: unset !important;
+    }
+
+    .tabbrowser-tab::after,
+    .tabbrowser-tab::before {
+        border-left: none !important;
+    }
+
+    #TabsToolbar .toolbarbutton-1> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+        --toolbarbutton-inner-padding: 4px;
+        border-radius: var(--toolbarbutton-border-radius) !important;
+    }
+
+    #TabsToolbar #tabbrowser-tabs {
+        background-color: transparent !important;
+    }
+
+    #TabsToolbar .tabbrowser-tab {
+        background-color: color-mix(in srgb, var(--lwt-accent-color) 20%, transparent) !important;
+        padding: 0 !important;
+    }
+
+    .tabbrowser-tab:not([selected]) .tab-label {
+        color: color-mix(in srgb, currentColor 70%, white);
+    }
+
+    .tabbrowser-tab:is([visuallyselected], [selected]) .tab-background {
+        background-image: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)),
+            linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)),
+            var(--lwt-header-image, none)
+    }
+
+    .tab-background {
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    .tab-close-button {
+        padding: 3px !important;
+        width: 16px !important;
+        height: 16px !important;
+        border-radius: 50%;
+    }
+
+    /* Compact for win7/win8 */
+
+    @media (-moz-platform: windows-win7),
+    (-moz-platform: windows-win8) {
+        :root[uidensity="compact"][tabsintitlebar][sizemode="maximized"] #titlebar {
+            appearance: auto;
+        }
+
+        :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar>.toolbar-items,
+        :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive]+#TabsToolbar>.toolbar-items {
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        .titlebar-buttonbox-container {
+            -moz-box-align: center;
+        }
+    }
+
+
+    /** 垂直标签栏 */
+    #main-window[vertical-tabs="true"] #vertical-tabs-list .all-tabs-item:is([selected], [multiselected], [usercontextid]:is(:hover, [_moz-menuactive])) .all-tabs-button:not([disabled]) {
+        background-image: linear-gradient(to right, color-mix(in srgb, var(--main-stripe-color) 20%, white), color-mix(in srgb, var(--main-stripe-color) 10%, white)) !important;
+    }
+
+    #vertical-tabs-list .all-tabs-item:is(:hover, :focus-within) .all-tabs-secondary-button[close-button] {
+        margin-left: 2px;
+    }
+}
+
+/**======== 显示垂直标签栏时隐藏横向标签栏 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.tabs.verticalOrient") {
+    #main-window[vertical-tabs="true"] #navigator-toolbox {
+        display: grid;
+        border: none !important;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "navbar navbar titlebar"
+            "PersonalToolbar PersonalToolbar PersonalToolbar";
+    }
+
+    /* #main-window[vertical-tabs="true"][sizemode="maximized"] #navigator-toolbox {
+    padding-top: 6px !important;
+} */
+
+    #main-window[vertical-tabs="true"] #TabsToolbar>.toolbar-items {
+        visibility: collapse;
+    }
+
+    #main-window[vertical-tabs="true"] #titlebar {
+        grid-area: titlebar;
+        -moz-appearance: none !important;
+        background-color: var(--toolbar-bgcolor);
+        background-image: var(--toolbar-bgimage);
+        background-clip: padding-box;
+        color: var(--toolbar-color);
+    }
+
+    #main-window[vertical-tabs="true"] #titlebar {
+        -moz-box-orient: horizontal !important;
+    }
+
+    #main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
+        visibility: collapse !important;
+    }
+
+    :root:not([chromehidden~="menubar"], [operatingsystem="linux"], [operatingsystem="macosx"]) #main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive])+#TabsToolbar .titlebar-spacer {
+        display: none;
+    }
+
+    #main-window[vertical-tabs="true"] #toolbar-menubar {
+        -moz-box-ordinal-group: 3;
+    }
+
+    #main-window[vertical-tabs="true"] #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+        max-width: 0 !important;
+        min-width: 0 !important;
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        opacity: 0 !important;
+    }
+
+    :root[inFullscreen] #main-window[vertical-tabs="true"] #toolbar-menubar {
+        visibility: visible !important;
+    }
+
+    #main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive="true"]) {
+        background: var(--titlebar-background);
+    }
+
+    #main-window[vertical-tabs="true"] #main-menubar {
+        -moz-box-flex: 1 !important;
+    }
+
+    #main-window[vertical-tabs="true"] #toolbar-menubar #main-menubar>menu {
+        appearance: none !important;
+        background-color: transparent !important;
+        padding-inline: 2px;
+    }
+
+    #main-window[vertical-tabs="true"] #nav-bar {
+        grid-area: navbar;
+    }
+
+    #main-window[vertical-tabs="true"] #PersonalToolbar {
+        grid-area: PersonalToolbar;
+    }
+
+
+    /* 总是隐藏标签栏拖拽区域，书签工具栏也可以拖拽的 */
+    #main-window[vertical-tabs="true"] #TabsToolbar .titlebar-spacer,
+    #main-window[vertical-tabs="true"] #toolbar-menubar>spacer {
+        width: 0 !important;
+        visibility: collapse;
+    }
+
+    /* 激活菜单时隐藏标签栏拖拽区域 */
+    /* #main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive="true"])+#TabsToolbar .titlebar-spacer,
+#main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive="true"])>spacer {
+    width: 0 !important;
+    visibility: collapse;
+} */
+}
+
+/**======== 紧凑地址栏 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.urlbar.compact") {
+    #urlbar[breakout] {
+        margin-inline-start: 0px !important;
+        width: 100% !important;
+        left: 0 !important;
+        top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+    }
+
+    #urlbar[breakout]:not([open]) {
+        bottom: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+    }
+
+    .urlbarView {
+        margin-inline: 0 !important;
+        width: auto !important;
+    }
+
+    .urlbarView-row {
+        padding: 0 2px !important;
+    }
+
+    .urlbarView-row-inner {
+        padding-inline-start: 4px !important;
+    }
+
+    #urlbar-background {
+        animation: none !important;
+    }
+
+    #urlbar-input-container {
+        padding: 1px !important;
+        height: 100% !important;
+    }
+
+    #identity-icon {
+        margin-block: var(--urlbar-icon-padding)
+    }
+
+    .urlbarView>.search-one-offs:not([hidden]) {
+        padding-block: 0px !important;
+    }
+
+
+    /* 隐藏蓝色框框 */
+    #urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
+    #searchbar:focus-within {
+        outline: none;
+    }
+
+    /* disable useless space wasting inside popup */
+    #urlbar[breakout][breakout-extend]>.urlbarView {
+        padding: unset !important;
+        margin: unset !important;
+    }
+
+    #urlbar[breakout] .urlbarView {
+        margin-inline: unset !important;
+        width: 100% !important;
+    }
+
+    /* disable space wasting inside popup around result items */
+    #urlbar[breakout] #urlbar-results {
+        padding: 0px !important;
+        margin: 0px !important;
+    }
+
+    #urlbar[breakout] #urlbar-results .urlbarView-body-outer,
+    #urlbar[breakout] #urlbar-results .urlbarView-row,
+    #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
+        margin-inline-start: 0 !important;
+        padding-inline-start: 0 !important;
+        margin-inline-end: 0 !important;
+        padding-inline-end: 0 !important;
+    }
+
+    #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
+        padding-inline-start: 4px !important;
+        padding-inline-end: 4px !important;
+    }
+
+    #urlbar[breakout] .urlbarView-row {
+        padding-block: 0px !important;
+    }
+
+    /* disable space wasting inside popup around search engines */
+    #urlbar[breakout] .search-one-offs {
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages") {
+    /* 内置页面隐藏书签按钮 */
+
+    #tracking-protection-icon-container:is([hidden], :not([aria-label]))~#identity-box:not(.chromeUI, .localResource)~#page-action-buttons>#reader-mode-button[hidden]~ :is(#star-button-box, #pageAction-urlbar-screenshot) {
+        visibility: collapse;
+    }
+
+    :root[hide-tp-icon-on-ntp] #tracking-protection-icon-container:is([hidden], :not([aria-label]))~#identity-box:not(.chromeUI, .localResource)~#page-action-buttons>#userContext-icons:not([hidden])~#reader-mode-button[hidden]~#star-button-box {
+        visibility: hidden;
+        width: 0 !important;
+        min-width: 0 !important;
+    }
+}
+
+/**======== 紧凑面板 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.panel.compact") {
+
+    .PanelUI-subView:not([extension="true"]),
+    panelmultiview,
+    #PlacesToolbar menupopup[placespopup="true"]::part(arrowscrollbox),
+    menupopup[context="placesContext"]::part(content),
+    #BMB_bookmarksPopup menupopup::part(content),
+    #sidebarMenu-popup::part(content) {
+        padding: var(--sidra-panel-padding) !important;
+    }
+
+    #PlacesToolbar,
+    #BMB_bookmarksPopup,
+    #sidebarMenu-popup {
+        --panel-border-color: var(var(--panel-item-hover-bgcolor));
+        --panel-border-radius: 0;
+        --panel-border-width: var(--sidra-menu-border-width, 1px);
+        --panel-background-color: var(var(--arrowpanel-background));
+        --panel-hover-background-color: var(var(--panel-item-hover-bgcolor));
+        padding-inline-start: 0px;
+    }
+
+    #PlacesToolbar menupopup[placespopup="true"]::part(arrowscrollbox) {
+        border-width: 1px;
+        border-style: solid;
+        border-color: var(--arrowpanel-border-color);
+        border-radius: var(--panel-border-radius);
+    }
+
+
+    /** 多列书签引起圆弧只显示左上角和左下角，同意去掉  */
+    #PlacesToolbar menupopup[placespopup="true"] menu,
+    #PlacesToolbar menupopup[placespopup="true"] menuitem {
+        border-radius: 0;
+    }
+
+    #PlacesToolbar menupopup.bmmc[placespopup="true"]::part(content) {
+        padding-inline-end: var(--sidra-panel-item-padding-end);
+    }
+
+    #PlacesToolbar menupopup.bmmc[placespopup="true"] menupopup.bmmc {
+        margin-left: -10px !important;
+    }
+
+    .panel-header,
+    .panel-subview-body {
+        padding: 0 !important;
+    }
+
+    #PlacesToolbar menuitem,
+    #PlacesToolbar menu,
+    .subview-subheader,
+    panelview .toolbarbutton-1,
+    .subviewbutton,
+    .widget-overflow-list .toolbarbutton-1,
+    #allTabsMenu-allTabsViewTabs>.all-tabs-item {
+        padding-inline-start: var(--sidra-panel-item-padding-start);
+        padding-inline-end: var(--sidra-panel-item-padding-end);
+        padding-top: var(--sidra-panel-item-padding-top);
+        padding-bottom: var(--sidra-panel-item-padding-bottom);
+        margin: 0 !important;
+        min-height: unset !important;
+    }
+
+    .panel-subview-body .subviewbutton>.toolbarbutton-icon,
+    .panel-subview-body .subviewbutton>hbox>image,
+    .panel-subview-footer-button>.toolbarbutton-icon,
+    .widget-overflow-list .toolbarbutton-1:not(.toolbarbutton-combined)>:is(.toolbarbutton-icon, .toolbarbutton-badge-stack),
+    #sidebarMenu-popup toolbarbutton>.toolbarbutton-icon {
+        width: var(--sidra-panel-icon-width);
+        height: var(--sidra-panel-icon-height);
+        margin-top: var(--sidra-panel-item-padding-top);
+        margin-bottom: var(--sidra-panel-item-padding-bottom);
+        margin-inline-start: var(--sidra-panel-margin-before-icon);
+        margin-inline-end: var(--sidra-panel-margin-after-icon) !important;
+        width: var(--sidra-panel-icon-width, 16px);
+        height: var(--sidra-panel-icon-height, 16px);
+    }
+
+    .panel-subview-body .subviewbutton>.toolbarbutton-text,
+    .panel-subview-body .subviewbutton>hbox>label,
+    .panel-subview-footer-button>.toolbarbutton-text,
+    .widget-overflow-list .toolbarbutton-1:not(.toolbarbutton-combined)>.toolbarbutton-text,
+    #sidebarMenu-popup toolbarbutton>.toolbarbutton-text {
+        margin: var(--sidra-panel-text-margin) !important;
+        margin-inline: 0;
+        margin-block: 0;
+        height: var(--sidra-panel-icon-height);
+        padding-inline-start: 0 !important;
+    }
+
+    :is(panelview, #widget-overflow-fixed-list) .toolbaritem-combined-buttons {
+        padding-inline-start: var(--sidra-panel-padding-no-iconic);
+        padding-inline-end: var(--sidra-panel-item-padding-end);
+        padding-top: var(--sidra-panel-item-padding-top);
+        padding-bottom: var(--sidra-panel-item-padding-bottom);
+        margin: 0;
+    }
+
+    /** 分隔符 */
+    .PanelUI-subView toolbarseparator,
+    #PlacesToolbar menupopup[context="placesContext"] menuseparator {
+        margin-top: var(--sidra-separator-padding-top);
+        margin-bottom: var(--sidra-separator-padding-bottom);
+        margin-left: 0;
+        margin-right: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    /** 二级菜单指示 */
+    .PanelUI-subView .subviewbutton-nav::after,
+    #protections-popup-mainView .subviewbutton-nav:not(.notFound)::after,
+    #identity-popup-mainView .subviewbutton-nav::after,
+    .widget-overflow-list .subviewbutton-nav::after,
+    .PanelUI-subView .subviewbutton-nav::after {
+        margin-right: -4px;
+    }
+
+    /** 放大缩小右边对齐 */
+    #appMenu-fullscreen-button2 {
+        padding-right: 0 !important;
+    }
+
+    /** 所有标签按钮 */
+    #allTabsMenu-allTabsViewTabs {
+        padding-bottom: 0px;
+    }
+
+    #allTabsMenu-allTabsViewTabs>toolbaritem.all-tabs-item {
+        padding: 0;
+        padding-left: 0;
+    }
+
+    /* Identity Popup */
+    #identity-popup {
+        margin-inline: 0 !important;
+        margin-inline-start: -16px !important;
+    }
+
+    #identity-popup-multiView {
+        /* width: auto; */
+    }
+
+    #identity-popup-mainView,
+    #permission-popup-mainView,
+    #protections-popup-mainView,
+    #identity-popup-mainView-panel-header,
+    #permission-popup-mainView-panel-header,
+    #protections-popup-mainView-panel-header {
+        min-width: unset;
+        max-width: unset;
+    }
+
+    #identity-popup-security-button {
+        padding-inline: 0 !important;
+        margin-inline-start: var(--sidra-panel-padding-x) !important;
+        margin-inline-end: var(--sidra-panel-padding-x) !important;
+    }
+
+    #identity-popup-security {
+        margin-inline-start: var(--sidra-panel-padding-x) !important;
+        margin-inline-end: var(--sidra-panel-padding-x) !important;
+    }
+
+    .identity-popup-security-connection {
+        width: auto !important;
+        -moz-box-flex: 1;
+    }
+
+    .identity-popup-security-connection>hbox {
+        margin-inline-start: 0 !important;
+        padding-inline-start: var(--sidra-panel-padding-no-iconic);
+        padding-inline-end: var(--sidra-panel-item-padding-end) !important;
+    }
+
+    .identity-popup-security-connection>hbox>label {
+        margin-inline-start: 0 !important;
+        margin-inline-end: 0 !important;
+    }
+
+    #identity-popup-security-httpsonlymode,
+    #identity-popup-security-ev-content-owner,
+    .identity-popup-warning-box,
+    .identity-popup-connection-secure.security-view,
+    .identity-popup-connection-not-secure.security-view,
+    #identity-popup-securityView-body>description {
+        margin-left: 0;
+        padding-inline-start: var(--sidra-panel-padding-no-iconic) !important;
+    }
+
+    #identity-popup-securityView-body {
+        margin-inline: 0;
+        margin-left: var(--sidra-panel-padding-x);
+    }
+
+    .identity-popup-security-connection {
+        background-position-x: calc(var(--sidra-panel-padding-x) + var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon));
+    }
+}
+
+/**======== 紧凑菜单 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.menupopup.compact") {
+    menupopup {
+        --menu-color: var(--sidra-menu-color, var(--arrowpanel-color));
+        --menu-disabled-color: var(--sidra-menu-disabled-color, var(--panel-disabled-color));
+        --menu-border-color: var(--sidra-menu-border-color, var(--panel-item-hover-bgcolor));
+        --menu-border-radius: var(--sidra-menu-border-radius, var(--arrowpanel-border-radius));
+        --menu-border-width: var(--sidra-menu-border-width, 1px);
+        --menu-background-color: var(--sidra-menu-background, var(--arrowpanel-background));
+        --menuitem-hover-background-color: var(--sidra-menuitem-hover-background, var(--panel-item-hover-bgcolor));
+        --menu-separator-color: var(--sidra-menu-separator-color, var(--menu-border-color));
+        /* margin-left: -3px !important; */
+    }
+
+    /** 弹出菜单去除原生边框 */
+    @media (-moz-windows-default-theme) {
+        menupopup {
+            --windows-panel-box-shadow: unset;
+            appearance: none;
+            border: 0px;
+            background-color: unset;
+        }
+    }
+
+    /** 二级弹出菜单向左缩 */
+    menupopup:not([class="in-menulist"]) menupopup {
+        margin-left: calc(0px - var(--sidra-menuitem-padding-start) - 5px) !important;
+    }
+
+    /** 菜单加边框 */
+    :is(#historyMenuPopup, #bookmarksMenuPopup, #historyMenuPopup menupopup, #bookmarksMenuPopup menupopup, menupopup:not([placespopup]))::part(content) {
+        margin: 0;
+        padding: var(--sidra-menu-padding, 6px 0);
+        background-clip: padding-box !important;
+        border: 5px solid var(--menu-border-color);
+        border-image: var(--sidra-menu-border-image, unset);
+        border-radius: var(--menu-border-radius);
+        background-color: var(--sidra-menu-background) !important;
+    }
+
+    /** 菜单缩小间距 */
+    menupopup:not([class="in-menulist"]) :is(menu, menuitem) {
+        padding-block-start: var(--sidra-menuitem-padding-top) !important;
+        padding-inline-end: var(--sidra-menuitem-padding-end) !important;
+        padding-block-end: var(--sidra-menuitem-padding-bottom) !important;
+        padding-inline-start: var(--sidra-menuitem-padding-start) !important;
+
+    }
+
+    /** 菜单文字颜色 */
+    menupopup:not([class="in-menulist"]) :is(menu, menuitem) {
+        color: var(--menu-color);
+    }
+
+    menupopup:not([class="in-menulist"]) :is(menu[disabled="true"], menuitem[disabled="true"], menu[_moz-menuactive="true"][disabled="true"], menuitem[_moz-menuactive="true"][disabled="true"]) {
+        color: var(--menu-disabled-color);
+    }
+
+    /** 菜单分隔符 */
+    :is(#historyMenuPopup, #bookmarksMenuPopup, menupopup:not([placespopup])) menuseparator {
+        appearance: none;
+        border-top: 1px solid var(--menu-separator-color);
+        border-bottom: 0px;
+        background-color: var(--menu-background-color) !important;
+        margin-top: var(--sidra-separator-padding-top);
+        margin-bottom: var(--sidra-separator-padding-bottom);
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    /* 有图标菜单边距控制 */
+    menupopup>menu.menu-iconic>:is(.menu-iconic-left, .menuitem-iconic-left),
+    menupopup>menuitem.menuitem-iconic>:is(.menu-iconic-left, .menuitem-iconic-left),
+    menupopup>[type="checkbox"]>:is(.menu-iconic-left, .menuitem-iconic-left),
+    menupopup>[type="radio"]>:is(.menu-iconic-left, .menuitem-iconic-left) {
+        padding-inline-start: var(--sidra-menuitem-padding-before-icon) !important;
+        padding-inline-end: var(--sidra-menuitem-padding-after-icon) !important;
+        margin-inline-start: var(--sidra-menuitem-margin-before-icon) !important;
+        margin-inline-end: var(--sidra-menuitem-margin-after-icon) !important;
+        padding-top: 0 !important;
+        appearance: none;
+        height: var(--sidra-menuitem-icon-height);
+        width: var(--sidra-menuitem-icon-width);
+    }
+
+    menupopup>menu.menu-iconic>:is(.menu-iconic-text, .menuitem-iconic-text),
+    menupopup>menuitem.menuitem-iconic>:is(.menu-iconic-text, .menuitem-iconic-text) {
+        padding: var(--sidra-menuitem-text-padding);
+        height: var(--sidra-menuitem-icon-height);
+        margin-block: 0;
+        margin-inline-start: 0 !important;
+        margin-inline: 0 !important;
+    }
+
+    #PlacesToolbar menu>.menu-iconic-text,
+    #PlacesToolbar menuitem>.menu-iconic-text {
+        padding-inline-start: 0;
+    }
+
+    /** 无图标缩进 */
+    menupopup:not([class="in-menulist"]) menu:not(.menu-iconic, [type="checkbox"], [type="radio"], [icon], [class*="identity-color"]),
+    menupopup:not([class="in-menulist"]) menuitem:not(.menuitem-iconic, [type="checkbox"], [type="radio"], [icon], [class*="identity-color"]) {
+        padding-inline-start: var(--sidra-menuitem-padding-no-iconic) !important;
+        appearance: none;
+    }
+
+    menupopup menu:not(.menu-iconic, [type="checkbox"], [type="radio"], [icon], [class*="identity-color"])>label,
+    menupopup menuitem:not(.menuitem-iconic, [type="checkbox"], [type="radio"], [icon], [class*="identity-color"])>label {
+        padding: 0;
+        height: var(--sidra-menuitem-icon-height);
+        padding-inline-start: var(--sidra-menuitem-text-padding-start) !important;
+        appearance: none;
+    }
+
+    /* 菜单加图标 */
+    menupopup:not([class="in-menulist"]) menu:not([type="checkbox"], [type="radio"], [icon], [class*="identity-color"]),
+    menupopup:not([class="in-menulist"]) menuitem:not([type="checkbox"], [type="radio"], [icon], [class*="identity-color"]) {
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-menuitem-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-menuitem-padding-start) + var(--sidra-menuitem-margin-before-icon) + var(--sidra-menuitem-padding-before-icon)) 50% !important;
+    }
+
+    /** list-style-image 图标颜色 */
+    menupopup :is(menu, menuitem):not([class*="identity-color"])> :is(.menu-iconic-left, .menuitem-iconic-left),
+    .subviewbutton-iconic:not([class*="identity-color"])>.toolbarbutton-icon,
+    .panel-subview-body>.subviewbutton:not([class*="identity-color"])>.toolbarbutton-icon {
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+    }
+
+    /* Checkbox 强制显示图标 */
+    menupopup menu:is([type="checkbox"], [type="radio"])>.menu-iconic-left>.menu-iconic-icon,
+    menupopup menuitem:is([type="checkbox"], [type="radio"])>.menu-iconic-left>.menu-iconic-icon {
+        /* display: -moz-box !important; */
+        display: block !important;
+    }
+
+    /** 菜单右边距 */
+    .menu-right {
+        margin-inline-end: var(--sidra-menuitem-padding-after-text);
+        appearance: none;
+        list-style-image: url("chrome://global/skin/icons/arrow-right.svg");
+        -moz-context-properties: fill, fill-opacity;
+        fill: currentColor;
+        fill-opacity: var(--menu-icon-opacity);
+        padding-top: 0;
+    }
+
+
+    /** 横排菜单边距控制 */
+    menugroup.showText>menuitem {
+        padding-inline-end: var(--sidra-menuitem-padding-after-text);
+    }
+
+    menugroup:not(#context-navigation) {
+        margin-top: 0;
+        margin-bottom: 0 !important;
+        padding-top: 0;
+        padding-bottom: 0 !important;
+    }
+
+    menugroup:not(#context-navigation)>menuitem>.menu-iconic-left {
+        padding-inline-start: var(--sidra-menuitem-padding-before-icon) !important;
+        padding-inline-end: var(--sidra-menuitem-padding-after-icon) !important;
+        margin-inline-start: var(--sidra-menuitem-margin-before-icon) !important;
+        margin-inline-end: var(--sidra-menuitem-margin-after-icon) !important;
+        padding-top: 0;
+        appearance: none;
+    }
+
+    menugroup.showText:not(#context-navigation)>menuitem {
+        padding-inline-end: var(--sidra-menuitem-padding-end) !important;
+    }
+
+    menugroup:not(#context-navigation)>menuitem>.menu-iconic-text {
+        padding: 0;
+        padding-inline-end: var(--sidra-menuitem-padding-end) !important;
+        margin-inline-start: 0 !important;
+    }
+
+    menugroup.showFirstText:not(#context-navigation)>menuitem:not(:first-child) {
+        padding-inline-end: 0 !important;
+        padding-inline-start: 0 !important;
+    }
+
+    menugroup.showFirstText:not(#context-navigation)>menuitem:first-child>.menu-iconic-text {
+        padding-inline-end: var(--sidra-menuitem-padding-end) !important;
+        padding: 0 !important;
+        height: var(--sidra-menuitem-icon-height);
+    }
+
+    menugroup.showFirstText:not(#context-navigation)>menuitem:not(:first-child)>.menu-iconic-left {
+        --fix-margin: calc((var(--sidra-menuitem-margin-before-icon, 6px) + var(--sidra-menuitem-margin-after-icon, 6px)) / 2);
+        --fix-padding: calc((var(--sidra-menuitem-padding-before-icon, 0px) + var(--sidra-menuitem-padding-after-icon, 0px)) / 2);
+        margin-inline-start: var(--fix-margin) !important;
+        padding-inline-start: var(--fix-padding) !important;
+        margin-inline-end: var(--fix-margin) !important;
+        padding-inline-end: var(--fix-padding) !important;
+    }
+
+    menugroup.addMenu>.fixedSize:not(.noIcon) {
+        padding-inline-end: 0 !important;
+    }
+
+    menugroup.addMenu>.fixedSize:is(:first-child)+menuitem.noIcon {
+        padding-inline-start: 0 !important;
+        margin-inline-start: 0 !important;
+    }
+
+    #main-menubar>menu>menupopup {
+        margin-top: -3px;
+    }
+
+    /* 选中菜单背景颜色 */
+    menupopup menu[_moz-menuactive="true"],
+    menupopup menuitem[_moz-menuactive="true"] {
+        background-color: var(--menuitem-hover-background-color);
+        appearance: none;
+    }
+
+    /* 隐藏右键导航 */
+    #context-navigation,
+    #context-sep-navigation {
+        display: none !important;
+    }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.menupopup.icon.complementary") {
+
+    /**======== 右键菜单图标 ========*/
+    /* checkbox */
+    :is(popup, menupopup) :is([type="checkbox"]:not([check="true"]), [checked="false"], #navbar-context-autohide-downloads-button,
+        #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_disableAll, #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch) {
+        list-style-image: url("../images/sidra/skin/checkbox.svg") !important;
+    }
+
+    :is(popup,
+        menupopup) [checked="true"] {
+        list-style-image: url("../images/sidra/skin/checkbox-checked.svg") !important;
+    }
+
+    :is(popup,
+        menupopup) :is([type="checkbox"], [type="radio"]):not([checked="true"]) {
+        list-style-image: url("../images/sidra/skin/checkbox.svg") !important;
+    }
+
+    /** Tab Context */
+    #context_openANewTab[oncommand^="TMP"] {
+        list-style-image: url("../images/sidra/tab-context/new-tab.svg")
+    }
+
+    #context_openANewTab:not([oncommand^="TMP"]) {
+        --menuitem-image: url("../images/sidra/tab-context/new-tab.svg")
+    }
+
+    #navbar-context-openANewTab,
+    #toolbar-context-openANewTab {
+        --menuitem-image: url("../images/sidra/tab-context/new-tab.svg");
+    }
+
+    #context_toggleMuteTab,
+    #context_toggleMuteSelectedTabs {
+        --menuitem-image: url("chrome://browser/skin/tabbrowser/tab-audio-muted-small.svg");
+    }
+
+    #context_toggleMuteTab[muted="true"],
+    #context_toggleMuteSelectedTabs[muted="true"] {
+        --menuitem-image: url("../images/sidra/tab-context/muted.svg") !important;
+    }
+
+    #context_pinTab,
+    #context_pinSelectedTabs {
+        --menuitem-image: url("../images/sidra/tab-context/pin.svg");
+    }
+
+    #context_unpinTab,
+    #context_unpinSelectedTabs {
+        --menuitem-image: url("../images/sidra/tab-context/unpin.svg");
+    }
+
+    #context_openTabInWindow {
+        --menuitem-image: url("../images/sidra/tab-context/duplicate-to-new-window.svg");
+    }
+
+    #context_duplicateTab,
+    #context_duplicateTabs {
+        --menuitem-image: url("../images/sidra/tab-context/clone.svg");
+    }
+
+    /*移动标签页*/
+    #context_moveTabOptions {
+        --menuitem-image: url("../images/sidra/tab-context/arrow-swap.svg");
+    }
+
+    #context_moveToStart {
+        --menuitem-image: url("../images/sidra/tab-context/angle-left.svg");
+    }
+
+    #context_moveToEnd {
+        --menuitem-image: url("../images/sidra/tab-context/angle-right.svg");
+    }
+
+    #context_sendTabToDevice {
+        --menuitem-image: url("../images/sidra/tab-context/send-to-device.svg");
+    }
+
+    .share-tab-url-item {
+        --menuitem-image: url("../images/sidra/tab-context/share.svg");
+    }
+
+    /*身份打开 */
+    #context_reopenInContainer {
+        --menuitem-image: url("../images/sidra/tab-context/profile.svg");
+    }
+
+    #context_reopenInContainer>menupopup>menuitem {
+        --menuitem-image: url();
+    }
+
+    #context_reopenInContainer>menupopup>menuitem[data-usercontextid="0"] {
+        --menuitem-image: url("../images/sidra/tab-context/new-tab.svg")
+    }
+
+    #context_selectAllTabs {
+        --menuitem-image: url("../images/sidra/tab-context/select-all-on.svg");
+    }
+
+    /** 重载标签页 */
+    #context_reloadTab,
+    #context_reloadSelectedTabs,
+    #context_reloadTabOptions,
+    #navbar-context-reloadSelectedTab {
+        --menuitem-image: url("../images/sidra/tab-context/reload.svg");
+    }
+
+    #toolbar-context-reloadSelectedTab {
+        --menuitem-image: url("../images/sidra/update.svg");
+    }
+
+    /** 关闭标签页 */
+    #context_closeTabOptions,
+    #_08fb86c7-5590-40b1-ba0f-22917b9a5faf_-menuitem-_close_left,
+    #_588c6fa6-14f9-4826-b769-71a305c80bbb_-menuitem-_close_right,
+    #_a02f4411-7950-4b43-abcd-23a01a9ce719_-menuitem-_close_other_tabs {
+        --menuitem-image: url("../images/sidra/tab-context/close-all.svg");
+    }
+
+    #context_undoCloseTab,
+    #toolbar-context-undoCloseTab {
+        --menuitem-image: url("../images/sidra/tab-context/rollback.svg");
+    }
+
+    #context_closeTab {
+        --menuitem-image: url("../images/sidra/tab-context/close.svg");
+    }
+
+    #context_bookmarkTab,
+    #navbar-context-bookmarkSelectedTab,
+    #context_bookmarkAllTabs,
+    #context_bookmarkSelectedTabs,
+    #toolbar-context-bookmarkSelectedTab {
+        --menuitem-image: url("../images/sidra/tab-context/bookmark-plus.svg");
+    }
+
+    #navbar-context-selectAllTabs,
+    #toolbar-context-selectAllTabs {
+        --menuitem-image: url("../images/sidra/tab-context/select-all-on.svg");
+    }
+
+    .new-tab-popup [command*="NewUserContextTab"],
+    #new-tab-button-popup [command*="NewUserContextTab"] {
+        --menuitem-image: url("../images/sidra/tab-context/new-tab.svg");
+    }
+
+    .new-tab-popup [command*="OpenAboutContainers"],
+    #new-tab-button-popup [command*="OpenAboutContainers"] {
+        --menuitem-image: url("../images/sidra/tab-context/manage-profiles.svg");
+    }
+
+    #tabContextMenu [id^="content-farm-terminator_danny0838_addons_mozilla_org"] {
+        --menuitem-image: url("../images/sidra/tab-context/disable.svg");
+    }
+
+    #tabContextMenu [id^="content-farm-terminator_danny0838_addons_mozilla_org"] .menu-iconic-left {
+        visibility: hidden;
+    }
+
+    /** Toolbar Context */
+    #toggle_PersonalToolbar {
+        --menuitem-image: url("../images/sidra/navbar-context/book.svg");
+    }
+
+    #toggle_PersonalToolbar menuitem {
+        --menuitem-image: '';
+    }
+
+    .viewCustomizeToolbar {
+        --menuitem-image: url("../images/sidra/navbar-context/customize.svg");
+    }
+
+    [data-l10n-id="custombuttons-viewmenu-item"] {
+        list-style-image: url("../images/sidra/navbar-context/add.svg");
+    }
+
+    .customize-context-moveToPanel {
+        --menuitem-image: url("../images/sidra/navbar-context/hide.svg");
+    }
+
+    .customize-context-removeFromToolbar,
+    .customize-context-removeFromPanel {
+        --menuitem-image: url("../images/sidra/navbar-context/move-in.svg");
+    }
+
+    #customizationPanelItemContextMenuUnpin {
+        --menuitem-image: url("../images/sidra/navbar-context/move-out.svg");
+    }
+
+    .customize-context-manageExtension {
+        --menuitem-image: url("../images/sidra/navbar-context/manage-extension.svg");
+    }
+
+    .customize-context-removeExtension {
+        --menuitem-image: url("../images/sidra/navbar-context/delete.svg");
+    }
+
+    .customize-context-reportExtension {
+        --menuitem-image: url("../images/sidra/navbar-context/report.svg");
+    }
+
+    [id="toolbarauto-contextmenu"] {
+        --menuitem-image: url("../images/sidra/navbar-context/hide.svg");
+    }
+
+    /** Urlbar Context Menu */
+    #paste-and-go,
+    .searchbar-paste-and-search {
+        --menuitem-image: url("../images/sidra/navbar-context/forward.svg");
+    }
+
+    [data-l10n-id="text-action-undo"] {
+        --menuitem-image: url("../images/sidra/navbar-context/undo.svg");
+    }
+
+    [data-l10n-id="text-action-redo"] {
+        --menuitem-image: url("../images/sidra/navbar-context/redo.svg");
+    }
+
+    [data-l10n-id="page-action-manage-extension"] {
+        --menuitem-image: url("../images/sidra/navbar-context/manage-extension.svg");
+    }
+
+    [data-l10n-id="page-action-remove-extension"] {
+        --menuitem-image: url("../images/sidra/navbar-context/delete.svg");
+    }
+
+    .searchbar-clear-history {
+        --menuitem-image: url("../images/sidra/navbar-context/clean.svg");
+    }
+
+    /** Popup settings context */
+    #blockedPopupAllowSite {
+        --menuitem-image: url("../images/sidra/navbar-context/ok.svg");
+    }
+
+    [data-l10n-id="edit-popup-settings"] {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #blockedPopupsSeparator+menuitem {
+        --menuitem-image: url("../images/sidra/navbar-context/eye-show.svg");
+    }
+
+    /* Addons Items */
+    /*Stylus*/
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_show-badge:not[checked="true"] {
+        --menuitem-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    #edit-popup-settings {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-manager {
+        --menuitem-image: url("../images/sidra/navbar-context/empty-box.svg");
+    }
+
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-options {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    /** JJB */
+    [id^="_42f0bbb4-0214-49d1-a01a-bdead05c5540"] {
+        --menuitem-image: url("../images/sidra/navbar-context/new-window.svg");
+    }
+
+    #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-menuitem-_login-notice {
+        --menuitem-image: url("../images/sidra/navbar-context/login.svg");
+    }
+
+    /** Switchy Omega */
+    #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch+menuitem {
+        --menuitem-image: url("../images/sidra/navbar-context/report.svg");
+    }
+
+    #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch+menuitem+menuitem {
+        --menuitem-image: url("../images/sidra/navbar-context/save.svg");
+    }
+
+    /* Adguard */
+    [label="AdGuard 无法运行于此域"],
+    [label="禁止过滤此网站"] {
+        --menuitem-image: url("../images/sidra/navbar-context/remove.svg");
+    }
+
+    [label="拦截此网站上的广告..."],
+    [label="拦截元素..."] {
+        --menuitem-image: url("../images/sidra/navbar-context/block.svg");
+    }
+
+    [label="检测网站安全性"] {
+        --menuitem-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    [label="报告问题 ..."] {
+        --menuitem-image: url("../images/sidra/navbar-context/report.svg");
+    }
+
+    #toolbar-context-menu [label="AdGuard 广告拦截器"],
+    #customizationPanelItemContextMenu [label="AdGuard 广告拦截器"] {
+        --menuitem-image: url("../images/sidra/navbar-context/adguard.svg");
+    }
+
+    [label="AdGuard 设置..."] {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    [label="过滤日志..."] {
+        --menuitem-image: url("../images/sidra/navbar-context/log.svg");
+    }
+
+    [label="检查过滤器更新"] {
+        --menuitem-image: url("../images/sidra/update.svg");
+    }
+
+    [label="暂停 AdGuard 保护"] {
+        --menuitem-image: url("../images/sidra/navbar-context/pause.svg");
+    }
+
+    [label="AdGuard 保护已暂停"] {
+        --menuitem-image: url("../images/sidra/navbar-context/remove.svg");
+    }
+
+    [label="继续 AdGuard 保护"] {
+        --menuitem-image: url("../images/sidra/navbar-context/play.svg");
+    }
+
+    [id^="content-farm-terminator_danny0838_addons_mozilla_org"] menuitem {
+        --menuitem-image: url("../images/sidra/navbar-context/block.svg");
+    }
+
+    /** Tampermonkey */
+    #firefox_tampermonkey_net-menuitem-_root:not(.menuitem-iconic) {
+        --menuitem-image: url("../images/sidra/navbar-context/javascript.svg");
+    }
+
+    #firefox_tampermonkey_net-menuitem-_root:not(.menuitem-iconic) :is(menu,
+        menuitem) {
+        padding-inline-start: calc(var(--sidra-menuitem-padding-before-icon) + var(--sidra-menuitem-margin-before-icon)) !important;
+        --menuitem-image: url();
+    }
+
+    /** Video Download Helper */
+    #customizationPanelItemContextMenu #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-menuitem-_vdh-main {
+        --menuitem-image: url("../images/sidra/navbar-context/video.svg");
+    }
+
+    #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-menuitem-_vdh-main menuitem {
+        --menuitem-image: url();
+    }
+
+    [label*="智能命名规则"] {
+        --menuitem-image: url("../images/sidra/navbar-context/rename.svg");
+    }
+
+    /** Image Picka */
+    [id^="image-picka_eight04_blogspot"]:nth-child(1),
+    [id^="image-picka_eight04_blogspot"]:nth-child(2),
+    [id^="image-picka_eight04_blogspot"]:nth-child(3) {
+        --menuitem-image: url("../images/sidra/navbar-context/select-image.svg");
+    }
+
+    /* xStyle */
+    #xstyle-amo_addon_firefoxcn_net-menuitem-_openManage {
+        --menuitem-image: url("../images/sidra/navbar-context/style.svg");
+    }
+
+    /** userChrome */
+    #uc-menugroup .menu-iconic-icon {
+        margin-left: 0;
+    }
+
+    #userChromejs_restartApp {
+        padding: 0;
+        appearance: none;
+        padding-inline-start: var(--sidra_menuitem_padding_before_icon);
+        padding-inline-end: var(--sidra_menuitem_padding_after_icon);
+    }
+
+    #userChromejs_restartApp:hover {
+        background-color: var(--button-hover-bgcolor);
+        /*         background-color: var(--panel-item-hover-bgcolor); */
+    }
+
+    #uc-manageMenu {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #uc-manageMenu menuitem {
+        --menuitem-image: '';
+    }
+
+    /** Styloaix */
+    #styloaix-reload-all,
+    #styloaix-style-reload {
+        --menuitem-image: url("../images/sidra/navbar-context/reload.svg");
+    }
+
+    #styloaix-open-folder {
+        --menuitem-image: url("../images/sidra/navbar-context/folder.svg");
+    }
+
+    #styloaix-new-style,
+    #styloaix-style-edit {
+        --menuitem-image: url("../images/sidra/navbar-context/edit.svg");
+    }
+
+    #styloaix-style-delete {
+        --menuitem-image: url("../images/sidra/navbar-context/trash.svg");
+    }
+
+    #se-menu-find {
+        --menuitem-image: url("../images/sidra/document-search.svg");
+    }
+
+    #cMenu_findAgain {
+        --menuitem-image: url("../images/sidra/navbar-context/next.svg");
+    }
+
+    #se-menu-gotoLine {
+        --menuitem-image: url("../images/sidra/navbar-context/go.svg");
+    }
+
+    /** 密码管理 */
+    #manage-saved-logins {
+        --menuitem-image: url("chrome://browser/skin/login.svg");
+    }
+
+    #fill-login {
+        --menuitem-image: url("../images/sidra/password-management/password.svg");
+    }
+
+    #fill-login-generated-password,
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_generate-password"],
+    [label^="生成并复制密码"] {
+        --menuitem-image: url("../images/sidra/password-management/generate-password.svg");
+    }
+
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_autofill"] {
+        --menuitem-image: url("../images/sidra/password-management/autofill.svg");
+    }
+
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-username"],
+    [label^="粘贴帐号"] {
+        --menuitem-image: url("../images/sidra/password-management/user.svg");
+    }
+
+    #toolbar-context-menu #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root,
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-password"],
+    #firefox-enpass_enpass_io-menuitem-_enpass_context_menu,
+    [label^="粘贴密码"] {
+        --menuitem-image: url("chrome://browser/skin/login.svg");
+    }
+
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-totp"] {
+        --menuitem-image: url("../images/sidra/password-management/copy.svg");
+    }
+
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-identifier"] {
+        --menuitem-image: url("../images/sidra/password-management/copy.svg");
+    }
+
+    [label*="粘贴动态口令"] {
+        --menuitem-image: url("../images/sidra/password-management/totp.svg");
+    }
+
+    #firefox-enpass_enpass_io-menuitem-_settings {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    /** Input Content Menu */
+    #context-searchselect {
+        --menuitem-image: url("chrome://global/skin/icons/search-glass.svg");
+    }
+
+    #context-cut,
+    [data-l10n-id="text-action-cut"] {
+        --menuitem-image: url("../images/sidra/page-context/cut.svg");
+    }
+
+    #context-copy,
+    [data-l10n-id="text-action-copy"] {
+        --menuitem-image: url("../images/sidra/page-context/copy.svg");
+    }
+
+    #context-paste,
+    [data-l10n-id="text-action-paste"] {
+        --menuitem-image: url("../images/sidra/page-context/paste.svg");
+    }
+
+    #context-delete,
+    [data-l10n-id="text-action-delete"] {
+        --menuitem-image: url("chrome://global/skin/icons/delete.svg");
+    }
+
+    #context-selectall,
+    [data-l10n-id="text-action-select-all"] {
+        --menuitem-image: url("../images/sidra/page-context/select-all.svg");
+    }
+
+    /* 翻译 */
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-showPopup {
+        --menuitem-image: url("../images/sidra/navbar-context/multi-window.svg");
+    }
+
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_never-translate {
+        --menuitem-image: url("../images/sidra/navbar-context/remove.svg");
+    }
+
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-pdf-to-html {
+        --menuitem-image: url("../images/sidra/navbar-context/pdf.svg");
+    }
+
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_more-options {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    /* uBlock Origin */
+    #ublock0_raymondhill_net-menuitem-_uBlock0-blockElement {
+        --menuitem-image: url("../images/sidra/navbar-context/block.svg");
+    }
+
+    /** Places Context Menu */
+    .openintabs-menuitem {
+        --menuitem-image: url("../images/sidra/places-context/open-in-current.svg");
+    }
+
+    #placesContext_open,
+    #placesContext_openBookmarkContainer\:tabs {
+        --menuitem-image: url("../images/sidra/places-context/open-in-current.svg");
+    }
+
+    #openAllPrivate .menu-iconic-icon,
+    #openPrivate .menu-iconic-icon {
+        list-style-image: url("../images/sidra/places-context/private-see.svg") !important;
+    }
+
+    #placesContext_open\:newcontainertab {
+        --menuitem-image: url("../images/sidra/places-context/profile.svg");
+    }
+
+    #placesContext_open\:newcontainertab menuitem {
+        --menuitem-image: url();
+    }
+
+    #placesContext_open\:newtab,
+    #placesContext_openContainer\:tabs {
+        --menuitem-image: url("chrome://global/skin/icons/open-in-new.svg");
+    }
+
+    #placesContext_open\:newwindow {
+        --menuitem-image: url("../images/sidra/places-context/open-in-new-window.svg");
+    }
+
+    #placesContext_open\:newprivatewindow {
+        --menuitem-image: url("../images/sidra/places-context/open-in-private-window.svg");
+    }
+
+    #placesContext_showInFolder {
+        --menuitem-image: url("../images/sidra/places-context/folder.svg");
+    }
+
+    #UC_update_bookmark {
+        --menuitem-image: url("../images/sidra/places-context/replace.svg");
+    }
+
+    #placesContext_show_bookmark\:info,
+    #placesContext_show_folder\:info {
+        --menuitem-image: url("../images/sidra/places-context/rename.svg");
+    }
+
+    #placesContext_show\:info {
+        --menuitem-image: url("../images/sidra/places-context/editor.svg");
+    }
+
+    #placesContext_deleteFolder,
+    #placesContext_deleteBookmark {
+        --menuitem-image: url("../images/sidra/places-context/delete.svg");
+    }
+
+    #rbtChangeColor {
+        --menuitem-image: url("../images/sidra/places-context/picker.svg");
+    }
+
+    #placesContext_sortBy\:name,
+    #viewSort {
+        --menuitem-image: url("../images/sidra/places-context/order.svg");
+    }
+
+    #placesContext_add\:bookmark {
+        --menuitem-image: url("../images/sidra/places-context/bookmark-plus.svg");
+    }
+
+    #placesContext_add\:bookmark>.menu-iconic-left {
+        visibility: hidden;
+    }
+
+    #placesContext_new\:bookmark,
+    #newbookmark,
+    #placesContext_createBookmark {
+        --menuitem-image: url("../images/sidra/places-context/bookmark.svg");
+    }
+
+    #placesContext_new\:folder,
+    #newfolder {
+        --menuitem-image: url("../images/sidra/places-context/folder-add.svg");
+    }
+
+    .downloadShowMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/folder.svg");
+    }
+
+    #placesContext_new\:separator,
+    #newseparator {
+        --menuitem-image: url("../images/sidra/places-context/vertical-line.svg");
+    }
+
+    #placesContext_showAllBookmarks {
+        --menuitem-image: url("chrome://browser/skin/bookmark-star-on-tray.svg");
+    }
+
+    #sidebar-switcher-bookmarks {
+        list-style-image: url("chrome://browser/skin/bookmark.svg");
+    }
+
+    #sidebar-switcher-history {
+        list-style-image: url("chrome://browser/skin/history.svg");
+    }
+
+    #sidebar-switcher-tabs {
+        list-style-image: url("chrome://browser/skin/tab.svg");
+    }
+
+    #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action {
+        list-style-image: url("../images/sidra/toolbarbutton/vault_unlocked.svg") !important;
+    }
+
+    #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action[style*="gray.png"] {
+        list-style-image: url("../images/sidra/toolbarbutton/vault_locked.svg") !important;
+    }
+
+    #sidebar-reverse-position {
+        list-style-image: url("../images/sidra/places-context/arrow-swap.svg");
+    }
+
+    [data-l10n-id="sidebar-menu-close"] {
+        list-style-image: url("../images/sidra/places-context/close.svg");
+    }
+
+    #orgClose {
+        --menuitem-image: url("../images/sidra/places-context/close.svg");
+    }
+
+    #viewColumns {
+        --menuitem-image: url("../images/sidra/places-context/columns.svg");
+    }
+
+    #backupBookmarks {
+        --menuitem-image: url("../images/sidra/places-context/backup.svg");
+    }
+
+    #fileRestoreMenu {
+        --menuitem-image: url("../images/sidra/places-context/restore.svg");
+    }
+
+    #restoreFromFile {
+        --menuitem-image: url("../images/sidra/places-context/browse.svg");
+    }
+
+    #fileImport {
+        --menuitem-image: url("../images/sidra/places-context/html.svg");
+    }
+
+    #fileExport {
+        --menuitem-image: url("../images/sidra/places-context/export.svg");
+    }
+
+    #browserImport {
+        --menuitem-image: url("../images/sidra/places-context/edge.svg");
+    }
+
+    .downloadPauseMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/pause.svg");
+    }
+
+    .downloadResumeMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/play.svg");
+    }
+
+    .downloadUnblockMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/allow.svg");
+    }
+
+    .downloadUseSystemDefaultMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/edge.svg");
+    }
+
+    .downloadAlwaysUseSystemDefaultMenuItem:not([checked]),
+    .downloadAlwaysOpenSimilarFilesMenuItem:not([checked]) {
+        list-style-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    .downloadCopyLocationMenuItem {
+        --menuitem-image: url("../images/sidra/skin/copyLink.svg");
+    }
+
+    .downloadOpenReferrerMenuItem {
+        --menuitem-image: url("chrome://global/skin/icons/open-in-new.svg");
+    }
+
+    .downloadDeleteFileMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/delete-row.svg");
+    }
+
+    .downloadRemoveFromHistoryMenuItem {
+        --menuitem-image: url("../images/sidra/places-context/delete-document.svg");
+    }
+
+    #removeDownload,
+    #placesContext_delete_history {
+        --menuitem-image: url("../images/sidra/places-context/delete.svg");
+    }
+
+    [data-l10n-id="downloads-cmd-clear-list"],
+    [data-l10n-id="downloads-cmd-clear-downloads"],
+    #placesContext_deleteHost {
+        --menuitem-image: url("../images/sidra/places-context/clean.svg");
+    }
+
+    #_7ab17bfa-6754-4921-b184-c581018277bf_-menuitem-_BTH>.menu-iconic-left {
+        visibility: hidden;
+    }
+
+    #_7ab17bfa-6754-4921-b184-c581018277bf_-menuitem-_BTH {
+        --menuitem-image: url("../images/sidra/places-context/bookmark-plus.svg");
+    }
+
+    /** Normal Context */
+    #context-savepage,
+    #ucjs_getUCJS_areamenu {
+        --menuitem-image: url("../images/sidra/page-context/save.svg");
+    }
+
+    #context-take-screenshot {
+        --menuitem-image: url("chrome://browser/skin/screenshot.svg");
+    }
+
+    #context-viewsource {
+        --menuitem-image: url("../images/sidra/page-context/document-search.svg");
+    }
+
+    #context-inspect-a11y {
+        --menuitem-image: url("chrome://devtools/skin/images/tool-accessibility.svg");
+    }
+
+    #context-inspect {
+        --menuitem-image: url("../images/sidra/page-context/command-pick.svg");
+    }
+
+    #context-sendpagetodevice {
+        --menuitem-image: url("../images/sidra/page-context/send-to-device.svg");
+    }
+
+    #textZoomPerDomain {
+        --menuitem-image: url("../images/sidra/page-context/text.svg");
+    }
+
+    #textZoomPerDomain menuitem {
+        --menuitem-image: ''
+    }
+
+    /*框架*/
+    #frame {
+        --menuitem-image: url("../images/sidra/page-context/command-frames.svg");
+    }
+
+    #context-showonlythisframe {
+        --menuitem-image: url("../images/sidra/page-context/open-in-current.svg");
+    }
+
+    #context-openframeintab {
+        --menuitem-image: url("../images/sidra/page-context/open-in-new-tab.svg");
+    }
+
+    #context-openframe {
+        --menuitem-image: url("../images/sidra/page-context/open-in-new-window.svg");
+    }
+
+    #context-reloadframe {
+        --menuitem-image: url("../images/sidra/page-context/reload-frame.svg");
+    }
+
+    #context-bookmarkframe {
+        --menuitem-image: url("../images/sidra/page-context/bookmark-frame.svg");
+    }
+
+    #context-saveframe {
+        --menuitem-image: url("../images/sidra/page-context/save-frame.svg");
+    }
+
+    #context-printframe {
+        --menuitem-image: url("../images/sidra/page-context/print-frame.svg");
+    }
+
+    #context-take-frame-screenshot {
+        --menuitem-image: url("chrome://browser/skin/screenshot.svg");
+    }
+
+    #context-viewframesource {
+        --menuitem-image: url("../images/sidra/page-context/inspect-frame.svg");
+    }
+
+    #context-viewframeinfo {
+        --menuitem-image: url("../images/sidra/page-context/frame-info.svg");
+    }
+
+    /*链接*/
+    #context-openlinkincurrent {
+        --menuitem-image: url("../images/sidra/page-context/current-tab.svg");
+    }
+
+    #context-openlinkintab {
+        --menuitem-image: url("../images/sidra/page-context/open-in-new-tab.svg");
+    }
+
+    #openLinkInPrivateTab .menu-iconic-left {
+        list-style-image: url("../images/sidra/page-context/open-in-private-tab.svg") !important;
+    }
+
+    #context-openlinkintab_new .menu-iconic-left {
+        visibility: hidden;
+    }
+
+    #context-openlinkincontainertab {
+        --menuitem-image: url("../images/sidra/page-context/open-in-private-tab.svg");
+    }
+
+    #context-openlinkinusercontext-menu {
+        --menuitem-image: url("../images/sidra/page-context/profile.svg");
+    }
+
+    #context-openlink {
+        --menuitem-image: url("../images/sidra/page-context/open-in-new-window.svg");
+    }
+
+    #context-openlinkprivate {
+        --menuitem-image: url("../images/sidra/page-context/open-in-private-window.svg");
+    }
+
+    #context-bookmarklink {
+        --menuitem-image: url("../images/sidra/page-context/bookmark-plus.svg");
+    }
+
+    #context-copylink {
+        --menuitem-image: url("chrome://browser/skin/copyLink.svg");
+    }
+
+    #context-savelink {
+        --menuitem-image: url("../images/sidra/page-context/save.svg");
+    }
+
+    #context-sendlinktodevice {
+        --menuitem-image: url("../images/sidra/page-context/send-to-device.svg");
+    }
+
+
+    /* 快速输入 */
+    #quick_input {
+        list-style-image: url("../images/sidra/page-context/editor.svg");
+    }
+
+    #quick_inputemoji {
+        list-style-image: url("../images/sidra/page-context/emoji.svg");
+    }
+
+    #context-keywordfield {
+        --menuitem-image: url("../images/sidra/page-context/bookmark-plus.svg");
+    }
+
+    /** Select Context Menu */
+    #context-viewpartialsource-selection {
+        --menuitem-image: url("../images/sidra/page-context/inspect-code.svg");
+    }
+
+    #context-print-selection {
+        --menuitem-image: url("../images/sidra/page-context/print.svg");
+    }
+
+    /** Media Context Menu */
+    #context-viewimage {
+        --menuitem-image: url("../images/sidra/media/image-add.svg");
+    }
+
+    #context-saveimage,
+    #context-savevideo,
+    #context-saveaudio {
+        --menuitem-image: url("../images/sidra/media/save.svg");
+    }
+
+    #context-copyimage-contents {
+        --menuitem-image: url("../images/sidra/media/copy.svg")
+    }
+
+    #context-copyimage,
+    #context-copyvideourl,
+    #context-copyaudiourl {
+        --menuitem-image: url("chrome://browser/skin/copyLink.svg")
+    }
+
+    #context-viewimageinfo,
+    #context-viewimagedesc {
+        --menuitem-image: url("../images/sidra/media/info.svg")
+    }
+
+    #context-sendimage,
+    #context-sendvideo,
+    #context-sendaudio {
+        --menuitem-image: url("../images/sidra/media/send.svg")
+    }
+
+    #context-setDesktopBackground {
+        --menuitem-image: url("../images/sidra/media/image.svg")
+    }
+
+    #context-media-play {
+        --menuitem-image: url("../images/sidra/media/play.svg")
+    }
+
+    #context-media-pause {
+        --menuitem-image: url("../images/sidra/media/pause.svg")
+    }
+
+    #context-media-mute {
+        --menuitem-image: url("../images/sidra/media/muted.svg")
+    }
+
+    #context-media-playbackrate {
+        --menuitem-image: url("../images/sidra/media/speed.svg")
+    }
+
+    #context-video-fullscreen {
+        --menuitem-image: url("../images/sidra/media/enter-fullscreen.svg")
+    }
+
+    #context-leave-dom-fullscreen {
+        --menuitem-image: url("../images/sidra/media/exit-fullscreen.svg")
+    }
+
+    #context-media-showcontrols {
+        --menuitem-image: url("../images/sidra/media/toolbar.svg")
+    }
+
+    #context-viewvideo {
+        --menuitem-image: url("../images/sidra/media/open-in-new-tab.svg")
+    }
+
+    #context-video-saveimage {
+        --menuitem-image: url("chrome://browser/skin/screenshot.svg");
+    }
+
+    /** 显示你的书签 */
+    #BMB_viewBookmarksSidebar {
+        --menuitem-image: url("../images/sidra/navbar-context/book.svg")
+    }
+
+    #BMB_bookmarksShowAllTop,
+    #BMB_bookmarksShowAll {
+        --menuitem-image: url("chrome://browser/skin/bookmark-star-on-tray.svg");
+    }
+
+    #BMB_viewBookmarksToolbar {
+        --menuitem-image: url("../images/sidra/navbar-context/hide.svg")
+    }
+
+    /** 垂直标签栏 */
+    #vertical-tabs-context-position:is([label*="右"], [label*="right"]) {
+        --menuitem-image: url("../images/sidra/page-context/angle-right.svg");
+    }
+
+    #vertical-tabs-context-position:is([label*="左"], [label*="left"]) {
+        --menuitem-image: url("../images/sidra/page-context/angle-left.svg");
+    }
+
+    #vertical-tabs-context-hover-delay,
+    #vertical-tabs-context-hover-out-delay {
+        --menuitem-image: url("../images/sidra/page-context/clock-checked.svg");
+    }
+
+    /** OneTab */
+    [id^="extension_one-tab_com-menuitem"][label="OneTab"]:not(.menu-iconic) {
+        --menuitem-image: url("../images/sidra/navbar-context/savef-tabs-list.svg");
+    }
+
+    [id^="extension_one-tab_com-menuitem"][label="OneTab"] :is([label="帮助"], [label="Help"]) {
+        --menuitem-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    [id^="bookmarksorganizer_agenedia_com"] {
+        --menuitem-image: url("../images/sidra/extensions/bookmarksorganizer/book.svg");
+    }
+
+    [id^="bookmarksorganizer_agenedia_com"] .menu-iconic-left {
+        visibility: hidden;
+    }
+
+    /* */
+    #_37fa1426-b82d-11db-8314-0800200c9a66_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/notification-center.svg");
+    }
+
+    /**======== 主菜单图标 ========*/
+    /* File */
+    #menu_newNavigatorTab {
+        --menuitem-image: url("../images/sidra/main-menu/new-tab.svg");
+    }
+
+    #menu_newPrivateTab .menu-iconic-left {
+        list-style-image: url("../images/sidra/main-menu/new-private-tab.svg") !important;
+    }
+
+    #menu_newUserContext {
+        --menuitem-image: url("../images/sidra/main-menu/open-in-container.svg");
+    }
+
+    #menu_newNavigator {
+        --menuitem-image: url("../images/sidra/main-menu/new-window.svg");
+    }
+
+    #menu_newPrivateWindow {
+        --menuitem-image: url("../images/sidra/main-menu/new-private-window.svg");
+    }
+
+    #menu_openFile {
+        --menuitem-image: url("../images/sidra/main-menu/browse.svg");
+    }
+
+    #menu_savePage {
+        --menuitem-image: url("../images/sidra/main-menu/save.svg");
+    }
+
+    #menu_sendLink {
+        --menuitem-image: url("../images/sidra/main-menu/send.svg");
+    }
+
+    #menu_printSetup {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #menu_print {
+        --menuitem-image: url("../images/sidra/main-menu/print.svg");
+    }
+
+    #menu_importFromAnotherBrowser {
+        --menuitem-image: url("chrome://browser/skin/import.svg");
+    }
+
+    #menu_FileQuitItem {
+        --menuitem-image: url("../images/sidra/skin/quit.svg");
+    }
+
+
+    /* Edit */
+    #menu_find {
+        --menuitem-image: url("../images/sidra/document-search.svg");
+    }
+
+    /* View */
+    #viewToolbarsMenu {
+        --menuitem-image: url("../images/sidra/main-menu/toolbar.svg");
+    }
+
+    #viewToolbarsMenu menuitem[type="checkbox"] {
+        --menuitem-image: url("../images/sidra/chekbox.svg");
+    }
+
+    #menu_customizeToolbars {
+        --menuitem-image: url("../images/sidra/main-menu/customize.svg");
+    }
+
+    #viewSidebarMenuMenu {
+        --menuitem-image: url("chrome://browser/skin/sidebars.svg");
+    }
+
+    #viewFullZoomMenu {
+        --menuitem-image: url("../images/sidra/main-menu/screenshot.svg");
+    }
+
+    #viewFullZoomMenu menuitem {
+        /* --menuitem-image: ''; */
+    }
+
+    #menu_zoomEnlarge {}
+
+    #menu_zoomReset {
+        --menuitem-image: url("../images/sidra/main-menu/100.svg") !important;
+    }
+
+    #menu_zoomEnlarge {
+        --menuitem-image: url("chrome://browser/skin/add-circle-fill.svg");
+    }
+
+    #menu_zoomReduce {
+        --menuitem-image: url("chrome://browser/skin/subtract-circle-fill.svg");
+    }
+
+    #pageStyleMenu {
+        --menuitem-image: url("../images/sidra/main-menu/css.svg");
+    }
+
+    #repair-text-encoding {
+        --menuitem-image: url("chrome://browser/skin/characterEncoding.svg");
+    }
+
+    #fullScreenItem {
+        list-style-image: url("chrome://browser/skin/fullscreen.svg");
+    }
+
+    #menu_readerModeItem {
+        --menuitem-image: url("chrome://browser/skin/reader-mode.svg");
+    }
+
+    /* History */
+    #menu_showAllHistory {
+        --menuitem-image: url("chrome://browser/skin/history.svg");
+    }
+
+    #sanitizeItem {
+        --menuitem-image: url("../images/sidra/main-menu/clean.svg");
+    }
+
+    #sync-tabs-menuitem {
+        --menuitem-image: url("chrome://browser/skin/sync.svg");
+    }
+
+    #historyRestoreLastSession {
+        --menuitem-image: url("../images/sidra/main-menu/restore-session.svg");
+    }
+
+    #historyUndoMenu {
+        --menuitem-image: url("../images/sidra/main-menu/closed-tabs.svg") !important;
+    }
+
+    #historyUndoWindowMenu {
+        --menuitem-image: url("../images/sidra/main-menu/closed-windows.svg") !important;
+    }
+
+    #menu_clearClosedWindowsList {
+        --menuitem-image: url("chrome://browser/skin/forget.svg") !important;
+    }
+
+    /* Bookmark */
+    #bookmarksShowAll {
+        --menuitem-image: url("../images/sidra/main-menu/bookmarks.svg") !important;
+    }
+
+    #menu_bookmarkThisPage {
+        --menuitem-image: url("../images/sidra/main-menu/bookmark-plus.svg") !important;
+    }
+
+    /* Tools */
+    #menu_openDownloads {
+        --menuitem-image: url("../images/sidra/main-menu/downloads.svg") !important;
+    }
+
+    #menu_openAddons {
+        --menuitem-image: url("chrome://mozapps/skin/extensions/extension.svg");
+    }
+
+    #sync-setup {
+        --menuitem-image: url("chrome://browser/skin/fxa/avatar-empty.svg");
+    }
+
+    #sync-syncnowitem {
+        --menuitem-image: url("chrome://browser/skin/sync.svg");
+    }
+
+    #addMenu-rebuild {
+        --menuitem-image: url("../images/sidra/main-menu/menu.svg") !important;
+    }
+
+    #toolsbar_KeyChanger_rebuild {
+        --menuitem-image: url("../images/sidra/main-menu/keyboard.svg") !important;
+    }
+
+    #webDeveloperMenu,
+    /* Legacy */
+    #browserToolsMenu {
+        --menuitem-image: url("../images/sidra/main-menu/tool.svg") !important;
+    }
+
+    #enableDeveloperTools {}
+
+    #menu_devToolbox {}
+
+    #menu_taskManager {
+        --menuitem-image: url("../images/sidra/main-menu/performance.svg");
+    }
+
+    #menu_devtools_remotedebugging {
+        --menuitem-image: url("../images/sidra/main-menu/bug.svg");
+    }
+
+    #menu_browserToolbox {
+        --menuitem-image: url("../images/sidra/main-menu/window-dev-tools.svg");
+    }
+
+    #menu_browserContentToolbox {
+        --menuitem-image: url("../images/sidra/main-menu/command-frames.svg");
+    }
+
+    #menu_browserConsole {
+        --menuitem-image: url("chrome://devtools/skin/images/command-console.svg");
+    }
+
+    #menu_responsiveUI {}
+
+    #menu_eyedropper {}
+
+    #menu_pageSource {
+        --menuitem-image: url("../images/sidra/document-search.svg");
+    }
+
+    #extensionsForDevelopers {
+        --menuitem-image: url("chrome://devtools/skin/images/debugging-addons.svg");
+    }
+
+    #menu_pageInfo {
+        --menuitem-image: url("../images/sidra/main-menu/info.svg") !important;
+    }
+
+    #menu_preferences {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg") !important;
+    }
+
+    /* Help */
+    #menu_openHelp {
+        --menuitem-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    #feedbackPage {
+        --menuitem-image: url("../images/sidra/main-menu/send.svg");
+    }
+
+    #helpSafeMode {
+        --menuitem-image: url("chrome://devtools/skin/images/debugging-workers.svg");
+    }
+
+    #troubleShooting {
+        --menuitem-image: url("chrome://global/skin/icons/more.svg");
+    }
+
+    #help_reportSiteIssue {
+        --menuitem-image: url("chrome://global/skin/icons/lightbulb.svg");
+    }
+
+    #menu_HelpPopup_reportPhishingtoolmenu {
+        --menuitem-image: url("chrome://global/skin/icons/warning.svg");
+    }
+
+    #menu_HelpPopup_reportPhishingErrortoolmenu {}
+
+    #aboutName {
+        --menuitem-image: url("chrome://global/skin/icons/info.svg");
+    }
+
+    #helpPolicySupport {}
+
+    /**======== 隐藏菜单 ========*/
+    /** 标签页右键 */
+    #tabContextMenu :is(#context_bookmarkTab, .share-tab-url-item, #context_undoCloseTab, [contexttype="fullscreen"]+menuseparator, #context_closeTabOptions) {
+        display: none;
+    }
+
+    /** 工具栏右键 */
+    #toolbar-context-menu :is(#toolbarNavigatorItemsMenuSeparator, #toolbar-context-reloadSelectedTab, #toolbar-context-bookmarkSelectedTab, #toolbar-context-selectAllTabs, #toolbar-context-undoCloseTab) {
+        display: none
+    }
+
+    /** 书签工具啦右键 */
+    #placesContext :is(#toggle_PersonalToolbar) {
+        display: none;
+    }
+
+    /* 网页右键 */
+    #contentAreaContextMenu :is(#context-sep-sendlinktodevice, #context-searchselect-private[hidden="true"] ~ #frame-sep, [id^="content-farm-terminator_danny0838_addons_mozilla_org"]),
+    #contentAreaContextMenu[addMenu="input"] #context-media-eme-learnmore~ :is(menu, menuitem):not([id^="_446900e4-71c2-419f-a6a7-df9c091e268b"]),
+    #contentAreaContextMenu[addMenu="input"] #textZoomPerDomain+menuseparator,
+    #contentAreaContextMenu:not([addMenu=""]) :is(#textZoomPerDomain),
+    #context-sep-bidi {
+        visibility: collapse;
+    }
+
+    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"] {
+        display: -moz-box !important;
+    }
+
+    /*IDM、NDM 排在最后面*/
+    [id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"],
+    [id*="_64d3e6d6-8a71-4443-b60b-a9b12ff1ec14_-menuitem-"] {
+        -moz-box-ordinal-group: 99 !important;
+    }
+}
+
+/**======== 弹出面板图标 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.panel.icon.complementary") {
+    .subviewbutton[type="checkbox"]:not([checked="true"]) {
+        list-style-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    #appMenu-fxa-status2,
+    #appMenu-zoom-controls2,
+    .subviewbutton:not(.subviewbutton-iconic) {
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-panel-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+    }
+
+    #appMenu-fxa-status2 {
+        --menuitem-image: url("../images/sidra/panel-popup/profile.svg");
+    }
+
+    #appMenu-fxa-status2:is([fxastatus="signedin"],
+        [fxastatus="unverified"],
+        [fxastatus="login-failed"]),
+    #appMenu-fxa-label2,
+    #appMenu-zoomReset-button2 {
+        --menuitem-image: '';
+    }
+
+    #appMenu-fxa-status2:is([fxastatus="signedin"],
+        [fxastatus="unverified"],
+        [fxastatus="login-failed"]) #appMenu-fxa-label2>vbox {
+        margin-inline-start: var(--sidra-panel-margin-before-icon);
+    }
+
+    #fxa-manage-account-button {
+        --menuitem-image: var(--avatar-image-url);
+        --sidra-panel-icon-width: 32px;
+    }
+
+    #fxa-manage-account-button>vbox {
+        margin-inline-start: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon) + var(--sidra-panel-icon-width) + var(--sidra-panel-margin-after-icon) + var(--sidra-panel-margin-before-text));
+    }
+
+    #PanelUI-fxa-menu-connect-device-button {
+        list-style-image: url("../images/sidra/panel-popup/device.svg");
+    }
+
+    #PanelUI-fxa-menu-setup-sync-button {
+        --menuitem-image: url("../images/sidra/panel-popup/enable-sync.svg");
+    }
+
+    .sendToDevice-device[clientType="desktop"] {
+        list-style-image: url("../images/sidra/panel-popup/macbook.svg");
+    }
+
+    .sendToDevice-device[clientType="phone"] {
+        list-style-image: url("../images/sidra/panel-popup/smartphone.svg");
+    }
+
+    toolbarseparator~.sendToDevice-device[clientId] {
+        list-style-image: url("../images/sidra/panel-popup/send.svg");
+    }
+
+    toolbarseparator~.sendToDevice-device:not([clientId]) {
+        list-style-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    .syncNowBtn {
+        visibility: visible;
+        -moz-box-ordinal-group: 1;
+        margin-inline-end: var(--sidra-panel-margin-after-icon);
+    }
+
+    #PanelUI-remotetabs-view-managedevices {
+        padding-inline-start: var(--sidra-panel-padding-no-iconic);
+        --menuitem-image: url("../images/sidra/panel-popup/manage-profiles.svg");
+    }
+
+    #PanelUI-fxa-menu-sendtab-button {
+        list-style-image: url("../images/sidra/panel-popup/send-to-device.svg");
+    }
+
+    #PanelUI-fxa-menu-account-signout-button {
+        list-style-image: url("../images/sidra/skin/quit.svg");
+    }
+
+    #appMenu-new-tab-button2 {
+        list-style-image: url("../images/sidra/panel-popup/new-tab.svg");
+    }
+
+    #appMenu-new-window-button2 {
+        list-style-image: url("../images/sidra/panel-popup/new-window.svg");
+    }
+
+    #appMenu-new-private-window-button2 {
+        list-style-image: url("../images/sidra/panel-popup/new-private-window.svg");
+    }
+
+    #appMenu-bookmarks-button {
+        list-style-image: url("../images/sidra/panel-popup/bookmarks.svg");
+    }
+
+    /** 书签 Start */
+    #panelMenuBookmarkThisPage {
+        list-style-image: url("../images/sidra/panel-popup/star-line-horizontal.svg");
+    }
+
+    #panelMenu_searchBookmarks {
+        list-style-image: url("chrome://global/skin/icons/search-glass.svg");
+    }
+
+    #panelMenu_viewBookmarksToolbar {
+        list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg");
+    }
+
+    #panelMenu_showAllBookmarks {
+        list-style-image: url("../images/sidra/panel-popup/bookmarks.svg");
+    }
+
+    /** 书签 End */
+    /** 历史 Start */
+    #appMenu-history-button {
+        list-style-image: url("../images/sidra/panel-popup/history.svg");
+    }
+
+    #appMenuRecentlyClosedTabs {
+        list-style-image: url("../images/sidra/panel-popup/closed-tabs.svg");
+    }
+
+    #appMenuRecentlyClosedWindows {
+        list-style-image: url("../images/sidra/panel-popup/closed-windows.svg");
+    }
+
+    #appMenuRestoreSession {
+        list-style-image: url("../images/sidra/panel-popup/restore-session.svg");
+    }
+
+    #appMenu-restoreSession {
+        list-style-image: url("../images/sidra/panel-popup/restore-session.svg");
+    }
+
+    #appMenuClearRecentHistory {
+        list-style-image: url("../images/sidra/panel-popup/history.svg");
+    }
+
+    :is(#appMenu-library-recentlyClosedTabs,
+        #appMenu-library-recentlyClosedWindows) .restoreallitem {
+        list-style-image: url("../images/sidra/tab-context/reload.svg");
+    }
+
+    #PanelUI-historyMore {
+        list-style-image: url("chrome://browser/skin/history.svg");
+    }
+
+    /** 历史 End */
+    #appMenu-downloads-button {
+        list-style-image: url("../images/sidra/panel-popup/downloads.svg");
+    }
+
+    #appMenu-passwords-button {
+        list-style-image: url("chrome://browser/skin/login.svg");
+    }
+
+    #appMenu-userChromeJS-openChrome {
+        list-style-image: url("../images/sidra/panel-popup/folder.svg") !important;
+    }
+
+    #appMenu-userChromeJS-restart {
+        list-style-image: url("../images/sidra/panel-popup/restart.svg") !important;
+    }
+
+    #appMenu-extensions-themes-button {
+        list-style-image: url("chrome://mozapps/skin/extensions/extension.svg");
+    }
+
+    #appMenu-print-button2 {
+        list-style-image: url("../images/sidra/panel-popup/print.svg");
+    }
+
+    #appMenu-save-file-button2 {
+        list-style-image: url("../images/sidra/panel-popup/save.svg");
+    }
+
+    #appMenu-find-button2 {
+        list-style-image: url("chrome://global/skin/icons/search-glass.svg");
+    }
+
+    #appMenu-zoom-controls2 {
+        --menuitem-image: url("../images/sidra/panel-popup/screenshot.svg");
+    }
+
+    #appMenu-settings-button {
+        list-style-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    /** 更多 Start */
+    #appMenu-more-button2 {
+        list-style-image: url("../images/sidra/panel-popup/more.svg");
+    }
+
+    #appmenu-moreTools-button {
+        list-style-image: url("../images/sidra/panel-popup/customize.svg");
+    }
+
+    /* Web Developer Tools */
+    #appmenu-developer-tools-view .subviewbutton:nth-child(1),
+    #PanelUI-developer-tools-view .subviewbutton:nth-child(1) {
+        list-style-image: url("../images/sidra/panel-popup/developer.svg");
+    }
+
+    /* Task Manager */
+    #appmenu-developer-tools-view .subviewbutton:nth-child(2),
+    #PanelUI-developer-tools-view .subviewbutton:nth-child(2) {
+        list-style-image: url("../images/sidra/panel-popup/performance.svg");
+    }
+
+    /* Remote Debugging - Edge bug.svg */
+    #appmenu-developer-tools-view .subviewbutton:nth-child(3),
+    #PanelUI-developer-tools-view .subviewbutton:nth-child(3) {
+        list-style-image: url("../images/sidra/panel-popup/bug.svg");
+    }
+
+    /* Browser Toolbox - Edge webdeveloper.svg */
+    #appmenu-developer-tools-view .subviewbutton:nth-child(4),
+    #PanelUI-developer-tools-view .subviewbutton:nth-child(4) {
+        list-style-image: url("../images/sidra/panel-popup/window-dev-tools.svg");
+    }
+
+    /* Browser Content Toolbaox -  */
+    #appmenu-developer-tools-view .subviewbutton:nth-child(5),
+    #PanelUI-developer-tools-view .subviewbutton:nth-child(5) {
+        list-style-image: url("../images/sidra/panel-popup/command-frames.svg");
+    }
+
+    /* Browser Console */
+    #appmenu-developer-tools-view .subviewbutton:nth-last-child(5),
+    #PanelUI-developer-tools-view .subviewbutton:nth-last-child(5) {
+        list-style-image: url("chrome://devtools/skin/images/command-console.svg");
+    }
+
+    /* Responsive Design Mode */
+    #appmenu-developer-tools-view .subviewbutton:nth-last-child(4),
+    #PanelUI-developer-tools-view .subviewbutton:nth-last-child(4) {
+        list-style-image: url("../images/sidra/panel-popup/command-responsivemode.svg");
+    }
+
+    /* Eyedropper */
+    #appmenu-developer-tools-view .subviewbutton:nth-last-child(3),
+    #PanelUI-developer-tools-view .subviewbutton:nth-last-child(3) {
+        list-style-image: url("chrome://devtools/skin/images/command-eyedropper.svg");
+    }
+
+    /* Page Source - Edge file-search.svg */
+    #appmenu-developer-tools-view .subviewbutton:nth-last-child(2),
+    #PanelUI-developer-tools-view .subviewbutton:nth-last-child(2) {
+        list-style-image: url("../images/sidra/document-search.svg");
+    }
+
+    /* Extensions for Devel */
+    #appmenu-developer-tools-view .subviewbutton:nth-last-child(1),
+    #PanelUI-developer-tools-view .subviewbutton:nth-last-child(1) {
+        list-style-image: url("chrome://global/skin/icons/plugin.svg");
+    }
+
+    #appmenu-developer-tools-view .subviewbutton:last-child {
+        margin-bottom: 6px !important;
+    }
+
+    /** 更多 End */
+    /** 帮助 Start */
+    #appMenu-help-button2 {
+        list-style-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    #appMenu_menu_openHelp {
+        list-style-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    #appMenu_feedbackPage {
+        list-style-image: url("../images/sidra/panel-popup/send.svg");
+    }
+
+    #appMenu_helpSafeMode {
+        list-style-image: url("chrome://devtools/skin/images/debugging-workers.svg");
+    }
+
+    #appMenu_troubleShooting {
+        list-style-image: url("chrome://global/skin/icons/more.svg");
+    }
+
+    #appMenu_help_reportSiteIssue {
+        list-style-image: url("chrome://global/skin/icons/lightbulb.svg");
+    }
+
+    #appMenu_menu_HelpPopup_reportPhishingtoolmenu {
+        list-style-image: url("chrome://global/skin/icons/warning.svg");
+    }
+
+    #appMenu_aboutName {
+        list-style-image: url("chrome://global/skin/icons/info.svg");
+    }
+
+    #appMenu-advanced-settings-button {
+        list-style-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    /** 帮助 End */
+    #appMenu-restart-button2 {
+        list-style-image: url("../images/sidra/panel-popup/restart.svg");
+    }
+
+    #appMenu-quit-button2 {
+        list-style-image: url("../images/sidra/skin/quit.svg");
+    }
+
+    /** alltabs start */
+    #allTabsMenu-searchTabs {
+        list-style-image: url("chrome://global/skin/icons/search-glass.svg");
+    }
+
+    #allTabsMenu-containerTabsButton {
+        list-style-image: url("../images/sidra/panel-popup/open-in-container.svg");
+    }
+
+    .subviewbutton[label="管理身份"] {
+        list-style-image: url("../images/sidra/tab-context/manage-profiles.svg");
+    }
+
+    /** alltabs end */
+    .restoreallitem,
+    [label="重新打开所有窗口"] {
+        list-style-image: url("chrome://global/skin/icons/reload.svg");
+    }
+
+    /** Identity Box */
+    #identity-popup-security-description>description {
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-menuitem-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-panel-padding-x) + var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+    }
+
+    #identity-popup-security-decription-custom-root,
+    #identity-popup-security-description>description.identity-popup-warning-yellow {
+        --menuitem-image: url("chrome://global/skin/icons/security-warning.svg");
+    }
+
+    #identity-popup-more-info {
+        list-style-image: url("../images/sidra/panel-popup/more.svg");
+    }
+
+    #identity-popup-clear-sitedata-button {
+        list-style-image: url("../images/sidra/panel-popup/clean.svg");
+    }
+
+    #identity-popup-clear-sitedata-button>.toolbarbutton-icon {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    /** 库 */
+    #appMenu-library-bookmarks-button {
+        --menuitem-image: url("../images/sidra/panel-popup/book.svg")
+    }
+
+    #appMenu-library-history-button {
+        list-style-image: url("../images/sidra/panel-popup/history.svg");
+    }
+
+    #appMenu-library-downloads-button {
+        list-style-image: url("../images/sidra/panel-popup/downloads.svg");
+    }
+}
+
+/**======== 修改菜单文本 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.menupopup.changeLabel") {
+    #contentAreaContextMenu [label="IDM Integration Module"]>.menu-iconic-text {
+        font-size: 0
+    }
+
+    #contentAreaContextMenu [label="IDM Integration Module"]>.menu-iconic-left:after {
+        content: '使用 IDM 下载';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-text {
+        font-size: 0
+    }
+
+    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-left:after {
+        content: '填充密码[Bitwarden]';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #contentAreaContextMenu [label="Enpass"]>.menu-iconic-text {
+        font-size: 0
+    }
+
+    #contentAreaContextMenu [label="Enpass"]>.menu-iconic-left:after {
+        content: '填充密码[Enpass]';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #contentAreaContextMenu [label="RoboForm密码管理器"]>.menu-iconic-text {
+        font-size: 0
+    }
+
+    #contentAreaContextMenu [label="RoboForm密码管理器"]>.menu-iconic-left:after {
+        content: '填充表单[RoboForm]';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #contentAreaContextMenu [label="SafeInCloud Password Manager"]>.menu-iconic-text {
+        font-size: 0
+    }
+
+    #contentAreaContextMenu [label="SafeInCloud Password Manager"]>.menu-iconic-left:after {
+        content: '填充密码[SafeInCloud]';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"]>.menu-iconic-text {
+        font-size: 0;
+    }
+
+    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"]>.menu-iconic-left:after {
+        content: '将该域名加入内容农场黑名单';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-text {
+        font-size: 0
+    }
+
+    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-left:after {
+        content: '填充密码[Bitwarden]';
+        display: block;
+        margin: var(--fix-margin-for-text);
+    }
+
+    /* TabMixPlus 菜单 */
+    #context_openANewTab>.menu-iconic-text {
+        font-size: 0;
+    }
+
+    #context_openANewTab>.menu-iconic-left:after {
+        content: '新建标签页';
+        display: block;
+        margin: var(--fix-margin-for-text) !important;
+    }
+
+    #context_reloadTabOptions>.menu-text {
+        visibility: hidden
+    }
+
+    #context_reloadTabOptions:before {
+        content: '重载多个标签';
+        display: block;
+        margin-left: 0px;
+    }
+}
+
+/**======== 按钮图标 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.toolbarbutton.icon.complementary") {
+
+    /** 可移动的 PanelUI 按钮 */
+    #main-window[tabsintitlebar] #navigator-toolbox #TabsToolbar #movable-PanelUI-button {
+        list-style-image: url("chrome://branding/content/about-logo.png") !important;
+    }
+
+    /** userscript 脚本管理图标 */
+    #_aecec67f-0d10-4fa7-b7c7-609a2db280cf_-browser-action,
+    #firefox_tampermonkey_net-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/javascript.svg") !important;
+    }
+
+    /** IDM */
+    #mozilla_cc3_internetdownloadmanager_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/downloads.svg") !important;
+    }
+
+    /** 链接提取图标 */
+    #linkgopher_oooninja_com-browser-action,
+    #linkgopher_kkp_disk_st-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/grab-links.svg");
+    }
+
+    #linkificator_markapola-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/link.svg");
+    }
+
+    /** Bitwarden */
+    #firefox-enpass_enpass_io-browser-action,
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/vault_unlocked.svg") !important;
+    }
+
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="gray.png"] {
+        fill: grey !important;
+        list-style-image: url("../images/sidra/toolbarbutton/vault_locked.svg") !important;
+    }
+
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="locked.png"] {
+        fill: red !important;
+        list-style-image: url("../images/sidra/toolbarbutton/vault_locked.svg") !important;
+    }
+
+    /** Roboform */
+    #rf-firefox_siber_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/form.svg");
+    }
+
+    /** SafeInCloud */
+    #info_safe-in-cloud_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/safeincloud.svg");
+    }
+
+    /** Stylus */
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/css.svg");
+    }
+
+    /** VideoDownloadHelper */
+    #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-browser-action .toolbarbutton-icon {
+        list-style-image: url("../images/sidra/toolbarbutton/video-clip.svg") !important;
+    }
+
+    /** Sound Fixer */
+    #soundfixer_unrelenting_technology-browser-action,
+    #soundfixer_kkp_disk_st-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/sound.svg") !important;
+    }
+
+    /** 翻译 */
+    #pageAction-urlbar-_036a55b4-5e72-4d05-a06c-cba2dfcc134a_,
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/translate.svg") !important;
+    }
+
+    /** SwitchyOmega */
+    #switchyomega_feliscatus_addons_mozilla_org-browser-action,
+    #smartproxy_salarcode_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/proxy.svg") !important;
+    }
+
+    #switchyomega_feliscatus_addons_mozilla_org-browser-action>.toolbarbutton-badge-stack>.toolbarbutton-icon {
+        -moz-context-properties: fill;
+        fill: blue !important;
+    }
+
+    #switchyomega_feliscatus_addons_mozilla_org-browser-action[label*="直接链接"]>.toolbarbutton-badge-stack>.toolbarbutton-icon,
+    #switchyomega_feliscatus_addons_mozilla_org-browser-action[label*="系统代理"]>.toolbarbutton-badge-stack>.toolbarbutton-icon {
+        fill: currentColor !important;
+    }
+
+    #switchyomega_feliscatus_addons_mozilla_org-browser-action[label*="auto"]>.toolbarbutton-badge-stack>.toolbarbutton-icon,
+    #switchyomega_feliscatus_addons_mozilla_org-browser-action[label*="自动"]>.toolbarbutton-badge-stack>.toolbarbutton-icon {
+        -moz-context-properties: fill;
+        fill: green !important;
+    }
+
+    /** Styloaix */
+    #styloaix-button,
+    #styloaix-button.icon-colored {
+        list-style-image: url("../images/sidra/toolbarbutton/skin.svg") !important;
+    }
+
+    /** Adguard */
+    #adguardadblocker_adguard_com-browser-action,
+    #browserassistant_adguard_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/adguard.svg") !important;
+    }
+
+    /** uBlock */
+    #ublock0_raymondhill_net-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/block.svg");
+    }
+
+    /** Adblock Plus */
+    #_d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/remove.svg");
+    }
+
+    /** 京价保 */
+    #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/shop.svg") !important;
+    }
+
+    /** Header Editor */
+    #headereditor-amo_addon_firefoxcn_net-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/editor.svg");
+    }
+
+    /** 迅雷 */
+    #xl_webbrowserstore_xunlei_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/xunlei.svg");
+    }
+
+    /** AutoFill / Aria2 */
+    #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-browser-action,
+    #_e2488817-3d73-4013-850d-b66c5e42d505_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/autofill.svg");
+    }
+
+    /** Image Picka */
+    #image-picka_eight04_blogspot_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/image.svg");
+    }
+
+    /** Youtube Enhancer */
+    #enhancerforyoutube_maximerf_addons_mozilla_org-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/youtube.svg");
+    }
+
+    /** DualSub */
+    #_104db41e-43f7-4484-bda8-a59536364925_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/subtitles.svg");
+    }
+
+    /** Downloadfile Encoding */
+    #download-filename-encoding_qw_linux-2g64_local-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/encoding.svg");
+    }
+
+    /** userChrome */
+    #userChromebtnMenu {
+        list-style-image: url("../images/sidra/toolbarbutton/userchrome.svg") !important;
+    }
+
+    /** Universal Bypass */
+    #_529b261b-df0b-4e3b-bf42-07b462da0ee8_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/skip.svg") !important;
+    }
+
+    /** 调整无痕指示器的大小 */
+    :root:not([accessibilitymode]) .private-browsing-indicator,
+    .accessibility-indicator {
+        width: 15px;
+        height: 15px;
+        margin-inline-start: 0;
+        margin-inline-end: 5px;
+        margin-top: 2px;
+    }
+
+    /** 终结内容农场 */
+    #content-farm-terminator_danny0838_addons_mozilla_org-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/unavailable.svg") !important;
+    }
+
+    /** Keepass Tusk */
+    #brandon_subdavis_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/keepass.svg") !important;
+    }
+
+    /** Feed */
+    #_a9c2ad37-e940-4892-8dce-cd73c6cbbc0c_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/rss.svg") !important;
+    }
+
+    /** Vue JS */
+    #_5caff8cc-3d2e-4110-a88a-003cc85b3858_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/vuejs.svg");
+    }
+
+    /** 无痕标签 */
+    #newPrivateTab-button,
+    #privateTab-button {
+        list-style-image: url("../images/sidra/toolbarbutton/new-private-tab.svg");
+    }
+
+    /** 浏览器内容工具箱 */
+    #browser-toolbox-button {
+        list-style-image: url("../images/sidra/toolbarbutton/browser-toolbox.svg") !important;
+    }
+
+    /** 定制工具栏 */
+    #overflowMenu-customize-button {
+        list-style-image: url("../images/sidra/toolbarbutton/customize.svg") !important;
+    }
+
+    #overflowMenu-customize-button>label {
+        padding-inline-start: 0 !important;
+        margin-top: -2px;
+    }
+
+    /** OneTab */
+    #extension_one-tab_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/onetab.svg") !important;
+    }
+
+    /** Auto Tab Discard  */
+    #_c2c003ee-bd69-42a2-b0e9-6f34222cb046_-browser-action {
+        list-style-image: url("../images/sidra/skin/quit.svg") !important;
+    }
+
+    /** Bookmarks Organizer */
+    #bookmarksorganizer_agenedia_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/book.svg") !important;
+    }
+
+    /** I don't care about cookies */
+    #jid1-kkzogwgsw3ao4q_jetpack-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/cookie.svg") !important;
+    }
+
+    /** xStyle */
+    #xstyle-amo_addon_firefoxcn_net-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/xstyle.svg") !important;
+    }
+
+    /** EverSync */
+    #fvdmedia_gmail_com-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/sync.svg") !important;
+    }
+
+    #clearDownloadsButton {
+        list-style-image: url("chrome://browser/skin/forget.svg") !important;
+    }
+
+    #clearDownloadsButton>.toolbarbutton-text {
+        margin: 1px 6px 2px !important;
+    }
+}
+
+/******* from https://github.com/Aris-t2/CustomCSSforFx ******/
+/**======== 图标上色 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.toolbarbutton.icon.colorized") {
+
+    /* red */
+    :is(#containers-panelmenu, #web-apps-button, #e10s-button, #panic-button, #cut-button, #zoom-out-button, #stop-button),
+    #pocket-button:not([open]),
+    #PanelUI-quit:not(:hover),
+    .tabs-closebutton:hover,
+    .tab-close-button:hover,
+    #stop-button .toolbarbutton-animatable-image,
+    #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image {
+        fill: red !important;
+    }
+
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#containers-panelmenu, #web-apps-button, #e10s-button, #panic-button, #cut-button, #zoom-out-button, #stop-button),
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #pocket-button:not([open]),
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #PanelUI-quit:not(:hover),
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext .tabs-closebutton:hover,
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext .tab-close-button:hover,
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #stop-button .toolbarbutton-animatable-image,
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image {
+        fill: #ff5a5a !important;
+    }
+
+    @media (-moz-content-prefers-color-scheme: dark) {
+
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme :is(#containers-panelmenu, #web-apps-button, #e10s-button, #panic-button, #cut-button, #zoom-out-button, #stop-button),
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #pocket-button:not([open]),
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #PanelUI-quit:not(:hover),
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme .tabs-closebutton:hover,
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme .tab-close-button:hover,
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #stop-button .toolbarbutton-animatable-image,
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image {
+            fill: #ff5a5a !important;
+        }
+    }
+
+    /*ROYAL BLUE*/
+    :is(#eom-button),
+    toolbar:not(#TabsToolbar):not(:-moz-lwtheme) :is(.scrollbutton-up, .scrollbutton-down, #new-tab-button, #alltabs-button),
+    #downloads-button[indicator="true"]:not([attention="success"]) #downloads-indicator-icon,
+    :is(#save-page-button, #back-button, #forward-button, #new-window-button, .search-go-button, #downloads-button, #zoom-in-button, #copy-button, #find-button, #sidebar-button, #fullscreen-button, #PanelUI-customize, #password-notification-icon, #PanelUI-fxa-status, #sync-button, #tabview-button, #social-share-button) {
+        fill: #4169e1 !important;
+    }
+
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext toolbar:not(#TabsToolbar):not(:-moz-lwtheme) :is(.scrollbutton-up, .scrollbutton-down, #new-tab-button, #alltabs-button),
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #downloads-button[indicator="true"]:not([attention="success"]) #downloads-indicator-icon,
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#save-page-button, #back-button, #forward-button, #new-window-button, .search-go-button, #downloads-button, #zoom-in-button, #copy-button, #find-button, #sidebar-button, #fullscreen-button, #PanelUI-customize, #password-notification-icon, #PanelUI-fxa-status, #sync-button, #tabview-button, #social-share-button, #info_safe-in-cloud_com-browser-action[badge], #firefox-enpass_enpass_io-browser-action, #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action) {
+        fill: #00d2ff !important;
+    }
+
+    @media (-moz-content-prefers-color-scheme: dark) {
+
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme toolbar:not(#TabsToolbar):not(:-moz-lwtheme) :is(.scrollbutton-up, .scrollbutton-down, #new-tab-button, #alltabs-button),
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #downloads-button[indicator="true"]:not([attention="success"]) #downloads-indicator-icon,
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme :is(#save-page-button, #back-button, #forward-button, #new-window-button, .search-go-button, #downloads-button, #zoom-in-button, #copy-button, #find-button, #sidebar-button, #fullscreen-button, #PanelUI-customize, #password-notification-icon, #PanelUI-fxa-status, #sync-button, #tabview-button, #social-share-button) {
+            fill: #00d2ff !important;
+        }
+    }
+
+    /*green*/
+    :is(#add-ons-button, #search-go-button, .search-go-button, #urlbar-go-button, .urlbar-go-button, #paste-button, #email-link-button, #reload-button),
+    #reload-button .toolbarbutton-animatable-image {
+        fill: green !important;
+    }
+
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#add-ons-button, #search-go-button, .search-go-button, #urlbar-go-button, .urlbar-go-button, #paste-button, #email-link-button, #reload-button),
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #reload-button .toolbarbutton-animatable-image {
+        fill: lightgreen !important;
+    }
+
+    @media (-moz-content-prefers-color-scheme: dark) {
+
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme :is(#add-ons-button, #search-go-button, .search-go-button, #urlbar-go-button, .urlbar-go-button, #paste-button, #email-link-button, #reload-button),
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #reload-button .toolbarbutton-animatable-image {
+            fill: lightgreen !important;
+        }
+    }
+
+    /*orange*/
+    :is(#open-file-button, #home-button, #feed-button),
+    #_a9c2ad37-e940-4892-8dce-cd73c6cbbc0c_-browser-action>stack>.toolbarbutton-icon {
+        fill: orange !important;
+    }
+
+    /*PURPLE*/
+    :is(#history-button, #history-panelmenu, #library-button, #privatebrowsing-button, #print-button, #fxa-toolbar-menu-button, #styloaix-button.icon-colored) {
+        fill: #800080 !important;
+    }
+
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#history-button, #history-panelmenu, #library-button, #privatebrowsing-button, #print-button, #fxa-toolbar-menu-button) {
+        fill: #ff00ff !important;
+    }
+
+    @media (-moz-content-prefers-color-scheme: dark) {
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme :is(#history-button, #history-panelmenu, #library-button, #privatebrowsing-button, #print-button, #fxa-toolbar-menu-button) {
+            fill: #ff00ff !important;
+        }
+    }
+
+    /*AZURE*/
+    :is(#webide-button, #PanelUI-menu-button, #nav-bar-overflow-button, #bookmarks-menu-button, #bookmarks-button),
+    #bookmarks-menu-button>.toolbarbutton-menubutton-dropmarker>.dropmarker-icon {
+        -moz-context-properties: fill;
+        fill: #336699 !important;
+    }
+
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#webide-button, #PanelUI-menu-button, #nav-bar-overflow-button, #bookmarks-menu-button, #bookmarks-button),
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #bookmarks-menu-button>.toolbarbutton-menubutton-dropmarker>.dropmarker-icon {
+        fill: #64a3e2 !important;
+    }
+
+    @media (-moz-content-prefers-color-scheme: dark) {
+
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme :is(#webide-button, #PanelUI-menu-button, #nav-bar-overflow-button, #bookmarks-menu-button, #bookmarks-button),
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme #bookmarks-menu-button>.toolbarbutton-menubutton-dropmarker>.dropmarker-icon {
+            fill: #64a3e2 !important;
+        }
+    }
+
+    /* grey*/
+    :is(#developer-button, #preferences-button, #characterencoding-button) {
+        fill: grey !important;
+    }
+
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#developer-button, #preferences-button, #characterencoding-button) {
+        fill: lightgrey !important;
+    }
+
+    @media (-moz-content-prefers-color-scheme: dark) {
+        #main-window:not([style*='--lwt-header-image']):-moz-lwtheme :is(#developer-button, #preferences-button, #characterencoding-button) {
+            fill: lightgrey !important;
+        }
+    }
+}
+
+/**======== 侧边栏 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.sidebar.fixed") {
+
+    /* 侧边栏显示时不顶开网页 */
+    #sidebar-box {
+        display: flex !important;
+        position: absolute !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: auto !important;
+        z-index: 1 !important;
+        flex-direction: column !important;
+        box-shadow: 0px 0px 8px -4px hsla(240, 4%, 0%, 0.6), 0px 0px 15px 0px hsla(0, 0%, 0%, 0.2) !important;
+        background-image: var(--lwt-header-image, var(--lwt-additional-images));
+        background-repeat: var(--lwt-background-tiling);
+        background-position: var(--lwt-background-alignment);
+    }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.sidebar.compact") {
+    #browser {
+        position: relative !important;
+    }
+
+    #sidebar-box[hidden] {
+        display: none !important;
+    }
+
+    #sidebar-box[positionend] {
+        left: auto !important;
+        right: 0 !important;
+    }
+
+    #sidebar-header {
+        top: 0 !important;
+    }
+
+    #sidebar {
+        min-width: -moz-available !important;
+        flex-grow: 1 !important;
+    }
+
+    .sidebar-placesTree {
+        background-color: inherit !important;
+    }
+
+    /** 侧边栏标题 */
+    #sidebar-header {
+        padding: 6px !important;
+        padding-bottom: 3px !important;
+        border-bottom: 0px solid transparent !important;
+        color: inherit !important;
+        font-size: 1.2em !important;
+        background-color: var(--toolbar-bgcolor);
+        background-image: var(--toolbar-bgimage);
+        background-clip: padding-box;
+        color: var(--toolbar-color);
+    }
+
+
+    #sidebar-switcher-target {
+        min-height: 28px !important;
+        min-width: 28px !important;
+        padding-inline: 6px !important;
+    }
+
+    #sidebar-switcher-target #sidebar-title {
+        padding-inline: 6px !important;
+    }
+
+    #bookmarksPanel {
+        background-color: var(--lwt-sidebar-background-color, var(--newtab-background-color));
+        background-image: var(--toolbar-bgimage);
+        background-clip: padding-box;
+        color: var(--toolbar-color);
+    }
+
+    #sidebar-search-container {
+        padding: 3px 6px !important;
+    }
+
+    :where(#sidebar-search-container, .sidebar-search-container) search-textbox {
+        appearance: none !important;
+        padding-inline: 5px 0 !important;
+        background-color: var(--urlbar-box-bgcolor) !important;
+        border-radius: var(--general-button-border-radius) !important;
+        padding-block: 0 !important;
+        transition: 300ms background-color !important;
+        color: currentColor !important;
+        min-height: 25px !important;
+        margin: 0 !important;
+        outline: 0 solid transparent !important;
+        transition: var(--textbox-outline-transition-duration, 100ms) outline ease-in,
+            var(--findbar-textbox-bg-transition-duration, 200ms) background-color !important;
+    }
+
+
+    /* 搜索框选中边框动画 */
+    :is(#sidebar-search-container, .sidebar-search-container) search-textbox:focus {
+        background-color: var(--urlbar-box-focus-bgcolor) !important;
+        outline: 2px solid var(--lwt-sidebar-highlight-background-color, -moz-accent-color) !important;
+        transition-duration: calc(var(--textbox-outline-transition-duration, 100ms) * 0.6),
+            var(--findbar-textbox-bg-transition-duration, 200ms) !important;
+        transition-timing-function: ease-out, linear !important;
+    }
+
+    #viewButton {
+        padding-inline: 7px 5px !important;
+        margin-inline-start: 6px !important;
+        border-radius: var(--general-button-border-radius) !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    #viewButton>.button-box>dropmarker {
+        margin-inline-start: 4px !important;
+    }
+
+    #viewButton:hover {
+        background-color: var(--button-hover-bgcolor， var(--newtab-background-color)) !important;
+    }
+
+    #viewButton:is(:active, [open]) {
+        background-color: var(--button-active-bgcolor, var(--newtab-background-color)) !important;
+    }
+
+    #sidebarMenu-popup {
+        margin-top: 0 !important;
+    }
+
+    #sidebarMenu-popup>.subviewbutton>.toolbarbutton-icon {
+        fill-opacity: 0.8;
+    }
+
+    /** 侧边栏书签条目/文件夹 上色 */
+    .sidebar-placesTreechildren::-moz-tree-cell {
+        margin-inline: 6px !important;
+        cursor: default !important;
+    }
+
+    .sidebar-placesTreechildren::-moz-tree-row {
+        min-height: 26px !important;
+        background: none !important;
+        padding-block: 1px !important;
+    }
+
+    .sidebar-placesTreechildren::-moz-tree-row(empty) {
+        min-height: 0 !important;
+    }
+
+    .sidebar-placesTreechildren::-moz-tree-cell(selected) {
+        background-color: var(--places-cell-focus-bgcolor, var(--lwt-sidebar-highlight-background-color)) !important;
+        outline: none !important;
+        border: none !important;
+    }
+
+    .sidebar-placesTreechildren::-moz-tree-cell(hover),
+    .sidebar-placesTreechildren::-moz-tree-cell(selected, hover) {
+        background-color: var(--places-cell-focus-bgcolor, var(--lwt-sidebar-highlight-background-color)) !important;
+        color: var(--lwt-text-color) !important;
+        outline: none !important;
+    }
+
+    .sidebar-panel:-moz-window-inactive .sidebar-placesTreechildren::-moz-tree-cell(selected) {
+        background-color: transparent !important;
+    }
+
+
+    .sidebar-panel:-moz-window-inactive .sidebar-placesTreechildren::-moz-tree-cell(selected, hover) {
+        background-color: var(--places-cell-focus-bgcolor, var(--lwt-sidebar-highlight-background-color)) !important;
+        color: var(--lwt-text-color) !important;
+        outline: none !important;
+    }
+
+    .sidebar-panel .sidebar-placesTreechildren::-moz-tree-cell(cutting, selected),
+    .sidebar-panel .sidebar-placesTreechildren::-moz-tree-cell(cutting, hover) {
+        background-color: color-mix(in srgb,
+                transparent 50%,
+                var(--places-cell-focus-bgcolor, var(--lwt-sidebar-highlight-background-color))) !important;
+    }
+
+
+    .sidebar-placesTreechildren::-moz-tree-row,
+    .sidebar-placesTreechildren::-moz-tree-row(current, focus),
+    .sidebar-placesTreechildren::-moz-tree-row(selected, current, focus) {
+        border: none !important;
+        outline: none !important;
+    }
+
+    .sidebar-placesTreechildren::-moz-tree-row(selected, current, focus) {
+        border: none !important;
+        outline: none !important;
+    }
+
+    .sidebar-placesTreechildren::-moz-tree-cell-text(primary, dropOn) {
+        background: none !important;
+    }
+
+    /**======== 杂项 ========*/
+    /* 清理历史记录下拉框 */
+    #sanitizeDurationChoice {
+        outline: none;
+        margin-left: 10px;
+        border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
+    }
+
+    /* 状态栏 */
+    #browser-bottombox {
+        background-image: var(--lwt-header-image, var(--lwt-additional-images));
+        background-repeat: var(--lwt-background-tiling);
+        background-position: var(--lwt-background-alignment);
+    }
+
+    #status-bar {
+        background-color: var(--toolbar-bgcolor);
+        background-image: var(--toolbar-bgimage);
+        background-clip: padding-box;
+        color: var(--toolbar-color);
+    }
+
+    #status-bar toolbarbutton {
+        padding: 0;
+    }
+}
+
+/**======== 搜索栏 ========*/
+/* 修改自 https://github.com/aminomancer/uc.css.js/blob/master/uc-findbar.css */
+@supports -moz-bool-pref("userChromeJS.sidra.findbar.compact") {
+    @keyframes findbar-down {
+        0% {
+            opacity: 0;
+            transform: translateY(calc(0px - var(--findbar-height) - 16px));
+        }
+
+        66.6% {
+            opacity: 0.666;
+            transform: translateY(0);
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .browserContainer {
+        position: relative;
+    }
+
+    .browserContainer>findbar {
+        -moz-box-ordinal-group: 0;
+        position: absolute !important;
+        display: flex !important;
+        visibility: visible !important;
+        flex-flow: row nowrap;
+        align-items: center;
+        top: 0 !important;
+        left: 1.5em;
+        min-height: unset !important;
+        padding-block: 8px !important;
+        width: calc(40% - 100px) !important;
+        min-width: 225px !important;
+        max-width: 400px !important;
+        background-color: transparent;
+        background-repeat: var(--lwt-background-tiling);
+        background-position: var(--lwt-background-alignment);
+        border: 0px solid transparent !important;
+        border-bottom-left-radius: 5px !important;
+        border-bottom-right-radius: 5px !important;
+        border-top: none !important;
+        box-shadow: 0px 0px 7px -2px hsla(240, 4%, 0%, 0.6), 0px 0px 15px 0px hsla(0, 0%, 0%, 0.2) !important;
+        background-image: none !important;
+        transition-property: transform, opacity, width, left, right !important;
+        transition-duration: 0.2s, 0.3s, 0.2s, 0.2s, 0.2s !important;
+        transition-delay: 0s, 0s, 0s, 0s, 0s !important;
+        transition-timing-function: ease-in-out, ease-in-out, ease-in-out, ease-in-out, ease-in-out !important;
+        z-index: 1 !important;
+        animation: 0.3s ease-in-out findbar-down;
+        overflow: hidden !important;
+        transform-style: preserve-3d !important;
+        backface-visibility: hidden !important;
+    }
+
+    :root:not([lwtheme-image]) .browserContainer>findbar:-moz-lwtheme {
+        background-color: var(--lwt-accent-color-inactive, var(--lwt-accent-color)) !important;
+        background-image: var(--lwt-header-image, var(--lwt-additional-images)) !important;
+    }
+
+
+    .browserContainer>findbar:before {
+        content: '';
+        background-color: var(--toolbar-bgcolor);
+        background-image: var(--toolbar-bgimage);
+        background-clip: padding-box;
+        color: var(--toolbar-color);
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+    }
+
+    @media screen and not (min-width: 500px) {
+        .browserContainer>findbar {
+            width: 100% !important;
+            right: 0 !important;
+            max-width: unset !important;
+            left: 0 !important;
+            right: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        #sidebar-box[hidden="true"]~#appcontent findbar,
+        #sidebar-box:not([positionend="true"])~#appcontent findbar {
+            right: 0 !important;
+        }
+    }
+
+    .browserContainer>findbar>.findbar-container,
+    .browserContainer>findbar>.findbar-closebutton {
+        z-index: 2;
+    }
+
+    @media screen and not (min-width: 500px) {
+        .browserContainer>findbar {
+            width: 100% !important;
+            right: 0 !important;
+            max-width: unset !important;
+            left: 0 !important;
+            right: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        #sidebar-box[hidden="true"]~#appcontent findbar,
+        #sidebar-box:not([positionend="true"])~#appcontent findbar {
+            right: 0 !important;
+        }
+    }
+
+    .findbar-container {
+        -moz-box-orient: horizontal !important;
+        height: var(--findbar-height, 22px) !important;
+        min-width: revert !important;
+        width: 100% !important;
+        overflow: revert !important;
+    }
+
+    findbar[hidden] {
+        transform: translateY(calc(0px - var(--findbar-height) - 16px));
+        pointer-events: none;
+        opacity: 0 !important;
+        transition-duration: 0.3s, 0.2s, 0.2s, 0.2s, 0.2s !important;
+    }
+
+    #sidebar-box[hidden="true"]~#appcontent findbar,
+    #sidebar-box:not([positionend="true"])~#appcontent findbar {
+        left: auto !important;
+        right: 1.5em !important;
+    }
+
+    .findbar-closebutton {
+        padding: 0 !important;
+        margin-inline: 7px 0 !important;
+        margin-block: 0 !important;
+        height: var(--findbar-height, 22px) !important;
+        width: var(--findbar-height, 22px) !important;
+        border-radius: var(--toolbarbutton-border-radius) !important;
+        -moz-box-ordinal-group: 2 !important;
+    }
+
+    .findbar-closebutton .toolbarbutton-icon {
+        width: 12px !important;
+        height: 12px !important;
+        list-style-image: url("../images/sidra/skin/close.svg") !important;
+        -moz-context-properties: fill, fill-opacity, stroke !important;
+    }
+
+    .findbar-closebutton:is(:hover, :focus-visible):not([disabled]) {
+        background-color: var(--toolbarbutton-hover-background) !important;
+    }
+
+    .findbar-closebutton:is(:hover, :focus-visible):not([disabled]):active {
+        background-color: var(--toolbarbutton-active-background) !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"] {
+        border-radius: var(--toolbarbutton-border-radius) !important;
+        overflow: hidden !important;
+        -moz-box-flex: 1 !important;
+        background-color: var(--toolbar-field-background-color);
+        color: var(--lwt-toolbar-field-color, var(--toolbar-color)) !important;
+        margin-right: 8px;
+    }
+
+    .findbar-textbox {
+        border: none !important;
+        transition: var(--findbar-textbox-bg-transition-duration, 200ms) background-color !important;
+        width: -moz-available !important;
+        border-radius: 0 !important;
+        outline: none !important;
+        height: var(--findbar-height, 22px) !important;
+        padding-inline: 6px !important;
+        -moz-box-flex: 1 !important;
+    }
+
+    .findbar-textbox input>.anonymous-div {
+        color: white !important;
+        opacity: 1 !important;
+    }
+
+    .findbar-textbox {
+        background-color: transparent;
+    }
+
+    .findbar-textbox::placeholder {
+        color: var(--toolbar-color) !important;
+    }
+
+    .findbar-textbox:focus::placeholder,
+    .findbar-textbox:focus {
+        color: var(--lwt-toolbar-field-color, var(--toolbar-field-focus-color)) !important;
+    }
+
+    .findbar-textbox[status="notfound"] {
+        background-color: var(--search-box-null) !important;
+        color: var(--toolbar-color) !important;
+        transition-duration: var(--findbar-textbox-bg-notfound-transition-duration, 300ms) !important;
+        transition-timing-function: ease-out !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"]:focus-within .findbar-textbox:not([status="notfound"]) {
+        background-color: var(--search-box-focus, var(--toolbar-field-focus-background-color)) !important;
+        color: var(--lwt-toolbar-field-color, var(--toolbar-field-focus-color)) !important;
+    }
+
+    findbar .matches-indicator {
+        background-color: var(--search-box-color);
+        transition: var(--findbar-textbox-bg-transition-duration, 200ms) background-color;
+        mask-image: linear-gradient(to right, transparent 0px, black 20px);
+        line-height: var(--findbar-height, 22px) !important;
+        height: var(--findbar-height, 22px) !important;
+    }
+
+    .findbar-textbox:focus~.matches-indicator {
+        background-color: var(--search-box-focus);
+    }
+
+    .findbar-textbox[status="notfound"]~.matches-indicator {
+        background-color: var(--search-box-null);
+        transition-duration: var(--findbar-textbox-bg-notfound-transition-duration, 300ms);
+        transition-timing-function: ease-out;
+    }
+
+    [anonid="findbar-textbox-wrapper"]:focus-within .findbar-textbox:not([status="notfound"])~.matches-indicator {
+        background-color: var(--search-box-focus);
+    }
+
+    .findbar-find-previous,
+    .findbar-find-next {
+        border: none !important;
+        padding: 0 !important;
+        background: var(--search-box-color) !important;
+        transition: var(--findbar-textbox-bg-transition-duration, 200ms) background-color !important;
+    }
+
+    .findbar-find-previous>.toolbarbutton-icon,
+    .findbar-find-next>.toolbarbutton-icon {
+        background: none !important;
+        padding: 0 !important;
+        width: 16px !important;
+        margin-inline: 2px !important;
+        opacity: 0.5 !important;
+        color: var(--toolbar-color);
+        fill: currentColor;
+    }
+
+    [anonid="findbar-textbox-wrapper"]:focus-within .findbar-find-previous>.toolbarbutton-icon,
+    [anonid="findbar-textbox-wrapper"]:focus-within .findbar-find-next>.toolbarbutton-icon {
+        color: var(--lwt-toolbar-field-color, var(--toolbar-field-focus-color));
+    }
+
+    [anonid="findbar-textbox-wrapper"]> :last-child>.toolbarbutton-icon {
+        margin-inline-end: calc((var(--findbar-height) - 16px) / 3) !important;
+    }
+
+    .findbar-find-previous {
+        padding-inline: 0 !important;
+        margin-inline: 0 !important;
+        border-radius: 0;
+        list-style-image: url("../images/sidra/skin/arrow-left.svg") !important;
+    }
+
+    .findbar-find-next {
+        padding-inline: 0 !important;
+        margin-inline: 0 !important;
+        border-radius: 0;
+        list-style-image: url("../images/sidra/skin/arrow-right.svg") !important;
+    }
+
+    :is(.findbar-find-previous, .findbar-find-next):not([disabled], [hidden]):is(:hover, :focus-visible)>.toolbarbutton-icon {
+        background: none !important;
+        opacity: 1 !important;
+    }
+
+    :is(.findbar-entire-word, .findbar-case-sensitive):not([disabled], [hidden]):is(:hover, :focus-visible, [checked]) :is(.toolbarbutton-icon, .checkbox-icon) {
+        background: none !important;
+        opacity: 0.8 !important;
+    }
+
+    :is(.findbar-find-previous, .findbar-find-next, .findbar-entire-word, .findbar-case-sensitive):not([disabled], [hidden]):hover:active {
+        box-shadow: none !important;
+    }
+
+    :is(.findbar-find-previous, .findbar-find-next, .findbar-entire-word, .findbar-case-sensitive):not([disabled], [hidden]):where([checked]:hover, [checked]:focus-visible, :hover:active, :focus-visible:hover) :is(.toolbarbutton-icon, .checkbox-icon) {
+        background: none !important;
+        opacity: 1 !important;
+    }
+
+    .findbar-textbox[status="notfound"]~ :is(.findbar-find-previous, .findbar-find-next)>.toolbarbutton-icon,
+    .findbar-textbox[status="notfound"]~ :is(.findbar-find-previous, .findbar-find-next)>.toolbarbutton-icon,
+    :is(.findbar-find-previous, .findbar-find-next, .findbar-entire-word, .findbar-case-sensitive):is([disabled="true"], [hidden]) :is(.toolbarbutton-icon, .checkbox-icon) {
+        opacity: 0.25 !important;
+    }
+
+    .findbar-textbox:focus~ :is(.findbar-find-previous, .findbar-find-next, .findbar-entire-word, .findbar-case-sensitive) {
+        background-color: var(--search-box-focus) !important;
+    }
+
+    .findbar-textbox[status="notfound"]~ :is(.findbar-find-previous, .findbar-find-next, .findbar-entire-word, .findbar-case-sensitive) {
+        background-color: var(--search-box-null) !important;
+        transition: var(--findbar-textbox-bg-notfound-transition-duration, 300ms) !important;
+        transition-timing-function: ease-out !important;
+    }
+
+    .findbar-textbox[status="notfound"]~ :is(.findbar-find-previous, .findbar-find-next) {
+        -moz-user-focus: ignore !important;
+    }
+
+    .findbar-find-previous,
+    .findbar-find-next,
+    .findbar-entire-word,
+    .findbar-case-sensitive {
+        transition: var(--findbar-textbox-bg-transition-duration, 200ms) background-color !important;
+    }
+
+    .findbar-entire-word,
+    .findbar-case-sensitive {
+        -moz-context-properties: fill, fill-opacity;
+        padding-inline: 2px !important;
+        appearance: none !important;
+        border: none !important;
+        margin: 0 !important;
+        /* background: var(--search-box-color) !important; */
+        color: var(--toolbar-color);
+        fill: currentColor;
+        border-radius: 0 !important;
+        display: -moz-box !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"] checkbox {
+        opacity: 1 !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"] checkbox[hidden]:not([disabled]) {
+        pointer-events: none !important;
+        -moz-user-focus: none !important;
+    }
+
+
+    .findbar-entire-word {
+        list-style-image: url("../images/sidra/skin/entire-word.svg");
+    }
+
+    .findbar-case-sensitive {
+        list-style-image: url("../images/sidra/skin/case-sensitive.svg");
+    }
+
+    :is(.findbar-entire-word, .findbar-case-sensitive) :is(.toolbarbutton-icon, .checkbox-icon) {
+        margin: 0 !important;
+        background: none !important;
+        width: 16px !important;
+        opacity: 0.4 !important;
+        appearance: none !important;
+        display: -moz-inline-box !important;
+    }
+
+
+    .findbar-textbox.minimal~ :is(.findbar-case-sensitive, .findbar-entire-word, .findbar-find-previous, .findbar-find-next) {
+        display: none !important;
+    }
+
+    .findbar-textbox.minimal~.matches-indicator {
+        margin-inline-end: 6px !important;
+    }
+
+    :is(.findbar-entire-word, .findbar-case-sensitive) :is(.checkbox-check, .checkbox-label) {
+        display: none !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"]:focus-within .findbar-textbox:not([status="notfound"])~ :is(.findbar-find-previous, .findbar-find-next, .findbar-entire-word, .findbar-case-sensitive) {
+        background-color: var(--search-box-focus) !important;
+        transition: var(--findbar-textbox-bg-transition-duration, 200ms) background-color !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"] {
+        outline: 0 solid transparent !important;
+        transition: var(--textbox-outline-transition-duration, 100ms) outline ease-in !important;
+    }
+
+    [anonid="findbar-textbox-wrapper"]:focus-within {
+        outline-width: 2px !important;
+        outline-color: var(--search-box-focus-outline-color, -moz-accent-color) !important;
+        transition-duration: calc(var(--textbox-outline-transition-duration, 100ms) * 0.6) !important;
+        transition-timing-function: ease-out !important;
+    }
+
+    #findbar-close-container {
+        display: none !important;
+    }
+
+    .findbar-find-status,
+    .found-matches,
+    .find-status-icon,
+    .findbar-label,
+    .findbar-highlight,
+    .findbar-match-diacritics {
+        display: none !important;
+    }
+}
+
+/**======== 画中画 ========*/
+/* 修改自 https://github.com/aminomancer/uc.css.js/blob/master/uc-popups.css */
+@supports -moz-bool-pref("userChromeJS.sidra.pip.compact") {
+    .control-item {
+        background-image: var(--pip-icon) !important;
+        /* background-color: var(--in-content-button-highlight-dark) !important; */
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        -moz-context-properties: fill, stroke !important;
+        color: var(--player-control-icon-fill) !important;
+        border-radius: 3px !important;
+    }
+
+    body:not(:fullscreen) #controls:hover .control-item {
+        opacity: 1 !important;
+    }
+
+    #controls[keying] button:focus-visible {
+        outline-style: auto !important;
+        box-shadow: 1px 2px 5px #000;
+    }
+
+    #close {
+        background-size: 22px !important;
+        --pip-icon: url(resource://userchromejs/resources/images/sidra/skin/close.svg);
+    }
+
+    #controls.playing #playpause {
+        background-size: 19px !important;
+        --pip-icon: url(resource://userchromejs/resources/images/sidra/media/pause.svg);
+    }
+
+    #controls:not(.playing) #playpause {
+        background-size: 15px !important;
+        --pip-icon: url(resource://userchromejs/resources/images/sidra/media/play.svg);
+    }
+
+    #controls.muted #audio {
+        --pip-icon: url(resource://userchromejs/resources/images/sidra/media/audioMutedButton.svg);
+    }
+
+    #controls:not(.muted) #audio {
+        --pip-icon: url(resource://userchromejs/resources/images/sidra/media/audioUnmutedButton.svg);
+    }
+
+    #unpip {
+        --pip-icon: url(resource://userchromejs/resources/images/sidra/media/pictureinpicture-closed.svg);
+    }
+}
+
+/**======== 扩展管理 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.addons.icon.complementary") {
+    @-moz-document url-prefix(about:addons),
+    url-prefix(chrome: //mozapps/content/extensions/aboutaddons.html), url-prefix(chrome://mozapps/content/extensions/aboutaddons.xhtml) {
+
+        .addon-card-message {
+            display: none;
+        }
+
+        panel-list>panel-item-separator {
+            display: none;
+        }
+
+        [action="check-for-updates"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/update.svg");
+        }
+
+        [action="view-recent-updates"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/new.svg");
+        }
+
+        [action="install-from-file"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/browse.svg");
+        }
+
+        [action="debug-addons"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/bug.svg");
+        }
+
+        [action="reset-update-states"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/skin/reset.svg");
+        }
+
+        [action="manage-shortcuts"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/keyboard.svg");
+        }
+
+        [action="preferences"],
+        [action="expand"] {
+            --icon: url("chrome://global/skin/icons/settings.svg");
+        }
+
+        [action="AM-browse-dir"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/document-search.svg");
+        }
+
+        [action="AM-copy-name"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/copy.svg");
+        }
+
+        [action="AM-open-url"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/open-in-new.svg");
+        }
+
+        [action="AM-edit-script"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/aboutaddons/editor.svg");
+        }
+
+        /* Checkbox */
+        [action="set-update-automatically"],
+        [action="always-activate"],
+        [action="never-activate"] {
+            --icon: url("resource://userchromejs/resources/images/sidra/skin/checkbox.svg");
+        }
+
+        .addon-permissions-list>li {
+            background-image: url("../images/sidra/skin/checkbox.svg");
+        }
+
+        [action="set-update-automatically"][checked],
+        [action="always-activate"][checked],
+        [action="never-activate"][checked] {
+            --icon: url("resource://userchromejs/resources/images/sidra/skin/checkbox-checked.svg");
+        }
+
+        .addon-permissions-list>li.permission-checked {
+            background-image: url("resource://userchromejs/resources/images/sidra/skin/checkbox-checked.svg");
+        }
+    }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.extensions.compact") {
+
+    /**======== TabMixPlus 扩展 ========*/
+    /* TabMixPlus 弹出面板高亮颜色 */
+    .tabmix-subview toolbarbutton.subviewbutton:not([disabled], [open], :active):is(:hover, :focus),
+    .tabmix-subview toolbarbutton.subviewbutton:not([disabled]):is([open], :hover:active) {
+        background-color: var(--panel-item-hover-bgcolor, #9bcdff) !important;
+    }
+
+    #tabmix-alltabs-button.toolbarbutton-1 {
+        -moz-image-region: rect(0 16px 16px 0);
+        list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
+    }
+
+    #tabmix-closedWindowsButton.toolbarbutton-1 {
+        -moz-image-region: rect(0 16px 16px 0);
+        list-style-image: url("../images/sidra/toolbarbutton/closed-windows.svg");
+    }
+
+    #tabmix-alltabs-button.toolbarbutton-1:hover,
+    #tabmix-closedWindowsButton.toolbarbutton-1:hover {
+        -moz-image-region: rect(0 16px 16px 0);
+    }
+
+    #tabmix-closedTabsButton {
+        list-style-image: url("../images/sidra/toolbarbutton/rollback.svg") !important;
+    }
+
+    #tabmix-closedTabsButton {
+        -moz-image-region: rect(0 16px 16px 0) !important;
+    }
+
+    #tabmix-menu {
+        list-style-image: url("chrome://global/skin/icons/settings.svg") !important;
+    }
+
+    #tabmix-historyUndoWindowMenu {
+        list-style-image: url("../images/sidra/extensions/tabmixplus/closed-windows.svg") !important;
+    }
+
+    #tabmix-historyUndoWindowMenu:hover>.menu-iconic-left,
+    #tabmix-historyUndoWindowMenu>.menu-iconic-left {
+        -moz-image-region: rect(0 16px 16px 0) !important;
+    }
+
+    #tm-openAllLinks {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/open-in-new-tab.svg");
+    }
+
+    #tm-mergeWindowsTab {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/combine.svg");
+    }
+
+    #tm-renameTab {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/rename.svg");
+    }
+
+    #tm-copyTabUrl {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/copy.svg");
+    }
+
+    #tm-duplicateinWin,
+    #tm-duplicateinWinContext,
+    #tm-detachTabContext {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/duplicate-to-new-window.svg");
+    }
+
+    #tm-autoreloadTab_menu {
+        --menuitem-image: url("../images/sidra/update.svg");
+    }
+
+    #tm-autoreloadTab_menu menuitem {
+        --menuitem-image: url();
+    }
+
+    #tm-autoreloadTab_menu [anonid="start_custom_list"] {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/customize.svg");
+    }
+
+    #tm-autoreloadTab_menu [anonid="end_custom_list"]+menuitem[oncommand] {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/enable.svg");
+    }
+
+    #tm-autoreloadTab_menu [type="radio"]:not([check="true"]) {
+        list-style-image: url("../images/sidra/skin/checkbox.svg") !important;
+    }
+
+    #tm-autoreloadTab_menu [anonid="end_custom_list"]+menuitem[oncommand]+menuitem {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/disable.svg");
+    }
+
+    #tm-tabsList {
+        list-style-image: url("../images/sidra/extensions/tabmixplus/tab.svg") !important;
+    }
+
+    #tm-tabsList>.menu-iconic-left {
+        -moz-image-region: rect(0 16px 16px 0) !important;
+    }
+
+    #tm-content-undoCloseTab {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/rollback.svg");
+    }
+
+    :is(#tm-undoCloseList, #tm-content-undoCloseList)>.menu-iconic-left {
+        visibility: hidden;
+    }
+
+
+    :is(#tm-undoCloseList, #tm-content-undoCloseList) {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/closed-tabs.svg");
+    }
+
+    :is(#tm-undoCloseList, #tm-content-undoCloseList)>menupopup>menuitem {
+        --menuitem-image: '';
+    }
+
+    :is(#tm-undoCloseList, #tm-content-undoCloseList)>menupopup>.restoreallitem,
+    .restoreallitem {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/reload.svg");
+    }
+
+    #tm-docShell {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/frame.svg");
+    }
+
+    #tm-docShell menuitem {
+        --menuitem-image: url()
+    }
+
+    #tm-autoreload_menu {
+        --menuitem-image: url("../images/sidra/update.svg");
+    }
+
+    #tm-content-closetab {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/close.svg");
+    }
+
+    #tm-duplicateTabContext,
+    #tm-linkWithhistory {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/clone.svg");
+    }
+
+    #tm-openinverselink {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/open-in-new-window.svg");
+    }
+
+    #tm-defaults {
+        --menuitem-image: url("../images/sidra/skin/reset.svg");
+    }
+
+    #tm-import {
+        --menuitem-image: url("../images/sidra/skin/import.svg");
+    }
+
+    #tm-export {
+        --menuitem-image: url("../images/sidra/skin/export.svg");
+    }
+
+    #lockedClosedTabsList {
+        --menuitem-image: url("../images/sidra/skin/checkbox.svg") !important;
+    }
+
+    #lockedClosedTabsList > .menu-iconic-left {
+        visibility: hidden;
+    }
+
+    #lockedClosedTabsList[image="chrome://tabmixplus/skin/pin.png"] {
+        --menuitem-image: url("../images/sidra/skin/checkbox-checked.svg") !important;
+    }
+
+    #clearClosedTabsList {
+        list-style-image: url("chrome://browser/skin/forget.svg");
+    }
+
+    toolbarbutton#menu_clearClosedWindowsList {
+        list-style-image: url("chrome://browser/skin/forget.svg") !important;
+    }
+
+    /** 修正 Tabmixplus 图片定位 */
+    #main-window:not([customizing]) #tabmix-closedWindowsButton {
+        -moz-image-region: rect(0px 16px 16px 0) !important;
+    }
+
+    /**======== Feedbro 扩展 ========*/
+    #mainmenu {
+        margin: 0;
+    }
+
+    div#menuitems div.menuitem {
+        padding: var(--sidra-panel-item-padding-top) var(--sidra-panel-item-padding-end) var(--sidra-panel-item-padding-bottom) var(--sidra-panel-padding-no-iconic);
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-menuitem-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+    }
+
+    div.divider {
+        margin-top: var(--sidra-separator-padding-top);
+        margin-bottom: var(--sidra-separator-padding-bottom);
+        /*     border-bottom-color: var(--arrowpanel-border-color); */
+    }
+
+    div#articlelist {
+        margin-left: var(--sidra-panel-item-padding-start);
+        margin-right: var(--sidra-panel-item-padding-end);
+        margin-bottom: 0;
+    }
+
+    #reader {
+        --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/rss.svg");
+    }
+
+    #findfeeds {
+        --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/search-glass.svg");
+    }
+
+    #options {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #explorer {
+        --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/news.svg");
+    }
+}

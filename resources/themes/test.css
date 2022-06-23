@@ -1,0 +1,12 @@
+/* ==UserStyle==
+ * @name            测试主题
+ * @description     测试主题切换功能是否生效，生效后请删除此文件
+ * @author          Ryan
+ * @version         0.1.0
+ * @compatibility   Firefox 70
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+==/UserStyle== */
+#main-window {
+  border: 10px solid red;
+  box-sizing: border-box;
+}
