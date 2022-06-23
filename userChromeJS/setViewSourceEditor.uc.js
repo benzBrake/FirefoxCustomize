@@ -12,7 +12,7 @@
     UC.setViewSourceEditor = {
         init: function () {
             let UChrm = Services.dirsvc.get('UChrm', Ci.nsIFile);
-            xPref.set('view_source.editor.path', UChrm.path + "\\resources\\bin\\Notepad2\\Notepad2.exe");
+            xPref.set('view_source.editor.path', UChrm.path + "\\resources\\tools\\Notepad2\\Notepad2.exe");
         },
         destroy: function () {
             xPref.clear('view_source.editor.path');
