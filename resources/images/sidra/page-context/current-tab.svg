@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="context-fill" fill-opacity="context-fill-opacity" stroke-width="1">
+  <path d="M5 2C3.355469 2 2 3.355469 2 5L2 19C2 20.644531 3.355469 22 5 22L19 22C20.644531 22 22 20.644531 22 19L22 5C22 3.355469 20.644531 2 19 2 Z M 5 4L19 4C19.566406 4 20 4.433594 20 5L20 19C20 19.566406 19.566406 20 19 20L5 20C4.433594 20 4 19.566406 4 19L4 5C4 4.433594 4.433594 4 5 4 Z M 6 6L6 8L14.59375 8L6 16.59375L7.40625 18L16 9.40625L16 18L18 18L18 6Z" />
+</svg>
