@@ -6,7 +6,7 @@
  * @compatibility   Firefox 90
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
  * @l10n            { 'userChromeJS.oneline.AppButtonOnLeft': '三道杠按钮在左边' }
- * @note            修改自：https://bbs.kafan.cn/thread-2172443-1-1.html
+ * @note            修改自：https://bbs.kafan.cn/thread-2172443-1-1.html，三道杠在左边的功能有bug，建议使用脚本实现：https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/movablePanelUIButton.uc.js
 ==/UserStyle== */
 .titlebar-spacer[type="pre-tabs"],
 .titlebar-spacer[type="post-tabs"] {
