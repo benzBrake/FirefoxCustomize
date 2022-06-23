@@ -1,0 +1,113 @@
+/* ==UserStyle==
+ * @name            单行主题
+ * @description     来自 卡饭 的单行主题
+ * @author          Ryan
+ * @version         0.1.0
+ * @compatibility   Firefox 90
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+ * @l10n            { 'userChromeJS.oneline.AppButtonOnLeft': '三道杠按钮在左边' }
+ * @note            修改自：https://bbs.kafan.cn/thread-2172443-1-1.html
+==/UserStyle== */
+.titlebar-spacer[type="pre-tabs"],
+.titlebar-spacer[type="post-tabs"] {
+  display: none;
+}
+
+#navigator-toolbox {
+  display: grid;
+  border: none !important;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "navbar titlebar"
+    "PersonalToolbar PersonalToolbar";
+}
+
+#titlebar {
+  grid-area: titlebar;
+  -moz-appearance: none !important;
+  background-color: var(--toolbar-bgcolor);
+  background-image: var(--toolbar-bgimage);
+  background-clip: padding-box;
+  color: var(--toolbar-color);
+  -moz-box-orient: horizontal !important;
+}
+
+#toolbar-menubar {
+  -moz-box-ordinal-group: 3;
+}
+
+#toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+  max-width: 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+}
+
+#main-menubar {
+  -moz-box-flex: 1 !important;
+}
+
+#toolbar-menubar #menubar-items {
+  -moz-box-pack: center !important;
+}
+
+#main-menubar>menu>menupopup {
+  margin-block: calc(0px - var(--menupopup-inner-box-margin) - ((var(--tab-min-height) - 16px - 4px - 5px) / 2)) !important;
+  margin-inline: calc(0px - var(--menupopup-inner-box-margin) + 2px) !important;
+}
+
+#toolbar-menubar #main-menubar>menu {
+  appearance: none !important;
+  background-color: transparent !important;
+  padding-inline: 2px;
+}
+
+#toolbar-menubar #main-menubar>menu>label {
+  -moz-box-flex: 1000 !important;
+  margin: 0 !important;
+  padding: 4px 8px 5px 8px !important;
+  border-radius: var(--toolbarbutton-border-radius) !important;
+}
+
+#toolbar-menubar #main-menubar>menu[_moz-menuactive="true"]>label {
+  background-color: var(--toolbarbutton-hover-background) !important;
+}
+
+#toolbar-menubar #main-menubar>menu[open]>label {
+  background-color: var(--toolbarbutton-active-background) !important;
+}
+
+#nav-bar {
+  grid-area: navbar;
+}
+
+@supports -moz-bool-pref("userChromeJS.oneline.AppButtonOnLeft") {
+  #PanelUI-button {
+    -moz-box-ordinal-group: 0;
+  }
+
+  #PanelUI-menu-button {
+    padding-right: 0;
+  }
+}
+
+#PersonalToolbar {
+  grid-area: PersonalToolbar;
+}
+
+#urlbar-container {
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+#urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
+#searchbar:focus-within {
+  outline: none;
+}
+
+#urlbar:hover,
+.searchbar-textbox:hover {
+  background-color: hsla(240, 5%, 5%, .1) !important;
+}
