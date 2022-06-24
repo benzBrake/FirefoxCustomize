@@ -5,7 +5,7 @@
  * @version         0.1.0
  * @compatibility   Firefox 90
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
- * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.fixed': '侧边栏浮在网页上方', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '主题应用到扩展元素', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏' }
+ * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.fixed': '侧边栏浮在网页上方', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏' }
 ==/UserStyle== */
 
 :root,
@@ -896,7 +896,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     /* 去除当前标签 outline 边框 */
-    #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon:-moz-lwtheme, .tab-background[selected]:-moz-lwtheme {
+    #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon:-moz-lwtheme,
+    .tab-background[selected]:-moz-lwtheme {
         outline: none;
     }
 
@@ -1297,7 +1298,9 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #PlacesToolbar menupopup[placespopup="true"]::part(arrowscrollbox),
     menupopup[context="placesContext"]::part(content),
     #BMB_bookmarksPopup menupopup::part(content),
-    #sidebarMenu-popup::part(content) {
+    #sidebarMenu-popup::part(content),
+    #downloadsPanel-blockedSubview,
+    #downloadsPanel-mainView {
         padding: var(--sidra-panel-padding) !important;
     }
 
@@ -1358,9 +1361,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     .panel-subview-body .subviewbutton>hbox>image,
     .panel-subview-footer-button>.toolbarbutton-icon,
     .widget-overflow-list .toolbarbutton-1:not(.toolbarbutton-combined)>:is(.toolbarbutton-icon, .toolbarbutton-badge-stack),
-    #sidebarMenu-popup toolbarbutton>.toolbarbutton-icon {
-        width: var(--sidra-panel-icon-width);
-        height: var(--sidra-panel-icon-height);
+    #sidebarMenu-popup toolbarbutton>.toolbarbutton-icon,
+    #downloadsHistory>hbox>image {
         margin-top: var(--sidra-panel-item-padding-top);
         margin-bottom: var(--sidra-panel-item-padding-bottom);
         margin-inline-start: var(--sidra-panel-margin-before-icon);
@@ -1373,7 +1375,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     .panel-subview-body .subviewbutton>hbox>label,
     .panel-subview-footer-button>.toolbarbutton-text,
     .widget-overflow-list .toolbarbutton-1:not(.toolbarbutton-combined)>.toolbarbutton-text,
-    #sidebarMenu-popup toolbarbutton>.toolbarbutton-text {
+    #sidebarMenu-popup toolbarbutton>.toolbarbutton-text,
+    #downloadsHistory>hbox>label {
         margin: var(--sidra-panel-text-margin) !important;
         margin-inline: 0;
         margin-block: 0;
@@ -1389,9 +1392,27 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         margin: 0;
     }
 
+    #identity-popup-securityView {
+        min-width: 28em !important;
+        max-width: unset !important;
+    }
+
     /** 分隔符 */
     .PanelUI-subView toolbarseparator,
-    #PlacesToolbar menupopup[context="placesContext"] menuseparator {
+    #PlacesToolbar menupopup[context="placesContext"] menuseparator,
+    .PanelUI-subView menuseparator,
+    #PlacesToolbar menupopup[placespopup="true"] toolbarseparator,
+    #widget-overflow-mainView>toolbarseparator,
+    #widget-overflow-mainView>.panel-subview-body>toolbarseparator,
+    .PanelUI-subView toolbarseparator,
+    #permission-popup-mainView>toolbarseparator,
+    #protections-popup-multiView toolbarseparator,
+    #identity-popup-mainView toolbarseparator,
+    #identity-popup-securityView>toolbarseparator,
+    #editBookmarkPanel toolbarseparator,
+    #downloadsFooterButtons>toolbarseparator,
+    .cui-widget-panelview menuseparator,
+    .cui-widget-panel toolbarseparator {
         margin-top: var(--sidra-separator-padding-top);
         margin-bottom: var(--sidra-separator-padding-bottom);
         margin-left: 0;
@@ -1442,6 +1463,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #protections-popup-mainView-panel-header {
         min-width: unset;
         max-width: unset;
+        padding: var(--sidra-panel-padding) !important;
     }
 
     #identity-popup-security-button {
@@ -1483,11 +1505,59 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     #identity-popup-securityView-body {
         margin-inline: 0;
-        margin-left: var(--sidra-panel-padding-x);
+        /* margin-left: var(--sidra-panel-padding-x); */
     }
 
     .identity-popup-security-connection {
-        background-position-x: calc(var(--sidra-panel-padding-x) + var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon));
+        padding: 0;
+        background-position-x: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon));
+    }
+
+    #protections-popup-info-button {
+        margin-inline-end: 0;
+    }
+
+    #protections-popup-siteNotWorkingView-body,
+    .protections-popup-tp-switch-label-box,
+    .protections-popup-tp-switch-box {
+        min-height: unset;
+    }
+
+    #protections-popup-blocking-section-header,
+    #protections-popup-not-blocking-section-header,
+    #protections-popup-not-found-section-header,
+    #protections-popup-tp-switch-section,
+    .protections-popup-category,
+    .protections-popup-footer-button {
+        padding: 0;
+        margin: 0 !important;
+        padding-inline-start: var(--sidra-panel-item-padding-start);
+        padding-inline-end: var(--sidra-panel-item-padding-end);
+        padding-top: var(--sidra-panel-item-padding-top);
+        padding-bottom: var(--sidra-panel-item-padding-bottom);
+        height: unset !important;
+        min-height: unset !important;
+    }
+
+    :is(#protections-popup-blocking-section-header,
+        #protections-popup-not-blocking-section-header,
+        #protections-popup-not-found-section-header,
+        #protections-popup-tp-switch-section,
+        .protections-popup-category,
+        .protections-popup-footer-button)>image {
+        margin-top: var(--sidra-panel-item-padding-top);
+        margin-bottom: var(--sidra-panel-item-padding-bottom);
+        margin-inline-start: var(--sidra-panel-margin-before-icon);
+        margin-inline-end: var(--sidra-panel-margin-after-icon) !important;
+        width: var(--sidra-panel-icon-width, 16px);
+        height: var(--sidra-panel-icon-height, 16px);
+    }
+
+    #protections-popup-footer-protection-type-label,
+    #protections-popup-trackers-blocked-counter-box {
+        margin: 0;
+        padding: 0;
+        padding-inline-end: var(--sidra-panel-item-padding-end);
     }
 }
 
@@ -3182,7 +3252,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     /** 历史 End */
-    #appMenu-downloads-button {
+    #appMenu-downloads-button,
+    #downloadsHistory {
         list-style-image: url("../images/sidra/panel-popup/downloads.svg");
     }
 
@@ -3387,6 +3458,14 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #identity-popup-clear-sitedata-button>.toolbarbutton-icon {
         width: 16px !important;
         height: 16px !important;
+    }
+
+    #protections-popup-settings-button {
+        list-style-image: url("chrome://browser/skin/controlcenter/tracking-protection.svg");
+    }
+
+    #protections-popup-show-report-button {
+        list-style-image: url("chrome://browser/skin/window.svg");
     }
 
     /** 库 */
@@ -4658,6 +4737,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 }
 
+/**======== 扩展 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.extensions.compact") {
 
     /**======== TabMixPlus 扩展 ========*/
@@ -4883,4 +4963,31 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #explorer {
         --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/news.svg");
     }
+}
+
+/**======== 杂项 ========*/
+#tab-nav-popup {
+    --tooltip-border-radius: 3px !important;
+}
+
+.places-tooltip-box,
+tooltip .uc-tooltip-box {
+    --uc-tooltip-inner-padding: 5px 7px 6px 7px !important;
+}
+
+.places-tooltip description:not([value], [id]):empty,
+.places-tooltip description[value=""]:not([id]):empty {
+    display: none !important;
+}
+
+
+.places-tooltip-box > hbox {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.places-tooltip-title {
+    font-weight: 600;
+    max-height: 2.5em;
+    overflow-y: clip;
 }
