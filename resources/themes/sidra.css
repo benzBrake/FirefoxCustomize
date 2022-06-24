@@ -3118,6 +3118,11 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         list-style-image: url("../images/sidra/skin/checkbox.svg");
     }
 
+    .addon-banner-item,
+    .panel-banner-item {
+        margin: 0 0 var(--sidra-panel-item-padding-bottom);
+    }
+
     #appMenu-fxa-status2,
     #appMenu-zoom-controls2,
     .subviewbutton:not(.subviewbutton-iconic) {
