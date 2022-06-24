@@ -5,11 +5,10 @@
  * @version         0.1.0
  * @compatibility   Firefox 90
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
- * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.fixed': '侧边栏浮在网页上方', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏' }
+ * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏', 'userChromeJS.sidra.other.compact': '其他细节' }
 ==/UserStyle== */
 
-:root,
-window {
+:root {
     --tab-min-height: 32px;
     --findbar-height: 22px;
     --search-box-color: var(--toolbar-field-background-color);
@@ -122,15 +121,24 @@ window {
 
 @media (prefers-color-scheme: dark) {
     :root {
+        --button-primary-color: #fbfbfe;
         --sidra-menu-background: #2b2a33;
         --sidra-menu-separator-color: #5b5b66;
         --sidra-menu-color: #fbfbfe;
+        --sidra-menu-disabled-color: color-mix(in srgb, var(--sidra-menu-color) 70%, black);
         --sidra-menuitem-hover-background: #52525e;
     }
 }
 
 /**======== 紧凑导航栏 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.navbar.compact") {
+    #navigator-toolbox:-moz-lwtheme {
+        background-image: var(--lwt-header-image, var(--lwt-additional-images));
+        background-repeat: var(--lwt-background-tiling);
+        background-position: var(--lwt-background-alignment);
+        background-color: var(--lwt-accent-color, #fff);
+    }
+
     .titlebar-spacer[type="pre-tabs"] {
         display: none;
     }
@@ -611,6 +619,28 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     :root {
         --tab-border-radius: 0 !important;
         --tab-block-margin: 0 !important;
+    }
+
+    @media(-moz-platform: windows-win7) {
+        @media (-moz-windows-default-theme) {
+            #TabsToolbar {
+                color: inherit;
+                background: transparent;
+            }
+        }
+
+        @media (-moz-windows-glass) {
+            #toolbar-menubar {
+                text-shadow: unset;
+            }
+
+            #main-menubar:not(:-moz-window-inactive) {
+                background-color: unset;
+                color: inherit;
+                border-radius: 4px;
+            }
+        }
+
     }
 
     /** 去除标签栏上方的空白 */
@@ -1629,6 +1659,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         margin-bottom: var(--sidra-separator-padding-bottom);
         margin-left: 0;
         margin-right: 0;
+        padding: 0;
     }
 
     /* 有图标菜单边距控制 */
@@ -1678,6 +1709,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     /* 菜单加图标 */
     menupopup:not([class="in-menulist"]) menu:not([type="checkbox"], [type="radio"], [icon], [class*="identity-color"]),
     menupopup:not([class="in-menulist"]) menuitem:not([type="checkbox"], [type="radio"], [icon], [class*="identity-color"]) {
+        appearance: none;
         -moz-context-properties: fill, fill-opacity !important;
         fill: currentColor !important;
         background-size: var(--sidra-menuitem-icon-width) !important;
@@ -1697,8 +1729,13 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     /* Checkbox 强制显示图标 */
     menupopup menu:is([type="checkbox"], [type="radio"])>.menu-iconic-left>.menu-iconic-icon,
     menupopup menuitem:is([type="checkbox"], [type="radio"])>.menu-iconic-left>.menu-iconic-icon {
-        /* display: -moz-box !important; */
-        display: block !important;
+        display: -moz-inline-box !important;
+        /* display: block !important; */
+    }
+
+    menupopup menu:is([type="checkbox"], [type="radio"])>.menu-iconic-left>.menu-iconic-text,
+    menupopup menuitem:is([type="checkbox"], [type="radio"])>.menu-iconic-left>.menu-iconic-text {
+        padding: 0;
     }
 
     /** 菜单右边距 */
@@ -2382,14 +2419,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         --menuitem-image: url("../images/sidra/places-context/order.svg");
     }
 
-    #placesContext_add\:bookmark {
-        --menuitem-image: url("../images/sidra/places-context/bookmark-plus.svg");
-    }
-
-    #placesContext_add\:bookmark>.menu-iconic-left {
-        visibility: hidden;
-    }
-
     #placesContext_new\:bookmark,
     #newbookmark,
     #placesContext_createBookmark {
@@ -2562,6 +2591,10 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     #textZoomPerDomain menuitem {
         --menuitem-image: ''
+    }
+
+    #textZoomPerDomain #textZoomPerDomainChangeDefault {
+        --menuitem-image: url("../images/sidra/page-context/editor.svg");
     }
 
     /*框架*/
@@ -2779,23 +2812,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #vertical-tabs-context-hover-delay,
     #vertical-tabs-context-hover-out-delay {
         --menuitem-image: url("../images/sidra/page-context/clock-checked.svg");
-    }
-
-    /** OneTab */
-    [id^="extension_one-tab_com-menuitem"][label="OneTab"]:not(.menu-iconic) {
-        --menuitem-image: url("../images/sidra/navbar-context/savef-tabs-list.svg");
-    }
-
-    [id^="extension_one-tab_com-menuitem"][label="OneTab"] :is([label="帮助"], [label="Help"]) {
-        --menuitem-image: url("chrome://global/skin/icons/help.svg");
-    }
-
-    [id^="bookmarksorganizer_agenedia_com"] {
-        --menuitem-image: url("../images/sidra/extensions/bookmarksorganizer/book.svg");
-    }
-
-    [id^="bookmarksorganizer_agenedia_com"] .menu-iconic-left {
-        visibility: hidden;
     }
 
     /* */
@@ -3482,100 +3498,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 }
 
-/**======== 修改菜单文本 ========*/
-@supports -moz-bool-pref("userChromeJS.sidra.menupopup.changeLabel") {
-    #contentAreaContextMenu [label="IDM Integration Module"]>.menu-iconic-text {
-        font-size: 0
-    }
-
-    #contentAreaContextMenu [label="IDM Integration Module"]>.menu-iconic-left:after {
-        content: '使用 IDM 下载';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-text {
-        font-size: 0
-    }
-
-    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-left:after {
-        content: '填充密码[Bitwarden]';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #contentAreaContextMenu [label="Enpass"]>.menu-iconic-text {
-        font-size: 0
-    }
-
-    #contentAreaContextMenu [label="Enpass"]>.menu-iconic-left:after {
-        content: '填充密码[Enpass]';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #contentAreaContextMenu [label="RoboForm密码管理器"]>.menu-iconic-text {
-        font-size: 0
-    }
-
-    #contentAreaContextMenu [label="RoboForm密码管理器"]>.menu-iconic-left:after {
-        content: '填充表单[RoboForm]';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #contentAreaContextMenu [label="SafeInCloud Password Manager"]>.menu-iconic-text {
-        font-size: 0
-    }
-
-    #contentAreaContextMenu [label="SafeInCloud Password Manager"]>.menu-iconic-left:after {
-        content: '填充密码[SafeInCloud]';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"]>.menu-iconic-text {
-        font-size: 0;
-    }
-
-    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"]>.menu-iconic-left:after {
-        content: '将该域名加入内容农场黑名单';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-text {
-        font-size: 0
-    }
-
-    #contentAreaContextMenu [label="Bitwarden"]>.menu-iconic-left:after {
-        content: '填充密码[Bitwarden]';
-        display: block;
-        margin: var(--fix-margin-for-text);
-    }
-
-    /* TabMixPlus 菜单 */
-    #context_openANewTab>.menu-iconic-text {
-        font-size: 0;
-    }
-
-    #context_openANewTab>.menu-iconic-left:after {
-        content: '新建标签页';
-        display: block;
-        margin: var(--fix-margin-for-text) !important;
-    }
-
-    #context_reloadTabOptions>.menu-text {
-        visibility: hidden
-    }
-
-    #context_reloadTabOptions:before {
-        content: '重载多个标签';
-        display: block;
-        margin-left: 0px;
-    }
-}
-
 /**======== 按钮图标 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.toolbarbutton.icon.complementary") {
 
@@ -3976,24 +3898,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 }
 
 /**======== 侧边栏 ========*/
-@supports -moz-bool-pref("userChromeJS.sidra.sidebar.fixed") {
-
-    /* 侧边栏显示时不顶开网页 */
-    #sidebar-box {
-        display: flex !important;
-        position: absolute !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: auto !important;
-        z-index: 1 !important;
-        flex-direction: column !important;
-        box-shadow: 0px 0px 8px -4px hsla(240, 4%, 0%, 0.6), 0px 0px 15px 0px hsla(0, 0%, 0%, 0.2) !important;
-        background-image: var(--lwt-header-image, var(--lwt-additional-images));
-        background-repeat: var(--lwt-background-tiling);
-        background-position: var(--lwt-background-alignment);
-    }
-}
 
 @supports -moz-bool-pref("userChromeJS.sidra.sidebar.compact") {
     #browser {
@@ -4009,6 +3913,19 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         right: 0 !important;
     }
 
+    #sidebar-box,
+    #bookmarksPanel {
+        background-image: var(--lwt-header-image, var(--lwt-additional-images));
+        background-repeat: var(--lwt-background-tiling);
+        background-position: var(--lwt-background-alignment);
+    }
+
+    #sidebar-header,
+    #sidebar {
+        background-color: var(--toolbar-bgcolor);
+        background-image: var(--toolbar-bgimage);
+    }
+
     #sidebar-header {
         top: 0 !important;
     }
@@ -4018,10 +3935,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         flex-grow: 1 !important;
     }
 
-    .sidebar-placesTree {
-        background-color: inherit !important;
-    }
-
     /** 侧边栏标题 */
     #sidebar-header {
         padding: 6px !important;
@@ -4029,9 +3942,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         border-bottom: 0px solid transparent !important;
         color: inherit !important;
         font-size: 1.2em !important;
-        background-color: var(--toolbar-bgcolor);
-        background-image: var(--toolbar-bgimage);
-        background-clip: padding-box;
         color: var(--toolbar-color);
     }
 
@@ -4173,6 +4083,9 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     .sidebar-placesTreechildren::-moz-tree-cell-text(primary, dropOn) {
         background: none !important;
     }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.other.compact") {
 
     /**======== 杂项 ========*/
     /* 清理历史记录下拉框 */
@@ -4187,6 +4100,13 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         background-image: var(--lwt-header-image, var(--lwt-additional-images));
         background-repeat: var(--lwt-background-tiling);
         background-position: var(--lwt-background-alignment);
+    }
+
+    @media (-moz-windows-glass) {
+        #browser-bottombox:not([collapsed]) {
+            appearance: none;
+            border-top: 1px solid var(--toolbar-bgcolor) !important;
+        }
     }
 
     #status-bar {
@@ -4962,6 +4882,29 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     #explorer {
         --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/news.svg");
+    }
+
+    /** OneTab */
+    [id^="extension_one-tab_com-menuitem"][label="OneTab"]:not(.menu-iconic) {
+        --menuitem-image: url("../images/sidra/extensions/onetab/savef-tabs-list.svg");
+    }
+
+    [id^="extension_one-tab_com-menuitem"][label="显示OneTab"] {
+        --menuitem-image: url("../images/sidra/extensions/onetab/onetab.svg");
+    }
+
+    [id^="extension_one-tab_com-menuitem"][label="OneTab"] :is([label="帮助"], [label="Help"]) {
+        --menuitem-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    /** Bookmarks Organizer */
+
+    [id^="bookmarksorganizer_agenedia_com"] {
+        --menuitem-image: url("../images/sidra/extensions/bookmarksorganizer/book.svg");
+    }
+
+    [id^="bookmarksorganizer_agenedia_com"] .menu-iconic-left {
+        visibility: hidden;
     }
 }
 

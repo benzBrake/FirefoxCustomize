@@ -30,70 +30,74 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             "restart firefox": "重启 Firefox",
             "theme settings": "主题设置",
             "reload theme": "重新加载主题",
-            "open theme directory": "打开主题目录",
+            "open themes directory": "打开主题目录",
+            "open images directory": "打开图片目录",
             "no theme": "关闭主题",
             "theme item tooltip text": "左键：更换主题\n右键：修改主题",
             "theme options": "主题选项"
         }
     }
-
-    window.cPref = {
-        get: function (prefPath, defaultValue, setDefaultValueIfUndefined) {
-            const sPrefs = Services.prefs;
-            setDefaultValueIfUndefined = setDefaultValueIfUndefined || false;
-            try {
-                switch (sPrefs.getPrefType(prefPath)) {
-                    case 0:
-                        return defaultValue;
-                    case 32:
-                        return sPrefs.getStringPref(prefPath);
-                    case 64:
-                        return sPrefs.getIntPref(prefPath);
-                    case 128:
-                        return sPrefs.getBoolPref(prefPath);
+    if (!window.cPref) {
+        window.cPref = {
+            get: function (prefPath, defaultValue, setDefaultValueIfUndefined) {
+                const sPrefs = Services.prefs;
+                setDefaultValueIfUndefined = setDefaultValueIfUndefined || false;
+                try {
+                    switch (sPrefs.getPrefType(prefPath)) {
+                        case 0:
+                            return defaultValue;
+                        case 32:
+                            return sPrefs.getStringPref(prefPath);
+                        case 64:
+                            return sPrefs.getIntPref(prefPath);
+                        case 128:
+                            return sPrefs.getBoolPref(prefPath);
+                    }
+                } catch (ex) {
+                    if (setDefaultValueIfUndefined && typeof defaultValue !== undefined) this.set(prefPath, defaultValue);
+                    return defaultValue;
                 }
-            } catch (ex) {
-                if (setDefaultValueIfUndefined && typeof defaultValue !== undefined) this.set(prefPath, defaultValue);
-                return defaultValue;
-            }
-            return
-        },
-        getType: function (prefPath) {
-            const sPrefs = Services.prefs;
-            const map = {
-                0: undefined,
-                32: 'string',
-                64: 'int',
-                128: 'boolean'
-            }
-            try {
-                return map[sPrefs.getPrefType(prefPath)];
-            } catch (ex) {
-                return map[0];
-            }
-        },
-        set: function (prefPath, value) {
-            const sPrefs = Services.prefs;
-            switch (typeof value) {
-                case 'string':
-                    return sPrefs.setCharPref(prefPath, value) || value;
-                case 'number':
-                    return sPrefs.setIntPref(prefPath, value) || value;
-                case 'boolean':
-                    return sPrefs.setBoolPref(prefPath, value) || value;
-            }
-            return;
-        },
-        addListener: (a, b) => {
-            let o = (q, w, e) => (b(cPref.get(e), e));
-            Services.prefs.addObserver(a, o);
-            return { pref: a, observer: o }
-        },
-        removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
-    };
+                return
+            },
+            getType: function (prefPath) {
+                const sPrefs = Services.prefs;
+                const map = {
+                    0: undefined,
+                    32: 'string',
+                    64: 'int',
+                    128: 'boolean'
+                }
+                try {
+                    return map[sPrefs.getPrefType(prefPath)];
+                } catch (ex) {
+                    return map[0];
+                }
+            },
+            set: function (prefPath, value) {
+                const sPrefs = Services.prefs;
+                switch (typeof value) {
+                    case 'string':
+                        return sPrefs.setCharPref(prefPath, value) || value;
+                    case 'number':
+                        return sPrefs.setIntPref(prefPath, value) || value;
+                    case 'boolean':
+                        return sPrefs.setBoolPref(prefPath, value) || value;
+                }
+                return;
+            },
+            addListener: (a, b) => {
+                let o = (q, w, e) => (b(cPref.get(e), e));
+                Services.prefs.addObserver(a, o);
+                return { pref: a, observer: o }
+            },
+            removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
+        };
+    }
 
-    window.$CCC = $C;
-    window.$CCL = $L;
+    if (!window.$CCC)
+        window.$CCC = $C;
+    if (!window.$CCL)
+        window.$CCL = $L;
 
 
     const PATH_CONFIG = {
@@ -125,6 +129,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 class: 'reload',
                 oncommand: 'Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);',
             }]
+        }, {
+            label: "userChromeJS",
+            exec: "\\chrome\\userChromeJS"
         }, {}, {
             id: 'CopyCat-ThemeMenu',
             label: $L("theme settings"),
@@ -141,7 +148,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     if (CopyCat.themes) {
                         Object.values(CopyCat.themes).forEach(theme => {
                             let menuitem = $CCC(aDoc, 'menuitem', {
-                                type: 'radio', tooltiptext: $CCL("theme item tooltip text"), skin: true, edit: theme.file.path, value: theme.id, label: theme.name, checked: theme.id === cPref.get(CopyCat.PREF_THEME, "")
+                                type: 'radio', class: 'menuitem-iconic', tooltiptext: $CCL("theme item tooltip text"), skin: true, edit: theme.file.path, value: theme.id, label: theme.name, checked: theme.id === cPref.get(CopyCat.PREF_THEME, "")
                             })
                             if (ins)
                                 ins.parentNode.insertBefore(menuitem, ins)
@@ -226,8 +233,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
                 }
             }, {
-                label: $L("open theme directory"),
+                label: $L("open themes directory"),
                 exec: PATH_CONFIG?.THEME ? (/^(\\)/.test(PATH_CONFIG?.THEME) ? PATH_CONFIG?.THEME : "\\" + PATH_CONFIG?.THEME) : "\\chrome\\resources\\themes"
+            }, {
+                label: $L("open images directory"),
+                exec: "\\chrome\\resources\\images"
             }, {}, {
                 label: $L("no theme"),
                 id: 'copycat-theme-menu-no-theme',
@@ -321,10 +331,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             image: 'data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTcuNjI4OTA2MiAzLjA0Mjk2ODhMNi4yMTQ4NDM4IDQuNDU3MDMxMkwxMS4wOTU3MDMgOS4zMzc4OTA2TDIuNzM2MzI4MSAxNy42OTcyNjZDMS43NTQzMjgxIDE4LjY4MDI2NiAxLjc1MzMyODEgMjAuMjc5NzE5IDIuNzM2MzI4MSAyMS4yNjE3MTlDMy4yMTIzMjgxIDIxLjczODcxOSAzLjg0NjUzMTMgMjIgNC41MTk1MzEyIDIyQzUuMTkyNTMxMyAyMiA1LjgyNDc4MTMgMjEuNzM3NzE5IDYuMzAwNzgxMiAyMS4yNjE3MTlMMTQuNjYwMTU2IDEyLjkwMjM0NEwxOC41ODU5MzggMTYuODI4MTI1TDE5LjI5Mjk2OSAxNi4xMjEwOTRMMjIuODI0MjE5IDEyLjU4OTg0NEwxOC45MTk5MjIgOC42NDQ1MzEyTDIwLjI4MTI1IDcuMjgxMjVMMTkuNjYyMTA5IDYuNjYyMTA5NEwxNy4zMzc4OTEgNC4zMzc4OTA2TDE2LjcxODc1IDMuNzE4NzVMMTUuMzczMDQ3IDUuMDYyNUwxMy4zNzUgMy4wNDI5Njg4TDcuNjI4OTA2MiAzLjA0Mjk2ODggeiBNIDkuNjI4OTA2MiA1LjA0Mjk2ODhMMTIuNTM5MDYyIDUuMDQyOTY4OEwyMC4wMDM5MDYgMTIuNTgyMDMxTDE4LjU4NTkzOCAxNEw5LjYyODkwNjIgNS4wNDI5Njg4IHoiIC8+DQo8L3N2Zz4=',
             popup: [{
                 label: "设置默认浏览器",
-                exec: '\\chrome\\resources\\bin\\RegisterFirefoxPortable.exe'
+                tool: '\\RegisterFirefoxPortable.exe'
             }, {
                 label: '配置优化',
-                exec: '\\chrome\\resources\\bin\\speedyfox.exe',
+                tool: '\\speedyfox.exe',
             }, {
                 label: "复制扩展清单",
                 tooltiptext: "左键：名称 + 相关网页\nShift+左键：Markdown 表格",
@@ -380,6 +390,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }, {}, {
             label: '关于 CopyCat',
             where: 'tab',
+            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=',
             url: 'https://kkp.disk.st/firefox-ryan-personal-customization.html'
         }]
     }
@@ -637,6 +648,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (obj.class) obj.class.split(' ').forEach(c => classList.push(c));
             classList.push(tagName + '-iconic');
 
+            if (obj.tool) {
+                obj.exec = this.handleRelativePath(obj.tool, this.toolPath.path);
+                delete obj.tool;
+            }
             if (obj.exec) {
                 obj.exec = this.handleRelativePath(obj.exec);
             }
@@ -845,7 +860,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 delete this.FUNCTION_LIST[eventId];
             }
         },
-        handleRelativePath: function (path) {
+        handleRelativePath: function (path, parentPath) {
             if (path) {
                 let handled = false;
                 Object.keys(OS.Constants.Path).forEach(key => {
@@ -857,8 +872,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (!handled) {
                     path = path.replace(/\//g, '\\').toLocaleLowerCase();
                     if (/^(\\)/.test(path)) {
-                        var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
-                        path = ffdir + path;
+                        if (!parentPath) {
+                            parentPath = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
+                        }
+                        path = parentPath + path;
+                        path = path.replace("\\\\", "\\");
                     }
                 }
                 return path;
@@ -1221,7 +1239,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             license: (header.match(/\* @license\s+(.+)\s*$/im) || def)[1],
             licenseURL: (header.match(/\* @licenseURL\s+(.+)\s*$/im) || def)[1],
             lang: lang,
-            // url: Services.io.newURI(getURLSpecFromFile(aFile))
+            // url: Services.io.newURI(getURLSpecFromFile(aFile)) 使用这种方式 @supports -moz-bool-pref 不生效
         }
     }
 
@@ -1275,4 +1293,4 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik03MDYuNTQ1IDEyOC4wMTlhNjMuOTg1IDYzLjk4NSAwIDAgMSA0OC41OTkgMjIuMzYzbDE3Mi44MzUgMjAxLjc2My02My45OTYgMTI3Ljg1Ny00MS4zNzQtNDEuMzcxYy02LjI1LTYuMjQ4LTE0LjQzNy05LjM3Mi0yMi42MjQtOS4zNzItOC4xODggMC0xNi4zNzQgMy4xMjQtMjIuNjI0IDkuMzcyYTMyLjAwNiAzMi4wMDYgMCAwIDAtOS4zNzUgMjIuNjI2djQwMi43MjdjMCAxNy42NzItMTQuMzI3IDMxLjk5OC0zMS45OTkgMzEuOTk4SDMyMC4wMWMtMTcuNjcxIDAtMzEuOTk4LTE0LjMyNi0zMS45OTgtMzEuOTk4VjQ2MS4yNTZjMC0xNy42NzItMTQuMzI4LTMxLjk5OC0zMi0zMS45OThhMzEuOTk3IDMxLjk5NyAwIDAgMC0yMi42MjQgOS4zNzJsLTQxLjM3MyA0MS4zNzFMOTYuMDIgMzUyLjAwN2wxNzIuODM1LTIwMS42NGE2My45ODcgNjMuOTg3IDAgMCAxIDQ4LjU5Mi0yMi4zNDhoNi41MDdhOTUuOTcgOTUuOTcgMCAwIDEgNTAuMTMgMTQuMTMyQzQyOC4zNyAxNzUuMzk0IDQ3NC4zMzggMTkyLjAxNSA1MTIgMTkyLjAxNXM4My42MjktMTYuNjIxIDEzNy45MTUtNDkuODY0YTk1Ljk2OCA5NS45NjggMCAwIDEgNTAuMTMtMTQuMTMyaDYuNW0wLTYzLjk5OGgtNi41YTE1OS44OSAxNTkuODkgMCAwIDAtODMuNTU3IDIzLjU1OEM1NjEuOTA0IDEyMSA1MjkuNTM3IDEyOC4wMTggNTEyIDEyOC4wMThjLTE3LjUzOCAwLTQ5LjkwNC03LjAxNy0xMDQuNDk1LTQwLjQ0NmExNTkuODgxIDE1OS44ODEgMCAwIDAtODMuNTUtMjMuNTVoLTYuNTA4YTEyNy44MjMgMTI3LjgyMyAwIDAgMC05Ny4xODIgNDQuNzAxTDQ3LjQyOCAzMTAuMzZjLTE5LjUyMiAyMi43NzQtMjAuNiA1Ni4wNS0yLjYxIDgwLjA0N0wxNDAuODE1IDUxOC40YTYzLjk5OCA2My45OTggMCAwIDAgODMuMTk5IDE3LjAyNXYzMjguNTU4YzAgNTIuOTMyIDQzLjA2IDk1Ljk5NSA5NS45OTUgOTUuOTk1aDQxNS45OGM1Mi45MzUgMCA5NS45OTYtNDMuMDYzIDk1Ljk5Ni05NS45OTVWNTM1LjQyNWE2NC4wMjggNjQuMDI4IDAgMCAwIDQyLjI0IDcuNzQ5IDY0LjAxNCA2NC4wMTQgMCAwIDAgNDYuOTktMzQuNTI4bDYzLjk5Ny0xMjcuODU3YzExLjUyMi0yMy4wMjggOC4xMjUtNTAuNzIyLTguNjMzLTcwLjI3OUw4MDMuNzQ0IDEwOC43NDdjLTI0LjMzNi0yOC40MjItNTkuNzctNDQuNzI2LTk3LjItNDQuNzI2eiIgcC1pZD0iMTI4MiI+PC9wYXRoPjwvc3ZnPg==) !important;
     }
 }
-`, true);
+`, false);
