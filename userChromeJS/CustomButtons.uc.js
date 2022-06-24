@@ -1,0 +1,979 @@
+// ==UserScript==
+// @name            CustomButtons.uc.js
+// @description     添加多个自定义按钮，截图、UndoCloseTab、证书管理器、放大缩小、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
+// @author          Ryan
+// @version         0.1.2
+// @compatibility   Firefox 70 +
+// @startup         window.CustomButtons.init();
+// @shutdown        window.CustomButtons.destroy();
+// @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            从 CopyCat.uc.js 修改而来
+// ==/UserScript==
+location.href.startsWith('chrome://browser/content/browser.x') && (function (css, debug) {
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+    ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
+    ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+    if (window.CustomButtons) {
+        window.CustomButtons.destroy();
+        delete window.CustomButtons;
+    }
+
+    const TOOLS_PATH = "chrome\\resources\\tools"; // 工具路径
+
+    const LANG = {
+        'zh-CN': {
+            "take snapshot": "截图",
+            "take snapshot tooltip": "左键：截图\n右键：截图菜单",
+            "hide firefox to take snapshot": "隐藏火狐截图",
+            "scroll snapshot": "滚动截图工具",
+            "color picker": "颜色拾取工具",
+            "screen to gif": "录制动态图片",
+            "faststone capture": "完整截图工具",
+            "undo close tab": "撤销关闭标签页",
+            "undo close tab tooltip": "左键：撤销关闭标签页\n右键：已关闭标签页列表",
+            "reopen all tabs": "重新打开所有标签页",
+            "zoom control": "缩放控制",
+            "zoom control tooltip": "'左或滚轮↑：放大 | 按下滚轮：复位 | 右或滚轮↓：缩小'",
+            "certificate manager": "证书管理器",
+            "certificate manager tooltip": "证书管理器",
+            "clean history": "清除历史记录",
+            "clean history toolip": "清除最近的历史记录",
+            "about config": "高级首选项",
+            "synced tabs": "受同步的标签页",
+            "downloads history": "我的足迹：下载",
+            "bookmarks manager": "我的足迹：书签"
+        }
+    }
+
+    if (!window.cPref) {
+        window.cPref = {
+            get: function (prefPath, defaultValue, setDefaultValueIfUndefined) {
+                const sPrefs = Services.prefs;
+                setDefaultValueIfUndefined = setDefaultValueIfUndefined || false;
+                try {
+                    switch (sPrefs.getPrefType(prefPath)) {
+                        case 0:
+                            return defaultValue;
+                        case 32:
+                            return sPrefs.getStringPref(prefPath);
+                        case 64:
+                            return sPrefs.getIntPref(prefPath);
+                        case 128:
+                            return sPrefs.getBoolPref(prefPath);
+                    }
+                } catch (ex) {
+                    if (setDefaultValueIfUndefined && typeof defaultValue !== undefined) this.set(prefPath, defaultValue);
+                    return defaultValue;
+                }
+                return
+            },
+            getType: function (prefPath) {
+                const sPrefs = Services.prefs;
+                const map = {
+                    0: undefined,
+                    32: 'string',
+                    64: 'int',
+                    128: 'boolean'
+                }
+                try {
+                    return map[sPrefs.getPrefType(prefPath)];
+                } catch (ex) {
+                    return map[0];
+                }
+            },
+            set: function (prefPath, value) {
+                const sPrefs = Services.prefs;
+                switch (typeof value) {
+                    case 'string':
+                        return sPrefs.setCharPref(prefPath, value) || value;
+                    case 'number':
+                        return sPrefs.setIntPref(prefPath, value) || value;
+                    case 'boolean':
+                        return sPrefs.setBoolPref(prefPath, value) || value;
+                }
+                return;
+            },
+            addListener: (a, b) => {
+                let o = (q, w, e) => (b(cPref.get(e), e));
+                Services.prefs.addObserver(a, o);
+                return { pref: a, observer: o }
+            },
+            removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
+        };
+    }
+
+    const BTN_CONFIG = [
+        {
+            id: 'CB-SnapShot',
+            label: $L("take snapshot"),
+            tooltiptext: $L("take snapshot tooltip"),
+            type: "contextmenu",
+            tool: "\\SnapShot.exe",
+            image: "data:image/svg+xml;base64,PHN2ZyB0PSIxNjQ2Nzg2NTg2NTc4IiBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjE0MjMiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNODg5LjQ3MiAxNDguMjY2NjY3YTQyLjY2NjY2NyA0Mi42NjY2NjcgMCAwIDEtMTMuNTY4IDU4Ljc5NDY2NmwtMjgyLjg4IDE3Ni43MjUzMzQgMTcxLjMwNjY2NyAxMDcuMDA4IDIuMjYxMzMzIDAuMDg1MzMzYTIwMi42NjY2NjcgMjAyLjY2NjY2NyAwIDEgMS0xMTUuNDEzMzMzIDI5Ljc4MTMzM2wtMTM4LjYyNC04Ni41NzA2NjYtMTM5LjE3ODY2NyA4Ni45MTJhMjAyLjY2NjY2NyAyMDIuNjY2NjY3IDAgMSAxLTExMi41NTQ2NjctMzAuMjkzMzM0bDE3MS4yMjEzMzQtMTA2LjkyMjY2Ni0yODIuNzk0NjY3LTE3Ni43MjUzMzRhNDIuNjY2NjY3IDQyLjY2NjY2NyAwIDAgMS0xNS45NTczMzMtNTQuNGwyLjM4OTMzMy00LjM5NDY2NmE0Mi42NjY2NjcgNDIuNjY2NjY3IDAgMCAxIDU4Ljc5NDY2Ny0xMy41NjhsMzE4LjA4IDE5OC43ODQgMzE4LjEyMjY2Ni0xOTguNzg0YTQyLjY2NjY2NyA0Mi42NjY2NjcgMCAwIDEgNTguNzk0NjY3IDEzLjU2OHpNMjY2LjY2NjY2NyA1NzZhMTE3LjMzMzMzMyAxMTcuMzMzMzMzIDAgMSAwIDAgMjM0LjY2NjY2NyAxMTcuMzMzMzMzIDExNy4zMzMzMzMgMCAwIDAgMC0yMzQuNjY2NjY3eiBtNDkwLjY2NjY2NiAwYTExNy4zMzMzMzMgMTE3LjMzMzMzMyAwIDEgMCAwIDIzNC42NjY2NjcgMTE3LjMzMzMzMyAxMTcuMzMzMzMzIDAgMCAwIDAtMjM0LjY2NjY2N3oiIHAtaWQ9IjE0MjQiPjwvcGF0aD48L3N2Zz4=",
+            popup: [{
+                label: $L("hide firefox to take snapshot"),
+                precommand: 'window.minimize();',
+                tool: "\\SnapShot.exe",
+                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy4zNjcgNC43OCBMIDMuODM3IDQuNzggTCAzLjgzNyA4LjI5NyBMIDUuNjAyIDguMjk3IEwgNS42MDIgNi41MzggTCA3LjM2NyA2LjUzOCBNIDE2LjE5MSA4LjI5NyBMIDE0LjQyNiA4LjI5NyBMIDE0LjQyNiAxMC4wNTUgTCAxMi42NiAxMC4wNTUgTCAxMi42NiAxMS44MTQgTCAxNi4xOTEgMTEuODE0IE0gMTcuOTU1IDEzLjU3MiBMIDIuMDczIDEzLjU3MiBMIDIuMDczIDMuMDIxIEwgMTcuOTU1IDMuMDIxIE0gMTcuOTU1IDEuMjYzIEwgMi4wNzMgMS4yNjMgQyAxLjA5MyAxLjI2MyAwLjMwOCAyLjA0NiAwLjMwOCAzLjAyMSBMIDAuMzA4IDEzLjU3MiBDIDAuMzA4IDE0LjU0MyAxLjA5NyAxNS4zMzIgMi4wNzMgMTUuMzMyIEwgOC4yNDkgMTUuMzMyIEwgOC4yNDkgMTcuMDkgTCA2LjQ4NCAxNy4wOSBMIDYuNDg0IDE4Ljg0OSBMIDEzLjU0NCAxOC44NDkgTCAxMy41NDQgMTcuMDkgTCAxMS43NzggMTcuMDkgTCAxMS43NzggMTUuMzMyIEwgMTcuOTU1IDE1LjMzMiBDIDE4LjkzIDE1LjMzMiAxOS43MiAxNC41NDMgMTkuNzIgMTMuNTcyIEwgMTkuNzIgMy4wMjEgQyAxOS43MiAyLjA1IDE4LjkzIDEuMjYzIDE3Ljk1NSAxLjI2MyIgc3R5bGU9IiIvPgo8L3N2Zz4='
+            }, {
+                label: $L("scroll snapshot"),
+                oncommand: 'ScreenshotsUtils.notify(window, "shortcut");',
+                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhNWE1YSIgc3Ryb2tlLXdpZHRoPSI0IiB0cmFuc2Zvcm09Im1hdHJpeCgwLjQ2MjQ2LCAwLCAwLCAwLjQ2MTE2NiwgLTEuMjMyMjc5LCAtMS4wMTUzNjIpIiBzdHlsZT0iIj4KICAgIDxwYXRoIGQ9Ik0xNiA2SDhhMiAyIDAgMCAwLTIgMnY4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0eWxlPSJzdHJva2U6IHJnYigwLCAwLCAwKTsiLz4KICAgIDxwYXRoIGQ9Ik0xNiA0Mkg4YTIgMiAwIDAgMS0yLTJ2LTgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3R5bGU9InN0cm9rZTogcmdiKDAsIDAsIDApOyIvPgogICAgPHBhdGggZD0iTTMyIDQyaDhhMiAyIDAgMCAwIDItMnYtOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHlsZT0ic3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgICA8cGF0aCBkPSJNMzIgNmg4YTIgMiAwIDAgMSAyIDJ2OCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHlsZT0ic3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgICA8cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcng9IjIiIHN0eWxlPSJzdHJva2U6IHJnYigwLCAwLCAwKTsiLz4KICA8L2c+Cjwvc3ZnPg=='
+            }, {
+                label: $L("color picker"),
+                tool: '\\Colors\\Colors.exe',
+                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxnIGZpbGw9Im5vbmUiIHRyYW5zZm9ybT0ibWF0cml4KDAuOTAxOTYxLCAwLCAwLCAwLjkwMTk2MSwgLTAuOTk3MzMzLCAtMC43OTcyNzQpIiBzdHlsZT0iIj4KICAgIDxwYXRoIGQ9Ik0xMiAyMmE4IDggMCAwIDEtOC04YzAtMy41MDIgMi43MS02LjMwMyA1LjA5My04Ljg3TDEyIDJsMi45MDcgMy4xM0MxNy4yOSA3LjY5OCAyMCAxMC40OTkgMjAgMTRhOCA4IDAgMCAxLTggOHoiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHlsZT0ic3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgPC9nPgo8L3N2Zz4='
+            }, {}, {
+                label: $L("screen to gif"),
+                tool: "\\ScreenToGif.exe",
+                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhNWE1YSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHRyYW5zZm9ybT0ibWF0cml4KDAuODEwOTI0LCAwLCAwLCAwLjgwMDE4NywgMC4zMDcyMTEsIDAuNDcwNDkyKSIgc3R5bGU9IiI+CiAgICA8cGF0aCBkPSJNMjMgN2wtNyA1bDcgNVY3eiIgc3R5bGU9InN0cm9rZTogcmdiKDAsIDAsIDApOyIvPgogICAgPHJlY3QgeD0iMSIgeT0iNSIgd2lkdGg9IjE1IiBoZWlnaHQ9IjE0IiByeD0iMiIgcnk9IjIiIHN0eWxlPSJzdHJva2U6IHJnYigwLCAwLCAwKTsiLz4KICA8L2c+Cjwvc3ZnPg=='
+            }, {
+                label: $L("faststone capture"),
+                tool: "\\FSCapture\\FSCapture.exe",
+                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxnIHN0cm9rZT0iIzVhNWE1YSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgdHJhbnNmb3JtPSJtYXRyaXgoMC40NjAyMzIsIDAsIDAsIDAuNDYwMjMyLCAtMS4xNzY3MjMsIC0wLjgyNjA3OCkiIHN0eWxlPSIiPgogICAgPHBhdGggZD0iTTYgMTBoMzJ2MzIiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDQuMTA2MjFweDsgc3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgICA8cGF0aCBkPSJNMTAuNTQ4IDM3LjQ1Mkw0Mi4zODUgNS42MTUiIHN0eWxlPSJzdHJva2Utd2lkdGg6IDQuMTA2MjFweDsgc3Ryb2tlOiByZ2IoMCwgMCwgMCk7Ii8+CiAgICA8cGF0aCBkPSJNNDIgMzhIMTBWNiIgc3R5bGU9InN0cm9rZS13aWR0aDogNC4xMDYyMXB4OyBzdHJva2U6IHJnYigwLCAwLCAwKTsiLz4KICA8L2c+Cjwvc3ZnPg=='
+            }, {
+                label: $L("microsoft paint"),
+                tool: "\\mspaint.exe",
+                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTguMzY3IDkuOTIyIEMgMTguMzY3IDkuNjc0IDE4LjI2OSA5LjQzOCAxOC4wOTQgOS4yNjMgTCA5Ljc1MiAwLjkyMSBDIDkuMzg5IDAuNTU3IDguNzk5IDAuNTU3IDguNDM1IDAuOTIxIEwgNS41NDMgMy44MTIgTCAzLjcyOCAxLjk5NyBDIDMuMjIgMS40OSAyLjM1NSAxLjcyMiAyLjE2OSAyLjQxNSBDIDIuMDgzIDIuNzM2IDIuMTc1IDMuMDc5IDIuNDExIDMuMzE0IEwgNC4yMjYgNS4xMjkgTCAwLjk3MSA4LjM4NSBDIDAuMTI0IDkuMjM0IDAuMTI0IDEwLjYwOSAwLjk3MSAxMS40NTggTCA3LjU1OCAxOC4wNDQgQyA4LjQwNiAxOC44OTMgOS43ODIgMTguODkzIDEwLjYzMSAxOC4wNDQgTCAxOC4wOTQgMTAuNTggQyAxOC4yNjkgMTAuNDA1IDE4LjM2NyAxMC4xNjkgMTguMzY3IDkuOTIyIFogTSA5LjMxNCAxNi43MjcgQyA5LjE5MiAxNi44NDggOC45OTYgMTYuODQ4IDguODc1IDE2LjcyNyBMIDIuMjg4IDEwLjE0MSBDIDIuMTY3IDEwLjAyIDIuMTY3IDkuODIzIDIuMjg4IDkuNzAyIEwgNS41NDMgNi40NDcgTCA3LjIzNCA4LjEzNyBDIDYuMzA4IDEwLjA3OCA3LjgzMiAxMi4yOTQgOS45NzcgMTIuMTI1IEMgMTAuNjM5IDEyLjA3MiAxMS4yNjEgMTEuNzg2IDExLjczMSAxMS4zMTcgQyAxMy4yNTIgOS43OTYgMTIuNTU2IDcuMTk5IDEwLjQ3OCA2LjY0MiBDIDkuODM1IDYuNDcgOS4xNTIgNi41MzMgOC41NTEgNi44MiBMIDYuODYxIDUuMTI5IEwgOS4wOTMgMi44OTcgTCAxNi4xMTkgOS45MjIgWiBNIDkuNzU1IDguNDEgQyAxMC40NzIgOC40MSAxMC45MTkgOS4xODcgMTAuNTYgOS44MDcgQyAxMC4yMDEgMTAuNDI3IDkuMzA1IDEwLjQyNiA4Ljk0OCA5LjgwNiBDIDguNzM3IDkuNDQxIDguNzk5IDguOTggOS4wOTcgOC42ODMgQyA5LjI3MSA4LjUwNyA5LjUwOCA4LjQwOSA5Ljc1NSA4LjQwOSBaIE0gMTguMTc1IDEzLjM0IEMgMTcuODExIDEyLjk3NSAxNy4yMjIgMTIuOTc1IDE2Ljg1NyAxMy4zNCBDIDE2LjY3MSAxMy41MjYgMTUuMDMzIDE1LjIxOSAxNS4wMzMgMTcuMTAyIEMgMTUuMDMzIDE5LjAxNCAxNy4xMDIgMjAuMjA5IDE4Ljc1OCAxOS4yNTMgQyAxOS41MjYgMTguODA5IDIwIDE3Ljk5IDIwIDE3LjEwMiBDIDIwIDE1LjIxOSAxOC4zNjIgMTMuNTI2IDE4LjE3NSAxMy4zNCBaIE0gMTcuNTE2IDE3LjcyMyBDIDE3LjE3NCAxNy43MjMgMTYuODk1IDE3LjQ0NSAxNi44OTUgMTcuMTAyIEMgMTYuODk1IDE2LjU2NSAxNy4xOTMgMTUuOTY1IDE3LjUxNSAxNS40ODEgQyAxNy44MzcgMTUuOTY1IDE4LjEzNyAxNi41NjcgMTguMTM3IDE3LjEwMiBDIDE4LjEzNiAxNy40NDUgMTcuODU5IDE3LjcyMyAxNy41MTYgMTcuNzIzIFoiIHN0eWxlPSIiLz4KPC9zdmc+'
+            }]
+        }, {
+            id: 'CB-undoCloseTab',
+            label: $L("undo close tab"),
+            tooltiptext: $L("undo close tab tooltip"),
+            defaultArea: CustomizableUI.AREA_TABSTRIP,
+            oncommand: "undoCloseTab();",
+            image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNNzkzIDI0MkgzNjZ2LTc0YzAtNi43LTcuNy0xMC40LTEyLjktNi4zbC0xNDIgMTEyYTggOCAwIDAgMCAwIDEyLjZsMTQyIDExMmM1LjIgNC4xIDEyLjkgMC40IDEyLjktNi4zdi03NGg0MTV2NDcwSDE3NWMtNC40IDAtOCAzLjYtOCA4djYwYzAgNC40IDMuNiA4IDggOGg2MThjMzUuMyAwIDY0LTI4LjcgNjQtNjRWMzA2YzAtMzUuMy0yOC43LTY0LTY0LTY0eiI+PC9wYXRoPjwvc3ZnPg==",
+            onclick: function (event) {
+                if (event.button === 1) {
+                    try {
+                        SessionStore.restoreLastSession();
+                    } catch (e) { }
+                    return;
+                }
+                if (event.button !== 2) return;
+                const doc = (event.view && event.view.document) || document;
+                const menu = doc.getElementById(event.target.getAttribute('contextmenu'));
+                menu.querySelectorAll('.undo-item').forEach(i => i.remove());
+                let data = SessionStore.getClosedTabData(window);
+                if (typeof (data) === "string") {
+                    data = JSON.parse(data);
+                }
+                const tabLength = data.length;
+
+                for (let i = 0; i < tabLength; i++) {
+                    const item = data[i];
+                    const m = CustomButtons.createMenu({
+                        label: item.title,
+                        class: 'undo-item bookmark-item menuitem-with-favicon',
+                        value: i,
+                        oncommand: 'event.stopPropagation();event.preventDefault();undoCloseTab(event.originalTarget.getAttribute("value"));',
+                    }, doc);
+
+                    const state = item.state;
+                    let idx = state.index;
+                    if (idx == 0)
+                        idx = state.entries.length;
+                    if (--idx >= 0 && state.entries[idx])
+                        m.setAttribute("targetURI", state.entries[idx].url);
+
+                    if (typeof item.image === 'string') m.setAttribute('image', item.image);
+                    menu.insertBefore(m, doc.getElementById('CB-undoCloseTab-menuseparator'));
+                }
+            },
+            type: "contextmenu",
+            popup: [{
+                id: 'CB-undoCloseTab-menuseparator'
+            }, {
+                label: $L("reopen all tabs"),
+                image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDQ4IDQ4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0IDZDMTQuNzcxOTQ4IDYgNy4xNTEyOTY5IDEyLjk4NjUwOSA2LjEyNjk1MzEgMjEuOTQ1MzEyTDQuMTIxMDkzOCAxOS45Mzk0NTMgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMy4wNDQ5MjE5IDE5LjQ4NDM3NSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyIDIyLjA2MDU0N0w2LjUgMjYuNTYwNTQ3IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDguNjIxMDkzOCAyNi41NjA1NDdMMTMuMTIxMDk0IDIyLjA2MDU0NyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCAxMSAxOS45Mzk0NTNMOS4xODU1NDY5IDIxLjc1MzkwNkMxMC4yNjc3MzkgMTQuNTI1MzA5IDE2LjQ2MzM1IDkgMjQgOUMzMi4zMDI0IDkgMzkgMTUuNjk3NiAzOSAyNEMzOSAzMi4zMDI0IDMyLjMwMjQgMzkgMjQgMzlDMTguMTU4MzM3IDM5IDEzLjExNjYzNSAzNS42NzIwMDEgMTAuNjM0NzY2IDMwLjgxNjQwNiBBIDEuNTAwNjc2NiAxLjUwMDY3NjYgMCAwIDAgNy45NjI4OTA2IDMyLjE4MzU5NEMxMC45NDMwMjEgMzguMDEzOTk5IDE3LjAxNzY2MyA0MiAyNCA0MkMzMy45MjM2IDQyIDQyIDMzLjkyMzYgNDIgMjRDNDIgMTQuMDc2NCAzMy45MjM2IDYgMjQgNiB6IE0gMjQgMTlDMjIuNDU4MzM0IDE5IDIxLjExMjE0OCAxOS42MzIxMzMgMjAuMjUzOTA2IDIwLjU5NzY1NkMxOS4zOTU2NjQgMjEuNTYzMTc5IDE5IDIyLjc5MTY2NyAxOSAyNEMxOSAyNS4yMDgzMzMgMTkuMzk1NjY0IDI2LjQzNjgyMSAyMC4yNTM5MDYgMjcuNDAyMzQ0QzIxLjExMjE0OCAyOC4zNjc4NjcgMjIuNDU4MzM0IDI5IDI0IDI5QzI1LjU0MTY2NiAyOSAyNi44ODc4NTIgMjguMzY3ODY3IDI3Ljc0NjA5NCAyNy40MDIzNDRDMjguNjA0MzM2IDI2LjQzNjgyMSAyOSAyNS4yMDgzMzMgMjkgMjRDMjkgMjIuNzkxNjY3IDI4LjYwNDMzNiAyMS41NjMxNzkgMjcuNzQ2MDk0IDIwLjU5NzY1NkMyNi44ODc4NTIgMTkuNjMyMTMzIDI1LjU0MTY2NiAxOSAyNCAxOSB6IE0gMjQgMjJDMjQuNzkxNjY2IDIyIDI1LjE5NTQ4MiAyMi4yNDI4NjcgMjUuNTAzOTA2IDIyLjU4OTg0NEMyNS44MTIzMyAyMi45MzY4MjEgMjYgMjMuNDU4MzMzIDI2IDI0QzI2IDI0LjU0MTY2NyAyNS44MTIzMyAyNS4wNjMxNzkgMjUuNTAzOTA2IDI1LjQxMDE1NkMyNS4xOTU0ODIgMjUuNzU3MTMzIDI0Ljc5MTY2NiAyNiAyNCAyNkMyMy4yMDgzMzQgMjYgMjIuODA0NTE4IDI1Ljc1NzEzMyAyMi40OTYwOTQgMjUuNDEwMTU2QzIyLjE4NzY3IDI1LjA2MzE3OSAyMiAyNC41NDE2NjcgMjIgMjRDMjIgMjMuNDU4MzMzIDIyLjE4NzY3IDIyLjkzNjgyMSAyMi40OTYwOTQgMjIuNTg5ODQ0QzIyLjgwNDUxOCAyMi4yNDI4NjcgMjMuMjA4MzM0IDIyIDI0IDIyIHoiIC8+PC9zdmc+",
+                onclick: function (event) {
+                    this.parentNode.querySelectorAll('.undo-item').forEach(m => m.doCommand());
+                }
+            }]
+        }, {
+            id: 'zoom-control-ToolBarbutton',
+            label: $L("zoom control"),
+            tooltiptext: $L("zoom control tooltip"),
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTY0MS40MDggMTYwYTMzNC40OTYgMzM0LjQ5NiAwIDAgMC0xOTcuMjgtNjRjLTE4NS42IDAtMzM2IDE1MC40MzItMzM2IDMzNnMxNTAuNCAzMzYgMzM2IDMzNmMxNjkuMjggMCAzMDkuMzEyLTEyNS4xODQgMzMyLjU3Ni0yODhoLTMyLjM1MmEzMDQgMzA0IDAgMSAxLTMwMC4yMjQtMzUyYzUyLjA5NiAwIDk2IDguODk2IDEzOC44OCAzMmg1OC40eiBtMzguNDk2IDUxMy45MmE0OCA0OCAwIDAgMCAwIDY3LjkwNGwxNTguNCAxNTguNGE0OCA0OCAwIDAgMCA2Ny44NzItNjcuOTA0bC0xNTguNC0xNTguNGE0OCA0OCAwIDAgMC02Ny44NzIgMHpNNzY0LjEyOCAyMDhoLTExMnYzMmgxMTJWMzUyaDMyVjI0MGgxMTJ2LTMyaC0xMTJWOTZoLTMydjExMnogbS0xMTIgMTkydjMyaDI1NnYtMzJoLTI1NnogbS0xNzMuNTM2LTE3My4xNTJsMjIuNzUyLTI3Ljk2OGEyNDAgMjQwIDAgMCAwLTI3My43OTIgMzM2LjY3MmwyMi43Mi0yNy45NjhhMjA4IDIwOCAwIDAgMSAyMjguMzItMjgwLjczNnoiPjwvcGF0aD48L3N2Zz4=",
+            oncontextmenu: 'return(false);',
+            onclick: 'if (event.button == 0) { \
+        FullZoom.enlarge(); \
+    }; \
+    if (event.button == 1) { \
+        FullZoom.reset(); \
+    }; \
+    if (event.button == 2) { \
+        FullZoom.reduce(); \
+    };',
+            onwheel: 'if (event.deltaY < 0) { \
+        FullZoom.enlarge(); \
+    } else { \
+        FullZoom.reduce(); \
+    };'
+        }, {
+            id: 'context-viewcert-ToolBarButton',
+            label: $L("certificate manager"),
+            tooltiptext: $L("certificate manager tooltip"),
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI1IDJDMTIuMjk2ODc1IDIgMiAxMi4yOTY4NzUgMiAyNUMyIDM3LjcwMzEyNSAxMi4yOTY4NzUgNDggMjUgNDhDMzcuNzAzMTI1IDQ4IDQ4IDM3LjcwMzEyNSA0OCAyNUM0OCAxMi4yOTY4NzUgMzcuNzAzMTI1IDIgMjUgMiBaIE0gMjUgNEMzNi41NzgxMjUgNCA0NiAxMy40MjE4NzUgNDYgMjVDNDYgMzYuNTc4MTI1IDM2LjU3ODEyNSA0NiAyNSA0NkMxMy40MjE4NzUgNDYgNCAzNi41NzgxMjUgNCAyNUM0IDEzLjQyMTg3NSAxMy40MjE4NzUgNCAyNSA0IFogTSAyNSA4QzIwLjAzNTE1NiA4IDE2IDEyLjAzNTE1NiAxNiAxN0wxNiAyMUwyMiAyMUwyMiAxN0MyMiAxNS4zNDc2NTYgMjMuMzQ3NjU2IDE0IDI1IDE0QzI2LjY1MjM0NCAxNCAyOCAxNS4zNDc2NTYgMjggMTdMMjggMjFMMzQgMjFMMzQgMTdDMzQgMTIuMDM1MTU2IDI5Ljk2NDg0NCA4IDI1IDggWiBNIDI1IDEwQzI4Ljg2NzE4OCAxMCAzMiAxMy4xMzI4MTMgMzIgMTdMMzIgMTlMMzAgMTlMMzAgMTdDMzAgMTQuMjM4MjgxIDI3Ljc2MTcxOSAxMiAyNSAxMkMyMi4yMzgyODEgMTIgMjAgMTQuMjM4MjgxIDIwIDE3TDIwIDE5TDE4IDE5TDE4IDE3QzE4IDEzLjEzMjgxMyAyMS4xMzI4MTMgMTAgMjUgMTAgWiBNIDE2IDIyQzEzLjc5Mjk2OSAyMiAxMiAyMy43OTI5NjkgMTIgMjZMMTIgMzZDMTIgMzguMjA3MDMxIDEzLjc5Mjk2OSA0MCAxNiA0MEwzNCA0MEMzNi4yMDcwMzEgNDAgMzggMzguMjA3MDMxIDM4IDM2TDM4IDI2QzM4IDIzLjc5Mjk2OSAzNi4yMDcwMzEgMjIgMzQgMjIgWiBNIDE2IDI0TDM0IDI0QzM1LjEwNTQ2OSAyNCAzNiAyNC44OTQ1MzEgMzYgMjZMMzYgMzZDMzYgMzcuMTA1NDY5IDM1LjEwNTQ2OSAzOCAzNCAzOEwxNiAzOEMxNC44OTQ1MzEgMzggMTQgMzcuMTA1NDY5IDE0IDM2TDE0IDI2QzE0IDI0Ljg5NDUzMSAxNC44OTQ1MzEgMjQgMTYgMjQgWiBNIDE3IDI2QzE2LjQ0OTIxOSAyNiAxNiAyNi40NDkyMTkgMTYgMjdMMTYgMzVDMTYgMzUuNTUwNzgxIDE2LjQ0OTIxOSAzNiAxNyAzNkMxNy41NTA3ODEgMzYgMTggMzUuNTUwNzgxIDE4IDM1TDE4IDI3QzE4IDI2LjQ0OTIxOSAxNy41NTA3ODEgMjYgMTcgMjYgWiBNIDI1IDI2QzIzLjg5NDUzMSAyNiAyMyAyNi44OTQ1MzEgMjMgMjhDMjMgMjguNzE0ODQ0IDIzLjM4MjgxMyAyOS4zNzUgMjQgMjkuNzMwNDY5TDI0IDM1TDI2IDM1TDI2IDI5LjczMDQ2OUMyNi42MTcxODggMjkuMzcxMDk0IDI3IDI4LjcxNDg0NCAyNyAyOEMyNyAyNi44OTQ1MzEgMjYuMTA1NDY5IDI2IDI1IDI2WiIgLz4NCjwvc3ZnPg==",
+            oncommand: "window.open('chrome://pippki/content/certManager.xhtml', 'mozilla:certmanager', 'chrome,resizable=yes,all,width=830,height=400');"
+
+        }, {
+            id: 'context-deletehistory-ToolBarButton',
+            label: $L("clean history"),
+            tooltiptext: $L("clean history toolip"),
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy42MjQgMi45NTggQyA3LjY0IDIuNTIgNy43NzMgMi4wMjEgNy45NzMgMS42ODkgQyA4LjE3NSAxLjM1MiA4LjUzNyAxLjAyIDguODU5IDAuODIgQyA5LjE5MiAwLjY0MiA5LjY1OCAwLjQ5NiAxMC4wNTEgMC40ODkgQyAxMC40MzkgMC40ODMgMTAuOTM5IDAuNjE3IDExLjMyNiAwLjgyMiBDIDExLjUwMSAwLjkyNyAxMS42OTggMS4wOCAxMS44NCAxLjIxOCBDIDExLjk3OSAxLjM2MyAxMi4xMjkgMS41NiAxMi4yMjkgMS43MjcgQyAxMi4zMjQgMS44OTkgMTIuNDIgMi4xMjUgMTIuNDcyIDIuMzE1IEMgMTIuNTI0IDIuNTA3IDEyLjU1NCAyLjc1NSAxMi41NTcgMi45NTggTCAxMi41NTcgNy4zNTggTCAxNy43MDggNy4zNTggTCAxNy43MDggMTkuMTU5IEwgMi40NzQgMTkuMTU5IEwgMi40NzQgNy4zNTggTCA3LjYyNCA3LjM1OCBaIE0gOS4xMjQgOC44NTggTCAzLjk3NCA4Ljg1OCBMIDMuOTc0IDEwLjc5MSBMIDE2LjIwOCAxMC43OTEgTCAxNi4yMDggOC44NTggTCAxMS4wNTcgOC44NTggTCAxMS4wNTcgMi45NTggQyAxMS4wNiAyLjg1NSAxMS4wNSAyLjgwMyAxMS4wMjQgMi43MDcgQyAxMC45OTggMi42MDkgMTAuOTggMi41NTkgMTAuOTI4IDIuNDc0IEMgMTAuODggMi4zODYgMTAuODUgMi4zNDQgMTAuNzc4IDIuMjc3IEMgMTAuNzA5IDIuMjA0IDEwLjY2NiAyLjE2OSAxMC41NzUgMi4xMiBDIDEwLjM5IDEuOTk2IDEwLjI3OSAxLjk4NSAxMC4wNzcgMS45ODkgQyA5Ljg4IDEuOTkyIDkuNzc2IDIuMDExIDkuNjA3IDIuMTIxIEMgOS40MyAyLjIxMSA5LjM2MSAyLjI5MiA5LjI1OSAyLjQ2MSBDIDkuMTU1IDIuNjM1IDkuMTA4IDIuNzM2IDkuMTI0IDIuOTU4IFogTSAzLjk3NCAxNy42NTkgTCA1LjkwNyAxNy42NTkgTCA1LjkwNyAxMy41NzIgTCA3LjQwNyAxMy41NzIgTCA3LjQwNyAxNy42NTkgTCA5LjM0MSAxNy42NTkgTCA5LjM0MSAxMy41NzIgTCAxMC44NDEgMTMuNTcyIEwgMTAuODQxIDE3LjY1OSBMIDEyLjc3NSAxNy42NTkgTCAxMi43NzUgMTMuNTcyIEwgMTQuMjc1IDEzLjU3MiBMIDE0LjI3NSAxNy42NTkgTCAxNi4yMDggMTcuNjU5IEwgMTYuMjA4IDEyLjI5MSBMIDMuOTc0IDEyLjI5MSBaIiBzdHlsZT0iIi8+Cjwvc3ZnPg==",
+            oncommand: "window.open('chrome://browser/content/sanitize.xhtml', 'Toolkit:SanitizeDialog', 'chrome,resizable=yes');"
+        }, {
+            label: $L("about config"),
+            image: "chrome://global/skin/icons/settings.svg",
+            oncommand: `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
+        }, {
+            label: $L("synced tabs"),
+            tooltiptext: $L("synced tabs"),
+            image: "chrome://browser/skin/tab.svg",
+            oncommand: "SidebarUI.toggle('viewTabsSidebar');",
+        }, {
+            label: $L("downloads history"),
+            tooltiptext: $L("downloads history"),
+            image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjklEQVQ4T2NkoBAwUqifAdmA/1gMM4SKncciB9aLbgAy3wAovwGqMQBIX0AyBGQZQQPw+Y5oAxygphxAM41oAxqgGmE0zBz6GAByPrIXkL1B0AUK0FC/D3WzIpAGxcoDKJ+gASB1IA0wW0EuISsaQYaAALJmEJ8oF6DFHAoXpwH4NKHLYaREUjTD1VKcGwFUviQRNztwUgAAAABJRU5ErkJggg==",
+            oncommand: "DownloadsPanel.showDownloadsHistory();"
+        }, {
+            label: $L("bookmarks manager"),
+            tooltiptext: $L("bookmarks manager"),
+            image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAd0lEQVQ4T2NkoBAwAvULALE/ECugmfUByN8IFQPJg9QhgwcgeZABG4B4ARCDNKCDBKgASB4dgAxMABlwAIgdsCgACcHEQWqwgQOjBjCMhgEwDVElHUwAJrH/OJIyLP1jS+YgOUaQC/ABkOEgUIBLESED8LkAbCYAgXoo4XtZ6RoAAAAASUVORK5CYII=",
+            oncommand: "PlacesCommandHook.showPlacesOrganizer('AllBookmarks');"
+        }];
+
+    window.CustomButtons = {
+        PREF_LISTENER: [],
+        FUNCTION_LIST: [],
+        get appVersion() {
+            return Services.appinfo.version.split(".")[0];
+        },
+        get win() {
+            return Services.wm.getMostRecentWindow("navigator:browser");
+        },
+        get eventId() {
+            if (!this._eventId) this._eventId = 1;
+            return this._eventId++;
+        },
+        get btnId() {
+            if (!this._btnId) this._btnId = 1;
+            return this._btnId++;
+        },
+        get debug() {
+            if (this._debug) {
+                this._debug = debug;
+            }
+            return this._debug;
+        },
+        get toolsPath() {
+            if (!this._toolsPath) {
+                let path = Services.dirsvc.get("ProfD", Ci.nsIFile);
+                path.appendRelativePath(TOOLS_PATH || "chrome\\resources\\tools");
+                if (!path.exists()) {
+                    path.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+                }
+                this._toolsPath = path;
+            }
+            return this._toolsPath;
+        },
+        get btnCfg() {
+            if (!this._btnCfg) {
+                this._btnCfg = [];
+                BTN_CONFIG.forEach(obj => this._btnCfg.push(cloneObj(obj)));
+            }
+            return this._btnCfg;
+        },
+        init() {
+            if (this.debug) this.log("CustomButtons init");
+            this.style = addStyle(css);
+            if (!BTN_CONFIG) {
+                if (this.debug) this.log($L("buttons config has some mistake"));
+                return;
+            }
+            this.rebuild();
+        },
+        uninit() {
+            if (this.btnIds?.length) {
+                this.btnIds.forEach(id => {
+                    if (this.debug) this.log($L("destroying button"), id);
+                    CustomizableUI.destroyWidget(id);
+                });
+            }
+            this.btnIds = null;
+            this.PREF_LISTENER.forEach(l => cPref.removeListener(l));
+            this.PREF_LISTENER = [];
+        },
+        rebuild() {
+            this.uninit();
+            this.btnIds = this.createButtons();
+        },
+        destroy() {
+            this.uninit();
+            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            delete window.CustomButtons;
+        },
+        createButtons() {
+            if (!this.btnCfg) {
+                if (this.debug) this.log($L("no buttons configuration"));
+                return;
+            }
+            if (this.debug) this.log($L("creating buttons"));
+            let btnIds = [];
+            Object.values(this.btnCfg).forEach(obj => {
+                let btn = this.createButton(obj);
+                btnIds.push(btn.getAttribute('id'));
+            });
+            return btnIds;
+        },
+        createButton(obj) {
+            obj.id = obj.id || "CustomButtons-Button-" + this.btnId;
+            obj.label = obj.label || "Custom Button";
+            obj.defaultArea = obj.defaultArea || CustomizableUI.AREA_NAVBAR;
+            obj.class = obj.class ? obj.class + ' custom-button' : 'custom-button';
+            if (obj.tool) {
+                obj.exec = this.handleRelativePath(obj.tool, this.toolsPath.path);
+                delete obj.tool;
+            }
+            if (obj.exec) {
+                obj.exec = this.handleRelativePath(obj.exec);
+            }
+            CustomizableUI.createWidget({
+                id: obj.id,
+                type: 'custom',
+                localized: false,
+                defaultArea: obj.defaultArea,
+                onBuild: function (doc) {
+                    let btn;
+                    try {
+                        btn = $C(doc, 'toolbarbutton', obj, ['type', 'group', 'popup', 'onBuild']);
+                        'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
+                        if (obj.popup) {
+                            let id = obj.id + '-popup';
+                            btn.setAttribute('type', obj.type || "menu");
+                            btn.setAttribute(obj.type || "menu", id);
+                            let popup = $C(doc, 'menupopup', { id: id, class: 'CustomButtons-Popup' });
+                            btn.appendChild(popup);
+                            obj.popup.forEach(child => popup.appendChild(CustomButtons.createMenu(child, doc, popup, true)));
+                        }
+                        if (obj.onBuild && typeof obj.onBuild == 'function') obj.onBuild(btn, doc);
+                        if (!obj.oncommand)
+                            btn.setAttribute("oncommand", "CustomButtons.onCommand(event);");
+                    } catch (e) {
+                        CustomButtons.error(e);
+                    }
+                    return btn;
+                }
+            });
+            return CustomizableUI.getWidget(obj.id).forWindow(window).node;
+        },
+        createMenu(obj, aDoc, parent) {
+            if (!obj) return;
+            aDoc = aDoc || parent?.ownerDocument || this.win.document;
+            let el;
+            if (obj.group) {
+                el = $C(aDoc, 'menugroup', obj, ['group', 'popup']);
+                el.classList.add('CustomButtons-Group');
+                obj.group.forEach(child => el.appendChild(CustomButtons.createMenu(child, aDoc, el)));
+
+                // menugroup 无需嵌套在 menu 中
+                return el;
+            } else if (obj.popup) {
+                el = $C(aDoc, 'menupopup', obj, ['group', 'popup']);
+                el.classList.add('CustomButtons-Popup');
+                obj.popup.forEach(child => el.appendChild(CustomButtons.createMenu(child, aDoc, el)));
+            }
+
+            let item = this.createMenuItem(obj, aDoc, parent);
+            if (el) item.appendChild(el);
+            return item;
+        },
+        createMenuItem: function (obj, aDoc, parent) {
+            if (!obj) return;
+            aDoc = aDoc || parent?.ownerDocument || this.win.document;
+            let item,
+                classList = [],
+                tagName = obj.type || 'menuitem';
+            if (inObject(['separator', 'menuseparator'], obj.type) || !obj.group && !obj.popup && !obj.label && !obj.image && !obj.command && !obj.pref) {
+                return $C(aDoc, 'menuseparator', obj, ['type', 'group', 'popup']);
+            }
+            if (inObject['checkbox', 'radio'], obj.type) tagName = 'menuitem';
+            if (obj.group) tagName = 'menu';
+            if (obj.popup) tagName = 'menu';
+            if (obj.class) obj.class.split(' ').forEach(c => classList.push(c));
+            classList.push(tagName + '-iconic');
+
+            if (obj.tool) {
+                obj.exec = this.handleRelativePath(obj.tool, this.toolsPath.path);
+                delete obj.tool;
+            }
+            if (obj.exec) {
+                obj.exec = this.handleRelativePath(obj.exec);
+            }
+
+            if (obj.command) {
+                // todo: add clone menuitem function
+            } else {
+                item = $C(aDoc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group']);
+                if (classList.length) item.setAttribute('class', classList.join(' '));
+                $A(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type']);
+                item.setAttribute('label', obj.label || obj.command || obj.oncommand);
+
+                if (obj.pref) {
+                    let type = cPref.getType(obj.pref) || obj.type || 'unknown';
+                    const map = {
+                        string: 'prompt',
+                        int: 'prompt',
+                        boolean: 'checkbox',
+                    }
+                    const defaultVal = {
+                        string: '',
+                        int: 0,
+                        bool: false
+                    }
+                    if (map[type]) item.setAttribute('type', map[type]);
+                    if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
+                    if (map[type] === 'checkbox') {
+                        item.setAttribute('checked', !!cPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
+                        this.addPrefListener(obj.pref, function (value, pref) {
+                            item.setAttribute('checked', value);
+                            if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
+                        });
+                    } else {
+                        let value = cPref.get(obj.pref);
+                        if (value) {
+                            item.setAttribute('value', value);
+                            item.setAttribute('label', $S(obj.label, value));
+                        }
+                        this.addPrefListener(obj.pref, function (value, pref) {
+                            item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
+                            if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
+                        });
+                    }
+                }
+            }
+
+
+            if (!obj.pref && !obj.onclick)
+                item.setAttribute("onclick", "checkForMiddleClick(this, event)");
+
+            if (debug) this.log('createMenuItem', tagName, item);
+
+            if (obj.oncommand || obj.command)
+                return item;
+
+            item.setAttribute("oncommand", "CustomButtons.onCommand(event);");
+
+            // 可能ならばアイコンを付ける
+            this.setIcon(item, obj);
+
+            return item;
+        },
+        onCommand: function (event) {
+            event.stopPropagation();
+            if (event.button === 0 && event.target.hasAttribute('skin')) return;
+            let item = event.target;
+            let precommand = item.getAttribute("precommand") || "",
+                pref = item.getAttribute("pref") || "",
+                text = item.getAttribute("text") || "",
+                exec = item.getAttribute("exec") || "",
+                edit = item.getAttribute("edit") || "",
+                url = item.getAttribute("url") || "";
+            where = item.getAttribute("where") || "";
+            if (precommand) eval(precommand);
+            if (pref) this.handlePref(event, pref);
+            else if (exec) this.exec(exec, text);
+            else if (edit) this.edit(edit);
+            else if (url) this.openCommand(event, url, where);
+        },
+        handlePref(event, pref) {
+            let item = event.target;
+            if (item.getAttribute('type') === 'checkbox') {
+                let setVal = cPref.get(pref, false, !!item.getAttribute('defaultValue'));
+                cPref.set(pref, !setVal);
+                item.setAttribute('checked', !setVal);
+            } else if (item.getAttribute('type') === 'prompt') {
+                let type = item.getAttribute('valueType') || 'string',
+                    val = prompt(item.getAttribute('label'), cPref.get(pref, item.getAttribute('default') || ""));
+                if (val) {
+                    switch (type) {
+                        case 'int':
+                            val = parseInt(val);
+                            break;
+                        case 'boolean':
+                            val = !!val;
+                            break;
+                        case 'string':
+                        default:
+                            val = "" + val;
+                            break;
+                    }
+                    cPref.set(pref, val);
+                }
+
+            }
+            if (item.hasAttribute("postcommand")) {
+                eval(item.getAttribute('postcommand'));
+            }
+        },
+        openCommand: function (event, url, where, postData) {
+            var uri;
+            try {
+                uri = Services.io.newURI(url, null, null);
+            } catch (e) {
+                return this.log('openCommand', 'url is invalid', url);
+            }
+            if (uri.scheme === "javascript") {
+                try {
+                    loadURI(url);
+                } catch (e) {
+                    gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                }
+            } else if (where) {
+                if (this.appVersion < 78) {
+                    openUILinkIn(uri.spec, where, false, postData || null);
+                } else {
+                    openUILinkIn(uri.spec, where, {
+                        postData: postData || null,
+                        triggeringPrincipal: where === 'current' ?
+                            gBrowser.selectedBrowser.contentPrincipal : (
+                                /^(f|ht)tps?:/.test(uri.spec) ?
+                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.getSystemPrincipal()
+                            )
+                    });
+                }
+            } else if (event.button == 1) {
+                if (this.appVersion < 78) {
+                    openNewTabWith(uri.spec);
+                } else {
+                    openNewTabWith(uri.spec, 'tab', {
+                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
+                            Services.scriptSecurityManager.createNullPrincipal({}) :
+                            Services.scriptSecurityManager.getSystemPrincipal()
+                    });
+                }
+            } else {
+                if (this.appVersion < 78)
+                    openUILink(uri.spec, event);
+                else {
+                    openUILink(uri.spec, event, {
+                        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                    });
+                }
+            }
+        },
+        edit: function (edit) {
+            if (debug) this.log('edit', edit);
+            if (cPref.get("view_source.editor.path"))
+                this.exec(cPref.get("view_source.editor.path"), edit);
+            else
+                this.exec(this.handleRelativePath(obj.edit));
+        },
+        exec: function (path, arg) {
+            if (debug) this.log('exec', path, arg);
+            var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
+            var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+            try {
+                var a;
+                if (typeof arg == "undefined") arg = []; // fix slice error
+                if (typeof arg == 'string' || arg instanceof String) {
+                    a = arg.split(/\s+/)
+                } else if (Array.isArray(arg)) {
+                    a = arg;
+                } else {
+                    a = [arg];
+                }
+
+                file.initWithPath(path);
+                if (!file.exists()) {
+                    this.error($L("file not found").replace("%s", path))
+                    return;
+                }
+
+                if (file.isExecutable()) {
+                    process.init(file);
+                    process.runw(false, a, a.length);
+                } else {
+                    file.launch();
+                }
+            } catch (e) {
+                this.error(e);
+            }
+        },
+        addPrefListener(pref, callback) {
+            this.PREF_LISTENER[pref] = cPref.addListener(pref, callback);
+        },
+        handleRelativePath: function (path, parentPath) {
+            if (path) {
+                let handled = false;
+                Object.keys(OS.Constants.Path).forEach(key => {
+                    if (path.includes("{" + key + "}")) {
+                        path = path.replace("{" + key + "}", OS.Constants.Path[key]);
+                        handled = true;
+                    }
+                })
+                if (!handled) {
+                    path = path.replace(/\//g, '\\').toLocaleLowerCase();
+                    if (/^(\\)/.test(path)) {
+                        if (!parentPath) {
+                            parentPath = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
+                        }
+                        path = parentPath + path;
+                        path = path.replace("\\\\", "\\");
+                    }
+                }
+                return path;
+            }
+        },
+        setIcon: function (menu, obj) {
+            if (menu.hasAttribute("src") || menu.hasAttribute("image") || menu.hasAttribute("icon"))
+                return;
+
+            if (obj.edit || obj.exec) {
+                var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+                try {
+                    aFile.initWithPath(obj.edit ? this.handleRelativePath(obj.edit) : obj.exec);
+                } catch (e) {
+                    return;
+                }
+
+                if (!aFile.exists()) {
+                    menu.setAttribute("disabled", "true");
+                } else {
+                    if (aFile.isFile()) {
+                        let fileURL = getURLSpecFromFile(aFile);
+                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                    } else {
+                        menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
+                    }
+                }
+                return;
+            }
+
+            var setIconCallback = function (url) {
+                let uri, iconURI;
+                try {
+                    uri = Services.io.newURI(url, null, null);
+                } catch (e) { }
+                if (!uri) return;
+
+                menu.setAttribute("scheme", uri.scheme);
+                PlacesUtils.favicons.getFaviconDataForPage(uri, {
+                    onComplete: function (aURI, aDataLen, aData, aMimeType) {
+                        try {
+                            // javascript: URI の host にアクセスするとエラー
+                            menu.setAttribute("image", aURI && aURI.spec ?
+                                "moz-anno:favicon:" + aURI.spec :
+                                "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
+                        } catch (e) { }
+                    }
+                });
+            }
+            PlacesUtils.keywords.fetch(obj.keyword || '').then(entry => {
+                let url;
+                if (entry) {
+                    url = entry.url.href;
+                } else {
+                    url = (obj.url + '').replace(this.regexp, "");
+                }
+                setIconCallback(url);
+            }, e => {
+                CustomButtons.error(e)
+            }).catch(e => { });
+
+        },
+        alert: function (aMsg, aTitle, aCallback) {
+            var callback = aCallback ? {
+                observe: function (subject, topic, data) {
+                    if ("alertclickcallback" != topic)
+                        return;
+                    aCallback.call(null);
+                }
+            } : null;
+            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+            alertsService.showAlertNotification(
+                this.appVersion >= 78 ? "chrome://global/skin/icons/info.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "CustomButtons",
+                aMsg + "", !!callback, "", callback);
+        },
+        error: function () {
+            Cu.reportError(Array.prototype.slice.call(arguments));
+        },
+        log: function () {
+            this.win.console.log(Array.prototype.slice.call(arguments));
+        },
+    }
+
+    /**
+    * 获取  DOM 元素
+    * @param {string} id 
+    * @param {Document} aDoc 
+    * @returns 
+    */
+    function $(id, aDoc) {
+        return (aDoc || document).getElementById(id);
+    }
+
+    function $J(selector, aDoc) {
+        return (aDoc || document).querySelector(selector);
+    }
+
+    function $JJ(selector, aDoc) {
+        return (aDoc || document).querySelectorAll(selector);
+    }
+
+    /**
+     * 创建 DOM 元素
+     * @param {string} tag DOM 元素标签
+     * @param {object} attr 属性对象
+     * @param {array} skipAttrs 跳过属性
+     * @returns 
+     */
+    function $C(aDoc, tag, attrs, skipAttrs) {
+        attrs = attrs || {};
+        skipAttrs = skipAttrs || [];
+        var el = (aDoc || document).createXULElement(tag);
+        return $A(el, attrs, skipAttrs);
+    }
+
+    /**
+     * 应用属性
+     * @param {Element} el DOM 对象
+     * @param {object} obj 属性对象
+     * @param {array} skipAttrs 跳过属性
+     * @returns 
+     */
+    function $A(el, obj, skipAttrs) {
+        skipAttrs = skipAttrs || [];
+        if (obj) Object.keys(obj).forEach(function (key) {
+            if (!inObject(skipAttrs, key)) {
+                if (typeof obj[key] === 'function') {
+                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                } else {
+                    el.setAttribute(key, obj[key]);
+                }
+            }
+        });
+        return el;
+    }
+
+    /**
+     * 获取本地化文本
+     * @param {string} str 
+     * @param {string|null} replace 
+     * @returns 
+     */
+    function $L(str, replace) {
+        const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
+        if (str) {
+            str = LANG[LOCALE][str] || str;
+            return $S(str, replace);
+        } else
+            return "";
+    }
+
+    /**
+     * 替换 %s 为指定文本
+     * @param {string} str 
+     * @param {string} replace 
+     * @returns 
+     */
+    function $S(str, replace) {
+        str || (str = '');
+        if (typeof replace !== "undefined") {
+            str = str.replace("%s", replace);
+        }
+        return str || "";
+    }
+
+    /**
+    * 数组/对象中是否包含某个关键字
+     * @param {object} obj 
+     * @param {any} key 
+    * @returns 
+    */
+    function inObject(obj, key) {
+        if (obj.indexOf) {
+            return obj.indexOf(key) > -1;
+        } else if (obj.hasAttribute) {
+            return obj.hasAttribute(key);
+        } else {
+            for (var i = 0; i < obj.length; i++) {
+                if (obj[i] === key) return true;
+            }
+            return false;
+        }
+    }
+
+    function addStyle(css) {
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
+    }
+
+    /**
+     * 克隆对象
+     * @param {object} o 
+     * @returns 
+     */
+    function cloneObj(o) {
+        if (typeof (o) === typeof (1) || typeof ('') === typeof (o) || typeof (o) === typeof (true) ||
+            typeof (o) === typeof (undefined)) {
+            return o
+        }
+        if (Array.isArray(o)) {
+            let arr = []
+            for (let key in o) {
+                arr.push(cloneObj(o[key]))
+            }
+            return arr
+        }
+        if (typeof (o) === typeof ({})) {
+            if (o === null) {
+                return o
+            }
+            let obj = {}
+            for (let key in o) {
+                obj[key] = cloneObj(o[key])
+            }
+            return obj
+        }
+        return o;
+    }
+
+    function getURLSpecFromFile(aFile) {
+        var aURL;
+        if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
+            aURL = userChrome.getURLSpecFromFile(aFile);
+        } else if (this.appVersion < 92) {
+            aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
+        } else {
+            aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
+        }
+        return aURL;
+    }
+
+    function saveFile(fileOrName, data) {
+        var file;
+        if (typeof fileOrName == "string") {
+            file = Services.dirsvc.get('UChrm', Ci.nsIFile);
+            file.appendRelativePath(fileOrName);
+        } else {
+            file = fileOrName;
+        }
+
+        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        suConverter.charset = 'UTF-8';
+        data = suConverter.ConvertFromUnicode(data);
+
+        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
+        foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+        foStream.write(data, data.length);
+        foStream.close();
+    }
+
+    function readFile(aFile, metaOnly = false) {
+        let stream = Cc['@mozilla.org/network/file-input-stream;1'].createInstance(Ci.nsIFileInputStream);
+        stream.init(aFile, 0x01, 0, 0);
+        let cvstream = Cc['@mozilla.org/intl/converter-input-stream;1'].createInstance(Ci.nsIConverterInputStream);
+        cvstream.init(stream, 'UTF-8', 1024, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+        let content = '',
+            data = {};
+        while (cvstream.readString(4096, data)) {
+            content += data.value;
+            if (metaOnly && (content.indexOf('// ==/UserScript==' || content.indexOf('==/UserStyle=='))) > 0) {
+                break;
+            }
+        }
+        cvstream.close();
+        return content.replace(/\r\n?/g, '\n');
+    }
+
+    function readStyleInfo(aFile) {
+        let content = readFile(aFile, true);
+        let header = (content.match(/^\/\*\s*==UserStyle==\s*\n(?:.*\n)*?==\/UserStyle==\s*\*\/\s*\n/m) || [''])[0];
+        let def = ['', ''];
+        let lang = (header.match(/\* @l10n\s+(.+)\s*$/im) || def)[1];
+        try {
+            lang = eval("(" + lang + ")");
+        } catch (e) {
+            lang = {};
+        }
+        return {
+            filename: aFile.leafName || '',
+            content: content,
+            name: (header.match(/\* @name\s+(.+)\s*$/im) || def)[1],
+            charset: (header.match(/\* @charset\s+(.+)\s*$/im) || def)[1],
+            version: (header.match(/\* @version\s+(.+)\s*$/im) || def)[1],
+            description: (header.match(/\* @description\s+(.+)\s*$/im) || def)[1],
+            homepageURL: (header.match(/\* @homepageURL\s+(.+)\s*$/im) || def)[1],
+            downloadURL: (header.match(/\* @downloadURL\s+(.+)\s*$/im) || def)[1],
+            updateURL: (header.match(/\* @updateURL\s+(.+)\s*$/im) || def)[1],
+            optionsURL: (header.match(/\* @optionsURL\s+(.+)\s*$/im) || def)[1],
+            author: (header.match(/\* @author\s+(.+)\s*$/im) || def)[1],
+            license: (header.match(/\* @license\s+(.+)\s*$/im) || def)[1],
+            licenseURL: (header.match(/\* @licenseURL\s+(.+)\s*$/im) || def)[1],
+            lang: lang,
+            // url: Services.io.newURI(getURLSpecFromFile(aFile)) 使用这种方式 @supports -moz-bool-pref 不生效
+        }
+    }
+
+    window.CustomButtons.init();
+})(`
+@-moz-document url('chrome://browser/content/browser.xhtml') {
+    #context-take-screenshot, #context-sep-screenshots {
+        display: none;
+    }
+    .CustomButtons-Group > .menuitem-iconic {
+        padding-block: 0.5em;
+    }
+    
+    .CustomButtons-Group > .menuitem-iconic:first-child {
+        padding-inline-start: 1em;
+    }
+    .CustomButtons-Group:not(.showText):not(.showFirstText) > :is(menu, menuitem):not(.showText) > label,
+    .CustomButtons-Group.showFirstText > :is(menu, menuitem):not(:first-child) > label,
+    .CustomButtons-Group > :is(menu, menuitem) > .menu-accel-container {
+        display: none;
+    }
+
+    .CustomButtons-Group.showFirstText > :is(menu, menuitem):first-child,
+    .CustomButtons-Group.showText > :is(menu, menuitem) {
+        -moz-box-flex: 1;
+        padding-inline-end: .5em;
+    }
+    .CustomButtons-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) {
+        padding-left: 0;
+        -moz-box-flex: 0;
+    }
+    .CustomButtons-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) > .menu-iconic-left {
+        margin-inline-start: 8px;
+        margin-inline-end: 8px;
+    }
+    .CustomButtons-Popup menuseparator+menuseparator {
+        visibility: collapse;
+    }
+    .CustomButtons-Popup menuseparator:last-child {
+        /* 懒得研究为什么多了一个分隔符 */
+        visibility: collapse;
+    }
+
+    .CustomButtons-Popup .menuitem-iconic.reload {
+        list-style-image: url(chrome://devtools/content/debugger/images/reload.svg) !important;
+    }
+
+    .CustomButtons-Popup .menuitem-iconic.option {
+        list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
+    }
+
+    .CustomButtons-Popup .menu-iconic.skin,
+    .CustomButtons-Popup .menuitem-iconic.skin {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik03MDYuNTQ1IDEyOC4wMTlhNjMuOTg1IDYzLjk4NSAwIDAgMSA0OC41OTkgMjIuMzYzbDE3Mi44MzUgMjAxLjc2My02My45OTYgMTI3Ljg1Ny00MS4zNzQtNDEuMzcxYy02LjI1LTYuMjQ4LTE0LjQzNy05LjM3Mi0yMi42MjQtOS4zNzItOC4xODggMC0xNi4zNzQgMy4xMjQtMjIuNjI0IDkuMzcyYTMyLjAwNiAzMi4wMDYgMCAwIDAtOS4zNzUgMjIuNjI2djQwMi43MjdjMCAxNy42NzItMTQuMzI3IDMxLjk5OC0zMS45OTkgMzEuOTk4SDMyMC4wMWMtMTcuNjcxIDAtMzEuOTk4LTE0LjMyNi0zMS45OTgtMzEuOTk4VjQ2MS4yNTZjMC0xNy42NzItMTQuMzI4LTMxLjk5OC0zMi0zMS45OThhMzEuOTk3IDMxLjk5NyAwIDAgMC0yMi42MjQgOS4zNzJsLTQxLjM3MyA0MS4zNzFMOTYuMDIgMzUyLjAwN2wxNzIuODM1LTIwMS42NGE2My45ODcgNjMuOTg3IDAgMCAxIDQ4LjU5Mi0yMi4zNDhoNi41MDdhOTUuOTcgOTUuOTcgMCAwIDEgNTAuMTMgMTQuMTMyQzQyOC4zNyAxNzUuMzk0IDQ3NC4zMzggMTkyLjAxNSA1MTIgMTkyLjAxNXM4My42MjktMTYuNjIxIDEzNy45MTUtNDkuODY0YTk1Ljk2OCA5NS45NjggMCAwIDEgNTAuMTMtMTQuMTMyaDYuNW0wLTYzLjk5OGgtNi41YTE1OS44OSAxNTkuODkgMCAwIDAtODMuNTU3IDIzLjU1OEM1NjEuOTA0IDEyMSA1MjkuNTM3IDEyOC4wMTggNTEyIDEyOC4wMThjLTE3LjUzOCAwLTQ5LjkwNC03LjAxNy0xMDQuNDk1LTQwLjQ0NmExNTkuODgxIDE1OS44ODEgMCAwIDAtODMuNTUtMjMuNTVoLTYuNTA4YTEyNy44MjMgMTI3LjgyMyAwIDAgMC05Ny4xODIgNDQuNzAxTDQ3LjQyOCAzMTAuMzZjLTE5LjUyMiAyMi43NzQtMjAuNiA1Ni4wNS0yLjYxIDgwLjA0N0wxNDAuODE1IDUxOC40YTYzLjk5OCA2My45OTggMCAwIDAgODMuMTk5IDE3LjAyNXYzMjguNTU4YzAgNTIuOTMyIDQzLjA2IDk1Ljk5NSA5NS45OTUgOTUuOTk1aDQxNS45OGM1Mi45MzUgMCA5NS45OTYtNDMuMDYzIDk1Ljk5Ni05NS45OTVWNTM1LjQyNWE2NC4wMjggNjQuMDI4IDAgMCAwIDQyLjI0IDcuNzQ5IDY0LjAxNCA2NC4wMTQgMCAwIDAgNDYuOTktMzQuNTI4bDYzLjk5Ny0xMjcuODU3YzExLjUyMi0yMy4wMjggOC4xMjUtNTAuNzIyLTguNjMzLTcwLjI3OUw4MDMuNzQ0IDEwOC43NDdjLTI0LjMzNi0yOC40MjItNTkuNzctNDQuNzI2LTk3LjItNDQuNzI2eiIgcC1pZD0iMTI4MiI+PC9wYXRoPjwvc3ZnPg==) !important;
+    }
+}
+`, true);

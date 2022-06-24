@@ -2,11 +2,12 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.1.1
+// @version         0.1.2
 // @compatibility   Firefox 70 +
 // @startup         window.CopyCat.init();
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.1.2 新增移动菜单功能，本地化覆盖所有菜单
 // @version         0.1.1 修复 bug，自动读取主题选项
 // @version         0.1.0 初始版本
 // ==/UserScript==
@@ -17,7 +18,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
 
     if (window.CopyCat) {
-        window.CopyCat.unload();
+        window.CopyCat.destroy();
         delete window.CopyCat;
     }
 
@@ -34,7 +35,20 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             "open images directory": "打开图片目录",
             "no theme": "关闭主题",
             "theme item tooltip text": "左键：更换主题\n右键：修改主题",
-            "theme options": "主题选项"
+            "theme options": "主题选项",
+            "modify config file": "修改配置文件",
+            "addMenuPlus config file": "菜单",
+            "reload config file": "重新载入配置",
+            "KeyConfig config file": "快捷键",
+            "browser toolbox": "浏览器内容工具箱",
+            "fix browser toolbox": "修复浏览器内容工具箱",
+            "usefull tools": "实用工具",
+            "speedyfox": "配置优化",
+            "about copycat": "关于 CopyCat",
+            "copy addons list": "复制扩展清单",
+            "copy addons list tooltip": "左键：名称 + 相关网页\nShift+左键：Markdown 表格",
+            "copy userchromejs list": "复制UC脚本清单",
+            "copy userchromejs list tooltip": "左键：名称 + 主页\n中键：名称"
         }
     }
     if (!window.cPref) {
@@ -126,6 +140,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 exec: '\\chrome',
             }, {
                 label: $L("restart firefox"),
+                tooltiptext: $L("restart firefox"),
                 class: 'reload',
                 oncommand: 'Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);',
             }]
@@ -252,17 +267,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }]
         }, {
             type: 'menuitem',
-            label: '修改配置文件',
+            label: $L("modify config file"),
             image: 'chrome://browser/skin/preferences/category-general.svg',
             popup: [{
                 class: 'showFirstText',
                 group: [{
-                    label: "菜单",
+                    label: $L("addMenuPlus config file"),
                     oncommand: "addMenu.edit(addMenu.FILE);",
                     image: "chrome://browser/skin/menu.svg"
                 },
                 {
-                    label: '重新载入配置',
+                    label: $L("reload config file"),
+                    tooltiptext: $L("reload config file"),
                     oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
                     image: 'chrome://browser/skin/preferences/category-sync.svg',
                 }]
@@ -270,12 +286,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             {
                 class: 'showFirstText',
                 group: [{
-                    label: "快捷键",
+                    label: $L("KeyChange config file"),
                     oncommand: "KeyChanger.edit(KeyChanger.file);",
                     image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTcuNjggMi44NDIgTCA5Ljk1IDIuODQyIEwgMi4yMiAyLjg0MiBDIDEuNzQ3IDIuODQyIDEuMzE4IDMuMDM1IDEuMDA3IDMuMzQ3IEMgMC42OTUgMy42NTggMC41MDIgNC4wODggMC41MDIgNC41NiBMIDAuNTAyIDEwLjE0MyBMIDAuNTAyIDE1LjcyNSBDIDAuNTAyIDE2LjE5OCAwLjY5NSAxNi42MjcgMS4wMDcgMTYuOTM4IEMgMS4zMTggMTcuMjUgMS43NDcgMTcuNDQzIDIuMjIgMTcuNDQzIEwgOS45NSAxNy40NDMgTCAxNy42OCAxNy40NDMgQyAxOC4xNTIgMTcuNDQzIDE4LjU4MSAxNy4yNSAxOC44OTMgMTYuOTM4IEMgMTkuMjA0IDE2LjYyNyAxOS4zOTcgMTYuMTk4IDE5LjM5NyAxNS43MjUgTCAxOS4zOTcgMTAuMTQzIEwgMTkuMzk3IDQuNTYgQyAxOS4zOTcgNC4wODggMTkuMjA0IDMuNjU4IDE4Ljg5MyAzLjM0NyBDIDE4LjU4MSAzLjAzNSAxOC4xNTIgMi44NDIgMTcuNjggMi44NDIgWiBNIDE3LjY4IDE1LjcyNSBMIDkuOTUgMTUuNzI1IEwgMi4yMiAxNS43MjUgTCAyLjIyIDEwLjE0MyBMIDIuMjIgNC41NiBMIDkuOTUgNC41NiBMIDE3LjY4IDQuNTYgTCAxNy42OCAxMC4xNDMgWiBNIDcuMzczIDYuMjc4IEwgOC4yMzIgNi4yNzggTCA5LjA5MSA2LjI3OCBMIDkuMDkxIDcuMTM3IEwgOS4wOTEgNy45OTUgTCA4LjIzMiA3Ljk5NSBMIDcuMzczIDcuOTk1IEwgNy4zNzMgNy4xMzcgWiBNIDMuOTM4IDYuMjc4IEwgNC43OTcgNi4yNzggTCA1LjY1NSA2LjI3OCBMIDUuNjU1IDcuMTM3IEwgNS42NTUgNy45OTUgTCA0Ljc5NyA3Ljk5NSBMIDMuOTM4IDcuOTk1IEwgMy45MzggNy4xMzcgWiBNIDYuNTE0IDEzLjE0OSBMIDkuOTUgMTMuMTQ5IEwgMTMuMzg1IDEzLjE0OSBMIDEzLjM4NSAxMy41NzggTCAxMy4zODUgMTQuMDA3IEwgOS45NSAxNC4wMDcgTCA2LjUxNCAxNC4wMDcgTCA2LjUxNCAxMy41NzggWiBNIDEwLjgwOSA2LjI3OCBMIDExLjY2NyA2LjI3OCBMIDEyLjUyNiA2LjI3OCBMIDEyLjUyNiA3LjEzNyBMIDEyLjUyNiA3Ljk5NSBMIDExLjY2NyA3Ljk5NSBMIDEwLjgwOSA3Ljk5NSBMIDEwLjgwOSA3LjEzNyBaIE0gNy4zNzMgOS43MTMgTCA4LjIzMiA5LjcxMyBMIDkuMDkxIDkuNzEzIEwgOS4wOTEgMTAuNTcyIEwgOS4wOTEgMTEuNDMxIEwgOC4yMzIgMTEuNDMxIEwgNy4zNzMgMTEuNDMxIEwgNy4zNzMgMTAuNTcyIFogTSAzLjkzOCA5LjcxMyBMIDQuNzk3IDkuNzEzIEwgNS42NTUgOS43MTMgTCA1LjY1NSAxMC41NzIgTCA1LjY1NSAxMS40MzEgTCA0Ljc5NyAxMS40MzEgTCAzLjkzOCAxMS40MzEgTCAzLjkzOCAxMC41NzIgWiBNIDEwLjgwOSA5LjcxMyBMIDExLjY2NyA5LjcxMyBMIDEyLjUyNiA5LjcxMyBMIDEyLjUyNiAxMC41NzIgTCAxMi41MjYgMTEuNDMxIEwgMTEuNjY3IDExLjQzMSBMIDEwLjgwOSAxMS40MzEgTCAxMC44MDkgMTAuNTcyIFogTSAxNC4yNDQgNi4yNzggTCAxNS4xMDMgNi4yNzggTCAxNS45NjIgNi4yNzggTCAxNS45NjIgNy4xMzcgTCAxNS45NjIgNy45OTUgTCAxNS4xMDMgNy45OTUgTCAxNC4yNDQgNy45OTUgTCAxNC4yNDQgNy4xMzcgWiBNIDE0LjI0NCA5LjcxMyBMIDE1LjEwMyA5LjcxMyBMIDE1Ljk2MiA5LjcxMyBMIDE1Ljk2MiAxMC41NzIgTCAxNS45NjIgMTEuNDMxIEwgMTUuMTAzIDExLjQzMSBMIDE0LjI0NCAxMS40MzEgTCAxNC4yNDQgMTAuNTcyIFoiIHN0eWxlPSIiLz4KPC9zdmc+"
                 },
                 {
-                    label: '重新载入配置',
+                    label: $L("reload config file"),
+                    tooltiptext: $L("reload config file"),
                     oncommand: 'setTimeout(function(){ KeyChanger.makeKeyset(true);},10)',
                     image: 'chrome://browser/skin/preferences/category-sync.svg'
                 }
@@ -289,7 +306,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }, {
             class: 'showFirstText',
             group: [{
-                label: '浏览器内容工具箱',
+                label: $L("browser toolbox"),
                 oncommand: function (event) {
                     var doc = event.target.ownerDocument;
                     if (!doc.getElementById('menu_browserToolbox')) {
@@ -303,7 +320,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 image: "chrome://devtools/skin/images/tool-inspector.svg"
             },
             {
-                label: "修复不能打开",
+                label: $L("fix browser toolbox"),
+                tooltiptext: $L("fix browser toolbox"),
                 oncommand: function () {
                     let targetPath;
                     if (CopyCat.appVersion >= 100) {
@@ -327,17 +345,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
             ]
         }, {
-            label: '实用工具',
+            label: $L("usefull tools"),
             image: 'data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTcuNjI4OTA2MiAzLjA0Mjk2ODhMNi4yMTQ4NDM4IDQuNDU3MDMxMkwxMS4wOTU3MDMgOS4zMzc4OTA2TDIuNzM2MzI4MSAxNy42OTcyNjZDMS43NTQzMjgxIDE4LjY4MDI2NiAxLjc1MzMyODEgMjAuMjc5NzE5IDIuNzM2MzI4MSAyMS4yNjE3MTlDMy4yMTIzMjgxIDIxLjczODcxOSAzLjg0NjUzMTMgMjIgNC41MTk1MzEyIDIyQzUuMTkyNTMxMyAyMiA1LjgyNDc4MTMgMjEuNzM3NzE5IDYuMzAwNzgxMiAyMS4yNjE3MTlMMTQuNjYwMTU2IDEyLjkwMjM0NEwxOC41ODU5MzggMTYuODI4MTI1TDE5LjI5Mjk2OSAxNi4xMjEwOTRMMjIuODI0MjE5IDEyLjU4OTg0NEwxOC45MTk5MjIgOC42NDQ1MzEyTDIwLjI4MTI1IDcuMjgxMjVMMTkuNjYyMTA5IDYuNjYyMTA5NEwxNy4zMzc4OTEgNC4zMzc4OTA2TDE2LjcxODc1IDMuNzE4NzVMMTUuMzczMDQ3IDUuMDYyNUwxMy4zNzUgMy4wNDI5Njg4TDcuNjI4OTA2MiAzLjA0Mjk2ODggeiBNIDkuNjI4OTA2MiA1LjA0Mjk2ODhMMTIuNTM5MDYyIDUuMDQyOTY4OEwyMC4wMDM5MDYgMTIuNTgyMDMxTDE4LjU4NTkzOCAxNEw5LjYyODkwNjIgNS4wNDI5Njg4IHoiIC8+DQo8L3N2Zz4=',
             popup: [{
-                label: "设置默认浏览器",
-                tool: '\\RegisterFirefoxPortable.exe'
-            }, {
-                label: '配置优化',
+                label: $L("speedyfox"),
                 tool: '\\speedyfox.exe',
             }, {
-                label: "复制扩展清单",
-                tooltiptext: "左键：名称 + 相关网页\nShift+左键：Markdown 表格",
+                label: $L("copy addons list"),
+                tooltiptext: $L("copy addons list tooltip"),
                 image: "chrome://mozapps/skin/extensions/extension.svg",
                 onclick: function (e) {
                     e.preventDefault();
@@ -365,8 +380,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     });
                 }
             }, {
-                label: "复制UC脚本清单",
-                tooltiptext: "左键：名称 + 主页\n中键：名称",
+                label: $L("copy userchromejs list"),
+                tooltiptext: $L("copy userchromejs list tooltip"),
                 image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABeSURBVDhPY6AKSCms+x+SkPMfREOFwACXOAYYNQBVITrGJQ7CUO0IA0jFUO0QA3BhkEJs4iAM1Y4bgBTBDIAKkQYGlwHYMFQZbgBSBDIAF4Yqww3QbUTHUGWUAAYGAEyi7ERKirMnAAAAAElFTkSuQmCC",
                 onclick: function (e) {
                     e.preventDefault();
@@ -388,7 +403,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             }]
         }, {}, {
-            label: '关于 CopyCat',
+            label: $L("about copycat"),
             where: 'tab',
             image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=',
             url: 'https://kkp.disk.st/firefox-ryan-personal-customization.html'
@@ -483,6 +498,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         uninit() {
             if (this.mainEl) {
+                $JJ('.CopyCat-Replacement[original-id]').forEach(item => {
+                    // 还原移动的菜单
+                    let orgId = item.getAttribute('original-id') || "";
+                    if (orgId.length) {
+                        let org = $(orgId);
+                        item.parentNode.insertBefore(org, item);
+                        item.parentNode.removeChild(item);
+                    }
+                })
                 if (this.debug) this.log($L("destroying element"), this.mainEl);
                 if (this.mainEl.localName == 'toolbarbutton')
                     CustomizableUI.destroyWidget(this.mainEl.id);
@@ -657,7 +681,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
 
             if (obj.command) {
-                // todo: add clone menuitem function
+                // 移动菜单
+                let org = $(obj.command, aDoc);
+                if (org) {
+                    let replacement = $C(aDoc, 'menuseparator', { hidden: true, class: 'CopyCat-Replacement', 'original-id': obj.command });
+                    org.parentNode.insertBefore(replacement, org);
+                    return org;
+                } else {
+                    return $C(aDoc, 'menuseparator', { hidden: true });
+                }
             } else {
                 item = $C(aDoc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group']);
                 if (classList.length) item.setAttribute('class', classList.join(' '));
