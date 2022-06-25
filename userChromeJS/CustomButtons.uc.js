@@ -24,7 +24,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     const LANG = {
         'zh-CN': {
-            "take snapshot": "截图",
+            "take snapshot": "高级截图",
             "take snapshot tooltip": "左键：截图\n右键：截图菜单",
             "hide firefox to take snapshot": "隐藏火狐截图",
             "scroll snapshot": "滚动截图工具",
@@ -856,71 +856,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
         }
         return aURL;
-    }
-
-    function saveFile(fileOrName, data) {
-        var file;
-        if (typeof fileOrName == "string") {
-            file = Services.dirsvc.get('UChrm', Ci.nsIFile);
-            file.appendRelativePath(fileOrName);
-        } else {
-            file = fileOrName;
-        }
-
-        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-        suConverter.charset = 'UTF-8';
-        data = suConverter.ConvertFromUnicode(data);
-
-        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
-        foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
-        foStream.write(data, data.length);
-        foStream.close();
-    }
-
-    function readFile(aFile, metaOnly = false) {
-        let stream = Cc['@mozilla.org/network/file-input-stream;1'].createInstance(Ci.nsIFileInputStream);
-        stream.init(aFile, 0x01, 0, 0);
-        let cvstream = Cc['@mozilla.org/intl/converter-input-stream;1'].createInstance(Ci.nsIConverterInputStream);
-        cvstream.init(stream, 'UTF-8', 1024, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
-        let content = '',
-            data = {};
-        while (cvstream.readString(4096, data)) {
-            content += data.value;
-            if (metaOnly && (content.indexOf('// ==/UserScript==' || content.indexOf('==/UserStyle=='))) > 0) {
-                break;
-            }
-        }
-        cvstream.close();
-        return content.replace(/\r\n?/g, '\n');
-    }
-
-    function readStyleInfo(aFile) {
-        let content = readFile(aFile, true);
-        let header = (content.match(/^\/\*\s*==UserStyle==\s*\n(?:.*\n)*?==\/UserStyle==\s*\*\/\s*\n/m) || [''])[0];
-        let def = ['', ''];
-        let lang = (header.match(/\* @l10n\s+(.+)\s*$/im) || def)[1];
-        try {
-            lang = eval("(" + lang + ")");
-        } catch (e) {
-            lang = {};
-        }
-        return {
-            filename: aFile.leafName || '',
-            content: content,
-            name: (header.match(/\* @name\s+(.+)\s*$/im) || def)[1],
-            charset: (header.match(/\* @charset\s+(.+)\s*$/im) || def)[1],
-            version: (header.match(/\* @version\s+(.+)\s*$/im) || def)[1],
-            description: (header.match(/\* @description\s+(.+)\s*$/im) || def)[1],
-            homepageURL: (header.match(/\* @homepageURL\s+(.+)\s*$/im) || def)[1],
-            downloadURL: (header.match(/\* @downloadURL\s+(.+)\s*$/im) || def)[1],
-            updateURL: (header.match(/\* @updateURL\s+(.+)\s*$/im) || def)[1],
-            optionsURL: (header.match(/\* @optionsURL\s+(.+)\s*$/im) || def)[1],
-            author: (header.match(/\* @author\s+(.+)\s*$/im) || def)[1],
-            license: (header.match(/\* @license\s+(.+)\s*$/im) || def)[1],
-            licenseURL: (header.match(/\* @licenseURL\s+(.+)\s*$/im) || def)[1],
-            lang: lang,
-            // url: Services.io.newURI(getURLSpecFromFile(aFile)) 使用这种方式 @supports -moz-bool-pref 不生效
-        }
     }
 
     window.CustomButtons.init();
