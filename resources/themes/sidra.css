@@ -31,6 +31,7 @@
     --sidra-panel-text-margin: var(--sidra-panel-item-padding-top) var(--sidra-panel-margin-after-text) var(--sidra-panel-item-padding-bottom) var(--sidra-panel-margin-before-text);
     --sidra-separator-padding-top: 3px;
     --sidra-separator-padding-bottom: 3px;
+    --sidra-panel-background: #fff;
     --sidra-menu-color: #262626;
     /** 弹出菜单上下留白 */
     --sidra-menuitem-padding-start: 6px;
@@ -122,6 +123,7 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --button-primary-color: #fbfbfe;
+        --sidra-panel-background: #2b2a33;
         --sidra-menu-background: #2b2a33;
         --sidra-menu-separator-color: #5b5b66;
         --sidra-menu-color: #fbfbfe;
@@ -3647,7 +3649,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     /** Image Picka */
     #image-picka_eight04_blogspot_com-browser-action {
-        list-style-image: url("../images/sidra/toolbarbutton/image.svg");
+        list-style-image: url("../images/sidra/toolbarbutton/photos.svg");
     }
 
     /** Youtube Enhancer */
@@ -3776,7 +3778,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     .tabs-closebutton:hover,
     .tab-close-button:hover,
     #stop-button .toolbarbutton-animatable-image,
-    #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image {
+    #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image,
+    #context-deletehistory-ToolBarButton>image {
         fill: red !important;
     }
 
@@ -3853,7 +3856,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     /*PURPLE*/
     :is(#history-button, #history-panelmenu, #library-button, #privatebrowsing-button, #print-button, #fxa-toolbar-menu-button, #styloaix-button.icon-colored) {
-        fill: #800080 !important;
+        fill: #cc03cc !important;
     }
 
     #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext :is(#history-button, #history-panelmenu, #library-button, #privatebrowsing-button, #print-button, #fxa-toolbar-menu-button) {
@@ -4665,6 +4668,16 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 /**======== 扩展 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.extensions.compact") {
 
+    [uc-extension-id] {
+        color: var(--sidra-menu-color) !important;
+        background-color: var(--sidra-panel-background) !important;
+    }
+
+    [uc-extension-id] > body {
+        color: inherit;
+        background-color: inherit !important;
+    }
+
     /**======== TabMixPlus 扩展 ========*/
     /* TabMixPlus 弹出面板高亮颜色 */
     .tabmix-subview toolbarbutton.subviewbutton:not([disabled], [open], :active):is(:hover, :focus),
@@ -4847,46 +4860,52 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     /**======== Feedbro 扩展 ========*/
-    #mainmenu {
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #mainmenu {
         margin: 0;
+        padding: var(--sidra-panel-padding);
     }
 
-    div#menuitems div.menuitem {
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] div#menuitems div.menuitem {
         padding: var(--sidra-panel-item-padding-top) var(--sidra-panel-item-padding-end) var(--sidra-panel-item-padding-bottom) var(--sidra-panel-padding-no-iconic);
         -moz-context-properties: fill, fill-opacity !important;
         fill: currentColor !important;
-        background-size: var(--sidra-menuitem-icon-width) !important;
+        color: var(--sidra-menu-color);
+        background-size: var(--sidra-panel-icon-width) !important;
         background-repeat: no-repeat !important;
         background-image: var(--menuitem-image);
         background-position: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+        border-radius: 4px;
     }
 
-    div.divider {
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] div#menuitems div.menuitem:hover {
+        background-color: var(--sidra-menuitem-hover-background) !important;
+    }
+
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] div.divider {
         margin-top: var(--sidra-separator-padding-top);
         margin-bottom: var(--sidra-separator-padding-bottom);
-        /*     border-bottom-color: var(--arrowpanel-border-color); */
     }
 
-    div#articlelist {
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] div#articlelist {
         margin-left: var(--sidra-panel-item-padding-start);
         margin-right: var(--sidra-panel-item-padding-end);
         margin-bottom: 0;
     }
 
-    #reader {
-        --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/rss.svg");
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #reader {
+        --menuitem-image: url("../images/sidra/extensions/feedbro/rss.svg");
     }
 
-    #findfeeds {
-        --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/search-glass.svg");
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #findfeeds {
+        --menuitem-image: url("../images/sidra/extensions/feedbro/search-glass.svg");
     }
 
-    #options {
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #options {
         --menuitem-image: url("chrome://global/skin/icons/settings.svg");
     }
 
-    #explorer {
-        --menuitem-image: url("resource://userchromejs/resources/images/sidra/extensions/feedbro/news.svg");
+    [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #explorer {
+        --menuitem-image: url("../images/sidra/extensions/feedbro/news.svg");
     }
 
     /** OneTab */
@@ -4910,6 +4929,202 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     [id^="bookmarksorganizer_agenedia_com"] .menu-iconic-left {
         visibility: hidden;
+    }
+
+    /** Links Gopher */
+    [uc-extension-id="linkgopher@oooninja.com"] > body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--sidra-panel-background);
+    }
+
+    [uc-extension-id="linkgopher@oooninja.com"] > body > .container {
+        padding: var(--sidra-panel-padding);
+    }
+
+    [uc-extension-id="linkgopher@oooninja.com"] > body > .container > button {
+        border: 0;
+        margin-bottom: 0;
+        padding-inline-start: var(--sidra-panel-padding-no-iconic);
+        padding-inline-end: var(--sidra-panel-item-padding-end);
+        padding-top: var(--sidra-panel-item-padding-top);
+        padding-bottom: var(--sidra-panel-item-padding-bottom);
+        text-align: left;
+        border-radius: 5px;
+        color: var(--sidra-menu-color);
+        background-color: unset;
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-panel-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+        cursor: pointer;
+    }
+
+    [uc-extension-id="linkgopher@oooninja.com"] > body > .container > button:hover,
+    [uc-extension-id="linkgopher@oooninja.com"] > body > .container > button:active,
+    [uc-extension-id="linkgopher@oooninja.com"] > body > .container > button:focus {
+        background-color: var(--sidra-menuitem-hover-background);
+    }
+
+    [uc-extension-id="linkgopher@oooninja.com"] #extract-all {
+        --menuitem-image: url("../images/sidra/extensions/linkgopher/links.svg");
+    }
+
+    [uc-extension-id="linkgopher@oooninja.com"] #extract-some {
+        --menuitem-image: url("../images/sidra/extensions/linkgopher/keyword.svg");
+    }
+
+    [uc-extension-id="linkgopher@oooninja.com"] #about-linkgopher {
+        --menuitem-image: url("chrome://global/skin/icons/info.svg");
+    }
+
+    /** Tampermonkey */
+    [uc-extension-id="firefox@tampermonkey.net"] > body {
+        padding: var(--sidra-panel-padding);
+        width: calc(100% - var(--sidra-panel-padding-x) * 2);
+        overflow: hidden;
+    }
+
+    [uc-extension-id="firefox@tampermonkey.net"] #action {
+        margin-right: 0;
+    }
+
+    [uc-extension-id="firefox@tampermonkey.net"] table.at_commands > tr:first-child[id$="mm_outer_tr"] > td:first-child {
+        background-image: url("chrome://global/skin/icons/settings.svg");
+        background-size: var(--sidra-panel-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-position: calc((2.3em - 16px) /2 + 2px) 4px;
+    }
+
+    [uc-extension-id="firefox@tampermonkey.net"] .actionregion table {
+        border-width: 0;
+    }
+
+    [uc-extension-id="firefox@tampermonkey.net"] .actiontable tr {
+        height: calc(var(--sidra-panel-item-padding-top) + var(--sidra-panel-icon-height, 16px) + var(--sidra-panel-item-padding-bottom));
+    }
+
+    [uc-extension-id="firefox@tampermonkey.net"] .actiontable tr:hover {
+        background: linear-gradient(to bottom, var(--sidra-menuitem-hover-background) calc(var(--sidra-panel-item-padding-top) + var(--sidra-panel-icon-height, 16px) + var(--sidra-panel-item-padding-bottom)), #00000000 calc(var(--sidra-panel-item-padding-top) + var(--sidra-panel-icon-height, 16px) + var(--sidra-panel-item-padding-bottom)));
+    }
+
+    /** Stylus */
+    [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup {
+        padding: var(--sidra-panel-padding);
+    }
+
+    [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #disableAll {
+        background-color: transparent;
+        background-image: url("../images/sidra/skin/checkbox.svg");
+        width: 16px;
+        height: 16px;
+        border: 0px;
+        fill: var(--sidra-menu-color);
+        fill: currentColor !important;
+        -moz-context-properties: fill, fill-opacity !important;
+    }
+
+    [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #installed.disabled + .actions #disableAll:checked {
+        background-image: url("../images/sidra/skin/checkbox-checked.svg");
+    }
+
+    [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #installed.disabled + .actions #disableAll:checked:hover {
+        border-color: transparent;
+        background-color: transparent;
+    }
+
+    [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #installed.disabled + .actions #disableAll:checked + .svg-icon.checked {
+        display: none;
+    }
+
+    [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #popup-options button {
+        padding: 8px 16px;
+        font-weight: 600;
+        border-radius: 4px;
+        background-image: unset;
+        color: var(--sidra-menu-color);
+        background-color: var(--sidra-panel-background);
+    }
+
+    /** Sound Fixer */
+    [uc-extension-id="soundfixer@unrelenting.technology"] header {
+        color: var(--sidra-menu-color);
+    }
+
+    [uc-extension-id="soundfixer@unrelenting.technology"] :is(#elements-list, .info) {
+        color: var(--sidra-menu-color);
+        background-color: color-mix(in srgb, var(--sidra-panel-background) 90%, #fff);
+    }
+
+    /** X-Nofifier */
+    [uc-extension-id="{37fa1426-b82d-11db-8314-0800200c9a66}"] .ml {
+        margin-left: 0 !important;
+        padding-inline-start: var(--sidra-panel-padding-no-iconic);
+        padding-inline-end: var(--sidra-panel-item-padding-end);
+        padding-top: var(--sidra-panel-item-padding-top);
+        padding-bottom: var(--sidra-panel-item-padding-bottom);
+        height: unset;
+        border-radius: 4px;
+        color: var(--sidra-menu-color);
+        cursor: pointer;
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-panel-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+    }
+
+    [uc-extension-id="{37fa1426-b82d-11db-8314-0800200c9a66}"] .ml:hover {
+        border: 0px;
+        background-color: var(--sidra-menuitem-hover-background);
+    }
+
+    [uc-extension-id="{37fa1426-b82d-11db-8314-0800200c9a66}"] #chk {
+        --menuitem-image: url("../images/sidra/extensions/x-notifier/update.svg");
+    }
+
+    [uc-extension-id="{37fa1426-b82d-11db-8314-0800200c9a66}"] #open {
+        --menuitem-image: url("../images/sidra/extensions/x-notifier/new-tab.svg");
+    }
+
+    [uc-extension-id="{37fa1426-b82d-11db-8314-0800200c9a66}"] #options {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    [uc-extension-id="{37fa1426-b82d-11db-8314-0800200c9a66}"] #help {
+        --menuitem-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    /** Safe In Cloud */
+    [uc-extension-id="info@safe-in-cloud.com"] .layout {
+        color: inherit !important;
+        background-color: inherit !important;
+    }
+
+    [uc-extension-id="info@safe-in-cloud.com"] .title_separator {
+        border-top-color: var(--sidra-panel-background) !important;
+        border-bottom-color: var(--sidra-panel-background) !important;
+    }
+
+    /** I dont't care about cookies */
+    [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body > div {
+        padding: var(--sidra-panel-padding) !important;
+    }
+
+    [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body > div> div {
+        padding: 0 !important;
+    }
+
+    [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body > div> div > a[id] {
+        border-top: 0;
+        color: var(--sidra-menu-color);
+    }
+
+    [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body > div> div > a[id]:hover {
+        background-color: var(--sidra-menuitem-hover-background);
     }
 }
 
