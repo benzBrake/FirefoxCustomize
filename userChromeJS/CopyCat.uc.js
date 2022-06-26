@@ -2,11 +2,12 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.1.2
-// @compatibility   Firefox 70 +
+// @version         0.1.3
+// @compatibility   Firefox 78 +
 // @startup         window.CopyCat.init();
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.1.3 修改主题列表 tooltiptext，尝试修复有时候 CSS 未加载
 // @version         0.1.2 新增移动菜单功能，本地化覆盖所有菜单
 // @version         0.1.1 修复 bug，自动读取主题选项
 // @version         0.1.0 初始版本
@@ -34,12 +35,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             "open themes directory": "打开主题目录",
             "open images directory": "打开图片目录",
             "no theme": "关闭主题",
-            "theme item tooltip text": "左键：更换主题\n右键：修改主题",
+            "theme item tooltip text": "主题：{name}\n作者：{author}\n简介：{description}\n左键：更换主题\n右键：修改主题",
             "theme options": "主题选项",
             "modify config file": "修改配置文件",
             "addMenuPlus config file": "菜单",
             "reload config file": "重新载入配置",
             "KeyChanger config file": "快捷键",
+            "portable configure": "便携配置",
             "browser toolbox": "浏览器内容工具箱",
             "fix browser toolbox": "修复浏览器内容工具箱",
             "usefull tools": "实用工具",
@@ -162,8 +164,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     });
                     if (CopyCat.themes) {
                         Object.values(CopyCat.themes).forEach(theme => {
+                            let tooltiptext = $CCL("theme item tooltip text");
+                            tooltiptext = tooltiptext.replace("{name}", theme.name).replace("{author}", theme.author).replace("{description}", theme.description).replace("\\n", "\n");
                             let menuitem = $CCC(aDoc, 'menuitem', {
-                                type: 'radio', class: 'menuitem-iconic', tooltiptext: $CCL("theme item tooltip text"), skin: true, edit: theme.file.path, value: theme.id, label: theme.name, checked: theme.id === cPref.get(CopyCat.PREF_THEME, "")
+                                type: 'radio',
+                                class: 'menuitem-iconic',
+                                tooltiptext: tooltiptext,
+                                skin: true,
+                                edit: theme.file.path,
+                                value: theme.id,
+                                label: theme.name,
+                                checked: theme.id === cPref.get(CopyCat.PREF_THEME, "")
                             })
                             if (ins)
                                 ins.parentNode.insertBefore(menuitem, ins)
@@ -300,6 +311,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }, {
                 label: 'user.js',
                 edit: '\\user.js',
+            }, {
+            }, {
+                label: $L("portable configure"),
+                tooltiptext: $L("portable configure"),
+                exec: "\\..\\CopyCat.exe",
+                text: "-set"
             }]
         }, {
             id: 'copycat-insert-point'
@@ -513,9 +530,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 else
                     this.mainEl.parentNode.removeChild(this.mainEl);
             }
-            if (this.style) {
+            if (this.style && this.style.parentNode) {
                 if (this.debug) this.log($L("unregister style"), this.style);
-                Sss.unregisterSheet(this.style.url, this.style.sheet);
+                this.style.parentNode.removeChild(this.style);
                 this.style = null;
             }
             if (this.theme) {
@@ -531,8 +548,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         rebuild() {
             this.uninit();
-            this.style = createStyle(css);
-            Sss.loadAndRegisterSheet(this.style.url, this.style.sheet);
+            this.style = addStyle(css);
             this.loadThemes();
             this.loadTheme();
             this.needRefreshThemeList = true;
@@ -1156,16 +1172,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }
     }
 
-    function createStyle(css, sheet = 'agent') {
-        let map = {
-            'agent': 0,
-            'user': 1,
-            'author': 2
-        }
-        return {
-            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)),
-            sheet: map[sheet.toLocaleLowerCase()] || 0
-        }
+    function addStyle(css) {
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
     }
 
     /**
