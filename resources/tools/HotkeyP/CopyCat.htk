@@ -1,0 +1,31 @@
+hotKeys7 5 1
+Snapshot 截图
+..\..\Tools\Snapshot.exe
+
+
+
+538836993 65 3 0 1 0 -1 0 0
+Snapshot 隐藏窗口截图
+
+
+
+
+538836993 65 7 0 1 0 8 0 0
+ScreenToGif 动态截图
+..\..\Tools\ScreenToGif.exe
+
+
+
+538902529 83 3 0 1 0 -1 0 0
+FSCapture 完整截图工具
+..\..\Tools\FSCapture\FSCapture.exe
+
+
+
+539033601 70 3 0 1 0 -1 0 0
+Colors 颜色吸取工具
+..\..\Tools\Colors\Colors.exe
+
+
+
+539885569 67 3 0 1 0 -1 0 0

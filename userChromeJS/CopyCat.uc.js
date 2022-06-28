@@ -155,34 +155,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             class: 'skin',
             onpopupshowing: function (e) {
                 let popup = e.target,
-                    aDoc = e.ownerDocument,
-                    ins = popup.querySelector("#copycat-theme-menu-separator");
+                    aDoc = e.ownerDocument;
                 if (CopyCat?.needRefreshThemeList) {
-                    if (CopyCat?.debug) CopyCat.log(["refresh theme list", popup]);
-                    popup.querySelectorAll('[skin="true"]').forEach(function (skin) {
-                        skin.parentNode.removeChild(skin);
-                    });
-                    if (CopyCat.themes) {
-                        Object.values(CopyCat.themes).forEach(theme => {
-                            let tooltiptext = $CCL("theme item tooltip text");
-                            tooltiptext = tooltiptext.replace("{name}", theme.name).replace("{author}", theme.author).replace("{description}", theme.description).replace("\\n", "\n");
-                            let menuitem = $CCC(aDoc, 'menuitem', {
-                                type: 'radio',
-                                class: 'menuitem-iconic',
-                                tooltiptext: tooltiptext,
-                                skin: true,
-                                edit: theme.file.path,
-                                value: theme.id,
-                                label: theme.name,
-                                checked: theme.id === cPref.get(CopyCat.PREF_THEME, "")
-                            })
-                            if (ins)
-                                ins.parentNode.insertBefore(menuitem, ins)
-                            else
-                                popup.appendChild(menuitem);
-                        })
-                    }
+                    CopyCat.refreshThemeList(popup, aDoc)
                     CopyCat.needRefreshThemeList = false;
+                }
+
+                if (CopyCat?.needRefreshThemeOptions) {
+                    CopyCat.refreshTHemeOptions(popup, aDoc);
+                    CopyCat.needRefreshThemeOptions = false;
                 }
 
                 let themeName = cPref.get(CopyCat?.PREF_THEME, "");
@@ -193,34 +174,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     popup.querySelector(`[skin][value="${themeName}"]`).setAttribute("checked", true);
                 } else {
                     popup.querySelector(`[skin="false"]`).setAttribute("checked", true);
-                }
-
-                if (CopyCat?.needRefreshThemeOptions) {
-                    if (CopyCat?.debug) CopyCat.log(["refresh theme options", popup]);
-                    popup.querySelectorAll('[option="true"]').forEach(function (option) {
-                        let pref = option.getAttribute('pref');
-                        if (pref && CopyCat?.PREF_LISTENER[pref])
-                            cPref.removeListener(CopyCat?.PREF_LISTENER[pref]);
-                        option.parentNode.removeChild(option);
-                    });
-                    if (CopyCat?.theme?.options) {
-                        Object.values(CopyCat.theme.options).forEach(option => {
-                            let item = popup.appendChild(CopyCat.createMenuItem({
-                                label: option.name,
-                                type: 'checkbox',
-                                option: true,
-                                pref: option.pref,
-                                defaultValue: 0,
-                                checked: cPref.get(option.pref, false)
-                            }, aDoc));
-                            function callback() {
-                                item.setAttribute("checked", cPref.get(option.pref, false));
-                                CopyCat.loadTheme();
-                            }
-                            CopyCat.addPrefListener(option.pref, callback);
-                        })
-                    }
-                    CopyCat.needRefreshThemeOptions = false;
                 }
             },
             onclick: function (event) {
@@ -568,6 +521,63 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         getCurrentThemeName: function () {
             return cPref.get(this.PREF_THEME, "");
         },
+        refreshThemeList(popup, aDoc) {
+            if (!popup)
+                return;
+            aDoc || (aDoc = popup.ownerDocument);
+            let ins = popup.querySelector("#copycat-theme-menu-separator");
+            if (this.debug) this.log(["refresh theme list", popup]);
+            popup.querySelectorAll('[skin="true"]').forEach(skin => skin.parentNode.removeChild(skin));
+            if (this.themes) {
+                Object.values(this.themes).forEach(theme => {
+                    let tooltiptext = $CCL("theme item tooltip text");
+                    tooltiptext = tooltiptext.replace("{name}", theme.name).replace("{author}", theme.author).replace("{description}", theme.description).replace("\\n", "\n");
+                    let menuitem = $CCC(aDoc, 'menuitem', {
+                        type: 'radio',
+                        class: 'menuitem-iconic',
+                        tooltiptext: tooltiptext,
+                        skin: true,
+                        edit: theme.file.path,
+                        value: theme.id,
+                        label: theme.name,
+                        checked: theme.id === cPref.get(CopyCat.PREF_THEME, "")
+                    })
+                    if (ins)
+                        ins.parentNode.insertBefore(menuitem, ins)
+                    else
+                        popup.appendChild(menuitem);
+                })
+            }
+        },
+        refreshThemeOptions(popup, aDoc) {
+            if (!popup)
+                return;
+            aDoc || (aDoc = popup.ownerDocument);
+            if (this.debug) this.log(["refresh theme options", popup]);
+            popup.querySelectorAll('[option="true"]').forEach(function (option) {
+                let pref = option.getAttribute('pref');
+                if (pref && this.PREF_LISTENER[pref])
+                    cPref.removeListener(this.PREF_LISTENER[pref]);
+                option.parentNode.removeChild(option);
+            });
+            if (this.theme?.options) {
+                Object.values(this.theme.options).forEach(option => {
+                    let item = popup.appendChild(CopyCat.createMenuItem({
+                        label: option.name,
+                        type: 'checkbox',
+                        option: true,
+                        pref: option.pref,
+                        defaultValue: 0,
+                        checked: cPref.get(option.pref, false)
+                    }, aDoc));
+                    function callback() {
+                        item.setAttribute("checked", cPref.get(option.pref, false));
+                        CopyCat.loadTheme();
+                    }
+                    this.addPrefListener(option.pref, callback);
+                });
+            }
+        },
         loadTheme(themeName) {
             themeName || (themeName = this.getCurrentThemeName() || "");
             if (this.theme)
@@ -642,6 +652,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             let popup = $C(doc, 'menupopup', { id: id, class: 'CopyCat-Popup' });
                             btn.appendChild(popup);
                             obj.popup.forEach(child => popup.appendChild(CopyCat.createMenu(child, doc, popup, true)));
+                            let themeMenu = btn.querySelector("#CopyCat-ThemeMenu");
+                            if (themeMenu && themeMenu.querySelector(":scope>menupopup")) {
+                                let tPopup = themeMenu.querySelector(":scope>menupopup");
+                                CopyCat.refreshThemeList(tPopup, aDoc);
+                                CopyCat.refreshThemeOptions(tPopup, aDoc);
+                            }
                         }
                         if (obj.onBuild && typeof obj.onBuild == 'function') obj.onBuild(btn, aDoc);
                     } catch (e) {
