@@ -162,7 +162,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
 
                 if (CopyCat?.needRefreshThemeOptions) {
-                    CopyCat.refreshTHemeOptions(popup, aDoc);
+                    CopyCat.refreshThemeOptions(popup, aDoc);
                     CopyCat.needRefreshThemeOptions = false;
                 }
 
@@ -339,10 +339,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             });
                         }
                     ).then(arr => arr = arr.filter(m => !!m.id)).then(arr => {
-                        let text = e.shiftKey ? "| 名称 | 版本 |链接 |\n| ---- | ---- | ---- |\n" : "",
+                        let text = e.shiftKey ? "| 名称 | 版本 | 链接 | 默 | \n| ---- | ---- | ---- | ---- |\n" : "",
                             glue = e.shiftKey ? "|" : " ";
                         arr.forEach(item => {
-                            let line = [item.name, item.version, item.url].join(glue);
+                            let line = [item.name, item.version, item.url, item.isActive ? '✔' : '✘'].join(glue);
                             if (e.shiftKey) line = [glue, glue].join(line);
                             text += line + '\n';
                         })
@@ -556,8 +556,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (this.debug) this.log(["refresh theme options", popup]);
             popup.querySelectorAll('[option="true"]').forEach(function (option) {
                 let pref = option.getAttribute('pref');
-                if (pref && this.PREF_LISTENER[pref])
-                    cPref.removeListener(this.PREF_LISTENER[pref]);
+                if (pref && CopyCat.PREF_LISTENER[pref])
+                    cPref.removeListener(CopyCat.PREF_LISTENER[pref]);
                 option.parentNode.removeChild(option);
             });
             if (this.theme?.options) {
@@ -1002,6 +1002,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 CopyCat.error(e)
             }).catch(e => { });
 
+        },
+        copyText: function (aText) {
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
         },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
