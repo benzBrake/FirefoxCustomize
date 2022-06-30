@@ -5,7 +5,7 @@
  * @version         0.1.0
  * @compatibility   Firefox 90
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
- * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏', 'userChromeJS.sidra.other.compact': '其他细节' }
+ * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏', 'userChromeJS.sidra.other.compact': '其他细节', 'userChromeJS.sidra.autoOneLine': '分辨率大于1600px时启用单行模式' }
 ==/UserStyle== */
 
 :root {
@@ -14,6 +14,8 @@
     --search-box-color: var(--toolbar-field-background-color);
     --search-box-focus: var(--toolbar-field-focus-background-color);
     --search-box-null: hsl(336, 69%, 71%);
+    --sidra-tab-rounding: 0px;
+    --sidra-tab-separator-color: rgba(0, 0, 0, .2) !important;
     --sidra-panel-padding-x: 4px;
     --sidra-panel-padding-y: 4px;
     --sidra-panel-padding: var(--sidra-panel-padding-y) var(--sidra-panel-padding-x);
@@ -66,10 +68,12 @@
     --sidra-tab-hover: color-mix(in srgb, #dadada 50%, transparent);
     --sidra-tab-selected: #dadada;
     --sidra-multiselected-color: hsl(241, 50%, 51%);
+    --sidra-oneline-urlbar-min-width: 50vw;
 }
 
 :root[uidensity="compact"] {
     --tab-min-height: 26px;
+    --toolbarbutton-outer-padding: 2px !important;
     --sidra-panel-padding-x: 2px;
     --sidra-panel-padding-y: 2px;
     --sidra-panel-item-padding-start: 2px;
@@ -123,6 +127,8 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --button-primary-color: #fbfbfe;
+        --toolbar-bgcolor: rgb(68, 68, 68);
+        --sidra-toolbar-bgcolor: rgb(68, 68, 68);
         --sidra-panel-background: #2b2a33;
         --sidra-menu-background: #2b2a33;
         --sidra-menu-separator-color: #5b5b66;
@@ -139,6 +145,10 @@
         background-repeat: var(--lwt-background-tiling);
         background-position: var(--lwt-background-alignment);
         background-color: var(--lwt-accent-color, #fff);
+    }
+
+    .browser-toolbar:not(.titlebar-color) {
+        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
     }
 
     .titlebar-spacer[type="pre-tabs"] {
@@ -200,7 +210,7 @@
         width: 10px !important;
         height: 10px !important;
         box-shadow: none !important;
-        background-image: url(chrome://userchrome/content/devtools/error.svg) !important;
+        background-image: url("../images/sidra/skin/error.svg") !important;
         background-size: contain !important;
         background-position: center !important;
         background-repeat: no-repeat !important;
@@ -210,7 +220,7 @@
         background-color: transparent !important;
         -moz-context-properties: none !important;
         border-radius: revert !important;
-        background-image: url(chrome://userchrome/content/indicator-tab-attention-purple.svg) !important;
+        background-image: url("../images/sidra/skin/indicator-tab-attention-purple.svg") !important;
     }
 
     :is(.customization-target, .widget-overflow-list) #downloads-button[attention="warning"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
@@ -226,7 +236,7 @@
     }
 
     :is(.customization-target, .widget-overflow-list) #fxa-toolbar-menu-button[badge-status="login_failed"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-        background: url(chrome://userchrome/content/skin/controlcenter/warning.svg) no-repeat center/contain !important;
+        background: url("../images/sidra/skin/controlcenter/warning.svg") no-repeat center/contain !important;
         stroke: var(--low-warning-icon-detail) !important;
         fill: var(--low-warning-icon-background) !important;
         box-shadow: none !important;
@@ -343,14 +353,9 @@
         background-color: var(--toolbarbutton-active-background);
     }
 
-    /* fix a little visual bug (maybe related to window scaling) where the stop button appears to move half a pixel to the left between animations.
-this is because the reload button is replaced with a step animation for a few moments, and the step animation is then replaced with a static stop icon.
-the stop icon sticks around until the page finishes loading, then it's hidden again and the step animation returns and plays in reverse.
-unfortunately the way the static icon is rendered is not identical to the step animation for every given scaling factor.
-to fix this we can just replace the static icon's path entirely with a path pulled directly from the step animation.
-i haven't tested this on every scaling factor, if it makes things worse on your setup then just delete or override this. */
+    /* 修复停止按钮的便宜bug，如果没有问题，删掉 */
     #stop-button .toolbarbutton-icon {
-        background-image: url(chrome://userchrome/content/skin/stop-button-fix.svg) !important;
+        background-image: url("../images/sidra/skin/stop-button-fix.svg") !important;
         background-repeat: no-repeat;
         background-position: left 5px center;
         list-style-image: none;
@@ -462,7 +467,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]::after {
         content: "";
         display: -moz-inline-box;
-        background: url(chrome://userchrome/content/check.svg) no-repeat center/contain;
+        background: url("../images/sidra/check.svg") no-repeat center/contain;
         fill: currentColor;
         width: 16px;
         height: 16px;
@@ -773,20 +778,6 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         display: none !important;
     }
 
-    /* 隐藏标签分隔符 */
-    .tabbrowser-tab::after,
-    .tabbrowser-tab::before {
-        opacity: 0 !important;
-        border-image: unset !important;
-        border-image-slice: unset !important;
-        width: unset !important;
-    }
-
-    .tabbrowser-tab::after,
-    .tabbrowser-tab::before {
-        border-left: none !important;
-    }
-
     #TabsToolbar .toolbarbutton-1> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
         border-radius: var(--toolbarbutton-border-radius) !important;
     }
@@ -921,7 +912,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     /* 容器标签彩色下划线 */
-    .tabbrowser-tab[usercontextid] .tab-context-line {
+    .tabbrowser-tab[usercontextid] .tab-background::before {
         background: var(--identity-tab-color) !important;
         height: 2px !important;
         margin-bottom: 0 !important;
@@ -933,7 +924,20 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         outline: none;
     }
 
-    /* purple line on multiselected tabs */
+    /* 选中标签颜色 */
+    #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[multiselected="true"],
+    #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[selected="true"] {
+        background-image: none !important;
+        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor)) !important;
+    }
+
+    /* 选中标签阴影 */
+    #TabsToolbar:not([brighttext]) .tabbrowser-tab:is([visuallyselected="true"], [multiselected])>.tab-stack>.tab-background {
+        box-shadow: 0 0 4px rgba(0, 0, 0, .5) !important;
+    }
+
+
+    /* 选中多个标签下划线标注 */
     #TabsToolbar .tabbrowser-tab[multiselected="true"] .tab-context-line {
         min-height: 2px !important;
         background-color: var(--sidra-multiselected-color, var(--toolbar-bgcolor)) !important;
@@ -948,6 +952,19 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         transition: none !important;
     }
 
+    /* 去除主题引入的选中标签 outline */
+    #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon:-moz-lwtheme,
+    .tab-background[selected]:not([multiselected="true"]):-moz-lwtheme {
+        outline: none;
+    }
+
+    /* 非激活标签分隔符 */
+    .tabbrowser-tab:not([selected=true]):not([multiselected=true]):not([beforeselected-visible="true"]) .tab-background {
+        border-right: 1px solid var(--sidra-tab-separator-color) !important;
+    }
+
+
+
     .tabbrowser-tab:not([usercontextid], [multiselected]) .tab-context-line {
         display: none !important;
     }
@@ -960,7 +977,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         font-weight: unset !important;
     }
 
-    /* highlight unread tabs; requires italicizeUnreadTabs.uc.js */
+    /* 高亮未读标签; 依赖 italicizeUnreadTabs.uc.js */
     :root[italic-unread-tabs] .tabbrowser-tab[notselectedsinceload]:not([pending]),
     :root[italic-unread-tabs] .tabbrowser-tab[notselectedsinceload][pending][busy] {
         font-style: italic !important;
@@ -968,12 +985,13 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     #TabsToolbar .tabbrowser-tab,
     #TabsToolbar .tabbrowser-tab :is(.tab-stack, .tab-background, .tab-content, .tab-loading-burst) {
-        border-top-right-radius: 5px !important;
-        border-top-left-radius: 5px !important;
-        overflow: hidden;
+        border-top-right-radius: var(--sidra-tab-rounding) !important;
+        border-top-left-radius: var(--sidra-tab-rounding) !important;
+        /* overflow: hidden; */
+        /* 设置了这一行就没有阴影了 */
     }
 
-    /* pinned tabs should style just like regular tabs except without labels and buttons */
+    /* 固定标签和普通标签一样除了没有标题和控制按钮 */
     #tabbrowser-tabs[positionpinnedtabs]>#tabbrowser-arrowscrollbox>.tabbrowser-tab[pinned]>.tab-stack {
         border-inline: none !important;
     }
@@ -984,7 +1002,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     /* 固定标签页宽度 仅留下图标 */
     .tabbrowser-tab[pinned] {
-        width: var(--tab-min-height, 32px) !important;
+        box-sizing: border-box;
     }
 
     .tabbrowser-tab[pinned] .tab-content {
@@ -993,16 +1011,13 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         align-items: center;
     }
 
-    #main-window[uidensity="compact"] .tabbrowser-tab[pinned] {
-        width: var(--tab-min-height, 26px) !important;
-    }
-
-    #main-window[uidensity="touch"] .tabbrowser-tab[pinned] {
-        width: var(--tab-min-height, 41px) !important;
-    }
-
     .tabbrowser-tab[pinned] .tab-label-container {
         display: none;
+    }
+
+    /* 去除固定标签和普通标签之间的间隔 */
+    #tabbrowser-tabs[haspinnedtabs]:not([positionpinnedtabs])>#tabbrowser-arrowscrollbox>.tabbrowser-tab[first-visible-unpinned-tab] {
+        margin-inline-start: 0 !important;
     }
 
     /* get rid of drop shadow drawn on leftmost visible tab */
@@ -1113,7 +1128,13 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     /** 垂直标签栏 */
     #main-window[vertical-tabs="true"] #vertical-tabs-list .all-tabs-item:is([selected], [multiselected], [usercontextid]:is(:hover, [_moz-menuactive])) .all-tabs-button:not([disabled]) {
-        background-image: linear-gradient(to right, color-mix(in srgb, var(--main-stripe-color) 20%, white), color-mix(in srgb, var(--main-stripe-color) 10%, white)) !important;
+        background-image: linear-gradient(to right,  color-mix(in srgb, var(--main-stripe-color) 10%, white), color-mix(in srgb, var(--main-stripe-color) 30%, white)) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        #main-window[vertical-tabs="true"] #vertical-tabs-list .all-tabs-item:is([selected], [multiselected], [usercontextid]:is(:hover, [_moz-menuactive])) .all-tabs-button:not([disabled]) {
+            background-image: linear-gradient(to right, color-mix(in srgb, var(--main-stripe-color) 20%, var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor))), color-mix(in srgb, var(--main-stripe-color) 10%, var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor)))) !important;
+        }
     }
 
     #vertical-tabs-list .all-tabs-item:is(:hover, :focus-within) .all-tabs-secondary-button[close-button] {
@@ -1127,8 +1148,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         display: grid;
         border: none !important;
         grid-template-columns: auto 1fr;
-        grid-template-areas:
-            "navbar navbar titlebar"
+        grid-template-areas: "navbar navbar titlebar"
             "PersonalToolbar PersonalToolbar PersonalToolbar";
     }
 
@@ -1143,7 +1163,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #main-window[vertical-tabs="true"] #titlebar {
         grid-area: titlebar;
         -moz-appearance: none !important;
-        background-color: var(--toolbar-bgcolor);
+        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
         background-image: var(--toolbar-bgimage);
         background-clip: padding-box;
         color: var(--toolbar-color);
@@ -1623,7 +1643,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     /** 菜单加边框 */
-    :is(#historyMenuPopup, #bookmarksMenuPopup, #historyMenuPopup menupopup, #bookmarksMenuPopup menupopup, menupopup:not([placespopup]))::part(content) {
+    :is(#historyMenuPopup, #bookmarksMenuPopup, #historyMenuPopup menupopup, #bookmarksMenuPopup menupopup, menupopup:not([placespopup]), #tabmix-historyUndoWindowPopup)::part(content) {
         margin: 0;
         padding: var(--sidra-menu-padding, 6px 0);
         background-clip: padding-box !important;
@@ -2646,7 +2666,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     /*链接*/
     #context-openlinkincurrent {
-        --menuitem-image: url("../images/sidra/page-context/current-tab.svg");
+        --menuitem-image: url("../images/sidra/page-context/open-in-current.svg");
     }
 
     #context-openlinkintab {
@@ -2953,12 +2973,16 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         --menuitem-image: url("../images/sidra/main-menu/closed-tabs.svg") !important;
     }
 
+    #historyUndoMenu menuitem {
+        --menuitem-image: "";
+    }
+
     #historyUndoWindowMenu {
         --menuitem-image: url("../images/sidra/main-menu/closed-windows.svg") !important;
     }
 
     #menu_clearClosedWindowsList {
-        --menuitem-image: url("chrome://browser/skin/forget.svg") !important;
+        --menuitem-image: url("../images/sidra/main-menu/clean.svg") !important;
     }
 
     /* Bookmark */
@@ -3267,7 +3291,11 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     :is(#appMenu-library-recentlyClosedTabs,
         #appMenu-library-recentlyClosedWindows) .restoreallitem {
-        list-style-image: url("../images/sidra/tab-context/reload.svg");
+        list-style-image: url("../images/sidra/tab-context/reload.svg") !important;
+    }
+
+    #historyUndoPopup .restoreallitem {
+        --menuitem-image: url("../images/sidra/tab-context/reload.svg");
     }
 
     #PanelUI-historyMore {
@@ -3765,6 +3793,11 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     #clearDownloadsButton>.toolbarbutton-text {
         margin: 1px 6px 2px !important;
     }
+
+    /** memoryMinimizationButton.uc.js */
+    #memoryMinimizationButton {
+        list-style-image: url("../images/sidra/toolbarbutton/system-task.svg") !important;
+    }
 }
 
 /******* from https://github.com/Aris-t2/CustomCSSforFx ******/
@@ -3930,7 +3963,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     #sidebar-header,
     #sidebar {
-        background-color: var(--toolbar-bgcolor);
+        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
         background-image: var(--toolbar-bgimage);
     }
 
@@ -4118,7 +4151,7 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     #status-bar {
-        background-color: var(--toolbar-bgcolor);
+        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
         background-image: var(--toolbar-bgimage);
         background-clip: padding-box;
         color: var(--toolbar-color);
@@ -4721,7 +4754,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         -moz-image-region: rect(0 16px 16px 0) !important;
     }
 
-    #tm-openAllLinks {
+    #tm-openAllLinks,
+    #tmOpenInNewTab {
         --menuitem-image: url("../images/sidra/extensions/tabmixplus/open-in-new-tab.svg");
     }
 
@@ -4733,7 +4767,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         --menuitem-image: url("../images/sidra/extensions/tabmixplus/rename.svg");
     }
 
-    #tm-copyTabUrl {
+    #tm-copyTabUrl,
+    #tmcopyTabUrl {
         --menuitem-image: url("../images/sidra/extensions/tabmixplus/copy.svg");
     }
 
@@ -4775,7 +4810,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         -moz-image-region: rect(0 16px 16px 0) !important;
     }
 
-    #tm-content-undoCloseTab {
+    #tm-content-undoCloseTab,
+    #tmRestoreTab {
         --menuitem-image: url("../images/sidra/extensions/tabmixplus/rollback.svg");
     }
 
@@ -4818,7 +4854,8 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         --menuitem-image: url("../images/sidra/extensions/tabmixplus/clone.svg");
     }
 
-    #tm-openinverselink {
+    #tm-openinverselink,
+    #tmOpenInNewWindow {
         --menuitem-image: url("../images/sidra/extensions/tabmixplus/open-in-new-window.svg");
     }
 
@@ -4838,7 +4875,17 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
         --menuitem-image: url("../images/sidra/skin/checkbox.svg") !important;
     }
 
-    #lockedClosedTabsList > .menu-iconic-left {
+    toolbarbutton#lockedClosedTabsList {
+        -moz-context-properties: fill, fill-opacity !important;
+        fill: currentColor !important;
+        background-size: var(--sidra-panel-icon-width) !important;
+        background-repeat: no-repeat !important;
+        background-image: var(--menuitem-image);
+        background-position: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon)) 50% !important;
+    }
+
+    #lockedClosedTabsList > .menu-iconic-left,
+    #lockedClosedTabsList > .toolbarbutton-icon {
         visibility: hidden;
     }
 
@@ -4847,16 +4894,29 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
     }
 
     #clearClosedTabsList {
-        list-style-image: url("chrome://browser/skin/forget.svg");
+        list-style-image: url("../images/sidra/extensions/tabmixplus/clean.svg");
     }
 
     toolbarbutton#menu_clearClosedWindowsList {
-        list-style-image: url("chrome://browser/skin/forget.svg") !important;
+        list-style-image: url("../images/sidra/extensions/tabmixplus/clean.svg") !important;
     }
 
     /** 修正 Tabmixplus 图片定位 */
     #main-window:not([customizing]) #tabmix-closedWindowsButton {
         -moz-image-region: rect(0px 16px 16px 0) !important;
+    }
+
+    #tm_delete-window,
+    #tm_delete {
+        --menuitem-image: url("chrome://global/skin/icons/delete.svg")
+    }
+
+    #tmOpen {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/open-in-current.svg");
+    }
+
+    #tmAddBookmark {
+        --menuitem-image: url("../images/sidra/extensions/tabmixplus/bookmark-plus.svg");
     }
 
     /**======== Feedbro 扩展 ========*/
@@ -5125,6 +5185,116 @@ i haven't tested this on every scaling factor, if it makes things worse on your 
 
     [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body > div> div > a[id]:hover {
         background-color: var(--sidra-menuitem-hover-background);
+    }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.autoOneLine") {
+    @media (min-width: 1600px) {
+
+        .titlebar-spacer[type="pre-tabs"],
+        .titlebar-spacer[type="post-tabs"] {
+            display: none;
+        }
+
+        #navigator-toolbox {
+            display: grid;
+            border: none !important;
+            grid-template-columns: auto 1fr;
+            grid-template-areas: "navbar titlebar"
+            "PersonalToolbar PersonalToolbar";
+        }
+
+        #titlebar {
+            grid-area: titlebar;
+            -moz-appearance: none !important;
+            background-color: var(--toolbar-bgcolor);
+            background-image: var(--toolbar-bgimage);
+            background-clip: padding-box;
+            color: var(--toolbar-color);
+            -moz-box-orient: horizontal !important;
+        }
+
+        #toolbar-menubar {
+            -moz-box-ordinal-group: 3;
+        }
+
+        #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+            max-width: 0 !important;
+            min-width: 0 !important;
+            width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            opacity: 0 !important;
+        }
+
+        #main-menubar {
+            -moz-box-flex: 1 !important;
+        }
+
+        #toolbar-menubar #menubar-items {
+            -moz-box-pack: center !important;
+        }
+
+        #main-menubar>menu>menupopup {
+            margin-block: calc(0px - var(--menupopup-inner-box-margin) - ((var(--tab-min-height) - 16px - 4px - 5px) / 2)) !important;
+            margin-inline: calc(0px - var(--menupopup-inner-box-margin) + 2px) !important;
+        }
+
+        #toolbar-menubar #main-menubar>menu {
+            appearance: none !important;
+            background-color: transparent !important;
+            padding-inline: 2px;
+        }
+
+        #toolbar-menubar #main-menubar>menu>label {
+            -moz-box-flex: 1000 !important;
+            margin: 0 !important;
+            padding: 4px 8px 5px 8px !important;
+            border-radius: var(--toolbarbutton-border-radius) !important;
+        }
+
+        #toolbar-menubar #main-menubar>menu[_moz-menuactive="true"]>label {
+            background-color: var(--toolbarbutton-hover-background) !important;
+        }
+
+        #toolbar-menubar #main-menubar>menu[open]>label {
+            background-color: var(--toolbarbutton-active-background) !important;
+        }
+
+        #nav-bar {
+            grid-area: navbar;
+            border-left-width: 0px !important
+        }
+
+        #customization-panelWrapper>.panel-arrowbox>.panel-arrow {
+            margin-inline-end: initial !important;
+        }
+
+        #urlbar[breakout] {
+            position: relative;
+        }
+
+        #urlbar[breakout][open] {
+            position: absolute;
+        }
+
+        #urlbar[open]:focus-within {
+            min-width: var(--sidra-oneline-urlbar-min-width, none) !important;
+            left: 0 !important;
+            right: auto !important;
+        }
+
+        #TabsToolbar {
+            -moz-box-align: center;
+        }
+
+        #TabsToolbar .tabbrowser-tab, #TabsToolbar .tabbrowser-tab :is(.tab-stack, .tab-background, .tab-content, .tab-loading-burst) {
+            border-radius: 5px !important;
+        }
+
+        #PersonalToolbar {
+            grid-area: PersonalToolbar;
+        }
     }
 }
 
