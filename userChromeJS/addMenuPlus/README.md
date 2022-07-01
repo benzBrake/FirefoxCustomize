@@ -98,7 +98,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %IMAGE_BASE64%   图片的 Base64（ywzhaiqi 新增的，不支持 gif 动态图片）
     %IMAGE_ALT%      图片的 alt 属性
     %IMAGE_TITLE%    图片的 title 属性
-    %SVG_BASE64%	 SVG 的 Base64（我新增的，支持 SVG 链接和打开的 SVG 展示页面）
+    %SVG_BASE64%     SVG 的 Base64（我新增的，支持 SVG 链接和打开的 SVG 展示页面）
     %LINK%           链接的地址
     %LINK_TEXT%      链接的文本
     %RLINK_TEXT%     链接的文本（上面那个的别名）
@@ -218,7 +218,7 @@ page({label: "Google Translate",
 ```
 示例：右键添加 `翻译整个页面` 菜单（菜单调用 Bookmarklet 例子），[来源](https://www.runningcheese.com/bookmarklet)。
 
-*注：github.com 由于服务器限制，无法直接插入 js，故无效。*现在建议使用扩展翻译：[翻译网页 – 下载 🦊 Firefox 扩展（zh-CN）](https://addons.mozilla.org/zh-CN/firefox/addon/traduzir-paginas-web/)
+*注：github.com 由于服务器限制，无法直接插入 js，故无效。* 现在建议使用扩展翻译：[翻译网页 – 下载 🦊 Firefox 扩展（zh-CN）](https://addons.mozilla.org/zh-CN/firefox/addon/traduzir-paginas-web/)
 
 ```js
 page({
@@ -245,10 +245,9 @@ page([
         label: "复制 SVG Base64",
         condition: "normal",
         class: "copy",
-		text: "%SVG_BASE64%", // 必须是 2022.05.26 以后的版本调用
+        text: "%SVG_BASE64%", // 必须是 2022.05.26 以后的版本调用
         onshowing: function () {
-            let uri = gBrowser.currentURI.spec;
-            if (!uri.endsWith(".svg")) {
+            if (!gBrowser.currentURI.spec.endsWith(".svg")) {
                 this.hidden = true;
             } else {
                 this.hidden = false;
@@ -277,7 +276,14 @@ app([{
     'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
 }])
 ```
-
+示例：汉堡菜单移动更多工具到退出前（必须是 2022.05.20 以后的版本调用）
+```js
+app([{
+    id: 'appMenu-more-button2',
+    clone: false,
+    insertBefore: 'appMenu-quit-button2',
+}])
+```
 示例：标签右键菜单
 
 ```js
@@ -375,9 +381,9 @@ pagesub([
         url: "javascript:(function(p){open('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3EForce%3C/a%3E%3Cscript%3Efunction%20i(n){return%20d.getElementById(n)}function%20z(){c+=0.2;if(c%3E=t){c=0;e.location=u;r++}x()}function%20x(){s=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0||c/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22Reloads:%20%22+r;i(3).innerHTML=%22Time:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)}c=r=0;d=document;e=opener.top;u=prompt(%22URL%22,e.location.href);t=u?prompt(%22Seconds%22,60):0;setInterval(%22z()%22,200);if(!t){window.close()}%3C/script%3E%3C/body%3E')})('status=0,scrollbars=0,width=100,height=115,left=1,top=1')",
         image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAK2SURBVDhPY0AGq/6HMs9/YFo794Hp8oUPrTIWP3Aymn/fXqC+noEJqoQwmHpT2nvybZlPU24p/pl0Tft130Xzox1n7YKg0vjBkmde8vMemkycekvu28Qb0v87Lyn8rzuu9q/ysG4DUJoRogoHWPLE3mD2PZ3DU27J/Zl8S+p/3zXZ/63nlP5XHtL4VLRP0xmqDDuY/9JUYvY97b2Tb0n/m3Jb6v+E69L/Oi/J/qg/qfKvdJ/WueKdemJQpWDwH+iaVaGhzFAuA8Os+zoZQH//mnRTCmTAvUk3ZTrazymmVB1Re160R2ti6CoGhGIgOCYjw3lYWVkbzJn535h1+h2lVZNuSnyfckNq6dS70nqr/jMw11/RYivZp92Wv0vPHawQCZy1sFA5qKraeMbYmJVh5lNJLmDIb5h8W7Jy4i0hPqgaMKifry+wONcMRey8u7vCUX39tfvl5HZukpTkYph5xph10i3J5CkvRXmgauDgsIGB/hETk/pjFhac++3tWU47OFgf1tU9sFdO7u9eaelVYBeAwJyH6lKrViEFChRsU1FJ2qqg8GafqWneAVPTtu1KSk+2SEn93ywp+WublFQmVBl2AAxppjVyctNXiIn9XyMl9XO1pOTfVUD2SjGxf2tERfevFRGRhCrFDlYpKfEvlpA4Ol9Y+D8ILwDihcLCfxeKiJxaKiJiDFWGG8yWl9ecLir6dKqg4P9pQDwdRAsJbZ8jLKwOlMafKoGAcaKoqHKvgMD+bn7+V718fD97+Pn/dfPwbAeyhaBqIGDlypWiixcvNl24cKH7okWLgoF0FJBOXrJwYeq87u7y2cXFk6bHx2+e7ONzo9/a+vn0zMxqkFqQHpBeBqBixSVLlgQB6WygYBWQ3QKkO4D0JKDYVBAGsRcvWNC5aN689oXz51eD1EL0LFIEAGnEJwptdKj6AAAAAElFTkSuQmCC"
     }, {
-    label: "全页面截图(FF 已经自带截图，而且这个不会修)",
-    	image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABISURBVDhPY6AOWPnmPwpGBuhy6PJggE8Buhy6PBjglEADA2/AMAAUhwHtDUDGyACbPAjDAV5JIMAmD8IkA7I1wgDFBmAABgYA9oelARp3ZZ4AAAAASUVORK5CYII=",
-    	oncommand: function () {
+        label: "全页面截图(FF 已经自带截图，而且这个不会修)",
+        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABISURBVDhPY6AOWPnmPwpGBuhy6PJggE8Buhy6PBjglEADA2/AMAAUhwHtDUDGyACbPAjDAV5JIMAmD8IkA7I1wgDFBmAABgYA9oelARp3ZZ4AAAAASUVORK5CYII=",
+        oncommand: function () {
             var canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
             canvas.width = addMenu.focusedWindow.document.scrollingElement.scrollWidth;
             canvas.height = addMenu.focusedWindow.document.scrollingElement.scrollHeight;
@@ -400,8 +406,8 @@ pagesub([
                 false,
                 document.nodePrincipal /* system, because blob: */
             );
-    	}
-	}, {
+        }
+    }, {
         label: "宽度匹配",
         url: "javascript:(function(){function%20t(f){a=d.createNodeIterator(d,1,f,false);while(a.nextNode()){}}var%20d=document;t(function(e){x=e.offsetLeft;l=e.offsetParent;while(l!=null){x+=l.offsetLeft;l=l.offsetParent}var%20w=d.documentElement.clientWidth-x;var%20s=e.style;if(s.marginLeft)w-=s.marginLeft;if(s.marginRight)w-=s.marginRight;if(s.paddingLeft)w-=s.paddingLeft;if(s.paddingRight)w-=s.paddingRight;if(s.borderSize)w-=s.borderSize;w-=d.defaultView.innerWidth-d.documentElement.offsetWidth;if(e.tagName=='IMG'){h=e.clientHeight*w/e.clientWidth;s.maxHeight=h}s.maxWidth=w+'px'})})();",
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGXSURBVDhPYxh4MHHiRPv///8zQrlEA5Ce/v5+B4aWlpZX9fX1TFBxogFIT3Nz8yu4AatWrWI+fPiwIFAOp2tAtoLUgNSiGLB//36WdevWuU2YMKEZKMECVY8BQHIgNRs2bHABscEGtLa2vt66dasrkHOdm5v77Zw5c3iBhhpkZ2ebAA0W2bZtmyiI3d7ert/Z2ckLUgNUew1kCFDda4a2trbP4uLi30RERP5zcXG9rays1BESEvouLCz8u66uLrampiYOyP8NEisrK9MGqQGpFRMT+wbSCzLgG5Dzi4+P7z8nJ+fb9PR0fUFBwV8CAgL/srKykjIyMlJAbCD+mZycrMfBwfGWl5cXZMAvoOu/gb2wePHilLS0tBcgA2bOnCkC9F8YUGPsmjVrVEE4NTU1FuiaUJAcyACgQc8XLVqUDPYCKCCAfuVYsGBBOtC50/AFItASVqA3pgPVpoH0gAMRRAA1MQEDi/3IkSPK+BIVSA6kBqQWpAfFAKgaogHcAGDUhJOblDs6OiIYQKkKKkYyoEQvFDAwAACRUudRsBI1mwAAAABJRU5ErkJggg==",
@@ -412,7 +418,7 @@ pagesub([
     },
     {
         onshowinglabel: "站内搜索 %s", // 显示时修改 label，必须 2022.05.27 以后的版本才能这么用
-		text: 'site:%h %s',
+        text: 'site:%h %s',
         condition: 'select',
         keyword: '@default' // 调用默认搜索引擎，必须 2022.05.27 以后的版本才能这么用
     },
@@ -421,16 +427,16 @@ pagesub([
         condition: "input",
         url: "javascript:(function()%7Bvar%20IN,F;IN=document.getElementsByTagName('input');for(var%20i=0;i<IN.length;i++)%7BF=IN%5Bi%5D;if(F.type.toLowerCase()=='password')%7Btry%7BF.type='text'%7Dcatch(r)%7Bvar%20n,Fa;n=document.createElement('input');Fa=F.attributes;for(var%20ii=0;ii<Fa.length;ii++)%7Bvar%20k,knn,knv;k=Fa%5Bii%5D;knn=k.nodeName;knv=k.nodeValue;if(knn.toLowerCase()!='type')%7Bif(knn!='height'&&knn!='width'&!!knv)n%5Bknn%5D=knv%7D%7D;F.parentNode.replaceChild(n,F)%7D%7D%7D%7D)()"
     }, {}, {
-    	label: "复制扩展清单",
-    	image: "chrome://mozapps/skin/extensions/extension.svg",
-    	oncommand: function () {
-        	AddonManager.getAddonsByTypes(['extension']).then(addons => {
-            	return addons.map(addon => {
-                	return addon.id + ' ' + addon.name + ' ' + (addon.homepageURL || "");
-            	});
-        	}).then(arr => addMenu.copy(arr.join('\n')));
-    	}
-	}, {
+        label: "复制扩展清单",
+        image: "chrome://mozapps/skin/extensions/extension.svg",
+        oncommand: function () {
+            AddonManager.getAddonsByTypes(['extension']).then(addons => {
+                return addons.map(addon => {
+                    return addon.id + ' ' + addon.name + ' ' + (addon.homepageURL || "");
+                });
+            }).then(arr => addMenu.copy(arr.join('\n')));
+        }
+    }, {
         label: "复制用户脚本清单",
         oncommand: function () {
             // 不能用，找大佬修复吧
@@ -729,44 +735,71 @@ imagesub([{
     image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAVElEQVQ4ja2SwQ4AMARD+/8/bbdlw8ogcdK9RQsApNmQal2A359dgCK7j07tBmiBByGzWMjABsBMfaaQgdAYxwGtFVomMiGZDRxSYFLulCtFY8z2AmZhBhe3B+XrAAAAAElFTkSuQmCC"
 }, ]);
 ```
-示例：撤销关闭二级菜单 By feiruo (不能用了，但是有很多替代)
+示例：新版撤销关闭二级菜单 By benzbrake
 ```js
-var undoMenu = PageMenu({
-    label: '撤销关闭',
-    position: 2,
-    tooltiptext: "右键显示所有历史记录",
-    onclick: "if (event.button == 2) {PlacesCommandHook.showPlacesOrganizer('History');}",
-    onpopupshowing: function(e) {
-        var popup = e.target;
-        popup.setAttribute('id', 'addUndoMneun');
-        var items = popup.querySelectorAll('.bookmark-item');
-        [].forEach.call(items, function(item) {
-            item.parentNode.removeChild(item);
-        });
-        var undoItems = JSON.parse(Cc['@mozilla.org/browser/sessionstore;1'].getService(Ci.nsISessionStore).getClosedTabData(window));
-        if (undoItems.length == 0) {
-            popup.setAttribute('oncommand', 'this.parentNode._placesView._onCommand(event);');
-            if (!this.parentNode._placesView) new HistoryMenu(event);
-        } else {
-            undoItems.map(function(item, id) {
-                var m = document.createElement('menuitem');
-                m.setAttribute('label', item.title);
-                m.setAttribute('image', item.image ? 'moz-anno:favicon:' + item.image : '');
-                m.setAttribute('class', 'menuitem-iconic bookmark-item closedtab');
-                m.setAttribute('oncommand', 'undoCloseTab(' + id + ')');
-                m.setAttribute('type', 'unclose-menuitem');
-                popup.appendChild(m);
-            });
-        }
-    },
-    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAASCAYAAABSO15qAAABDklEQVQ4jZ3SPShFcRjH8Q8JN2IgI4pJorxkMJDNYlE27AZWG4vBJoOymewMshtsdzHIQilKUl7SDde9hnNuTqdzLuc+9UzP8/2e/uf3kFyNWMVwyrxqNWEddxjPCuewiQJeMJYFbsU2PlDGM0b/C7dhF58hXA5FR9jDBhbQh/o43IV9FCNwUhdxgx30RwWHKP0BxzuPiYpgCbcZBWWco7cimcV1bKGEJzziPUHwja3oU2ZwFVl4xTwGMYUVHMdkl/EfOokLvzGOxOY5LOI+3CnEBQTHk8eb9ENaw1fYiTWEU+mn3C2I9CFNAD3oTJm1CFI4qSaoVu04w3KtggEcoKMWuA5zmK71682CeBvgB+93YAIjVuYDAAAAAElFTkSuQmCC"
-});
-undoMenu([{
-    label: "恢复上一次会话",
-    command: "Browser:RestoreLastSession",
-}]);
+new function () {
+    var undoMenu = ToolMenu({
+        'data-l10n-href': 'appmenu.ftl',
+        'data-l10n-id': 'appmenu-recently-closed-tabs',
+        onclick: function (event) {
+            if (event.button == 2) {
+                event.preventDefault();
+                event.target.ownerGlobal.PlacesCommandHook.showPlacesOrganizer('History');
+            }
+            closeMenus(event.target);
+        },
+        onpopupshowing: function (e) {
+            function $C(aDoc, tag, attrs) {
+                attrs = attrs || {};
+                var el = (aDoc || document).createXULElement(tag);
+                for (let p in attrs) {
+                    el.setAttribute(p, attrs[p]);
+                }
+                return el;
+            }
+            var popup = e.target;
+            popup.querySelector("#addMenu-undo-open-all").setAttribute('label', e.target.ownerGlobal.gNavigatorBundle.getString("menuOpenAllInTabs.label"));
+            popup.querySelectorAll('.undo-item').forEach(item => item.parentNode.removeChild(item));
+            let data = SessionStore.getClosedTabData(window);
+            if (typeof (data) === "string") {
+                data = JSON.parse(data);
+            }
+            const tabLength = data.length;
+            const ins = popup.querySelector("#addMenu-undo-seperator");
+            for (let i = 0; i < tabLength; i++) {
+                const item = data[i];
+                const m = $C(e.view.document, 'menuitem', {
+                    label: item.title,
+                    class: 'undo-item menuitem-iconic bookmark-item menuitem-with-favicon',
+                    value: i,
+                    oncommand: 'event.stopPropagation();event.preventDefault(); undoCloseTab(event.originalTarget.getAttribute("value"));',
+                });
+
+                const state = item.state;
+                let idx = state.index;
+                if (idx == 0)
+                    idx = state.entries.length;
+                if (--idx >= 0 && state.entries[idx])
+                    m.setAttribute("targetURI", state.entries[idx].url);
+
+                if (typeof item.image === 'string') m.setAttribute('image', item.image);
+                popup.insertBefore(m, ins)
+            }
+        },
+        image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNNzkzIDI0MkgzNjZ2LTc0YzAtNi43LTcuNy0xMC40LTEyLjktNi4zbC0xNDIgMTEyYTggOCAwIDAgMCAwIDEyLjZsMTQyIDExMmM1LjIgNC4xIDEyLjkgMC40IDEyLjktNi4zdi03NGg0MTV2NDcwSDE3NWMtNC40IDAtOCAzLjYtOCA4djYwYzAgNC40IDMuNiA4IDggOGg2MThjMzUuMyAwIDY0LTI4LjcgNjQtNjRWMzA2YzAtMzUuMy0yOC43LTY0LTY0LTY0eiI+PC9wYXRoPjwvc3ZnPg=="
+    });
+    undoMenu([{
+        id: 'addMenu-undo-seperator'
+    }, {
+        id: 'addMenu-undo-open-all',
+        image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDQ4IDQ4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0IDZDMTQuNzcxOTQ4IDYgNy4xNTEyOTY5IDEyLjk4NjUwOSA2LjEyNjk1MzEgMjEuOTQ1MzEyTDQuMTIxMDkzOCAxOS45Mzk0NTMgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMy4wNDQ5MjE5IDE5LjQ4NDM3NSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyIDIyLjA2MDU0N0w2LjUgMjYuNTYwNTQ3IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDguNjIxMDkzOCAyNi41NjA1NDdMMTMuMTIxMDk0IDIyLjA2MDU0NyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCAxMSAxOS45Mzk0NTNMOS4xODU1NDY5IDIxLjc1MzkwNkMxMC4yNjc3MzkgMTQuNTI1MzA5IDE2LjQ2MzM1IDkgMjQgOUMzMi4zMDI0IDkgMzkgMTUuNjk3NiAzOSAyNEMzOSAzMi4zMDI0IDMyLjMwMjQgMzkgMjQgMzlDMTguMTU4MzM3IDM5IDEzLjExNjYzNSAzNS42NzIwMDEgMTAuNjM0NzY2IDMwLjgxNjQwNiBBIDEuNTAwNjc2NiAxLjUwMDY3NjYgMCAwIDAgNy45NjI4OTA2IDMyLjE4MzU5NEMxMC45NDMwMjEgMzguMDEzOTk5IDE3LjAxNzY2MyA0MiAyNCA0MkMzMy45MjM2IDQyIDQyIDMzLjkyMzYgNDIgMjRDNDIgMTQuMDc2NCAzMy45MjM2IDYgMjQgNiB6IE0gMjQgMTlDMjIuNDU4MzM0IDE5IDIxLjExMjE0OCAxOS42MzIxMzMgMjAuMjUzOTA2IDIwLjU5NzY1NkMxOS4zOTU2NjQgMjEuNTYzMTc5IDE5IDIyLjc5MTY2NyAxOSAyNEMxOSAyNS4yMDgzMzMgMTkuMzk1NjY0IDI2LjQzNjgyMSAyMC4yNTM5MDYgMjcuNDAyMzQ0QzIxLjExMjE0OCAyOC4zNjc4NjcgMjIuNDU4MzM0IDI5IDI0IDI5QzI1LjU0MTY2NiAyOSAyNi44ODc4NTIgMjguMzY3ODY3IDI3Ljc0NjA5NCAyNy40MDIzNDRDMjguNjA0MzM2IDI2LjQzNjgyMSAyOSAyNS4yMDgzMzMgMjkgMjRDMjkgMjIuNzkxNjY3IDI4LjYwNDMzNiAyMS41NjMxNzkgMjcuNzQ2MDk0IDIwLjU5NzY1NkMyNi44ODc4NTIgMTkuNjMyMTMzIDI1LjU0MTY2NiAxOSAyNCAxOSB6IE0gMjQgMjJDMjQuNzkxNjY2IDIyIDI1LjE5NTQ4MiAyMi4yNDI4NjcgMjUuNTAzOTA2IDIyLjU4OTg0NEMyNS44MTIzMyAyMi45MzY4MjEgMjYgMjMuNDU4MzMzIDI2IDI0QzI2IDI0LjU0MTY2NyAyNS44MTIzMyAyNS4wNjMxNzkgMjUuNTAzOTA2IDI1LjQxMDE1NkMyNS4xOTU0ODIgMjUuNzU3MTMzIDI0Ljc5MTY2NiAyNiAyNCAyNkMyMy4yMDgzMzQgMjYgMjIuODA0NTE4IDI1Ljc1NzEzMyAyMi40OTYwOTQgMjUuNDEwMTU2QzIyLjE4NzY3IDI1LjA2MzE3OSAyMiAyNC41NDE2NjcgMjIgMjRDMjIgMjMuNDU4MzMzIDIyLjE4NzY3IDIyLjkzNjgyMSAyMi40OTYwOTQgMjIuNTg5ODQ0QzIyLjgwNDUxOCAyMi4yNDI4NjcgMjMuMjA4MzM0IDIyIDI0IDIyIHoiIC8+PC9zdmc+",
+        onclick: function (event) {
+            this.parentNode.querySelectorAll('.undo-item').forEach(m => m.doCommand());
+        },
+    }]);
+}();
 ```
-示例：保存所有图片到 zip
+示例：保存所有图片到 zip *// 这个不知道怎么修*
 ```js
 page({
     label: "保存所有图片到 zip",
@@ -797,9 +830,8 @@ page({
         }
         zipDeKure(pack, path);
 
-
         function zipDeKure(urls, savePath) {
-            // 这个不知道怎么修
+            
             const ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
             const zipWriter = Components.Constructor("@mozilla.org/zipwriter;1", "nsIZipWriter");
             var uri = addMenu.convertText("%URL%");
