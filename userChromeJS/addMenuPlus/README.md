@@ -5,7 +5,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 [ywzhaiqi](https://github.com/ywzhaiqi) 基于 [Griever/addMenu.uc.js](https://github.com/Griever/userChromeJS/tree/master/addMenu) 修改增强
 
- - 新增**修改原有菜单**的功能
+ - 新增**修改原有菜单**的功能（2022.07.01 以后的关闭脚本可以即时还原已移动菜单）
  - 新增参数 `%FAVICON_BASE64%`：站点图标的 base64
  - 新增参数 `%IMAGE_BASE64%`：图片的 BASE64
  - 新增参数 `%TITLES%`：简短的标题
@@ -73,7 +73,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     
     id          标签的ID（ywzhaiqi新增的，修改原菜单用）
     position/insertBefore/insertAfter 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
-    clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口
+    clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口（2022.07.01以后的版本禁用脚本即可还原）
     onshowing   ywzhaiqi新增的，当页面右键显示时会执行该函数，可用于动态更改标签标题，详见下面的示例。
     onshowinglabel 我新增的，显示的时候根据模板设置 label
     "data-l10n-href" （我新增的，因JS语法问题配置里请用双引号括起来，本地化语言文件 ftl 后缀）
@@ -582,10 +582,9 @@ page({
     insertAfter: "context-paste",
     oncommand: function(event) {
         goDoCommand("cmd_paste");
-
-            window.QueryInterface(Ci.nsIInterfaceRequestor)
-                .getInterface(Ci.nsIDOMWindowUtils)
-                .sendKeyEvent("keypress", KeyEvent.DOM_VK_RETURN, 0, 0);
+        window.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindowUtils)
+            .sendKeyEvent("keypress", KeyEvent.DOM_VK_RETURN, 0, 0);
     }
 })
 ```
