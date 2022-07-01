@@ -73,3 +73,7 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 |      | 90   | [QuickSnapshot](QuickSnapshot_Mod.uc.js)                    | 可移动多功能截图按钮，改成可热插拔了，被[CustomButtons](CustomButtons.uc.js)替代了 | [📃](https://github.com/runningcheese/RunningCheese-Firefox/blob/master/userChrome.js/QuickSnapshot.uc.js) |
 | ❌    | 96   | [rightClickOpenClipboard](90/rightClickOpenClipboard.uc.js) | 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）<br />新窗口不生效，已经被 TabPlus.uc.js 替代 |                                                              |
 |      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)           | 给工具栏书签新增替换书签功能，已经被 BookmarkOpt.uc.js 替代  | [📃](https://bbs.kafan.cn/thread-2233641-1-1.html)            |
+
+## 特殊说明
+
+（2022.07.01）91.11ESR 安装 [xiaoxiaoflood userChromeJS 环境 6.23 版](https://github.com/xiaoxiaoflood/firefox-scripts/tree/7f4e96000baf44398e7308b0aed24781ec29ea82) 之后，启动Firefox时提示“读取配置文件失败，请联系您的系统管理员”，并且也不能安装老式扩展，可以点[这里](91ESR/xiaoxiaoflood)查看可用的版本
