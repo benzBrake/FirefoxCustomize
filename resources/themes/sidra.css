@@ -760,6 +760,26 @@
         margin-inline-start: 2px !important;
     }
 
+    /* firefox view button compact */
+    #firefox-view-button+#tabbrowser-tabs {
+        padding-inline-start: 0 !important;
+        margin-inline-start: 0 !important;
+    }
+
+    #firefox-view-button {
+        margin: 0 !important;
+    }
+
+    #TabsToolbar #firefox-view-button>.toolbarbutton-icon {
+        --toolbarbutton-inner-padding: calc((var(--tab-min-height) - 16px) / 2);
+        border-radius: var(--sidra-tab-rounding) var(--sidra-tab-rounding) 0 0 !important;
+    }
+
+    #firefox-view-button[open] >.toolbarbutton-icon {
+        background-image: unset !important;
+        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor)) !important;
+    }
+
     #tabbrowser-tabs:not([overflow]) #tabs-newtab-button {
         z-index: 5 !important;
     }
@@ -1128,7 +1148,7 @@
 
     /** 垂直标签栏 */
     #main-window[vertical-tabs="true"] #vertical-tabs-list .all-tabs-item:is([selected], [multiselected], [usercontextid]:is(:hover, [_moz-menuactive])) .all-tabs-button:not([disabled]) {
-        background-image: linear-gradient(to right,  color-mix(in srgb, var(--main-stripe-color) 10%, white), color-mix(in srgb, var(--main-stripe-color) 30%, white)) !important;
+        background-image: linear-gradient(to right, color-mix(in srgb, var(--main-stripe-color) 10%, white), color-mix(in srgb, var(--main-stripe-color) 30%, white)) !important;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -3335,7 +3355,7 @@
     #appMenu-find-button2 {
         list-style-image: url("chrome://global/skin/icons/search-glass.svg");
     }
-    
+
     #appMenu-zoom-controls,
     #appMenu-zoom-controls2 {
         --menuitem-image: url("../images/sidra/panel-popup/screenshot.svg");
