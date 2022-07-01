@@ -3120,7 +3120,7 @@
 
     /* 网页右键 */
     #contentAreaContextMenu :is(#context-sep-sendlinktodevice, #context-searchselect-private[hidden="true"] ~ #frame-sep, [id^="content-farm-terminator_danny0838_addons_mozilla_org"]),
-    #contentAreaContextMenu[addMenu="input"] #context-media-eme-learnmore~ :is(menu, menuitem):not([id^="_446900e4-71c2-419f-a6a7-df9c091e268b"]),
+    /* #contentAreaContextMenu[addMenu="input"] #context-media-eme-learnmore~ :is(menu, menuitem):not([id^="_446900e4-71c2-419f-a6a7-df9c091e268b"]), */
     #contentAreaContextMenu[addMenu="input"] #textZoomPerDomain+menuseparator,
     #contentAreaContextMenu:not([addMenu=""]) :is(#textZoomPerDomain),
     #context-sep-bidi {
@@ -3335,7 +3335,8 @@
     #appMenu-find-button2 {
         list-style-image: url("chrome://global/skin/icons/search-glass.svg");
     }
-
+    
+    #appMenu-zoom-controls,
     #appMenu-zoom-controls2 {
         --menuitem-image: url("../images/sidra/panel-popup/screenshot.svg");
     }
