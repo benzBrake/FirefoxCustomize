@@ -1,5 +1,6 @@
 // ==UserScript==
-// @name            指定页面显示书签工具栏
+// @name            showPersonalToolbarOnDemand.uc.js
+// @description     按需显示书签工具栏
 // @license         MIT License
 // @compatibility   Firefox 90
 // @charset         UTF-8
@@ -22,5 +23,6 @@
         }
         setToolbarVisibility(document.getElementById("PersonalToolbar"), URLS.contain(gBrowser.currentURI.spec));
         gBrowser.tabContainer.addEventListener('TabSelect', event);
+        gBrowser.tabContainer.addEventListener('TabAttrModified', event);
     }, 2000);
 })();
