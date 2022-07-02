@@ -42,6 +42,10 @@
                 label: '书签',
                 type: 'checkbox',
                 pref: 'browser.tabs.loadBookmarksInTabs'
+            }, {
+                label: '历史',
+                type: 'checkbox',
+                pref: 'browser.tabs.loadHistoryInTabs'
             }]
         },
         {
@@ -134,6 +138,7 @@
             callback: function (event) {
                 // 自动切换到鼠标指向标签页
                 if (!window.TabPlus && !cPref.get('browser.tabs.swithOnHover')) return;
+                if (event.target.ownerGlobal.document.getElementById('navigator-toolbox').getAttribute('custommode') === "true") return;
                 const tab = event.target.closest('.tabbrowser-tab');
                 if (!tab) return;
                 timeout = setTimeout(() => gBrowser.selectedTab = tab, OPTIONS.autoSwitchTabDelay);
@@ -163,6 +168,9 @@
                     gBrowser.tabContainer.advanceSelectedTab(dir, true);
                 }, 0);
             }
+        },
+        'browser.tabs.loadHistoryInTabs': {
+            el: document.getEl
         },
         'browser.tabs.loadImageInBackground': {
             trigger: false,
