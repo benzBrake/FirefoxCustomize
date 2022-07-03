@@ -1,5 +1,6 @@
 // ==UserScript==
 // @name            PrivateTab
+// @description     无痕标签页
 // @author          xiaoxiaoflood
 // @include         main
 // @include         chrome://browser/content/places/bookmarksSidebar.xhtml
@@ -9,6 +10,7 @@
 // @shutdown        UC.privateTab.destroy();
 // @onlyonce
 // ==/UserScript==
+
 UC.privateTab = {
   config: {
     neverClearData: false, // if you want to not record history but don't care about other data, maybe even want to keep private logins
@@ -16,20 +18,20 @@ UC.privateTab = {
     doNotClearDataUntilFxIsClosed: true,
     deleteContainerOnDisable: false,
     clearDataOnDisable: false,
-    profileName: '无痕',
+    profileName: '无痕'
   },
 
   openTabs: new Set(),
-
-  strstr: function (str) {
-    return str.replace('%s', this.config.profileName);
+  
+  strstr: function(str) {
+      return str.replace('%s', this.config.profileName);
   },
-
+  
   exec: function (win) {
     if (win.PrivateBrowsingUtils.isWindowPrivate(win))
       return;
 
-    let { document } = win;
+    let {document} = win;
 
     let openAll = document.getElementById('placesContext_openBookmarkContainer:tabs');
     let openAllPrivate = _uc.createElement(document, 'menuitem', {
@@ -68,9 +70,9 @@ UC.privateTab = {
     if (win.location.href != _uc.BROWSERCHROME)
       return;
 
-    let { customElements, gBrowser, MozElements } = win;
+    let {customElements, gBrowser, MozElements} = win;
 
-    let keyset = _uc.createElement(document, 'keyset', { id: 'privateTab-keyset' });
+    let keyset =  _uc.createElement(document, 'keyset', { id: 'privateTab-keyset' });
     document.getElementById('mainKeyset').insertAdjacentElement('afterend', keyset);
 
     let toggleKey = _uc.createElement(document, 'key', {
@@ -108,7 +110,7 @@ UC.privateTab = {
     });
 
     openLink.addEventListener('command', (e) => {
-      let { gContextMenu } = win;
+      let {gContextMenu} = win;
       win.openLinkIn(gContextMenu.linkURL, 'tab', gContextMenu._openLinkInParameters({
         userContextId: UC.privateTab.container.userContextId,
         triggeringPrincipal: document.nodePrincipal,
@@ -161,7 +163,7 @@ UC.privateTab = {
       if (!tab)
         return;
       let isPrivate = this.isPrivate(tab);
-
+    
       if (!isPrivate) {
         if (this.observePrivateTabs) {
           this.openTabs.delete(tab);
@@ -179,14 +181,14 @@ UC.privateTab = {
 
     win.addEventListener('XULFrameLoaderCreated', gBrowser.privateListener);
 
-    if (this.observePrivateTabs)
+    if(this.observePrivateTabs)
       gBrowser.tabContainer.addEventListener('TabClose', this.onTabClose);
 
     MozElements.MozTab.prototype.getAttribute = function (att) {
       if (att == 'usercontextid' && this.isToggling) {
         delete this.isToggling;
         return UC.privateTab.orig_getAttribute.call(this, att) ==
-          UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
+               UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
       } else {
         return UC.privateTab.orig_getAttribute.call(this, att);
       }
@@ -203,12 +205,12 @@ UC.privateTab = {
 
     customElements.get('tabbrowser-tabs').prototype.insertBefore = function (tab, node) {
       if (!this.arrowScrollbox) {
-        throw new Error("Shouldn't call this without arrowscrollbox");
+        throw new Error("错误: arrowscrollbox 不存在！");
       }
 
       let { arrowScrollbox } = this;
       if (node == null) {
-        node = arrowScrollbox.lastChild;
+        node = arrowScrollbox.lastChild.previousSibling.previousSibling;
       }
       return arrowScrollbox.insertBefore(tab, node);
     }
@@ -258,10 +260,10 @@ UC.privateTab = {
 
   init: function () {
     ContextualIdentityService.ensureDataReady();
-    this.container = ContextualIdentityService._identities.find(container => container.name == this.config.profileName);
+    this.container = ContextualIdentityService._identities.find(container => container.name ==  this.config.profileName);
     if (!this.container) {
       ContextualIdentityService.create(this.config.profileName, 'fingerprint', 'purple');
-      this.container = ContextualIdentityService._identities.find(container => container.name == this.config.profileName);
+      this.container = ContextualIdentityService._identities.find(container => container.name ==  this.config.profileName);
     } else if (!this.config.neverClearData) {
       this.clearData();
     }
@@ -299,7 +301,7 @@ UC.privateTab = {
       onBuild: (doc) => {
         let btn = _uc.createElement(doc, 'toolbarbutton', {
           id: UC.privateTab.BTN_ID,
-          label: this.strstr('打开新%s标签'),
+          label: this.strstr('打开新%s标签') ,
           tooltiptext: this.strstr("打开新%s标签(Ctrl+Alt+P)"),
           class: 'toolbarbutton-1 chromeclass-toolbar-additional',
           oncommand: 'UC.privateTab.BrowserOpenTabPrivate(window)',
@@ -311,14 +313,14 @@ UC.privateTab = {
 
     let { getBrowserWindow } = Cu.import('resource:///modules/PlacesUIUtils.jsm');
     eval('PlacesUIUtils.openTabset = function ' +
-      PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
-        '$1$2$1userContextId: aEvent.userContextId || 0,'));
-
+          PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
+                                                      '$1$2$1userContextId: aEvent.userContextId || 0,'));
+                                                      
     eval('PlacesUIUtils._openNodeIn = ' +
-      PlacesUIUtils._openNodeIn.toString().replace(/(\s+)(aPrivate = false)\n/,
-        '$1$2,$1userContextId = 0\n')
-        .replace(/(\s+)(private: aPrivate,)\n/,
-          '$1$2$1userContextId,\n'));
+          PlacesUIUtils._openNodeIn.toString().replace(/(\s+)(aPrivate = false)\n/,
+                                                       '$1$2,$1userContextId = 0\n')
+                                              .replace(/(\s+)(private: aPrivate,)\n/,
+                                                       '$1$2$1userContextId,\n'));
 
     let { UUIDMap } = Cu.import('resource://gre/modules/Extension.jsm');
     let TST_ID = 'treestyletab@piro.sakura.ne.jp';
@@ -359,7 +361,7 @@ UC.privateTab = {
   },
 
   togglePrivate: function (win, tab = win.gBrowser.selectedTab) {
-    let { gBrowser } = win;
+    let {gBrowser} = win;
     tab.isToggling = true;
     let shouldSelect = tab == win.gBrowser.selectedTab;
     let newTab = gBrowser.duplicateTab(tab);
@@ -380,7 +382,7 @@ UC.privateTab = {
   },
 
   toggleMask: function (win) {
-    let { gBrowser } = win;
+    let {gBrowser} = win;
     let privateMask = win.document.getElementById('private-mask');
     if (gBrowser.selectedTab.isToggling)
       privateMask.setAttribute('enabled', gBrowser.selectedTab.userContextId == this.container.userContextId ? 'false' : 'true');
@@ -420,7 +422,7 @@ UC.privateTab = {
 
   placesContext: function (e) {
     let win = e.view;
-    let { document } = win;
+    let {document} = win;
     document.getElementById('openPrivate').disabled = document.getElementById('placesContext_open:newtab').disabled;
     document.getElementById('openPrivate').hidden = document.getElementById('placesContext_open:newtab').hidden;
     document.getElementById('openAllPrivate').disabled = document.getElementById('placesContext_openBookmarkContainer:tabs').disabled;
@@ -518,12 +520,6 @@ UC.privateTab = {
   },
 
   destroy: function () {
-    const {
-      ContextualIdentityService,
-      CustomizableUI,
-      PlacesUIUtils
-    } = Services.wm.getMostRecentBrowserWindow();
-
     if (this.config.deleteContainerOnDisable)
       ContextualIdentityService.remove(this.container.userContextId);
     else if (this.config.clearDataOnDisable)
@@ -542,7 +538,7 @@ UC.privateTab = {
       doc.getElementById('openAllLinksPrivate').remove();
       doc.getElementById('openPrivate').remove();
       doc.getElementById('placesContext').removeEventListener('popupshowing', this.placesContext);
-      let { gBrowser } = win;
+      let {gBrowser} = win;
       if (!gBrowser)
         return;
       doc.getElementById('privateTab-keyset').remove();
