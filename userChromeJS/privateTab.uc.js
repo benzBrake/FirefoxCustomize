@@ -315,7 +315,7 @@ UC.privateTab = {
         '$1$2$1userContextId: aEvent.userContextId || 0,'));
 
     eval('PlacesUIUtils._openNodeIn = ' +
-      PlacesUIUtils._openNodeIn.toString().replace(/(\s+)(aPrivate = false)\n/,
+      PlacesUIUtils._openNodeIn.toString().replaceAll("lazy.", "").replace(/(\s+)(aPrivate = false)\n/,
         '$1$2,$1userContextId = 0\n')
         .replace(/(\s+)(private: aPrivate,)\n/,
           '$1$2$1userContextId,\n'));
