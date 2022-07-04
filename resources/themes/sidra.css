@@ -5,7 +5,7 @@
  * @version         0.1.0
  * @compatibility   Firefox 90
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
- * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏', 'userChromeJS.sidra.other.compact': '其他细节', 'userChromeJS.sidra.autoOneLine': '分辨率大于1600px时启用单行模式' }
+ * @l10n            { 'userChromeJS.sidra.navbar.compact': '紧凑导航', 'userChromeJS.sidra.urlbar.hide-bookmarks-button-on-system-pages': '内置页面隐藏地址栏收藏按钮', 'userChromeJS.sidra.tabs.compact': '紧凑标签', 'userChromeJS.sidra.menubar.showOnRight': '菜单在标签栏右边显示',  'userChromeJS.sidra.tabs.verticalOrient': '显示垂直标签栏时隐藏横向标签栏', 'userChromeJS.sidra.urlbar.compact': '紧凑地址栏', 'userChromeJS.sidra.menupopup.compact': '紧凑菜单',  'userChromeJS.sidra.menupopup.changeLabel': '修改菜单文本', 'userChromeJS.sidra.menupopup.icon.complementary': '补全菜单图标', 'userChromeJS.sidra.panel.compact': '紧凑面板', 'userChromeJS.sidra.panel.icon.complementary': '补全面板图标', 'userChromeJS.sidra.toolbarbutton.icon.complementary': '补全按钮图标', 'userChromeJS.sidra.toolbarbutton.icon.colorized': '按钮图标上色', 'userChromeJS.sidra.sidebar.compact': '紧凑侧边栏', 'userChromeJS.sidra.pip.compact': '画中画调整', 'userChromeJS.sidra.addons.icon.complementary': '扩展管理补全图标', 'userChromeJS.sidra.extensions.compact': '扩展样式', 'userChromeJS.sidra.findbar.compact': '紧凑搜索栏', 'userChromeJS.sidra.other.compact': '其他细节', 'userChromeJS.sidra.autoOneLine': '分辨率大于1600px时启用单行模式' }
 ==/UserStyle== */
 
 :root {
@@ -14,6 +14,10 @@
     --search-box-color: var(--toolbar-field-background-color);
     --search-box-focus: var(--toolbar-field-focus-background-color);
     --search-box-null: hsl(336, 69%, 71%);
+    --update-badge-bg: hsl(125, 81%, 57%);
+    --update-badge-color: hsl(118, 89%, 24%);
+    --update-badge-inactive: hsl(227, 19%, 48%);
+
     --sidra-tab-rounding: 0px;
     --sidra-tab-separator-color: rgba(0, 0, 0, .2) !important;
     --sidra-panel-padding-x: 4px;
@@ -140,6 +144,8 @@
 
 /**======== 紧凑导航栏 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.navbar.compact") {
+
+    /** 导航栏北京和颜色 */
     #navigator-toolbox:-moz-lwtheme {
         background-image: var(--lwt-header-image, var(--lwt-additional-images));
         background-repeat: var(--lwt-background-tiling);
@@ -147,20 +153,12 @@
         background-color: var(--lwt-accent-color, #fff);
     }
 
+    /** 工具栏颜色 */
     .browser-toolbar:not(.titlebar-color) {
         background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
     }
 
-    .titlebar-spacer[type="pre-tabs"] {
-        display: none;
-    }
-
-    .titlebar-spacer[type="post-tabs"],
-    #toolbar-menubar>spacer {
-        width: var(--titlebar-spacer-width, 32px) !important;
-        display: -moz-box !important;
-    }
-
+    /** 按钮边距 */
     toolbarpaletteitem>toolbarspring {
         margin-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2) !important;
         outline: none !important;
@@ -176,6 +174,7 @@
         margin-block: 5px !important;
     }
 
+    /** 书签按钮边距 */
     #PersonalToolbar>toolbarpaletteitem>toolbarspring {
         margin-block: revert !important;
         margin-inline: 2px !important;
@@ -190,7 +189,7 @@
 
     /* 工具栏按钮上标 */
     :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):not([attention])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-        background-color: var(--uc-toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
+        background-color: var(--toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
         color: var(--toolbar-color, white) !important;
         box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026,
             0 1px 3px #1e1e2033 !important;
@@ -353,7 +352,7 @@
         background-color: var(--toolbarbutton-active-background);
     }
 
-    /* 修复停止按钮的便宜bug，如果没有问题，删掉 */
+    /* 修复停止按钮的偏移bug，如果没有问题，删掉 */
     #stop-button .toolbarbutton-icon {
         background-image: url("../images/sidra/skin/stop-button-fix.svg") !important;
         background-repeat: no-repeat;
@@ -481,7 +480,7 @@
         transition: min-height 200ms ease-in-out, max-height 200ms ease-in-out,
             opacity 200ms ease-in-out, transform 200ms ease-in-out !important;
         overflow-y: visible !important;
-        padding-block: 0 var(--bookmark-block-padding) !important;
+        padding-block: 0 var(--bookmark-block-padding, 0) !important;
         outline: none !important;
     }
 
@@ -665,35 +664,11 @@
         width: 0px;
     }
 
-    /** 调整标签栏后面的空格大小 */
-    #toolbar-menubar:not([inactive="true"])+#TabsToolbar .titlebar-spacer,
-    #toolbar-menubar:not([inactive="true"])>spacer {
-        width: calc(var(--titlebar-spacer-width, 32px) / 2) !important;
-    }
-
-    #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
-        visibility: collapse !important;
-    }
-
-    :root:not([chromehidden~="menubar"], [operatingsystem="linux"], [operatingsystem="macosx"]) #toolbar-menubar:not([inactive])+#TabsToolbar .titlebar-spacer {
-        display: none;
-    }
-
     #titlebar {
+        height: var(--tab-min-height);
+        /** 设置 Tabsintitlebar 高度 */
         -moz-box-orient: horizontal !important;
-    }
-
-    #tabbrowser-tabs {
-        background-color: var(--lwt-accent-color) !important;
-    }
-
-    /** 移动菜单栏到标签栏后边 */
-    #TabsToolbar {
-        -moz-box-ordinal-group: 1;
-    }
-
-    #toolbar-menubar {
-        -moz-box-ordinal-group: 3;
+        /** 标签栏和菜单栏同一行 */
     }
 
     #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
@@ -760,7 +735,7 @@
         margin-inline-start: 2px !important;
     }
 
-    /* firefox view button compact */
+    /* firefox view 按钮调整到和标签一样 */
     #firefox-view-button+#tabbrowser-tabs {
         padding-inline-start: 0 !important;
         margin-inline-start: 0 !important;
@@ -775,7 +750,7 @@
         border-radius: var(--sidra-tab-rounding) var(--sidra-tab-rounding) 0 0 !important;
     }
 
-    #firefox-view-button[open] >.toolbarbutton-icon {
+    #firefox-view-button[open]>.toolbarbutton-icon {
         background-image: unset !important;
         background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor)) !important;
     }
@@ -802,8 +777,14 @@
         border-radius: var(--toolbarbutton-border-radius) !important;
     }
 
+    /** 隐私浏览指示器 */
     .private-browsing-indicator {
         visibility: collapse;
+    }
+
+    /** 隐私模式地址栏变色 */
+    :root[privatebrowsingmode="temporary"] #urlbar-input-container {
+        background-color: color-mix(in srgb, transparent 75%, purple);
     }
 
     /* 所有标签按钮 */
@@ -938,6 +919,11 @@
         margin-bottom: 0 !important;
     }
 
+
+    .tabbrowser-tab:not([selected]) .tab-label {
+        color: color-mix(in srgb, currentColor 70%, white);
+    }
+
     /* 去除当前标签 outline 边框 */
     #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon:-moz-lwtheme,
     .tab-background[selected]:-moz-lwtheme {
@@ -947,15 +933,16 @@
     /* 选中标签颜色 */
     #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[multiselected="true"],
     #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[selected="true"] {
-        background-image: none !important;
         background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor)) !important;
+        background-image: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)),
+            linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)),
+            var(--lwt-header-image, none) !important;
     }
 
     /* 选中标签阴影 */
     #TabsToolbar:not([brighttext]) .tabbrowser-tab:is([visuallyselected="true"], [multiselected])>.tab-stack>.tab-background {
         box-shadow: 0 0 4px rgba(0, 0, 0, .5) !important;
     }
-
 
     /* 选中多个标签下划线标注 */
     #TabsToolbar .tabbrowser-tab[multiselected="true"] .tab-context-line {
@@ -983,8 +970,6 @@
         border-right: 1px solid var(--sidra-tab-separator-color) !important;
     }
 
-
-
     .tabbrowser-tab:not([usercontextid], [multiselected]) .tab-context-line {
         display: none !important;
     }
@@ -1005,8 +990,7 @@
 
     #TabsToolbar .tabbrowser-tab,
     #TabsToolbar .tabbrowser-tab :is(.tab-stack, .tab-background, .tab-content, .tab-loading-burst) {
-        border-top-right-radius: var(--sidra-tab-rounding) !important;
-        border-top-left-radius: var(--sidra-tab-rounding) !important;
+        border-radius: var(--sidra-tab-rounding) var(--sidra-tab-rounding) 0 0 !important;
         /* overflow: hidden; */
         /* 设置了这一行就没有阴影了 */
     }
@@ -1029,6 +1013,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        padding: calc((var(--tab-min-height) - 16px) / 2);
+        /* 固定标签改成正方形 */
     }
 
     .tabbrowser-tab[pinned] .tab-label-container {
@@ -1040,12 +1026,12 @@
         margin-inline-start: 0 !important;
     }
 
-    /* get rid of drop shadow drawn on leftmost visible tab */
+    /* 取消最左边的可见标签有泛白阴影 */
     .tabbrowser-arrowscrollbox>.arrowscrollbox-overflow-start-indicator {
         visibility: collapse !important;
     }
 
-    /* tab dragging and dropping icon */
+    /* 标签拖拽指示器 */
     .tab-drop-indicator {
         background-image: url(../images/sidra/tab-drag-indicator.svg) !important;
         -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
@@ -1073,6 +1059,7 @@
     #TabsToolbar #tabs-newtab-button>.toolbarbutton-icon,
     #TabsToolbar #newPrivateTab-button>.toolbarbutton-icon {
         --toolbarbutton-inner-padding: calc((var(--tab-min-height) - 16px) / 2);
+        border-radius: var(--sidra-tab-rounding) var(--sidra-tab-rounding) 0 0 !important;
     }
 
     /* 隐藏标签分隔符 */
@@ -1101,16 +1088,6 @@
     #TabsToolbar .tabbrowser-tab {
         background-color: color-mix(in srgb, var(--lwt-accent-color) 20%, transparent) !important;
         padding: 0 !important;
-    }
-
-    .tabbrowser-tab:not([selected]) .tab-label {
-        color: color-mix(in srgb, currentColor 70%, white);
-    }
-
-    .tabbrowser-tab:is([visuallyselected], [selected]) .tab-background {
-        background-image: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)),
-            linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)),
-            var(--lwt-header-image, none)
     }
 
     .tab-background {
@@ -1160,6 +1137,33 @@
     #vertical-tabs-list .all-tabs-item:is(:hover, :focus-within) .all-tabs-secondary-button[close-button] {
         margin-left: 2px;
     }
+
+    #toolbar-menubar:not([inactive="true"]) .titlebar-buttonbox-container {
+        visibility: collapse;
+    }
+
+    :root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"]+#TabsToolbar> :is(.titlebar-buttonbox-container, .titlebar-spacer) {
+        visibility: visible !important;
+        display: -moz-box !important;
+    }
+}
+
+@supports -moz-bool-pref("userChromeJS.sidra.menubar.showOnRight") {
+    #TabsToolbar {
+        -moz-box-ordinal-group: 1;
+    }
+
+    #toolbar-menubar {
+        -moz-box-ordinal-group: 3;
+    }
+
+    #toolbar-menubar:not([inactive="true"]) .titlebar-buttonbox-container {
+        visibility: visible;
+    }
+
+    :root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"]+#TabsToolbar> :is(.titlebar-buttonbox-container, .titlebar-spacer) {
+        visibility: collapse !important;
+    }
 }
 
 /**======== 显示垂直标签栏时隐藏横向标签栏 ========*/
@@ -1171,10 +1175,6 @@
         grid-template-areas: "navbar navbar titlebar"
             "PersonalToolbar PersonalToolbar PersonalToolbar";
     }
-
-    /* #main-window[vertical-tabs="true"][sizemode="maximized"] #navigator-toolbox {
-    padding-top: 6px !important;
-} */
 
     #main-window[vertical-tabs="true"] #TabsToolbar>.toolbar-items {
         visibility: collapse;
@@ -1247,26 +1247,23 @@
         width: 0 !important;
         visibility: collapse;
     }
-
-    /* 激活菜单时隐藏标签栏拖拽区域 */
-    /* #main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive="true"])+#TabsToolbar .titlebar-spacer,
-#main-window[vertical-tabs="true"] #toolbar-menubar:not([inactive="true"])>spacer {
-    width: 0 !important;
-    visibility: collapse;
-} */
 }
 
 /**======== 紧凑地址栏 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.urlbar.compact") {
     #urlbar[breakout] {
         margin-inline-start: 0px !important;
-        width: 100% !important;
-        left: 0 !important;
-        top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
     }
 
     #urlbar[breakout]:not([open]) {
-        bottom: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+        position: relative;
+    }
+
+    #urlbar[breakout][open] {
+        position: absolute;
+        width: 100%;
+        left: 0 !important;
+        top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
     }
 
     .urlbarView {
@@ -1364,6 +1361,12 @@
 
 /**======== 紧凑面板 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.panel.compact") {
+
+    /* add icons to non-iconized appmenu items */
+    .subviewbutton:not(.subviewbutton-iconic)>.toolbarbutton-icon {
+        -moz-context-properties: fill, fill-opacity;
+        fill: currentColor;
+    }
 
     .PanelUI-subView:not([extension="true"]),
     panelmultiview,
@@ -1517,14 +1520,159 @@
         padding-left: 0;
     }
 
+    /** CheckBox */
+    .subviewbutton[type="checkbox"]:not([checked="true"]) {
+        list-style-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    /* 三道杠 */
+    #PanelUI-menu-button {
+        padding-inline: var(--toolbarbutton-outer-padding) !important;
+    }
+
+    #PanelUI-menu-button[badge-status=""]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        display: none !important;
+    }
+
+    .addon-banner-item,
+    .panel-banner-item {
+        margin: 0 0 var(--sidra-panel-item-padding-bottom);
+    }
+
+    #PanelUI-menu-button[badge-status^="update"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: var(--update-badge-bg) url("../images/sidra/panel-popup/update-icon-inverted.svg") no-repeat center/contain !important;
+        background-clip: border-box !important;
+        fill: var(--update-badge-color) !important;
+        border: 1px solid transparent !important;
+        border-radius: 100% !important;
+        -moz-context-properties: fill !important;
+        padding: 0 !important;
+        margin-inline: auto -4px !important;
+        margin-block: -7px auto !important;
+    }
+
+    :root:not([customizing]) #PanelUI-menu-button[badge-status^="update"]>.toolbarbutton-badge-stack>.toolbarbutton-badge:-moz-window-inactive {
+        fill: transparent !important;
+        background-color: var(--update-badge-inactive) !important;
+    }
+
+    :root:not([customizing]) #PanelUI-menu-button[badge-status^="update"]:is(:hover, [open])>.toolbarbutton-badge-stack>.toolbarbutton-badge:-moz-window-inactive {
+        background-color: var(--update-badge-bg) !important;
+        fill: var(--update-badge-color) !important;
+    }
+
+    .panel-banner-item[notificationid^="update"]::after {
+        display: none !important;
+    }
+
+    .panel-banner-item[notificationid^="update"]>.toolbarbutton-icon {
+        background: var(--update-badge-bg) url("../images/sidra/panel-popup/update-icon-inverted.svg") no-repeat center/contain !important;
+        background-clip: border-box !important;
+        fill: var(--update-badge-color) !important;
+        border: 1px solid transparent;
+        border-radius: 100% !important;
+        -moz-context-properties: fill !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        width: unset !important;
+        height: unset !important;
+        box-sizing: content-box !important;
+        padding: 0 !important;
+    }
+
+    .panel-banner-item[notificationid="update-available"]>.toolbarbutton-icon,
+    #PanelUI-menu-button[badge-status="update-available"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: var(--update-badge-bg) url("../images/sidra/panel-popup/update-icon-inverted.svg") no-repeat center/contain !important;
+        fill: var(--update-badge-color) !important;
+        transform: scaleY(-1);
+    }
+
+    .panel-banner-item[notificationid="update-downloading"]>.toolbarbutton-icon,
+    #PanelUI-menu-button[badge-status="update-downloading"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: var(--update-badge-bg) url("../images/sidra/panel-popup/more.svg") no-repeat center/75% !important;
+        fill: var(--update-badge-color) !important;
+    }
+
+    .panel-banner-item[notificationid="update-restart"]>.toolbarbutton-icon,
+    #PanelUI-menu-button[badge-status="update-restart"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: var(--update-badge-bg) url("../images/sidra/anel-popup/check.svg") no-repeat center/contain !important;
+        fill: var(--update-badge-color) !important;
+    }
+
+
+    .panel-banner-item[notificationid="update-unsupported"]>.toolbarbutton-icon,
+    #PanelUI-menu-button[badge-status="update-unsupported"]>.toolbarbutton-badge-stack>.toolbarbutton-badge,
+    #PanelUI-menu-button[badge-status="update-unsupported"]:is(:hover, [open])>.toolbarbutton-badge-stack>.toolbarbutton-badge:-moz-window-inactive {
+        background: var(--low-warning-icon-background) url("../images/sidra/anel-popup/check-partial.svg") no-repeat center/contain !important;
+        fill: var(--low-warning-icon-detail) !important;
+    }
+
+    #PanelUI-menu-button[badge-status]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        filter: none !important;
+    }
+
+    #PanelUI-menu-button[badge-status="fxa-needs-authentication"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: url("../images/sidra/skin/controlcenter/warning.svg") no-repeat center/contain !important;
+        stroke: var(--low-warning-icon-detail) !important;
+        fill: var(--low-warning-icon-background) !important;
+        -moz-context-properties: fill, stroke !important;
+        margin: -7px 0 0 !important;
+        margin-inline-end: -6px !important;
+    }
+
+    #PanelUI-menu-button[badge-status="addon-alert"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        background: url("../images/sidra/panel-popup/extension.svg") no-repeat center/contain !important;
+        stroke: var(--low-warning-icon-detail) !important;
+        fill: var(--low-warning-icon-background) !important;
+        -moz-context-properties: fill, stroke !important;
+        margin: -8px 0 0 !important;
+        margin-inline-end: -6px !important;
+    }
+
+    #PanelUI-menu-button[badge-status="fxa-needs-authentication"] {
+        list-style-image: url("../images/sidra/skin/menu-triangular-badged.svg") !important;
+    }
+
+    #PanelUI-menu-button[badge-status="addon-alert"],
+    #PanelUI-menu-button[badge-status="update-unsupported"] {
+        list-style-image: url("../images/sidra/skin/menu-badged.svg") !important;
+    }
+
+    :root:not([customizing]) #PanelUI-menu-button[badge-status="addon-alert"]:not(:hover, [open])>.toolbarbutton-badge-stack>.toolbarbutton-badge:-moz-window-inactive {
+        fill: var(--update-badge-inactive) !important;
+    }
+
+    :root:not([customizing]) #PanelUI-menu-button[badge-status="fxa-needs-authentication"]:not(:hover, [open])>.toolbarbutton-badge-stack>.toolbarbutton-badge:-moz-window-inactive {
+        fill: var(--update-badge-inactive) !important;
+        stroke: transparent !important;
+    }
+
+    #PanelUI-menu-button[badge-status="extension-new-tab"]>.toolbarbutton-badge-stack>.toolbarbutton-badge,
+    #PanelUI-menu-button[badge-status="download-success"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+        display: none;
+    }
+
+    #appMenu-fxa-status2[fxastatus]>toolbarbutton {
+        padding-top: var(--sidra-panel-item-padding-top) !important;
+        padding-bottom: var(--sidra-panel-item-padding-bottom) !important;
+    }
+
+    #appMenu-fxa-status2:is([fxastatus="signedin"],
+        [fxastatus="unverified"],
+        [fxastatus="login-failed"]) #appMenu-fxa-label2>vbox {
+        margin-inline-start: var(--sidra-panel-margin-before-icon);
+    }
+
+    #appMenu-fxa-status2[fxastatus]>toolbarbutton>vbox>label {
+        height: var(--sidra-panel-icon-height);
+        margin: var(--sidra-panel-text-margin) !important;
+        overflow: hidden;
+    }
+
     /* Identity Popup */
     #identity-popup {
         margin-inline: 0 !important;
         margin-inline-start: -16px !important;
-    }
-
-    #identity-popup-multiView {
-        /* width: auto; */
     }
 
     #identity-popup-mainView,
@@ -1688,6 +1836,11 @@
     }
 
     menupopup:not([class="in-menulist"]) :is(menu[disabled="true"], menuitem[disabled="true"], menu[_moz-menuactive="true"][disabled="true"], menuitem[_moz-menuactive="true"][disabled="true"]) {
+        color: var(--menu-disabled-color);
+    }
+
+    /* Fix for extensionOptionsMenu.uc.js */
+    #eom-button-popup menuitem.noOptions {
         color: var(--menu-disabled-color);
     }
 
@@ -3160,14 +3313,7 @@
 
 /**======== 弹出面板图标 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.panel.icon.complementary") {
-    .subviewbutton[type="checkbox"]:not([checked="true"]) {
-        list-style-image: url("../images/sidra/skin/checkbox.svg");
-    }
 
-    .addon-banner-item,
-    .panel-banner-item {
-        margin: 0 0 var(--sidra-panel-item-padding-bottom);
-    }
 
     #appMenu-fxa-status2,
     #appMenu-zoom-controls2,
@@ -3190,12 +3336,6 @@
     #appMenu-fxa-label2,
     #appMenu-zoomReset-button2 {
         --menuitem-image: '';
-    }
-
-    #appMenu-fxa-status2:is([fxastatus="signedin"],
-        [fxastatus="unverified"],
-        [fxastatus="login-failed"]) #appMenu-fxa-label2>vbox {
-        margin-inline-start: var(--sidra-panel-margin-before-icon);
     }
 
     #fxa-manage-account-button {
