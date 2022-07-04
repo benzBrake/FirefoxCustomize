@@ -698,13 +698,13 @@
     #toolbar-menubar #main-menubar>menu {
         appearance: none !important;
         background-color: transparent !important;
-        padding-inline: 2px;
+        /* padding-inline: 2px; */
     }
 
     #toolbar-menubar #main-menubar>menu>label {
         -moz-box-flex: 1000 !important;
         margin: 0 !important;
-        padding: 4px 8px 5px 8px !important;
+        padding: calc((var(--tab-min-height) - 16px) / 2) 8px calc((var(--tab-min-height) - 16px) / 2) 8px !important;
         border-radius: var(--toolbarbutton-border-radius) !important;
     }
 
@@ -1146,6 +1146,10 @@
         visibility: visible !important;
         display: -moz-box !important;
     }
+
+    #toolbar-menubar[autohide="true"]:not([inactive])+#TabsToolbar>.titlebar-buttonbox-container {
+        visibility: visible;
+    }
 }
 
 @supports -moz-bool-pref("userChromeJS.sidra.menubar.showOnRight") {
@@ -1154,7 +1158,7 @@
     }
 
     #toolbar-menubar {
-        -moz-box-ordinal-group: 3;
+        -moz-box-ordinal-group: 2;
     }
 
     #toolbar-menubar:not([inactive="true"]) .titlebar-buttonbox-container {
@@ -1164,6 +1168,12 @@
     :root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"]+#TabsToolbar> :is(.titlebar-buttonbox-container, .titlebar-spacer) {
         visibility: collapse !important;
     }
+
+    #toolbar-menubar[autohide="true"]:not([inactive])+#TabsToolbar>.titlebar-buttonbox-container,
+    :root:not([chromehidden~="menubar"], [operatingsystem="linux"], [operatingsystem="macosx"]) #toolbar-menubar:not([inactive])+#TabsToolbar .titlebar-spacer {
+        display: none;
+    }
+
 }
 
 /**======== 显示垂直标签栏时隐藏横向标签栏 ========*/
