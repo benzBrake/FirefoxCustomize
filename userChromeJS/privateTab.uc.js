@@ -1,5 +1,6 @@
 // ==UserScript==
 // @name            PrivateTab
+// @description     无痕标签页
 // @author          xiaoxiaoflood
 // @include         main
 // @include         chrome://browser/content/places/bookmarksSidebar.xhtml
@@ -7,11 +8,12 @@
 // @include         chrome://browser/content/places/places.xhtml
 // @startup         UC.privateTab.exec(win);
 // @shutdown        UC.privateTab.destroy();
+// @homepageURL     https://github.com/xiaoxiaoflood/firefox-scripts/
 // @onlyonce
 // ==/UserScript==
 UC.privateTab = {
   config: {
-    neverClearData: false, // if you want to not record history but don't care about other data, maybe even want to keep private logins
+    neverClearData: true, // if you want to not record history but don't care about other data, maybe even want to keep private logins
     restoreTabsOnRestart: true,
     doNotClearDataUntilFxIsClosed: true,
     deleteContainerOnDisable: false,
@@ -192,27 +194,6 @@ UC.privateTab = {
       }
     };
 
-    win.Object.defineProperty(customElements.get('tabbrowser-tabs').prototype, 'allTabs', {
-      get: function allTabs() {
-        let children = Array.from(this.arrowScrollbox.children);
-        while (children.length && children[children.length - 1].tagName != 'tab')
-          children.pop();
-        return children;
-      }
-    });
-
-    customElements.get('tabbrowser-tabs').prototype.insertBefore = function (tab, node) {
-      if (!this.arrowScrollbox) {
-        throw new Error("Shouldn't call this without arrowscrollbox");
-      }
-
-      let { arrowScrollbox } = this;
-      if (node == null) {
-        node = arrowScrollbox.lastChild;
-      }
-      return arrowScrollbox.insertBefore(tab, node);
-    }
-
     customElements.get('tabbrowser-tabs').prototype._updateNewTabVisibility = function () {
       let wrap = n =>
         n.parentNode.localName == "toolbarpaletteitem" ? n.parentNode : n;
@@ -311,14 +292,16 @@ UC.privateTab = {
 
     let { getBrowserWindow } = Cu.import('resource:///modules/PlacesUIUtils.jsm');
     eval('PlacesUIUtils.openTabset = function ' +
-      PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
-        '$1$2$1userContextId: aEvent.userContextId || 0,'));
-
+          PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
+                                                      '$1$2$1userContextId: aEvent.userContextId || 0,')
+                                             .replace(/\blazy\./g, ''));
+                                                      
     eval('PlacesUIUtils._openNodeIn = ' +
-      PlacesUIUtils._openNodeIn.toString().replaceAll("lazy.", "").replace(/(\s+)(aPrivate = false)\n/,
-        '$1$2,$1userContextId = 0\n')
-        .replace(/(\s+)(private: aPrivate,)\n/,
-          '$1$2$1userContextId,\n'));
+          PlacesUIUtils._openNodeIn.toString().replace(/(\s+)(aPrivate = false)\n/,
+                                                       '$1$2,$1userContextId = 0\n')
+                                              .replace(/(\s+)(private: aPrivate,)\n/,
+                                                       '$1$2$1userContextId,\n')
+                                              .replace(/\blazy\./g, ''));
 
     let { UUIDMap } = Cu.import('resource://gre/modules/Extension.jsm');
     let TST_ID = 'treestyletab@piro.sakura.ne.jp';
@@ -477,8 +460,8 @@ UC.privateTab = {
           }
 
           #tabbrowser-tabs[hasadjacentnewprivatetabbutton]:not([overflow="true"]) ~ #${UC.privateTab.BTN_ID},
-          #tabbrowser-tabs[overflow="true"] > #tabbrowser-arrowscrollbox > #${UC.privateTab.BTN2_ID},
-          #tabbrowser-tabs:not([hasadjacentnewprivatetabbutton]) > #tabbrowser-arrowscrollbox > #${UC.privateTab.BTN2_ID},
+          #tabbrowser-tabs[overflow="true"] > #tabbrowser-arrowscrollbox > #tabbrowser-arrowscrollbox-periphery > #${UC.privateTab.BTN2_ID},
+          #tabbrowser-tabs:not([hasadjacentnewprivatetabbutton]) > #tabbrowser-arrowscrollbox > #tabbrowser-arrowscrollbox-periphery > #${UC.privateTab.BTN2_ID},
           #TabsToolbar[customizing="true"] #${UC.privateTab.BTN2_ID} {
             display: none;
           }
