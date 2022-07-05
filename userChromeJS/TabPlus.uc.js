@@ -350,28 +350,11 @@
             }
         },
         createMenuItems: function () {
-            let ins = $('copycat-insert-point', this.win.document);
             let toolIns = $("prefSep") || $("webDeveloperMenu");
             this.menuitems = [];
             MENU_CFG.forEach(item => {
                 let menuitem = TabPlus.createMenu(item);
-                if (ins) {
-                    ins.parentNode.insertBefore(menuitem, ins);
-                    if (!menuitem.id) {
-                        menuitem.setAttribute('id', 'TabPlus-Original-' + this.id);
-                    }
-                    if (toolIns) {
-                        let separator = $C(this.win.document, 'menuseparator', {
-                            'hidden': true,
-                            'class': 'CopyCat-Replacement',
-                            'original-id': menuitem.getAttribute('id')
-                        });
-                        toolIns.parentNode.insertBefore(separator, toolIns);
-                        this.menuitems.push(separator);
-                    }
-                } else if (toolIns) {
-                    toolIns.parentNode.insertBefore(menuitem, toolIns);
-                }
+                toolIns.parentNode.insertBefore(menuitem, toolIns);
                 this.menuitems.push(menuitem);
             });
 
@@ -396,7 +379,7 @@
             let item,
                 classList = [],
                 tagName = 'menuitem';
-            if (['separator', 'menuseparator'].contain(obj.type) || !obj.pref && !obj.popup) {
+            if (['separator', 'menuseparator'].includes(obj.type) || !obj.pref && !obj.popup) {
                 return $C(aDoc, 'menuseparator', obj, ['type', 'group', 'popup']);
             }
 

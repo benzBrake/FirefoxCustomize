@@ -1,10 +1,25 @@
 # FirefoxCustomize
 Ryan 的 Firefox 自定义资源收藏夹
 
-## 为什么我要用 Firefox 而不是 Chrome/Edge 之类的？
+## 分类说明
 
-因为不用换浏览器啊，Google Chrome 还没出来我就在用 Firefox 了。
-而且这里说个题外话，Chrome != Google Chrome[^1]。
+> ConfigBackup: 存放插件的配置备份
+>
+> extensions: 存放收集的插件
+>
+> resources: 存放相关资源
+>
+> userChromeJS: 存放收集、修改过的 UC 脚本
+>
+> UserScript: 存放收集、修改过油猴脚本
+
+## UC 脚本说明
+
+[点击这里查看](userChromeJS/README.md)
+
+## 题外话：为什么我要用 Firefox 而不是 Chrome/Edge 之类的？
+
+因为不用换浏览器啊，Google Chrome 还没出来我就在用 Firefox 了。PS: Chrome != Google Chrome[^1]。
 
 曾记得第一次用 Google Chrome 的时候（没记错版本号还没到20？），在我笔记本上天天崩溃，写博客写一半就给我崩了，怎么能忍，然后到现在都没怎么用过 Google Chrome，顶多用一下 360/搜狗/QQ 之类，毕竟国产双核上国内的老旧网站还是很有用的。
 
@@ -58,6 +73,6 @@ That's it.
 
 ## CopyLeft
 
-随便你怎么改协议™
+除了从别人那边偷来的，剩下的：随便你怎么改协议™
 
 [^1]: [Chrome - 术语表](https://developer.mozilla.org/zh-CN/docs/Glossary/Chrome)

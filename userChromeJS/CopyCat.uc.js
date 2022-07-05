@@ -272,6 +272,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 text: "-set"
             }]
         }, {
+            command: 'TabPlus-menu',
+        }, {
             id: 'copycat-insert-point'
         }, {
             class: 'showFirstText',
@@ -1307,6 +1309,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }
 
     window.CopyCat.init();
+    setTimeout(function () { window.CopyCat.rebuild(); }, 1000);//1秒
+    setTimeout(function () { window.CopyCat.rebuild(); }, 3000);//3秒
 })(`
 @-moz-document url('chrome://browser/content/browser.xhtml') {
     .CopyCat-Group > .menuitem-iconic {

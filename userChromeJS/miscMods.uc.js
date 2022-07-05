@@ -15,7 +15,7 @@
     const WIDGET_ATTRS = {
         "urlbar": {
             el: "#paste-and-go",
-            initEvent: "click",
+            initEvent: "contextmenu",
             accesskey: 'S'
         },
         "urlbar-middle-click": {
@@ -26,7 +26,7 @@
         },
         "searchbar": {
             el: ".searchbar-paste-and-search",
-            initEvent: "click",
+            initEvent: "contextmenu",
             accesskey: 'S'
         },
         "star-button-box": {
@@ -240,6 +240,26 @@
         }
     }
 
+    const DELAY_EXEC = {
+        "reload styloaix": {
+            command: function () {
+                if (UC && UC.styloaix) UC.styloaix.toggleAll({ reload: true });
+            }
+        },
+        "warn on quit": {
+            command: function () {
+                location.href.startsWith('chrome://browser/content/browser.x') && setTimeout(() => {
+                    const { BrowserGlue } = ChromeUtils.import('resource:///modules/BrowserGlue.jsm');
+                    const gTabbrowserBundle = Services.strings.createBundle('chrome://browser/locale/tabbrowser.properties');
+                    eval('BrowserGlue.prototype._onQuitRequest = ' +
+                        BrowserGlue.prototype._onQuitRequest.toString()
+                            .replace('pagecount >= 2', 'pagecount >= 1')
+                    );
+                }, 1000);
+            }
+        },
+    }
+
     function $(sel, aDoc) {
         if (!sel) return false;
         let doc = aDoc || document;
@@ -300,7 +320,7 @@
         try {
             uri = Services.io.newURI(url, null, null);
         } catch (e) {
-            return this.log(U($L('url is invalid')).replace("%s", url));
+            return this.log("链接有误：%s".replace("%s", url));
         }
         if (uri.scheme === "javascript") {
             try {
@@ -334,15 +354,6 @@
         }
     }
 
-    const DELAY_EXEC = {
-        "reload styloaix": {
-            delay: 300,
-            command: function () {
-                if (UC && UC.styloaix) UC.styloaix.toggleAll({ reload: true });
-            }
-        }
-    }
-
     function init() {
         for (let widget in WIDGET_ATTRS) {
             let obj = WIDGET_ATTRS[widget];
@@ -372,9 +383,10 @@
         }
 
         for (let key in DELAY_EXEC) {
-            let obj = DELAY_EXEC[key];
-            if (obj.delay && obj.command) {
-                Number.isInteger(obj.delay) && setTimeout(obj.command, obj.delay);
+            let obj = DELAY_EXEC[key],
+                delay = obj.delay || 300;
+            if (obj.command) {
+                Number.isInteger(delay) && setTimeout(obj.command, delay);
             }
         }
     }
