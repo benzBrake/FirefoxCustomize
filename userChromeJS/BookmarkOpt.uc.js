@@ -269,6 +269,17 @@
                     break;
             }
         },
+        handleUrlBarEvent: function (event) {
+            let { target, button } = event;
+            switch (event.type) {
+                case 'dblclick':
+                    if (target.id === "urlbar-input" && button == 0) {
+                        var bar = target.ownerGlobal.document.getElementById("PersonalToolbar");
+                        target.ownerGlobal.setToolbarVisibility(bar, bar.collapsed);
+                    }
+                    break;
+            }
+        },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
@@ -286,6 +297,7 @@
             if (this.isMain) {
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
             }
             this.style = addStyle(css);
         },
@@ -300,6 +312,7 @@
                 this.clearPanelItems(this.topWin.document);
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
             }
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             delete window.BookmarkOpt;
