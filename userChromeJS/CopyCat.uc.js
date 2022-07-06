@@ -875,9 +875,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         edit: function (edit) {
             if (debug) this.log('edit', edit);
             if (cPref.get("view_source.editor.path"))
-                this.exec(cPref.get("view_source.editor.path"), edit);
+                this.exec(cPref.get("view_source.editor.path"), this.handleRelativePath(edit));
             else
-                this.exec(this.handleRelativePath(obj.edit));
+                this.exec(this.handleRelativePath(edit));
         },
         exec: function (path, arg) {
             if (debug) this.log('exec', path, arg);
