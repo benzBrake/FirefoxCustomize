@@ -7,7 +7,6 @@
 // @include         chrome://browser/content/browser.xhtml
 // @shutdown        window. showPersonalToolbarOnDemand.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note            需要把书签工具栏模式设置为在新标签页显示
 // ==/UserScript==
 (function () {
     class showPersonalToolbarOnDemand {
