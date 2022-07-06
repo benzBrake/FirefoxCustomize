@@ -215,7 +215,7 @@ var addToolbarInsideLocationBar = {
 
     fakeUnregisterArea: function (name) {
         let CustomizableUIBSPass =
-            ChromeUtils.import("resource:///modules/CustomizableUI.jsm", null);
+            Cu.import("resource:///modules/CustomizableUI.jsm", null);
         CustomizableUIBSPass.gAreas.delete(name);
         CustomizableUIBSPass.gBuildAreas.delete(name);
     },
