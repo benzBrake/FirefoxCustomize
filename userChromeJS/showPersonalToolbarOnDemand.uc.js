@@ -5,24 +5,52 @@
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
+// @shutdown        window. showPersonalToolbarOnDemand.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            需要把书签工具栏模式设置为在新标签页显示
 // ==/UserScript==
 (function () {
-    const URLS = [
-        'about:newtab',
-        'about:blank',
-        'about:privatebrowsing',
-        'about:home'
-    ];
-    setTimeout(function () {
-        let event = (event) => {
-            const win = event.target.ownerGlobal;
-            const bar = win.document.getElementById("PersonalToolbar");
-            win.setToolbarVisibility(bar, URLS.contain(win.gBrowser.currentURI.spec));
+    class showPersonalToolbarOnDemand {
+        NOT_FOCUS_ON_URLBAR = true;
+        TOOLBAR_ID = "PersonalToolbar";
+        NEWTAB_URLS = [
+            'about:newtab',
+            'about:blank',
+            'about:privatebrowsing',
+            'about:home'
+        ]
+        constructor() {
+            this.toggle();
+            this.originalVisibility = Services.prefs.getStringPref("browser.toolbars.bookmarks.visibility");
+            gBrowser.tabContainer.addEventListener('TabSelect', this);
+            gBrowser.tabContainer.addEventListener('TabAttrModified', this);
         }
-        setToolbarVisibility(document.getElementById("PersonalToolbar"), URLS.contain(gBrowser.currentURI.spec));
-        gBrowser.tabContainer.addEventListener('TabSelect', event);
-        gBrowser.tabContainer.addEventListener('TabAttrModified', event);
-    }, 2000);
+        toggle(win) {
+            win || (win = Services.wm.getMostRecentWindow("navigator:browser"));
+            let aDoc = win.document;
+            const toolbar = aDoc.getElementById(this.TOOLBAR_ID);
+            win.setToolbarVisibility(toolbar, this.NEWTAB_URLS.contain(win.gBrowser.currentURI.spec));
+            if (this.NOT_FOCUS_ON_URLBAR) aDoc.getElementById("urlbar-input").blur();
+        }
+        handleEvent(event) {
+            this.toggle(event.target.ownerGlobal);
+        }
+        destroy() {
+            gBrowser.tabContainer.removeEventListener('TabSelect', this);
+            gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
+            Services.prefs.setStringPref("browser.toolbars.bookmarks.visibility", this.originalVisibility || "newtab");
+        }
+    }
+
+    if (gBrowserInit.delayedStartupFinished) window.showPersonalToolbarOnDemand = new showPersonalToolbarOnDemand();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.showPersonalToolbarOnDemand = new showPersonalToolbarOnDemand();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
+
 })();
