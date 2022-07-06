@@ -10,7 +10,7 @@
 // ==/UserScript==
 (function () {
     class showPersonalToolbarOnDemand {
-        NOT_FOCUS_ON_URLBAR = true;
+        NOT_FOCUS_ON_URLBAR = false;
         TOOLBAR_ID = "PersonalToolbar";
         NEWTAB_URLS = [
             'about:newtab',

@@ -239,7 +239,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             try {
                 uri = Services.io.newURI(url, null, null);
             } catch (e) {
-                return this.log(U(this.t('urlIsInvalid')).replace("%s", url));
+                return this.log("URL 有问题: %s".replace("%s", url));
             }
             if (uri.scheme === "javascript") {
                 try {

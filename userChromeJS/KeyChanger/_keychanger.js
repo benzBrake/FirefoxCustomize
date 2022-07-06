@@ -33,7 +33,7 @@ keys['F4'] = "duplicateTabIn(gBrowser.selectedTab, 'tab')"; //复制当前标签
 //keys['F5'] =""; // 原生功能：刷新
 //keys['F6'] =""; // 原生功能：定位到地址栏
 //keys['F7'] =""; // 原生功能：启用浏览光标
-keys['F8'] = function () {
+keys['F8'] = function (e) {
     gBrowser.loadURI("javascript:document.body.contentEditable%20=%20'true';%20document.designMode='on';%20void%200", {
         triggeringPrincipal: gBrowser.contentPrincipal
     });
@@ -75,13 +75,29 @@ keys['Alt+F'] = function () {
     var bar = document.getElementById("PersonalToolbar");
     setToolbarVisibility(bar, bar.collapsed);
 }; //显示或隐藏书签栏， 自带按键 Ctrl+Shift+B
-keys['Alt+G'] = function () {
-    KeyChanger.openCommand("javascript:var%20Bar=location.host+%22%22;q%20=%20%22%22%20+%20(window.getSelection%20?%20window.getSelection()%20:%20document.getSelection%20?%20document.getSelection()%20:%20document.selection.createRange().text);%20if%20(!q)%20q%20=%20prompt(%22\u8BF7\u8F93\u5165\u641C\u7D22\u7684\u5173\u952E\u8BCD:%22,%20%22%22);%20if%20(q!=null)%20{var%20qlocation=%22%20%22;qlocation=('http://www.google.com/search?num=30&hl=zh-CN&newwindow=1&q='+q+'&sitesearch='+Bar+'');window.open(qlocation);}%20void%200");
+keys['Alt+G'] = function (event) {
+    let sel = KeyChanger.selectedText,
+        win = event.target.ownerGlobal;
+    if (!sel.length) {
+        sel = win.prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '请输入搜索的关键词:' : 'Please input keyword:', '');
+    }
+    if (sel) {
+        let url = 'https://www.google.com/search?q=site:' + encodeURIComponent(win.gBrowser.currentURI.host) + ' ' + sel;
+        win.KeyChanger.openCommand(url, 'tab');
+    }
 }; //Google站内搜索
-keys['Alt+B'] = function () {
-    KeyChanger.openCommand("javascript:var%20Bar=location.host+%22%22;q%20=%20%22%22%20+%20(window.getSelection%20?%20window.getSelection()%20:%20document.getSelection%20?%20document.getSelection()%20:%20document.selection.createRange().text);%20if%20(!q)%20q%20=%20prompt(%22%5Cu8BF7%5Cu8F93%5Cu5165%5Cu641C%5Cu7D22%5Cu7684%5Cu5173%5Cu952E%5Cu8BCD:%22,%20%22%22);%20if%20(q!=null)%20%7Bvar%20qlocation=%22%20%22;qlocation=('http://www.baidu.com/s?&ie=UTF-8&oe=UTF-8&cl=3&rn=100&wd=%20%20'+q+'%20%20%20site:%20'+Bar+'');window.open(qlocation);%7D%20void%200");
+keys['Alt+B'] = function (event) {
+    let sel = KeyChanger.selectedText,
+        win = event.target.ownerGlobal;
+    if (!sel.length) {
+        sel = win.prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '请输入搜索的关键词:' : 'Please input keyword:', '');
+    }
+    if (sel) {
+        let url = 'http://www.baidu.com/s?&ie=UTF-8&oe=UTF-8&cl=3&rn=100&wd=site:' + encodeURIComponent(win.gBrowser.currentURI.host) + ' ' + sel;
+        win.KeyChanger.openCommand(url, 'tab');
+    }
 };//Baidu站内搜索
-keys['Alt+I'] = function () {
+keys['Alt+I'] = function (event) {
     event.target.ownerGlobal.BrowserPageInfo();
 }; //查看页面信息
 keys['Alt+Z'] = function () {
@@ -134,45 +150,24 @@ keys['Ctrl+Shift+Alt+C'] = function () {
     })();
 } //复制所有网页 Markdown 链接
 
-
-
-//Ctrl+Alt 组合键
-//--------------------------------------------------------------------------------------------------------------------------------------------
-keys['Ctrl+Alt+A'] = function () {
-    if (UC.QuickSnapshot.takeSnapshot) {
-        UC.QuickSnapshot.takeSnapshot();
-    }
-}; //截图
-keys['Ctrl+Alt+Shift+A'] = function () {
-    if (UC.QuickSnapshot.takeSnapshot) {
-        UC.QuickSnapshot.takeSnapshot(true);
-    }
-}; //隐藏火狐截图
-keys['Ctrl+Alt+Q'] = function () {
-    if (UC.QuickSnapshot.fsCapture) {
-        UC.QuickSnapshot.fsCapture();
-    }
-}; //完整截图
-keys["Ctrl+Alt+S"] = function () {
-    if (UC.QuickSnapshot.captuerGif) {
-        UC.QuickSnapshot.captuerGif();
-    }
-}; //GIF截图
-keys['Ctrl+Alt+C'] = function () {
-    if (UC.QuickSnapshot.pickColor) {
-        UC.QuickSnapshot.pickColor();
-    }
-}; //颜色拾取器
-keys["Ctrl+Alt+X"] = function () {
-    var toolbar = document.getElementById("toolbar-menubar");
-    var visibility = toolbar.getAttribute("autohide") == "true";
-    setToolbarVisibility(toolbar, visibility);
-}; //打开Alt菜单 ff70+
-
-
-
 //Ctrl+Shift 组合键
 //--------------------------------------------------------------------------------------------------------------------------------------------
+keys['Ctrl+Shift+F5'] = function () {
+    gBrowser.tabs.forEach(t => gBrowser.reloadTab(t));
+}
 //keys['Ctrl+Shift+A'] = 原生快捷键：打开附加组件栏
 //keys['Ctrl+Shift+S'] = 原生快捷键：打开火狐自带的截图功能
 //keys['Ctrl+Shift+D'] = 原生快捷键：保存当前所有标签
+// keys['Ctrl+Shift+N'] = function () {
+//     document.getElementById("Tools:PrivateBrowsing").doCommand();
+// };
+
+//Ctrl+Alt 组合键
+//--------------------------------------------------------------------------------------------------------------------------------------------
+keys['Ctrl+Alt+P'] = (event) => {
+    if (event.target.ownerGlobal === window) {
+        gBrowser.selectedTab.pinned
+            ? gBrowser.unpinMultiSelectedTabs()
+            : gBrowser.pinMultiSelectedTabs();
+    }
+} // 固定标签页
