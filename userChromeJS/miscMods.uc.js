@@ -13,7 +13,7 @@
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
     const WIDGET_ATTRS = {
-        "urlbar": {
+        "urlbar-input": {
             el: "#paste-and-go",
             initEvent: "contextmenu",
             accesskey: 'S'
@@ -359,21 +359,22 @@
             let obj = WIDGET_ATTRS[widget];
             try {
                 let { node } = CustomizableUI.getWidget(widget)?.forWindow(window),
-                    { el, initEvent } = obj;
+                    { el, initEvent, arg } = obj;
+                arg || (arg = false)
                 let callback = (e) => {
                     if (e.type == "click" && e.button !== 2) return;
                     var timer = setInterval(() => {
                         if (el && $(el)) {
                             clearInterval(timer);
                             applyAttrs($(el), obj);
-                            node.removeEventListener(initEvent, callback);
+                            node.removeEventListener(initEvent, callback, arg);
                         }
                     }, 10)
                 }
                 node = node || $(el);
                 if (!node) return;
                 if (initEvent) {
-                    node.addEventListener(initEvent, callback, false);
+                    node.addEventListener(initEvent, callback, arg);
                 } else {
                     applyAttrs(node, obj);
                 }
