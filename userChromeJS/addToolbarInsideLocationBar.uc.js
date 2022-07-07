@@ -1,4 +1,5 @@
-// ==UserScript==// @name           000-addToolbarInsideLocationBar.uc.js
+// ==UserScript==
+// @name           000-addToolbarInsideLocationBar.uc.js
 // @namespace      http://space.geocities.yahoo.co.jp/gl/alice0775
 // @description    add a Toolbar inside LocationBar
 // @include        main
