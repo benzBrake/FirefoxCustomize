@@ -120,7 +120,7 @@ var addToolbarInsideLocationBar = {
         }
         #nav-bar #ucjs-Locationbar-toolbar>.toolbarbutton-1>.toolbarbutton-icon,
         #nav-bar #ucjs-Locationbar-toolbar>.toolbarbutton-1>.toolbarbutton-badge-stack>.toolbarbutton-icon,
-        #downloads-indicator-icon {
+        #nav-bar #ucjs-Locationbar-toolbar #downloads-indicator-icon {
             width: calc(var(--locationbar-icon-width) + 2 * var(--urlbar-icon-padding)) !important;
             height: calc(var(--locationbar-icon-height) + 2 * var(--urlbar-icon-padding)) !important;
             padding: var(--urlbar-icon-padding) !important;
@@ -130,7 +130,7 @@ var addToolbarInsideLocationBar = {
         }
         #nav-bar #ucjs-Locationbar-toolbar .toolbarbutton-1:is(:hover,:active,:focus,:focus-within,[open="true"])>image,
         #nav-bar #ucjs-Locationbar-toolbar .toolbarbutton-1:is(:hover,:active,:focus,:focus-within,[open="true"])>.toolbarbutton-badge-stack>image,
-        #downloads-button:is(:hover,:active,:focus,:focus-within,[open="true"]) #downloads-indicator-icon {
+        #nav-bar #ucjs-Locationbar-toolbar #downloads-button:is(:hover,:active,:focus,:focus-within,[open="true"]) #downloads-indicator-icon {
             background-color: var(--urlbar-box-hover-bgcolor) !important;
             color: var(--urlbar-box-hover-text-color) !important;
         }      
