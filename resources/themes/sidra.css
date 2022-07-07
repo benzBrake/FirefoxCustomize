@@ -145,12 +145,16 @@
 /**======== 紧凑导航栏 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.navbar.compact") {
 
-    /** 导航栏北京和颜色 */
+    /** 导航栏背景和颜色 */
     #navigator-toolbox:-moz-lwtheme {
         background-image: var(--lwt-header-image, var(--lwt-additional-images));
         background-repeat: var(--lwt-background-tiling);
         background-position: var(--lwt-background-alignment);
         background-color: var(--lwt-accent-color, #fff);
+    }
+
+    #navigator-toolbox:-moz-window-inactive:-moz-lwtheme {
+        background-color: var(--lwt-accent-color-inactive, var(--lwt-accent-color));
     }
 
     /** 工具栏颜色 */
@@ -484,6 +488,11 @@
         outline: none !important;
     }
 
+    #PersonalToolbar[collapsed="true"] {
+        padding-inline: 0 !important;
+        padding-block: 0 !important;
+    }
+
     #PersonalToolbar>* {
         transition: opacity 200ms ease-in-out, transform 200ms ease-in-out !important;
         overflow-y: visible !important;
@@ -647,6 +656,11 @@
             }
         }
 
+    }
+
+    /** 调整标签栏后面的空格大小 */
+    #TabsToolbar .titlebar-spacer[type="post-tabs"] {
+        width: calc(var(--titlebar-spacer-width, 32px) / 2) !important;
     }
 
     /** 去除标签栏上方的空白 */
@@ -1261,97 +1275,15 @@
 
 /**======== 紧凑地址栏 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.urlbar.compact") {
-    #urlbar[breakout] {
-        margin-inline-start: 0px !important;
-    }
-
-    #urlbar[breakout]:not([open]) {
-        position: relative;
-    }
-
-    #urlbar[breakout][open] {
-        position: absolute;
-        width: 100%;
-        left: 0 !important;
-        top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
-    }
-
-    .urlbarView {
-        margin-inline: 0 !important;
-        width: auto !important;
-    }
-
-    .urlbarView-row {
-        padding: 0 2px !important;
-    }
-
-    .urlbarView-row-inner {
-        padding-inline-start: 4px !important;
-    }
-
-    #urlbar-background {
-        animation: none !important;
-    }
-
-    #urlbar-input-container {
-        padding: 1px !important;
-        height: 100% !important;
-    }
-
-    #identity-icon {
-        margin-block: var(--urlbar-icon-padding)
-    }
-
-    .urlbarView>.search-one-offs:not([hidden]) {
-        padding-block: 0px !important;
-    }
-
-
     /* 隐藏蓝色框框 */
     #urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
     #searchbar:focus-within {
         outline: none;
     }
 
-    /* disable useless space wasting inside popup */
-    #urlbar[breakout][breakout-extend]>.urlbarView {
-        padding: unset !important;
-        margin: unset !important;
-    }
-
-    #urlbar[breakout] .urlbarView {
-        margin-inline: unset !important;
-        width: 100% !important;
-    }
-
-    /* disable space wasting inside popup around result items */
-    #urlbar[breakout] #urlbar-results {
-        padding: 0px !important;
-        margin: 0px !important;
-    }
-
-    #urlbar[breakout] #urlbar-results .urlbarView-body-outer,
-    #urlbar[breakout] #urlbar-results .urlbarView-row,
-    #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
-        margin-inline-start: 0 !important;
-        padding-inline-start: 0 !important;
-        margin-inline-end: 0 !important;
-        padding-inline-end: 0 !important;
-    }
-
-    #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
-        padding-inline-start: 4px !important;
-        padding-inline-end: 4px !important;
-    }
-
-    #urlbar[breakout] .urlbarView-row {
-        padding-block: 0px !important;
-    }
-
-    /* disable space wasting inside popup around search engines */
-    #urlbar[breakout] .search-one-offs {
-        padding-top: 0px !important;
-        padding-bottom: 0px !important;
+    /* 地址栏内工具栏 */
+    #ucjs-Locationbar-toolbar {
+        padding: 0;
     }
 }
 
@@ -1390,7 +1322,7 @@
     }
 
     #PlacesToolbar,
-    #BMB_bookmarksPopup,
+    /* #BMB_bookmarksPopup, */
     #sidebarMenu-popup {
         --panel-border-color: var(var(--panel-item-hover-bgcolor));
         --panel-border-radius: 0;
@@ -1398,6 +1330,10 @@
         --panel-background-color: var(var(--arrowpanel-background));
         --panel-hover-background-color: var(var(--panel-item-hover-bgcolor));
         padding-inline-start: 0px;
+    }
+
+    #BMB_bookmarksPopup .subviewbutton>.menu-iconic-text {
+        padding-inline-start: 0;
     }
 
     #PlacesToolbar menupopup[placespopup="true"]::part(arrowscrollbox) {
@@ -2095,6 +2031,15 @@
         --menuitem-image: url("../images/sidra/tab-context/clone.svg");
     }
 
+    /* 未读标签 依赖 unreadTabMods.uc.js */
+    #context-markAsRead {
+        --menuitem-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    #context-markAsUnread {
+        --menuitem-image: url("../images/sidra/skin/checkbox-checked.svg");
+    }
+
     /*移动标签页*/
     #context_moveTabOptions {
         --menuitem-image: url("../images/sidra/tab-context/arrow-swap.svg");
@@ -2276,285 +2221,6 @@
 
     #blockedPopupsSeparator+menuitem {
         --menuitem-image: url("../images/sidra/navbar-context/eye-show.svg");
-    }
-
-    /* Addons Items */
-    /*Stylus*/
-    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_show-badge:not[checked="true"] {
-        --menuitem-image: url("../images/sidra/skin/checkbox.svg");
-    }
-
-    #edit-popup-settings {
-        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
-    }
-
-    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-manager {
-        --menuitem-image: url("../images/sidra/navbar-context/empty-box.svg");
-    }
-
-    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-options {
-        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
-    }
-
-    /** JJB */
-    [id^="_42f0bbb4-0214-49d1-a01a-bdead05c5540"] {
-        --menuitem-image: url("../images/sidra/navbar-context/new-window.svg");
-    }
-
-    #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-menuitem-_login-notice {
-        --menuitem-image: url("../images/sidra/navbar-context/login.svg");
-    }
-
-    /** Switchy Omega */
-    #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch+menuitem {
-        --menuitem-image: url("../images/sidra/navbar-context/report.svg");
-    }
-
-    #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch+menuitem+menuitem {
-        --menuitem-image: url("../images/sidra/navbar-context/save.svg");
-    }
-
-    /* Adguard */
-    [label="AdGuard 无法运行于此域"],
-    [label="禁止过滤此网站"] {
-        --menuitem-image: url("../images/sidra/navbar-context/remove.svg");
-    }
-
-    [label="拦截此网站上的广告..."],
-    [label="拦截元素..."] {
-        --menuitem-image: url("../images/sidra/navbar-context/block.svg");
-    }
-
-    [label="检测网站安全性"] {
-        --menuitem-image: url("chrome://global/skin/icons/help.svg");
-    }
-
-    [label="报告问题 ..."] {
-        --menuitem-image: url("../images/sidra/navbar-context/report.svg");
-    }
-
-    #toolbar-context-menu [label="AdGuard 广告拦截器"],
-    #customizationPanelItemContextMenu [label="AdGuard 广告拦截器"] {
-        --menuitem-image: url("../images/sidra/navbar-context/adguard.svg");
-    }
-
-    [label="AdGuard 设置..."] {
-        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
-    }
-
-    [label="过滤日志..."] {
-        --menuitem-image: url("../images/sidra/navbar-context/log.svg");
-    }
-
-    [label="检查过滤器更新"] {
-        --menuitem-image: url("../images/sidra/update.svg");
-    }
-
-    [label="暂停 AdGuard 保护"] {
-        --menuitem-image: url("../images/sidra/navbar-context/pause.svg");
-    }
-
-    [label="AdGuard 保护已暂停"] {
-        --menuitem-image: url("../images/sidra/navbar-context/remove.svg");
-    }
-
-    [label="继续 AdGuard 保护"] {
-        --menuitem-image: url("../images/sidra/navbar-context/play.svg");
-    }
-
-    [id^="content-farm-terminator_danny0838_addons_mozilla_org"] menuitem {
-        --menuitem-image: url("../images/sidra/navbar-context/block.svg");
-    }
-
-    /** Tampermonkey */
-    #firefox_tampermonkey_net-menuitem-_root:not(.menuitem-iconic) {
-        --menuitem-image: url("../images/sidra/navbar-context/javascript.svg");
-    }
-
-    #firefox_tampermonkey_net-menuitem-_root:not(.menuitem-iconic) :is(menu,
-        menuitem) {
-        padding-inline-start: calc(var(--sidra-menuitem-padding-before-icon) + var(--sidra-menuitem-margin-before-icon)) !important;
-        --menuitem-image: url();
-    }
-
-    /** Video Download Helper */
-    #customizationPanelItemContextMenu #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-menuitem-_vdh-main {
-        --menuitem-image: url("../images/sidra/navbar-context/video.svg");
-    }
-
-    #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-menuitem-_vdh-main menuitem {
-        --menuitem-image: url();
-    }
-
-    [label*="智能命名规则"] {
-        --menuitem-image: url("../images/sidra/navbar-context/rename.svg");
-    }
-
-    /** Image Picka */
-    [id^="image-picka_eight04_blogspot"]:nth-child(1),
-    [id^="image-picka_eight04_blogspot"]:nth-child(2),
-    [id^="image-picka_eight04_blogspot"]:nth-child(3) {
-        --menuitem-image: url("../images/sidra/navbar-context/select-image.svg");
-    }
-
-    /* xStyle */
-    #xstyle-amo_addon_firefoxcn_net-menuitem-_openManage {
-        --menuitem-image: url("../images/sidra/navbar-context/style.svg");
-    }
-
-    /** userChrome */
-    #uc-menugroup .menu-iconic-icon {
-        margin-left: 0;
-    }
-
-    #userChromejs_restartApp {
-        padding: 0;
-        appearance: none;
-        padding-inline-start: var(--sidra_menuitem_padding_before_icon);
-        padding-inline-end: var(--sidra_menuitem_padding_after_icon);
-    }
-
-    #userChromejs_restartApp:hover {
-        background-color: var(--button-hover-bgcolor);
-        /*         background-color: var(--panel-item-hover-bgcolor); */
-    }
-
-    #uc-manageMenu {
-        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
-    }
-
-    #uc-manageMenu menuitem {
-        --menuitem-image: '';
-    }
-
-    /** Styloaix */
-    #styloaix-reload-all,
-    #styloaix-style-reload {
-        --menuitem-image: url("../images/sidra/navbar-context/reload.svg");
-    }
-
-    #styloaix-open-folder {
-        --menuitem-image: url("../images/sidra/navbar-context/folder.svg");
-    }
-
-    #styloaix-new-style,
-    #styloaix-style-edit {
-        --menuitem-image: url("../images/sidra/navbar-context/edit.svg");
-    }
-
-    #styloaix-style-delete {
-        --menuitem-image: url("../images/sidra/navbar-context/trash.svg");
-    }
-
-    #se-menu-find {
-        --menuitem-image: url("../images/sidra/document-search.svg");
-    }
-
-    #cMenu_findAgain {
-        --menuitem-image: url("../images/sidra/navbar-context/next.svg");
-    }
-
-    #se-menu-gotoLine {
-        --menuitem-image: url("../images/sidra/navbar-context/go.svg");
-    }
-
-    /** 密码管理 */
-    #manage-saved-logins {
-        --menuitem-image: url("chrome://browser/skin/login.svg");
-    }
-
-    #fill-login {
-        --menuitem-image: url("../images/sidra/password-management/password.svg");
-    }
-
-    #fill-login-generated-password,
-    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_generate-password"],
-    [label^="生成并复制密码"] {
-        --menuitem-image: url("../images/sidra/password-management/generate-password.svg");
-    }
-
-    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_autofill"] {
-        --menuitem-image: url("../images/sidra/password-management/autofill.svg");
-    }
-
-    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-username"],
-    [label^="粘贴帐号"] {
-        --menuitem-image: url("../images/sidra/password-management/user.svg");
-    }
-
-    #toolbar-context-menu #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root,
-    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-password"],
-    #firefox-enpass_enpass_io-menuitem-_enpass_context_menu,
-    [label^="粘贴密码"] {
-        --menuitem-image: url("chrome://browser/skin/login.svg");
-    }
-
-    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-totp"] {
-        --menuitem-image: url("../images/sidra/password-management/copy.svg");
-    }
-
-    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-identifier"] {
-        --menuitem-image: url("../images/sidra/password-management/copy.svg");
-    }
-
-    [label*="粘贴动态口令"] {
-        --menuitem-image: url("../images/sidra/password-management/totp.svg");
-    }
-
-    #firefox-enpass_enpass_io-menuitem-_settings {
-        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
-    }
-
-    /** Input Content Menu */
-    #context-searchselect {
-        --menuitem-image: url("chrome://global/skin/icons/search-glass.svg");
-    }
-
-    #context-cut,
-    [data-l10n-id="text-action-cut"] {
-        --menuitem-image: url("../images/sidra/page-context/cut.svg");
-    }
-
-    #context-copy,
-    [data-l10n-id="text-action-copy"] {
-        --menuitem-image: url("../images/sidra/page-context/copy.svg");
-    }
-
-    #context-paste,
-    [data-l10n-id="text-action-paste"] {
-        --menuitem-image: url("../images/sidra/page-context/paste.svg");
-    }
-
-    #context-delete,
-    [data-l10n-id="text-action-delete"] {
-        --menuitem-image: url("chrome://global/skin/icons/delete.svg");
-    }
-
-    #context-selectall,
-    [data-l10n-id="text-action-select-all"] {
-        --menuitem-image: url("../images/sidra/page-context/select-all.svg");
-    }
-
-    /* 翻译 */
-    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-showPopup {
-        --menuitem-image: url("../images/sidra/navbar-context/multi-window.svg");
-    }
-
-    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_never-translate {
-        --menuitem-image: url("../images/sidra/navbar-context/remove.svg");
-    }
-
-    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-pdf-to-html {
-        --menuitem-image: url("../images/sidra/navbar-context/pdf.svg");
-    }
-
-    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_more-options {
-        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
-    }
-
-    /* uBlock Origin */
-    #ublock0_raymondhill_net-menuitem-_uBlock0-blockElement {
-        --menuitem-image: url("../images/sidra/navbar-context/block.svg");
     }
 
     /** Places Context Menu */
@@ -2802,6 +2468,36 @@
         --menuitem-image: url("../images/sidra/page-context/editor.svg");
     }
 
+    /** Input Content Menu */
+    #context-searchselect {
+        --menuitem-image: url("chrome://global/skin/icons/search-glass.svg");
+    }
+
+    #context-cut,
+    [data-l10n-id="text-action-cut"] {
+        --menuitem-image: url("../images/sidra/page-context/cut.svg");
+    }
+
+    #context-copy,
+    [data-l10n-id="text-action-copy"] {
+        --menuitem-image: url("../images/sidra/page-context/copy.svg");
+    }
+
+    #context-paste,
+    [data-l10n-id="text-action-paste"] {
+        --menuitem-image: url("../images/sidra/page-context/paste.svg");
+    }
+
+    #context-delete,
+    [data-l10n-id="text-action-delete"] {
+        --menuitem-image: url("chrome://global/skin/icons/delete.svg");
+    }
+
+    #context-selectall,
+    [data-l10n-id="text-action-select-all"] {
+        --menuitem-image: url("../images/sidra/page-context/select-all.svg");
+    }
+
     /*框架*/
     #frame {
         --menuitem-image: url("../images/sidra/page-context/command-frames.svg");
@@ -2895,7 +2591,6 @@
     #context-sendlinktodevice {
         --menuitem-image: url("../images/sidra/page-context/send-to-device.svg");
     }
-
 
     /* 快速输入 */
     #quick_input {
@@ -3164,6 +2859,10 @@
         --menuitem-image: url("../images/sidra/main-menu/closed-windows.svg") !important;
     }
 
+    #historyUndoWindowMenu .menuitem-iconic {
+        --menuitem-image: "";
+    }
+
     #menu_clearClosedWindowsList {
         --menuitem-image: url("../images/sidra/main-menu/clean.svg") !important;
     }
@@ -3178,8 +2877,9 @@
     }
 
     /* Tools */
+    menuitem[oncommand^="ucjs_downloadManager"],
     #menu_openDownloads {
-        --menuitem-image: url("../images/sidra/main-menu/downloads.svg") !important;
+        --menuitem-image: url("chrome://browser/skin/downloads/downloads.svg") !important;
     }
 
     #menu_openAddons {
@@ -3285,39 +2985,51 @@
 
     #helpPolicySupport {}
 
-    /**======== 隐藏菜单 ========*/
-    /** 标签页右键 */
-    #tabContextMenu :is(#context_bookmarkTab, .share-tab-url-item, #context_undoCloseTab, [contexttype="fullscreen"]+menuseparator, #context_closeTabOptions) {
-        display: none;
+    /** 密码管理 */
+    #manage-saved-logins {
+        --menuitem-image: url("chrome://browser/skin/login.svg");
     }
 
-    /** 工具栏右键 */
-    #toolbar-context-menu :is(#toolbarNavigatorItemsMenuSeparator, #toolbar-context-reloadSelectedTab, #toolbar-context-bookmarkSelectedTab, #toolbar-context-selectAllTabs, #toolbar-context-undoCloseTab) {
-        display: none
+    #fill-login {
+        --menuitem-image: url("../images/sidra/password-management/password.svg");
     }
 
-    /** 书签工具啦右键 */
-    #placesContext :is(#toggle_PersonalToolbar) {
-        display: none;
+    #fill-login-generated-password,
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_generate-password"],
+    [label^="生成并复制密码"] {
+        --menuitem-image: url("../images/sidra/password-management/generate-password.svg");
     }
 
-    /* 网页右键 */
-    #contentAreaContextMenu :is(#context-sep-sendlinktodevice, #context-searchselect-private[hidden="true"] ~ #frame-sep, [id^="content-farm-terminator_danny0838_addons_mozilla_org"]),
-    /* #contentAreaContextMenu[addMenu="input"] #context-media-eme-learnmore~ :is(menu, menuitem):not([id^="_446900e4-71c2-419f-a6a7-df9c091e268b"]), */
-    #contentAreaContextMenu[addMenu="input"] #textZoomPerDomain+menuseparator,
-    #contentAreaContextMenu:not([addMenu=""]) :is(#textZoomPerDomain),
-    #context-sep-bidi {
-        visibility: collapse;
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_autofill"] {
+        --menuitem-image: url("../images/sidra/password-management/autofill.svg");
     }
 
-    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"] {
-        display: -moz-box !important;
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-username"],
+    [label^="粘贴帐号"] {
+        --menuitem-image: url("../images/sidra/password-management/user.svg");
     }
 
-    /*IDM、NDM 排在最后面*/
-    [id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"],
-    [id*="_64d3e6d6-8a71-4443-b60b-a9b12ff1ec14_-menuitem-"] {
-        -moz-box-ordinal-group: 99 !important;
+    #toolbar-context-menu #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root,
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-password"],
+    #firefox-enpass_enpass_io-menuitem-_enpass_context_menu,
+    [label^="粘贴密码"] {
+        --menuitem-image: url("chrome://browser/skin/login.svg");
+    }
+
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-totp"] {
+        --menuitem-image: url("../images/sidra/password-management/copy.svg");
+    }
+
+    [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-identifier"] {
+        --menuitem-image: url("../images/sidra/password-management/copy.svg");
+    }
+
+    [label*="粘贴动态口令"] {
+        --menuitem-image: url("../images/sidra/password-management/totp.svg");
+    }
+
+    #firefox-enpass_enpass_io-menuitem-_settings {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
     }
 }
 
@@ -3436,7 +3148,7 @@
     /** 书签 End */
     /** 历史 Start */
     #appMenu-history-button {
-        list-style-image: url("../images/sidra/panel-popup/history.svg");
+        list-style-image: url("chrome://browser/skin/history.svg");
     }
 
     #appMenuRecentlyClosedTabs {
@@ -3456,7 +3168,7 @@
     }
 
     #appMenuClearRecentHistory {
-        list-style-image: url("../images/sidra/panel-popup/history.svg");
+        list-style-image: url("../images/sidra/panel-popup/clean.svg");
     }
 
     :is(#appMenu-library-recentlyClosedTabs,
@@ -3475,7 +3187,7 @@
     /** 历史 End */
     #appMenu-downloads-button,
     #downloadsHistory {
-        list-style-image: url("../images/sidra/panel-popup/downloads.svg");
+        list-style-image: url("chrome://browser/skin/downloads/downloads.svg");
     }
 
     #appMenu-passwords-button {
@@ -3696,11 +3408,11 @@
     }
 
     #appMenu-library-history-button {
-        list-style-image: url("../images/sidra/panel-popup/history.svg");
+        list-style-image: url("chrome://browser/skin/history.svg");
     }
 
     #appMenu-library-downloads-button {
-        list-style-image: url("../images/sidra/panel-popup/downloads.svg");
+        list-style-image: url("chrome://browser/skin/downloads/downloads.svg");
     }
 }
 
@@ -3957,6 +3669,7 @@
         list-style-image: url("../images/sidra/toolbarbutton/sync.svg") !important;
     }
 
+    /** 清除下载 */
     #clearDownloadsButton {
         list-style-image: url("chrome://browser/skin/forget.svg") !important;
     }
@@ -3969,11 +3682,20 @@
     #memoryMinimizationButton {
         list-style-image: url("../images/sidra/toolbarbutton/system-task.svg") !important;
     }
+
+    /** SingleFile */
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action {
+        list-style-image: url("../images/sidra/toolbarbutton/singlefile.svg");
+    }
 }
 
 /******* from https://github.com/Aris-t2/CustomCSSforFx ******/
 /**======== 图标上色 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.toolbarbutton.icon.colorized") {
+    .toolbarbutton-1>.toolbarbutton-icon {
+        color: inherit;
+        -moz-context-properties: fill, fill-opacity;
+    }
 
     /* red */
     :is(#containers-panelmenu, #web-apps-button, #e10s-button, #panic-button, #cut-button, #zoom-out-button, #stop-button),
@@ -3993,7 +3715,8 @@
     #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext .tabs-closebutton:hover,
     #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext .tab-close-button:hover,
     #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #stop-button .toolbarbutton-animatable-image,
-    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image {
+    #main-window:not([style*='--lwt-header-image']):-moz-lwtheme:-moz-lwtheme-brighttext #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-animatable-box>.toolbarbutton-animatable-image,
+    #CopyCat-btn>.toolbarbutton-icon {
         fill: #ff5a5a !important;
     }
 
@@ -4011,7 +3734,7 @@
     }
 
     /*ROYAL BLUE*/
-    :is(#eom-button),
+    :is(#eom-button, #_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action),
     toolbar:not(#TabsToolbar):not(:-moz-lwtheme) :is(.scrollbutton-up, .scrollbutton-down, #new-tab-button, #alltabs-button),
     #downloads-button[indicator="true"]:not([attention="success"]) #downloads-indicator-icon,
     :is(#save-page-button, #back-button, #forward-button, #new-window-button, .search-go-button, #downloads-button, #zoom-in-button, #copy-button, #find-button, #sidebar-button, #fullscreen-button, #PanelUI-customize, #password-notification-icon, #PanelUI-fxa-status, #sync-button, #tabview-button, #social-share-button) {
@@ -4331,6 +4054,41 @@
     #status-bar toolbarbutton {
         padding: 0;
     }
+
+    /**======== 隐藏菜单 ========*/
+    /** 标签页右键 */
+    #tabContextMenu :is(#context_bookmarkTab, .share-tab-url-item, #context_undoCloseTab, [contexttype="fullscreen"]+menuseparator, #context_closeTabOptions) {
+        display: none;
+    }
+
+    /** 工具栏右键 */
+    #toolbar-context-menu :is(#toolbarNavigatorItemsMenuSeparator, #toolbar-context-reloadSelectedTab, #toolbar-context-bookmarkSelectedTab, #toolbar-context-selectAllTabs, #toolbar-context-undoCloseTab) {
+        display: none
+    }
+
+    /** 书签工具啦右键 */
+    #placesContext :is(#toggle_PersonalToolbar) {
+        display: none;
+    }
+
+    /* 网页右键 */
+    #contentAreaContextMenu :is(#context-sep-sendlinktodevice, #context-searchselect-private[hidden="true"] ~ #frame-sep, [id^="content-farm-terminator_danny0838_addons_mozilla_org"]),
+    /* #contentAreaContextMenu[addMenu="input"] #context-media-eme-learnmore~ :is(menu, menuitem):not([id^="_446900e4-71c2-419f-a6a7-df9c091e268b"]), */
+    #contentAreaContextMenu[addMenu="input"] #textZoomPerDomain+menuseparator,
+    #contentAreaContextMenu:not([addMenu=""]) :is(#textZoomPerDomain),
+    #context-sep-bidi {
+        visibility: collapse;
+    }
+
+    #contentAreaContextMenu[addMenu="link"] [id^="content-farm-terminator_danny0838_addons_mozilla_org"] {
+        display: -moz-box !important;
+    }
+
+    /*IDM、NDM 排在最后面*/
+    [id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"],
+    [id*="_64d3e6d6-8a71-4443-b60b-a9b12ff1ec14_-menuitem-"] {
+        -moz-box-ordinal-group: 99 !important;
+    }
 }
 
 /**======== 搜索栏 ========*/
@@ -4478,10 +4236,13 @@
         -moz-box-ordinal-group: 2 !important;
     }
 
+    .close-icon.findbar-closebutton {
+        margin: 2px 8px 2px 0 !important;
+    }
+
     .findbar-closebutton .toolbarbutton-icon {
         width: 12px !important;
         height: 12px !important;
-        list-style-image: url("../images/sidra/skin/close.svg") !important;
         -moz-context-properties: fill, fill-opacity, stroke !important;
     }
 
@@ -4882,6 +4643,61 @@
         background-color: inherit !important;
     }
 
+    /** userChrome */
+    #uc-menugroup .menu-iconic-icon {
+        margin-left: 0;
+    }
+
+    #userChromejs_restartApp {
+        padding: 0;
+        appearance: none;
+        padding-inline-start: var(--sidra_menuitem_padding_before_icon);
+        padding-inline-end: var(--sidra_menuitem_padding_after_icon);
+    }
+
+    #userChromejs_restartApp:hover {
+        background-color: var(--button-hover-bgcolor);
+    }
+
+    #uc-manageMenu {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #uc-manageMenu menuitem {
+        --menuitem-image: '';
+    }
+
+    /** Styloaix */
+    #styloaix-reload-all,
+    #styloaix-style-reload {
+        --menuitem-image: url("../images/sidra/extensions/styloaix/reload.svg");
+    }
+
+    #styloaix-open-folder {
+        --menuitem-image: url("../images/sidra/extensions/styloaix/folder.svg");
+    }
+
+    #styloaix-new-style,
+    #styloaix-style-edit {
+        --menuitem-image: url("../images/sidra/extensions/styloaix/edit.svg");
+    }
+
+    #styloaix-style-delete {
+        --menuitem-image: url("../images/sidra/extensions/styloaix/trash.svg");
+    }
+
+    #se-menu-find {
+        --menuitem-image: url("../images/sidra/document-search.svg");
+    }
+
+    #cMenu_findAgain {
+        --menuitem-image: url("../images/sidra/extensions/styloaix/next.svg");
+    }
+
+    #se-menu-gotoLine {
+        --menuitem-image: url("../images/sidra/extensions/styloaix/go.svg");
+    }
+
     /**======== TabMixPlus 扩展 ========*/
     /* TabMixPlus 弹出面板高亮颜色 */
     .tabmix-subview toolbarbutton.subviewbutton:not([disabled], [open], :active):is(:hover, :focus),
@@ -5140,15 +4956,39 @@
     }
 
     /** OneTab */
-    [id^="extension_one-tab_com-menuitem"][label="OneTab"]:not(.menu-iconic) {
-        --menuitem-image: url("../images/sidra/extensions/onetab/savef-tabs-list.svg");
+    [label="OneTab"]:not(.menu-iconic) {
+        --menuitem-image: url("../images/sidra/extensions/onetab/saved-tabs-list.svg");
     }
 
-    [id^="extension_one-tab_com-menuitem"][label="显示OneTab"] {
+    [label="显示OneTab"] {
         --menuitem-image: url("../images/sidra/extensions/onetab/onetab.svg");
     }
 
-    [id^="extension_one-tab_com-menuitem"][label="OneTab"] :is([label="帮助"], [label="Help"]) {
+    [label="发送全部标签页至OneTab"] {
+        --menuitem-image: url("../images/sidra/extensions/onetab/send.svg");
+    }
+
+    [label="仅发送此标签页至OneTab"] {
+        --menuitem-image: url("../images/sidra/skin/checkbox-checked.svg");
+    }
+
+    [label="发送除此标签页以外的全部标签页至OneTab"] {
+        --menuitem-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    [label="发送左侧标签页至OneTab"] {
+        --menuitem-image: url("../images/sidra/skin/arrow-left.svg");
+    }
+
+    [label="发送右侧标签页至OneTab"] {
+        --menuitem-image: url("../images/sidra/skin/arrow-right.svg");
+    }
+
+    [label="发送全部窗口的全部标签页至OneTab"] {
+        --menuitem-image: url("../images/sidra/extensions/onetab/window.svg");
+    }
+
+    [label="OneTab"] :is([label="帮助"], [label="Help"]) {
         --menuitem-image: url("chrome://global/skin/icons/help.svg");
     }
 
@@ -5212,6 +5052,16 @@
     }
 
     /** Tampermonkey */
+    #firefox_tampermonkey_net-menuitem-_root:not(.menuitem-iconic) {
+        --menuitem-image: url("../images/sidra/extensions/tampermonkey/javascript.svg");
+    }
+
+    #firefox_tampermonkey_net-menuitem-_root:not(.menuitem-iconic) :is(menu,
+        menuitem) {
+        padding-inline-start: calc(var(--sidra-menuitem-padding-before-icon) + var(--sidra-menuitem-margin-before-icon)) !important;
+        --menuitem-image: url();
+    }
+
     [uc-extension-id="firefox@tampermonkey.net"] > body {
         padding: var(--sidra-panel-padding);
         width: calc(100% - var(--sidra-panel-padding-x) * 2);
@@ -5242,6 +5092,22 @@
     }
 
     /** Stylus */
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_show-badge:not[checked="true"] {
+        --menuitem-image: url("../images/sidra/skin/checkbox.svg");
+    }
+
+    #edit-popup-settings {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-manager {
+        --menuitem-image: url("../images/sidra/extensions/tampermonkey/empty-box.svg");
+    }
+
+    #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-options {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
     [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup {
         padding: var(--sidra-panel-padding);
     }
@@ -5277,6 +5143,11 @@
         background-image: unset;
         color: var(--sidra-menu-color);
         background-color: var(--sidra-panel-background);
+    }
+
+    /* xStyle */
+    #xstyle-amo_addon_firefoxcn_net-menuitem-_openManage {
+        --menuitem-image: url("../images/sidra/extensions/xstyle/style.svg");
     }
 
     /** Sound Fixer */
@@ -5357,15 +5228,178 @@
     [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body > div> div > a[id]:hover {
         background-color: var(--sidra-menuitem-hover-background);
     }
+
+    /** 京价保 */
+    [id^="_42f0bbb4-0214-49d1-a01a-bdead05c5540"] {
+        --menuitem-image: url("../images/sidra/navbar-context/new-window.svg");
+    }
+
+    #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-menuitem-_login-notice {
+        --menuitem-image: url("../images/sidra/extensions/jjb/login.svg");
+    }
+
+    /** Switchy Omega */
+    #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch+menuitem {
+        --menuitem-image: url("../images/sidra/extensions/jjb/report.svg");
+    }
+
+    #switchyomega_feliscatus_addons_mozilla_org-menuitem-_enableQuickSwitch+menuitem+menuitem {
+        --menuitem-image: url("../images/sidra/extensions/jjb/save.svg");
+    }
+
+    /* Adguard */
+    [label="AdGuard 无法运行于此域"],
+    [label="禁止过滤此网站"] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/remove.svg");
+    }
+
+    [label="拦截此网站上的广告..."],
+    [label="拦截元素..."] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/block.svg");
+    }
+
+    [label="检测网站安全性"] {
+        --menuitem-image: url("chrome://global/skin/icons/help.svg");
+    }
+
+    [label="报告问题 ..."] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/report.svg");
+    }
+
+    #toolbar-context-menu [label="AdGuard 广告拦截器"],
+    #customizationPanelItemContextMenu [label="AdGuard 广告拦截器"] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/adguard.svg");
+    }
+
+    [label="AdGuard 设置..."] {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    [label="过滤日志..."] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/log.svg");
+    }
+
+    [label="检查过滤器更新"] {
+        --menuitem-image: url("../images/sidra/update.svg");
+    }
+
+    [label="暂停 AdGuard 保护"] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/pause.svg");
+    }
+
+    [label="AdGuard 保护已暂停"] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/remove.svg");
+    }
+
+    [label="继续 AdGuard 保护"] {
+        --menuitem-image: url("../images/sidra/extensions/adguard/play.svg");
+    }
+
+    [id^="content-farm-terminator_danny0838_addons_mozilla_org"] menuitem {
+        --menuitem-image: url("../images/sidra/extensions/adguard/block.svg");
+    }
+
+    /* uBlock Origin */
+    #ublock0_raymondhill_net-menuitem-_uBlock0-blockElement {
+        --menuitem-image: url("../images/sidra/extensions/ublock/block.svg");
+    }
+
+    /** Video Download Helper */
+    #customizationPanelItemContextMenu #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-menuitem-_vdh-main {
+        --menuitem-image: url("../images/sidra/extensions/videodownloadhelper/video.svg");
+    }
+
+    #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-menuitem-_vdh-main menuitem {
+        --menuitem-image: url();
+    }
+
+    [label*="智能命名规则"] {
+        --menuitem-image: url("../images/sidra/extensions/videodownloadhelper/rename.svg");
+    }
+
+    /** Image Picka */
+    [id^="image-picka_eight04_blogspot"]:nth-child(1),
+    [id^="image-picka_eight04_blogspot"]:nth-child(2),
+    [id^="image-picka_eight04_blogspot"]:nth-child(3) {
+        --menuitem-image: url("../images/sidra/extensions/imagepicka/select-image.svg");
+    }
+
+    /* 翻译 */
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-showPopup {
+        --menuitem-image: url("../images/sidra/extensions/traduzirpaginasweb/multi-window.svg");
+    }
+
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_never-translate {
+        --menuitem-image: url("../images/sidra/extensions/traduzirpaginasweb/remove.svg");
+    }
+
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-pdf-to-html {
+        --menuitem-image: url("../images/sidra/extensions/traduzirpaginasweb/pdf.svg");
+    }
+
+    #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_more-options {
+        --menuitem-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    /* SingleFile */
+    #tabContextMenu [id^="_531906d3-e22f-4a6c-a102-8057b88a1a63_"][ext-type="top-level-menu"] > .menu-iconic-left {
+        visibility: hidden;
+    }
+
+    [id^="_531906d3-e22f-4a6c-a102-8057b88a1a63_"][ext-type="top-level-menu"] {
+        --menuitem-image: url("../images/sidra/extensions/singlefile/singlefile.svg");
+    }
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_edit-and-save-page {
+        --menuitem-image: url("../images/sidra/extensions/singlefile/hashtag.svg");
+    }
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-selected-links {
+        --menuitem-image: url("../images/sidra/extensions/singlefile/link.svg");
+    }
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-selected,
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_button-save-selected-tabs {
+        --menuitem-image: url("../images/sidra/extensions/singlefile/tick.svg");
+    }
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-tabs {}
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_button-save-unpinned-tabs {
+        --menuitem-image: url("../images/sidra/extensions/singlefile/unpin.svg");
+    }
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_auto-save {}
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_batch-save-urls {}
+
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_view-pendings {
+        --menuitem-image: url("../images/sidra/extensions/singlefile/paused.svg");
+    }
 }
 
 @supports -moz-bool-pref("userChromeJS.sidra.autoOneLine") {
     @media (min-width: 1600px) {
+        :root[uidensity="compact"] {
+            --tab-min-height: 34px;
+        }
+
+        :root {
+            --tab-min-height: 44px;
+        }
+
+        :root[uidensity="touch"] {
+            --tab-min-height: 48px;
+        }
 
         .titlebar-spacer[type="pre-tabs"],
         .titlebar-spacer[type="post-tabs"] {
             display: none;
         }
+
+        /* #navigator-toolbox-background {
+            overflow: clip;
+        } */
 
         #navigator-toolbox {
             display: grid;
@@ -5441,6 +5475,10 @@
             margin-inline-end: initial !important;
         }
 
+        #urlbar-container {
+            width: 350px;
+        }
+
         #urlbar[breakout] {
             position: relative;
         }
@@ -5453,14 +5491,6 @@
             min-width: var(--sidra-oneline-urlbar-min-width, none) !important;
             left: 0 !important;
             right: auto !important;
-        }
-
-        #TabsToolbar {
-            -moz-box-align: center;
-        }
-
-        #TabsToolbar .tabbrowser-tab, #TabsToolbar .tabbrowser-tab :is(.tab-stack, .tab-background, .tab-content, .tab-loading-burst) {
-            border-radius: 5px !important;
         }
 
         #PersonalToolbar {
