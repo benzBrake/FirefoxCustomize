@@ -843,6 +843,11 @@
         stroke: inherit !important;
     }
 
+    :root[uidensity="touch"] .titlebar-button>.toolbarbutton-icon {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
     .titlebar-buttonbox {
         appearance: none !important;
     }
@@ -1275,6 +1280,7 @@
 
 /**======== 紧凑地址栏 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.urlbar.compact") {
+
     /* 隐藏蓝色框框 */
     #urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
     #searchbar:focus-within {
@@ -1370,7 +1376,8 @@
     .subviewbutton,
     .widget-overflow-list .toolbarbutton-1,
     #allTabsMenu-allTabsViewTabs>.all-tabs-item {
-        padding-inline-start: var(--sidra-panel-item-padding-start);
+        padding-inline-start: 0;
+        /* padding-inline-start: var(--sidra-panel-item-padding-start); */
         padding-inline-end: var(--sidra-panel-item-padding-end);
         padding-top: var(--sidra-panel-item-padding-top);
         padding-bottom: var(--sidra-panel-item-padding-bottom);
@@ -1634,8 +1641,8 @@
 
     #identity-popup-security-button {
         padding-inline: 0 !important;
-        margin-inline-start: var(--sidra-panel-padding-x) !important;
-        margin-inline-end: var(--sidra-panel-padding-x) !important;
+        /* margin-inline-start: var(--sidra-panel-padding-x) !important;
+        margin-inline-end: var(--sidra-panel-padding-x) !important; */
     }
 
     #identity-popup-security {
@@ -1650,7 +1657,7 @@
 
     .identity-popup-security-connection>hbox {
         margin-inline-start: 0 !important;
-        padding-inline-start: var(--sidra-panel-padding-no-iconic);
+        padding-inline-start: calc(var(--sidra-panel-padding-no-iconic) - var(--sidra-panel-item-padding-start));
         padding-inline-end: var(--sidra-panel-item-padding-end) !important;
     }
 
@@ -1666,7 +1673,7 @@
     .identity-popup-connection-not-secure.security-view,
     #identity-popup-securityView-body>description {
         margin-left: 0;
-        padding-inline-start: var(--sidra-panel-padding-no-iconic) !important;
+        padding-inline-start: calc(var(--sidra-panel-padding-no-iconic) - var(--sidra-panel-item-padding-start)) !important;
     }
 
     #identity-popup-securityView-body {
@@ -1676,7 +1683,9 @@
 
     .identity-popup-security-connection {
         padding: 0;
-        background-position-x: calc(var(--sidra-panel-item-padding-start) + var(--sidra-panel-margin-before-icon));
+        background-position-x: calc(var(--sidra-panel-margin-before-icon));
+        padding-top: var(--sidra-panel-item-padding-top);
+        padding-bottom: var(--sidra-panel-item-padding-bottom);
     }
 
     #protections-popup-info-button {
@@ -5381,25 +5390,21 @@
 @supports -moz-bool-pref("userChromeJS.sidra.autoOneLine") {
     @media (min-width: 1600px) {
         :root[uidensity="compact"] {
-            --tab-min-height: 34px;
+            --tab-min-height: 28px;
         }
 
         :root {
-            --tab-min-height: 44px;
+            --tab-min-height: 36px;
         }
 
         :root[uidensity="touch"] {
-            --tab-min-height: 48px;
+            --tab-min-height: 38px;
         }
 
         .titlebar-spacer[type="pre-tabs"],
         .titlebar-spacer[type="post-tabs"] {
             display: none;
         }
-
-        /* #navigator-toolbox-background {
-            overflow: clip;
-        } */
 
         #navigator-toolbox {
             display: grid;
@@ -5417,6 +5422,8 @@
             background-clip: padding-box;
             color: var(--toolbar-color);
             -moz-box-orient: horizontal !important;
+            height: 100%;
+            -moz-box-align: center;
         }
 
         #toolbar-menubar {
