@@ -123,7 +123,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function () {
                     if (firstItem) {
                         columns = parseInt(menupopup._x_box.scrollWidth / parseInt(getComputedStyle(firstItem).width))
                     }
-                    menupopup._x_scrollbox.width = menupopup._x_box.scrollWidth + (columns || 1) * (leftFix + rightFix);
+                    menupopup._x_scrollbox.width = menupopup._x_box.scrollWidth + (columns || 1) * (leftFix || 0 + rightFix || 0);
                 }
             }
 
