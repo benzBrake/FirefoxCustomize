@@ -931,6 +931,14 @@
         list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNODMuOCA3NC4zTDM5LjcgMzAuMmMtMi42LTIuNi02LjktMi42LTkuNiAwLTIuNiAyLjYtMi42IDYuOSAwIDkuNmw0NC4xIDQ0LjFjMi42IDIuNiA2LjkgMi42IDkuNiAwIDIuNy0yLjcgMi43LTcgMC05LjZ6IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNMzkuNyA4My44bDQ0LjEtNDQuMWMyLjYtMi42IDIuNi02LjkgMC05LjYtMi42LTIuNi02LjktMi42LTkuNiAwbC00NCA0NC4yYy0yLjYgMi42LTIuNiA2LjkgMCA5LjYgMi42IDIuNiA2LjkgMi42IDkuNS0uMXoiIC8+Cjwvc3ZnPg==) !important;
     }
 
+    /* 为空白标签加上图标 Add icon for blank tabs */
+    #TabsToolbar .tabbrowser-tab .tab-icon-image:not([src]):not([busy]):not([pending]),
+    #TabsToolbar .tabbrowser-tab .tab-icon-image:not([src]):not([busy]):not([pending]):not([selected]) {
+        display: inline !important;
+        list-style-image: url("chrome://global/skin/icons/defaultFavicon.svg") !important;
+    }
+
+
     /* 容器标签彩色下划线 */
     .tabbrowser-tab[usercontextid] .tab-background::before {
         background: var(--identity-tab-color) !important;
@@ -950,17 +958,23 @@
     }
 
     /* 选中标签颜色 */
-    #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[multiselected="true"],
-    #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[selected="true"] {
-        background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor)) !important;
-        background-image: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)),
+    :root:not(:-moz-lwtheme) {
+        /* Fix for windows's system default theme. Using --toolbar-bgcolor fallback */
+        --tab-selected-bgcolor: unset !important;
+        /* Original: rgb(255,255,255); */
+    }
+
+    #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[selected="true"]:-moz-lwtheme {
+        /* Original: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)), linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)), var(--lwt-header-image, none)*/
+        background-image: linear-gradient(transparent, transparent),
             linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)),
             var(--lwt-header-image, none) !important;
     }
 
+
     /* 选中标签阴影 */
     #TabsToolbar:not([brighttext]) .tabbrowser-tab:is([visuallyselected="true"], [multiselected])>.tab-stack>.tab-background {
-        box-shadow: 0 0 4px rgba(0, 0, 0, .5) !important;
+        box-shadow: 0 0 1px var(--toolbar-color) !important;
     }
 
     /* 选中多个标签下划线标注 */
@@ -1287,9 +1301,54 @@
         outline: none;
     }
 
+    #urlbar[breakout] {
+        margin-inline-start: 0px !important;
+        width: 100% !important;
+        left: 0 !important;
+        top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+    }
+
+    #urlbar[breakout]:not([open]) {
+        bottom: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+    }
+
+    .urlbarView {
+        margin-inline: 0 !important;
+        width: auto !important;
+    }
+
+    .urlbarView-row {
+        padding: 0 2px !important;
+    }
+
+    .urlbarView-row-inner {
+        padding-inline-start: 4px !important;
+    }
+
+    #urlbar-background {
+        animation: none !important;
+    }
+
+    #urlbar-input-container {
+        padding: 1px !important;
+        height: 100% !important;
+    }
+
+    #identity-icon {
+        margin-block: var(--urlbar-icon-padding)
+    }
+
+    .urlbarView>.search-one-offs:not([hidden]) {
+        padding-block: 0px !important;
+    }
+
     /* 地址栏内工具栏 */
     #ucjs-Locationbar-toolbar {
         padding: 0;
+    }
+
+    #urlbar-container[breakout][locationbarcollapsed] {
+        top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2 - 1px) !important;
     }
 }
 
@@ -1349,15 +1408,15 @@
         border-radius: var(--panel-border-radius);
     }
 
+    #PlacesToolbar menupopup[placespopup="true"]::part(arrowscrollbox) {
+        --width-fix-left: var(--sidra-panel-padding-x);
+        --width-fix-right: var(--sidra-panel-padding-x);
+    }
 
     /** 多列书签引起圆弧只显示左上角和左下角，同意去掉  */
     #PlacesToolbar menupopup[placespopup="true"] menu,
     #PlacesToolbar menupopup[placespopup="true"] menuitem {
         border-radius: 0;
-    }
-
-    #PlacesToolbar menupopup.bmmc[placespopup="true"]::part(content) {
-        padding-inline-end: var(--sidra-panel-item-padding-end);
     }
 
     #PlacesToolbar menupopup.bmmc[placespopup="true"] menupopup.bmmc {
@@ -1376,13 +1435,17 @@
     .subviewbutton,
     .widget-overflow-list .toolbarbutton-1,
     #allTabsMenu-allTabsViewTabs>.all-tabs-item {
-        padding-inline-start: 0;
-        /* padding-inline-start: var(--sidra-panel-item-padding-start); */
+        /* padding-inline-start: 0; */
+        padding-inline-start: var(--sidra-panel-item-padding-start);
         padding-inline-end: var(--sidra-panel-item-padding-end);
         padding-top: var(--sidra-panel-item-padding-top);
         padding-bottom: var(--sidra-panel-item-padding-bottom);
         margin: 0 !important;
         min-height: unset !important;
+    }
+
+    .panel-subview-footer-button {
+        padding-inline-start: 0;
     }
 
     .panel-subview-body .subviewbutton>.toolbarbutton-icon,
@@ -2238,10 +2301,13 @@
     }
 
     #placesContext_open,
-    #placesContext_openBookmarkContainer\:tabs {
+    #placesContext_openBookmarkContainer\:tabs,
+    #placesContext_openLinks\:tabs,
+    #placesContext_openBookmarkLinks\:tabs {
         --menuitem-image: url("../images/sidra/places-context/open-in-current.svg");
     }
 
+    #openAllLinksPrivate .menu-iconic-icon,
     #openAllPrivate .menu-iconic-icon,
     #openPrivate .menu-iconic-icon {
         list-style-image: url("../images/sidra/places-context/private-see.svg") !important;
@@ -3208,7 +3274,7 @@
     }
 
     #appMenu-userChromeJS-restart {
-        list-style-image: url("../images/sidra/panel-popup/restart.svg") !important;
+        list-style-image: url("chrome://global/skin/icons/reload.svg") !important;
     }
 
     #appMenu-extensions-themes-button {
@@ -3349,7 +3415,7 @@
 
     /** 帮助 End */
     #appMenu-restart-button2 {
-        list-style-image: url("../images/sidra/panel-popup/restart.svg");
+        list-style-image: url("chrome://global/skin/icons/reload.svg");
     }
 
     #appMenu-quit-button2 {
@@ -4075,7 +4141,7 @@
         display: none
     }
 
-    /** 书签工具啦右键 */
+    /** 书签工具栏右键 */
     #placesContext :is(#toggle_PersonalToolbar) {
         display: none;
     }
