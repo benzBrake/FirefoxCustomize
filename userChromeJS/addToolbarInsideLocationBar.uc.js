@@ -192,9 +192,23 @@ var addToolbarInsideLocationBar = {
 
             gURLBar.onDrop_addToolbarInsideLocationBar(event);
         };
+
+        document.getElementById('urlbar-container').setAttribute('locationbarcollapsed', document.getElementById("ucjs-Locationbar-toolbar").getAttribute('collapsed') || "false");
+
         //
         window.addEventListener("beforecustomization", this, true);
         //BookmarkingUI._updateCustomizationState();
+
+        var mutationObserver = new MutationObserver(function callback(mutationsList, observer) {
+            mutationsList.forEach(m => {
+                if (m.attributeName == "collapsed")
+                    document.getElementById('urlbar-container').setAttribute('locationbarcollapsed', m.target.getAttribute('collapsed') || "false");
+
+            })
+        });
+        mutationObserver.observe(document.getElementById("ucjs-Locationbar-toolbar"), {
+            'attributes': true
+        });
     },
 
     getInsertPoint: function () {
@@ -229,7 +243,7 @@ var addToolbarInsideLocationBar = {
                 this.registerArea("ucjs-Locationbar-toolbar");
                 this.placeholder = toolbar.parentNode.insertBefore(document.createElement("hbox"), toolbar);
                 let ref = document.getElementById("nav-bar-customization-target");
-                toolbar.setAttribute("tooltiptext", "Toolbar inside LocationBar");
+                toolbar.setAttribute("tooltiptext", "地址栏内工具栏");
                 ref.parentNode.insertBefore(toolbar, ref);
                 break;
             case "customizationending":

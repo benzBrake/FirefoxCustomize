@@ -22,6 +22,7 @@
 
     const LANG = {
         'zh-CN': {
+            "bookmarkopt options": "BookmarkOpt 选项",
             "add bookmark here": "添加书签到此处",
             "add bookmark here tooltip": "左键：添加到最后\nShift+左键：添加到最前",
             "update current bookmark": "替换为当前网址",
@@ -33,6 +34,9 @@
         },
         'en-US': {
             "add bookmark here": "Add Bookmark Here",
+            "add bookmark here tooltip": "Left click: add bookmark to the end.\nShift + Left click: add bookmark to the first.",
+            "update current bookmark tooltip": "Left click：replace with current url\nMiddle click：replace with current title and bookmark\nRight click：replace with current url and custom title.",
+            "update current bookmark prompt": "Update current bookmark's title, original title is \n %s",
             "copy bookmark title": "Copy Title",
             "copy bookmark link": "Copy URL",
             "show node type": "Node type",
@@ -140,11 +144,12 @@
             }
         },
         handlePlacesToolbarEvent: function (event) {
+            let { target } = event;
             if (event.type === 'popuphidden') {
                 // 防止影响其他方式添加书签
-                BookmarkOpt.clearPanelItems(event.target);
+                BookmarkOpt.clearPanelItems(target, true);
             } else if (event.type === 'popupshowing') {
-                let firstItem = event.target.firstChild;
+                let firstItem = target.firstChild;
                 if (firstItem?.classList.contains('bmopt-panel')) return;
                 let last;
                 PLACES_POPUP_ITEMS.forEach(c => {
@@ -166,14 +171,11 @@
                 });
             }
         },
-        clearPanelItems: function (target) {
-            let menuitems = (target.ownerDocument || document).querySelectorAll(".bmopt-panel"),
-                menuseparators = (target.ownerDocument || document).querySelectorAll(".bmopt-separator");
+        clearPanelItems: function (target, doNotRecursive = false) {
+            var menuitems = (target || document).querySelectorAll((doNotRecursive ? ":scope>" : "") + "[class*='bmopt']");
+            console.log(menuitems);
             for (let menuitem of menuitems) {
                 menuitem.parentNode.removeChild(menuitem);
-            }
-            for (let menuseparator of menuseparators) {
-                menuseparator.parentNode.removeChild(menuseparator);
             }
         },
         operate: function (event, aMethod, aTriggerNode) {
@@ -295,6 +297,14 @@
             $('placesContext').addEventListener('popupshowing', this.handlePlacesContextEvent, false);
             $('placesContext').addEventListener('popuphidden', this.handlePlacesContextEvent, false);
             if (this.isMain) {
+                // ($("prefSep") || $("webDeveloperMenu")).before(
+                //     $C('menuitem', {
+                //         id: "BookmarOpt-menu-options",
+                //         label: $L("bookmarkopt options"),
+                //         oncommand: "BookmarkOpt.showOptions();",
+                //         style: 'list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg")'
+                //     })
+                // );
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
@@ -310,6 +320,8 @@
             });
             if (this.isMain) {
                 this.clearPanelItems(this.topWin.document);
+                let m = $("BookmarOpt-menu-options");
+                if (m) m.parentNode.removeChild(m);
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
@@ -335,6 +347,9 @@
             el.setAttribute(p, props[p]);
         }
         el.classList.add('bmopt');
+        if (type === "menu" || type === "menuitem") {
+            el.classList.add(type + "-iconic");
+        }
         return el;
     }
 
