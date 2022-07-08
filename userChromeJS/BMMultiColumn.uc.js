@@ -88,6 +88,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function () {
                     menupopup._x_box = box;
                     menupopup._x_scrollbox = scrollbox;
                     if (!menupopup._x_inited) {
+                        menupopup.classList.add(['bmmc']);
                         menupopup._x_inited = true;
                         this.cachedMenus.push(menupopup);
                     }
@@ -108,13 +109,21 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function () {
                 var menuitem = menupopup.lastChild;
                 while (menuitem) {
                     if (!menuitem.style.maxWidth) {
-                        menuitem.style.maxWidth = "300px";
-                        menuitem.style.minWidth = "160px";
+                        // menuitem.style.maxWidth = "300px";
+                        // menuitem.style.minWidth = "180px";
+                        menuitem.style.width = "240px";
                     }
                     menuitem = menuitem.previousSibling;
                 }
                 if (!(menupopup._x_scrollbox.width == menupopup._x_box.scrollWidth)) {
-                    menupopup._x_scrollbox.width = menupopup._x_box.scrollWidth;
+                    var leftFix = parseInt(getComputedStyle(menupopup._x_scrollbox).getPropertyValue("--width-fix-left"));
+                    var rightFix = parseInt(getComputedStyle(menupopup._x_scrollbox).getPropertyValue("--width-fix-right"));
+                    var firstItem = menupopup.querySelector('menuitem');
+                    var columns = 0;
+                    if (firstItem) {
+                        columns = parseInt(menupopup._x_box.scrollWidth / parseInt(getComputedStyle(firstItem).width))
+                    }
+                    menupopup._x_scrollbox.width = menupopup._x_box.scrollWidth + (columns || 1) * (leftFix + rightFix);
                 }
             }
 
@@ -126,4 +135,5 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function () {
     function $(id) {
         return document.getElementById(id);
     }
+
 })();
