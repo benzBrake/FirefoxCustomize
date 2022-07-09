@@ -128,17 +128,20 @@
             if (event.type === 'popuphidden') {
                 target.removeAttribute("bmopt");
             } else if (event.type === 'popupshowing') {
+                target.querySelectorAll(".bmopt").forEach(m => m.removeAttribute('hidden'));
+                target.querySelectorAll(".bmopt").forEach(m => m.removeAttribute('disabled'));
                 let state = [],
                     triggerNode = event.currentTarget.triggerNode,
                     view = PlacesUIUtils.getViewForNode(triggerNode),
                     aNode = view?.selectedNode;
-                if (triggerNode.id === "PlacesToolbarItems") {
-                    target.setAttribute("bmopt", state.join("toolbar"));
+                if (triggerNode.id == "PlacesToolbarItems") {
+                    state.push("toolbar");
+                } else {
+                    ['bookmark', 'container', 'day', 'folder', 'historyContainer', 'host', 'query', 'separator', 'tagQuery'].forEach(condition => {
+                        eval("if (PlacesUtils.nodeIs" + firstUpperCase(condition) + "(aNode)) state.push(condition)");
+                    });
+                    if (PlacesUtils.nodeIsURI(aNode)) state.push("uri");
                 }
-                ['bookmark', 'container', 'day', 'folder', 'historyContainer', 'host', 'query', 'separator', 'tagQuery'].forEach(condition => {
-                    eval("if (PlacesUtils.nodeIs" + firstUpperCase(condition) + "(aNode)) state.push(condition)");
-                });
-                if (PlacesUtils.nodeIsURI(aNode)) state.push("uri");
                 if (event.shiftKey) state.push('shift');
                 target.setAttribute("bmopt", state.join(" "));
             }
@@ -173,7 +176,6 @@
         },
         clearPanelItems: function (target, doNotRecursive = false) {
             var menuitems = (target || document).querySelectorAll((doNotRecursive ? ":scope>" : "") + "[class*='bmopt']");
-            console.log(menuitems);
             for (let menuitem of menuitems) {
                 menuitem.parentNode.removeChild(menuitem);
             }
@@ -389,6 +391,7 @@
 #placesContext[bmopt~="separator"] .bmopt[condition~="separator"],
 #placesContext[bmopt~="tagQuery"] .bmopt[condition~="tagQuery"],
 #placesContext[bmopt~="uri"] .bmopt[condition~="uri"],
+#placesContext[bmopt~="toolbar"] .bmopt[condition~="toolbar"],
 #placesContext[bmopt~="shift"] .bmopt[condition~="shift"] {
     visibility: visible;
 }
