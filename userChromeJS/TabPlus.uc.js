@@ -173,6 +173,13 @@
             label: '关闭标签页选中左侧标签页',
             type: 'checkbox',
             pref: 'browser.tabs.selectLeftTabOnClose'
+        },
+        {
+            label: '显示 Firefox 今日按钮',
+            type: 'checkbox',
+            pref: 'browser.tabs.firefox-view',
+            style: 'list-style-image: url(chrome://devtools/skin/images/browsers/firefox.svg);',
+            postcommand: 'Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);'
         }
         ]
     }];
