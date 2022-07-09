@@ -72,10 +72,6 @@
         };
     }
 
-    const OPTIONS = {
-        autoSwitchTabDelay: 150
-    }
-
     const MENU_CFG = [{
         label: "标签设置",
         id: "TabPlus-menu",
@@ -146,9 +142,17 @@
             pref: 'browser.tabs.closeWindowWithLastTab'
         },
         {
-            label: '自动选中鼠标指向标签页',
-            type: 'checkbox',
-            pref: 'browser.tabs.swithOnHover'
+            group: [{
+                label: '自动选中鼠标指向标签页',
+                type: 'checkbox',
+                pref: 'browser.tabs.swithOnHover'
+            }, {
+                label: '设置延时',
+                pref: 'browser.tabs.swithOnHoverDelay',
+                type: 'int',
+                default: 150,
+                style: 'list-style-image: url("chrome://browser/skin/history.svg");'
+            }]
         },
         {
             label: '滚轮切换标签页',
@@ -198,7 +202,7 @@
                 if (!tab) return;
                 timeout = setTimeout(() =>
                     tab.id === "firefox-view-button" ? tab.click() : gBrowser.selectedTab = tab
-                    , OPTIONS.autoSwitchTabDelay);
+                    , cPref.get('browser.tabs.swithOnHoverDelay', 150));
             },
         },
         'browser.tabs.closeTabByRightClick': {
@@ -362,15 +366,20 @@
         createMenu(obj, aDoc) {
             if (!obj) return;
             aDoc || (aDoc = this.win.document);
-            let el;
+            let el, item;
             if (obj.popup) {
                 el = $C(aDoc, 'menupopup', obj, ['popup']);
                 obj.popup.forEach(child => el.appendChild(TabPlus.createMenuItem(child, aDoc)));
             }
-
-            let item = $C(aDoc, 'menu', obj, ['popup']);
-            item.classList.add('menu-iconic');
-            if (el) item.appendChild(el);
+            if (obj.group) {
+                el = $C(aDoc, 'menugroup', obj, ['group']);
+                obj.group.forEach(child => el.appendChild(TabPlus.createMenuItem(child, aDoc)));
+                item = el;
+            } else {
+                item = $C(aDoc, 'menu', obj, ['popup']);
+                item.classList.add('menu-iconic');
+                if (el) item.appendChild(el);
+            }
             return item;
         },
         createMenuItem(obj, aDoc) {
@@ -379,11 +388,15 @@
             let item,
                 classList = [],
                 tagName = 'menuitem';
-            if (['separator', 'menuseparator'].includes(obj.type) || !obj.pref && !obj.popup) {
+            if (['separator', 'menuseparator'].includes(obj.type) || !obj.pref && !obj.popup && !obj.group) {
                 return $C(aDoc, 'menuseparator', obj, ['type', 'group', 'popup']);
             }
 
             if (obj.popup) {
+                return this.createMenu(obj, aDoc);
+            }
+
+            if (obj.group) {
                 return this.createMenu(obj, aDoc);
             }
 
@@ -503,17 +516,6 @@
         }
     }
 
-    if (gBrowserInit.delayedStartupFinished) window.TabPlus.init();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.TabPlus.init();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
-
     function log(e) {
         Cu.reportError(e);
     }
@@ -582,4 +584,28 @@
         return el;
     }
 
+    /**
+     * 替换 %s 为指定文本
+     * @param {string} str 
+     * @param {string} replace 
+     * @returns 
+     */
+    function $S(str, replace) {
+        str || (str = '');
+        if (typeof replace !== "undefined") {
+            str = str.replace("%s", replace);
+        }
+        return str || "";
+    }
+
+    if (gBrowserInit.delayedStartupFinished) window.TabPlus.init();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.TabPlus.init();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
 })();
