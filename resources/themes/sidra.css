@@ -1318,11 +1318,13 @@
     }
 
     .urlbarView-row {
-        padding: 0 2px !important;
+        padding: 0 4px !important;
+        margin-inline: 0 !important;
     }
 
     .urlbarView-row-inner {
         padding-inline-start: 4px !important;
+        padding-block: 3px;
     }
 
     #urlbar-background {
@@ -1330,7 +1332,7 @@
     }
 
     #urlbar-input-container {
-        padding: 1px !important;
+        padding: 1px 4px !important;
         height: 100% !important;
     }
 
