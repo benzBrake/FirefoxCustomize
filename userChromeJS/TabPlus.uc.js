@@ -10,11 +10,66 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
-    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
     if (window.TabPlus) {
         window.TabPlus.unload();
         delete window.TabPlus;
+    }
+
+    if (!window.cPref) {
+        window.cPref = {
+            get: function (prefPath, defaultValue, setDefaultValueIfUndefined) {
+                const sPrefs = Services.prefs;
+                setDefaultValueIfUndefined = setDefaultValueIfUndefined || false;
+                try {
+                    switch (sPrefs.getPrefType(prefPath)) {
+                        case 0:
+                            return defaultValue;
+                        case 32:
+                            return sPrefs.getStringPref(prefPath);
+                        case 64:
+                            return sPrefs.getIntPref(prefPath);
+                        case 128:
+                            return sPrefs.getBoolPref(prefPath);
+                    }
+                } catch (ex) {
+                    if (setDefaultValueIfUndefined && typeof defaultValue !== undefined) this.set(prefPath, defaultValue);
+                    return defaultValue;
+                }
+                return
+            },
+            getType: function (prefPath) {
+                const sPrefs = Services.prefs;
+                const map = {
+                    0: undefined,
+                    32: 'string',
+                    64: 'int',
+                    128: 'boolean'
+                }
+                try {
+                    return map[sPrefs.getPrefType(prefPath)];
+                } catch (ex) {
+                    return map[0];
+                }
+            },
+            set: function (prefPath, value) {
+                const sPrefs = Services.prefs;
+                switch (typeof value) {
+                    case 'string':
+                        return sPrefs.setCharPref(prefPath, value) || value;
+                    case 'number':
+                        return sPrefs.setIntPref(prefPath, value) || value;
+                    case 'boolean':
+                        return sPrefs.setBoolPref(prefPath, value) || value;
+                }
+                return;
+            },
+            addListener: (a, b) => {
+                let o = (q, w, e) => (b(cPref.get(e), e));
+                Services.prefs.addObserver(a, o);
+                return { pref: a, observer: o }
+            },
+            removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
+        };
     }
 
     const OPTIONS = {
@@ -133,16 +188,18 @@
             }
         },
         'browser.tabs.swithOnHover': {
-            el: gBrowser.tabContainer,
+            el: gBrowser.tabContainer.parentNode,
             event: 'mouseover',
             callback: function (event) {
                 // 自动切换到鼠标指向标签页
                 if (!window.TabPlus && !cPref.get('browser.tabs.swithOnHover')) return;
-                if (event.target.ownerGlobal.document.getElementById('navigator-toolbox').getAttribute('custommode') === "true") return;
-                const tab = event.target.closest('.tabbrowser-tab');
+                if (event.target.ownerGlobal.document.getElementById('TabsToolbar').getAttribute('custommode') === "true") return;
+                const tab = event.target.closest('#firefox-view-button,.tabbrowser-tab');
                 if (!tab) return;
-                timeout = setTimeout(() => gBrowser.selectedTab = tab, OPTIONS.autoSwitchTabDelay);
-            }
+                timeout = setTimeout(() =>
+                    tab.id === "firefox-view-button" ? tab.click() : gBrowser.selectedTab = tab
+                    , OPTIONS.autoSwitchTabDelay);
+            },
         },
         'browser.tabs.closeTabByRightClick': {
             el: gBrowser.tabContainer,
@@ -170,7 +227,7 @@
             }
         },
         'browser.tabs.loadHistoryInTabs': {
-            el: document.getEl
+            // need to implement
         },
         'browser.tabs.loadImageInBackground': {
             trigger: false,
@@ -270,63 +327,6 @@
             }
         },
     };
-
-    if (!window.cPref) {
-        window.cPref = {
-            get: function (prefPath, defaultValue, setDefaultValueIfUndefined) {
-                const sPrefs = Services.prefs;
-                setDefaultValueIfUndefined = setDefaultValueIfUndefined || false;
-                try {
-                    switch (sPrefs.getPrefType(prefPath)) {
-                        case 0:
-                            return defaultValue;
-                        case 32:
-                            return sPrefs.getStringPref(prefPath);
-                        case 64:
-                            return sPrefs.getIntPref(prefPath);
-                        case 128:
-                            return sPrefs.getBoolPref(prefPath);
-                    }
-                } catch (ex) {
-                    if (setDefaultValueIfUndefined && typeof defaultValue !== undefined) this.set(prefPath, defaultValue);
-                    return defaultValue;
-                }
-                return
-            },
-            getType: function (prefPath) {
-                const sPrefs = Services.prefs;
-                const map = {
-                    0: undefined,
-                    32: 'string',
-                    64: 'int',
-                    128: 'boolean'
-                }
-                try {
-                    return map[sPrefs.getPrefType(prefPath)];
-                } catch (ex) {
-                    return map[0];
-                }
-            },
-            set: function (prefPath, value) {
-                const sPrefs = Services.prefs;
-                switch (typeof value) {
-                    case 'string':
-                        return sPrefs.setCharPref(prefPath, value) || value;
-                    case 'number':
-                        return sPrefs.setIntPref(prefPath, value) || value;
-                    case 'boolean':
-                        return sPrefs.setBoolPref(prefPath, value) || value;
-                }
-                return;
-            },
-            addListener: (a, b) => {
-                let o = (q, w, e) => (b(cPref.get(e), e));
-                Services.prefs.addObserver(a, o);
-                return { pref: a, observer: o }
-            },
-            removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
-        };
-    }
 
     window.TabPlus = {
         LISTENER_LIST: {},
