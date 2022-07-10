@@ -145,10 +145,10 @@
             group: [{
                 label: '自动选中鼠标指向标签页',
                 type: 'checkbox',
-                pref: 'browser.tabs.swithOnHover'
+                pref: 'browser.tabs.switchOnHover'
             }, {
                 label: '设置延时',
-                pref: 'browser.tabs.swithOnHoverDelay',
+                pref: 'browser.tabs.switchOnHoverDelay',
                 type: 'int',
                 default: 150,
                 style: 'list-style-image: url("chrome://browser/skin/history.svg");'
@@ -198,13 +198,13 @@
                 }
             }
         },
-        'browser.tabs.swithOnHover': {
+        'browser.tabs.switchOnHover': {
             el: gBrowser.tabContainer.parentNode,
             event: 'mouseover',
             callback: function (event) {
                 // 自动切换到鼠标指向标签页
-                if (!window.TabPlus && !cPref.get('browser.tabs.swithOnHover')) return;
-                if (event.target.ownerGlobal.document.getElementById('TabsToolbar').getAttribute('custommode') === "true") return;
+                if (!window.TabPlus && !cPref.get('browser.tabs.switchOnHover')) return;
+                if (event.target.ownerGlobal.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
                 const tab = event.target.closest('#firefox-view-button,.tabbrowser-tab');
                 if (!tab) return;
                 timeout = setTimeout(() =>
