@@ -238,7 +238,22 @@
             }
         },
         'browser.tabs.loadHistoryInTabs': {
-            // need to implement
+            init: function () {
+                TabPlus.ORIGINAL_LIST['PlacesUIUtils_openNodeWithEvent'] = PlacesUIUtils.openNodeWithEvent.toString();
+                eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString()
+                    .replace(' && lazy.PlacesUtils.nodeIsBookmark(aNode)', '')
+                    .replace(' && PlacesUtils.nodeIsBookmark(aNode)', '')
+                    .replace('getBrowserWindow(window)',
+                        '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
+                );
+            },
+            destroy: function () {
+                eval('PlacesUIUtils.openNodeWithEvent = ' + TabPlus.ORIGINAL_LIST['PlacesUIUtils_openNodeWithEvent']
+                    .replace('getBrowserWindow(window)',
+                        '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
+                    .replace('lazy.', '')
+                );
+            }
         },
         'browser.tabs.loadImageInBackground': {
             trigger: false,
@@ -340,7 +355,8 @@
     };
 
     window.TabPlus = {
-        LISTENER_LIST: {},
+        PREF_LISTENER_LIST: {},
+        MENU_LISTENER_LIST: {},
         ORIGINAL_LIST: {},
         FUNCTION_LIST: FUNCTION_LIST,
         get id() {
@@ -428,7 +444,7 @@
             if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
             if (map[type] === 'checkbox') {
                 item.setAttribute('checked', !!cPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
-                this.addPrefListener(obj.pref, function (value, pref) {
+                this.addMenuListener(obj.pref, function (value, pref) {
                     item.setAttribute('checked', value);
                     if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
                 });
@@ -438,7 +454,7 @@
                     item.setAttribute('value', value);
                     item.setAttribute('label', $S(obj.label, value));
                 }
-                this.addPrefListener(obj.pref, function (value, pref) {
+                this.addMenuListener(obj.pref, function (value, pref) {
                     item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
                     if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
                 });
@@ -450,7 +466,10 @@
             return item;
         },
         addPrefListener: function (pref, callback) {
-            this.LISTENER_LIST[pref] = cPref.addListener(pref, callback);
+            this.PREF_LISTENER_LIST[pref] = cPref.addListener(pref, callback);
+        },
+        addMenuListener: function (pref, callback) {
+            this.MENU_LISTENER_LIST[pref] = cPref.addListener(pref, callback);
         },
         onCommand: function (event) {
             let item = event.target;
@@ -492,14 +511,26 @@
             Object.keys(FUNCTION_LIST).forEach((pref) => {
                 try {
                     let val = TabPlus.FUNCTION_LIST[pref];
+                    let trigger = typeof val.trigger === "boolean" ? val.trigger : true;
                     if (typeof val.callback === "function") {
-                        let trigger = typeof val.trigger === "boolean" ? val.trigger : true;
+
                         if (trigger === cPref.get(pref, false)) {
-                            if (typeof val.init === "function") val.init();
                             val.el.addEventListener(val.event, TabPlus.FUNCTION_LIST[pref].callback, val.arg || false);
                         }
 
-                        TabPlus.LISTENER_LIST[pref] = cPref.addListener(pref, TabPlus.callback);
+                        TabPlus.PREF_LISTENER_LIST[pref] = cPref.addListener(pref, TabPlus.callback);
+                    }
+                    if (typeof val.init === "function") {
+                        if (trigger === cPref.get(pref, false)) {
+                            val.init();
+                        }
+                        let callback = function (value, pref) {
+                            if (value === trigger)
+                                TabPlus.FUNCTION_LIST[pref].init();
+                            else
+                                TabPlus.FUNCTION_LIST[pref].destroy();
+                        }
+                        TabPlus.PREF_LISTENER_LIST[pref] = cPref.addListener(pref, callback);
                     }
                 } catch (e) { log(e); }
             });
@@ -513,7 +544,8 @@
                 if (typeof val.destroy === "function")
                     val.destroy();
             });
-            Object.values(this.LISTENER_LIST).forEach(l => cPref.removeListener(l));
+            Object.values(this.PREF_LISTENER_LIST).forEach(l => cPref.removeListener(l));
+            Object.values(this.MENU_LISTENER_LIST).forEach(l => cPref.removeListener(l));
             if (this.menuitems && this.menuitems.length) {
                 this.menuitems.forEach(menuitem => {
                     menuitem.parentNode.removeChild(menuitem);
