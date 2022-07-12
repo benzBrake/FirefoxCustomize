@@ -1,12 +1,13 @@
 // ==UserScript==
-// @name           BMMultiColumn.uc.js
-// @description    书签菜单自动分列显示（先上下后左右）
-// @author         ding
-// @include        main
-// @version        2019.2.20
-// @startup        window.BMMultiColumn.init();
-// @shutdown       window.BMMultiColumn.destroy();
-// @note           适配Firefox57+
+// @name            BMMultiColumn.uc.js
+// @description     书签菜单自动分列显示（先上下后左右）
+// @author          ding
+// @include         main
+// @charset         UTF-8
+// @version         2019.2.20
+// @startup         window.BMMultiColumn.init();
+// @shutdown        window.BMMultiColumn.destroy();
+// @note            适配Firefox57+
 // ==/UserScript== 
 
 location.href.startsWith('chrome://browser/content/browser.x') && (function () {

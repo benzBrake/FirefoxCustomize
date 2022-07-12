@@ -1,16 +1,17 @@
 // ==UserScript==
-// @name           BookmarkOpt.uc.js
-// @description    书签操作增强
-// @author         Ryan
-// @include        main
-// @include        chrome://browser/content/places/places.xhtml
-// @include        chrome://browser/content/places/bookmarksSidebar.xhtml
-// @include        chrome://browser/content/places/historySidebar.xhtml
-// @version        1.1
-// @shutdown       window.BookmarkOpt.destroy();
-// @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note           合并 AddBookmarkHere 和 UpdateBookmarkLite，支持复制书签链接和标题
-// @version        1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
+// @name            BookmarkOpt.uc.js
+// @description     书签操作增强
+// @author          Ryan
+// @include         main
+// @charset         UTF-8
+// @include         chrome://browser/content/places/places.xhtml
+// @include         chrome://browser/content/places/bookmarksSidebar.xhtml
+// @include         chrome://browser/content/places/historySidebar.xhtml
+// @version         1.1
+// @shutdown        window.BookmarkOpt.destroy();
+// @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            合并 AddBookmarkHere 和 UpdateBookmarkLite，支持复制书签链接和标题
+// @version         1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
 // @version        1.0 初始化版本
 // ==/UserScript==
 (function (css) {

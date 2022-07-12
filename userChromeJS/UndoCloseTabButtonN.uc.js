@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name			UndoCloseTabButtonN
+// @name            UndoCloseTabButtonN
 // @description		閉じたタブを復元するツールバーボタン＆タブバーの空き上の中クリックで最後に閉じたタブを復元
-// @version			1.2.6
-// @include			main
-// @charset			UTF-8
+// @version         1.2.6
+// @include         main
+// @charset         UTF-8
 // @note            2021/12/12 Fx95 SessionStore.getClosedTabData / getClosedWindowData の戻り値がJSONからArrayに変更
 // @note            2019/01/23 Fx66でタブバー中クリックが効かないのを修正
 // @note            2019/07/04 Fx69
@@ -11,7 +11,7 @@
 // @note            2019/12/09 Fx72
 // ==/UserScript==
 // アイコン初期位置はタブバーです
-(function() {
+(function () {
     "use strict";
 
     const useTabbarMiddleClick = true; // タブバーの空き・タブ追加ボタン上の中クリックで最後に閉じたタブを復元するか？
@@ -26,7 +26,7 @@
 
             // 閉じたタブ
             let data = SessionStore.getClosedTabData(window);
-            if (typeof(data) === "string") {
+            if (typeof (data) === "string") {
                 data = JSON.parse(data);
             }
             const tabLength = data.length;
@@ -47,7 +47,7 @@
 
             // 閉じたウィンドウ
             data = SessionStore.getClosedWindowData();
-            if (typeof(data) === "string") {
+            if (typeof (data) === "string") {
                 data = JSON.parse(data);
             }
             const winLength = data.length;
@@ -77,9 +77,9 @@
 
             if (tabLength + winLength === 0) {
                 /*				menu.appendChild(this.$C(doc, "menuitem", {
-                					disabled: true,
-                					label	: "履歴がありません"
-                				}));*/
+                                    disabled: true,
+                                    label	: "履歴がありません"
+                                }));*/
                 event.preventDefault();
             }
         },
@@ -174,7 +174,7 @@
                     return btn;
                 },
             });
-        } catch (e) {}
+        } catch (e) { }
     }
 
     if (gBrowserInit.delayedStartupFinished) {

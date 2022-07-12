@@ -3,7 +3,8 @@
 // @description     添加多个自定义按钮，截图、UndoCloseTab、证书管理器、放大缩小、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
 // @version         0.1.2
-// @compatibility   Firefox 70 +
+// @charset         UTF-8
+// @compatibility   Firefox 73
 // @startup         window.CustomButtons.init();
 // @shutdown        window.CustomButtons.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize

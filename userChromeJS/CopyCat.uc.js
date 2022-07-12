@@ -3,7 +3,8 @@
 // @description     CopyCat 资源管理
 // @author          Ryan
 // @version         0.1.3
-// @compatibility   Firefox 78 +
+// @compatibility   Firefox 78
+// @charset         UTF-8
 // @startup         window.CopyCat.init();
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize

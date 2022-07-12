@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name		restoreOldStyleCleanHistory.uc.js
+// @name                restoreOldStyleCleanHistory.uc.js
 // @description         还原清除历史记录为旧版对话
-// @author		ylcs006         
+// @author              ylcs006         
 // @compatibility       Firefox 98
 // @onlyonce
 // ==/UserScript==

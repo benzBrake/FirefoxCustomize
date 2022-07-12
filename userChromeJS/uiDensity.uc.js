@@ -3,7 +3,8 @@
 // @version        1.0
 // @author         Ryan
 // @include        *
-// @homepage       https://github.com/benzBrake/FirefoxCustomize
+// @compatibility  Firefox 78
+// @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    非浏览器主窗口增加 udensity 属性
 // ==/UserScript==
 

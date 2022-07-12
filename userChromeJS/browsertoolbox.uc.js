@@ -3,6 +3,7 @@
 // @description     添加一个快捷打开浏览器内容工具箱的按钮
 // @author          Endor8
 // @include         main
+// @charset         UTF-8
 // @compatibility   Firefox 100
 // @homepage        https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js
 // ==/UserScript==

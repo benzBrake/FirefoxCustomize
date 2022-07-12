@@ -1,7 +1,7 @@
-// @name			AutoPopup
-// @description		自动弹出菜单
-// @charset       	UTF-8
-// @include			main
+// @name            AutoPopup
+// @description     自动弹出菜单
+// @charset         UTF-8
+// @include         main
 // ==/UserScript==
 
 (function () {
