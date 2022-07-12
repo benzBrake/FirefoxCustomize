@@ -69,6 +69,7 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 | ℹ️    | V    | 脚本                                                        | 说明                                                         | 源                                                           |
 | ---- | ---- | ----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 |      | 68   | [AddBookmarkHere](68/AddBookmarkHere.uc.js)                 | 添加 "添加书签到此处" 到书签栏右键菜单（仅在 Firefox 100 中测试过），如果想使用 WebExtension 版[看这里](https://github.com/benzBrake/FirefoxCustomize/tree/master/extensions/addbookmarkhere)，已经被 BookmarkOpt.uc.js 替代 |                                                              |
+|      | 87   | [AutoCopySelectionText](87/AutoCopySelectionText.uc.js)     | 自动复制选中文本（ScrLk 亮起时不复制）                       |                                                              |
 | ⛔    | 68   | [downloadPlus](68/downloadPlus.uc.js)                       | 下载功能增强，第三方工具，另存为，复制下载连接（没记错最多支持到73）。 |                                                              |
 |      | 90   | [downloadsBtnMods](90/downloadsBtnMods.uc.js)               | 下载按钮功能增强，中键调用 lux.exe/you-get.exe，右键打开下载管理 |                                                              |
 | ⛔    | 70   | [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js)   | 给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等  |                                                              |
