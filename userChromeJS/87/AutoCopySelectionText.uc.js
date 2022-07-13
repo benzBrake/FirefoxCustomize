@@ -6,6 +6,7 @@
 // @version         2022.07.13
 // @compatibility   Firefox 87
 // @include         main
+// @system          windows
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // ==/UserScript==
 location.href.startsWith('chrome://browser/content/browser.x') && setTimeout(() => {
