@@ -1,41 +1,40 @@
 // ==UserScript==
-// @name            addMenuPlus.uc.js
-// @description     通过配置文件增加修改菜单，修复版
-// @namespace       http://d.hatena.ne.jp/Griever/
-// @author          Griever
-// @include         main
-// @license         MIT License
-// @compatibility   Firefox 68
-// @charset         UTF-8
-// @version         0.1.3
-// @startup         window.addMenu.init();
-// @shutdown        window.addMenu.destroy();
-// @config          window.addMenu.edit(addMenu.FILE);
-// @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @ohomepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
-// @oohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
-// @reviewURL       http://bbs.kafan.cn/thread-1554431-1-1.html
-// @downloadURL     https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note            0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原
-// @note            0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件 
-// @note            0.1.1 Places keywords API を使うようにした
-// @note            0.1.0 menugroup をとりあえず利用できるようにした
-// @note            0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
-// @note            0.0.8 Firefox 25 の getShortcutOrURI 廃止に仮対応
-// @note            0.0.7 Firefox 21 の Favicon 周りの変更に対応
-// @note            0.0.6 Firefox 19 に合わせて修正
-// @note            0.0.5 Remove E4X
-// @note            0.0.4 設定ファイルから CSS を追加できるようにした
-// @note            0.0.4 label の無い menu を splitmenu 風の動作にした
-// @note            0.0.4 Vista でアイコンがズレる問題を修正…したかも
-// @note            0.0.4 %SEL% の改行が消えてしまうのを修正
-// @note            0.0.3 keyword の新しい書式で古い書式が動かない場合があったのを修正
-// @note            %URL_HTMLIFIED%, %EOL_ENCODE% が変換できなかったミスを修正
-// @note            %LINK_OR_URL% 変数を作成（リンク URL がなければページの URL を返す）
-// @note            タブの右クリックメニューでは %URL% や %SEL% はそのタブのものを返すようにした
-// @note            keyword で "g %URL%" のような記述を可能にした
-// @note            ツールの再読み込みメニューの右クリックで設定ファイルを開くようにした
-// @note            修复支持57+
+// @name           addMenuPlus.uc.js
+// @description    通过配置文件增加修改菜单，修复版
+// @namespace      http://d.hatena.ne.jp/Griever/
+// @author         Griever
+// @include        main
+// @license        MIT License
+// @compatibility  Firefox 68+
+// @charset        UTF-8
+// @version        0.1.3
+// @startup        window.addMenu.init();
+// @shutdown       window.addMenu.destroy();
+// @config         window.addMenu.edit(addMenu.FILE);
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
+// @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
+// @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原
+// @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
+// @note           0.1.1 Places keywords API を使うようにした
+// @note           0.1.0 menugroup をとりあえず利用できるようにした
+// @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
+// @note           0.0.8 Firefox 25 の getShortcutOrURI 廃止に仮対応
+// @note           0.0.7 Firefox 21 の Favicon 周りの変更に対応
+// @note           0.0.6 Firefox 19 に合わせて修正
+// @note           0.0.5 Remove E4X
+// @note           0.0.4 設定ファイルから CSS を追加できるようにした
+// @note           0.0.4 label の無い menu を splitmenu 風の動作にした
+// @note           0.0.4 Vista でアイコンがズレる問題を修正…したかも
+// @note           0.0.4 %SEL% の改行が消えてしまうのを修正
+// @note           0.0.3 keyword の新しい書式で古い書式が動かない場合があったのを修正
+// @note           %URL_HTMLIFIED%, %EOL_ENCODE% が変換できなかったミスを修正
+// @note           %LINK_OR_URL% 変数を作成（リンク URL がなければページの URL を返す）
+// @note           タブの右クリックメニューでは %URL% や %SEL% はそのタブのものを返すようにした
+// @note           keyword で "g %URL%" のような記述を可能にした
+// @note           ツールの再読み込みメニューの右クリックで設定ファイルを開くようにした
+// @note           修复支持57+
 // ==/UserScript==
 
 
@@ -152,6 +151,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
+    var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (window.addMenu) {
@@ -290,7 +290,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             ins = $("toolbar-context-undoCloseTab") || $("toolbarItemsMenuSeparator");
             ins.parentNode.insertBefore(
                 $C("menuseparator", { id: "addMenu-nav-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
-            PanelUI._initialized || PanelUI.init(shouldSuppressPopupNotifications);
             ins = $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem");
             ins.parentNode.insertBefore(
                 $C(ins.localName === "toolbarbutton" ? "toolbarseparator" : "menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins);
@@ -309,6 +308,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             // 单击三杠按钮时移动菜单到 AppMenu
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
+
+            if (enableidentityBoxContextMenu && $('identity-icon-box')) {
+                // SSL 小锁右键菜单
+                ins = $('identity-icon-box');
+                ins.addEventListener("click", this, false);
+                var popup = ins.appendChild($C('menupopup', {
+                    id: 'identity-icon-box-contextmenu'
+                }));
+                popup.appendChild($C("menuseparator", { id: "addMenu-identity-insertpoint", class: "addMenu-insert-point" }));
+                $("mainPopupSet").appendChild(popup);
+            }
 
             // 响应鼠标键释放事件（eg：获取选中文本）
             gBrowser.tabpanels.addEventListener("mouseup", this, false);
@@ -329,6 +339,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                 e.parentNode.removeChild(e)
             });
+            if (enableidentityBoxContextMenu && $('identity-icon-box-contextmenu')) {
+                var popup = $('identity-icon-box-contextmenu');
+                popup.parentNode.removeChild(popup);
+                if ($('identity-icon-box'))
+                    $('identity-icon-box').removeEventListener("click", this, false);
+            }
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
         },
@@ -347,7 +363,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             state.push("input");
                         if (gContextMenu.isContentSelected || gContextMenu.isTextSelected)
                             state.push("select");
-                        if (gContextMenu.onLink || !event.target.querySelector("#context-openlinkinusercontext-menu").hidden)
+                        if (gContextMenu.onLink || !event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden")?.length)
                             state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
                         if (gContextMenu.onCanvas)
                             state.push("canvas image");
@@ -404,6 +420,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         })
                     } catch (e) { }
                     break;
+                case 'click':
+                    if (event.button == 2 && event.target.id === "identity-icon-box" || event.target.id === "identity-icon")
+                        $("identity-icon-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
             }
         },
         updateModifiedFile: function () {
@@ -482,9 +501,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             } else if (event.button == 1) {
                 if (this.appVersion < 78) {
-                    openNewTabWith(uri.spec);
+                    openUILinkIn(uri.spec, 'tab');
                 } else {
-                    openNewTabWith(uri.spec, 'tab', {
+                    openUILinkIn(uri.spec, 'tab', {
                         triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
                             Services.scriptSecurityManager.createNullPrincipal({}) :
                             Services.scriptSecurityManager.getSystemPrincipal()
@@ -574,6 +593,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 { current: "app", submenu: "AppMenu", insertId: "addMenu-app-insertpoint" },
                 { current: "group", submenu: "GroupMenu", insertId: "addMenu-page-insertpoint" },
             ];
+
+            if (enableidentityBoxContextMenu) aiueo.push({ current: "ident", submenu: "IdentMenu", insertId: "addMenu-identity-insertpoint" });
 
             var data = loadText(aFile);
 
@@ -1124,7 +1145,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 },
             };
             let tab = document.popupNode || TabContextMenu ? TabContextMenu.contextTab : null;
-            var bw = (tab && tab.linkedBrowser) || context.browser;
+            var bw = (tab && tab.linkedBrowser) || context.browser || gBrowser.selectedTab.linkedBrowser;
 
             return text.replace(this.regexp, function (str) {
                 str = str.toUpperCase().replace("%LINK", "%RLINK");
