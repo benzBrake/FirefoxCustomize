@@ -166,6 +166,7 @@
         },
         {
             label: '中键打开书签不关闭书签菜单',
+            default: true,
             type: 'checkbox',
             pref: 'browser.bookmarks.openInTabClosesMenu',
         },
