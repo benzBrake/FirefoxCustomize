@@ -1,14 +1,18 @@
 // ==UserScript==
-// @name            下载增强(FF98+)
+// @name            DownloadPlus_ff98.uc.js
 // @description     修改整合自（w13998686967、ywzhaiqi、黒仪大螃蟹、Alice0775、紫云飞）
 // @author          Ryan
 // @include         main
 // @include         chrome://browser/content/places/places.xhtml
 // @include         chrome://mozapps/content/downloads/unknownContentType.xhtml
-// @version         2022.06.12
+// @version         0.0.1
 // @startup         window.DownloadPlus.init();
-// @compatibility   Firefox 102 +
+// @compatibility   Firefox 98
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            20220717 修复另存为不提示文件名，修复改名后点保存会弹出保存对话框，修复 Firefox 104 OS is not defined
+// @note            20220612 完成另存为，改名，转换编码，显示精确大小
+// @note            20220611 完成调用第三方 App 下载
+// @note            20220610 开始重写代码，完成保存并打开，从硬盘删除
 // ==/UserScript==
 (function (globalConfig, globalCss) {
     if (window.DownloadPlus) return;
@@ -16,8 +20,8 @@
 
     if (!window.CustomizableUI) Cu.import("resource:///modules/CustomizableUI.jsm");
     if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
-
-    Cu.import("resource://gre/modules/FileUtils.jsm");
+    if (!window.OS) Cu.import("resource://gre/modules/osfile/osfile_async_front.jsm")
+    if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
 
     const LANG = {
         'zh-CN': {
@@ -31,24 +35,29 @@
             "button idm": "IDM",
             "button thunder": "迅雷",
             "file not found": "文件未找到 %s",
+            "desktop": "桌面",
+            "disk label": "%s 盘",
+            "only support firefox 98 and above": "仅支持 Firefox 98（包括） 以上"
         }
     }
 
+    const _LOCALE = LANG.hasOwnProperty(Services.locale.appLocaleAsBCP47) ? Services.locale.appLocaleAsBCP47 : 'zh-CN';
+
     const QUICK_SAVE_LIST = [
-        [Services.dirsvc.get('Desk', Ci.nsIFile).path, "桌面"],
-        ["C:\\", "C盘"],
-        ["D:\\", "D盘"],
-        ["E:\\", "E盘"],
-        ["F:\\", "F盘"]
+        [Services.dirsvc.get('Desk', Ci.nsIFile).path, $L("desktop")],
+        ["C:\\", $L("disk label", "C")],
+        ["D:\\", $L("disk label", "D")],
+        ["E:\\", $L("disk label", "E")],
+        ["F:\\", $L("disk label", "F")]
     ]; // 快捷保存列表
 
-    const _LOCALE = LANG.hasOwnProperty(Services.locale.appLocaleAsBCP47) ? Services.locale.appLocaleAsBCP47 : 'zh-CN';
+
 
     const EXTRA_APP = {
         "aria2": {
             "config": "enable aria2 button",
             "label": $L("button aria2"),
-            "exec": "\\chrome\\resources\\bin\\aria2c.exe",
+            "exec": "\\chrome\\resources\\tools\\Aria2\\aria2c.exe",
             "text": '-x 8 -k 10M --load-cookies={cookiePath} --referer={referer} -d {path} {link}',
         },
         "idm": {
@@ -78,7 +87,7 @@
         },
         init: function () {
             if (this.appVersion < 98) {
-                this.log("仅支持 Firefox 98（包括） 以上");
+                this.log($L("only support firefox 98 and above"));
                 this.destroy();
             }
             switch (location.href) {
@@ -98,6 +107,7 @@
                 case 'chrome://browser/content/places/places.xhtml':
                     if (globalConfig["remove file menuitem"]) this.removeFileEnhance.init();
                     break;
+
             }
             this.style = addStyle(globalCss);
         },
@@ -295,9 +305,9 @@
             window.addEventListener("dialogaccept", function (event) {
                 if ((document.querySelector("#locationtext").value != dialog.mLauncher.suggestedFileName) && dialog.dialogElement("save").selected) {
                     event.stopPropagation();
-                    var mainwin = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser");
-                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, document.querySelector("#locationtext").value, null, null, false, null, null, null, null, Services.prefs.getBoolPref("browser.download.useDownloadDir", false), null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
-                    document.documentElement.removeAttribute("ondialogaccept");
+                    var mainwin = DownloadPlus.topWin;
+                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, document, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, true, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                    close();
                 }
             }, true);
         },
@@ -357,9 +367,9 @@
                 saveAs.setAttribute("hidden", "false");
                 saveAs.setAttribute("label", $L("save as"));
                 saveAs.addEventListener("command", () => {
-                    var mainwin = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser");
+                    var mainwin = DownloadPlus.topWin;
                     // 感谢 ycls006
-                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
                     close();
                 });
                 refEl.insertAdjacentElement('afterend', saveAs);
@@ -704,6 +714,7 @@
 
 
     function $Cookie(link, saveToFile) {
+        saveToFile || (saveToFile = false);
         if (!link) return "";
         let uri = Services.io.newURI(link, null, null),
             cookies = Services.cookies.getCookiesFromHost(uri.host, {}),
@@ -764,8 +775,8 @@
     "enable save as": true, // 下载对话框增加另存为按钮
     "enable save to": true, // 显示快捷保存按钮
     "cookie save path": "\\chrome\\resources\\cookies", // cookie 保存路径，可以是相对路径，相对于配置目录
-    "enable aria2 button": true, // 下载对话框增加aria2按钮
-    "enable idm button": false, // 下载对话框增加idm按钮
+    "enable aria2 button": false, // 下载对话框增加aria2按钮
+    "enable idm button": true, // 下载对话框增加idm按钮
     "enable thunder button": false, // 下载对话框增加thunder按钮
 }, `
 @-moz-document url("chrome://mozapps/content/downloads/unknownContentType.xhtml") {
