@@ -5,7 +5,7 @@
 // @include         main
 // @aversion        0.0.1
 // @shutdown        window.youGetBtn.unload();
-// @compatibility   Firefox 70 +
+// @compatibility   Firefox 90
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            感谢 ylcs006 帮忙解决路径乱码问题
 // @onlyonce
