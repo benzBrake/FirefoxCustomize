@@ -7,8 +7,9 @@
 // @include         chrome://mozapps/content/downloads/unknownContentType.xhtml
 // @version         0.0.1
 // @startup         window.DownloadPlus.init();
-// @compatibility   Firefox 98
+// @compatibility   Firefox 78
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            20220719 修复 78~98 无法使用
 // @note            20220717 修复另存为不提示文件名，修复改名后点保存会弹出保存对话框，修复 Firefox 104 OS is not defined
 // @note            20220612 完成另存为，改名，转换编码，显示精确大小
 // @note            20220611 完成调用第三方 App 下载
@@ -86,10 +87,10 @@
             return Services.wm.getMostRecentWindow("navigator:browser");
         },
         init: function () {
-            if (this.appVersion < 98) {
-                this.log($L("only support firefox 98 and above"));
-                this.destroy();
-            }
+            // if (this.appVersion < 98) {
+            //     this.log($L("only support firefox 98 and above"));
+            //     this.destroy();
+            // }
             switch (location.href) {
                 case 'chrome://browser/content/browser.xhtml':
                     if (globalConfig["enable save and open"]) this.saveAndOpenMain.init();
@@ -437,6 +438,7 @@
                 path = Services.prefs.getStringPref("browser.download.lastDir", ""),
                 regEx = new RegExp("^data");
             if (regEx.test(link)) {
+                console.log('internal save');
                 internalSave(link, null, "", null, null, false, null, null, null, null, null, false, null, PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
                 return;
             }
@@ -511,8 +513,10 @@
         },
         removeFileEnhance: {
             init: function () {
-                window.DownloadPlus.clearHistoryOnDelete = Services.prefs.getIntPref("browser.download.clearHistoryOnDelete");
-                Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", 2);
+                if (window.DownloadPlus.appVersion >= 98) {
+                    window.DownloadPlus.clearHistoryOnDelete = Services.prefs.getIntPref("browser.download.clearHistoryOnDelete");
+                    Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", 2);
+                }
                 let context = $("downloadsContextMenu");
                 context.insertBefore(
                     $C(document, "menuitem", {
@@ -525,7 +529,8 @@
                 );
             },
             destroy: function () {
-                Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", window.DownloadPlus.clearHistoryOnDelete);
+                if (window.DownloadPlus.appVersion >= 98)
+                    Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", window.DownloadPlus.clearHistoryOnDelete);
                 let context = $("downloadsContextMenu");
                 context.removeChild(context.querySelector("#downloadRemoveFromHistoryEnhanceMenuItem"));
             }
