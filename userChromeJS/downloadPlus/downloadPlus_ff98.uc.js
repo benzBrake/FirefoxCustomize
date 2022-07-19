@@ -4,12 +4,14 @@
 // @author          Ryan
 // @include         main
 // @include         chrome://browser/content/places/places.xhtml
+// @include         chrome://browser/content/places/places.xul
 // @include         chrome://mozapps/content/downloads/unknownContentType.xhtml
+// @include         chrome://mozapps/content/downloads/unknownContentType.xul
 // @version         0.0.1
 // @startup         window.DownloadPlus.init();
-// @compatibility   Firefox 78
+// @compatibility   Firefox 72
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
-// @note            20220719 修复 78~98 无法使用
+// @note            20220719 修复 72~98 无法使用
 // @note            20220717 修复另存为不提示文件名，修复改名后点保存会弹出保存对话框，修复 Firefox 104 OS is not defined
 // @note            20220612 完成另存为，改名，转换编码，显示精确大小
 // @note            20220611 完成调用第三方 App 下载
@@ -92,12 +94,14 @@
             //     this.destroy();
             // }
             switch (location.href) {
+                case 'chrome://browser/content/browser.xul':
                 case 'chrome://browser/content/browser.xhtml':
                     if (globalConfig["enable save and open"]) this.saveAndOpenMain.init();
                     if (globalConfig["download complete notice"]) this.downloadCompleteNotice.init();
                     if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.init();
                     if (globalConfig["enable rename"]) this.changeNameMainInit();
                     break;
+                case 'chrome://mozapps/content/downloads/unknownContentType.xul':
                 case 'chrome://mozapps/content/downloads/unknownContentType.xhtml':
                     this.addExtraAppButtons();
                     if (globalConfig["enable double click to copy link"]) this.dblClickToCopyLink();
@@ -105,6 +109,7 @@
                     if (globalConfig["show extract size"]) this.downloadDialogShowExtractSize();
                     window.sizeToContent();
                     break;
+                case 'chrome://browser/content/places/places.xul':
                 case 'chrome://browser/content/places/places.xhtml':
                     if (globalConfig["remove file menuitem"]) this.removeFileEnhance.init();
                     break;
@@ -386,7 +391,8 @@
                 shadowRoot.insertBefore(link, shadowRoot.firstChild);
                 let saveTo = $C(document, 'button', {
                     label: $L("save to"),
-                    hidde: false,
+                    class: 'dialog-button',
+                    hidden: false,
                     type: 'menu'
                 }),
                     saveToMenu = $C(document, 'menupopup', {});
@@ -421,6 +427,7 @@
                 if (app.label && app.exec && app.text && app.config && globalConfig[app.config]) {
                     let btn = $C(document, 'button', app);
                     btn.setAttribute("hidden", "false");
+                    btn.classList.add('dialog-button');
                     btn.setAttribute("onclick", "window.DownloadPlus.handleExtraAppBtnClick(event);");
                     refEl.insertAdjacentElement('afterend', btn);
                     refEl = btn;
@@ -433,7 +440,7 @@
                 text = target.getAttribute('text') || "",
                 header = "",
                 cookie = $Cookie(dialog.mLauncher.source.asciiSpec) || "",
-                referer = dialog.mSourcePath || gBrowser?.currentURI?.spec || "",
+                referer = dialog.mSourcePath || gBrowser.currentURI.spec || "",
                 link = dialog.mLauncher.source.asciiSpec,
                 path = Services.prefs.getStringPref("browser.download.lastDir", ""),
                 regEx = new RegExp("^data");
@@ -444,9 +451,12 @@
             }
             if (exec.length) {
                 if (path.length == 0) {
-                    let [title] = await document.l10n.formatValues([
-                        { id: "choose-download-folder-title" },
-                    ]);
+                    let title;
+                    if (document.l10n) {
+                        [title] = await document.l10n.formatValues([
+                            { id: "choose-download-folder-title" },
+                        ]);
+                    }
                     // firefox 选择保存目录对话框
                     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
                     fp.init(window, title, Ci.nsIFilePicker.modeGetFolder);
