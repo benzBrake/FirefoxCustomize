@@ -346,7 +346,7 @@ new function () {
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "在新标签中打开" : "Open in New Tab",
         oncommand: function (event) {
-            if (document.getElementById('context-openlinkincontainertab')?.hidden === true) {
+            if (document.getElementById('context-openlinkincontainertab') && document.getElementById('context-openlinkincontainertab').hidden === true) {
                 gContextMenu.openLinkInTab(event);
             } else {
                 document.getElementById('context-openlinkincontainertab').doCommand();
