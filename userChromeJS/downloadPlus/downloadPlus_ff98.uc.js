@@ -7,10 +7,11 @@
 // @include         chrome://browser/content/places/places.xul
 // @include         chrome://mozapps/content/downloads/unknownContentType.xhtml
 // @include         chrome://mozapps/content/downloads/unknownContentType.xul
-// @version         0.0.1
+// @version         0.0.2
 // @startup         window.DownloadPlus.init();
 // @compatibility   Firefox 72
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            20220727 FlashGot 测试版，还未测试兼容性 (感谢 pouriap 继续改进 FlashGot)
 // @note            20220719 修复 72~98 无法使用
 // @note            20220717 修复另存为不提示文件名，修复改名后点保存会弹出保存对话框，修复 Firefox 104 OS is not defined
 // @note            20220612 完成另存为，改名，转换编码，显示精确大小
@@ -34,13 +35,17 @@
             "dobule click to copy link": "双击复制链接",
             "convert tooltip": "Ctrl+点击转换url编码\n左键:UNICODE\n右键:GB2312",
             "remove from disk": "从硬盘删除",
-            "button aria2": "Aria2",
-            "button idm": "IDM",
-            "button thunder": "迅雷",
             "file not found": "文件未找到 %s",
             "desktop": "桌面",
             "disk label": "%s 盘",
-            "only support firefox 98 and above": "仅支持 Firefox 98（包括） 以上"
+            "button aria2": "Aria2",
+            "button idm": "IDM",
+            "button thunder": "迅雷",
+            "use flashgot to download": "FlashGot",
+            "default download manager": "（默认）",
+            "force reload download managers list": "重新读取下载工具列表",
+            "reloading download managers list": "正在重新读取下载工具列表，请稍后！",
+            "set to default download manger": "设置 %s 为默认下载器",
         }
     }
 
@@ -54,8 +59,6 @@
         ["F:\\", $L("disk label", "F")]
     ]; // 快捷保存列表
 
-
-
     const EXTRA_APP = {
         "aria2": {
             "config": "enable aria2 button",
@@ -63,22 +66,11 @@
             "exec": "\\chrome\\resources\\tools\\Aria2\\aria2c.exe",
             "text": '-x 8 -k 10M --load-cookies={cookiePath} --referer={referer} -d {path} {link}',
         },
-        "idm": {
-            config: "enable idm button",
-            label: $L("button idm"),
-            exec: "C:\\Program\ Files\ (x86)\\Internet\ Download\ Manager\\IDMan.exe", // 需要修改 IDM 路径
-            text: '/d {link}',
-        },
-        "thunder": {
-            config: "enable thunder button",
-            label: $L("button thunder"),
-            exec: "C:\\Program\ Files\ (x86)\\Thunder\\Thunder.exe", // 需要修改迅雷路径
-            text: '{link}',
-        }
     }
 
     window.DownloadPlus = {
         _urls: [],
+        FLASHGOT_STRUCTURE: `{num};{download-manager};0;;\n{referer}\n{url}\n{description}\n{cookies}\n{post-data}\n{filename}\n{extension}\n{download-page-referer}\n{download-page-cookies}\n\n\n{user-agent}`,
         get appVersion() {
             return Services.appinfo.version.split(".")[0]
         },
@@ -88,11 +80,27 @@
         get topWin() {
             return Services.wm.getMostRecentWindow("navigator:browser");
         },
+        get tempDir() {
+            return OS.Constants.Path.tmpDir;
+        },
+        get flashgotPath() {
+            var flashgotPref,
+                flashgotPath;
+            try {
+                flashgotPref = Services.prefs.get(this.PREF_FLASHGOT);
+            } catch (e) {
+                flashgotPref = "\\chrome\\resources\\tools\\FlashGot.exe";
+            }
+            flashgotPref = this.handleRelativePath(flashgotPref);
+            var flashgotPath = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
+            flashgotPath.initWithPath(flashgotPref);
+            if (flashgotPath.exists())
+                return flashgotPath.path;
+            else
+                return false;
+        },
         init: function () {
-            // if (this.appVersion < 98) {
-            //     this.log($L("only support firefox 98 and above"));
-            //     this.destroy();
-            // }
+            this.$L = $L;
             switch (location.href) {
                 case 'chrome://browser/content/browser.xul':
                 case 'chrome://browser/content/browser.xhtml':
@@ -100,10 +108,11 @@
                     if (globalConfig["download complete notice"]) this.downloadCompleteNotice.init();
                     if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.init();
                     if (globalConfig["enable rename"]) this.changeNameMainInit();
+                    this.loadDownloadManagersList();
                     break;
                 case 'chrome://mozapps/content/downloads/unknownContentType.xul':
                 case 'chrome://mozapps/content/downloads/unknownContentType.xhtml':
-                    this.addExtraAppButtons();
+                    this.addExtraElements();
                     if (globalConfig["enable double click to copy link"]) this.dblClickToCopyLink();
                     if (globalConfig["enable rename"]) this.downloadDialogChangeName();
                     if (globalConfig["show extract size"]) this.downloadDialogShowExtractSize();
@@ -115,7 +124,17 @@
                     break;
 
             }
-            this.style = addStyle(globalCss);
+            this.styleSheetService = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
+            this.STYLE = {
+                url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(globalCss)),
+                type: this.styleSheetService.AGENT_SHEET
+            }
+
+            this.styleSheetService.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+            // this.style = addStyle(globalCss);
+            if (window.DownloadPlus.appVersion >= 98 && window.DownloadPlus.appVersion <= 102) {
+                Services.prefs.setBoolPref("browser.download.improvements_to_download_panel", false);
+            }
         },
         destroy: function () {
             switch (location.href) {
@@ -130,7 +149,8 @@
                     if (globalConfig["remove file menuitem"]) this.removeFileEnhance.destroy();
                     break;
             }
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            this.styleSheetService.unregisterSheet(this.STYLE.url, this.STYLE.type);
+            // if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
         },
         handleRelativePath: function (path) {
             let OS = this.topWin.OS;
@@ -353,50 +373,182 @@
                 Downloads.getList(Downloads.ALL).then(list => { list.removeView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
             }
         },
-        addExtraAppButtons: function () {
-            let refEl = this.dialogElement.getButton("accept").nextSibling;
+        addExtraElements: function () {
+            setTimeout(() => {
+                dialog.dialogElement("basicBox").setAttribute("collapsed", true);
+                dialog.dialogElement("normalBox").setAttribute("collapsed", false);
+            }, 90);
+            var refEl = this.dialogElement.getButton("accept");
+            refEl.setAttribute('accesskey', 'C');
+            this.dialogElement.getButton("cancel").setAttribute('accesskey', 'Q');
             if (globalConfig["enable save and open"]) {
-                let saveAndOpen = this.dialogElement.getButton('extra1');
-                saveAndOpen.parentNode.insertBefore(saveAndOpen, this.dialogElement.getButton("accept").nextSibling);
-                saveAndOpen.setAttribute("hidden", "false");
-                saveAndOpen.setAttribute("label", $L("save and open"));
-                saveAndOpen.addEventListener("command", () => {
+                let saveAndOpen = $C(document, 'button', {
+                    id: 'save-and-open',
+                    label: $L("save and open"),
+                    accesskey: 'P',
+                    hidden: false,
+                });
+                saveAndOpen.addEventListener('click', () => {
                     Services.wm.getMostRecentWindow("navigator:browser").DownloadPlus._urls.push(dialog.mLauncher.source.asciiSpec);
                     document.querySelector("#save").click();
                     window.DownloadPlus.dialogElement.getButton("accept").disabled = 0;
-                    window.DownloadPlus.dialogElement.getButton("accept").click()
+                    window.DownloadPlus.dialogElement.getButton("accept").click();
                 });
-                refEl = saveAndOpen;
+                refEl = refEl.insertAdjacentElement('afterend', saveAndOpen);
             }
+            if (globalConfig["elable flashgot integration"]) {
+                if (this.flashgotPath) {
+                    let modeGroup = dialog.dialogElement('mode');
+                    let flashgotHbox = $C(document, 'hbox');
+                    modeGroup.appendChild(flashgotHbox);
+                    let flashgotRadio = $C(document, 'radio', {
+                        id: 'flashgot',
+                        label: $L("use flashgot to download"),
+                        accesskey: 'F',
+                    });
+                    flashgotHbox.appendChild(flashgotRadio);
+                    let flashgotDeck = $C(document, 'deck', {
+                        id: 'flashgotDeck',
+                        flex: 1
+                    });
+                    flashgotHbox.appendChild(flashgotDeck);
+                    let flashgotListHbox = $C(document, 'hbox', {
+                        flex: 1,
+                        align: 'center'
+                    })
+                    flashgotDeck.appendChild(flashgotListHbox);
+                    let flashgotHandler = $C(document, 'menulist', {
+                        id: 'flashgotHandler',
+                        flex: 1,
+                        native: true
+                    });
+                    flashgotListHbox.appendChild(flashgotHandler);
+                    let flashgotPopup = $C(document, 'menupopup', {});
+                    flashgotHandler.appendChild(flashgotPopup);
+
+                    this.refreshDownloadManagersPopup(flashgotPopup);
+
+                    let flashgotDownloadByDefault = $C(document, 'toolbarbutton', {
+                        id: 'flashgotDownloadByDefault',
+                        tooltiptext: $L("download by default download manager"),
+                        class: "toolbarbutton-1",
+                        style: 'list-style-image: url(chrome://browser/skin/downloads/downloads.svg)',
+                        accesskey: "D",
+                        onclick: function (event) {
+                            var flashgotPopup = event.target.ownerDocument.getElementById("flashgotHandler").querySelector("menupopup");
+                            event.target.ownerGlobal.DownloadPlus.handleFlashGotBtnClick({ target: flashgotPopup.querySelector('[selected="true"]') });
+                        }
+                    });
+
+                    let flashgotReloadManagers = $C(document, 'toolbarbutton', {
+                        id: 'flasgotReload',
+                        tooltiptext: $L("force reload download managers list"),
+                        class: "toolbarbutton-1",
+                        style: 'list-style-image: url(chrome://global/skin/icons/reload.svg)',
+                        accesskey: "R",
+                        onclick: function (event) {
+                            let { target } = event;
+                            let { ownerGlobal: win, ownerDocument: aDoc } = target;
+                            let hbox = aDoc.getElementById("flashgot").parentNode;
+                            let popup = target.parentNode.querySelector("menupopup");
+                            hbox.childNodes.forEach(el => el.setAttribute('disabled', true));
+                            win.DownloadPlus.loadDownloadManagersList(true, true);
+                            setTimeout(() => {
+                                win.DownloadPlus.refreshDownloadManagersPopup(popup)
+                                hbox.childNodes.forEach(el => el.disabled = false);
+                            }, 5500);
+                        }
+                    });
+
+                    let flashgotSetDefault = $C(document, 'toolbarbutton', {
+                        id: "flasgotSetDefault",
+                        class: "toolbarbutton-1",
+                        accesskey: "D",
+                        style: 'list-style-image: url(chrome://global/skin/icons/settings.svg)',
+                        onclick: function (event) {
+                            let { target } = event;
+                            let { ownerGlobal: win } = target;
+                            let popup = target.parentNode.querySelector("menupopup");
+                            let selectedManager = popup.querySelector('[selected="true"]');
+                            if (selectedManager && selectedManager.hasAttribute("manager")) {
+                                let { Services } = win;
+                                Services.prefs.setStringPref(win.DownloadPlus.PREF_FLASHGOT_DEFAULT, selectedManager.getAttribute("manager"));
+                                win.DownloadPlus.refreshDownloadManagersPopup(popup);
+                            }
+                        },
+                        onmouseover: function (event) {
+                            let { target } = event;
+                            let { ownerGlobal: win } = target;
+                            let popup = target.parentNode.querySelector("menupopup");
+                            let selectedManager = popup.querySelector('[selected="true"]');
+                            this.setAttribute('tooltiptext', win.DownloadPlus.$L("set to default download manger", selectedManager.getAttribute("label")));
+                        }
+                    });
+                    flashgotHbox.appendChild(flashgotDownloadByDefault);
+                    flashgotHbox.appendChild(flashgotReloadManagers);
+                    flashgotHbox.appendChild(flashgotSetDefault);
+                    function flashgotDefaultDownload(event) {
+                        window.DownloadPlus.handleFlashGotBtnClick({ target: flashgotPopup.querySelector('[selected="true"]') });
+                    }
+                    dialog.onOK = (function () {
+                        var cached_function = dialog.onOK;
+                        return function () {
+                            if (flashgotRadio.selected)
+                                return flashgotDefaultDownload.apply(this, arguments);
+                            else
+                                return cached_function.apply(this, arguments);
+                        };
+                    })();
+                } else {
+                    this.log("open about:config and set " + this.PREF_FLASHGOT);
+                }
+            }
+            // disable remember choice when downloadplus radio is selected
+            dialog.dialogElement('mode').addEventListener("select", function (event) {
+                const flashGotRadio = $('flashgot');
+                const rememberChoice = $('rememberChoice');
+                const flashgot = $('flashgot');
+                var other = true;
+                if (flashGotRadio && flashGotRadio.selected) {
+                    rememberChoice.disabled = true;
+                    other = false;
+                }
+                if (flashgot && flashgot.selected) {
+                    other = false;
+                }
+                if (other) {
+                    rememberChoice.disabled = false;
+                }
+            });
             if (globalConfig["enable save as"]) {
-                let saveAs = this.dialogElement.getButton('extra2');
-                saveAs.setAttribute("hidden", "false");
-                saveAs.setAttribute("label", $L("save as"));
+                let saveAs = $C(document, 'button', {
+                    id: 'saveAs',
+                    label: $L("save as"),
+                    accesskey: 'E'
+                })
                 saveAs.addEventListener("command", () => {
                     var mainwin = DownloadPlus.topWin;
                     // 感谢 ycls006
                     mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
                     close();
                 });
-                refEl.insertAdjacentElement('afterend', saveAs);
-                refEl = saveAs;
+                refEl = refEl.insertAdjacentElement('afterend', saveAs);
             }
+            let shadowRoot = document.getElementById('unknownContentType').shadowRoot,
+                link = $CNS(document, 'http://www.w3.org/1999/xhtml', 'html:link', {
+                    rel: 'stylesheet',
+                    href: 'chrome://global/content/widgets.css'
+                });
+            shadowRoot.insertBefore(link, shadowRoot.firstChild);
             refEl || (refEl = this.dialogElement.getButton("accept").nextSibling);
             if (globalConfig["enable save to"]) {
-                let shadowRoot = document.getElementById('unknownContentType').shadowRoot,
-                    link = $CNS(document, 'http://www.w3.org/1999/xhtml', 'html:link', {
-                        rel: 'stylesheet',
-                        href: 'chrome://global/content/widgets.css'
-                    });
-                shadowRoot.insertBefore(link, shadowRoot.firstChild);
                 let saveTo = $C(document, 'button', {
                     label: $L("save to"),
                     class: 'dialog-button',
                     hidden: false,
-                    type: 'menu'
-                }),
-                    saveToMenu = $C(document, 'menupopup', {});
-                // saveTo.appendChild(document.createXULElement('dropmarker'));
+                    type: 'menu',
+                    accesskey: 'T'
+                }), saveToMenu = $C(document, 'menupopup', {});
                 saveTo.appendChild(saveToMenu);
                 QUICK_SAVE_LIST.forEach(function (dir) {
                     var [name, dir] = [dir[1], dir[0]];
@@ -434,6 +586,122 @@
                 }
             });
         },
+        loadDownloadManagersList(forceLoad, notify) {
+            this.FLASHGOT_DOWNLOAD_MANSGERS = [];
+            if (notify) this.alert($L("reloading download managers list"));
+            if (this.flashgotPath) {
+                try {
+                    let prefVal = Services.prefs.getStringPref(this.PREF_FLASHGOT_DOWNLOAD_MANAGERS);
+                    this.FLASHGOT_DOWNLOAD_MANSGERS = prefVal.split(",");
+                } catch (e) { forceLoad = true }
+                if (forceLoad) {
+                    // get download managers list from flashgot
+                    var dmPathTextPath = PathUtils.join(this.tempDir, ".flashgot.dm.txt");
+                    this.exec(this.flashgotPath, ["-o", dmPathTextPath]);
+                    let that = this;
+                    setTimeout(function () {
+                        var dmText = readFile(dmPathTextPath);
+                        that.FLASHGOT_DOWNLOAD_MANSGERS = dmText.split("\n").filter(l => l.includes("|OK")).map(l => l.replace("|OK", ""))
+                        removeFile(dmPathTextPath);
+                        Services.prefs.setStringPref(that.PREF_FLASHGOT_DOWNLOAD_MANAGERS, that.FLASHGOT_DOWNLOAD_MANSGERS.join(","));
+                    }, 5000);
+                }
+            }
+        },
+        refreshDownloadManagersPopup(flashgotPopup) {
+            if (!flashgotPopup) return;
+            // remove all download managers items
+            flashgotPopup.querySelectorAll("menuitem").forEach(el => el.parentNode.removeChild(el));
+            this.topWin.DownloadPlus.FLASHGOT_DOWNLOAD_MANSGERS.forEach(m => {
+                let menuitemDownload = $C(document, 'menuitem', {
+                    label: m,
+                    manager: m,
+                    id: "dm-" + hashText(m),
+                    onclick: function (event) {
+                        let { target } = event;
+                        let { ownerDocument: aDoc, ownerGlobal: win } = target;
+                        target.parentNode.querySelectorAll("menuitem").forEach(el => el.removeAttribute("selected"));
+                        if (target.getAttribute('default')) {
+                            setTimeout(() => {
+                                aDoc.querySelector("#flashgotHandler").setAttribute('label', target.label + win.DownloadPlus.$L("default download manager"));
+                            }, 20);
+                        } else {
+                            aDoc.querySelector("#flashgotHandler").setAttribute('label', target.label);
+                        }
+                        target.setAttribute("selected", true);
+                        aDoc.querySelector("#flashgot").click();
+                    }
+                });
+                flashgotPopup.appendChild(menuitemDownload);
+            });
+
+            let defaultElement;
+            try {
+                let name = Services.prefs.getStringPref(this.PREF_FLASHGOT_DEFAULT);
+                let el;
+                if (name) el = flashgotPopup.querySelector('#dm-' + hashText(name));
+                defaultElement = el || flashgotPopup.firstChild;
+            } catch (e) {
+                console.error(e);
+                defaultElement = flashgotPopup.firstChild;
+            }
+            if (defaultElement) {
+                defaultElement.setAttribute('selected', true);
+                defaultElement.setAttribute('default', true);
+                $("flashgotHandler").setAttribute('label', defaultElement.getAttribute('label') + $L("default download manager"));
+            }
+        },
+        handleFlashGotBtnClick: function (event) {
+            let { target } = event;
+            if (target.hasAttribute("manager")) {
+                // make string support replace with array
+                function replaceArray(replaceString, find, replace) {
+                    var regex;
+                    for (var i = 0; i < find.length; i++) {
+                        regex = new RegExp(find[i], "g");
+                        replaceString = replaceString.replace(regex, replace[i]);
+                    }
+                    return replaceString;
+                };
+                var { targetFile: partFile } = dialog.mLauncher; // Future may be take use of part file
+                var { asciiSpec, username, userPass } = dialog.mLauncher.source,
+                    fileName = (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName),
+                    { userAgent } = navigator;
+                var initData = replaceArray(this.FLASHGOT_STRUCTURE, [
+                    '{num}',
+                    '{download-manager}',
+                    '{referer}',
+                    '{url}',
+                    '{description}',
+                    '{cookies}',
+                    '{post-data}',
+                    '{filename}',
+                    '{extension}',
+                    '{download-page-referer}',
+                    '{download-page-cookies}',
+                    '{user-agent}'
+                ], [
+                    1,
+                    target.getAttribute("manager"),
+                    dialog.mSourcePath || "",
+                    asciiSpec,
+                    "",
+                    $Cookie(asciiSpec),
+                    "", // need to implement
+                    fileName,
+                    dialog.mLauncher.MIMEInfo.primaryExtension,
+                    "", // need to implement
+                    $Cookie(dialog.mSourcePath) || "",
+                    userAgent // need to implement custom agent
+                ])
+                var initFilePath = PathUtils.join(this.tempDir, hashText(asciiSpec) + ".dl.properties");
+                saveFile(initFilePath, initData);
+                this.exec(this.flashgotPath, initFilePath);
+            } else {
+                alert("not support");
+            }
+            close();
+        },
         handleExtraAppBtnClick: async function (event) {
             let target = event.target;
             let exec = DownloadPlus.handleRelativePath(target.getAttribute('exec')) || "",
@@ -445,7 +713,6 @@
                 path = Services.prefs.getStringPref("browser.download.lastDir", ""),
                 regEx = new RegExp("^data");
             if (regEx.test(link)) {
-                console.log('internal save');
                 internalSave(link, null, "", null, null, false, null, null, null, null, null, false, null, PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
                 return;
             }
@@ -627,7 +894,7 @@
         autoCloseBlankTab: {
             eventListener: {
                 onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-                    if (!aRequest || !aWebProgress.isTopLevel) return;
+                    if (!aRequest || aWebProgress && !aWebProgress.isTopLevel) return;
                     let location;
                     try {
                         aRequest.QueryInterface(Ci.nsIChannel);
@@ -668,6 +935,9 @@
         log: function () {
             Cu.reportError(Array.prototype.slice.call(arguments));
         },
+        PREF_FLASHGOT_DEFAULT: 'userChromeJS.downloadPlus.flashgotDefaultManager',
+        PREF_FLASHGOT_DOWNLOAD_MANAGERS: 'userChromeJS.downloadPlus.flashgotManagers',
+        PREF_FLASHGOT: 'userChromeJS.downloadPlus.flashgotPath'
     }
 
     if (typeof gBrowserInit !== "undefined") {
@@ -703,8 +973,18 @@
     function $C(doc, tag, props, isHTML = false) {
         let el = isHTML ? doc.createElement(tag) : doc.createXULElement(tag);
         for (let prop in props) {
-            el.setAttribute(prop, props[prop])
+            let val = props[prop];
+            if (prop === 'innerHTML') {
+                el.innerHTML = val;
+            } else {
+                if (typeof val === "function") {
+                    val = "(" + val.toString() + ").call(this, event);";
+                }
+                el.setAttribute(prop, val);
+            }
         }
+        if (inArray(['menu', 'menuitem'], tag))
+            el.classList.add(tag + "-iconic");
         return el;
     }
 
@@ -720,7 +1000,8 @@
     }
 
     function $L(key, replace) {
-        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
+        if (!LANG[_LOCALE]) return key;
+        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : key;
         if (typeof replace !== "undefined") {
             str = str.replace("%s", replace);
         }
@@ -777,6 +1058,99 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
+    function saveFile(aFileOrPath, data, encoding) {
+        encoding || (encoding = "UTF-8");
+        var aFile;
+        if (typeof aFileOrPath == "string") {
+            aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);;
+            aFile.initWithPath(aFileOrPath);
+        } else {
+            aFile = aFileOrPath;
+        }
+        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        suConverter.charset = encoding;
+        data = suConverter.ConvertFromUnicode(data);
+        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
+        foStream.init(aFile, 0x02 | 0x08 | 0x20, 0664, 0);
+        foStream.write(data, data.length);
+        foStream.close();
+    }
+
+    function readFile(aFileOrPath, encoding) {
+        encoding || (encoding = "UTF-8");
+        var aFile;
+        if (typeof aFileOrPath == "string") {
+            aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);;
+            aFile.initWithPath(aFileOrPath);
+        } else {
+            aFile = aFileOrPath;
+        }
+        if (aFile.exists()) {
+            let stream = Cc['@mozilla.org/network/file-input-stream;1'].createInstance(Ci.nsIFileInputStream);
+            stream.init(aFile, 0x01, 0, 0);
+            let cvstream = Cc['@mozilla.org/intl/converter-input-stream;1'].createInstance(Ci.nsIConverterInputStream);
+            cvstream.init(stream, encoding, 1024, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+            let content = '',
+                data = {};
+            while (cvstream.readString(4096, data)) {
+                content += data.value;
+            }
+            cvstream.close();
+            return content.replace(/\r\n?/g, '\n');
+        } else {
+            return "";
+        }
+    }
+
+    function removeFile(aFileOrPath) {
+        var aFile;
+        if (typeof aFileOrPath == "string") {
+            aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);;
+            aFile.initWithPath(aFileOrPath);
+        } else {
+            aFile = aFileOrPath;
+        }
+        if (aFile.exists()) {
+            aFile.permissions |= 0666;
+            aFile.remove(0);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function hashText(text, type) {
+        if (!(typeof text == 'string' || text instanceof String)) {
+            text = "";
+        }
+        var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
+            .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+
+        converter.charset = "UTF-8";
+        var result = {};
+        var data = converter.convertToByteArray(text, result);
+
+        if (Ci.nsICryptoHash[type]) {
+            type = Ci.nsICryptoHash[type]
+        } else {
+            type = 2;
+        }
+        var hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
+            Ci.nsICryptoHash
+        );
+
+        text = null;
+        hasher.init(type);
+        hasher.update(data, data.length);
+        var hash = hasher.finish(false);
+        str = data = hasher = null;
+
+        function toHexString(charCode) {
+            return ("0" + charCode.toString(16)).slice(-2);
+        }
+
+        return Array.from(hash, (c, i) => toHexString(hash.charCodeAt(i))).join("");
+    }
 })({
     "remove file menuitem": true, // 下载管理增加超级删除菜单
     "download complete notice": true, // 下载完成后播放提示音
@@ -785,20 +1159,21 @@
     "enable encoding convert": false, // 启用编码转换
     "enable double click to copy link": true, // 下载对话框双击来源复制链接
     "show extract size": false, // 下载对话框显示文件精确大小 不知道哪个版本开始自带显示
-    "default select save button": true, // 下载对话框默认选择保存按钮
     "enable save and open": true, // 下载对话框新增保存并打开按钮
     "enable save as": true, // 下载对话框增加另存为按钮
     "enable save to": true, // 显示快捷保存按钮
     "cookie save path": "\\chrome\\resources\\cookies", // cookie 保存路径，可以是相对路径，相对于配置目录
     "enable aria2 button": false, // 下载对话框增加aria2按钮
-    "enable idm button": true, // 下载对话框增加idm按钮
-    "enable thunder button": false, // 下载对话框增加thunder按钮
+    "elable flashgot integration": true, // 下载对话框增加 FlashGot 功能
 }, `
-@-moz-document url("chrome://mozapps/content/downloads/unknownContentType.xhtml") {
+@-moz-document url-prefix("chrome://mozapps/content/downloads/unknownContentType.x") {
     #locationtext {
         outline: none;
         margin-left: 10px;
         border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
+    }
+    [disabled="true"] {
+        color: GrayText !important;
     }
 }
 `);
