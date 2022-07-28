@@ -1055,7 +1055,7 @@
             ]);
             initFilePath = this.handleRelativePath("{tmpDir}\\" + hashText(downloadLink) + ".dl.properties");
             saveFile(initFilePath, initData);
-            console.log(initFilePath, initData);
+            if (globalDebug) console.log(initFilePath, initData);
             this.exec(this.flashgotPath, initFilePath);
             if (globalDebug) this.log("DownloadPlus calling flashgot", this.flashgotPath, initFilePath);
             if (location.href.startsWith("chrome://mozapps/content/downloads/unknownContentType.x")) close();
