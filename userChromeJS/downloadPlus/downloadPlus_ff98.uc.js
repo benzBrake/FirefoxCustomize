@@ -9,9 +9,10 @@
 // @include         chrome://mozapps/content/downloads/unknownContentType.xul
 // @version         0.0.2
 // @startup         window.DownloadPlus.init();
+// @shutdown        window.DownloadPlus.destroy();
 // @compatibility   Firefox 72
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
-// @note            20220728 预防性修改，防止 Services.jsm 被删除后脚本无法使用（Bug 1667455），增加日志输出开关，修复 FlashGot 配置项无效，改回老方式添加样式，重写改名和编码转换代码，重写双击复制完整链接代码，调整 FlashGot 相关代码结构，修改右下角通知图标，根据个人喜好调节部分样式
+// @note            20220728 预防性修改，防止 Services.jsm 被删除后脚本无法使用（Bug 1667455），增加日志输出开关，修复 FlashGot 配置项无效，改回老方式添加样式，重写改名和编码转换代码，重写双击复制完整链接代码，调整 FlashGot 相关代码结构，修改右下角通知图标，根据个人喜好调节部分样式，还原下载按钮弹窗的删除功能，尝试增加热插拔
 // @note            20220727 FlashGot 测试版，还未测试兼容性 (感谢 pouriap 继续改进 FlashGot)
 // @note            20220719 修复 72~98 无法使用
 // @note            20220717 修复另存为不提示文件名，修复改名后点保存会弹出保存对话框，修复 Firefox 104 OS is not defined
@@ -110,6 +111,7 @@
                     if (globalConfig["enable save and open"]) this.saveAndOpenMain.init();
                     if (globalConfig["download complete notice"]) this.downloadCompleteNotice.init();
                     if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.init();
+                    if (globalConfig["remove file menuitem"]) this.removeFileEnhance.init();
                     this.contentAreaContextMenu.init();
                     this.loadDownloadManagersList();
                     break;
@@ -127,6 +129,13 @@
                     if (globalConfig["remove file menuitem"]) this.removeFileEnhance.init();
                     break;
 
+            }
+            if (globalConfig["remove file menuitem"]) {
+                let windows = Services.wm.getEnumerator(null);
+                while (windows.hasMoreElements()) {
+                    let win = windows.getNext();
+                    win.DownloadPlus.removeFileEnhance.init();
+                }
             }
             // this.styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
             // this.STYLE = {
@@ -146,8 +155,9 @@
                 case 'chrome://browser/content/browser.xhtml':
                     if (globalConfig["enable rename"]) this.changeNameMainDestroy();
                     if (globalConfig["enable save and open"]) this.saveAndOpenMain.destroy();
-                    if (globalConfig["download complete notice"]) this.downloadCompleteNotice.destroy();
+                    if (globalConfig["download complete notice"]) this.downloadCompleteNotice.uninit();
                     if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.destroy();
+                    if (globalConfig["remove file menuitem"]) this.removeFileEnhance.destroy();
                     this.contentAreaContextMenu.destroy();
                     break;
                 case 'chrome://mozapps/content/downloads/unknownContentType.xul':
@@ -157,6 +167,13 @@
                 case 'chrome://browser/content/places/places.xhtml':
                     if (globalConfig["remove file menuitem"]) this.removeFileEnhance.destroy();
                     break;
+            }
+            if (globalConfig["remove file menuitem"]) {
+                let windows = Services.wm.getEnumerator(null);
+                while (windows.hasMoreElements()) {
+                    let win = windows.getNext();
+                    win.DownloadPlus.removeFileEnhance.destroy();
+                }
             }
             // this.styleSheetService.unregisterSheet(this.STYLE.url, this.STYLE.type);
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
@@ -494,7 +511,7 @@
                 }
                 if (globalDebug) DownloadPlus.log("DownloadPlus contentAreaContextMenu init complete.");
             },
-            destory: function () {
+            destroy: function () {
                 if (this.el) {
                     this.el.removeEventListener('popupshowing', this, false);
                     this.el.removeEventListener('popuphiding', this, false);
@@ -1065,7 +1082,7 @@
             }
             window.close();
         },
-        removeFile: function (event) {
+        removeFileAction: function (event) {
             function removeSelectFile(path) {
                 let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
                 try {
@@ -1085,18 +1102,56 @@
                 }
             }
 
-            var ddBox = document.getElementById("downloadsRichListBox");
-            if (!(ddBox && ddBox._placesView)) {
-                ddBox = document.getElementById("downloadsListBox");
+            function getParents(el, parentSelector) {
+                if (!parentSelector ||
+                    parentSelector === undefined) {
+                    return null;
+                }
+                var type = 'className';
+                var splitF = '.';
+                if (parentSelector.indexOf('#') === 0) {
+                    type = 'id';
+                    splitF = '#';
+                }
+                var selector = parentSelector.split(splitF)[1];
+                function getP(el) {
+                    var p = el.parentNode;
+                    if (p === document) {
+                        return false;
+                    }
+                    if (p[type].indexOf(selector) > -1) {
+                        return p;
+                    } else {
+                        return getP(p);
+                    }
+                }
+                var final = getP(el);
+                return final;
             }
-            if (!ddBox) return;
-            var len = ddBox.selectedItems.length;
 
-            for (var i = len - 1; i >= 0; i--) {
-                let sShell = ddBox.selectedItems[i]._shell;
-                let path = sShell.download.target.path;
+            if (location.href.startsWith("chrome://browser/content/browser.x")) {
+                let aTriggerNode = DownloadsView.contextMenu.triggerNode,
+                    element = getParents(aTriggerNode, '.download-state'),
+                    sShell = element._shell,
+                    path = sShell.download.target.path;
                 removeSelectFile(path);
                 sShell.doCommand("cmd_delete");
+            } else if (location.href.startsWith("chrome://browser/content/places/places.x")) {
+                var ddBox = document.getElementById("downloadsRichListBox");
+                if (!(ddBox && ddBox._placesView)) {
+                    ddBox = document.getElementById("downloadsListBox");
+                }
+                if (!ddBox) return;
+                var len = ddBox.selectedItems.length;
+
+                for (var i = len - 1; i >= 0; i--) {
+                    let sShell = ddBox.selectedItems[i]._shell;
+                    let path = sShell.download.target.path;
+                    removeSelectFile(path);
+                    sShell.doCommand("cmd_delete");
+                }
+            } else {
+                event.target.ownerGlobal.DownloadPlus.error($L("DownloadPlus remove file: operate is not supported."));
             }
         },
         removeFileEnhance: {
@@ -1106,11 +1161,12 @@
                     Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", 2);
                 }
                 let context = $("downloadsContextMenu");
+                if (context.querySelector("#downloadRemoveFromHistoryEnhanceMenuItem")) return;
                 context.insertBefore(
                     $C(document, "menuitem", {
                         id: 'downloadRemoveFromHistoryEnhanceMenuItem',
                         class: 'downloadRemoveFromHistoryMenuItem',
-                        onclick: "window.DownloadPlus.removeFile()",
+                        onclick: "window.DownloadPlus.removeFileAction(event);",
                         label: $L("remove from disk")
                     }),
                     context.querySelector(".downloadRemoveFromHistoryMenuItem")
@@ -1119,8 +1175,10 @@
             destroy: function () {
                 if (window.DownloadPlus.appVersion >= 98)
                     Services.prefs.setIntPref("browser.download.clearHistoryOnDelete", window.DownloadPlus.clearHistoryOnDelete);
-                let context = $("downloadsContextMenu");
-                context.removeChild(context.querySelector("#downloadRemoveFromHistoryEnhanceMenuItem"));
+                let context = $("downloadsContextMenu"),
+                    child = context.querySelector("#downloadRemoveFromHistoryEnhanceMenuItem");
+                if (context && child)
+                    context.removeChild(child);
             }
         },
         alert: function (aMsg, aTitle, aCallback) {
