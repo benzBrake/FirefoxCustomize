@@ -75,6 +75,12 @@
     window.DownloadPlus = {
         _urls: [],
         FLASHGOT_STRUCTURE: `{num};{download-manager};0;;\n{referer}\n{url}\n{description}\n{cookies}\n{post-data}\n{filename}\n{extension}\n{download-page-referer}\n{download-page-cookies}\n\n\n{user-agent}`,
+        FLASHGOT_FORCE_USERAGENT: {
+            'd.pcs.baidu.com': 'netdisk;7.0.3.2;PC;PC-Windows;10.0.17763'
+        },
+        FLASHGOT_NULL_REFERER: [
+            'd.pcs.baidu.com'
+        ],
         get appVersion() {
             return Services.appinfo.version.split(".")[0]
         },
@@ -134,10 +140,17 @@
                 let windows = Services.wm.getEnumerator(null);
                 while (windows.hasMoreElements()) {
                     let win = windows.getNext();
-                    win.DownloadPlus.removeFileEnhance.init();
+                    if (inArray([
+                        'chrome://browser/content/browser.xul',
+                        'chrome://browser/content/browser.xhtml',
+                        'chrome://browser/content/places/places.xul',
+                        'chrome://browser/content/places/places.xhtml'
+                    ], win.location.href)) {
+                        win.DownloadPlus.removeFileEnhance.init();
+                    }
                 }
             }
-            // this.styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
+            // this.styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
             // this.STYLE = {
             //     url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(globalCss)),
             //     type: this.styleSheetService.AGENT_SHEET
@@ -191,7 +204,7 @@
                 })
                 if (!handled) {
                     path = path.replace(/\//g, '\\').toLocaleLowerCase();
-                    var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
+                    var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
                     if (/^(\\)/.test(path)) {
                         path = ffdir + path;
                     }
@@ -292,7 +305,7 @@
                         let channel = subject.QueryInterface(Ci.nsIHttpChannel);
                         let header = channel.contentDispositionHeader;
                         let associatedWindow = channel.notificationCallbacks
-                            .getInterface(Components.interfaces.nsILoadContext)
+                            .getInterface(Ci.nsILoadContext)
                             .associatedWindow;
                         associatedWindow.localStorage.setItem(channel.URI.spec, header.split("=")[1]);
                     } catch (e) { };
@@ -326,7 +339,7 @@
             onDownloadChanged: function (dl) {
                 if (dl.progress != 100) return;
                 if (window.DownloadPlus._urls.indexOf(dl.source.url) > -1) {
-                    let target = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                    let target = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
                     if (globalDebug) window.DownloadPlus.log("DownloadPlus opening: " + dl.target.path);
                     target.initWithPath(dl.target.path);
                     target.launch();
@@ -399,14 +412,14 @@
             playSoundFile: function (aFilePath) {
                 if (!aFilePath)
                     return;
-                var ios = Components.classes["@mozilla.org/network/io-service;1"]
-                    .createInstance(Components.interfaces["nsIIOService"]);
+                var ios = Cc["@mozilla.org/network/io-service;1"]
+                    .createInstance(Ci["nsIIOService"]);
                 try {
                     var uri = ios.newURI(aFilePath, "UTF-8", null);
                 } catch (e) {
                     return;
                 }
-                var file = uri.QueryInterface(Components.interfaces.nsIFileURL).file;
+                var file = uri.QueryInterface(Ci.nsIFileURL).file;
                 if (!file.exists())
                     return;
 
@@ -414,8 +427,8 @@
             },
 
             play: function (aUri) {
-                var sound = Components.classes["@mozilla.org/sound;1"]
-                    .createInstance(Components.interfaces["nsISound"]);
+                var sound = Cc["@mozilla.org/sound;1"]
+                    .createInstance(Ci["nsISound"]);
                 sound.play(aUri);
             },
 
@@ -606,8 +619,8 @@
                 type: 'menu',
                 tooltiptext: $L("encoding convert tooltip")
             }));
-            let converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
-                .getService(Components.interfaces.nsIScriptableUnicodeConverter);
+            let converter = Cc['@mozilla.org/intl/scriptableunicodeconverter']
+                .getService(Ci.nsIScriptableUnicodeConverter);
             let menupopup = $C(document, 'menupopup', {}), orginalString;
             menupopup.appendChild($C(document, 'menuitem', {
                 value: dialog.mLauncher.suggestedFileName,
@@ -861,8 +874,8 @@
                     item.setAttribute("image", "moz-icon:file:///" + dir + "\\");
                     item.setAttribute("class", "menuitem-iconic");
                     item.onclick = function () {
-                        var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-                        var path = dir.replace(/^\./, Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path);
+                        var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+                        var path = dir.replace(/^\./, Cc["@mozilla.org/file/directory_service;1"].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path);
                         path = path.endsWith("\\") ? path : path + "\\";
                         file.initWithPath(path + (document.querySelector("#locationText") ? document.querySelector("#locationText").value : document.querySelector("#location").value).trim());
                         if (typeof dialog.mLauncher.saveToDisk === 'function') {
@@ -952,6 +965,7 @@
                 downloadManager,
                 referer,
                 downloadLink,
+                downloadHost,
                 description,
                 postData,
                 fileName,
@@ -963,7 +977,7 @@
                 password;
             if (target.hasAttribute("manager")) {
                 var { targetFile: partFile } = dialog.mLauncher; // Future may be take use of part file
-                ({ asciiSpec: downloadLink, username, userPass: password } = dialog.mLauncher.source);
+                ({ asciiSpec: downloadLink, host: downloadHost, username, userPass: password } = dialog.mLauncher.source);
                 downloadManager = target.getAttribute("manager");
                 fileName = (document.querySelector("#locationText") ? document.querySelector("#locationText").value : dialog.mLauncher.suggestedFileName);
                 referer = dialog.mSourcePath;
@@ -973,6 +987,7 @@
                     case 'link':
                         downloadManager = this.getDefaultDownloadManager() || this.FLASHGOT_DOWNLOAD_MANSGERS[0];
                         downloadLink = gContextMenu.linkURL;
+                        downloadHost = gContextMenu.linkURI.host;
                         ({ asciiSpec: referer, username, userPass: password } = gContextMenu.browser.currentURI);
                         downloadPageCookies = $Cookie(referer);
                         downloadPageReferer = referer;
@@ -987,6 +1002,12 @@
             if (!downloadLink) {
                 this.alert($L("error link"));
                 return;
+            }
+            if (inArray(this.FLASHGOT_NULL_REFERER)) {
+                referer = "";
+            }
+            if (inArray(Object.keys(this.FLASHGOT_FORCE_USERAGENT), downloadHost)) {
+                userAgent = this.FLASHGOT_FORCE_USERAGENT[downloadHost];
             }
             initData = replaceArray(this.FLASHGOT_STRUCTURE, [
                 '{num}',
@@ -1084,7 +1105,7 @@
         },
         removeFileAction: function (event) {
             function removeSelectFile(path) {
-                let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
                 try {
                     file.initWithPath(path);
                 } catch (e) {
@@ -1282,13 +1303,13 @@
             cookieSavePath = DownloadPlus.handleRelativePath("{tmpDir}");
         if (saveToFile) {
             let string = cookies.map(formatCookie).join('');
-            let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+            let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
             file.initWithPath(cookieSavePath);
             file.append(uri.host + ".txt");
             if (!file.exists()) {
                 file.create(0, 0644);
             }
-            let foStream = Components.classes["@mozilla.org/network/file-output-stream;1"].createInstance(Components.interfaces.nsIFileOutputStream);
+            let foStream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
             foStream.init(file, 0x02 | 0x08 | 0x20, 0666, 0);
             foStream.write(string, string.length);
             foStream.close();
@@ -1388,8 +1409,8 @@
         if (!(typeof text == 'string' || text instanceof String)) {
             text = "";
         }
-        var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"]
-            .createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+        var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+            .createInstance(Ci.nsIScriptableUnicodeConverter);
 
         converter.charset = "UTF-8";
         var result = {};
@@ -1448,7 +1469,7 @@
         display: none;
     }
     .flashGot {
-        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgMTh2LTJoLjVhMy41IDMuNSAwIDEgMC0yLjUtNS45NVYxMGE2IDYgMCAxIDAtOCA1LjY1OXYyLjA4OWE4IDggMCAxIDEgOS40NTgtMTAuNjVBNS41IDUuNSAwIDEgMSAxNy41IDE4bC0uNS4wMDF6bS00LTEuOTk1aDNsLTUgNi41di00LjVIOGw1LTYuNTA1djQuNTA1eiIvPjwvc3ZnPg==)
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgMTh2LTJoLjVhMy41IDMuNSAwIDEgMC0yLjUtNS45NVYxMGE2IDYgMCAxIDAtOCA1LjY1OXYyLjA4OWE4IDggMCAxIDEgOS40NTgtMTAuNjVBNS41IDUuNSAwIDEgMSAxNy41IDE4bC0uNS4wMDF6bS00LTEuOTk1aDNsLTUgNi41di00LjVIOGw1LTYuNTA1djQuNTA1eiIvPjwvc3ZnPg==);
     }
 }
 @-moz-document url-prefix("chrome://mozapps/content/downloads/unknownContentType.x") {
