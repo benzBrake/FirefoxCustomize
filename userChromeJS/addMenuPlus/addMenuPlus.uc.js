@@ -291,7 +291,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             ins = $("toolbar-context-undoCloseTab") || $("toolbarItemsMenuSeparator");
             ins.parentNode.insertBefore(
                 $C("menuseparator", { id: "addMenu-nav-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
-            ins = $("appMenu-quit-button") || $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem");
+            ins = $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem");
             ins.parentNode.insertBefore(
                 $C(ins.localName === "toolbarbutton" ? "toolbarseparator" : "menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins);
             ins = $("devToolsSeparator");
@@ -455,8 +455,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     } catch (e) { }
                     break;
                 case 'click':
-                    if (event.button == 2 && event.target.id === "identity-icon-box" || event.target.id === "identity-icon")
+                    if (event.button == 2 && (event.target.id === "identity-icon-box" || event.target.id === "identity-icon"))
                         $("identity-icon-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
+                    break;
             }
         },
         receiveMessage(message) {
@@ -603,7 +604,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         moveToAppMenu: async function (_e) {
             let ins = document.getElementById('addMenu-app-insertpoint');
-            if (ins && ins.localName === 'menuseparator') {
+            if (ins?.localName === 'menuseparator') {
                 let separator = $('appMenu-quit-button2').previousSibling;
                 if (separator) {
                     ins.remove();
@@ -635,10 +636,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 { current: "group", submenu: "GroupMenu", insertId: "addMenu-page-insertpoint" },
             ];
 
-            if (enableidentityBoxContextMenu && $('identity-icon-box'))
-                aiueo.push({ current: "ident", submenu: "IdentMenu", insertId: "addMenu-identity-insertpoint" });
-            else
-                aiueo.push({ current: "ident", submenu: "IdentMenu", insertId: "addMenu-tab-insertpoint" });
+            if (enableidentityBoxContextMenu) aiueo.push({ current: "ident", submenu: "IdentMenu", insertId: "addMenu-identity-insertpoint" });
 
             var data = loadText(aFile);
 
@@ -754,7 +752,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (menuObj._group) {
                 return this.newGroupMenu(menuObj);
             }
-            var isAppMenu = opt.insertPoint && opt.insertPoint.localName === "toolbarseparator" && opt.insertPoint.id === 'addMenu-app-insertpoint',
+            var isAppMenu = opt.insertPoint?.localName === "toolbarseparator" && opt.insertPoint?.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
                 menuitemType = isAppMenu ? "toolbarbutton" : "menu",
                 menu = document.createXULElement(menuitemType),
@@ -762,7 +760,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 panelId;
 
             // fix for appmenu
-            const viewCache = $('appMenu-viewCache') && $('appMenu-viewCache').content || $('appMenu-multiView');
+            const viewCache = $('appMenu-viewCache')?.content || $('appMenu-multiView');
             if (isAppMenu && viewCache) {
                 menu.setAttribute('closemenu', "none");
                 panelId = menuObj.id ? menuObj.id + "-panel" : "addMenu-panel-" + Math.floor(Math.random() * 900000 + 99999);
@@ -847,10 +845,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             opt || (opt = {});
 
             var menuitem,
-                isAppMenu = opt.insertPoint && opt.insertPoint.localName === "toolbarseparator" && opt.insertPoint.id === 'addMenu-app-insertpoint',
+                isAppMenu = opt.insertPoint?.localName === "toolbarseparator" && opt.insertPoint?.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
                 menuitemType = isAppMenu ? "toolbarbutton" : "menuitem",
-                noDefaultLabel = !obj.label;
+                noDefaultLabel = false;
 
             // label == separator か必要なプロパティが足りない場合は区切りとみなす
             if (obj.label === "separator" ||
@@ -865,6 +863,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     if (obj.command)
                         menuitem.setAttribute("command", obj.command);
 
+                    noDefaultLabel = !obj.label;
                     if (noDefaultLabel)
                         obj.label = obj.command || obj.oncommand;
                 }
@@ -872,6 +871,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 menuitem = document.createXULElement(menuitemType);
 
                 // property fix
+                noDefaultLabel = !obj.label;
                 if (noDefaultLabel)
                     obj.label = obj.exec || obj.keyword || obj.url || obj.text;
 
@@ -924,13 +924,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 menuitem.setAttribute(key, val);
             }
 
-            if (menuitem.localName !== separatorType) {
+            if (noDefaultLabel && menuitem.localName !== separatorType) {
                 if (obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
                     // Localization 支持
                     let strings = new Localization([obj["data-l10n-href"]]);
                     strings.formatValue([obj['data-l10n-id']]).then(
                         text => {
-                            menuitem.setAttribute('label', text || obj.label);
+                            menuitem.setAttribute('label', text || menuitem.getAttribute("label"));
                         }
                     )
                 } else if (obj.keyword) {
@@ -1292,7 +1292,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 img.onload = function () {
                     var width = this.naturalWidth,
                         height = this.naturalHeight;
-                    if (that.appVersion <= 69) {
+                    if (that.appVersion <= 72) {
                         canvas = document.createXULElementNS(NSURI, "canvas");
                     } else {
                         canvas = document.createElementNS(NSURI, "canvas")
@@ -1403,7 +1403,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } catch (e) { }
 
             if (!editor || !editor.exists()) {
-                if (useScraptchpad && this.appVersion < 72) {
+                if (useScraptchpad && this.appVersion <= 72) {
                     this.openScriptInScratchpad(window, aFile);
                     return;
                 } else {
