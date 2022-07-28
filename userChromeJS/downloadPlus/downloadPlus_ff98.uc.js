@@ -1033,7 +1033,7 @@
         if (!link) return "";
         let uri = Services.io.newURI(link, null, null),
             cookies = Services.cookies.getCookiesFromHost(uri.host, {}),
-            cookieSavePath = DownloadPlus.handleRelativePath(globalConfig["cookie save path"]);
+            cookieSavePath = DownloadPlus.handleRelativePath("{tmpDir}");
         if (saveToFile) {
             let string = cookies.map(formatCookie).join('');
             let file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
@@ -1180,7 +1180,6 @@
     "enable save and open": true, // 下载对话框新增保存并打开按钮
     "enable save as": true, // 下载对话框增加另存为按钮
     "enable save to": true, // 显示快捷保存按钮
-    "cookie save path": "\\chrome\\resources\\cookies", // cookie 保存路径，可以是相对路径，相对于配置目录
     "enable aria2 button": false, // 下载对话框增加aria2按钮
     "elable flashgot integration": true, // 下载对话框增加 FlashGot 功能
 }, `
