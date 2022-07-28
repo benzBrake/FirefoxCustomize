@@ -62,7 +62,7 @@
 			"to": "https://recaptcha.net/recaptcha/$2"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Sourceforge下载 >> 镜像站点",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -144,6 +144,30 @@
 			"isFunction": false,
 			"action": "redirect",
 			"to": "$1"
+		},
+		{
+			"enable": false,
+			"name": "RawGit",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^(https:\\/\\/raw\\.githubusercontent\\.com\\/.*)",
+			"exclude": "",
+			"group": "加速",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://ghproxy.futils.com/$1"
+		},
+		{
+			"enable": true,
+			"name": "哔哩哔哩显示评论",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https:\\/\\/www\\.bilibili\\.com\\/s\\/video\\/(.*)",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://www.bilibili.com/video/$1"
 		}
 	],
 	"sendHeader": [
@@ -731,6 +755,34 @@
 			"group": "加速",
 			"isFunction": true,
 			"code": "let rt = detail.type;\nif (rt === 'script' || rt === 'stylesheet' || rt === 'main_frame' || rt === 'sub_frame') {\n  for (let i in val) {\n    if (val[i].name.toLowerCase() === 'content-security-policy') {\n      let s = val[i].value;\n      s = s.replace(/googleapis\\\\.com/g, '$& https://gapis.geekzu.org');\n      s = s.replace(/recaptcha\\\\.google\\\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/google\\\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/gstatic\\\\.com/g, '$& https://*.gstatic.cn');\n      val[i].value = s;\n    }\n  }\n}"
+		},
+		{
+			"enable": true,
+			"name": "同花顺 K 线修复",
+			"ruleType": "modifySendHeader",
+			"matchType": "domain",
+			"pattern": "d.10jqka.com.cn",
+			"exclude": "",
+			"group": "反盗链",
+			"isFunction": false,
+			"action": {
+				"name": "referer",
+				"value": "https://stockpage.10jqka.com.cn/"
+			}
+		},
+		{
+			"enable": true,
+			"name": "CCAV UA",
+			"ruleType": "modifySendHeader",
+			"matchType": "domain",
+			"pattern": "tv.cctv.com",
+			"exclude": "",
+			"group": "用户代理",
+			"isFunction": false,
+			"action": {
+				"name": "user-agent",
+				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+			}
 		}
 	],
 	"receiveHeader": [],
