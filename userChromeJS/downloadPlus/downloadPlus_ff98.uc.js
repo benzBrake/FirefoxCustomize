@@ -11,6 +11,7 @@
 // @startup         window.DownloadPlus.init();
 // @compatibility   Firefox 72
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            20220728 预防性修改，防止 Services.jsm 被删除后脚本无法使用（Bug 1667455），增加日志输出开关，修复 FlashGot 配置项无效，改回老方式添加样式，重写改名和编码转换代码，重写双击复制完整链接代码，调整 FlashGot 相关代码结构，修改右下角通知图标，根据个人喜好调节部分样式
 // @note            20220727 FlashGot 测试版，还未测试兼容性 (感谢 pouriap 继续改进 FlashGot)
 // @note            20220719 修复 72~98 无法使用
 // @note            20220717 修复另存为不提示文件名，修复改名后点保存会弹出保存对话框，修复 Firefox 104 OS is not defined
@@ -18,34 +19,33 @@
 // @note            20220611 完成调用第三方 App 下载
 // @note            20220610 开始重写代码，完成保存并打开，从硬盘删除
 // ==/UserScript==
-(function (globalConfig, globalCss) {
+(function (globalConfig, globalCss, globalDebug) {
     if (window.DownloadPlus) return;
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
-    if (!window.CustomizableUI) Cu.import("resource:///modules/CustomizableUI.jsm");
-    if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
-    if (!window.OS) Cu.import("resource://gre/modules/osfile/osfile_async_front.jsm")
-    if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
+    const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const OS = globalThis.OS || Cu.import("resource://gre/modules/osfile/osfile_async_front.jsm").OS;
+    const FileUtils = globalThis.FileUtils || Cu.import("resource://gre/modules/FileUtils.jsm").FileUtils;
 
     const LANG = {
         'zh-CN': {
-            "save and open": "保存并打开",
-            "save as": "另存为",
-            "save to": "保存到",
-            "dobule click to copy link": "双击复制链接",
-            "convert tooltip": "Ctrl+点击转换url编码\n左键:UNICODE\n右键:GB2312",
             "remove from disk": "从硬盘删除",
             "file not found": "文件未找到 %s",
-            "desktop": "桌面",
-            "disk label": "%s 盘",
-            "button aria2": "Aria2",
-            "button idm": "IDM",
-            "button thunder": "迅雷",
+            "original name": "默认编码: ",
+            "encoding convert tooltip": "点击转换编码",
+            "complete link": "链接：",
+            "dobule click to copy link": "双击复制链接",
             "use flashgot to download": "FlashGot",
             "default download manager": "（默认）",
+            "download by default download manager": "FlashGot 默认",
             "force reload download managers list": "重新读取下载工具列表",
             "reloading download managers list": "正在重新读取下载工具列表，请稍后！",
             "set to default download manger": "设置 %s 为默认下载器",
+            "save and open": "保存并打开",
+            "save as": "另存为",
+            "save to": "保存到",
+            "desktop": "桌面",
+            "disk label": "%s 盘",
+            "button aria2": "Aria2",
         }
     }
 
@@ -80,15 +80,13 @@
         get topWin() {
             return Services.wm.getMostRecentWindow("navigator:browser");
         },
-        get tempDir() {
-            return OS.Constants.Path.tmpDir;
-        },
         get flashgotPath() {
             var flashgotPref,
                 flashgotPath;
             try {
-                flashgotPref = Services.prefs.get(this.PREF_FLASHGOT);
+                flashgotPref = Services.prefs.getStringPref(this.PREF_FLASHGOT);
             } catch (e) {
+                if (globalDebug) this.error(e);
                 flashgotPref = "\\chrome\\resources\\tools\\FlashGot.exe";
             }
             flashgotPref = this.handleRelativePath(flashgotPref);
@@ -100,6 +98,7 @@
                 return false;
         },
         init: function () {
+            if (globalDebug) this.log("DownloadPlus init: " + location.href);
             this.$L = $L;
             switch (location.href) {
                 case 'chrome://browser/content/browser.xul':
@@ -124,36 +123,41 @@
                     break;
 
             }
-            this.styleSheetService = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
-            this.STYLE = {
-                url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(globalCss)),
-                type: this.styleSheetService.AGENT_SHEET
-            }
-
-            this.styleSheetService.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
-            // this.style = addStyle(globalCss);
-            if (window.DownloadPlus.appVersion >= 98 && window.DownloadPlus.appVersion <= 102) {
+            // this.styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
+            // this.STYLE = {
+            //     url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(globalCss)),
+            //     type: this.styleSheetService.AGENT_SHEET
+            // }
+            // this.styleSheetService.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+            this.style = addStyle(globalCss);
+            if (this.appVersion >= 98 && this.appVersion <= 102) {
                 Services.prefs.setBoolPref("browser.download.improvements_to_download_panel", false);
             }
         },
         destroy: function () {
+            if (globalDebug) this.log("DownloadPlus destroy: " + location.href);
             switch (location.href) {
+                case 'chrome://browser/content/browser.xul':
                 case 'chrome://browser/content/browser.xhtml':
                     if (globalConfig["enable save and open"]) this.saveAndOpenMain.destroy();
                     if (globalConfig["download complete notice"]) this.downloadCompleteNotice.destroy();
                     if (globalConfig["auto close blank tab"]) this.autoCloseBlankTab.destroy();
+                    if (globalConfig["enable rename"]) this.changeNameMainDestroy();
                     break;
+                case 'chrome://mozapps/content/downloads/unknownContentType.xul':
                 case 'chrome://mozapps/content/downloads/unknownContentType.xhtml':
                     break;
+                case 'chrome://browser/content/places/places.xul':
                 case 'chrome://browser/content/places/places.xhtml':
                     if (globalConfig["remove file menuitem"]) this.removeFileEnhance.destroy();
                     break;
             }
-            this.styleSheetService.unregisterSheet(this.STYLE.url, this.STYLE.type);
-            // if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            // this.styleSheetService.unregisterSheet(this.STYLE.url, this.STYLE.type);
+            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
         },
         handleRelativePath: function (path) {
-            let OS = this.topWin.OS;
+            if (globalDebug) this.log("DownloadPlus handling path: " + path);
+            const OS = this.topWin.OS;
             if (path) {
                 let handled = false;
                 Object.keys(OS.Constants.Path).forEach(key => {
@@ -169,6 +173,7 @@
                         path = ffdir + path;
                     }
                 }
+                if (globalDebug) this.log("DownloadPlus handle path complete: " + path);
                 return path;
             }
         },
@@ -200,28 +205,34 @@
                     file.launch();
                 }
             } catch (e) {
-                this.log(e);
+                this.error(e);
             }
         },
-        copy: function (aText) {
+        copyText: function (aText) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
         },
         dblClickToCopyLink: function (e) {
-            var s = document.querySelector("#source"),
-                l = s.previousSibling;
-            l.innerHTML = l.innerHTML + "(" + $L("dobule click to copy link") + ")";
-            s.value = dialog.mLauncher.source.spec;
-            s.setAttribute("crop", "center");
-            s.setAttribute("tooltiptext", $L("dobule click to copy link"));
-            s.style.setProperty('cursor', 'pointer');
-            l.setAttribute("ondblclick", 'DownloadPlus.copy(dialog.mLauncher.source.spec);');
-            s.setAttribute("ondblclick", 'DownloadPlus.copy(dialog.mLauncher.source.spec);');
+            var h = $C(document, 'hbox', { align: 'center' });
+            document.querySelector("#source").parentNode.after(h);
+            var label = h.appendChild($C(document, 'label', {
+                innerHTML: $L("complete link"),
+                style: 'margin-top: 1px'
+            }));
+            var description = h.appendChild($C(document, 'description', {
+                id: 'completeLinkDescription',
+                class: 'plain',
+                flex: 1,
+                crop: 'center',
+                value: dialog.mLauncher.source.spec,
+                tooltiptext: $L("dobule click to copy link"),
+            }));
+            [label, description].forEach(el => el.setAttribute("ondblclick", 'DownloadPlus.copyText(dialog.mLauncher.source.spec);'))
         },
         changeNameMainInit: function () {
             const obsService = Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverService);
             const RESPONSE_TOPIC = 'http-on-examine-response';
 
-            var respObserver = {
+            this.respObserver = {
                 observing: false,
                 observe: function (subject, topic, data) {
                     try {
@@ -231,111 +242,104 @@
                             .getInterface(Components.interfaces.nsILoadContext)
                             .associatedWindow;
                         associatedWindow.localStorage.setItem(channel.URI.spec, header.split("=")[1]);
-                    } catch (ex) { };
+                    } catch (e) { };
                 },
                 start: function () {
                     if (!this.observing) {
                         obsService.addObserver(this, RESPONSE_TOPIC, false);
                         this.observing = true;
+                        if (globalDebug) DownloadPlus.log("DownloadPlus change name monitor started!");
                     }
                 },
                 stop: function () {
                     if (this.observing) {
                         obsService.removeObserver(this, RESPONSE_TOPIC, false);
                         this.observing = false;
+                        if (globalDebug) DownloadPlus.log("DownloadPlus change name monitor stopped!");
                     }
                 }
             };
 
-            respObserver.start();
+            this.respObserver.start();
             addEventListener("beforeunload", function () {
-                respObserver.stop();
+                DownloadPlus.respObserver.stop();
             })
         },
+        changeNameMainDestroy: function () {
+            if (this.respObserver)
+                DownloadPlus.respObserver.stop();
+        },
         downloadDialogChangeName: function () {
-            document.querySelector("#mode").addEventListener("select", function () {
-                if (dialog.dialogElement("save").selected) {
-                    let rename = globalConfig["enable rename"],
-                        encodingConvert = globalConfig["enable encoding convert"];
-                    if (!document.querySelector("#locationtext")) {
-                        if (rename || encodingConvert) {
-                            var orginalString = "";
-                            if (encodingConvert) {
-                                try {
-                                    orginalString = (opener.localStorage.getItem(dialog.mLauncher.source.spec) ||
-                                        dialog.mLauncher.source.asciiSpec.substring(dialog.mLauncher.source.asciiSpec.lastIndexOf("/"))).replace(/[\/:*?"<>|]/g, "");
-                                    opener.localStorage.removeItem(dialog.mLauncher.source.spec)
-                                } catch (e) {
-                                    orginalString = dialog.mLauncher.suggestedFileName;
-                                }
-                            }
-                            var location = document.querySelector("#location"), locationtext;
-                            if (encodingConvert)
-                                locationtext = document.createXULElement("menulist");
-                            else
-                                locationtext = document.createElementNS("http://www.w3.org/1999/xhtml", "html:input");
-                            locationtext.id = "locationtext";
-                            if (rename && encodingConvert)
-                                locationtext.setAttribute("editable", "true");
-                            locationtext.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
-                            locationtext.setAttribute("tooltiptext", $L("convert tooltip"));
-                            location.parentNode.insertBefore(locationtext, location);
-                            locationtext.addEventListener("click", function (e) {
-                                if (e.ctrlKey) {
-                                    if (e.button == 0)
-                                        this.value = decodeURIComponent(this.value);
-                                    if (e.button == 2) {
-                                        e.preventDefault();
-                                        converter.charset = "GB2312";
-                                        this.value = converter.ConvertToUnicode(unescape(this.value));
-                                    }
-                                }
-                            }, false);
-                            if (rename)
-                                locationtext.value = dialog.mLauncher.suggestedFileName;
-                            if (encodingConvert) {
-                                locationtext.addEventListener("command", function (e) {
-                                    if (rename)
-                                        locationtext.value = e.target.value;
-                                    document.title = "Opening " + e.target.value;
-                                });
-                                let menupopup = locationtext.appendChild(document.createXULElement("menupopup"));
-                                let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
-                                menuitem.value = dialog.mLauncher.suggestedFileName;
-                                menuitem.label = "Original: " + menuitem.value;
-                                if (!rename)
-                                    locationtext.value = menuitem.value;
-                                let converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
-                                    .getService(Components.interfaces.nsIScriptableUnicodeConverter);
-
-                                function createMenuitem(encoding) {
-                                    converter.charset = encoding;
-                                    let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
-                                    menuitem.value = converter.ConvertToUnicode(orginalString).replace(/^"(.+)"$/, "$1");
-                                    menuitem.label = encoding + ": " + menuitem.value;
-                                }
-                                ["GB18030", "BIG5", "Shift-JIS"].forEach(function (item) {
-                                    createMenuitem(item)
-                                });
-                            }
-                        }
-                    }
-                    document.querySelector("#location").hidden = true;
-                    document.querySelector("#locationtext").hidden = false;
-                } else {
-                    document.querySelector("#locationtext").hidden = true;
-                    document.querySelector("#location").hidden = false;
+            let locationHbox = $C(document, 'hbox', {
+                id: 'locationHbox',
+                flex: 1,
+                align: 'center',
+            })
+            let location = $('location');
+            location.hidden = true;
+            location.after(locationHbox);
+            let locationText = locationHbox.appendChild($CNS(document, "http://www.w3.org/1999/xhtml", "html:input", {
+                id: "locationText",
+                value: dialog.mLauncher.suggestedFileName,
+                flex: 1
+            })), encodingConvertButton = locationHbox.appendChild($C(document, 'button', {
+                id: 'encodingConvertButton',
+                type: 'menu',
+                tooltiptext: $L("encoding convert tooltip")
+            }));
+            let converter = Components.classes['@mozilla.org/intl/scriptableunicodeconverter']
+                .getService(Components.interfaces.nsIScriptableUnicodeConverter);
+            let menupopup = $C(document, 'menupopup', {}), orginalString;
+            menupopup.appendChild($C(document, 'menuitem', {
+                value: dialog.mLauncher.suggestedFileName,
+                label: $L("original name") + dialog.mLauncher.suggestedFileName,
+                selected: true,
+                default: true,
+            }));
+            try {
+                orginalString = (opener.localStorage.getItem(dialog.mLauncher.source.spec) ||
+                    dialog.mLauncher.source.asciiSpec.substring(dialog.mLauncher.source.asciiSpec.lastIndexOf("/"))).replace(/[\/:*?"<>|]/g, "");
+                opener.localStorage.removeItem(dialog.mLauncher.source.spec)
+            } catch (e) {
+                orginalString = dialog.mLauncher.suggestedFileName;
+            }
+            function createMenuitem(encoding) {
+                converter.charset = encoding;
+                let menuitem = menupopup.appendChild(document.createXULElement("menuitem"));
+                menuitem.value = converter.ConvertToUnicode(orginalString).replace(/^"(.+)"$/, "$1");
+                menuitem.label = encoding + ": " + menuitem.value;
+            }
+            ["GB18030", "BIG5", "Shift-JIS"].forEach(function (item) {
+                createMenuitem(item)
+            });
+            menupopup.addEventListener('click', (event) => {
+                let { target } = event;
+                if (target.localName === "menuitem") {
+                    locationText.value = target.value;
                 }
-            }, false)
+            });
+            encodingConvertButton.appendChild(menupopup);
+            $('mode').addEventListener("select", () => {
+                if (dialog.dialogElement("save").selected) {
+                    location.hidden = true;
+                    locationHbox.hidden = false;
+                } else {
+                    location.hidden = false;
+                    locationHbox.hidden = true;
+                }
+            });
             dialog.dialogElement("save").selected && dialog.dialogElement("save").click();
             window.addEventListener("dialogaccept", function (event) {
-                if ((document.querySelector("#locationtext").value != dialog.mLauncher.suggestedFileName) && dialog.dialogElement("save").selected) {
+                if ((document.querySelector("#locationText").value != dialog.mLauncher.suggestedFileName) && dialog.dialogElement("save").selected) {
                     event.stopPropagation();
-                    var mainwin = DownloadPlus.topWin;
-                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, document, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, true, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                    var mainwin = DownloadPlus.topWin,
+                        fileName = document.querySelector("#locationText") ? document.querySelector("#locationText").value : dialog.mLauncher.suggestedFileName;
+                    if (globalDebug) this.log("DownloadPlus change name and save: " + fileName);
+                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, document, fileName, null, null, false, null, null, null, null, null, true, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
                     close();
                 }
             }, true);
+            if (globalDebug) this.log("DownloadPlus change name init complete.");
         },
         downloadDialogShowExtractSize: () => {
             Cu.import("resource://gre/modules/DownloadUtils.jsm");
@@ -348,12 +352,14 @@
                 return [(aBytes > 0) && (aBytes < 100) && (unitIndex != 0) ? (aBytes < 10 ? (parseInt(aBytes * 100) / 100).toFixed(2) : (parseInt(aBytes * 10) / 10).toFixed(1)) : parseInt(aBytes), ['bytes', 'KB', 'MB', 'GB'][unitIndex]];
             }
             eval("DownloadUtils.convertByteUnits = " + DU_convertByteUnits.toString());
+            if (globalDebug) this.log("DownloadPlus show extract size init complete.");
         },
         saveAndOpenView: {
             onDownloadChanged: function (dl) {
                 if (dl.progress != 100) return;
                 if (window.DownloadPlus._urls.indexOf(dl.source.url) > -1) {
                     let target = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                    if (globalDebug) this.log("DownloadPlus opening: " + dl.target.path);
                     target.initWithPath(dl.target.path);
                     target.launch();
                     window.DownloadPlus._urls[window.DownloadPlus._urls.indexOf(dl.source.url)] = "";
@@ -364,13 +370,14 @@
         },
         saveAndOpenMain: {
             init: function () {
-                Cu.import("resource://gre/modules/Downloads.jsm");
-                Downloads.getList(Downloads.ALL).then(list => { list.addView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
+                this.Downloads = globalThis.Downloads || Cu.import("resource://gre/modules/Downloads.jsm").Downloads;
+                this.Downloads.getList(Downloads.ALL).then(list => { list.addView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
+                if (globalDebug) DownloadPlus.log("DownloadPlus show extract size init complete.");
             },
             destroy: function () {
                 window.DownloadPlus._urls = [];
-                Cu.import("resource://gre/modules/Downloads.jsm");
-                Downloads.getList(Downloads.ALL).then(list => { list.removeView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
+                this.Downloads.getList(Downloads.ALL).then(list => { list.removeView(window.DownloadPlus.saveAndOpenView).then(null, Cu.reportError); });
+                if (globalDebug) DownloadPlus.log("DownloadPlus show extract size destroy complete.");
             }
         },
         addExtraElements: function () {
@@ -395,6 +402,7 @@
                     window.DownloadPlus.dialogElement.getButton("accept").click();
                 });
                 refEl = refEl.insertAdjacentElement('afterend', saveAndOpen);
+                if (globalDebug) this.log("DownloadPlus save and open init complete.");
             }
             if (globalConfig["elable flashgot integration"]) {
                 if (this.flashgotPath) {
@@ -499,27 +507,29 @@
                                 return cached_function.apply(this, arguments);
                         };
                     })();
+                    // disable remember choice when downloadplus radio is selected
+                    dialog.dialogElement('mode').addEventListener("select", function (event) {
+                        const flashGotRadio = $('flashgot');
+                        const rememberChoice = $('rememberChoice');
+                        const flashgot = $('flashgot');
+                        var other = true;
+                        if (flashGotRadio && flashGotRadio.selected) {
+                            rememberChoice.disabled = true;
+                            other = false;
+                        }
+                        if (flashgot && flashgot.selected) {
+                            other = false;
+                        }
+                        if (other) {
+                            rememberChoice.disabled = false;
+                        }
+                    });
+                    if (globalDebug) this.log("DownloadPlus flashgot init complete.");
                 } else {
-                    this.log("open about:config and set " + this.PREF_FLASHGOT);
+                    if (globalDebug) this.error("DownloadPlus flashgot init failed, open about:config and set " + this.PREF_FLASHGOT);
                 }
             }
-            // disable remember choice when downloadplus radio is selected
-            dialog.dialogElement('mode').addEventListener("select", function (event) {
-                const flashGotRadio = $('flashgot');
-                const rememberChoice = $('rememberChoice');
-                const flashgot = $('flashgot');
-                var other = true;
-                if (flashGotRadio && flashGotRadio.selected) {
-                    rememberChoice.disabled = true;
-                    other = false;
-                }
-                if (flashgot && flashgot.selected) {
-                    other = false;
-                }
-                if (other) {
-                    rememberChoice.disabled = false;
-                }
-            });
+
             if (globalConfig["enable save as"]) {
                 let saveAs = $C(document, 'button', {
                     id: 'saveAs',
@@ -529,10 +539,11 @@
                 saveAs.addEventListener("command", () => {
                     var mainwin = DownloadPlus.topWin;
                     // 感谢 ycls006
-                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, null, (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
+                    mainwin.eval("(" + mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(dialog.mLauncher.source.asciiSpec, null, null, (document.querySelector("#locationText") ? document.querySelector("#locationText").value : dialog.mLauncher.suggestedFileName), null, null, false, null, null, null, null, null, false, null, mainwin.PrivateBrowsingUtils.isBrowserPrivate(mainwin.gBrowser.selectedBrowser), Services.scriptSecurityManager.getSystemPrincipal());
                     close();
                 });
                 refEl = refEl.insertAdjacentElement('afterend', saveAs);
+                if (globalDebug) DownloadPlus.log("DownloadPlus save as init complete.");
             }
             let shadowRoot = document.getElementById('unknownContentType').shadowRoot,
                 link = $CNS(document, 'http://www.w3.org/1999/xhtml', 'html:link', {
@@ -560,7 +571,7 @@
                         var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
                         var path = dir.replace(/^\./, Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path);
                         path = path.endsWith("\\") ? path : path + "\\";
-                        file.initWithPath(path + (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : document.querySelector("#location").value).trim());
+                        file.initWithPath(path + (document.querySelector("#locationText") ? document.querySelector("#locationText").value : document.querySelector("#location").value).trim());
                         if (typeof dialog.mLauncher.saveToDisk === 'function') {
                             dialog.mLauncher.saveToDisk(file, 1);
                         } else {
@@ -573,6 +584,7 @@
                 })
                 refEl.insertAdjacentElement('afterend', saveTo);
                 refEl = saveTo;
+                if (globalDebug) DownloadPlus.log("DownloadPlus save to init complete.");
             }
             Object.keys(EXTRA_APP).forEach(function (key) {
                 let app = EXTRA_APP[key];
@@ -583,7 +595,9 @@
                     btn.setAttribute("onclick", "window.DownloadPlus.handleExtraAppBtnClick(event);");
                     refEl.insertAdjacentElement('afterend', btn);
                     refEl = btn;
+                    if (globalDebug) DownloadPlus.log("DownloadPlus estra app [" + app.label + "] init complete.");
                 }
+
             });
         },
         loadDownloadManagersList(forceLoad, notify) {
@@ -596,7 +610,7 @@
                 } catch (e) { forceLoad = true }
                 if (forceLoad) {
                     // get download managers list from flashgot
-                    var dmPathTextPath = PathUtils.join(this.tempDir, ".flashgot.dm.txt");
+                    var dmPathTextPath = PathUtils.join(this.handleRelativePath("{tmpDir}\\.flashgot.dm.txt"));
                     this.exec(this.flashgotPath, ["-o", dmPathTextPath]);
                     let that = this;
                     setTimeout(function () {
@@ -606,6 +620,7 @@
                         Services.prefs.setStringPref(that.PREF_FLASHGOT_DOWNLOAD_MANAGERS, that.FLASHGOT_DOWNLOAD_MANSGERS.join(","));
                     }, 5000);
                 }
+                if (globalDebug) DownloadPlus.log("DownloadPlus load download managers list complete.");
             }
         },
         refreshDownloadManagersPopup(flashgotPopup) {
@@ -665,7 +680,7 @@
                 };
                 var { targetFile: partFile } = dialog.mLauncher; // Future may be take use of part file
                 var { asciiSpec, username, userPass } = dialog.mLauncher.source,
-                    fileName = (document.querySelector("#locationtext") ? document.querySelector("#locationtext").value : dialog.mLauncher.suggestedFileName),
+                    fileName = (document.querySelector("#locationText") ? document.querySelector("#locationText").value : dialog.mLauncher.suggestedFileName),
                     { userAgent } = navigator;
                 var initData = replaceArray(this.FLASHGOT_STRUCTURE, [
                     '{num}',
@@ -694,11 +709,12 @@
                     $Cookie(dialog.mSourcePath) || "",
                     userAgent // need to implement custom agent
                 ])
-                var initFilePath = PathUtils.join(this.tempDir, hashText(asciiSpec) + ".dl.properties");
+                var initFilePath = this.handleRelativePath("{tmpDir}\\" + hashText(asciiSpec) + ".dl.properties")
                 saveFile(initFilePath, initData);
                 this.exec(this.flashgotPath, initFilePath);
+                if (globalDebug) this.log("DownloadPlus calling flashgot", this.flashgotPath, initFilePath);
             } else {
-                alert("not support");
+                this.alert($L("operate not support"));
             }
             close();
         },
@@ -929,11 +945,14 @@
             } : null;
             var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
             alertsService.showAlertNotification(
-                this.appVersion >= 78 ? "chrome://global/skin/icons/info.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "DownloadPlus",
+                this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "DownloadPlus",
                 aMsg + "", !!callback, "", callback);
         },
-        log: function () {
+        error: function () {
             Cu.reportError(Array.prototype.slice.call(arguments));
+        },
+        log: function () {
+            console.log(Array.prototype.slice.call(arguments));
         },
         PREF_FLASHGOT_DEFAULT: 'userChromeJS.downloadPlus.flashgotDefaultManager',
         PREF_FLASHGOT_DOWNLOAD_MANAGERS: 'userChromeJS.downloadPlus.flashgotManagers',
@@ -1156,7 +1175,6 @@
     "download complete notice": true, // 下载完成后播放提示音
     "auto close blank tab": true, // 自动关闭空白的标签页
     "enable rename": true, // 启用重命名
-    "enable encoding convert": false, // 启用编码转换
     "enable double click to copy link": true, // 下载对话框双击来源复制链接
     "show extract size": false, // 下载对话框显示文件精确大小 不知道哪个版本开始自带显示
     "enable save and open": true, // 下载对话框新增保存并打开按钮
@@ -1167,13 +1185,47 @@
     "elable flashgot integration": true, // 下载对话框增加 FlashGot 功能
 }, `
 @-moz-document url-prefix("chrome://mozapps/content/downloads/unknownContentType.x") {
-    #locationtext {
-        outline: none;
-        margin-left: 10px;
+    #location {
+        padding: 3px 0;
+    }
+    #location,
+    #locationHbox {
+        height: 22px;
+    }
+    #locationText {
         border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
+        padding-inline: 5px;
+        flex: 1;
+        appearance: none;
+        padding-block: 2px;
+        margin: 0;
+    }
+    #locationHbox {
+        display: flex;
+    }
+    #locationHbox[hidden="true"] {
+        visibility: collapse;
+    }
+    #encodingConvertButton {
+        min-width: unset;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik0zLjYwMzUxNTYgMkwwIDEyLjc5Mjk2OUwwIDEzTDEgMTNMMSAxMi45NTcwMzFMMS45ODYzMjgxIDEwTDcuMDE5NTMxMiAxMEw4IDEyLjk1NTA3OEw4IDEzTDkgMTNMOSAxMi43OTQ5MjJMNS40MTYwMTU2IDJMNC41IDJMMy42MDM1MTU2IDIgeiBNIDQuMzIyMjY1NiAzTDQuNSAzTDQuNjk1MzEyNSAzTDYuNjg3NSA5TDIuMzIwMzEyNSA5TDQuMzIyMjY1NiAzIHogTSAxMSA1TDExIDZMMTMuNSA2QzE0LjMzNTAxNSA2IDE1IDYuNjY0OTg0OSAxNSA3LjVMMTUgOC4wOTM3NUMxNC44NDI3NSA4LjAzNzEzMzUgMTQuNjc1NjcgOCAxNC41IDhMMTEuNSA4QzEwLjY3NzQ2OSA4IDEwIDguNjc3NDY4NiAxMCA5LjVMMTAgMTEuNUMxMCAxMi4zMjI1MzEgMTAuNjc3NDY5IDEzIDExLjUgMTNMMTMuNjcxODc1IDEzQzE0LjE0NjI5NyAxMyAxNC42MDQ0ODYgMTIuODYwMDg0IDE1IDEyLjYxMTMyOEwxNSAxM0wxNiAxM0wxNiAxMS43MDcwMzFMMTYgOS41TDE2IDcuNUMxNiA2LjEyNTAxNTEgMTQuODc0OTg1IDUgMTMuNSA1TDExIDUgeiBNIDExLjUgOUwxNC41IDlDMTQuNzgxNDY5IDkgMTUgOS4yMTg1MzE0IDE1IDkuNUwxNSAxMS4yOTI5NjlMMTQuNzMyNDIyIDExLjU2MDU0N0MxNC40NTEwNzQgMTEuODQxODk1IDE0LjA2OTE3MSAxMiAxMy42NzE4NzUgMTJMMTEuNSAxMkMxMS4yMTg1MzEgMTIgMTEgMTEuNzgxNDY5IDExIDExLjVMMTEgOS41QzExIDkuMjE4NTMxNCAxMS4yMTg1MzEgOSAxMS41IDkgeiIvPjwvc3ZnPg==);
+        border-radius: 0;
+        margin-block: 0;
+        margin-inline: 0;
+        outline: none;
+        appearance: none;
+        border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
+    }
+    #completeLinkDescription {
+        max-width: 340px;
+        cursor:pointer;
+    }
+    menupopup > menuitem, menupopup > menu {
+        padding-block: 4px;
     }
     [disabled="true"] {
         color: GrayText !important;
     }
 }
-`);
+`,
+    false);
