@@ -359,7 +359,7 @@
                 if (dl.progress != 100) return;
                 if (window.DownloadPlus._urls.indexOf(dl.source.url) > -1) {
                     let target = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-                    if (globalDebug) this.log("DownloadPlus opening: " + dl.target.path);
+                    if (globalDebug) window.DownloadPlus.log("DownloadPlus opening: " + dl.target.path);
                     target.initWithPath(dl.target.path);
                     target.launch();
                     window.DownloadPlus._urls[window.DownloadPlus._urls.indexOf(dl.source.url)] = "";
