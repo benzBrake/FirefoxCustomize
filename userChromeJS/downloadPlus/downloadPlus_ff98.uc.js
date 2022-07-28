@@ -76,10 +76,16 @@
         _urls: [],
         FLASHGOT_STRUCTURE: `{num};{download-manager};0;;\n{referer}\n{url}\n{description}\n{cookies}\n{post-data}\n{filename}\n{extension}\n{download-page-referer}\n{download-page-cookies}\n\n\n{user-agent}`,
         FLASHGOT_FORCE_USERAGENT: {
-            'd.pcs.baidu.com': 'netdisk;7.0.3.2;PC;PC-Windows;10.0.17763'
+            'd.pcs.baidu.com': 'pan.baidu.com'
+        },
+        FLASHGOT_COOKIES_FILTER: {
+            'd.pcs.baidu.com': ['BDUSS']
         },
         FLASHGOT_NULL_REFERER: [
-            'd.pcs.baidu.com'
+
+        ],
+        FLASHGOT_DONT_SEND_DOWNLOAD_PAGE_INFO: [
+
         ],
         get appVersion() {
             return Services.appinfo.version.split(".")[0]
@@ -964,6 +970,7 @@
                 downloadNum,
                 downloadManager,
                 referer,
+                cookies,
                 downloadLink,
                 downloadHost,
                 description,
@@ -988,6 +995,7 @@
                         downloadManager = this.getDefaultDownloadManager() || this.FLASHGOT_DOWNLOAD_MANSGERS[0];
                         downloadLink = gContextMenu.linkURL;
                         downloadHost = gContextMenu.linkURI.host;
+                        description = gContextMenu.linkTextStr;
                         ({ asciiSpec: referer, username, userPass: password } = gContextMenu.browser.currentURI);
                         downloadPageCookies = $Cookie(referer);
                         downloadPageReferer = referer;
@@ -1003,11 +1011,20 @@
                 this.alert($L("error link"));
                 return;
             }
-            if (inArray(this.FLASHGOT_NULL_REFERER)) {
+            if (inArray(this.FLASHGOT_NULL_REFERER, downloadHost)) {
                 referer = "";
+            }
+            if (inArray(this.FLASHGOT_DONT_SEND_DOWNLOAD_PAGE_INFO, downloadHost)) {
+                downloadPageReferer = "";
+                downloadPageCookies = "";
             }
             if (inArray(Object.keys(this.FLASHGOT_FORCE_USERAGENT), downloadHost)) {
                 userAgent = this.FLASHGOT_FORCE_USERAGENT[downloadHost];
+            }
+            if (inArray(Object.keys(this.FLASHGOT_COOKIES_FILTER), downloadHost)) {
+                cookies = $Cookie(downloadLink, false, this.FLASHGOT_COOKIES_FILTER[downloadHost]);
+            } else {
+                cookies = $Cookie(downloadLink)
             }
             initData = replaceArray(this.FLASHGOT_STRUCTURE, [
                 '{num}',
@@ -1028,7 +1045,7 @@
                 referer || "",
                 downloadLink,
                 description || "",
-                $Cookie(downloadLink) || "",
+                cookies || "",
                 postData || "", // need to implement
                 fileName || "",
                 extension || "",
@@ -1036,8 +1053,9 @@
                 downloadPageCookies || "",
                 userAgent || "" // need to implement custom agent
             ]);
-            initFilePath = this.handleRelativePath("{tmpDir}\\" + hashText(downloadLink) + ".dl.properties")
+            initFilePath = this.handleRelativePath("{tmpDir}\\" + hashText(downloadLink) + ".dl.properties");
             saveFile(initFilePath, initData);
+            console.log(initFilePath, initData);
             this.exec(this.flashgotPath, initFilePath);
             if (globalDebug) this.log("DownloadPlus calling flashgot", this.flashgotPath, initFilePath);
             if (location.href.startsWith("chrome://mozapps/content/downloads/unknownContentType.x")) close();
@@ -1295,12 +1313,15 @@
     }
 
 
-    function $Cookie(link, saveToFile) {
+    function $Cookie(link, saveToFile, filter) {
         saveToFile || (saveToFile = false);
         if (!link) return "";
         let uri = Services.io.newURI(link, null, null),
             cookies = Services.cookies.getCookiesFromHost(uri.host, {}),
             cookieSavePath = DownloadPlus.handleRelativePath("{tmpDir}");
+
+        if (filter)
+            cookies = cookies.filter(el => inArray(filter, el.name));
         if (saveToFile) {
             let string = cookies.map(formatCookie).join('');
             let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
