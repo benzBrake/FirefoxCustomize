@@ -2,6 +2,8 @@
 
 Firefox下载增强工具
 
+独立成一个REPO了，这里不再更新：https://github.com/benzBrake/Firefox-downloadPlus.uc.js
+
 ### 功能(Description)
 
 - 默认选择下载文件
