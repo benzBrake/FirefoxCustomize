@@ -6,7 +6,9 @@
 
 需要 userChromeJS script 环境，参考《[2202年了还在使用 userChrome JS 脚本之 Firefox userChrome JS 环境安装 - Ryan 快快跑](https://kkp.disk.st/in-2202-it-is-still-installed-in-firefox-userchromejs-environment-using-userchromejs-script.html)》
 
-点击【[这里](VideoBtn.uc.js)】下载脚本，或者点击【[这里](VideoBtn.zip)】下载打包好的（打包好的我不一定记得更新）。
+点击【[这里](VideoBtn.uc.js)】下载脚本，~~或者点击【[这里](VideoBtn.zip)】下载打包好的（打包好的我不一定记得更新）~~。
+
+https://www.123pan.com/s/i3PRVv-gMRP3提取码:39Vw
 
 解压到 【配置文件夹\chrome】 下即可
 
@@ -72,5 +74,4 @@ normal 网页右键
 
 
 https://user-images.githubusercontent.com/11323774/179400058-ad507ac2-fb02-40e7-b330-abe29f4486b5.mp4
-
 
