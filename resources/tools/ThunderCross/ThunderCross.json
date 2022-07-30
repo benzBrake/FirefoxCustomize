@@ -1,9 +1,0 @@
-{
-  "name": "ThunderCross",
-  "description": "Thunder invoker binary",
-  "path": "D:\\FirefoxPortable\\Other\\ThunderCross.exe",
-  "type": "stdio",
-  "allowed_extensions": [
-    "Thunder@Cross"
-  ]
-}
