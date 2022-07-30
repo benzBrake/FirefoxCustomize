@@ -590,7 +590,7 @@
             this.enabled = !val;
             if (window.userChromejs) {
                 userChromejs.chgScriptStat(this.name);
-            } else if (userChrome_js) {
+            } else if (typeof userChrome_js !== "undefined") {
                 var s = xPref.get("userChrome.disable.script", "");
                 var afilename = this.name;
                 if (!userChrome_js.scriptDisable[afilename]) {
