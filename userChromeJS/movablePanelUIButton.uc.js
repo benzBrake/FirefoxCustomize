@@ -3,7 +3,7 @@
 // @description     可移动 PanelUI 按钮
 // @author          Ryan, firefox
 // @include         main
-// @startup         window.movablePanelUIButton.init(win)
+// @startup         window.movablePanelUIButton.init()
 // @shutdown        window.movablePanelUIButton.unload()
 // @compatibility   Firefox 78
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
@@ -11,13 +11,22 @@
 // @note            2022.04.20 修改为可热插拔（不知道非 xiaoxiaoflood 的 userChromeJS 环境是否可用）
 // @onlyonce
 // ==/UserScript==
-location.href.startsWith('chrome://browser/content/browser.x') && (async function (css) {
-    Components.utils.import("resource:///modules/CustomizableUI.jsm");
+location.href.startsWith('chrome://browser/content/browser.x') && (async function () {
+    if (!CustomizableUI) Cu.import("resource:///modules/CustomizableUI.jsm");
 
     if (window.movablePanelUIButton) {
         window.movablePanelUIButton.destroy();
         delete window.movablePanelUIButton;
     }
+
+    var css = `
+        #PanelUI-button {
+            display: none !important;
+        }
+        #{widgetId} {
+            list-style-image: url("chrome://browser/skin/menu.svg");
+        }
+    `;
 
     window.movablePanelUIButton = {
         widgetId: "movable-PanelUI-button",
@@ -44,7 +53,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (async functio
                     document.getElementById('appMenu-popup').setAttribute('position', 'bottomcenter topleft');
                 }
             });
-            this.style = addStyle(css.replace("{widgetId}", this.widgetId))
+            var pi = document.createProcessingInstruction(
+                'xml-stylesheet',
+                'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css.replace("{widgetId}", this.widgetId)) + '"'
+            );
+            this.style = document.insertBefore(pi, document.documentElement);
         },
         unload: async function () {
             CustomizableUI.destroyWidget(this.widgetId);
@@ -54,21 +67,5 @@ location.href.startsWith('chrome://browser/content/browser.x') && (async functio
             delete window.movablePanelUIButton;
         }
     }
-    function addStyle(css) {
-        var pi = document.createProcessingInstruction(
-            'xml-stylesheet',
-            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-        );
-        return document.insertBefore(pi, document.documentElement);
-    }
     await window.movablePanelUIButton.init();
-})(`
-@-moz-document url('chrome://browser/content/browser.xhtml') {
-    #PanelUI-button {
-        display: none !important;
-    }
-    #{widgetId} {
-        list-style-image: url("chrome://browser/skin/menu.svg");
-    }
-}
-`)
+})();
