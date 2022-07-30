@@ -72,6 +72,12 @@
         };
     }
 
+    const LANG = {
+        'zh-CN': {
+            "tabplus settings": "标签设置"
+        }
+    }
+
     const MENU_CFG = [{
         label: "标签设置",
         id: "TabPlus-menu",
@@ -463,7 +469,7 @@
 
             if (!obj.pref && !obj.onclick)
                 item.setAttribute("onclick", "checkForMiddleClick(this, event)");
-            item.setAttribute("oncommand", "CopyCat.onCommand(event);");
+            item.setAttribute("oncommand", "TabPlus.onCommand(event);");
             return item;
         },
         addPrefListener: function (pref, callback) {
