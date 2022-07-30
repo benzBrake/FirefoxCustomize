@@ -14,9 +14,11 @@
 
 ⛔ 为不可用状态
 
-❌ 仅可以在 xiaoxiaoflood 的 userChromeJS 环境中使用。
+🅰️ 仅可以在 [alice0775](https://github.com/alice0775/userChrome.js) 的 userChromeJS 环境中使用。
 
-Ⓜ️ 仅可以在 MrOtherGuy 的 userChromeJS 环境中使用。
+❌ 仅可以在 [xiaoxiaoflood](https://github.com/xiaoxiaoflood/firefox-scripts/) 的 userChromeJS 环境中使用。
+
+Ⓜ️ 仅可以在 [MrOtherGuy](https://github.com/MrOtherGuy/fx-autoconfig) 的 userChromeJS 环境中使用。
 
 ### 脚本列表
 
@@ -26,6 +28,7 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 
 | ℹ️    | V    | 脚本                                                         | 说明                                                         | 源                                                           |
 | ---- | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 🅰️    | 68   | [000-xiaoxiaoflood.uc.js](000-xiaoxiaoflood.uc.js)           | alice0775 的 userChrome.js 环境运行 xiaoxiaoflood 的脚本需要这个依赖 |                                                              |
 |      | 68   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
 |      | 90   | [addToolbarInsideLocationBar](addToolbarInsideLocationBar.uc.js) | 添加一个地址内工具栏                                         | [📃](https://github.com/alice0775/userChrome.js/blob/master/zzz-addToolbarInsideLocationBar.uc.js) |
