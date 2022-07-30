@@ -250,7 +250,7 @@ new function () {
         image: "chrome://devtools/skin/images/tool-accessibility.svg",
         accesskey: "c"
     }]);
-    css('#context-viewsource, #context-inspect-a11y, #context-inspect, #context-media-eme-separator { display: none }');
+    css('#context-viewsource, #context-inspect-a11y, #context-inspect');
 };
 // 站内搜索
 new function () {
@@ -335,7 +335,13 @@ new function () {
         onshowing: function () {
             // open in private tab need privateTab.uc.js https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js
             let privateBtn = document.getElementById('addMenu-openLink-tab-private')
-            if (privateBtn) privateBtn.hidden = typeof UC.privateTab === "undefined";
+            if (privateBtn) {
+                if (typeof UC === "undefined") {
+                    privateBtn.hidden = true;
+                    return;
+                }
+                privateBtn.hidden = typeof UC.privateTab === "undefined";
+            }
         }
     });
     groupMenu([{
@@ -346,7 +352,7 @@ new function () {
     }, {
         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "在新标签中打开" : "Open in New Tab",
         oncommand: function (event) {
-            if (document.getElementById('context-openlinkincontainertab') && document.getElementById('context-openlinkincontainertab').hidden === true) {
+            if (document.getElementById('context-openlinkincontainertab')?.hidden === true) {
                 gContextMenu.openLinkInTab(event);
             } else {
                 document.getElementById('context-openlinkincontainertab').doCommand();
