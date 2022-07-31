@@ -111,7 +111,6 @@
     }
 
     win._uc = {
-        ALWAYSEXECUTE: 'rebuild_userChrome.uc.js',
         BROWSERCHROME: AppConstants.MOZ_APP_NAME == 'thunderbird' ? 'chrome://messenger/content/messenger.xhtml' : 'chrome://browser/content/browser.xhtml',
         BROWSERTYPE: AppConstants.MOZ_APP_NAME == 'thunderbird' ? 'mail:3pane' : 'navigator:browser',
         BROWSERNAME: AppConstants.MOZ_APP_NAME.charAt(0).toUpperCase() + AppConstants.MOZ_APP_NAME.slice(1),
@@ -149,6 +148,10 @@
                 el.setAttribute(att, atts[att]);
             }
             return el
+        },
+
+        get isFaked() {
+            return true;
         }
     }
 })()

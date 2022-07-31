@@ -452,7 +452,7 @@
             let scripts;
             if (window.userChrome_js) {
                 scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
-            } else if (window._uc) {
+            } else if (window._uc && !window._uc.isFaked) {
                 this.isXXF = true;
                 scripts = Object.values(_uc.scripts);
             } else {
@@ -635,7 +635,7 @@
 
         // Fx62.0-
         async enable() {
-            if (typeof _uc !== "undefined") {
+            if (typeof _uc !== "undefined" && !_uc.isFaked) {
                 let script = _uc.scripts[this.name];
                 xPref.set(_uc.PREF_SCRIPTSDISABLED, xPref.get(_uc.PREF_SCRIPTSDISABLED).replace(new RegExp('^' + script.filename + ',|,' + script.filename), ''));
                 if (!_uc.everLoaded.includes(script.id)) {
@@ -651,7 +651,7 @@
             this.userDisabled = false;
         },
         async disable() {
-            if (typeof _uc !== "undefined") {
+            if (typeof _uc !== "undefined" && !_uc.isFaked) {
                 let script = _uc.scripts[this.name];
                 xPref.set(_uc.PREF_SCRIPTSDISABLED, script.filename + ',' + xPref.get(_uc.PREF_SCRIPTSDISABLED));
                 if (script.isRunning && !!script.shutdown) {
