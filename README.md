@@ -48,6 +48,8 @@ That's it.
 > https://github.com/black7375/Firefox-UI-Fix
 >
 > https://github.com/aminomancer/uc.css.js
+>
+> https://bitbucket.org/BSTweaker/userchromejs/
 
 ### 已经离开 FF 的大佬
 
