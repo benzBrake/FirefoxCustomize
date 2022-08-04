@@ -11,9 +11,22 @@
 // @homepageURL     https://github.com/xiaoxiaoflood/firefox-scripts/
 // @onlyonce
 // ==/UserScript==
+
+const {
+  AddonManager,
+  ContextualIdentityService,
+  customElements,
+  CustomizableUI,
+  gBrowser,
+  MozElements,
+  PlacesUIUtils,
+  PlacesUtils,
+  PrivateBrowsingUtils
+} = window;
+
 UC.privateTab = {
   config: {
-    neverClearData: true, // if you want to not record history but don't care about other data, maybe even want to keep private logins
+    neverClearData: false, // if you want to not record history but don't care about other data, maybe even want to keep private logins
     restoreTabsOnRestart: true,
     doNotClearDataUntilFxIsClosed: true,
     deleteContainerOnDisable: false,
@@ -181,14 +194,14 @@ UC.privateTab = {
 
     win.addEventListener('XULFrameLoaderCreated', gBrowser.privateListener);
 
-    if (this.observePrivateTabs)
+    if(this.observePrivateTabs)
       gBrowser.tabContainer.addEventListener('TabClose', this.onTabClose);
 
     MozElements.MozTab.prototype.getAttribute = function (att) {
       if (att == 'usercontextid' && this.isToggling) {
         delete this.isToggling;
         return UC.privateTab.orig_getAttribute.call(this, att) ==
-          UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
+               UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
       } else {
         return UC.privateTab.orig_getAttribute.call(this, att);
       }
