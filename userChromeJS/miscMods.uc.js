@@ -1,15 +1,14 @@
 // ==UserScript==
 // @name            miscMods.uc.js
-// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮调用 you-get 下载视频，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏
+// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏
 // @license         MIT License
 // @compatibility   Firefox 90
 // @charset         UTF-8
+// @include         chrome://browser/content/browser.x
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
-    if (!location.href.startsWith("chrome://browser/content/browser.x")) return;
-
     const WIDGET_ATTRS = {
         "urlbar-input": {
             el: "#paste-and-go",
@@ -88,7 +87,7 @@
 
                     var check = { value: false };               // default the checkbox to false
                     var input = { value: readFromClipboard() || "" };                  // default the edit field to Bob
-                    var result = prompts.prompt(null, "Save Specified Url", "Please Input a URL?", input, null, check);
+                    var result = prompts.prompt(null, "保存 URL", "请输入 URL?", input, null, check);
                     if (!result)
                         return;
                     let cookieJarSettings = gBrowser.selectedBrowser.cookieJarSettings;
@@ -172,19 +171,10 @@
         return doc.querySelector(sel);
     }
 
-    Array.prototype.contain = function (val) {
-        for (var i = 0; i < this.length; i++) {
-            if (this[i] == val) {
-                return true;
-            }
-        }
-        return false;
-    };
-
     function applyAttrs(node, obj) {
         for (let key in obj) {
             if (key === 'el' || key === 'event') continue;
-            if (['onclick', 'ondblclick', 'onblur'].contain(key)) {
+            if (['onclick', 'ondblclick', 'onblur'].includes(key)) {
                 node.addEventListener(key.replace(/^on/, ""), obj[key], false);
             } else {
                 node.setAttribute(key, obj[key]);
@@ -240,14 +230,5 @@
         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
     }
 
-    if (gBrowserInit.delayedStartupFinished) init();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                init();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
+    init();
 })();
