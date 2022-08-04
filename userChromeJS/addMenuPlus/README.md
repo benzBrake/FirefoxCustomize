@@ -912,13 +912,12 @@ page({
 ```
 示例：快速保存选定文本为 txt 并打开。
 ```js
-page({
-    label: 'page({
+page([{
     label: '快速保存选定文本',
     condition: 'select',
     oncommand: function () {
-        if (!window.NetUtil) Cu.import("resource://gre/modules/NetUtil.jsm");
-        if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
+        const NetUtil = globalThis.NetUtil || Cu.import("resource://gre/modules/NetUtil.jsm").NetUtil;
+        const FileUtils = globalThis.FileUtils || Cu.import("resource://gre/modules/FileUtils.jsm").FileUtils;
 
         var data = addMenu.convertText("%SEL%");
 
@@ -943,7 +942,7 @@ page({
             });
         });
     }
-})
+}])
 ```
 示例：Firefox 31+ 横排菜单，**以图搜图横排版**。
 ```js
