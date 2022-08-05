@@ -5,7 +5,6 @@
 // @version         0.1.5
 // @compatibility   Firefox 78
 // @include         main
-// @startup         window.CopyCat.init();
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @version         0.1.5 重写部分代码，摆脱 osfile_async_front.jsm 依赖，预防性修改
@@ -564,14 +563,16 @@
                 // need to implement
             }
             if (this.mainEl) {
-                if (this.debug) this.log($L("CopyCat: estoring moved menuitems."), this.mainEl);
+                if (this.debug) this.log($L("CopyCat: estoring moved menuitems."));
                 $QA('.CopyCat-Replacement[original-id]').forEach(item => {
                     // 还原移动的菜单
                     let orgId = item.getAttribute('original-id') || "";
                     if (orgId.length) {
                         let org = $(orgId);
-                        item.parentNode.insertBefore(org, item);
-                        item.parentNode.removeChild(item);
+                        if (org && item && item.parentNode) {
+                            item.parentNode.insertBefore(org, item);
+                            item.parentNode.removeChild(item);
+                        }
                     }
                 });
                 if (this.debug) this.log($L("CopyCat: destroying element"), this.mainEl);
@@ -595,21 +596,6 @@
         rebuild: function (win) {
             win || (win = window);
             this.uninit();
-            this.mainEl = this.createMainEl(win.document);
-            if (this.mainEl && this.menuCfg.popup) {
-                let popup = this.newMenuPopup(this.mainEl.ownerDocument, this.menuCfg.popup);
-                if (this.mainEl.localName === "toolbarbutton") {
-                    $A(this.mainEl, {
-                        type: "menu",
-                        menu: this.mainEl.id + "-popup"
-                    });
-                    popup.setAttribute('id', this.mainEl.id + "-popup");
-                }
-                this.mainEl.appendChild(popup);
-            }
-        },
-        createMainEl(doc) {
-            let mainEl;
             if (cPref.get(this.PREF_SWITCH_TO_TOOLMENU, false)) {
                 let menu = $C(doc, 'menu',);
                 let ins = $("prefSep", doc) || $("webDeveloperMenu", doc);
@@ -618,7 +604,9 @@
                 } else {
                     this.error($L("CopyCat: toolmenu has no insert point"));
                 }
-                mainEl = menu;
+                this.mainEl = menu;
+                if (this.menuCfg.popup)
+                    this.mainEl.appendChild(this.newMenuPopup(this.mainEl.ownerDocument, this.menuCfg.popup));
             } else {
                 let widgetId = this.menuCfg.id || "CopyCat-Button-" + this.btnId;
                 CustomizableUI.createWidget({
@@ -631,15 +619,25 @@
                         try {
                             btn = CopyCat.$C(aDoc, 'toolbarbutton', CopyCat.menuCfg, ['type', 'group', 'popup']);
                             'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
+                            if (CopyCat.menuCfg.popup) {
+                                let popup = CopyCat.newMenuPopup(aDoc, CopyCat.menuCfg.popup);
+                                if (popup) {
+                                    $A(btn, {
+                                        type: "menu",
+                                        menu: btn.id + "-popup"
+                                    });
+                                    popup.setAttribute('id', btn.id + "-popup");
+                                    btn.appendChild(popup);
+                                }
+                            }
                         } catch (e) {
                             CopyCat.error(e);
                         }
                         return btn;
                     }
                 });
-                mainEl = CustomizableUI.getWidget(widgetId).forWindow(doc.ownerGlobal).node;
+                this.mainEl = CustomizableUI.getWidget(widgetId).forWindow(win).node;
             }
-            return mainEl;
         },
         newMenuPopup(doc, obj) {
             if (!obj) return;
@@ -1300,10 +1298,9 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
-
     window.CopyCat.init(window);
-    // setTimeout(function () { window.CopyCat.rebuild(window); }, 1000);//1秒
-    // setTimeout(function () { window.CopyCat.rebuild(window); }, 3000);//3秒
+    setTimeout(function () { window.CopyCat.rebuild(window); }, 1000);//1秒
+    setTimeout(function () { window.CopyCat.rebuild(window); }, 3000);//3秒
 })(`
 .CopyCat-Group > .menuitem-iconic {
     padding-block: 0.5em;
