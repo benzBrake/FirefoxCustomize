@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name           BookmarkOpt.uc.js
-// @description    书签操作增强
+// @description    书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮
 // @author         Ryan
 // @include        main
 // @include        chrome://browser/content/places/places.xhtml
 // @include        chrome://browser/content/places/bookmarksSidebar.xhtml
 // @include        chrome://browser/content/places/historySidebar.xhtml
-// @version        1.2
+// @version        1.2.1
 // @shutdown       window.BookmarkOpt.destroy();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note           合并 AddBookmarkHere 和 UpdateBookmarkLite，支持复制书签链接和标题
+// @version        1.2.1 新增显示隐藏书签工具栏按钮
 // @version        1.2 修复黑夜模式更新书签图标不变色，增加获取 GUID
 // @version        1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
 // @version        1.0 初始化版本
@@ -26,7 +26,8 @@
             "copy bookmark title": "复制标题",
             "copy bookmark link": "复制链接",
             "show node type": "节点类型",
-            "show node guid": "节点 ID"
+            "show node guid": "节点 ID",
+            "toggle personalToolbar": "显示/隐藏书签工具栏"
         },
         'en-US': {
             "add bookmark here": "Add Bookmark Here",
@@ -36,7 +37,8 @@
             "copy bookmark title": "Copy Title",
             "copy bookmark link": "Copy URL",
             "show node type": "Node type",
-            "show node guid": "Node guid"
+            "show node guid": "Node guid",
+            "toggle personalToolbar": "Toggle PersonalToolbar"
         }
     }
 
@@ -100,6 +102,22 @@
     }, {
 
     }];
+
+    const BTN_CFG = {
+        label: $L("toggle personalToolbar"),
+        tooltiptext: $L("toggle personalToolbar"),
+        style: 'list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg");',
+        class: 'toolbarbutton-1 chromeclass-toolbar-additional',
+        onclick: function (event) {
+            event.target.disabled = true;
+            var t = setTimeout(function () {
+                clearTimeout(t);
+                const toolbar = event.target.ownerDocument.getElementById("PersonalToolbar");
+                event.target.ownerGlobal.setToolbarVisibility(toolbar, toolbar.collapsed);
+                event.target.disabled = false;
+            }, 50);
+        }
+    }
 
     let firstUpperCase = ([first, ...rest]) => first?.toUpperCase() + rest.join('');
 
@@ -316,6 +334,17 @@
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
+                CustomizableUI.createWidget({
+                    id: 'BMOPT-toggle-personaltoolbar',
+                    type: 'custom',
+                    localized: false,
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    onBuild: function (aDoc) {
+                        BTN_CFG.id = 'BMOPT-toggle-personaltoolbar';
+                        return $C('toolbarbutton', BTN_CFG, aDoc);
+                    }
+                });
+                this.mainEl = CustomizableUI.getWidget('BMOPT-toggle-personaltoolbar').forWindow(window).node;
             }
             this.style = addStyle(css);
         },
@@ -333,12 +362,14 @@
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
+                if (this.mainEl) {
+                    CustomizableUI.destroyWidget(this.mainEl.id);
+                }
+                if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+                delete window.BookmarkOpt;
             }
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
-            delete window.BookmarkOpt;
-        },
+        }
     }
-
 
     function $(id, aDoc) {
         id = id || "";
@@ -350,14 +381,32 @@
     function $C(type, props = {}, aDoc) {
         let doc = aDoc || document;
         let el = doc.createXULElement(type);
-        for (let p in props) {
-            if (type === 'menuitem' && p === 'image') el.classList.add('menuitem-iconic');
-            el.setAttribute(p, props[p]);
-        }
+        el = $A(el, props);
         el.classList.add('bmopt');
         if (type === "menu" || type === "menuitem") {
             el.classList.add(type + "-iconic");
         }
+        return el;
+    }
+
+    /**
+     * 应用属性
+     * @param {Element} el DOM 对象
+     * @param {object} obj 属性对象
+     * @param {array} skipAttrs 跳过属性
+     * @returns 
+     */
+    function $A(el, obj, skipAttrs) {
+        skipAttrs = skipAttrs || [];
+        if (obj) Object.keys(obj).forEach(function (key) {
+            if (!skipAttrs.includes(key)) {
+                if (typeof obj[key] === 'function') {
+                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                } else {
+                    el.setAttribute(key, obj[key]);
+                }
+            }
+        });
         return el;
     }
 
