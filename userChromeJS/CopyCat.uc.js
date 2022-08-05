@@ -46,11 +46,13 @@
             "fix browser toolbox": "修复浏览器内容工具箱",
             "usefull tools": "实用工具",
             "speedyfox": "配置优化",
-            "about copycat": "关于 CopyCat",
+            "mouse guestures": "鼠标手势",
+            "notepad2": "Notepad2",
             "copy addons list": "复制扩展清单",
             "copy addons list tooltip": "左键：名称 + 相关网页\nShift+左键：Markdown 表格",
             "copy userchromejs list": "复制UC脚本清单",
-            "copy userchromejs list tooltip": "左键：名称 + 主页\n中键：名称"
+            "copy userchromejs list tooltip": "左键：名称 + 主页\n中键：名称",
+            "about copycat": "关于 CopyCat"
         }
     }
 
@@ -426,6 +428,12 @@
             popup: [{
                 label: $L("speedyfox"),
                 tool: '\\speedyfox.exe',
+            }, {
+                label: $L("mouse guestures"),
+                tool: '\\MouseInc\\MouseInc.exe'
+            }, {
+                label: $L("notepad2"),
+                tool: '\\Notepad2\\Notepad2.exe'
             }, {
                 label: $L("copy addons list"),
                 tooltiptext: $L("copy addons list tooltip"),
@@ -1046,6 +1054,10 @@
             }
             cvstream.close();
             return content.replace(/\r\n?/g, '\n');
+        },
+        copyText: function (aText) {
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
+            //XULBrowserWindow.statusTextField.label = "Copy: " + aText;
         },
         saveFile(fileOrName, data) {
             var file;
