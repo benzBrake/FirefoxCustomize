@@ -689,7 +689,7 @@
                 classList.push(tagName + '-iconic');
 
                 if (obj.tool) {
-                    obj.exec = this.handleRelativePath(obj.tool, this.toolPath.path);
+                    obj.exec = this.handleRelativePath(obj.tool, this.toolPath);
                     delete obj.tool;
                 }
 
