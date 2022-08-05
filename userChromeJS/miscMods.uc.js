@@ -230,5 +230,7 @@
         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
     }
 
-    init();
+    document.ownerGlobal.setTimeout(function () {
+        init();
+    }, 1000);
 })();
