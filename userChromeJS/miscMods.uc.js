@@ -76,7 +76,7 @@
             },
         },
         "downloads-button": {
-            tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：显示下载进度\n中键：下载视频\n右键：打开下载历史（CTRL + J）' : 'Left click: show download progress\nMiddle click: download video\nRight click: open download management(CTRL + J)',
+            tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：显示下载进度\n中键：保存 URL\n右键：打开下载历史（CTRL + J）' : 'Left click: show download progress\nMiddle click: download video\nRight click: open download management(CTRL + J)',
             onclick: function (e) {
                 if (e.button == 1) {
                     e.preventDefault();
@@ -97,7 +97,7 @@
                     //        aIsContentWindowPrivate,
                     //        aPrincipal)
                     saveURL(
-                        url,
+                        result,
                         null,
                         null,
                         null,
