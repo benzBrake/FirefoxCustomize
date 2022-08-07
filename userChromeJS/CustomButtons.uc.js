@@ -264,7 +264,7 @@
             obj.defaultArea = obj.defaultArea || CustomizableUI.AREA_NAVBAR;
             obj.class = obj.class ? obj.class + ' custom-button' : 'custom-button';
             if (obj.tool) {
-                obj.exec = this.handleRelativePath(obj.tool, this.toolsPath);
+                obj.exec = this.handleRelativePath(obj.tool, this.toolsPath.path);
                 delete obj.tool;
             }
             if (obj.exec) {
