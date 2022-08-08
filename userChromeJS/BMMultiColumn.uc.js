@@ -1,140 +1,162 @@
 // ==UserScript==
 // @name            BMMultiColumn.uc.js
 // @description     书签菜单自动分列显示（先上下后左右）
-// @author          ding
+// @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2019.2.20
-// @startup         window.BMMultiColumn.init();
+// @version         2022.08.08
 // @shutdown        window.BMMultiColumn.destroy();
+// @note            修复有时候无法启用
 // @note            适配Firefox57+
-// ==/UserScript== 
+// ==/UserScript==
+(function () {
+    const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
-location.href.startsWith('chrome://browser/content/browser.x') && (function () {
+
     if (window.BMMultiColumn) {
         window.BMMultiColumn.destroy();
         delete window.BMMultiColumn;
     }
 
-    var BMMultiColumn = {
-        cachedMenus: [],
+    window.BMMultiColumn = {
         init: function () {
-            $('PlacesToolbarItems').addEventListener('popupshowing', this, false);
-            var pop = $('BMB_bookmarksPopup');
-            if (pop) {
-                pop.addEventListener('popupshowing', this, false);
-                pop.addEventListener('click', this, false);
+            this.TOOLBAR = $("PersonalToolbar");
+            this.BUTTON = CustomizableUI.getWidget("bookmarks-menu-button")?.forWindow(window)?.node;
+            if (this.TOOLBAR) {
+                $("PlacesToolbarItems").addEventListener('popupshowing', this, false);
+                $("PlacesToolbarItems").addEventListener('popuphiding', this, false);
+            }
+            if (this.BUTTON) {
+                this.BUTTON.addEventListener('click', this, { once: true });
             }
         },
         destroy: function () {
-            $('PlacesToolbarItems').removeEventListener('popupshowing', this, false);
-            var pop = $('BMB_bookmarksPopup');
-            if (pop) {
-                pop.removeEventListener('popupshowing', this, false);
-                pop.removeEventListener('click', this, false);
+            if (this.TOOLBAR) {
+                $("PlacesToolbarItems").removeEventListener('popupshowing', this, false);
+                $("PlacesToolbarItems").removeEventListener('popuphiding', this, false);
             }
-
-            var i = 0;
-            for (i = 0; i < this.cachedMenus.length; i++) {
-                var menu = this.cachedMenus[i];
-                if (menu && menu._x_inited) {
-                    menu._x_scrollbox.width = '';
-                    if (menu._scrollBox && menu._scrollBox.style) {
-                        menu._scrollBox.style.maxHeight = "";
+            if (this.BMB_POPUP && this.BMB_POPUP.childNodes) {
+                this.BMB_POPUP.childNodes.forEach(element => {
+                    if (element.localName === "menu") {
+                        let popup = element.lastChild;
+                        if (popup) {
+                            popup.removeEventListener('popupshowing', this, false);
+                            popup.removeEventListener('popuphiding', this, false);
+                        }
                     }
-
-                    menu.style.maxWidth = "";
-
-                    var container = menu._x_box;
-                    if (container) {
-                        container.style.minHeight = "";
-                        container.style.height = "";
-                        container.style.display = "";
-                        container.style.flexFlow = "";
-                        container.style.overflow = "";
-                    }
-
-                    delete menu._x_scrollbox;
-                    delete menu._x_inited;
-                    delete menu._x_box;
-                }
+                });
             }
-            this.cachedMenus = [];
         },
         handleEvent: function (event) {
-            var menupopup;
-            if (event.target.tagName == 'menu') {
-                menupopup = event.target.menupopup;
-            } else if (event.target.tagName == 'menupopup') {
-                menupopup = event.target;
-            } else return;
-            if (!menupopup) return;
-            //没有初始化或换过位置，重新设置属性
-            if (!menupopup.firstChild) return;
+            let { target, type } = event;
+            switch (type) {
+                case 'popupshowing':
+                    let menupopup = target;
+                    if (this.TOOLBAR || this.BMB_POPUP) {
+                        if (!menupopup.firstChild) return;
+                        let scrollbox = menupopup._scrollBox;
+                        let firstMenu = menupopup.querySelectorAll('.bookmark-item')[0];
+                        let box = firstMenu.parentElement._scrollBox.scrollbox;
+                        let inited = false;
 
-            if (!menupopup._x_inited || !menupopup._x_scrollbox.scrollWidth) {
-                var scrollbox = menupopup._scrollBox;
+                        if (box) {
+                            inited = true;
+                            box.style.minHeight = "21px";
+                            box.style.height = "auto";
+                            box.style.display = "inline-flex";
+                            box.style.flexFlow = "column wrap";
+                            box.style.overflow = "-moz-hidden-unscrollable";
+                            box.style.maxHeight = "calc(100vh - 129px)";
+                            scrollbox.style.maxHeight = "calc(100vh - 129px)";
+                        }
+                        menupopup.style.maxWidth = "calc(100vw - 20px)";
 
-                var firstMenu = menupopup.querySelectorAll('.bookmark-item')[0];
-                // while (firstMenu) {
-                //     if (firstMenu.tagName == "menuitem") break;
-                //     firstMenu = firstMenu.nextSibling;
-                // }
-
-
-                //var box = firstMenu.boxObject.parentBox;
-                var box = firstMenu.parentElement._scrollBox.scrollbox;
-
-                if (box) {
-                    menupopup._x_box = box;
-                    menupopup._x_scrollbox = scrollbox;
-                    if (!menupopup._x_inited) {
-                        menupopup.classList.add(['bmmc']);
-                        menupopup._x_inited = true;
-                        this.cachedMenus.push(menupopup);
+                        if (inited) {
+                            let menuitem = menupopup.lastChild;
+                            while (menuitem) {
+                                menuitem.style.width = "240px";
+                                // menuitem.style.minWidth = "100px";
+                                // menuitem.style.maxWidth = "300px";
+                                menuitem = menuitem.previousSibling;
+                            }
+                            if (!(scrollbox.width == box.scrollWidth)) {
+                                var leftFix = parseInt(getComputedStyle(menupopup).paddingInlineStart);
+                                var rightFix = parseInt(getComputedStyle(menupopup).paddingInlineEnd);
+                                var firstItem = menupopup.querySelector('menuitem');
+                                var columns = 0;
+                                if (firstItem) {
+                                    columns = parseInt(box.scrollWidth / parseInt(getComputedStyle(firstItem).width))
+                                }
+                                scrollbox.width = box.scrollWidth + (columns || 1) * (leftFix || 0 + rightFix || 0);
+                            }
+                        }
                     }
-                }
-                var container = menupopup._x_box;
-                if (container) {
-                    container.style.minHeight = "21px";
-                    container.style.height = "auto";
-                    container.style.display = "inline-flex";
-                    container.style.flexFlow = "column wrap";
-                    container.style.overflow = "-moz-hidden-unscrollable";
-                    container.style.maxHeight = "calc(100vh - 129px)";
-                    menupopup._scrollBox.style.maxHeight = "calc(100vh - 129px)";
-                }
-                menupopup.style.maxWidth = "calc(100vw - 20px)";
+                    break;
+                case 'popuphiding':
+                    if (this.TOOLBAR || this.BMB_POPUP) {
+                        let menupopup = target;
+                        if (!menupopup.firstChild) return;
+                        let scrollbox = menupopup._scrollBox;
+                        let firstMenu = menupopup.querySelectorAll('.bookmark-item')[0];
+                        let box = firstMenu.parentElement._scrollBox.scrollbox;
+
+                        if (box) {
+                            box.style.minHeight = "";
+                            box.style.height = "";
+                            box.style.display = "";
+                            box.style.flexFlow = "";
+                            box.style.overflow = "";
+                            box.style.maxHeight = "";
+                            scrollbox.style.maxHeight = "";
+                        }
+
+                        let menuitem = menupopup.lastChild;
+                        while (menuitem) {
+                            menuitem.style.width = "";
+                            menuitem = menuitem.previousSibling;
+                        }
+
+                        scrollbox.width = "";
+                    }
+                    break;
+                case 'click':
+                    if (target.id === "bookmarks-menu-button") {
+                        this.BMB_POPUP = $("BMB_bookmarksPopup");
+                        if (this.BMB_POPUP && this.BMB_POPUP.childNodes) {
+                            this.BMB_POPUP.childNodes.forEach(element => {
+                                if (element.localName === "menu") {
+                                    let popup = element.lastChild;
+                                    if (popup) {
+                                        popup.addEventListener('popupshowing', this, false);
+                                        popup.addEventListener('popuphiding', this, false);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
-            if (menupopup._x_inited) {
-                var menuitem = menupopup.lastChild;
-                while (menuitem) {
-                    if (!menuitem.style.maxWidth) {
-                        // menuitem.style.maxWidth = "300px";
-                        // menuitem.style.minWidth = "180px";
-                        menuitem.style.width = "240px";
-                    }
-                    menuitem = menuitem.previousSibling;
-                }
-                if (!(menupopup._x_scrollbox.width == menupopup._x_box.scrollWidth)) {
-                    var leftFix = parseInt(getComputedStyle(menupopup._x_scrollbox).getPropertyValue("--width-fix-left"));
-                    var rightFix = parseInt(getComputedStyle(menupopup._x_scrollbox).getPropertyValue("--width-fix-right"));
-                    var firstItem = menupopup.querySelector('menuitem');
-                    var columns = 0;
-                    if (firstItem) {
-                        columns = parseInt(menupopup._x_box.scrollWidth / parseInt(getComputedStyle(firstItem).width))
-                    }
-                    menupopup._x_scrollbox.width = menupopup._x_box.scrollWidth + (columns || 1) * (leftFix || 0 + rightFix || 0);
-                }
-            }
-
         }
     }
-    BMMultiColumn.init();
-    window.BMMultiColumn = BMMultiColumn;
 
-    function $(id) {
-        return document.getElementById(id);
+    function $(id, aDoc) {
+        id = id || "";
+        let doc = aDoc || document;
+        if (id.startsWith('#')) id = id.substring(1, id.length);
+        return doc.getElementById(id);
     }
 
-})();
+    if (gBrowserInit.delayedStartupFinished) window.BMMultiColumn.init();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.BMMultiColumn.init();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
+})()
