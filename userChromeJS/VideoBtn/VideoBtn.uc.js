@@ -9,7 +9,7 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @version         0.1.0 初始版本
 // ==/UserScript==
-location.href.startsWith('chrome://browser/content/browser.x') && (function (css, debug) {
+(function (css, debug) {
 
     Cu.import("resource:///modules/CustomizableUI.jsm");
     Cu.import("resource://gre/modules/Services.jsm");
@@ -107,7 +107,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     const MENU_CONFIG = {
         id: 'VideoBtn-btn',
-        type: cPref.get("userChromeJS.VideoBtn.showInContextMenu", false) ? 'toolbarbutton' : 'menu',
         label: $L("videobtn btn name"),
         tooltiptext: $L("videobtn btn name"),
         condition: 'normal link',
@@ -190,6 +189,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             type: 'checkbox',
             pref: 'userChromeJS.VideoBtn.showInContextMenu',
             condition: 'normal link',
+            postcommand: 'VideoBtn.rebuild()'
         }, {
             label: "About Video Btn",
             url: 'https://kkp.disk.st/firefox-one-click-download-web-video-scheme-videobtn.html',
@@ -201,23 +201,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     window.VideoBtn = {
         PREF_LISTENER: [],
-        THEME_LIST: [],
-        get appVersion() {
-            return Services.appinfo.version.split(".")[0];
-        },
-        get win() {
-            return Services.wm.getMostRecentWindow("navigator:browser");
-        },
+        _paths: [],
+        $C: $C,
+        $L: $L,
+        get appVersion() { return Services.appinfo.version.split(".")[0]; },
+        get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
         get btnId() {
             if (!this._btnId) this._btnId = 1;
             return this._btnId++;
         },
-        get debug() {
-            if (this._debug) {
-                this._debug = debug;
-            }
-            return this._debug;
-        },
+        get debug() { return cPref.get("userChromeJS.VideoBtn.debug", false); },
         get menuCfg() {
             if (!this._menuCfg) this._menuCfg = cloneObj(MENU_CONFIG);
             return this._menuCfg;
@@ -228,14 +221,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         get SAVE_PATH() {
             return this.handleRelativePath(cPref.get(this.PREF_SAVE_PATH, this._DEFAULT_SAVE_PATH));
         },
-        get COOKIE_SAVE_PATH() {
-            return this.handleRelativePath(cPref.get(this.PREF_COOKIE_SAVE_PATH, this._DEFAULT_COOKIE_SAVE_PATH));
-        },
+        get COOKIES_SAVE_PATH() { return this.handleRelativePath("{tmpDir}"); },
         async init() {
             if (this.debug) this.log("VideoBtn init");
             this._DEFAULT_BIN_PATH = DEFAULT_TOOLS_PATH;
             this._DEFAULT_SAVE_PATH = await Downloads.getSystemDownloadsDirectory();
-            this._DEFAULT_COOKIE_SAVE_PATH = DEFAULT_COOKIES_PATH;
+            this._DEFAULT_COOKIES_SAVE_PATH = DEFAULT_COOKIES_PATH;
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -271,10 +262,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
+            ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
+                var path = Services.dirsvc.get(key, Ci.nsIFile);
+                this._paths[key] = path.path;
+            });
+
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
-
             gBrowser.tabpanels.addEventListener("mouseup", this, false);
-
+            this.style = addStyle(css);
             this.rebuild();
         },
         uninit() {
@@ -288,34 +283,70 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         item.parentNode.removeChild(item);
                     }
                 })
-                if (this.debug) this.log($L("destroying element"), this.mainEl);
+                if (this.debug) this.log($L("VideoBtn: destroying element"), this.mainEl);
                 if (this.mainEl.localName == 'toolbarbutton')
                     CustomizableUI.destroyWidget(this.mainEl.id);
                 else
                     this.mainEl.parentNode.removeChild(this.mainEl);
-            }
-            if (this.style && this.style.parentNode) {
-                if (this.debug) this.log($L("unregister style"), this.style);
-                this.style.parentNode.removeChild(this.style);
-                this.style = null;
             }
             this.PREF_LISTENER.forEach(l => cPref.removeListener(l));
             this.PREF_LISTENER = [];
         },
         rebuild() {
             this.uninit();
-            this.style = addStyle(css);
-            this.mainEl = this.createMainEl();
-            this.addPrefListener(this.PREF_SWITCH_TO_CONTEXTMENU, function (value, pref) {
-                setTimeout(function () {
-                    VideoBtn.rebuild();
-                }, 10);
-            });
+            if (cPref.get(this.PREF_SWITCH_TO_CONTEXTMENU, false)) {
+                let menu = $C(document, 'menu', this.menuCfg, ["popup"]);
+                menu.classList.add("menu-iconic");
+                menu.classList.add("VideoBtn");
+                let ins = $("context-media-eme-separator");
+                if (ins) {
+                    ins.parentNode.insertBefore(menu, ins);
+                } else {
+                    this.error($L("VideoBtn: contextmenu has no insert point"));
+                }
+                this.mainEl = menu;
+                if (this.menuCfg.popup)
+                    this.mainEl.appendChild(this.newMenuPopup(document, this.menuCfg.popup));
+            } else {
+                let widgetId = this.menuCfg.id || "VideoBtn-Button-" + this.btnId;
+                CustomizableUI.createWidget({
+                    id: widgetId,
+                    type: 'custom',
+                    localized: false,
+                    defaultArea: this.menuCfg.defaultArea || CustomizableUI.AREA_NAVBAR,
+                    onBuild: function (aDoc) {
+                        let btn;
+                        try {
+                            btn = VideoBtn.$C(aDoc, 'toolbarbutton', VideoBtn.menuCfg, ['type', 'group', 'popup', 'condition']);
+                            'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
+                            if (VideoBtn.menuCfg.popup) {
+                                let popup = VideoBtn.newMenuPopup(aDoc, VideoBtn.menuCfg.popup);
+                                if (popup) {
+                                    $A(btn, {
+                                        type: "menu",
+                                        menu: btn.id + "-popup"
+                                    });
+                                    popup.setAttribute('id', btn.id + "-popup");
+                                    btn.appendChild(popup);
+                                }
+                            }
+                        } catch (e) {
+                            VideoBtn.error(e);
+                        }
+                        return btn;
+                    }
+                });
+                this.mainEl = CustomizableUI.getWidget(widgetId).forWindow(window).node;
+            }
         },
         destroy() {
             this.uninit();
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             gBrowser.tabpanels.removeEventListener("mouseup", this, false);
+            if (this.style && this.style.parentNode) {
+                this.style.parentNode.removeChild(this.style);
+                this.style = null;
+            }
             delete window.VideoBtn;
         },
         openDownloadsFolder() {
@@ -398,53 +429,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
             }
         },
-        saveCookie(uri) {
-            let { host } = uri;
-            let cookies = Services.cookies.getCookiesFromHost(host, {});
-            let string = cookies.map(formatCookie).join('');
-            let file = getNSIFile(this.COOKIE_SAVE_PATH);
-            file.append(`${host}.txt`);
-            if (file.exists()) {
-                file.remove(0);
-            }
-
-            saveFile(file, string);
-            return file.path;
-
-            function formatCookie(co) {
-                return [
-                    [
-                        co.isHttpOnly ? '#HttpOnly_' : '',
-                        co.host
-                    ].join(''),
-                    co.isDomain ? 'TRUE' : 'FALSE',
-                    co.path,
-                    co.isSecure ? 'TRUE' : 'FALSE',
-                    co.expires,
-                    co.name,
-                    co.value + '\n'
-                ].join('\t');
-            }
-        },
-        createMainEl() {
-            if (!this.menuCfg) {
-                if (this.debug) this.log($L("no menu configuration"));
-                return;
-            }
-            if (this.debug) this.log($L("creating menuitems"));
-            if (cPref.get(this.PREF_SWITCH_TO_CONTEXTMENU, false)) {
-                let menu = this.createMenu(this.menuCfg);
-                let ins = $("context-savepage") || $("context-savelink");
-                if (ins) {
-                    ins.after(menu);
-                } else {
-                    $('contentAreaContextMenu').appendChild(menu);
-                }
-                return menu;
-            } else {
-                return this.createButton(this.menuCfg);
-            }
-        },
         createButton(obj, aDoc) {
             obj.id = obj.id || "VideoBtn-Button-" + this.btnId;
             obj.label = obj.label || "VideoBtn";
@@ -477,106 +461,137 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             });
             return CustomizableUI.getWidget(obj.id).forWindow(window).node;
         },
-        createMenu(obj, aDoc, parent) {
+        newMenuPopup(doc, obj) {
             if (!obj) return;
-            aDoc = aDoc || parent?.ownerDocument || this.win.document;
-            let el;
-            if (obj.group) {
-                el = $C(aDoc, 'menugroup', obj, ['group', 'popup']);
-                el.classList.add('VideoBtn-Group');
-                obj.group.forEach(child => el.appendChild(VideoBtn.createMenu(child, aDoc, el)));
-
-                // menugroup 无需嵌套在 menu 中
-                return el;
-            } else if (obj.popup) {
-                el = $C(aDoc, 'menupopup', obj, ['group', 'popup']);
-                el.classList.add('VideoBtn-Popup');
-                obj.popup.forEach(child => el.appendChild(VideoBtn.createMenu(child, aDoc, el)));
-            }
-
-            let item = this.createMenuItem(obj, aDoc, parent);
-            item.classList.add('VideoBtn')
-            if (el) item.appendChild(el);
-            return item;
+            let popup = $C(doc, 'menupopup');
+            obj.forEach(o => {
+                var el = this.newMenuitem(doc, o);
+                if (el) popup.appendChild(el);
+            });
+            popup.classList.add("VideoBtn-Popup");
+            return popup;
         },
-        createMenuItem: function (obj, aDoc, parent) {
+        newMenuGroup(doc, obj) {
             if (!obj) return;
-            aDoc = aDoc || parent?.ownerDocument || this.win.document;
-            let item,
-                classList = [],
-                tagName = obj.type || 'menuitem';
-            if (inObject(['separator', 'menuseparator'], obj.type) || !obj.group && !obj.popup && !obj.label && !obj.image && !obj.command && !obj.pref) {
-                return $C(aDoc, 'menuseparator', obj, ['type', 'group', 'popup']);
+            let group = $C(doc, 'menugroup', obj, ["group", "popup"]);
+            obj.group.forEach(o => {
+                var el = this.newMenuitem(doc, o);
+                if (el) group.appendChild(el);
+            })
+            group.classList.add("VideoBtn-Group");
+            return group;
+        },
+        newMenuitem(doc, obj) {
+            if (!obj) return;
+            if (obj.group) {
+                return this.newMenuGroup(doc, obj);
             }
-            if (inObject['checkbox', 'radio'], obj.type) tagName = 'menuitem';
-            if (obj.group) tagName = 'menu';
-            if (obj.popup) tagName = 'menu';
-            if (obj.class) obj.class.split(' ').forEach(c => classList.push(c));
-            classList.push(tagName + '-iconic');
-
-            if (obj.tool) {
-                obj.exec = this.BIN_PATH + obj.tool;
-                delete obj.tool;
-            }
-            if (obj.exec) {
-                obj.exec = this.handleRelativePath(obj.exec);
-            }
-
-            if (obj.command) {
-                // 移动菜单
-                let org = $(obj.command, aDoc);
-                if (org) {
-                    let replacement = $C(aDoc, 'menuseparator', { hidden: true, class: 'VideoBtn-Replacement', 'original-id': obj.command });
-                    org.parentNode.insertBefore(replacement, org);
-                    return org;
-                } else {
-                    return $C(aDoc, 'menuseparator', { hidden: true });
-                }
-            } else {
-                item = $C(aDoc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group']);
-                if (classList.length) item.setAttribute('class', classList.join(' '));
-                $A(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type']);
-                item.setAttribute('label', obj.label || obj.command || obj.oncommand);
-
-                if (obj.pref) {
-                    let type = cPref.getType(obj.pref) || obj.type || 'unknown';
-                    const map = {
-                        string: 'prompt',
-                        int: 'prompt',
-                        boolean: 'checkbox',
-                    }
-                    const defaultVal = {
-                        string: '',
-                        int: 0,
-                        bool: false
-                    }
-                    if (map[type]) item.setAttribute('type', map[type]);
-                    if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
-                    if (map[type] === 'checkbox') {
-                        item.setAttribute('checked', !!cPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
-                        this.addPrefListener(obj.pref, function (value, pref) {
-                            item.setAttribute('checked', value);
-                            if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
-                        });
+            let item
+            if (obj.popup) {
+                item = $C(doc, "menu", obj, ["popup"]);
+                item.classList.add("menu-iconic");
+                if (obj.onBuild) {
+                    if (typeof obj.onBuild === "function") {
+                        obj.onBuild(doc, item);
                     } else {
-                        let value = cPref.get(obj.pref);
-                        if (value) {
-                            item.setAttribute('value', value);
-                            item.setAttribute('label', $S(obj.label, value));
-                        }
-                        this.addPrefListener(obj.pref, function (value, pref) {
-                            item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
-                            if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
-                        });
+                        eval("(" + obj.onBuild + ").call(el, doc, item)")
                     }
                 }
+                item.appendChild(this.newMenuPopup(doc, obj.popup));
+            } else {
+
+                let classList = [],
+                    tagName = obj.type || 'menuitem';
+                if (['separator', 'menuseparator'].includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.image && !obj.command && !obj.pref) {
+                    return $C(doc, 'menuseparator', obj, ['type', 'group', 'popup']);
+                }
+
+                if (['checkbox', 'radio'].includes(obj.type)) tagName = 'menuitem';
+                if (obj.class) obj.class.split(' ').forEach(c => classList.push(c));
+                classList.push(tagName + '-iconic');
+                classList.push('VideoBtn');
+
+                if (obj.tool) {
+                    obj.exec = this.handleRelativePath(obj.tool, this.BIN_PATH);
+                    delete obj.tool;
+                }
+
+                if (obj.exec) {
+                    obj.exec = this.handleRelativePath(obj.exec);
+                }
+
+                if (obj.command) {
+                    // 移动菜单
+                    let org = $(obj.command, doc);
+                    if (org) {
+                        let replacement = $C(doc, 'menuseparator', { hidden: true, class: 'VideoBtn-Replacement', 'original-id': obj.command });
+                        org.parentNode.insertBefore(replacement, org);
+                        return org;
+                    } else {
+                        return $C(doc, 'menuseparator', { hidden: true });
+                    }
+                } else {
+                    item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
+                    if (classList.length) item.setAttribute('class', classList.join(' '));
+                    $A(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type']);
+                    item.setAttribute('label', obj.label || obj.command || obj.oncommand);
+
+                    if (obj.pref) {
+                        let type = cPref.getType(obj.pref) || obj.type || 'unknown';
+                        const map = {
+                            string: 'prompt',
+                            int: 'prompt',
+                            bool: 'checkbox',
+                            boolean: 'checkbox',
+                        }
+                        const defaultVal = {
+                            string: '',
+                            int: 0,
+                            bool: false,
+                            boolean: false
+                        }
+                        if (map[type]) item.setAttribute('type', map[type]);
+                        if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
+                        if (map[type] === 'checkbox') {
+                            item.setAttribute('checked', !!cPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
+                            this.addPrefListener(obj.pref, function (value, pref) {
+                                item.setAttribute('checked', value);
+                                if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
+                            });
+                        } else {
+                            let value = cPref.get(obj.pref);
+                            if (value) {
+                                item.setAttribute('value', value);
+                                item.setAttribute('label', $S(obj.label, value));
+                            }
+                            this.addPrefListener(obj.pref, function (value, pref) {
+                                item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
+                                if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
+                            });
+                        }
+                    }
+                }
+
+
+                if (!obj.pref && !obj.onclick)
+                    item.setAttribute("onclick", "checkForMiddleClick(this, event)");
+
+                if (obj.onBuild) {
+                    if (typeof obj.onBuild === "function") {
+                        obj.onBuild(doc, item);
+                    }
+                }
+
+                if (this.debug) this.log('createMenuItem', tagName, item);
             }
 
-
-            if (!obj.pref && !obj.onclick)
-                item.setAttribute("onclick", "checkForMiddleClick(this, event)");
-
-            if (debug) this.log('createMenuItem', tagName, item);
+            if (obj.onBuild) {
+                if (typeof obj.onBuild === "function") {
+                    obj.onBuild(doc, item);
+                } else {
+                    eval("(" + obj.onBuild + ").call(item, doc, item)")
+                }
+            }
 
             if (obj.oncommand || obj.command)
                 return item;
@@ -714,14 +729,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
         },
         edit: function (edit) {
-            if (debug) this.log('edit', edit);
+            if (this.debug) this.log('edit', edit);
             if (cPref.get("view_source.editor.path"))
                 this.exec(cPref.get("view_source.editor.path"), this.handleRelativePath(edit));
             else
                 this.exec(this.handleRelativePath(edit));
         },
         exec: function (path, arg) {
-            if (debug) this.log('exec', path, arg);
+            if (this.debug) this.log('exec', path, arg);
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             try {
@@ -757,9 +772,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         handleRelativePath: function (path, parentPath) {
             if (path) {
                 let handled = false;
-                Object.keys(OS.Constants.Path).forEach(key => {
+                path = this.replaceArray(path, [
+                    "{homeDir}",
+                    "{libDir}",
+                    "{localProfileDir}",
+                    "{profileDir}",
+                    "{tmpDir}"
+                ], [
+                    "{Home}",
+                    "{GreD}",
+                    "{ProfLD}",
+                    "{ProfD}",
+                    "{TmpD}"
+                ]);
+                ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
                     if (path.includes("{" + key + "}")) {
-                        path = path.replace("{" + key + "}", OS.Constants.Path[key]);
+                        path = path.replace("{" + key + "}", this._paths[key] || "");
                         handled = true;
                     }
                 })
@@ -776,6 +804,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return path;
             }
         },
+        replaceArray: function (replaceString, find, replace) {
+            var regex;
+            for (var i = 0; i < find.length; i++) {
+                regex = new RegExp(find[i], "g");
+                replaceString = replaceString.replace(regex, replace[i]);
+            }
+            return replaceString;
+        },
         setIcon: function (menu, obj) {
             if (menu.hasAttribute("src") || menu.hasAttribute("image") || menu.hasAttribute("icon"))
                 return;
@@ -783,16 +819,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (obj.edit || obj.exec) {
                 var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
                 try {
-                    aFile.initWithPath(obj.edit ? this.handleRelativePath(obj.edit) : obj.exec);
+                    aFile.initWithPath(this.handleRelativePath(obj.edit) || obj.exec);
                 } catch (e) {
+                    if (this.debug) this.error(e);
                     return;
                 }
-
+                // if (!aFile.exists() || !aFile.isExecutable()) {
                 if (!aFile.exists()) {
                     menu.setAttribute("disabled", "true");
                 } else {
                     if (aFile.isFile()) {
-                        let fileURL = getURLSpecFromFile(aFile);
+                        let fileURL = this.getURLSpecFromFile(aFile);
                         menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
                     } else {
                         menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
@@ -801,11 +838,24 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
+            if (obj.keyword) {
+                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
+                if (engine) {
+                    if (isPromise(engine)) {
+                        engine.then(function (engine) {
+                            if (engine.iconURI) menu.setAttribute("image", engine.iconURI.spec);
+                        });
+                    } else if (engine.iconURI) {
+                        menu.setAttribute("image", engine.iconURI.spec);
+                    }
+                    return;
+                }
+            }
             var setIconCallback = function (url) {
                 let uri, iconURI;
                 try {
                     uri = Services.io.newURI(url, null, null);
-                } catch (e) { }
+                } catch (e) { this.log(e) }
                 if (!uri) return;
 
                 menu.setAttribute("scheme", uri.scheme);
@@ -829,9 +879,47 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
                 setIconCallback(url);
             }, e => {
-                VideoBtn.error(e)
+                this.log(e)
             }).catch(e => { });
+        },
+        getURLSpecFromFile(aFile) {
+            var aURL;
+            if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
+                aURL = userChrome.getURLSpecFromFile(aFile);
+            } else if (this.appVersion < 92) {
+                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
+            } else {
+                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
+            }
+            return aURL;
+        },
+        saveCookie(uri) {
+            let { host } = uri;
+            let cookies = Services.cookies.getCookiesFromHost(host, {});
+            let string = cookies.map(formatCookie).join('');
+            let file = getNSIFile(this.COOKIES_SAVE_PATH);
+            file.append(`${host}.txt`);
+            if (file.exists()) {
+                file.remove(0);
+            }
 
+            saveFile(file, string);
+            return file.path;
+
+            function formatCookie(co) {
+                return [
+                    [
+                        co.isHttpOnly ? '#HttpOnly_' : '',
+                        co.host
+                    ].join(''),
+                    co.isDomain ? 'TRUE' : 'FALSE',
+                    co.path,
+                    co.isSecure ? 'TRUE' : 'FALSE',
+                    co.expires,
+                    co.name,
+                    co.value + '\n'
+                ].join('\t');
+            }
         },
         copyText: function (aText) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
@@ -853,12 +941,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             Cu.reportError(Array.prototype.slice.call(arguments));
         },
         log: function () {
-            this.win.console.log(Array.prototype.slice.call(arguments));
+            this.browserWin.console.log(Array.prototype.slice.call(arguments));
         },
         PREF_SWITCH_TO_CONTEXTMENU: 'userChromeJS.VideoBtn.showInContextMenu',
         PREF_BIN_PATH: 'userChromeJS.VideoBtn.binPath',
         PREF_SAVE_PATH: 'userChromeJS.VideoBtn.savePath',
-        PREF_COOKIE_SAVE_PATH: 'userChromeJS.VideoBtn.cookiesPath',
     }
 
     /**
@@ -903,7 +990,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     function $A(el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
-            if (!inObject(skipAttrs, key)) {
+            if (!skipAttrs.includes(key)) {
                 if (typeof obj[key] === 'function') {
                     el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
                 } else {
@@ -929,12 +1016,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return "";
     }
 
-    function $toogleText() {
-        if (cPref.get("userChromeJS.VideoBtn.showInContextMenu", false))
-            return $L("show in page context menu");
-        return $L("show in navigation bar");
-    }
-
     /**
      * 替换 %s 为指定文本
      * @param {string} str 
@@ -949,24 +1030,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return str || "";
     }
 
-    /**
-    * 数组/对象中是否包含某个关键字
-     * @param {object} obj 
-     * @param {any} key 
-    * @returns 
-    */
-    function inObject(obj, key) {
-        if (obj.indexOf) {
-            return obj.indexOf(key) > -1;
-        } else if (obj.hasAttribute) {
-            return obj.hasAttribute(key);
-        } else {
-            for (var i = 0; i < obj.length; i++) {
-                if (obj[i] === key) return true;
-            }
-            return false;
-        }
+
+    function $toogleText() {
+        if (cPref.get("userChromeJS.VideoBtn.showInContextMenu", false))
+            return $L("show in page context menu");
+        return $L("show in navigation bar");
     }
+
 
     function addStyle(css) {
         var pi = document.createProcessingInstruction(
@@ -1004,18 +1074,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return obj
         }
         return o;
-    }
-
-    function getURLSpecFromFile(aFile) {
-        var aURL;
-        if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
-            aURL = userChrome.getURLSpecFromFile(aFile);
-        } else if (this.appVersion < 92) {
-            aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
-        } else {
-            aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
-        }
-        return aURL;
     }
 
     function choosePathAndSave(title, prefKey, mode, filter, textIfCancel, textIfOk) {
@@ -1067,8 +1125,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }
 
     window.VideoBtn.init();
-    setTimeout(function () { window.VideoBtn.rebuild(); }, 1000);//1秒
-    setTimeout(function () { window.VideoBtn.rebuild(); }, 3000);//3秒
+    // setTimeout(function () { window.VideoBtn.rebuild(); }, 1000);//1秒
+    // setTimeout(function () { window.VideoBtn.rebuild(); }, 3000);//3秒
 })(`
     #contentAreaContextMenu[VideoBtn] .VideoBtn:not(menuseparator):not(menugroup) {
         visibility: collapse;
@@ -1132,4 +1190,4 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     .VideoBtn-Popup .menuitem-iconic.skin {
         list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik03MDYuNTQ1IDEyOC4wMTlhNjMuOTg1IDYzLjk4NSAwIDAgMSA0OC41OTkgMjIuMzYzbDE3Mi44MzUgMjAxLjc2My02My45OTYgMTI3Ljg1Ny00MS4zNzQtNDEuMzcxYy02LjI1LTYuMjQ4LTE0LjQzNy05LjM3Mi0yMi42MjQtOS4zNzItOC4xODggMC0xNi4zNzQgMy4xMjQtMjIuNjI0IDkuMzcyYTMyLjAwNiAzMi4wMDYgMCAwIDAtOS4zNzUgMjIuNjI2djQwMi43MjdjMCAxNy42NzItMTQuMzI3IDMxLjk5OC0zMS45OTkgMzEuOTk4SDMyMC4wMWMtMTcuNjcxIDAtMzEuOTk4LTE0LjMyNi0zMS45OTgtMzEuOTk4VjQ2MS4yNTZjMC0xNy42NzItMTQuMzI4LTMxLjk5OC0zMi0zMS45OThhMzEuOTk3IDMxLjk5NyAwIDAgMC0yMi42MjQgOS4zNzJsLTQxLjM3MyA0MS4zNzFMOTYuMDIgMzUyLjAwN2wxNzIuODM1LTIwMS42NGE2My45ODcgNjMuOTg3IDAgMCAxIDQ4LjU5Mi0yMi4zNDhoNi41MDdhOTUuOTcgOTUuOTcgMCAwIDEgNTAuMTMgMTQuMTMyQzQyOC4zNyAxNzUuMzk0IDQ3NC4zMzggMTkyLjAxNSA1MTIgMTkyLjAxNXM4My42MjktMTYuNjIxIDEzNy45MTUtNDkuODY0YTk1Ljk2OCA5NS45NjggMCAwIDEgNTAuMTMtMTQuMTMyaDYuNW0wLTYzLjk5OGgtNi41YTE1OS44OSAxNTkuODkgMCAwIDAtODMuNTU3IDIzLjU1OEM1NjEuOTA0IDEyMSA1MjkuNTM3IDEyOC4wMTggNTEyIDEyOC4wMThjLTE3LjUzOCAwLTQ5LjkwNC03LjAxNy0xMDQuNDk1LTQwLjQ0NmExNTkuODgxIDE1OS44ODEgMCAwIDAtODMuNTUtMjMuNTVoLTYuNTA4YTEyNy44MjMgMTI3LjgyMyAwIDAgMC05Ny4xODIgNDQuNzAxTDQ3LjQyOCAzMTAuMzZjLTE5LjUyMiAyMi43NzQtMjAuNiA1Ni4wNS0yLjYxIDgwLjA0N0wxNDAuODE1IDUxOC40YTYzLjk5OCA2My45OTggMCAwIDAgODMuMTk5IDE3LjAyNXYzMjguNTU4YzAgNTIuOTMyIDQzLjA2IDk1Ljk5NSA5NS45OTUgOTUuOTk1aDQxNS45OGM1Mi45MzUgMCA5NS45OTYtNDMuMDYzIDk1Ljk5Ni05NS45OTVWNTM1LjQyNWE2NC4wMjggNjQuMDI4IDAgMCAwIDQyLjI0IDcuNzQ5IDY0LjAxNCA2NC4wMTQgMCAwIDAgNDYuOTktMzQuNTI4bDYzLjk5Ny0xMjcuODU3YzExLjUyMi0yMy4wMjggOC4xMjUtNTAuNzIyLTguNjMzLTcwLjI3OUw4MDMuNzQ0IDEwOC43NDdjLTI0LjMzNi0yOC40MjItNTkuNzctNDQuNzI2LTk3LjItNDQuNzI2eiIgcC1pZD0iMTI4MiI+PC9wYXRoPjwvc3ZnPg==) !important;
     }
-`, false);
+`, true);
