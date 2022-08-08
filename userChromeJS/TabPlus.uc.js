@@ -440,12 +440,14 @@
             const map = {
                 string: 'prompt',
                 int: 'prompt',
+                bool: 'checkbox',
                 boolean: 'checkbox',
             }
             const defaultVal = {
                 string: '',
                 int: 0,
-                bool: false
+                bool: false,
+                boolean: false
             }
             if (map[type]) item.setAttribute('type', map[type]);
             if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);

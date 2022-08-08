@@ -605,7 +605,7 @@
             win || (win = window);
             this.uninit();
             if (cPref.get(this.PREF_SWITCH_TO_TOOLMENU, false)) {
-                let menu = $C(doc, 'menu',);
+                let menu = $C(doc, 'menu', this.menuCfg, ["popup"]);
                 let ins = $("prefSep", doc) || $("webDeveloperMenu", doc);
                 if (ins) {
                     ins.parentNode.insertBefore(menu, ins);
@@ -726,12 +726,14 @@
                         const map = {
                             string: 'prompt',
                             int: 'prompt',
-                            boolean: 'checkbox',
+                            bool: 'checkbox',
+                            boolean: 'checkbox'
                         }
                         const defaultVal = {
                             string: '',
                             int: 0,
-                            bool: false
+                            bool: false,
+                            boolean: false
                         }
                         if (map[type]) item.setAttribute('type', map[type]);
                         if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
