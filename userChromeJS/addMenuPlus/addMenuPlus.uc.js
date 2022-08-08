@@ -1056,6 +1056,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             function insertMenuItem(obj, menuitem, noMove) {
                 let ins;
+                if (obj.parent && (ins = $(obj.parent))) {
+                    ins.appendChild(menuitem);
+                    return;
+                }
                 if (obj.insertAfter && (ins = $(obj.insertAfter))) {
                     ins.parentNode.insertBefore(menuitem, ins.nextSibling);
                     return;
@@ -1508,7 +1512,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } : null;
             var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
             alertsService.showAlertNotification(
-                "chrome://global/skin/icons/info.svg", aTitle || "addMenu",
+                this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "DownloadPlus",
                 aMsg + "", !!callback, "", callback);
         },
         $$: function (exp, context, aPartly) {
@@ -1524,17 +1528,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         log: log,
     };
-
-    if (gBrowserInit.delayedStartupFinished) window.addMenu.init();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.addMenu.init();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
 
     function $(id) {
         return document.getElementById(id);
@@ -1647,6 +1640,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         )
     }
 
+    if (gBrowserInit.delayedStartupFinished) window.addMenu.init();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.addMenu.init();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
 })(`
 .addMenuHide
   { display: none !important; }

@@ -52,7 +52,9 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 二级子菜单
 
-    PageMenu, TabMenu, ToolMenu, AppMenu
+* ident: SSL 小锁右键菜单（主要用于非浏览器内置网页）
+
+    PageMenu, TabMenu, ToolMenu, AppMenu, IdentMenu
 
 ### 标签的介绍
 
@@ -72,7 +74,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     ...         Firefox 菜单的其它属性
     
     id          标签的ID（ywzhaiqi新增的，修改原菜单用）
-    position/insertBefore/insertAfter 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
+    parent/position/insertBefore/insertAfter 位置的设置（4选1），parent: "id", position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口（2022.07.01以后的版本禁用脚本即可还原）
     onshowing   ywzhaiqi新增的，当页面右键显示时会执行该函数，可用于动态更改标签标题，详见下面的示例。
     onshowinglabel 我新增的，显示的时候根据模板设置 label
