@@ -547,7 +547,7 @@
             try {
                 ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
                     var path = Services.dirsvc.get(key, Ci.nsIFile);
-                    this._paths[key] = path;
+                    this._paths[key] = path.path;
                 });
                 // add resource path
                 let aFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
