@@ -22,7 +22,9 @@
     window.BMMultiColumn = {
         init: function () {
             this.TOOLBAR = $("PersonalToolbar");
-            this.BUTTON = CustomizableUI.getWidget("bookmarks-menu-button")?.forWindow(window)?.node;
+            let w = CustomizableUI.getWidget("bookmarks-menu-button");
+            if (w && w.forWindow(window))
+                this.BUTTON = w.forWindow(window).node;
             if (this.TOOLBAR) {
                 $("PlacesToolbarItems").addEventListener('popupshowing', this, false);
                 $("PlacesToolbarItems").addEventListener('popuphiding', this, false);
