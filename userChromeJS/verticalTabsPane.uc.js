@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name           Vertical Tabs Pane
-// @version        1.6.4
+// @version        1.6.5
 // @author         aminomancer
-// @homepage       https://github.com/aminomancer/uc.css.js
+// @homepageURL    https://github.com/aminomancer/uc.css.js
 // @description    垂直标签栏
 // Create a vertical pane across from the sidebar that functions
 // like the vertical tab pane in Microsoft Edge. It doesn't hide the tab bar
@@ -35,7 +35,6 @@
 // "Configure Hover Delay" and "Configure Hover Out Delay" options in the
 // context menu, or in about:config. For languages other than English, the
 // labels and tooltips can be modified directly in the l10n object below.
-
 // @license        This Source Code Form is subject to the terms of the Creative Commons Attribution-NonCommercial-ShareAlike International License, v. 4.0. If a copy of the CC BY-NC-SA 4.0 was not distributed with this file, You can obtain one at http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 // ==/UserScript==
 
@@ -233,13 +232,9 @@
       this._registerSheet();
       // ensure E10SUtils are available. required for showing tab's process ID
       // in its tooltip, if the pref for that is enabled.
-      if (window.E10SUtils) {
-        this.E10SUtils = window.E10SUtils;
-      } else {
-        XPCOMUtils.defineLazyModuleGetters(this, {
-          E10SUtils: "resource://gre/modules/E10SUtils.jsm",
-        });
-      }
+      XPCOMUtils.defineLazyModuleGetters(this, {
+        E10SUtils: "resource://gre/modules/E10SUtils.jsm",
+      });
       // get some localized strings for the tooltip
       XPCOMUtils.defineLazyGetter(this, "_l10n", function () {
         return new Localization(["browser/browser.ftl"], true);
@@ -605,6 +600,8 @@
           title = config.l10n.prompt["Hover out delay title"];
           text = config.l10n.prompt["Hover out delay description"];
           break;
+        default:
+          return;
       }
       let input = { value: val };
       let win = Services.wm.getMostRecentWindow(null);
@@ -1611,7 +1608,7 @@
       gBrowser.warmupTab(tab);
     }
     // invoked when mousing out of an element.
-    _onMouseOut (e) {
+    _onMouseOut(e) {
       let row = e.target.closest(".all-tabs-item");
       if (e.target.classList.contains("all-tabs-secondary-button")) {
         row.mOverSecondaryButton = false;
