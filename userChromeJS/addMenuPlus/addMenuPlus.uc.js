@@ -323,16 +323,37 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             // 内容进程运行 JS
             function frameScript() {
+                const { Services } = Components.utils.import(
+                    "resource://gre/modules/Services.jsm"
+                );
                 content.addMenu_Content = {
                     init: function () {
                         addMessageListener("addMenu_getSelectedText", this);
                         addMessageListener("addMenu_destroy", this);
                     },
+                    getSelection: function (win, focusedElement) {
+                        win || (win = content);
+                        var selection = win.getSelection().toString();
+                        if (!selection) {
+                            let element = focusedElement;
+                            let isOnTextInput = function (elem) {
+                                return elem instanceof HTMLTextAreaElement ||
+                                    (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
+                            };
+
+                            if (isOnTextInput(element)) {
+                                selection = element.value.substring(element.selectionStart,
+                                    element.selectionEnd);
+                            }
+                        }
+
+                        return selection;
+                    },
                     receiveMessage: function (message) {
                         switch (message.name) {
                             case 'addMenu_getSelectedText':
-                                let sel = content.getSelection();
-                                let data = { text: sel.toString() }
+                                const focusedElement = Services.focus.focusedElement;
+                                let data = { text: this.getSelection(content, focusedElement) }
                                 sendSyncMessage("addMenu_selectionData", data);
                                 break;
                             case 'addMenu_destroy':
