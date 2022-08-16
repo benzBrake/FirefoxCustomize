@@ -45,16 +45,17 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 ### 可添加的范围
 
+一级菜单
+
  - page: 页面右键菜单
  - tab: 标签右键
  - tool: 工具菜单
  - app: 左上角橙色菜单（firefox 29 以下版本）/ 汉堡菜单 firefox 29 以上版本
+ - ident: SSL 小锁右键菜单（主要用于非浏览器内置网页）
 
-二级子菜单
+二级子菜单（menu with menupopup）
 
-* ident: SSL 小锁右键菜单（主要用于非浏览器内置网页）
-
-    PageMenu, TabMenu, ToolMenu, AppMenu, IdentMenu
+>    PageMenu, TabMenu, ToolMenu, AppMenu, IdentMenu
 
 ### 标签的介绍
 
@@ -88,7 +89,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - [Attribute (XUL) - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute)
 
 
-### 可利用的变量
+### 可利用的变量(用于 url/text 属性)
 
     %EOL%            换行(\r\n)
     %TITLE%          标题
@@ -139,6 +140,189 @@ css('.addMenu .menu-iconic-accel[value="current"] { display: none; }');
 ```
 示例
 -----
+
+### 汉堡菜单
+
+示例：汉堡菜单添加重启菜单（必须是 2022.05.20 以后的版本调用，`data-l10n-href`和`data-l10n-id`必须是2022.05.27以后的版本才能用）
+
+```js
+app([{
+    'id': 'appMenu-advanced-settings-button',
+    'data-l10n-href': 'toolkit/about/config.ftl',
+    'data-l10n-id': 'about-config-page-title',
+    'insertAfter': 'appMenu-settings-button',
+    'image': 'chrome://global/skin/icons/settings.svg',
+    'oncommand': `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
+}, {
+    'id': 'appMenu-restart-button2',
+    //'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
+    'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
+    'data-l10n-id': 'restart-button-label',
+    'insertBefore': 'appMenu-quit-button2',
+    'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+    'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+}])
+```
+
+示例：汉堡菜单移动更多工具到退出前（必须是 2022.05.20 以后的版本调用）
+
+```js
+app([{
+    id: 'appMenu-more-button2',
+    clone: false,
+    insertBefore: 'appMenu-quit-button2',
+}])
+```
+
+### SSL 小锁（identity-box）右键菜单
+
+**这个是2022.07.14版本新增的**
+
+![](identitybox-context.jpg)
+
+示例：使用第三方浏览器打开当前页面
+
+```
+new function () {
+    var CatGroup = GroupMenu({
+        parent: 'identity-icon-box-contextmenu', // 这个属性 2022.08.08 以后版本可用
+        class: 'showFirstText',
+    });
+    CatGroup([{
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "其他浏览器中打开" : "Open in other browser",
+        id: 'identity-contextmenu-openwithbrowser',
+        accesskey: 'e',
+        onclick: function (event) {
+            let prefs = addMenu.prefs, browser = prefs.getStringPref("chooseBrowser", "");
+            function isFileExists(path) {
+                if (!path || path === "") return false;
+                let app = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
+                app.initWithPath(path);
+                return app.exists();
+            }
+
+            if (event.button == 0) {
+                let href = addMenu.convertText("%RLINK_OR_URL%");
+                if (!isFileExists(browser)) {
+                    event.target.nextSibling.click();
+                    return;
+                }
+                if (href.startsWith('http')) {
+                    addMenu.exec(browser, href);
+                } else {
+                    addMenu.exec(browser);
+                }
+            }
+        },
+        image: 'data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI0LjM3NSAyQzE4LjY5NTMxMyAyIDE0LjQxMDE1NiAzLjk4MDQ2OSAxMS4zMTI1IDYuMzQzNzVDMy40NTMxMjUgMTIuMzM1OTM4IDIuNjg3NSAyMi40Njg3NSAyLjY4NzUgMjIuNDY4NzVDMi42NDQ1MzEgMjIuOTI5Njg4IDIuOTIxODc1IDIzLjM2MzI4MSAzLjM2MzI4MSAyMy41MTE3MTlDMy44MDA3ODEgMjMuNjYwMTU2IDQuMjg1MTU2IDIzLjQ4ODI4MSA0LjUzMTI1IDIzLjA5Mzc1QzQuNTMxMjUgMjMuMDkzNzUgNy40MTc5NjkgMTguNjI1IDEyLjQzNzUgMTUuNUMxNC4xMzY3MTkgMTQuNDQxNDA2IDE2LjMwNDY4OCAxMy42Njc5NjkgMTguNSAxMy4xMjVDMTcuNjMyODEzIDEzLjUxMTcxOSAxNC42MzY3MTkgMTQuOTYwOTM4IDExLjgxMjUgMTguMjVDOS4yNjE3MTkgMjEuMjE4NzUgNy44MTI1IDI1LjI2MTcxOSA3LjgxMjUgMjkuNUM3LjgxMjUgMzAuNTY2NDA2IDcuNzkyOTY5IDMyLjYxMzI4MSA4LjQwNjI1IDM0Ljc4MTI1QzguOTc2NTYzIDM2LjgwMDc4MSAxMC4wNzgxMjUgMzguNzYxNzE5IDExLjA5Mzc1IDQwLjI1QzE0LjAzNTE1NiA0NC41NTQ2ODggMTguMzU5Mzc1IDQ2LjM1NTQ2OSAyMC40Mzc1IDQ3LjAzMTI1QzIyLjgzMjAzMSA0Ny44MDg1OTQgMjUuMjkyOTY5IDQ4IDI3LjU2MjUgNDhDMzUuNjkxNDA2IDQ4IDQxLjEyNSA0NC42NTYyNSA0MS4xMjUgNDQuNjU2MjVDNDEuNDI1NzgxIDQ0LjQ2ODc1IDQxLjYwMTU2MyA0NC4xMzY3MTkgNDEuNTkzNzUgNDMuNzgxMjVMNDEuNTkzNzUgMzQuNTMxMjVDNDEuNjAxNTYzIDM0LjE1NjI1IDQxLjM5ODQzOCAzMy44MTI1IDQxLjA3MDMxMyAzMy42MzI4MTNDNDAuNzQyMTg4IDMzLjQ1NzAzMSA0MC4zMzk4NDQgMzMuNDc2NTYzIDQwLjAzMTI1IDMzLjY4NzVDNDAuMDMxMjUgMzMuNjg3NSAzNy44OTg0MzggMzUuMTQwNjI1IDM1Ljg0Mzc1IDM1Ljc1QzM0LjI5Njg3NSAzNi4yMTA5MzggMzMuMDM1MTU2IDM2LjgxMjUgMjguNzE4NzUgMzYuODEyNUMyMi42MDkzNzUgMzYuODEyNSAyMC4wMjczNDQgMzQuNjk1MzEzIDE4Ljc4MTI1IDMyLjY1NjI1QzE3Ljk4ODI4MSAzMS4zNTU0NjkgMTcuNzgxMjUgMzAuMjkyOTY5IDE3LjcxODc1IDI5LjUzMTI1TDQ0LjMxMjUgMjkuNTMxMjVDNDQuODYzMjgxIDI5LjUzMTI1IDQ1LjMxMjUgMjkuMDgyMDMxIDQ1LjMxMjUgMjguNTMxMjVMNDUuMzEyNSAyMy45Mzc1QzQ1LjMxMjUgMjMuOTI1NzgxIDQ1LjMxMjUgMjMuOTE3OTY5IDQ1LjMxMjUgMjMuOTA2MjVDNDUuMzEyNSAyMy45MDYyNSA0NS4yMjI2NTYgMjAuMzM5ODQ0IDQ0LjQ2ODc1IDE3LjI1QzQ0LjA2NjQwNiAxNS42MDE1NjMgNDMuNDQ5MjE5IDEzLjkxMDE1NiA0Mi42MjUgMTIuNTMxMjVDNDAuODUxNTYzIDkuNTU0Njg4IDM5LjEwMTU2MyA3LjMyODEyNSAzNS4xMjUgNC44NzVDMzEuMDE1NjI1IDIuMzM5ODQ0IDI2LjUzOTA2MyAyIDI0LjM3NSAyIFogTSAyNC4zNzUgNEMyNi4zMDQ2ODggNCAzMC40NDE0MDYgNC4zNTkzNzUgMzQuMDYyNSA2LjU5Mzc1QzM3LjgyMDMxMyA4LjkxMDE1NiAzOS4xOTUzMTMgMTAuNjk1MzEzIDQwLjkwNjI1IDEzLjU2MjVDNDEuNTg1OTM4IDE0LjcwNzAzMSA0Mi4xNjc5NjkgMTYuMjM4MjgxIDQyLjUzMTI1IDE3LjcxODc1QzQzLjIwNzAzMSAyMC40ODgyODEgNDMuMzEyNSAyMy45Mzc1IDQzLjMxMjUgMjMuOTM3NUw0My4zMTI1IDI3LjUzMTI1TDE2LjY4NzUgMjcuNTMxMjVDMTYuMTYwMTU2IDI3LjUzMTI1IDE1LjcxODc1IDI3Ljk0MTQwNiAxNS42ODc1IDI4LjQ2ODc1QzE1LjY4NzUgMjguNDY4NzUgMTUuNDY4NzUgMzEuMDgyMDMxIDE3LjA2MjUgMzMuNjg3NUMxOC42NTYyNSAzNi4yOTI5NjkgMjIuMTIxMDk0IDM4LjgxMjUgMjguNzE4NzUgMzguODEyNUMzMy4yNDIxODggMzguODEyNSAzNS4wNDY4NzUgMzguMDU4NTk0IDM2LjQwNjI1IDM3LjY1NjI1QzM3LjYwNTQ2OSAzNy4zMDA3ODEgMzguNzI2NTYzIDM2Ljc1MzkwNiAzOS41OTM3NSAzNi4yODEyNUwzOS41OTM3NSA0My4xNTYyNUMzOC45Mzc1IDQzLjUzOTA2MyAzNC41OTc2NTYgNDYgMjcuNTYyNSA0NkMyNS40MDYyNSA0NiAyMy4xNjc5NjkgNDUuODA4NTk0IDIxLjA2MjUgNDUuMTI1QzE5LjIxMDkzOCA0NC41MjM0MzggMTUuMzE2NDA2IDQyLjg4MjgxMyAxMi43NSAzOS4xMjVDMTEuODIwMzEzIDM3Ljc2MTcxOSAxMC43ODkwNjMgMzUuOTM3NSAxMC4zMTI1IDM0LjI1QzkuNzkyOTY5IDMyLjQxMDE1NiA5LjgxMjUgMzAuNTc4MTI1IDkuODEyNSAyOS41QzkuODEyNSAyNS43MTg3NSAxMS4xMDkzNzUgMjIuMDk3NjU2IDEzLjMxMjUgMTkuNTMxMjVDMTQuMzkwNjI1IDE4LjI3MzQzOCAxNS41MjczNDQgMTcuMzUxNTYzIDE2LjU5Mzc1IDE2LjU5Mzc1QzE2LjU3ODEyNSAxNi42MjUgMTYuNTc4MTI1IDE2LjYyMTA5NCAxNi41NjI1IDE2LjY1NjI1QzE1LjcxNDg0NCAxOC42NTYyNSAxNS41IDIwLjYyNSAxNS41IDIwLjYyNUMxNS40NzI2NTYgMjAuOTA2MjUgMTUuNTY2NDA2IDIxLjE4MzU5NCAxNS43NTc4MTMgMjEuMzk0NTMxQzE1Ljk0OTIxOSAyMS42MDE1NjMgMTYuMjE4NzUgMjEuNzE4NzUgMTYuNSAyMS43MTg3NUwzMi4wOTM3NSAyMS43MTg3NUMzMi42MDE1NjMgMjEuNzIyNjU2IDMzLjAzMTI1IDIxLjM0NzY1NiAzMy4wOTM3NSAyMC44NDM3NUMzMy4wOTM3NSAyMC44NDM3NSAzMy4zNTU0NjkgMTguMjg5MDYzIDMyLjI1IDE1LjY4NzVDMzEuMTQ0NTMxIDEzLjA4NTkzOCAyOC40NDE0MDYgMTAuNDA2MjUgMjMuMjUgMTAuNDA2MjVDMTkuMzQ3NjU2IDEwLjQwNjI1IDE0LjczODI4MSAxMS43MTg3NSAxMS4zNzUgMTMuODEyNUM4LjkyMTg3NSAxNS4zMzk4NDQgNy4wMjM0MzggMTcuMTI1IDUuNTkzNzUgMTguNjU2MjVDNi41MTk1MzEgMTUuNDY4NzUgOC4zODI4MTMgMTEuMDk3NjU2IDEyLjUzMTI1IDcuOTM3NUMxNS4zNTkzNzUgNS43ODEyNSAxOS4xNTYyNSA0IDI0LjM3NSA0IFogTSAyMy4yNSAxMi40MDYyNUMyNy44MDA3ODEgMTIuNDA2MjUgMjkuNTMxMjUgMTQuNDEwMTU2IDMwLjQwNjI1IDE2LjQ2ODc1QzMwLjk4MDQ2OSAxNy44MTY0MDYgMzEuMDgyMDMxIDE4LjkzMzU5NCAzMS4wOTM3NSAxOS43MTg3NUwxNy43ODEyNSAxOS43MTg3NUMxNy44OTQ1MzEgMTkuMDgyMDMxIDE3LjkyOTY4OCAxOC41NjI1IDE4LjQwNjI1IDE3LjQzNzVDMTkuMTA5Mzc1IDE1Ljc3NzM0NCAyMC4yODEyNSAxNC4zNzUgMjAuMjgxMjUgMTQuMzc1QzIwLjQ3NjU2MyAxNC4xNjAxNTYgMjAuNTY2NDA2IDEzLjg3MTA5NCAyMC41MzEyNSAxMy41ODIwMzFDMjAuNDkyMTg4IDEzLjI5Mjk2OSAyMC4zMzU5MzggMTMuMDM1MTU2IDIwLjA5Mzc1IDEyLjg3NUMyMS4xNzE4NzUgMTIuNjg3NSAyMi4yNzM0MzggMTIuNDA2MjUgMjMuMjUgMTIuNDA2MjVaIiAvPg0KPC9zdmc+'
+    }, {
+        id: 'identity-contextmenu-openwithbrowser-changebrowser',
+        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "更换浏览器" : "Change browser",
+        tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? "更换浏览器" : "Change browser",
+        style: 'list-style-image: url("chrome://global/skin/icons/settings.svg");',
+        oncommand: function (event) {
+            let prefs = addMenu.prefs, browser = prefs.getStringPref("chooseBrowser", "");
+            function chooseBrowser() {
+                let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
+                fp.appendFilter(Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file", "*.exe"); // 非 Windows 必须注释这一行，不过不一定能用
+                fp.open(res => {
+                    if (res != Ci.nsIFilePicker.returnOK) return;
+                    prefs.setStringPref("chooseBrowser", fp.file.path);
+                });
+            }
+
+            alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "请先设置浏览器的路径!!!" : "Please set browser path first!!!");
+            chooseBrowser();
+        }
+    }])
+}
+```
+
+### 标签页右键菜单
+
+示例：标签右键菜单
+
+```js
+tab([
+    {
+        label: "复制标题",
+        text: "%TITLE%",
+    },
+    {
+        label: "复制标题+URL",
+        text: "%TITLE%\n%URL%",
+    },
+    {
+        label: "复制标题（MD）",
+        accesskey: "D",
+        text: "[%TITLE%](%URL%)",
+    },
+    {
+        label: "复制标题（BBS）",
+        text: "[url=%URL%]%TITLE%[/url]",
+    },
+    {
+        label: "复制标题（Html）",
+        text: '<a href="%URL%">%TITLE%</a>',
+    },
+    {
+        label: "复制标题（Link）",
+        class: "copy",
+        oncommand: function(){
+            var url = addMenu.convertText('%URL%'),
+                label = addMenu.convertText('%TITLE%');
+            addMenu.copyLink(url, label);
+        }
+    },
+    {},
+    {
+        label: "复制 Favicon 的 URL",
+        text: "%FAVICON%",
+    }, 
+    {
+        label: "复制 Favicon 的 Base64",
+        text: "%FAVICON_BASE64%",
+    },
+    {
+        label: "切换编码（gbk、utf-8）",
+        accesskey: "e",
+        oncommand: function () {
+            var charset = gBrowser.selectedTab.ownerDocument.charset;
+            BrowserSetForcedCharacterSet(charset == "gbk" ? "utf-8" : "gbk"); // 不能用，找大佬修复吧
+        }
+    },
+    {
+        label: "关闭所有标签页",
+        oncommand: function() {
+            // gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab'));
+            gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab', { triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) })); // 没记错是 FF 78 开始必须提供 triggeringPrincipal 参数
+        },
+        insertAfter:"context_closeOtherTabs",
+        accesskey: "Q"
+    },
+    {
+        label: "复制所有标签标题+地址",
+        class: "copy",
+        oncommand: function(){
+            var text = "";
+            var tabs = gBrowser.mTabContainer ? gBrowser.mTabContainer.childNodes : gBrowser.tabs; // Firefox 61 删除了 mTabContainer
+            for (var i = 0, l = tabs.length, doc; i < l; i++) {
+                doc = tabs[i].linkedBrowser.contentDocument;
+                if (doc) {
+                    text += doc.title + "\n" + doc.location.href + "\n";
+                } else {
+                    doc = tabs[i].linkedBrowser
+                    text += doc.contentTitle + "\n" + doc.currentURI.spec + "\n";
+                }
+            }
+            addMenu.copy(text);
+        }
+    },
+]);
+```
+
+### 页面右键菜单
 
 打开方式(默认当前页面)，通过`where` 更改，具体`tab`(前台)、`tabshifted`(后台)、`window`(窗口)、`current`(当前页面)
 
@@ -258,115 +442,6 @@ page([
     }
 ]);
 ```
-示例：汉堡菜单添加重启菜单（必须是 2022.05.20 以后的版本调用，`data-l10n-href`和`data-l10n-id`必须是2022.05.27以后的版本才能用）
-
-```js
-app([{
-    'id': 'appMenu-advanced-settings-button',
-    'data-l10n-href': 'toolkit/about/config.ftl',
-    'data-l10n-id': 'about-config-page-title',
-    'insertAfter': 'appMenu-settings-button',
-    'image': 'chrome://global/skin/icons/settings.svg',
-    'oncommand': `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
-}, {
-    'id': 'appMenu-restart-button2',
-    //'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
-    'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
-    'data-l10n-id': 'restart-button-label',
-    'insertBefore': 'appMenu-quit-button2',
-    'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-    'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-}])
-```
-示例：汉堡菜单移动更多工具到退出前（必须是 2022.05.20 以后的版本调用）
-```js
-app([{
-    id: 'appMenu-more-button2',
-    clone: false,
-    insertBefore: 'appMenu-quit-button2',
-}])
-```
-示例：标签右键菜单
-
-```js
-tab([
-    {
-        label: "复制标题",
-        text: "%TITLE%",
-    },
-    {
-        label: "复制标题+URL",
-        text: "%TITLE%\n%URL%",
-    },
-    {
-        label: "复制标题（MD）",
-        accesskey: "D",
-        text: "[%TITLE%](%URL%)",
-    },
-    {
-        label: "复制标题（BBS）",
-        text: "[url=%URL%]%TITLE%[/url]",
-    },
-    {
-        label: "复制标题（Html）",
-        text: '<a href="%URL%">%TITLE%</a>',
-    },
-    {
-        label: "复制标题（Link）",
-        class: "copy",
-        oncommand: function(){
-            var url = addMenu.convertText('%URL%'),
-                label = addMenu.convertText('%TITLE%');
-            addMenu.copyLink(url, label);
-        }
-    },
-    {},
-    {
-        label: "复制 Favicon 的 URL",
-        text: "%FAVICON%",
-    }, 
-    {
-        label: "复制 Favicon 的 Base64",
-        text: "%FAVICON_BASE64%",
-    },
-    {
-        label: "切换编码（gbk、utf-8）",
-        accesskey: "e",
-        oncommand: function () {
-            var charset = gBrowser.selectedTab.ownerDocument.charset;
-            BrowserSetForcedCharacterSet(charset == "gbk" ? "utf-8" : "gbk"); // 不能用，找大佬修复吧
-        }
-    },
-    {
-        label: "关闭所有标签页",
-        oncommand: function() {
-            // gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab'));
-            gBrowser.removeAllTabsBut(gBrowser.addTab('about:newtab', { triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) })); // 没记错是 FF 78 开始必须提供 triggeringPrincipal 参数
-        },
-        insertAfter:"context_closeOtherTabs",
-        accesskey: "Q"
-    },
-    {
-        label: "复制所有标签标题+地址",
-        class: "copy",
-        oncommand: function(){
-            var text = "";
-            var tabs = gBrowser.mTabContainer ? gBrowser.mTabContainer.childNodes : gBrowser.tabs; // Firefox 61 删除了 mTabContainer
-            for (var i = 0, l = tabs.length, doc; i < l; i++) {
-                doc = tabs[i].linkedBrowser.contentDocument;
-                if (doc) {
-                    text += doc.title + "\n" + doc.location.href + "\n";
-                } else {
-                    doc = tabs[i].linkedBrowser
-                    text += doc.contentTitle + "\n" + doc.currentURI.spec + "\n";
-                }
-            }
-            addMenu.copy(text);
-        }
-    },
-]);
-```
-
 示例：页面右键添加多功能子菜单
 
 ```js
@@ -858,51 +933,6 @@ page({
     },
     image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABBElEQVQ4jdWSsWqEQBBAbcRKC4VlBf8gfUr/w1oQBLuABNlUNkE2LCJqJQe6CZFUqXIfkINwCP6B2ITbI22uCCkmnVwCB9pdHrxqmMcUI0lnAef8uWmazVw55xvGWDEF6rreO44DS6yqajsFsizb2bYNS2SMvU2BMAzfZVkGVVVB13VACAHGGEzTBNM0AWMMCCEwDAM0TQNFUSCKotdfAUmSYIlnFnhZrz/SNP3MsmyWRVEc2rbdHl1wnSRJsqKUTpZl+dT3/b7rul2e54/HM0rpyvO8q5OPFcdxMY7jtxAChBAwDMNXEAQ3Jxf+YlnWpe/7d4SQB0LIveu6txjji9mB/8UPojsDPwcvqoEAAAAASUVORK5CYII="
 });
-```
-示例：左键用第三方浏览器打开当前页，右键直接打开第三方浏览器，CTRL+右键设置浏览器路径。
-```js
-page({
-    label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "其他浏览器中打开" : "Open in other browser",
-    id: 'context-open-with-browser',
-    tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? "左键打开，右键设置浏览器路径" : "Left click: open in other browser\nRight click: set browser path",
-    onclick: function (event) {
-        let prefs = addMenu.prefs, browser = prefs.getStringPref("chooseBrowser", "");
-        function chooseBrowser() {
-            let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-            fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
-            fp.appendFilter(Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file", "*.exe"); // 非 Windows 必须注释这一行，不过不一定能用
-            fp.open(res => {
-                if (res != Ci.nsIFilePicker.returnOK) return;
-                prefs.setStringPref("chooseBrowser", fp.file.path);
-            });
-        }
-
-        function isFileExists(path) {
-            if (!path || path === "") return false;
-            let app = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsIFile);
-            app.initWithPath(path);
-            return app.exists();
-        }
-
-        if (event.button == 0) {
-            let href = addMenu.convertText("%RLINK_OR_URL%");
-            if (browser) browser = addMenu.convertUnicode(browser);
-            if (!isFileExists(browser)) {
-                alert(Services.locale.appLocaleAsBCP47.includes("zh-") ? "请先右键点击菜单设置浏览器的路径!!!" : "Please right click to set browser path first!!!");
-                return;
-            }
-            if (href.startsWith('http')) {
-                addMenu.exec(browser, href);
-            } else {
-                addMenu.exec(browser);
-            }
-        } else if (event.button == 2) {
-            chooseBrowser();
-        }
-    },
-    image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI0LjM3NSAyQzE4LjY5NTMxMyAyIDE0LjQxMDE1NiAzLjk4MDQ2OSAxMS4zMTI1IDYuMzQzNzVDMy40NTMxMjUgMTIuMzM1OTM4IDIuNjg3NSAyMi40Njg3NSAyLjY4NzUgMjIuNDY4NzVDMi42NDQ1MzEgMjIuOTI5Njg4IDIuOTIxODc1IDIzLjM2MzI4MSAzLjM2MzI4MSAyMy41MTE3MTlDMy44MDA3ODEgMjMuNjYwMTU2IDQuMjg1MTU2IDIzLjQ4ODI4MSA0LjUzMTI1IDIzLjA5Mzc1QzQuNTMxMjUgMjMuMDkzNzUgNy40MTc5NjkgMTguNjI1IDEyLjQzNzUgMTUuNUMxNC4xMzY3MTkgMTQuNDQxNDA2IDE2LjMwNDY4OCAxMy42Njc5NjkgMTguNSAxMy4xMjVDMTcuNjMyODEzIDEzLjUxMTcxOSAxNC42MzY3MTkgMTQuOTYwOTM4IDExLjgxMjUgMTguMjVDOS4yNjE3MTkgMjEuMjE4NzUgNy44MTI1IDI1LjI2MTcxOSA3LjgxMjUgMjkuNUM3LjgxMjUgMzAuNTY2NDA2IDcuNzkyOTY5IDMyLjYxMzI4MSA4LjQwNjI1IDM0Ljc4MTI1QzguOTc2NTYzIDM2LjgwMDc4MSAxMC4wNzgxMjUgMzguNzYxNzE5IDExLjA5Mzc1IDQwLjI1QzE0LjAzNTE1NiA0NC41NTQ2ODggMTguMzU5Mzc1IDQ2LjM1NTQ2OSAyMC40Mzc1IDQ3LjAzMTI1QzIyLjgzMjAzMSA0Ny44MDg1OTQgMjUuMjkyOTY5IDQ4IDI3LjU2MjUgNDhDMzUuNjkxNDA2IDQ4IDQxLjEyNSA0NC42NTYyNSA0MS4xMjUgNDQuNjU2MjVDNDEuNDI1NzgxIDQ0LjQ2ODc1IDQxLjYwMTU2MyA0NC4xMzY3MTkgNDEuNTkzNzUgNDMuNzgxMjVMNDEuNTkzNzUgMzQuNTMxMjVDNDEuNjAxNTYzIDM0LjE1NjI1IDQxLjM5ODQzOCAzMy44MTI1IDQxLjA3MDMxMyAzMy42MzI4MTNDNDAuNzQyMTg4IDMzLjQ1NzAzMSA0MC4zMzk4NDQgMzMuNDc2NTYzIDQwLjAzMTI1IDMzLjY4NzVDNDAuMDMxMjUgMzMuNjg3NSAzNy44OTg0MzggMzUuMTQwNjI1IDM1Ljg0Mzc1IDM1Ljc1QzM0LjI5Njg3NSAzNi4yMTA5MzggMzMuMDM1MTU2IDM2LjgxMjUgMjguNzE4NzUgMzYuODEyNUMyMi42MDkzNzUgMzYuODEyNSAyMC4wMjczNDQgMzQuNjk1MzEzIDE4Ljc4MTI1IDMyLjY1NjI1QzE3Ljk4ODI4MSAzMS4zNTU0NjkgMTcuNzgxMjUgMzAuMjkyOTY5IDE3LjcxODc1IDI5LjUzMTI1TDQ0LjMxMjUgMjkuNTMxMjVDNDQuODYzMjgxIDI5LjUzMTI1IDQ1LjMxMjUgMjkuMDgyMDMxIDQ1LjMxMjUgMjguNTMxMjVMNDUuMzEyNSAyMy45Mzc1QzQ1LjMxMjUgMjMuOTI1NzgxIDQ1LjMxMjUgMjMuOTE3OTY5IDQ1LjMxMjUgMjMuOTA2MjVDNDUuMzEyNSAyMy45MDYyNSA0NS4yMjI2NTYgMjAuMzM5ODQ0IDQ0LjQ2ODc1IDE3LjI1QzQ0LjA2NjQwNiAxNS42MDE1NjMgNDMuNDQ5MjE5IDEzLjkxMDE1NiA0Mi42MjUgMTIuNTMxMjVDNDAuODUxNTYzIDkuNTU0Njg4IDM5LjEwMTU2MyA3LjMyODEyNSAzNS4xMjUgNC44NzVDMzEuMDE1NjI1IDIuMzM5ODQ0IDI2LjUzOTA2MyAyIDI0LjM3NSAyIFogTSAyNC4zNzUgNEMyNi4zMDQ2ODggNCAzMC40NDE0MDYgNC4zNTkzNzUgMzQuMDYyNSA2LjU5Mzc1QzM3LjgyMDMxMyA4LjkxMDE1NiAzOS4xOTUzMTMgMTAuNjk1MzEzIDQwLjkwNjI1IDEzLjU2MjVDNDEuNTg1OTM4IDE0LjcwNzAzMSA0Mi4xNjc5NjkgMTYuMjM4MjgxIDQyLjUzMTI1IDE3LjcxODc1QzQzLjIwNzAzMSAyMC40ODgyODEgNDMuMzEyNSAyMy45Mzc1IDQzLjMxMjUgMjMuOTM3NUw0My4zMTI1IDI3LjUzMTI1TDE2LjY4NzUgMjcuNTMxMjVDMTYuMTYwMTU2IDI3LjUzMTI1IDE1LjcxODc1IDI3Ljk0MTQwNiAxNS42ODc1IDI4LjQ2ODc1QzE1LjY4NzUgMjguNDY4NzUgMTUuNDY4NzUgMzEuMDgyMDMxIDE3LjA2MjUgMzMuNjg3NUMxOC42NTYyNSAzNi4yOTI5NjkgMjIuMTIxMDk0IDM4LjgxMjUgMjguNzE4NzUgMzguODEyNUMzMy4yNDIxODggMzguODEyNSAzNS4wNDY4NzUgMzguMDU4NTk0IDM2LjQwNjI1IDM3LjY1NjI1QzM3LjYwNTQ2OSAzNy4zMDA3ODEgMzguNzI2NTYzIDM2Ljc1MzkwNiAzOS41OTM3NSAzNi4yODEyNUwzOS41OTM3NSA0My4xNTYyNUMzOC45Mzc1IDQzLjUzOTA2MyAzNC41OTc2NTYgNDYgMjcuNTYyNSA0NkMyNS40MDYyNSA0NiAyMy4xNjc5NjkgNDUuODA4NTk0IDIxLjA2MjUgNDUuMTI1QzE5LjIxMDkzOCA0NC41MjM0MzggMTUuMzE2NDA2IDQyLjg4MjgxMyAxMi43NSAzOS4xMjVDMTEuODIwMzEzIDM3Ljc2MTcxOSAxMC43ODkwNjMgMzUuOTM3NSAxMC4zMTI1IDM0LjI1QzkuNzkyOTY5IDMyLjQxMDE1NiA5LjgxMjUgMzAuNTc4MTI1IDkuODEyNSAyOS41QzkuODEyNSAyNS43MTg3NSAxMS4xMDkzNzUgMjIuMDk3NjU2IDEzLjMxMjUgMTkuNTMxMjVDMTQuMzkwNjI1IDE4LjI3MzQzOCAxNS41MjczNDQgMTcuMzUxNTYzIDE2LjU5Mzc1IDE2LjU5Mzc1QzE2LjU3ODEyNSAxNi42MjUgMTYuNTc4MTI1IDE2LjYyMTA5NCAxNi41NjI1IDE2LjY1NjI1QzE1LjcxNDg0NCAxOC42NTYyNSAxNS41IDIwLjYyNSAxNS41IDIwLjYyNUMxNS40NzI2NTYgMjAuOTA2MjUgMTUuNTY2NDA2IDIxLjE4MzU5NCAxNS43NTc4MTMgMjEuMzk0NTMxQzE1Ljk0OTIxOSAyMS42MDE1NjMgMTYuMjE4NzUgMjEuNzE4NzUgMTYuNSAyMS43MTg3NUwzMi4wOTM3NSAyMS43MTg3NUMzMi42MDE1NjMgMjEuNzIyNjU2IDMzLjAzMTI1IDIxLjM0NzY1NiAzMy4wOTM3NSAyMC44NDM3NUMzMy4wOTM3NSAyMC44NDM3NSAzMy4zNTU0NjkgMTguMjg5MDYzIDMyLjI1IDE1LjY4NzVDMzEuMTQ0NTMxIDEzLjA4NTkzOCAyOC40NDE0MDYgMTAuNDA2MjUgMjMuMjUgMTAuNDA2MjVDMTkuMzQ3NjU2IDEwLjQwNjI1IDE0LjczODI4MSAxMS43MTg3NSAxMS4zNzUgMTMuODEyNUM4LjkyMTg3NSAxNS4zMzk4NDQgNy4wMjM0MzggMTcuMTI1IDUuNTkzNzUgMTguNjU2MjVDNi41MTk1MzEgMTUuNDY4NzUgOC4zODI4MTMgMTEuMDk3NjU2IDEyLjUzMTI1IDcuOTM3NUMxNS4zNTkzNzUgNS43ODEyNSAxOS4xNTYyNSA0IDI0LjM3NSA0IFogTSAyMy4yNSAxMi40MDYyNUMyNy44MDA3ODEgMTIuNDA2MjUgMjkuNTMxMjUgMTQuNDEwMTU2IDMwLjQwNjI1IDE2LjQ2ODc1QzMwLjk4MDQ2OSAxNy44MTY0MDYgMzEuMDgyMDMxIDE4LjkzMzU5NCAzMS4wOTM3NSAxOS43MTg3NUwxNy43ODEyNSAxOS43MTg3NUMxNy44OTQ1MzEgMTkuMDgyMDMxIDE3LjkyOTY4OCAxOC41NjI1IDE4LjQwNjI1IDE3LjQzNzVDMTkuMTA5Mzc1IDE1Ljc3NzM0NCAyMC4yODEyNSAxNC4zNzUgMjAuMjgxMjUgMTQuMzc1QzIwLjQ3NjU2MyAxNC4xNjAxNTYgMjAuNTY2NDA2IDEzLjg3MTA5NCAyMC41MzEyNSAxMy41ODIwMzFDMjAuNDkyMTg4IDEzLjI5Mjk2OSAyMC4zMzU5MzggMTMuMDM1MTU2IDIwLjA5Mzc1IDEyLjg3NUMyMS4xNzE4NzUgMTIuNjg3NSAyMi4yNzM0MzggMTIuNDA2MjUgMjMuMjUgMTIuNDA2MjVaIiAvPg0KPC9zdmc+",
-    accesskey: 'e'
-})
 ```
 示例：使用 Everything 搜索选中的文字，需要自行设置路径。
 ```js
