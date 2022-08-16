@@ -1695,7 +1695,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #toolbar-context-menu:not([addMenu~="navbar"]) .addMenu[condition~="navbar"],
 #toolbar-context-menu:not([addMenu~="personal"]) .addMenu[condition~="personal"],
 #toolbar-context-menu:not([addMenu~="button"]) .addMenu[condition~="button"],
-#toolbar-context-menu[addMenu~="menubar"] .addMenu[condition~="menubar"],
+#toolbar-context-menu[addMenu~="menubar"] .addMenu[condition~="nomenubar"],
 #toolbar-context-menu[addMenu~="tabs"] .addMenu[condition~="notabs"],
 #toolbar-context-menu[addMenu~="navbar"] .addMenu[condition~="nonavbar"],
 #toolbar-context-menu[addMenu~="personal"] .addMenu[condition~="nopersonal"],

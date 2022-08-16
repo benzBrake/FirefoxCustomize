@@ -50,12 +50,13 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - page: 页面右键菜单
  - tab: 标签右键
  - tool: 工具菜单
+ - nav: 导航工具栏右键菜单
  - app: 左上角橙色菜单（firefox 29 以下版本）/ 汉堡菜单 firefox 29 以上版本
  - ident: SSL 小锁右键菜单（主要用于非浏览器内置网页）
 
 二级子菜单（menu with menupopup）
 
->    PageMenu, TabMenu, ToolMenu, AppMenu, IdentMenu
+>    PageMenu, TabMenu, ToolMenu, NavMenu, AppMenu, IdentMenu
 
 ### 标签的介绍
 
@@ -66,7 +67,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     text        复制你想要的字符串到剪贴板，可与 keyword, exec 一起使用
     url         打开你想要的网址
     where       打开的位置 (current, tab, tabshifted, window)
-    condition   菜单出现的条件 (select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput)
+    condition   菜单出现的条件 (网页右键：select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput；工具栏右键：menubar, tabs, navbar, personal, button, nomenubar, notabs, nonavbar, nopersonal, nobutton)
     oncommand   自定义命令
     command     命令的 id
     onclick     点击的函数
