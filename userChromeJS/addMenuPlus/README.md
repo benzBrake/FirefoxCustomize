@@ -474,41 +474,36 @@ pagesub([
         url: "javascript:(function(p){open('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3EForce%3C/a%3E%3Cscript%3Efunction%20i(n){return%20d.getElementById(n)}function%20z(){c+=0.2;if(c%3E=t){c=0;e.location=u;r++}x()}function%20x(){s=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0||c/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22Reloads:%20%22+r;i(3).innerHTML=%22Time:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)}c=r=0;d=document;e=opener.top;u=prompt(%22URL%22,e.location.href);t=u?prompt(%22Seconds%22,60):0;setInterval(%22z()%22,200);if(!t){window.close()}%3C/script%3E%3C/body%3E')})('status=0,scrollbars=0,width=100,height=115,left=1,top=1')",
         image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAK2SURBVDhPY0AGq/6HMs9/YFo794Hp8oUPrTIWP3Aymn/fXqC+noEJqoQwmHpT2nvybZlPU24p/pl0Tft130Xzox1n7YKg0vjBkmde8vMemkycekvu28Qb0v87Lyn8rzuu9q/ysG4DUJoRogoHWPLE3mD2PZ3DU27J/Zl8S+p/3zXZ/63nlP5XHtL4VLRP0xmqDDuY/9JUYvY97b2Tb0n/m3Jb6v+E69L/Oi/J/qg/qfKvdJ/WueKdemJQpWDwH+iaVaGhzFAuA8Os+zoZQH//mnRTCmTAvUk3ZTrazymmVB1Re160R2ti6CoGhGIgOCYjw3lYWVkbzJn535h1+h2lVZNuSnyfckNq6dS70nqr/jMw11/RYivZp92Wv0vPHawQCZy1sFA5qKraeMbYmJVh5lNJLmDIb5h8W7Jy4i0hPqgaMKifry+wONcMRey8u7vCUX39tfvl5HZukpTkYph5xph10i3J5CkvRXmgauDgsIGB/hETk/pjFhac++3tWU47OFgf1tU9sFdO7u9eaelVYBeAwJyH6lKrViEFChRsU1FJ2qqg8GafqWneAVPTtu1KSk+2SEn93ywp+WublFQmVBl2AAxppjVyctNXiIn9XyMl9XO1pOTfVUD2SjGxf2tERfevFRGRhCrFDlYpKfEvlpA4Ol9Y+D8ILwDihcLCfxeKiJxaKiJiDFWGG8yWl9ecLir6dKqg4P9pQDwdRAsJbZ8jLKwOlMafKoGAcaKoqHKvgMD+bn7+V718fD97+Pn/dfPwbAeyhaBqIGDlypWiixcvNl24cKH7okWLgoF0FJBOXrJwYeq87u7y2cXFk6bHx2+e7ONzo9/a+vn0zMxqkFqQHpBeBqBixSVLlgQB6WygYBWQ3QKkO4D0JKDYVBAGsRcvWNC5aN689oXz51eD1EL0LFIEAGnEJwptdKj6AAAAAElFTkSuQmCC"
     }, {
-        label: "全页面截图(FF 已经自带截图，而且这个不会修)",
+        label: "全页面截图", // github 不能截
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABISURBVDhPY6AOWPnmPwpGBuhy6PJggE8Buhy6PBjglEADA2/AMAAUhwHtDUDGyACbPAjDAV5JIMAmD8IkA7I1wgDFBmAABgYA9oelARp3ZZ4AAAAASUVORK5CYII=",
         oncommand: function () {
             function receiveMessage(message) {
                 switch (message.name) {
                     case 'addMenu_full_scrrenshot':
-                        internalSave(
-                            data.image,
-                            null, // document
-                            addMenu.convertText("%TITLES%") + ".png",
-                            null, // content disposition
-                            "image/png", // _canvasToBlobURL uses image/png by default.
-                            true, // bypass cache
-                            "保存截图",
-                            null, // chosen data
-                            null,
-                            null,
-                            null, // initiating doc
-                            false, // don't skip prompt for where to save
-                            null, // cache key
-                            false,
-                            document.nodePrincipal /* system, because blob: */
-                        );
-                        window.messageManager.removeMessageListener("addMenu_full_scrrenshot", receiveMessage);
+                        if (message.data.image == "data:,") {
+                            addMenu.alert("截图失败");
+                        } else {
+                            saveURL(message.data.image, null, addMenu.convertText("%TITLES%") + ".png", null, false,
+                                true,
+                                null,
+                                null,
+                                null,
+                                PrivateBrowsingUtils.isWindowPrivate(window),
+                                Services.scriptSecurityManager.createNullPrincipal({}));
+                            window.messageManager.removeMessageListener("addMenu_full_scrrenshot", receiveMessage);
+                        }
                         break;
                 }
             }
             window.messageManager.addMessageListener("addMenu_full_scrrenshot", receiveMessage);
             let frameScript = function () {
-                var canvas = content.document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
-                canvas.width = content.document.documentElement.scrollWidth;
-                canvas.height = content.document.documentElement.scrollHeight;
+                var document = content.document;
+                var canvas = document.createElement("canvas");
+                canvas.width = document.documentElement.scrollWidth;
+                canvas.height = document.documentElement.scrollHeight;
                 var ctx = canvas.getContext("2d");
                 ctx.drawWindow(content, 0, 0, canvas.width, canvas.height, "rgb(255,255,255)");
-                let data = { image: canvas.toDataUrl() };
+                var data = { image: canvas.toDataURL("image/png") };
                 sendSyncMessage("addMenu_full_scrrenshot", data);
             }
             let frameScriptURI = 'data:application/javascript,'
