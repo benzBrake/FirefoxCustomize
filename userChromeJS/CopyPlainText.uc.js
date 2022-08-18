@@ -4,7 +4,7 @@
 // @author          Ryan
 // @include         main
 // @version         0.0.1
-// @compatibility   Firefox 72
+// @compatibility   Firefox 57
 // @shutdown        window.CopyPlainText.destroy()
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
 // ==/UserScript==
