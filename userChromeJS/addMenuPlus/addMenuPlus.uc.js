@@ -5,7 +5,7 @@
 // @author         Griever
 // @include        main
 // @license        MIT License
-// @compatibility  Firefox 68+
+// @compatibility  Firefox 57
 // @charset        UTF-8
 // @version        0.1.3
 // @startup        window.addMenu.init();
