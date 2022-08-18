@@ -203,8 +203,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
     }
 
-    const _LOCALE = LANG.hasOwnProperty(Services.locale.appLocaleAsBCP47) ? Services.locale.appLocaleAsBCP47 : 'en-US';
-
     window.addMenu = {
         get prefs() {
             delete this.prefs;
@@ -240,6 +238,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         get supportLocalization() {
             delete this.supportLocalization;
             return this.supportLocalization = typeof Localization === "function";
+        },
+        get locale() {
+            delete this.locale;
+            try {
+                this.locale = Services.prefs.getCharPref("general.useragent.locale", "en-US");
+            } catch (e) {
+                this.locale = "en-US";
+            }
+            return this.locale;
         },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
@@ -676,7 +683,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             try {
                 sandbox.locale = Services.prefs.getCharPref("general.useragent.locale", "zh-CN");
             } catch (e) {
-
+                sandbox.locale = "en-US";
             }
 
 
@@ -1652,6 +1659,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }
 
     function $L(key, replace) {
+        const _LOCALE = Services.prefs.getCharPref("general.useragent.locale", "zh-CN");
         let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
         if (typeof replace !== "undefined") {
             str = str.replace("%s", replace);
