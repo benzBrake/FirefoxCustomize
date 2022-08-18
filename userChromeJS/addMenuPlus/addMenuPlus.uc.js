@@ -321,10 +321,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             // 单击三杠按钮时移动菜单到 AppMenu
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, { once: true });
 
-            if (enableidentityBoxContextMenu && $('identity-box')) {
+            this.identityBox = $('identity-icon') || $('identity-box')
+            if (enableidentityBoxContextMenu && this.identityBox) {
                 // SSL 小锁右键菜单
-                ins = $('identity-box');
-                ins.addEventListener("click", this, false);
+                this.identityBox.addEventListener("click", this, false);
+                this.identityBox.setAttribute('contextmenu', false);
                 var popup = ins.appendChild($C('menupopup', {
                     id: 'identity-box-contextmenu'
                 }));
@@ -406,12 +407,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                 e.parentNode.removeChild(e)
             });
-            if (enableidentityBoxContextMenu && $('identity-box-contextmenu')) {
+            if ($('identity-box-contextmenu')) {
                 var popup = $('identity-box-contextmenu');
                 popup.parentNode.removeChild(popup);
-                if ($('identity-box'))
-                    $('identity-box').removeEventListener("click", this, false);
             }
+            if (this.identityBox) {
+                this.identityBox.removeAttribute('contextmenu');
+                this.identityBox.removeEventListener("click", this, false);
+            }
+
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
             delete window.addMenu;
@@ -487,8 +491,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     } catch (e) { }
                     break;
                 case 'click':
-                    if (event.button == 2 && (event.target.id === "identity-box" || event.target.id === "identity-icon"))
+                    if (event.button == 2 && event.target.id === this.identityBox.id)
                         $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
+
                     break;
             }
         },
