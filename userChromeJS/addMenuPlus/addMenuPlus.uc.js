@@ -467,9 +467,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
 
                     if (event.target.id === "toolbar-context-menu") {
-                        if (event.target != event.currentTarget) return;
-
-                        let triggerNode = event.currentTarget.triggerNode;
+                        let triggerNode = event.target.triggerNode;
                         var state = [];
                         const map = {
                             'toolbar-menubar': 'menubar',
@@ -478,7 +476,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             'PersonalToolbar': 'personal',
                         }
                         Object.keys(map).map(e => $(e).contains(triggerNode) && state.push(map[e]));
-                        if (triggerNode.localName === "button") {
+                        if (triggerNode && triggerNode.localName === "toolbarbutton") {
                             state.push("button");
                         }
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
