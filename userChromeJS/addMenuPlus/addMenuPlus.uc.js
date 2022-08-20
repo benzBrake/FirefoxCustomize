@@ -242,9 +242,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         get locale() {
             delete this.locale;
             try {
-                this.locale = Services.prefs.getCharPref("general.useragent.locale", "en-US");
+                this.locale = Services.prefs.getCharPref("general.useragent.locale");
             } catch (e) {
-                this.locale = "en-US";
+            }
+
+            if (!this.locale) {
+                this.locale = Services.locale.appLocaleAsBCP47 || "en-US";
             }
             return this.locale;
         },
