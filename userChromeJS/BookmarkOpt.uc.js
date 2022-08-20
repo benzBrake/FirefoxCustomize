@@ -1,23 +1,29 @@
 // ==UserScript==
-// @name           BookmarkOpt.uc.js
-// @description    书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮
-// @author         Ryan
-// @include        main
-// @include        chrome://browser/content/places/places.xhtml
-// @include        chrome://browser/content/places/bookmarksSidebar.xhtml
-// @include        chrome://browser/content/places/historySidebar.xhtml
-// @version        1.2.1
-// @shutdown       window.BookmarkOpt.destroy();
-// @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @version        1.2.1 新增显示隐藏书签工具栏按钮
-// @version        1.2 修复黑夜模式更新书签图标不变色，增加获取 GUID
-// @version        1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
-// @version        1.0 初始化版本
+// @name            BookmarkOpt.uc.js
+// @description     书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮
+// @author          Ryan
+// @include         main
+// @include         chrome://browser/content/places/places.xhtml
+// @include         chrome://browser/content/places/places.xul
+// @include         chrome://browser/content/places/bookmarksSidebar.xhtml
+// @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
+// @include         chrome://browser/content/places/historySidebar.xhtml
+// @include         chrome://browser/content/places/historySidebar.xul
+// @version         1.3
+// @shutdown        window.BookmarkOpt.destroy();
+// @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3 尝试兼容 Firefox 57+
+// @version         1.2.2 修改界面语言读取方式
+// @version         1.2.1 新增显示隐藏书签工具栏按钮
+// @version         1.2 修复黑夜模式更新书签图标不变色，增加获取 GUID
+// @version         1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
+// @version         1.0 初始化版本
 // ==/UserScript==
 (function (css) {
+    var firstUpperCase = ([first, ...rest]) => first ? first.toUpperCase() + rest.join('') : '';
+
     const LANG = {
         'zh-CN': {
-            "bookmarkopt options": "BookmarkOpt 选项",
             "add bookmark here": "添加书签到此处",
             "add bookmark here tooltip": "左键：添加到最后\nShift+左键：添加到最前",
             "update current bookmark": "替换为当前网址",
@@ -42,7 +48,7 @@
         }
     }
 
-    const _LOCALE = LANG.hasOwnProperty(Services.locale.appLocaleAsBCP47) ? Services.locale.appLocaleAsBCP47 : 'zh-CN';
+
 
     // 右键菜单
     const PLACES_CONTEXT_ITEMS = [{
@@ -119,22 +125,14 @@
         }
     }
 
-    let firstUpperCase = ([first, ...rest]) => first?.toUpperCase() + rest.join('');
-
     window.BookmarkOpt = {
         items: [],
         get topWin() {
             const wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
             return wm.getMostRecentWindow("navigator:browser");
         },
-        get isBookarmkSidebar() {
-            return location.href === "chrome://browser/content/places/bookmarksSidebar.xhtml";
-        },
-        get isHistorySidebar() {
-            return location.href === "chrome://browser/content/places/historySidebar.xhtml";
-        },
         get isMain() {
-            return location.href === "chrome://browser/content/browser.xhtml";
+            return location.href.startsWith("chrome://browser/content/browser.x");
         },
         addPlacesContextItems: function (ins) {
             PLACES_CONTEXT_ITEMS.forEach(p => {
@@ -154,7 +152,7 @@
                 let state = [],
                     triggerNode = event.currentTarget.triggerNode,
                     view = PlacesUIUtils.getViewForNode(triggerNode),
-                    aNode = view?.selectedNode;
+                    aNode = view ? view.selectedNode : {};
                 if (triggerNode.id == "PlacesToolbarItems") {
                     state.push("toolbar");
                 } else {
@@ -174,7 +172,7 @@
                 BookmarkOpt.clearPanelItems(target, true);
             } else if (event.type === 'popupshowing') {
                 let firstItem = target.firstChild;
-                if (firstItem?.classList.contains('bmopt-panel')) return;
+                if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
                 let last;
                 PLACES_POPUP_ITEMS.forEach(c => {
                     let item;
@@ -205,12 +203,20 @@
             let popupNode = aTriggerNode || PlacesUIUtils.lastContextMenuTriggerNode || document.popupNode;
             if (!popupNode) return;
             let view = PlacesUIUtils.getViewForNode(popupNode),
-                aNode = view?.selectedNode || popupNode._placesNode,
-                aWin = BookmarkOpt.topWin,
+                aNode;
+
+            if (view && view.selectedNode) {
+                aNode = view.selectedNode;
+            } else {
+                aNode = popupNode._placesNode;
+            }
+
+            let aWin = BookmarkOpt.topWin,
                 currentTitle = aWin.gBrowser.contentTitle,
                 currentUrl = aWin.gBrowser.currentURI.spec,
                 nodeIsFolder = PlacesUtils.nodeIsFolder(aNode),
                 nodeIsHistoryFolder = PlacesUtils.nodeIsHistoryContainer(aNode);
+
             switch (aMethod) {
                 case 'panelAdd':
                     BookmarkOpt.clearPanelItems(aTriggerNode);
@@ -319,18 +325,10 @@
             this.regexp = new RegExp(
                 [rTITLE, rURL, rHOST].join("|"), "ig");
 
-            this.addPlacesContextItems();
+            this.addPlacesContextItems($("placesContext_createBookmark"));
             $('placesContext').addEventListener('popupshowing', this.handlePlacesContextEvent, false);
             $('placesContext').addEventListener('popuphidden', this.handlePlacesContextEvent, false);
             if (this.isMain) {
-                // ($("prefSep") || $("webDeveloperMenu")).before(
-                //     $C('menuitem', {
-                //         id: "BookmarOpt-menu-options",
-                //         label: $L("bookmarkopt options"),
-                //         oncommand: "BookmarkOpt.showOptions();",
-                //         style: 'list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg")'
-                //     })
-                // );
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
@@ -379,8 +377,14 @@
     }
 
     function $C(type, props = {}, aDoc) {
-        let doc = aDoc || document;
-        let el = doc.createXULElement(type);
+        const appVersion = Services.appinfo.version.split(".")[0];
+        var doc = aDoc || document,
+            el;
+        if (appVersion >= 69) {
+            el = doc.createXULElement(type);
+        } else {
+            el = doc.createElement(type);
+        }
         el = $A(el, props);
         el.classList.add('bmopt');
         if (type === "menu" || type === "menuitem") {
@@ -419,12 +423,19 @@
     }
 
     function copyText(aText) {
-        Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
+        const cHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
+        cHelper.copyString(aText);
     }
 
     function $L(key, replace) {
-        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['zh-CN'].hasOwnProperty(key) ? LANG['zh-CN'][key] : "");
-        str = str.replace("%s", replace || "");
+        const _LOCALE = Services.prefs.getCharPref("general.useragent.locale", "zh-CN");
+        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
+        if (typeof str === "undefined") {
+            str = firstUpperCase(key);
+        }
+        if (typeof replace !== "undefined") {
+            str = str.replace("%s", replace);
+        }
         return str;
     }
 
