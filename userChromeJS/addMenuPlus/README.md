@@ -179,7 +179,7 @@ app([{
 
 **这个是2022.07.14版本新增的**
 
-![](identitybox-context.jpg)
+![](images/identitybox-context.jpg)
 
 示例：使用第三方浏览器打开当前页面
 
