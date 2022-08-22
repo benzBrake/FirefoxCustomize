@@ -856,173 +856,6 @@ page([{
 }])
 ```
 
-#### 媒体右键
-
-示例：图片，视频，音频另存为保存到默认路径（Shift + 左键弹出另存为对话框）
-
-```javascript
-new function () {
-    var saveMedia = function (event) {
-        const SAVE_PATH_LIST = {
-            'image': 'E:\\Images',
-            'video': 'E:\\Videos',
-            'audio': 'E:\\Audios'
-        }
-        const SAVE_DOMAIN_NAME = true; // save media in domain folder
-        const ADD_PAGETILE_PREFIX = true; // add title prefix when media has an original name
-        const Downloads = globalThis.Downloads || Cu.import("resource://gre/modules/Downloads.jsm").Downloads;
-        const mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-        let aUrl = addMenu.convertText("%MEDIA_URL%");
-
-        let ReferrerInfo = Components.Constructor(
-            "@mozilla.org/referrer-info;1",
-            "nsIReferrerInfo",
-            "init"
-        );
-
-        if (aUrl) {
-            var aUri = Services.io.newURI(aUrl);
-            var titleKey = "SaveImageTitle";
-            var savePath = SAVE_PATH_LIST['image'];
-            var fileSaving = Cc["@mozilla.org/file/local;1"].
-                createInstance(Ci.nsIFile);
-
-            // Bug 1565216 to evaluate passing referrer as item.baseURL
-            let referrerInfo = new ReferrerInfo(
-                Ci.nsIReferrerInfo.EMPTY,
-                true,
-                aUri
-            );
-
-            if (gContextMenu.onVideo) {
-                titleKey = "SaveVideoTitle";
-                savePath = SAVE_PATH_LIST['video'];
-            } else if (gContextMenu.onAudio) {
-                titleKey = "SaveAudioTitle";
-                savePath = SAVE_PATH_LIST['audio'];
-            }
-
-            try {
-                fileSaving.initWithPath(savePath);
-                if (!fileSaving.exists()) {
-                    fileSaving.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-                }
-                if (!fileSaving.isDirectory()) {
-                    addMenu.alert("The download folder [%s] does not exist!".replace("%s", savePath));
-                    return;
-                }
-            } catch (e) {
-                addMenu.alert("Invalid download path [%s]".replace("%s", savePath));
-                return;
-            }
-
-            if (SAVE_DOMAIN_NAME) {
-                fileSaving.append(aUri.host);
-                if (!fileSaving.exists() || !fileSaving.isDirectory()) {
-                    try {
-                        fileSaving.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-                    } catch (e) {
-                        addMenu.alert("Cannot create download path [%s]".replace("%s", fileSaving.path));
-                    }
-                }
-
-                savePath = fileSaving.path;
-            }
-
-            var mimeType, mimeInfo
-            try {
-                mimeType = Cc["@mozilla.org/mime;1"]
-                    .getService(Ci.nsIMIMEService)
-                    .getTypeFromURI(aUri);
-            } catch (e) { }
-
-            if (mimeType)
-                mimeInfo = mimeService.getFromTypeAndExtension(mimeType || "", "");
-
-            var fileName = aUri.filePath.substr(aUri.filePath.lastIndexOf("/") + 1);
-
-            if (!event.shiftKey && mimeInfo) {
-                if (fileName.substr(fileName.lastIndexOf(".") + 1) !== mimeInfo.primaryExtension) {
-                    fileName = addMenu.convertText("%TITLES%.") + mimeInfo.primaryExtension;
-                } else if (ADD_PAGETILE_PREFIX) {
-                    fileName = addMenu.convertText("%TITLES%") + fileName;
-                }
-
-                fileSaving.append(fileName);
-
-                var newFileName = fileName;
-                while (fileSaving.exists()) {
-                    if (newFileName.indexOf('.') != -1) {
-                        var ext = newFileName.substr(newFileName.lastIndexOf('.'));
-                        var file = newFileName.substring(0, newFileName.length - ext.length);
-                        newFileName = getAnotherName(file) + ext;
-                    } else newFileName = getAnotherName(newFileName);
-
-                    fileSaving.initWithPath(savePath);
-                    fileSaving.append(newFileName);
-                }
-
-                var urifix = Cc['@mozilla.org/docshell/uri-fixup;1'].
-                    getService(Ci.nsIURIFixup);
-
-                var fixedUri = urifix.getFixupURIInfo(aUrl, 0).preferredURI;
-
-                var options = {
-                    source: fixedUri,
-                    target: fileSaving,
-                };
-
-                var downloadPromise = Downloads.createDownload(options)
-                downloadPromise.then(function success(d) {
-                    Downloads.getList(Downloads.ALL).then(list => list.add(d));
-                    d.start();
-                });
-
-            } else {
-                // internalSave(aURL, aOriginalURL, aDocument, aDefaultFileName, aContentDisposition, aContentType, aShouldBypassCache, aFilePickerTitleKey, aChosenData, aReferrerInfo, aCookieJarSettings, aInitiatingDocument, aSkipPrompt, aCacheKey, aIsContentWindowPrivate, aPrincipal)
-
-                eval("(" + internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(aUrl, null, document, fileName, null, null, false, titleKey, null, referrerInfo, null, null, false, null, PrivateBrowsingUtils.isBrowserPrivate(gContextMenu.browser), Services.scriptSecurityManager.getSystemPrincipal());
-            }
-        }
-
-        function getAnotherName(fName) {
-            if (/\[(\d+)\]$/.test(fName)) {
-                var i = 1 + parseInt(RegExp.$1);
-                fName = fName.replace(/\[\d+\]$/, "[" + i + "]");
-            } else fName += "[1]";
-            return fName;
-        }
-    }
-
-    page([{
-        insertAfter: 'context-saveimage',
-        'data-l10n-href': 'browserContext.ftl',
-        'data-l10n-id': 'main-context-menu-image-save-as',
-        condition: 'image',
-        oncommand: saveMedia
-    }, {
-        insertAfter: 'context-savevideo',
-        'data-l10n-href': 'browserContext.ftl',
-        'data-l10n-id': 'main-context-menu-video-save-as',
-        condition: 'media',
-        oncommand: saveMedia,
-        onshowing: function () {
-            this.hidden = !gContextMenu.onVideo;
-        }
-    }, {
-        insertAfter: 'context-saveaudio',
-        'data-l10n-href': 'browserContext.ftl',
-        'data-l10n-id': 'main-context-menu-audio-save-as',
-        condition: 'media',
-        oncommand: saveMedia,
-        onshowing: function () {
-            this.hidden = !gContextMenu.onAudio;
-        }
-    }]);
-    css("#context-saveimage, #context-savevideo, #context-saveaudio { display: none !important }");
-}
-```
-
 #### 选中文本右键
 
 示例：2014-9-8 版本之后新增的 `onshowing` 函数，在右键菜单出现时会执行该函数。例如下面这个例子只在卡饭论坛显示 **插入 code 代码** 右键菜单。
@@ -1354,6 +1187,216 @@ testMenu([
 ]);
 ```
 ### 特殊的示例
+
+#### 另存为不弹出保存对话框
+
+示例：网页，链接，图片，视频，音频另存为保存到默认路径（Shift + 左键弹出另存为对话框）
+
+```javascript
+new function () {
+    var saveMedia = function (event) {
+        const SAVE_PATH_LIST = {
+            'image': 'E:\\Images',
+            'video': 'E:\\Videos',
+            'audio': 'E:\\Audios',
+            'link': 'E:\\Downloads',
+            'page': 'E:\\Downloads'
+        }
+        const SAVE_DOMAIN_NAME = true; // save media in domain folder
+        const ADD_PAGETILE_PREFIX = true; // add tilte prefix when media has an original name
+        const Downloads = globalThis.Downloads || Cu.import("resource://gre/modules/Downloads.jsm").Downloads;
+        let aUrl = addMenu.convertText("%MEDIA_URL%") || addMenu.convertText("%LINK_OR_URL%");
+
+        let ReferrerInfo = Components.Constructor(
+            "@mozilla.org/referrer-info;1",
+            "nsIReferrerInfo",
+            "init"
+        );
+
+        if (aUrl) {
+            var aUri = Services.io.newURI(aUrl);
+            var titleKey;
+            var savePath = SAVE_PATH_LIST['image'];
+            var fileSaving = Cc["@mozilla.org/file/local;1"].
+                createInstance(Ci.nsIFile);
+
+            // Bug 1565216 to evaluate passing referrer as item.baseURL
+            let referrerInfo = new ReferrerInfo(
+                Ci.nsIReferrerInfo.EMPTY,
+                true,
+                aUri
+            );
+
+            if (gContextMenu.onImage || gContextMenu.onCanvas) {
+                titleKey = "SaveImageTitle";
+            } else if (gContextMenu.onVideo) {
+                titleKey = "SaveVideoTitle";
+                savePath = SAVE_PATH_LIST['video'];
+            } else if (gContextMenu.onAudio) {
+                titleKey = "SaveAudioTitle";
+                savePath = SAVE_PATH_LIST['audio'];
+            } else if (gContextMenu.onLink) {
+                titleKey = "SaveLinkTitle";
+                savePath = SAVE_PATH_LIST['link'];
+            } else {
+                titleKey = "SavePageTitle";
+                savePath = SAVE_PATH_LIST['page'];
+            }
+
+            try {
+                fileSaving.initWithPath(savePath);
+                if (!fileSaving.exists()) {
+                    fileSaving.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+                }
+                if (!fileSaving.isDirectory()) {
+                    addMenu.alert("The download folder [%s] does not exist!".replace("%s", savePath));
+                    return;
+                }
+            } catch (e) {
+                addMenu.alert("Invalid download path [%s]".replace("%s", savePath));
+                return;
+            }
+
+            if (SAVE_DOMAIN_NAME) {
+                fileSaving.append(aUri.host);
+                if (!fileSaving.exists() || !fileSaving.isDirectory()) {
+                    try {
+                        fileSaving.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+                    } catch (e) {
+                        addMenu.alert("Cannot create download path [%s]".replace("%s", fileSaving.path));
+                    }
+                }
+
+                savePath = fileSaving.path;
+            }
+
+            var mimeType, mimeInfo;
+
+            try {
+                mimeType = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService).getTypeFromURI(aUri);
+            } catch (e) { }
+
+            var fileName = aUri.filePath.substr(aUri.filePath.lastIndexOf("/") + 1);
+
+            if (titleKey === "SavePageTitle") {
+                mimeType = "text/html";
+            }
+
+            if (!mimeType) {
+                var x = new XMLHttpRequest();
+                x.onreadystatechange = function () {
+                    mimeType = this.getResponseHeader('content-type');
+                    var disposition = this.getResponseHeader('Content-Disposition');
+                    if (disposition && disposition.startsWith("attachment")) {
+                        var fileNameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                        var matches = fileNameRegex.exec(disposition);
+                        if (matches != null && matches[1]) {
+                            fileName = matches[1].replace(/['"]/g, '');
+                        }
+                    }
+                };
+                x.open('GET', aUrl, false);
+                x.send(null);
+            }
+
+            if (mimeType)
+                mimeInfo = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService).getFromTypeAndExtension(mimeType || "", "");
+
+            var mTitle = addMenu.convertText("%TITLES%").replaceAll(/[\/\\]/g, "-");
+            if (!event.shiftKey && mimeInfo) {
+                if (fileName.substr(fileName.lastIndexOf(".") + 1) !== mimeInfo.primaryExtension) {
+                    fileName = mTitle + "." + mimeInfo.primaryExtension;
+                } else if (!fileName && ADD_PAGETILE_PREFIX) {
+                    fileName = mTitle + fileName;
+                }
+
+                fileSaving.append(fileName);
+
+                var newFileName = fileName;
+                while (fileSaving.exists()) {
+                    if (newFileName.indexOf('.') != -1) {
+                        var ext = newFileName.substr(newFileName.lastIndexOf('.'));
+                        var file = newFileName.substring(0, newFileName.length - ext.length);
+                        newFileName = getAnotherName(file) + ext;
+                    } else newFileName = getAnotherName(newFileName);
+
+                    fileSaving.initWithPath(savePath);
+                    fileSaving.append(newFileName);
+                }
+
+                var urifix = Cc['@mozilla.org/docshell/uri-fixup;1'].
+                    getService(Ci.nsIURIFixup);
+
+                var fixedUri = urifix.getFixupURIInfo(aUrl, 0).preferredURI;
+
+                var options = {
+                    source: fixedUri,
+                    target: fileSaving,
+                };
+
+                var downloadPromise = Downloads.createDownload(options)
+                downloadPromise.then(function success(d) {
+                    Downloads.getList(Downloads.ALL).then(list => list.add(d));
+                    d.start();
+                });
+
+            } else {
+                let cookieJarSettings = gBrowser.selectedBrowser.cookieJarSettings;
+                // internalSave(aURL, aOriginalURL, aDocument, aDefaultFileName, aContentDisposition, aContentType, aShouldBypassCache, aFilePickerTitleKey, aChosenData, aReferrerInfo, aCookieJarSettings, aInitiatingDocument, aSkipPrompt, aCacheKey, aIsContentWindowPrivate, aPrincipal)
+
+                eval("(" + internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")(aUrl, null, document, fileName, null, null, false, titleKey, null, referrerInfo, cookieJarSettings, null, false, null, PrivateBrowsingUtils.isBrowserPrivate(gContextMenu.browser), Services.scriptSecurityManager.getSystemPrincipal());
+            }
+        }
+
+        function getAnotherName(fName) {
+            if (/\[(\d+)\]$/.test(fName)) {
+                var i = 1 + parseInt(RegExp.$1);
+                fName = fName.replace(/\[\d+\]$/, "[" + i + "]");
+            } else fName += "[1]";
+            return fName;
+        }
+    }
+
+    page([{
+        insertAfter: 'context-saveimage',
+        'data-l10n-href': 'browserContext.ftl',
+        'data-l10n-id': 'main-context-menu-image-save-as',
+        condition: 'image',
+        oncommand: saveMedia
+    }, {
+        insertAfter: 'context-savevideo',
+        'data-l10n-href': 'browserContext.ftl',
+        'data-l10n-id': 'main-context-menu-video-save-as',
+        condition: 'media',
+        oncommand: saveMedia,
+        onshowing: function () {
+            this.hidden = !gContextMenu.onVideo;
+        }
+    }, {
+        insertAfter: 'context-saveaudio',
+        'data-l10n-href': 'browserContext.ftl',
+        'data-l10n-id': 'main-context-menu-audio-save-as',
+        condition: 'media',
+        oncommand: saveMedia,
+        onshowing: function () {
+            this.hidden = !gContextMenu.onAudio;
+        }
+    }, {
+        insertAfter: 'context-savepage',
+        'data-l10n-href': 'browserContext.ftl',
+        'data-l10n-id': 'main-context-menu-page-save',
+        condition: 'normal',
+        oncommand: saveMedia
+    }, {
+        insertAfter: 'context-savelink',
+        'data-l10n-href': 'browserContext.ftl',
+        'data-l10n-id': 'main-context-menu-save-link',
+        condition: 'link',
+        oncommand: saveMedia
+    }])
+    css("#context-saveimage, #context-savevideo, #context-saveaudio, #context-savepage, #context-savelink { display: none !important }");
+}
+```
 
 #### 打开程序
 
