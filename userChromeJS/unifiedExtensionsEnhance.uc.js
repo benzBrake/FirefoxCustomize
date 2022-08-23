@@ -13,6 +13,14 @@
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
+    if (!Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false)) {
+        uAlert('Please set extensions.unifiedExtensions.enabled to true and restart browser\n Click here set it to true immediately!', null, function () {
+            Services.prefs.setBoolPref('extensions.unifiedExtensions.enabled', true);
+            Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
+            return;
+        });
+    }
+
     if (window.unifiedExtensionsEnhance) {
         window.unifiedExtensionsEnhance.destroy();
     }
@@ -45,11 +53,11 @@
                                     view.addEventListener('ViewShowing', unifiedExtensionsEnhance, false);
                                     unifiedExtensionsEnhance.inited = true;
                                 }
+                                if (view.getAttribute('visible') === "true")
+                                    view.parentNode.parentNode.parentNode.parentNode.hidePopup();
+                                else
+                                    gUnifiedExtensions.togglePanel(node, event);
                             }
-                            if (view.getAttribute('visible') === "true")
-                                view.parentNode.parentNode.parentNode.parentNode.hidePopup();
-                            else
-                                gUnifiedExtensions.togglePanel(node, event);
                         })
                     })
                 }
@@ -83,7 +91,12 @@
                 case 'click':
                     var uItem = getParentOfLocalName(target, 'unified-extensions-item');
                     var { addon } = uItem;
-                    if (target.localName = "unified-extensions-item" || target.classList.contains("unified-extensions-item-contents")) {
+
+
+                    if (target.classList.contains('unified-extensions-item-open-submenu')) {
+                        var { addon } = target.parentNode;
+                        unifiedExtensionsEnhance.openAddonOptions(addon, window);
+                    } else {
                         switch (event.button) {
                             case 0:
                                 if (addon.userDisabled) {
@@ -95,11 +108,7 @@
                                 }
                                 break;
                         }
-                    }
 
-                    if (target.classList.contains('unified-extensions-item-open-submenu')) {
-                        var { addon } = target.parentNode;
-                        unifiedExtensionsEnhance.openAddonOptions(addon, window);
                     }
                     break;
             }
@@ -169,6 +178,19 @@
             }
         });
         return el;
+    }
+
+    function uAlert(aMsg, aTitle, aCallback) {
+        var callback = aCallback ? {
+            observe: function (subject, topic, data) {
+                if ("alertclickcallback" != topic)
+                    return;
+                aCallback.call(null);
+            }
+        } : null;
+        var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+        alertsService.showAlertNotification("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "unifiedExtensionsEnhance",
+            aMsg + "", !!callback, "", callback);
     }
 
     function getParentOfLocalName(el, localName) {
