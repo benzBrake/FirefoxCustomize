@@ -7,6 +7,7 @@
 // @shutdown        window.unifiedExtensionsEnhance.destroy();
 // @compatibility   Firefox 104
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            参考了 https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/extensionOptionsMenu.uc.js
 // ==/UserScript==
 (function () {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
