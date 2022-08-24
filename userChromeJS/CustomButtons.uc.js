@@ -94,7 +94,8 @@
                 if (event.button === 1) {
                     try {
                         SessionStore.restoreLastSession();
-                    } catch (e) { }
+                    } catch (e) {
+                    }
                     return;
                 }
                 if (event.button !== 2) return;
@@ -109,12 +110,12 @@
 
                 for (let i = 0; i < tabLength; i++) {
                     const item = data[i];
-                    const m = CustomButtons.createMenu({
+                    const m = CustomButtons.newMenuitem(doc, {
                         label: item.title,
                         class: 'undo-item bookmark-item menuitem-with-favicon',
                         value: i,
                         oncommand: 'event.stopPropagation();event.preventDefault();undoCloseTab(event.originalTarget.getAttribute("value"));',
-                    }, doc);
+                    });
 
                     const state = item.state;
                     let idx = state.index;
@@ -195,10 +196,18 @@
         _btnId: 1,
         $C: $C,
         $L: $L,
-        get appVersion() { return Services.appinfo.version.split(".")[0]; },
-        get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
-        get btnId() { return this._btnId++; },
-        get debug() { return Services.prefs.getBoolPref("userChromeJS.CopyCat.debug", false); },
+        get appVersion() {
+            return Services.appinfo.version.split(".")[0];
+        },
+        get browserWin() {
+            return Services.wm.getMostRecentWindow("navigator:browser");
+        },
+        get btnId() {
+            return this._btnId++;
+        },
+        get debug() {
+            return Services.prefs.getBoolPref("userChromeJS.CopyCat.debug", false);
+        },
         get toolsPath() {
             if (!this._toolsPath) {
                 let path = Services.dirsvc.get("ProfD", Ci.nsIFile);
@@ -369,11 +378,15 @@
                     // 移动菜单
                     let org = $(obj.command, doc);
                     if (org) {
-                        let replacement = $C(doc, 'menuseparator', { hidden: true, class: 'CustomButtons-Replacement', 'original-id': obj.command });
+                        let replacement = $C(doc, 'menuseparator', {
+                            hidden: true,
+                            class: 'CustomButtons-Replacement',
+                            'original-id': obj.command
+                        });
                         org.parentNode.insertBefore(replacement, org);
                         return org;
                     } else {
-                        return $C(doc, 'menuseparator', { hidden: true });
+                        return $C(doc, 'menuseparator', {hidden: true});
                     }
                 } else {
                     item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
@@ -470,7 +483,7 @@
                 try {
                     loadURI(url);
                 } catch (e) {
-                    gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                    gBrowser.loadURI(url, {triggeringPrincipal: gBrowser.contentPrincipal});
                 }
             } else if (where) {
                 if (this.appVersion < 78) {
@@ -630,7 +643,9 @@
                 let uri, iconURI;
                 try {
                     uri = Services.io.newURI(url, null, null);
-                } catch (e) { this.log(e) }
+                } catch (e) {
+                    this.log(e)
+                }
                 if (!uri) return;
 
                 menu.setAttribute("scheme", uri.scheme);
@@ -641,7 +656,8 @@
                             menu.setAttribute("image", aURI && aURI.spec ?
                                 "moz-anno:favicon:" + aURI.spec :
                                 "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-                        } catch (e) { }
+                        } catch (e) {
+                        }
                     }
                 });
             }
@@ -655,7 +671,8 @@
                 setIconCallback(url);
             }, e => {
                 this.log(e)
-            }).catch(e => { });
+            }).catch(e => {
+            });
         },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
@@ -679,11 +696,11 @@
     }
 
     /**
-    * 获取  DOM 元素
-    * @param {string} id 
-    * @param {Document} aDoc 
-    * @returns 
-    */
+     * 获取  DOM 元素
+     * @param {string} id
+     * @param {Document} aDoc
+     * @returns
+     */
     function $(id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
@@ -693,7 +710,7 @@
      * @param {string} tag DOM 元素标签
      * @param {object} attr 属性对象
      * @param {array} skipAttrs 跳过属性
-     * @returns 
+     * @returns
      */
     function $C(aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
@@ -707,7 +724,7 @@
      * @param {Element} el DOM 对象
      * @param {object} obj 属性对象
      * @param {array} skipAttrs 跳过属性
-     * @returns 
+     * @returns
      */
     function $A(el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
@@ -725,9 +742,9 @@
 
     /**
      * 获取本地化文本
-     * @param {string} str 
-     * @param {string|null} replace 
-     * @returns 
+     * @param {string} str
+     * @param {string|null} replace
+     * @returns
      */
     function $L(str, replace) {
         const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
@@ -740,9 +757,9 @@
 
     /**
      * 替换 %s 为指定文本
-     * @param {string} str 
-     * @param {string} replace 
-     * @returns 
+     * @param {string} str
+     * @param {string} replace
+     * @returns
      */
     function $S(str, replace) {
         str || (str = '');
@@ -762,8 +779,8 @@
 
     /**
      * 克隆对象
-     * @param {object} o 
-     * @returns 
+     * @param {object} o
+     * @returns
      */
     function cloneObj(o) {
         if (typeof (o) === typeof (1) || typeof ('') === typeof (o) || typeof (o) === typeof (true) ||
