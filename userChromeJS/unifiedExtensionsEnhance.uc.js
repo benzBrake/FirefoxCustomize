@@ -14,7 +14,7 @@
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
     if (!Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false)) {
-        uAlert('Please set extensions.unifiedExtensions.enabled to true and restart browser\n Click here set it to true immediately!', null, function () {
+        uAlert('Please set extensions.unifiedExtensions.enabled to true and restart browser\n Click here to set immediately!', null, function () {
             Services.prefs.setBoolPref('extensions.unifiedExtensions.enabled', true);
             Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
             return;
