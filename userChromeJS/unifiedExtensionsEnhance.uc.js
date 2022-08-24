@@ -52,6 +52,7 @@
                                     view.addEventListener('click', unifiedExtensionsEnhance, false);
                                     view.addEventListener('ViewShowing', unifiedExtensionsEnhance, false);
                                     unifiedExtensionsEnhance.inited = true;
+                                    $Q('#unified-extensions-manage-extensions', view).addEventListener('click', unifiedExtensionsEnhance, false);
                                 }
                                 if (view.getAttribute('visible') === "true")
                                     view.parentNode.parentNode.parentNode.parentNode.hidePopup();
@@ -71,12 +72,16 @@
                 }
                 #movable-unified-extensions {
                     list-style-image: url("chrome://mozapps/skin/extensions/extension.svg");
+                }
+                #unified-extensions-view {
+                    overflow-x: hidden;
+                    overflow-y: scroll;
                 }`) + '"'
             );
             this.style = document.insertBefore(pi, document.documentElement);
         },
         handleEvent: function (event) {
-            let { target } = event
+            let {target} = event
             switch (event.type) {
                 case 'ViewShowing':
                     let list = $Q('.unified-extensions-list', target);
@@ -90,12 +95,14 @@
                     break;
                 case 'click':
                     var uItem = getParentOfLocalName(target, 'unified-extensions-item');
-                    var { addon } = uItem;
+                    var {addon} = uItem;
 
 
                     if (target.classList.contains('unified-extensions-item-open-submenu')) {
-                        var { addon } = target.parentNode;
+                        var {addon} = target.parentNode;
                         unifiedExtensionsEnhance.openAddonOptions(addon, window);
+                    } else if (target.id == "unified-extensions-manage-extensions") {
+                        target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
                     } else {
                         switch (event.button) {
                             case 0:
@@ -146,6 +153,7 @@
             if (view && this.inited) {
                 view.removeEventListener('click', unifiedExtensionsEnhance, false);
                 view.removeEventListener('ViewShowing', unifiedExtensionsEnhance, false);
+                $Q('#unified-extensions-manage-extensions', view).removeEventListener('click', unifiedExtensionsEnhance, false);
             }
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             delete window.unifiedExtensionsEnhance;
@@ -155,6 +163,7 @@
     function $(id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
+
     function $Q(sel, aDoc) {
         return (aDoc || document).querySelector(sel);
     }
