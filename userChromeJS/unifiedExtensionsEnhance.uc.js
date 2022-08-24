@@ -56,7 +56,7 @@
                                     $Q('#unified-extensions-manage-extensions', view).addEventListener('click', unifiedExtensionsEnhance, false);
                                 }
                                 if (view.getAttribute('visible') === "true")
-                                    view.parentNode.parentNode.parentNode.parentNode.hidePopup();
+                                    getParentOfLocalName(view, 'panel').hidePopup();
                                 else
                                     gUnifiedExtensions.togglePanel(node, event);
                             }
