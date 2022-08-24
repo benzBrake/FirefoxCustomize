@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            unifiedExtensionsEnhance.uc.js
-// @description     扩展管理按钮增强，左键点击切换状态，点击设置按钮打开设置页面
+// @description     Unified Extensions Button Enhance script, left click to switch addon status, click gear button to open options page.
+// Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
 // @version         0.1.0
