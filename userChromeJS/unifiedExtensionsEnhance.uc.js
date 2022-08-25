@@ -44,6 +44,8 @@
                 localized: false,
                 style: 'list-style-image: url("chrome://mozapps/skin/extensions/extension.svg")',
                 onCreated: function (node) {
+                    node.setAttribute('label', "Extensions");
+                    node.setAttribute('tooltiptext', "Extensions");
                     ["kepress", "mousedown"].forEach(aEvent => {
                         node.addEventListener(aEvent, (event) => {
                             event.stopPropagation();
@@ -82,7 +84,7 @@
             this.style = document.insertBefore(pi, document.documentElement);
         },
         handleEvent: function (event) {
-            let {target} = event
+            let { target } = event
             switch (event.type) {
                 case 'ViewShowing':
                     let list = $Q('.unified-extensions-list', target);
@@ -96,11 +98,11 @@
                     break;
                 case 'click':
                     var uItem = getParentOfLocalName(target, 'unified-extensions-item');
-                    var {addon} = uItem;
+                    var { addon } = uItem;
 
 
                     if (target.classList.contains('unified-extensions-item-open-submenu')) {
-                        var {addon} = target.parentNode;
+                        var { addon } = target.parentNode;
                         unifiedExtensionsEnhance.openAddonOptions(addon, window);
                     } else if (target.id == "unified-extensions-manage-extensions") {
                         target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
