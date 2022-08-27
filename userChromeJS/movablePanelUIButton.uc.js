@@ -3,16 +3,15 @@
 // @description     可移动 PanelUI 按钮
 // @author          Ryan, firefox
 // @include         main
-// @startup         window.movablePanelUIButton.init()
 // @shutdown        window.movablePanelUIButton.unload()
 // @compatibility   Firefox 78
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            2022.08.27 fx 102+
 // @note            2022.07.02 非 xiaoxiaoflood 的 userChromeJS 环境测试可用
 // @note            2022.04.20 修改为可热插拔（不知道非 xiaoxiaoflood 的 userChromeJS 环境是否可用）
-// @onlyonce
 // ==/UserScript==
-location.href.startsWith('chrome://browser/content/browser.x') && (async function () {
-    if (!CustomizableUI) Cu.import("resource:///modules/CustomizableUI.jsm");
+(function () {
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
     if (window.movablePanelUIButton) {
         window.movablePanelUIButton.destroy();
@@ -30,7 +29,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (async functio
 
     window.movablePanelUIButton = {
         widgetId: "movable-PanelUI-button",
-        init: async function () {
+        init: function () {
             CustomizableUI.createWidget({
                 id: this.widgetId,
                 type: "button",
@@ -59,7 +58,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (async functio
             );
             this.style = document.insertBefore(pi, document.documentElement);
         },
-        unload: async function () {
+        unload: function () {
             CustomizableUI.destroyWidget(this.widgetId);
             gBrowser.ownerDocument.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
             document.getElementById('appMenu-popup').setAttribute('position', 'bottomcenter topright');
@@ -67,5 +66,5 @@ location.href.startsWith('chrome://browser/content/browser.x') && (async functio
             delete window.movablePanelUIButton;
         }
     }
-    await window.movablePanelUIButton.init();
+    window.movablePanelUIButton.init();
 })();
