@@ -103,6 +103,9 @@
                 }
                 unified-extensions-item.no-options .unified-extensions-item-name {
                     color: color-mix(in srgb, currentColor 50%, transparent);
+                }
+                unified-extensions-item.disabled .unified-extensions-item-name {
+                    font-style: italic;
                 }`) + '"'
             );
             this.style = document.insertBefore(pi, document.documentElement);
@@ -139,7 +142,7 @@
             }
         },
         onClick(event) {
-            var { addon } = getParentOfLocalName(event.target, 'unified-extensions-item');
+            var { addon } = vbox = getParentOfLocalName(event.target, 'unified-extensions-item');
             var { classList } = event.target;
             if (classList.contains('unified-extensions-item-action') || classList.contains('unified-extensions-item-contents') || classList.contains('unified-extensions-item-name') || classList.contains('unified-extensions-item-message') || classList.contains('unified-extensions-item-icon')) {
                 switch (event.button) {
@@ -151,10 +154,10 @@
                     case 2:
                         if (addon.userDisabled) {
                             addon.enable();
-                            event.target.classList.remove('disabled');
+                            vbox.classList.remove('disabled');
                         } else {
                             addon.disable();
-                            event.target.classList.add('disabled');
+                            vbox.classList.add('disabled');
                         }
                         break;
                 }
