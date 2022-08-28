@@ -2,7 +2,6 @@
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
 // @license         MIT License
-// @startup         window.TabPlus.init(win);
 // @shutdown        window.TabPlus.unload();
 // @compatibility   Firefox 90
 // @charset         UTF-8
@@ -322,7 +321,7 @@
             el: gBrowser.tabContainer,
             event: 'click',
             callback: function (e) {
-                if (e.target.id === 'tabs-newtab-button' && e.button === 2 && !e.shiftKey) {
+                if (['tabs-newtab-button', 'new-tab-button'].includes(e.target.id) && e.button === 2 && !e.shiftKey) {
                     e.preventDefault();
                     e.stopPropagation();
                     let win = e.target.ownerGlobal;
