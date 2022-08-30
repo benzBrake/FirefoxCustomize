@@ -153,6 +153,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
+    var hideContentAreaContextMenuIconForProton = true; // Pronton 网页右键默认无图标
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (window.addMenu) {
@@ -316,6 +317,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
             }), ins);
+            if (hideContentAreaContextMenuIconForProton) {
+                $("contentAreaContextMenu").classList.add('noIcon');
+            }
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("toolbar-context-menu").addEventListener("popupshowing", this, false);
@@ -418,7 +422,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.identityBox.removeAttribute('contextmenu');
                 this.identityBox.removeEventListener("click", this, false);
             }
-
+            $("contentAreaContextMenu").classList.remove('noIcon');
             if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
             if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
             delete window.addMenu;
@@ -1279,9 +1283,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%IMAGE_TITLE%":
                         return context.target.title || "";
                     case "%I":
-                        return context.imageURL || context.mediaURL || "";
+                        return context.imageURL || context.imageInfo.currentSrc || "";
                     case "%IMAGE_URL%":
-                        return context.imageURL || context.mediaURL || "";
+                        return context.imageURL || context.imageInfo.currentSrc || "";
                     case "%IMAGE_BASE64%":
                         return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
                     case "%SVG_BASE64%":
@@ -1751,11 +1755,18 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
     -moz-context-properties: fill, fill-opacity !important;
     fill: currentColor !important;
 }
+#contentAreaContextMenu > .addMenu:is(menu, menuitem) > .menu-iconic-left,
+#contentAreaContextMenu > menugroup.addMenu >.addMenu:first-child > .menu-iconic-left{
+    visibility: collapse;
+}
 menugroup.addMenu {
   padding-bottom: 2px;
 }
 menugroup.addMenu > .menuitem-iconic.fixedSize {
     -moz-box-flex: 0;
+}
+menugroup.addMenu > .menuitem-iconic:nth-child(2).noIcon {
+    padding-inline-start: 0;
 }
 menugroup.addMenu > .menuitem-iconic.noIcon > .menu-iconic-left {
     display: none !important;
