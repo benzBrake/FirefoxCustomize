@@ -3,9 +3,10 @@
 // @description     Make overflow button draggable
 // @author          Ryan
 // @include         main
-// @version         0.1.0
+// @version         0.1.1
 // @compatibility   Firefox 100
 // @shutdown        window.movableOverflowButton.destroy()
+// @note            0.1.1 修正多窗口报错，无法显示 Overflow Panel
 // ==/UserScript==
 (function () {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
@@ -15,7 +16,6 @@
     }
 
     window.movableOverflowButton = {
-        widgetId: 'movable-overflow-button',
         listener: {
             onCustomizeStart(win) {
                 let { styleDisplay: style, sss } = win.movableOverflowButton;
@@ -47,38 +47,38 @@
             this.sss.loadAndRegisterSheet(this.styleIcon.url, this.styleIcon.type);
             this.sss.loadAndRegisterSheet(this.styleDisplay.url, this.styleDisplay.type);
             CustomizableUI.addListener(this.listener);
-            CustomizableUI.createWidget({
-                id: this.widgetId,
-                type: "button",
-                defaultArea: CustomizableUI.AREA_NAVBAR,
-                localized: false,
-                onCreated: function (node) {
-                    let doc = node.ownerDocument;
-                    let originalMenu = doc.getElementById("nav-bar").overflowable;
-                    ['label', 'tooltiptext'].forEach(attr => {
-                        node.setAttribute(attr, doc.getElementById('nav-bar-overflow-button').getAttribute(attr));
-                    })
 
-                    // helper function to not repeat so much code
-                    function setEvent(event) {
-                        node.addEventListener(event, function () {
-                            originalMenu._chevron = node;
-                        }, { "capture": true });
-                        node.addEventListener(event, originalMenu);
+            if (CustomizableUI.getWidget('movable-overflow-button')) {
+                let { node } = CustomizableUI.getWidget('movable-overflow-button').forWindow(window);
+                node.addEventListener('mousedown', movableOverflowButton);
+                node.addEventListener('keypress', movableOverflowButton);
+            } else {
+                CustomizableUI.createWidget({
+                    id: 'movable-overflow-button',
+                    type: "button",
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    localized: false,
+                    onCreated: function (node) {
+                        node.addEventListener('mousedown', movableOverflowButton);
+                        node.addEventListener('keypress', movableOverflowButton);
                     }
-
-                    setEvent("mousedown");
-                    setEvent("keypress");
-                    //setEvent("dragend");
-                    //setEvent("dragover");
-                }
-            });
+                });
+            }
+        },
+        handleEvent: function (event) {
+            if (event.type === "mousedown" && event.button !== 0) return;
+            let { target: node } = event;
+            let { ownerDocument: document } = node;
+            const { overflowable } = document.getElementById('nav-bar');
+            overflowable._chevron = node;
+            overflowable.show();
         },
         destroy: function () {
             CustomizableUI.removeListener(this.listener);
             this.sss.unregisterSheet(this.styleIcon.url, this.styleIcon.type);
             this.sss.unregisterSheet(this.styleDisplay.url, this.styleDisplay.type);
-            CustomizableUI.destroyWidget(this.widgetId);
+            CustomizableUI.destroyWidget('movable-overflow-button');
+            delete this;
         }
     }
 
