@@ -13,6 +13,7 @@
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     if (window.movableOverflowButton) {
         window.movableOverflowButton.destroy();
+        delete window.movableOverflowButton;
     }
 
     window.movableOverflowButton = {

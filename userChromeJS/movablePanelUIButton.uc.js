@@ -6,6 +6,7 @@
 // @shutdown        window.movablePanelUIButton.unload()
 // @compatibility   Firefox 78
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            2022.09.05 修正窗口报错
 // @note            2022.08.27 fx 102+
 // @note            2022.07.02 非 xiaoxiaoflood 的 userChromeJS 环境测试可用
 // @note            2022.04.20 修改为可热插拔（不知道非 xiaoxiaoflood 的 userChromeJS 环境是否可用）
@@ -18,51 +19,70 @@
         delete window.movablePanelUIButton;
     }
 
-    var css = `
-        #PanelUI-button {
-            display: none !important;
-        }
-        #{widgetId} {
-            list-style-image: url("chrome://browser/skin/menu.svg");
-        }
-    `;
-
     window.movablePanelUIButton = {
-        widgetId: "movable-PanelUI-button",
+        get sss() {
+            delete this.sss;
+            return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+        },
+        STYLE_ICON: {
+            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
+            #movable-PanelUI-button {
+                list-style-image: url(chrome://browser/skin/menu.svg);
+            }
+            `)),
+        },
+        STYLE_DISPLAY: {
+            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
+            #PanelUI-button {
+                display: none;
+            }
+            `)),
+        },
+        listener: {
+            onCustomizeStart(win) {
+                let { STYLE_DISPLAY: style, sss } = win.movablePanelUIButton;
+                sss.unregisterSheet(style.url, style.type);
+            },
+            onCustomizeEnd(win) {
+                let { STYLE_DISPLAY: style, sss } = win.movablePanelUIButton;
+                sss.loadAndRegisterSheet(style.url, style.type);
+            }
+        },
         init: function () {
-            CustomizableUI.createWidget({
-                id: this.widgetId,
-                type: "button",
-                defaultArea: CustomizableUI.AREA_NAVBAR,
-                localized: false,
-                image: "chrome://browser/skin/menu.svg",
-                onCreated: function (node) {
-                    let originalMenu = node.ownerDocument.defaultView.PanelUI;
-
-                    // helper function to not repeat so much code
-                    function setEvent(event) {
-                        node.addEventListener(event, function () {
-                            originalMenu.menuButton = node;
-                        }, { "capture": true });
-                        node.addEventListener(event, originalMenu);
+            this.sss.loadAndRegisterSheet(this.STYLE_ICON.url, this.STYLE_ICON.type);
+            this.sss.loadAndRegisterSheet(this.STYLE_DISPLAY.url, this.STYLE_DISPLAY.type);
+            CustomizableUI.addListener(this.listener);
+            if (CustomizableUI.getWidget('movable-PanelUI-button')) {
+                let { node } = CustomizableUI.getWidget('movable-PanelUI-button').forWindow(window);
+                node.addEventListener('mousedown', this);
+                node.addEventListener('keypress', this);
+            } else {
+                CustomizableUI.createWidget({
+                    id: "movable-PanelUI-button",
+                    type: "button",
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    localized: false,
+                    removable: true,
+                    onCreated: node => {
+                        node.addEventListener('mousedown', this);
+                        node.addEventListener('keypress', this);
                     }
-
-                    setEvent("mousedown");
-                    setEvent("keypress");
-                    document.getElementById('appMenu-popup').setAttribute('position', 'bottomcenter topleft');
-                }
-            });
-            var pi = document.createProcessingInstruction(
-                'xml-stylesheet',
-                'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css.replace("{widgetId}", this.widgetId)) + '"'
-            );
-            this.style = document.insertBefore(pi, document.documentElement);
+                });
+            }
+        },
+        handleEvent: function (event) {
+            if (event.type === "mousedown" && event.button !== 0) return;
+            let { target: node } = event;
+            let { ownerDocument: document } = node;
+            const { PanelUI } = document.defaultView;
+            PanelUI.menuButton = node;
+            PanelUI.show();
         },
         unload: function () {
-            CustomizableUI.destroyWidget(this.widgetId);
-            gBrowser.ownerDocument.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
-            document.getElementById('appMenu-popup').setAttribute('position', 'bottomcenter topright');
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            CustomizableUI.destroyWidget("movable-PanelUI-button");
+            document.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
+            this.sss.unregisterSheet(this.STYLE_ICON.url, this.STYLE_ICON.type);
+            this.sss.unregisterSheet(this.STYLE_DISPLAY.url, this.STYLE_DISPLAY.type);
             delete window.movablePanelUIButton;
         }
     }
