@@ -14,9 +14,8 @@
 (function () {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
-    if (window.movablePanelUIButton) {
+    if (window.movablePanelUIButton && window.movablePanelUIButton.destroy) {
         window.movablePanelUIButton.destroy();
-        delete window.movablePanelUIButton;
     }
 
     window.movablePanelUIButton = {
@@ -79,11 +78,10 @@
             PanelUI.show();
         },
         unload: function () {
-            CustomizableUI.destroyWidget("movable-PanelUI-button");
-            document.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
             this.sss.unregisterSheet(this.STYLE_ICON.url, this.STYLE_ICON.type);
             this.sss.unregisterSheet(this.STYLE_DISPLAY.url, this.STYLE_DISPLAY.type);
-            delete window.movablePanelUIButton;
+            CustomizableUI.destroyWidget("movable-PanelUI-button");
+            document.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
         }
     }
     window.movablePanelUIButton.init();
