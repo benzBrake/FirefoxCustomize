@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3
+// @version         1.3.1
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.1 去除显示隐藏书签工具栏按钮
 // @version         1.3 尝试兼容 Firefox 57+
 // @version         1.2.2 修改界面语言读取方式
 // @version         1.2.1 新增显示隐藏书签工具栏按钮
@@ -139,7 +140,11 @@
                 let item = $C('menuitem', p, document);
                 if (!p.condition) item.setAttribute('condition', 'normal');
                 this.items.push(item);
-                ($(p.insertBefore) || ins || $('#placesContext').firstChild).before(item);
+                var refNode = ($(p.insertBefore) || ins || $('#placesContext').firstChild);
+                if (!refNode.classList.contains('menuitem-iconic')) {
+                    item.classList.remove('menuitem-iconic');
+                }
+                refNode.before(item);
             });
         },
         handlePlacesContextEvent: function (event) {
@@ -177,12 +182,12 @@
                 PLACES_POPUP_ITEMS.forEach(c => {
                     let item;
                     if (c.label) {
-                        item = $C('menuitem', c);
+                        item = $C('menuitem', c, event.target.ownerDocument);
                         item.classList.add('bmopt-panel');
                     } else {
                         item = $C('menuseparator', {
                             'class': 'bmopt-separator'
-                        })
+                        }, event.target.ownerDocument);
                     }
                     if (last) {
                         last.after(item);
@@ -332,17 +337,6 @@
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
-                CustomizableUI.createWidget({
-                    id: 'BMOPT-toggle-personaltoolbar',
-                    type: 'custom',
-                    localized: false,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    onBuild: function (aDoc) {
-                        BTN_CFG.id = 'BMOPT-toggle-personaltoolbar';
-                        return $C('toolbarbutton', BTN_CFG, aDoc);
-                    }
-                });
-                this.mainEl = CustomizableUI.getWidget('BMOPT-toggle-personaltoolbar').forWindow(window).node;
             }
             this.style = addStyle(css);
         },
@@ -360,9 +354,6 @@
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
-                if (this.mainEl) {
-                    CustomizableUI.destroyWidget(this.mainEl.id);
-                }
                 if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
                 delete window.BookmarkOpt;
             }
@@ -378,12 +369,11 @@
 
     function $C(type, props = {}, aDoc) {
         const appVersion = Services.appinfo.version.split(".")[0];
-        var doc = aDoc || document,
-            el;
+        var el;
         if (appVersion >= 69) {
-            el = doc.createXULElement(type);
+            el = aDoc.createXULElement(type);
         } else {
-            el = doc.createElement(type);
+            el = aDoc.createElement(type);
         }
         el = $A(el, props);
         el.classList.add('bmopt');
