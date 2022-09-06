@@ -65,6 +65,8 @@
                     onCreated: node => {
                         node.addEventListener('mousedown', this);
                         node.addEventListener('keypress', this);
+                        let pNode = node.ownerDocument.getElementById('PanelUI-menu-button');
+                        ['label', 'tooltiptext'].forEach(attr => node.setAttribute(attr, pNode.getAttribute(attr)));
                     }
                 });
             }
