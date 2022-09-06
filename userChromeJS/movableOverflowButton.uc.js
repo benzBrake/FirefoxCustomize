@@ -62,6 +62,8 @@
                     onCreated: function (node) {
                         node.addEventListener('mousedown', movableOverflowButton);
                         node.addEventListener('keypress', movableOverflowButton);
+                        let pNode = node.ownerDocument.getElementById('nav-bar-overflow-button');
+                        ['label', 'tooltiptext'].forEach(attr => node.setAttribute(attr, pNode.getAttribute(attr)));
                     }
                 });
             }
