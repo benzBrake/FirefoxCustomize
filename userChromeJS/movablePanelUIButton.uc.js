@@ -3,9 +3,10 @@
 // @description     可移动 PanelUI 按钮
 // @author          Ryan, firefox
 // @include         main
-// @shutdown        window.movablePanelUIButton.unload()
+// @shutdown        window.movablePanelUIButton.destroy()
 // @compatibility   Firefox 78
 // @homepage        https://github.com/benzBrake/FirefoxCustomize
+// @note            2022.09.07 修正新窗口不能定制
 // @note            2022.09.05 修正窗口报错
 // @note            2022.08.27 fx 102+
 // @note            2022.07.02 非 xiaoxiaoflood 的 userChromeJS 环境测试可用
@@ -30,6 +31,7 @@
                 list-style-image: url(chrome://browser/skin/menu.svg);
             }
             `)),
+            type: 0
         },
         STYLE_DISPLAY: {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
@@ -37,17 +39,18 @@
                 display: none;
             }
             `)),
+            type: 0
         },
         listener: {
             windows: windows,
             onCustomizeStart(win) {
                 this.windows(function (doc, win, location) {
-                    win.dispatchEvent(new CustomEvent("MovablePanelUIButtonShow"));
+                    win.dispatchEvent(new CustomEvent("OriginalPanelUIButtonShow"));
                 })
             },
             onCustomizeEnd(win) {
                 this.windows(function (doc, win, location) {
-                    win.dispatchEvent(new CustomEvent("MovablePanelUIButtonHide"));
+                    win.dispatchEvent(new CustomEvent("OriginalPanelUIButtonHide"));
                 })
             }
         },
@@ -68,8 +71,8 @@
                     ['label', 'tooltiptext'].forEach(attr => node.setAttribute(attr, pNode.getAttribute(attr)));
                 }
             });
-            window.addEventListener('MovablePanelUIButtonShow', this);
-            window.addEventListener('MovablePanelUIButtonHide', this);
+            window.addEventListener('OriginalPanelUIButtonShow', this);
+            window.addEventListener('OriginalPanelUIButtonHide', this);
         },
         handleEvent: function (event) {
             if (event.type === "mousedown" && event.button !== 0) return;
@@ -82,26 +85,27 @@
                     PanelUI.menuButton = node;
                     PanelUI.show();
                     break;
-                case 'MovablePanelUIButtonShow':
+                case 'OriginalPanelUIButtonShow':
                     this.sss.unregisterSheet(this.STYLE_DISPLAY.url, this.STYLE_DISPLAY.type);
                     break;
-                case 'MovablePanelUIButtonHide':
+                case 'OriginalPanelUIButtonHide':
                     this.sss.loadAndRegisterSheet(this.STYLE_DISPLAY.url, this.STYLE_DISPLAY.type);
                     break;
             }
 
         },
-        unload: function () {
+        destroy: function () {
             this.sss.unregisterSheet(this.STYLE_ICON.url, this.STYLE_ICON.type);
             this.sss.unregisterSheet(this.STYLE_DISPLAY.url, this.STYLE_DISPLAY.type);
             CustomizableUI.destroyWidget("movable-PanelUI-button");
-            document.defaultView.PanelUI.menuButton = document.getElementById('PanelUI-button');
-            window.removeEventListener('MovablePanelUIButtonShow', this);
-            window.removeEventListener('MovablePanelUIButtonHide', this);
-            delete window.movablePanelUIButton;
+            windows(function (doc, win, location) {
+                doc.defaultView.PanelUI.menuButton = doc.getElementById('PanelUI-button');
+            })
+            window.removeEventListener('OriginalPanelUIButtonShow', this);
+            window.removeEventListener('OriginalPanelUIButtonHide', this);
+            delete this;
         }
     }
-    window.movablePanelUIButton.init();
 
     function windows(fun) {
         let windows = Services.wm.getEnumerator('navigator:browser');
@@ -114,4 +118,6 @@
                 break;
         }
     }
+
+    window.movablePanelUIButton.init();
 })();
