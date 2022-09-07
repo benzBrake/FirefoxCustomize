@@ -61,7 +61,7 @@
                 type: "button",
                 defaultArea: CustomizableUI.AREA_NAVBAR,
                 localized: false,
-                onCreated: function (node) {
+                onCreated: node => {
                     node.addEventListener('mousedown', this);
                     node.addEventListener('keypress', this);
                     let pNode = node.ownerDocument.getElementById('nav-bar-overflow-button');
