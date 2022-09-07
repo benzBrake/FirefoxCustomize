@@ -20,8 +20,6 @@
         delete window.CustomButtons;
     }
 
-    const TOOLS_PATH = "chrome\\resources\\tools"; // 工具路径
-
     const LANG = {
         'zh-CN': {
             "take snapshot": "高级截图",
@@ -139,7 +137,7 @@
                 }
             }]
         }, {
-            id: 'zoom-control-ToolBarbutton',
+            id: 'CB-ZoomControl',
             label: $L("zoom control"),
             tooltiptext: $L("zoom control tooltip"),
             image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTY0MS40MDggMTYwYTMzNC40OTYgMzM0LjQ5NiAwIDAgMC0xOTcuMjgtNjRjLTE4NS42IDAtMzM2IDE1MC40MzItMzM2IDMzNnMxNTAuNCAzMzYgMzM2IDMzNmMxNjkuMjggMCAzMDkuMzEyLTEyNS4xODQgMzMyLjU3Ni0yODhoLTMyLjM1MmEzMDQgMzA0IDAgMSAxLTMwMC4yMjQtMzUyYzUyLjA5NiAwIDk2IDguODk2IDEzOC44OCAzMmg1OC40eiBtMzguNDk2IDUxMy45MmE0OCA0OCAwIDAgMCAwIDY3LjkwNGwxNTguNCAxNTguNGE0OCA0OCAwIDAgMCA2Ny44NzItNjcuOTA0bC0xNTguNC0xNTguNGE0OCA0OCAwIDAgMC02Ny44NzIgMHpNNzY0LjEyOCAyMDhoLTExMnYzMmgxMTJWMzUyaDMyVjI0MGgxMTJ2LTMyaC0xMTJWOTZoLTMydjExMnogbS0xMTIgMTkydjMyaDI1NnYtMzJoLTI1NnogbS0xNzMuNTM2LTE3My4xNTJsMjIuNzUyLTI3Ljk2OGEyNDAgMjQwIDAgMCAwLTI3My43OTIgMzM2LjY3MmwyMi43Mi0yNy45NjhhMjA4IDIwOCAwIDAgMSAyMjguMzItMjgwLjczNnoiPjwvcGF0aD48L3N2Zz4=",
@@ -159,33 +157,37 @@
         FullZoom.reduce(); \
     };'
         }, {
-            id: 'context-viewcert-ToolBarButton',
+            id: 'CB-ViewCert',
             label: $L("certificate manager"),
             tooltiptext: $L("certificate manager tooltip"),
             image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI1IDJDMTIuMjk2ODc1IDIgMiAxMi4yOTY4NzUgMiAyNUMyIDM3LjcwMzEyNSAxMi4yOTY4NzUgNDggMjUgNDhDMzcuNzAzMTI1IDQ4IDQ4IDM3LjcwMzEyNSA0OCAyNUM0OCAxMi4yOTY4NzUgMzcuNzAzMTI1IDIgMjUgMiBaIE0gMjUgNEMzNi41NzgxMjUgNCA0NiAxMy40MjE4NzUgNDYgMjVDNDYgMzYuNTc4MTI1IDM2LjU3ODEyNSA0NiAyNSA0NkMxMy40MjE4NzUgNDYgNCAzNi41NzgxMjUgNCAyNUM0IDEzLjQyMTg3NSAxMy40MjE4NzUgNCAyNSA0IFogTSAyNSA4QzIwLjAzNTE1NiA4IDE2IDEyLjAzNTE1NiAxNiAxN0wxNiAyMUwyMiAyMUwyMiAxN0MyMiAxNS4zNDc2NTYgMjMuMzQ3NjU2IDE0IDI1IDE0QzI2LjY1MjM0NCAxNCAyOCAxNS4zNDc2NTYgMjggMTdMMjggMjFMMzQgMjFMMzQgMTdDMzQgMTIuMDM1MTU2IDI5Ljk2NDg0NCA4IDI1IDggWiBNIDI1IDEwQzI4Ljg2NzE4OCAxMCAzMiAxMy4xMzI4MTMgMzIgMTdMMzIgMTlMMzAgMTlMMzAgMTdDMzAgMTQuMjM4MjgxIDI3Ljc2MTcxOSAxMiAyNSAxMkMyMi4yMzgyODEgMTIgMjAgMTQuMjM4MjgxIDIwIDE3TDIwIDE5TDE4IDE5TDE4IDE3QzE4IDEzLjEzMjgxMyAyMS4xMzI4MTMgMTAgMjUgMTAgWiBNIDE2IDIyQzEzLjc5Mjk2OSAyMiAxMiAyMy43OTI5NjkgMTIgMjZMMTIgMzZDMTIgMzguMjA3MDMxIDEzLjc5Mjk2OSA0MCAxNiA0MEwzNCA0MEMzNi4yMDcwMzEgNDAgMzggMzguMjA3MDMxIDM4IDM2TDM4IDI2QzM4IDIzLjc5Mjk2OSAzNi4yMDcwMzEgMjIgMzQgMjIgWiBNIDE2IDI0TDM0IDI0QzM1LjEwNTQ2OSAyNCAzNiAyNC44OTQ1MzEgMzYgMjZMMzYgMzZDMzYgMzcuMTA1NDY5IDM1LjEwNTQ2OSAzOCAzNCAzOEwxNiAzOEMxNC44OTQ1MzEgMzggMTQgMzcuMTA1NDY5IDE0IDM2TDE0IDI2QzE0IDI0Ljg5NDUzMSAxNC44OTQ1MzEgMjQgMTYgMjQgWiBNIDE3IDI2QzE2LjQ0OTIxOSAyNiAxNiAyNi40NDkyMTkgMTYgMjdMMTYgMzVDMTYgMzUuNTUwNzgxIDE2LjQ0OTIxOSAzNiAxNyAzNkMxNy41NTA3ODEgMzYgMTggMzUuNTUwNzgxIDE4IDM1TDE4IDI3QzE4IDI2LjQ0OTIxOSAxNy41NTA3ODEgMjYgMTcgMjYgWiBNIDI1IDI2QzIzLjg5NDUzMSAyNiAyMyAyNi44OTQ1MzEgMjMgMjhDMjMgMjguNzE0ODQ0IDIzLjM4MjgxMyAyOS4zNzUgMjQgMjkuNzMwNDY5TDI0IDM1TDI2IDM1TDI2IDI5LjczMDQ2OUMyNi42MTcxODggMjkuMzcxMDk0IDI3IDI4LjcxNDg0NCAyNyAyOEMyNyAyNi44OTQ1MzEgMjYuMTA1NDY5IDI2IDI1IDI2WiIgLz4NCjwvc3ZnPg==",
             oncommand: "window.open('chrome://pippki/content/certManager.xhtml', 'mozilla:certmanager', 'chrome,resizable=yes,all,width=830,height=400');"
 
         }, {
-            id: 'context-deletehistory-ToolBarButton',
+            id: 'CB-CleanHistory',
             label: $L("clean history"),
             tooltiptext: $L("clean history toolip"),
             image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy42MjQgMi45NTggQyA3LjY0IDIuNTIgNy43NzMgMi4wMjEgNy45NzMgMS42ODkgQyA4LjE3NSAxLjM1MiA4LjUzNyAxLjAyIDguODU5IDAuODIgQyA5LjE5MiAwLjY0MiA5LjY1OCAwLjQ5NiAxMC4wNTEgMC40ODkgQyAxMC40MzkgMC40ODMgMTAuOTM5IDAuNjE3IDExLjMyNiAwLjgyMiBDIDExLjUwMSAwLjkyNyAxMS42OTggMS4wOCAxMS44NCAxLjIxOCBDIDExLjk3OSAxLjM2MyAxMi4xMjkgMS41NiAxMi4yMjkgMS43MjcgQyAxMi4zMjQgMS44OTkgMTIuNDIgMi4xMjUgMTIuNDcyIDIuMzE1IEMgMTIuNTI0IDIuNTA3IDEyLjU1NCAyLjc1NSAxMi41NTcgMi45NTggTCAxMi41NTcgNy4zNTggTCAxNy43MDggNy4zNTggTCAxNy43MDggMTkuMTU5IEwgMi40NzQgMTkuMTU5IEwgMi40NzQgNy4zNTggTCA3LjYyNCA3LjM1OCBaIE0gOS4xMjQgOC44NTggTCAzLjk3NCA4Ljg1OCBMIDMuOTc0IDEwLjc5MSBMIDE2LjIwOCAxMC43OTEgTCAxNi4yMDggOC44NTggTCAxMS4wNTcgOC44NTggTCAxMS4wNTcgMi45NTggQyAxMS4wNiAyLjg1NSAxMS4wNSAyLjgwMyAxMS4wMjQgMi43MDcgQyAxMC45OTggMi42MDkgMTAuOTggMi41NTkgMTAuOTI4IDIuNDc0IEMgMTAuODggMi4zODYgMTAuODUgMi4zNDQgMTAuNzc4IDIuMjc3IEMgMTAuNzA5IDIuMjA0IDEwLjY2NiAyLjE2OSAxMC41NzUgMi4xMiBDIDEwLjM5IDEuOTk2IDEwLjI3OSAxLjk4NSAxMC4wNzcgMS45ODkgQyA5Ljg4IDEuOTkyIDkuNzc2IDIuMDExIDkuNjA3IDIuMTIxIEMgOS40MyAyLjIxMSA5LjM2MSAyLjI5MiA5LjI1OSAyLjQ2MSBDIDkuMTU1IDIuNjM1IDkuMTA4IDIuNzM2IDkuMTI0IDIuOTU4IFogTSAzLjk3NCAxNy42NTkgTCA1LjkwNyAxNy42NTkgTCA1LjkwNyAxMy41NzIgTCA3LjQwNyAxMy41NzIgTCA3LjQwNyAxNy42NTkgTCA5LjM0MSAxNy42NTkgTCA5LjM0MSAxMy41NzIgTCAxMC44NDEgMTMuNTcyIEwgMTAuODQxIDE3LjY1OSBMIDEyLjc3NSAxNy42NTkgTCAxMi43NzUgMTMuNTcyIEwgMTQuMjc1IDEzLjU3MiBMIDE0LjI3NSAxNy42NTkgTCAxNi4yMDggMTcuNjU5IEwgMTYuMjA4IDEyLjI5MSBMIDMuOTc0IDEyLjI5MSBaIiBzdHlsZT0iIi8+Cjwvc3ZnPg==",
             oncommand: "window.open('chrome://browser/content/sanitize.xhtml', 'Toolkit:SanitizeDialog', 'chrome,resizable=yes');"
         }, {
+            id: 'CB-AboutConfig',
             label: $L("about config"),
             image: "chrome://global/skin/icons/settings.svg",
             oncommand: `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
         }, {
+            id: 'CB-SyncedTabs',
             label: $L("synced tabs"),
             tooltiptext: $L("synced tabs"),
             image: "chrome://browser/skin/tab.svg",
             oncommand: "SidebarUI.toggle('viewTabsSidebar');",
         }, {
+            id: 'CB-DownloadHistory',
             label: $L("downloads history"),
             tooltiptext: $L("downloads history"),
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIuNDE0IDVIMjFhMSAxIDAgMCAxIDEgMXYxNGExIDEgMCAwIDEtMSAxSDNhMSAxIDAgMCAxLTEtMVY0YTEgMSAwIDAgMSAxLTFoNy40MTRsMiAyek00IDV2MTRoMTZWN2gtOC40MTRsLTItMkg0em05IDhoM2wtNCA0LTQtNGgzVjloMnY0eiIvPjwvc3ZnPg==",
             oncommand: "DownloadsPanel.showDownloadsHistory();"
         }, {
+            id: 'CB-BookmarksManager',
             label: $L("bookmarks manager"),
             tooltiptext: $L("bookmarks manager"),
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTMgMjF2MmgtMnYtMkgzYTEgMSAwIDAgMS0xLTFWNGExIDEgMCAwIDEgMS0xaDZhMy45OSAzLjk5IDAgMCAxIDMgMS4zNTRBMy45OSAzLjk5IDAgMCAxIDE1IDNoNmExIDEgMCAwIDEgMSAxdjE2YTEgMSAwIDAgMS0xIDFoLTh6bTctMlY1aC01YTIgMiAwIDAgMC0yIDJ2MTJoN3ptLTkgMFY3YTIgMiAwIDAgMC0yLTJINHYxNGg3eiIvPjwvc3ZnPg==",
@@ -209,26 +211,21 @@
             return Services.prefs.getBoolPref("userChromeJS.CopyCat.debug", false);
         },
         get toolsPath() {
-            if (!this._toolsPath) {
-                let path = Services.dirsvc.get("ProfD", Ci.nsIFile);
-                path.appendRelativePath(TOOLS_PATH || "chrome\\resources\\tools");
-                if (!path.exists()) {
-                    path.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-                }
-                this._toolsPath = path;
+            delete this.toolsPath
+            let path = Services.dirsvc.get("ProfD", Ci.nsIFile);
+            path.appendRelativePath("chrome\\UserTools");
+            if (!path.exists()) {
+                path.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
             }
-            return this._toolsPath;
+            return this.toolsPath = path;
         },
-        get btnCfg() {
-            if (!this._btnCfg) {
-                this._btnCfg = [];
-                BTN_CONFIG.forEach(obj => this._btnCfg.push(cloneObj(obj)));
-            }
-            return this._btnCfg;
+        get sss() {
+            delete this.sss;
+            return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
         },
         init() {
             if (this.debug) this.log("CustomButtons: init started!");
-            this.style = addStyle(css);
+            this.style = addStyle(this.sss, css);
             if (!BTN_CONFIG) {
                 if (this.debug) this.log($L("buttons config has some mistake"));
                 return;
@@ -251,18 +248,20 @@
         },
         destroy() {
             this.uninit();
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            if (this.style) removeStyle(this.sss, this.style);
             delete window.CustomButtons;
         },
         createButtons() {
-            if (!this.btnCfg) {
+            if (!BTN_CONFIG) {
                 if (this.debug) this.log($L("CustomButtons: no buttons configuration"));
                 return;
             }
             if (this.debug) this.log($L("CustomButtons: creating buttons"));
             let btnIds = [];
-            Object.values(this.btnCfg).forEach(obj => {
-                let btn = this.createButton(obj);
+            Object.values(BTN_CONFIG).forEach(obj => {
+                if (obj.id && !CustomizableUI.getWidget(obj.id)) {
+                    let btn = this.createButton(obj);
+                }
                 btnIds.push(btn.getAttribute('id'));
             });
             return btnIds;
@@ -284,13 +283,13 @@
                 type: 'custom',
                 localized: false,
                 defaultArea: obj.defaultArea,
-                onBuild: function (aDoc) {
+                onBuild: aDoc => {
                     let btn;
                     try {
-                        btn = CustomButtons.$C(aDoc, 'toolbarbutton', obj, ['type', 'popup', 'onBuild']);
+                        btn = this.$C(aDoc, 'toolbarbutton', obj, ['type', 'popup', 'onBuild']);
                         'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
                         if (obj.popup) {
-                            let popup = CustomButtons.newMenuPopup(aDoc, obj.popup);
+                            let popup = this.newMenuPopup(aDoc, obj.popup);
                             if (popup) {
                                 let id = obj.id + '-popup';
                                 btn.setAttribute('type', obj.type || "menu");
@@ -309,7 +308,7 @@
                         if (!obj.oncommand)
                             btn.setAttribute("oncommand", "CustomButtons.onCommand(event);");
                     } catch (e) {
-                        CustomButtons.error(e);
+                        this.error(e);
                     }
                     return btn;
                 }
@@ -386,7 +385,7 @@
                         org.parentNode.insertBefore(replacement, org);
                         return org;
                     } else {
-                        return $C(doc, 'menuseparator', {hidden: true});
+                        return $C(doc, 'menuseparator', { hidden: true });
                     }
                 } else {
                     item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
@@ -461,16 +460,26 @@
         },
         onCommand: function (event) {
             event.stopPropagation();
-            if (event.button === 0 && event.target.hasAttribute('skin')) return;
+            event.preventDefault();
             let item = event.target;
-            let text = item.getAttribute("text") || "",
+            let precommand = item.getAttribute('precommand') || "",
+                postcommand = item.getAttribute("postcommand") || "",
+                pref = item.getAttribute("pref") || "",
+                text = item.getAttribute("text") || "",
                 exec = item.getAttribute("exec") || "",
                 edit = item.getAttribute("edit") || "",
-                url = item.getAttribute("url") || "";
-            where = item.getAttribute("where") || "";
-            if (exec) this.exec(exec, text);
-            else if (edit) this.edit(edit);
-            else if (url) this.openCommand(event, url, where);
+                url = item.getAttribute("url") || "",
+                where = item.getAttribute("where") || "";
+            if (precommand) eval(precommand);
+            if (pref)
+                this.handlePref(event, pref);
+            else if (exec)
+                this.exec(exec, text);
+            else if (edit)
+                this.edit(edit);
+            else if (url)
+                this.openCommand(event, url, where);
+            if (postcommand) eval(postcommand);
         },
         openCommand: function (event, url, where, postData) {
             var uri;
@@ -483,7 +492,7 @@
                 try {
                     loadURI(url);
                 } catch (e) {
-                    gBrowser.loadURI(url, {triggeringPrincipal: gBrowser.contentPrincipal});
+                    gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
                 }
             } else if (where) {
                 if (this.appVersion < 78) {
@@ -688,10 +697,10 @@
                 aMsg + "", !!callback, "", callback);
         },
         error: function () {
-            Cu.reportError(Array.prototype.slice.call(arguments));
+            this.browserWin.console.error(Array.prototype.slice.call(arguments));
         },
         log: function () {
-            this.win.console.log(Array.prototype.slice.call(arguments));
+            this.browserWin.console.log(Array.prototype.slice.call(arguments));
         },
     }
 
@@ -769,12 +778,22 @@
         return str || "";
     }
 
-    function addStyle(css) {
-        var pi = document.createProcessingInstruction(
-            'xml-stylesheet',
-            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-        );
-        return document.insertBefore(pi, document.documentElement);
+    function addStyle(sss, css, type = 0) {
+        if (sss instanceof Ci.nsIStyleSheetService && typeof css === "string") {
+            let STYLE = {
+                url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)), type: type
+            }
+            sss.loadAndRegisterSheet(STYLE.url, STYLE.type);
+            return STYLE;
+        }
+    }
+
+    function removeStyle(sss, style) {
+        if (sss instanceof Ci.nsIStyleSheetService && style && style.url && style.type) {
+            sss.unregisterSheet(style.url, style.type);
+            return true;
+        }
+        return false;
     }
 
     /**
