@@ -223,7 +223,7 @@
             delete this.sss;
             return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
         },
-        init() {
+        init: function () {
             if (this.debug) this.log("CustomButtons: init started!");
             this.style = addStyle(this.sss, css);
             if (!BTN_CONFIG) {
@@ -233,7 +233,7 @@
             this.rebuild();
             if (this.debug) this.log("CustomButtons: init complete!");
         },
-        uninit() {
+        uninit: function () {
             if (this.btnIds instanceof Array) {
                 this.btnIds.forEach(id => {
                     if (this.debug) this.log($L("CustomButtons: destroying button [%s]"), id);
@@ -262,7 +262,7 @@
                 if (obj.id && !CustomizableUI.getWidget(obj.id)) {
                     let btn = this.createButton(obj);
                 }
-                btnIds.push(btn.getAttribute('id'));
+                btnIds.push(obj.id);
             });
             return btnIds;
         },
