@@ -116,6 +116,12 @@
                 label: originalMenu.getAttribute('label'),
                 tooltiptext: originalMenu.getAttribute('tooltiptext'),
                 style: 'list-style-image: url("chrome://mozapps/skin/extensions/extension.svg")',
+                contextmenu: false,
+                onclick: function (event) {
+                    if (event.target.id === "movable-unified-extensions" && event.button === 2) {
+                        event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/extension");
+                    }
+                }
             });
             let view = PanelMultiView.getViewNode(
                 document,
