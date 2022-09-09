@@ -4,9 +4,10 @@
 // @compatibility  Firefox 57
 // @author         Ryan, GOLF-AT
 // @include        main
-// @startup        window.moveReloadIntoURL.init();
+// @shutdown       window.moveReloadIntoURL.unload();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
-// @version        1.2.2
+// @version        1.2.3
+// @note           1.2.3 修复在新窗口不生效，热插拔有事时候不能用
 // @note           1.2.2 修复 Firefox 103 兼容性
 // @note           1.2 改成可热插拔，兼容夜间模式，图片内置到脚本
 // @note           1.1 20220424 修复，兼容性未知，FF 100 测试通过
@@ -26,29 +27,63 @@
         Services.obs.addObserver(this, 'domwindowopened', false);
     }
 
-
     moveReloadIntoURL.prototype = {
-        get sss() {
-            delete this.sss;
-            return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
-        },
         observe: function (aSubject, aTopic, aData) {
             aSubject.addEventListener('load', this, true);
         },
         handleEvent: function (aEvent) {
-            let document = aEvent.originalTarget;
-            if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
-                this.init(document, document.ownerGlobal);
+            if (aEvent.type === "load") {
+                let document = aEvent.originalTarget;
+                if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
+                    this.init(document, document.ownerGlobal);
+                }
+            } else if (aEvent.type === "MoveReloadIntoUrlUnload") {
+                let win = aEvent.originalTarget,
+                    doc = win.document;
+                let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
+                if (RELOADBTN)
+                    RELOADBTN.removeEventListener('DOMAttrModified', this.reloadBtnAttr);
+                let BTN = doc.getElementById("new-stop-reload-button");
+                if (BTN)
+                    BTN.parentNode.removeChild(BTN);
+                if (this.STYLE) {
+                    this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
+                }
+                win.removeEventListener('MoveReloadIntoUrlUnload', this);
+                if (win.moveReloadIntoURL)
+                    delete win.moveReloadIntoURL;
             }
         },
         init: function (doc, win) {
-            this.setStyle();
-            this.PABTN = CustomizableUI.getWidget("pageActionButton").forWindow(win).node;
-            this.RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
-            this.BTN = $C(doc, 'hbox', {
+            if (win.moveReloadIntoURL) {
+                this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+                this.STYLE = {
+                    url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
+                @-moz-document url('chrome://browser/content/browser.xhtml') {
+                    #stop-reload-button {
+                        display: none;
+                    }
+                    #new-stop-reload-button {
+                        -moz-box-ordinal-group: 999;
+                        display: -moz-box !important;
+                    }
+                    #new-stop-reload-button .urlbar-icon {
+                        -moz-context-properties: fill, fill-opacity !important;
+                        fill: currentColor !important;
+                    }
+                }
+              `)),
+                    type: this.sss.AGENT_SHEET
+                };
+                this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+            }
+            let PABTN = CustomizableUI.getWidget("pageActionButton").forWindow(win).node;
+            let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
+            let BTN = $C(doc, 'hbox', {
                 id: "new-stop-reload-button",
                 class: "urlbar-page-action urlbar-addon-page-action",
                 "tooltiptext": Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
+                style: "list-style-image: url('data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+CiAgPHBhdGggZD0iTTEwLjcwNyA2IDE0LjcgNmwuMy0uMyAwLTMuOTkzYS41LjUgMCAwIDAtLjg1NC0uMzU0bC0xLjQ1OSAxLjQ1OUE2Ljk1IDYuOTUgMCAwIDAgOCAxQzQuMTQxIDEgMSA0LjE0MSAxIDhzMy4xNDEgNyA3IDdhNi45NyA2Ljk3IDAgMCAwIDYuOTY4LTYuMzIyLjYyNi42MjYgMCAwIDAtLjU2Mi0uNjgyLjYzNS42MzUgMCAwIDAtLjY4Mi41NjJBNS43MjYgNS43MjYgMCAwIDEgOCAxMy43NWMtMy4xNzEgMC01Ljc1LTIuNTc5LTUuNzUtNS43NVM0LjgyOSAyLjI1IDggMi4yNWE1LjcxIDUuNzEgMCAwIDEgMy44MDUgMS40NDVsLTEuNDUxIDEuNDUxYS41LjUgMCAwIDAgLjM1My44NTR6Ii8+Cjwvc3ZnPgo=",
                 onclick: function (e) {
                     let r = CustomizableUI.getWidget("reload-button").forWindow(window).node;
                     if (r && r.getAttribute('displaystop'))
@@ -61,27 +96,27 @@
                         }
                 }
             })
-            let img = $C(doc, 'image', {
-                class: 'urlbar-icon'
-            })
 
-            this.BTN.appendChild(img);
-            this.PABTN.after(this.BTN);
-            this.RELOADBTN.addEventListener('DOMAttrModified', this.reloadBtnAttr);
+            BTN.appendChild($C(doc, 'image', {
+                class: 'urlbar-icon',
+            }));
+
+            PABTN.after(BTN);
+            RELOADBTN.addEventListener('DOMAttrModified', this.reloadBtnAttr);
             this.reloadBtnAttr();
+
+            win.addEventListener('MoveReloadIntoUrlUnload', this)
         },
         unload: function () {
-            if (this.RELOADBTN) {
-                this.RELOADBTN.removeEventListener('DOMAttrModified', this.reloadBtnAttr)
+            let windows = Services.wm.getEnumerator('navigator:browser');
+            while (windows.hasMoreElements()) {
+                let win = windows.getNext();
+                win.dispatchEvent(new CustomEvent("MoveReloadIntoUrlUnload"));
             }
-            if (this.BTN) this.BTN.parentNode.removeChild(this.BTN);
-            this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
-            delete window.moveReloadIntoURL;
         },
-
         reloadBtnAttr: function (e) {
-            let doc = e ? e.ownerDocument : document;
-            btn = window.moveReloadIntoURL.BTN;
+            let doc = e ? e.target.ownerDocument : document;
+            btn = doc.getElementById('new-stop-reload-button');
             if (btn && (!e || e.attrName == 'displaystop')) {
                 var newVal = e ? e.newValue : doc.getElementById(
                     "reload-button").getAttribute('displaystop');
@@ -90,28 +125,6 @@
                 else
                     btn.style.listStyleImage = "url('data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+CiAgPHBhdGggZD0iTTEwLjcwNyA2IDE0LjcgNmwuMy0uMyAwLTMuOTkzYS41LjUgMCAwIDAtLjg1NC0uMzU0bC0xLjQ1OSAxLjQ1OUE2Ljk1IDYuOTUgMCAwIDAgOCAxQzQuMTQxIDEgMSA0LjE0MSAxIDhzMy4xNDEgNyA3IDdhNi45NyA2Ljk3IDAgMCAwIDYuOTY4LTYuMzIyLjYyNi42MjYgMCAwIDAtLjU2Mi0uNjgyLjYzNS42MzUgMCAwIDAtLjY4Mi41NjJBNS43MjYgNS43MjYgMCAwIDEgOCAxMy43NWMtMy4xNzEgMC01Ljc1LTIuNTc5LTUuNzUtNS43NVM0LjgyOSAyLjI1IDggMi4yNWE1LjcxIDUuNzEgMCAwIDEgMy44MDUgMS40NDVsLTEuNDUxIDEuNDUxYS41LjUgMCAwIDAgLjM1My44NTR6Ii8+Cjwvc3ZnPgo=')";
             }
-        },
-
-        setStyle: function () {
-            this.STYLE = {
-                url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
-            @-moz-document url('chrome://browser/content/browser.xhtml') {
-                #stop-reload-button {
-                    display: none;
-                }
-                #new-stop-reload-button {
-                    -moz-box-ordinal-group: 999;
-                    display: -moz-box !important;
-                }
-                #new-stop-reload-button .urlbar-icon {
-                    -moz-context-properties: fill, fill-opacity !important;
-                    fill: currentColor !important;
-                }
-            }
-          `)),
-                type: this.sss.AGENT_SHEET
-            }
-            this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
         },
     }
 
@@ -138,12 +151,12 @@
 
     window.moveReloadIntoURL = new moveReloadIntoURL();
 
-    if (gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(document, window)
+    if (gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(document, window, true)
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                window.moveReloadIntoURL.init(subject.document, subject);
+                window.moveReloadIntoURL.init(subject.document, subject, true);
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
