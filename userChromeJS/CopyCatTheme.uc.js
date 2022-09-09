@@ -81,10 +81,12 @@
             [{
                 action: 'ReloadAllThemes',
                 label: $L("reload themes"),
+                onclick: 'UC.CopyCatTheme._onclick(event)',
                 style: 'list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);',
             }, {
                 label: $L("open themes directory"),
                 action: "OpenThemesDirectory",
+                onclick: 'UC.CopyCatTheme._onclick(event)'
             }, {}, {
                 type: 'html:h2',
                 class: 'subview-subheader',
@@ -94,9 +96,10 @@
                 internal: 'true',
                 type: 'radio',
                 skin: true,
-                pref: 'userChromeJS.CopyCat.theme',
                 value: '',
-                action: 'SetTheme'
+                action: 'SetTheme',
+                closemenu: true,
+                onclick: 'UC.CopyCatTheme._onclick(event)'
             }, {
                 id: 'CopyCat-ThemeMenu-Themes-InsertPoint'
             }, {
@@ -158,6 +161,8 @@
             switch (event.type) {
                 case 'ViewShowing':
                     let { target: view } = event;
+                    this.refreshThemesList();
+                    this.refreshThemeOptions();
                     let name = xPref.get("userChromeJS.CopyCat.theme", false, "");
                     view.querySelectorAll('[action="SetTheme"]').forEach(el => el.removeAttribute("checked"));
                     view.querySelector(`[action="SetTheme"][value="${name}"]`)?.setAttribute("checked", "true");
@@ -196,9 +201,9 @@
                         }
                     } else {
                         xPref.set("userChromeJS.CopyCat.theme", item.getAttribute('value'));
+                        if (event.button === 1) // 避免相对定位导致面板被假隐藏
+                            item.ownerDocument.querySelectorAll("panelview[visible=true]").forEach(view => view.closest('panel').hidePopup());
                         this.loadTheme();
-                        this.refreshThemesList();
-                        this.refreshThemeOptions();
                     }
                     break;
                 case 'SetOption':
@@ -286,6 +291,7 @@
                         type: 'checkbox',
                         pref: option.pref,
                         action: 'SetOption',
+                        closemenu: false,
                         checked: xPref.get(option.pref, false, false),
                         onclick: 'UC.CopyCatTheme._onclick(event)'
                     }), ins);
