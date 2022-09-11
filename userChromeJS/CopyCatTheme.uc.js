@@ -7,6 +7,7 @@
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @onlyonce
 // ==/UserScript==
 (function (css) {
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -53,7 +54,8 @@
             url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
             type: 2,
         },
-        init: function () {
+        init: function (win) {
+            let { document, CustomizableUI } = win;
             this.STYLE = _uc.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
             let viewCache = getViewCache(document);
             let view = document.getElementById("CopyCat-ThemeMenu-View") || viewCache.querySelector("#CopyCat-ThemeMenu-View");
@@ -138,19 +140,22 @@
 
             this.loadThemes();
             this.loadTheme();
-            this.refreshThemesList();
-            this.refreshThemeOptions();
+            this.refreshThemesList(document);
+            this.refreshThemeOptions(document);
 
-            if (this.debug) {
+            if (this.debug && !CustomizableUI.getWidget("CopyCat-ReloadTheme")) {
                 CustomizableUI.createWidget({
                     id: 'CopyCat-ReloadTheme',
                     label: $L("reload themes"),
+                    tooltiptext: $L("reload themes"),
                     removable: true,
                     defaultArea: CustomizableUI.AREA_NAVBAR,
                     localized: false,
                     onCreated: node => {
                         $A(node, {
-                            oncommand: 'UC.CopyCatTheme.reloadAllThemes();',
+                            action: 'ReloadAllThemes',
+                            onclick: 'UC.CopyCatTheme._onclick(event)',
+                            notice: true,
                             style: 'list-style-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+DQogIDxwYXRoIGZpbGw9IiM1MGU2ZmYiIGQ9Ik0xMC4yMjgsMTUuODg1TDcuMzIsMTIuOTc3QzUuMjI2LDE2LjEzOCw0LDE5LjkyNCw0LDI0YzAsMy42NjgsMC45OTMsNy4xMDMsMi43MTksMTAuMDU4YzAuMjkzLDAuNTAyLDAuOTk0LDAuNTczLDEuNDA1LDAuMTYxbDEuNjQtMS42NGMwLjI3NS0wLjI3NSwwLjMyNi0wLjY5MywwLjE0Mi0xLjAzNUM4LjY5NywyOS4yOTUsOCwyNi43MzIsOCwyNEM4LDIxLjAzNCw4LjgyMSwxOC4yNjcsMTAuMjI4LDE1Ljg4NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik00MCwyNGMwLDIuOTY2LTAuODIxLDUuNzMzLTIuMjI4LDguMTE1bDIuOTA4LDIuOTA4QzQyLjc3NCwzMS44NjIsNDQsMjguMDc1LDQ0LDI0YzAtMy42NjgtMC45OTMtNy4xMDMtMi43MTktMTAuMDU4Yy0wLjI5My0wLjUwMi0wLjk5NC0wLjU3Mi0xLjQwNS0wLjE2MWwtMS42NCwxLjY0Yy0wLjI3NSwwLjI3NS0wLjMyNiwwLjY5My0wLjE0MiwxLjAzNUMzOS4zMDMsMTguNzA1LDQwLDIxLjI2OCw0MCwyNHoiIC8+DQogIDxwYXRoIGZpbGw9IiMzNWMxZjEiIGQ9Ik0xNS40MjEsOS43NjRjMC4yNzUsMC4yNzUsMC42OTMsMC4zMjYsMS4wMzUsMC4xNDJDMTguNzA1LDguNjk3LDIxLjI2OCw4LDI0LDhjMi45NjYsMCw1LjczMywwLjgyMSw4LjExNSwyLjIyOGwyLjkwOS0yLjkwOUMzMS44NjIsNS4yMjYsMjguMDc2LDQsMjQsNGMtMy42NSwwLTcuMDY4LDAuOTgzLTEwLjAxMywyLjY5M2MtMC41MjEsMC4zMDMtMC42MzEsMS4wMDYtMC4yMDUsMS40MzJMMTUuNDIxLDkuNzY0eiIgLz4NCiAgPHBhdGggZmlsbD0iIzAwNzhkNCIgZD0iTTMyLjU3OSwzOC4yMzZjLTAuMjc1LTAuMjc1LTAuNjkzLTAuMzI2LTEuMDM1LTAuMTQyQzI5LjI5NSwzOS4zMDMsMjYuNzMyLDQwLDI0LDQwYy0yLjk2NiwwLTUuNzMzLTAuODIxLTguMTE1LTIuMjI4bC0yLjkwOCwyLjkwOEMxNi4xMzgsNDIuNzc0LDE5LjkyNSw0NCwyNCw0NGMzLjY2OCwwLDcuMTAzLTAuOTkzLDEwLjA1OC0yLjcxOWMwLjUwMi0wLjI5MywwLjU3My0wLjk5NCwwLjE2MS0xLjQwNUwzMi41NzksMzguMjM2eiIgLz4NCiAgPHBhdGggZmlsbD0iIzM1YzFmMSIgZD0iTTM1LjkzNCwxMi4wNzVMMzEuMSwxMS45MDljLTAuMzQyLTAuMDEyLTAuNTEyLTAuNDIxLTAuMjc3LTAuNjcxbDQuNjU3LTQuOTc1YzAuMjQyLTAuMjU5LDAuNjc2LTAuMDk3LDAuNjksMC4yNTdsMC4yMDEsNS4xMTdDMzYuMzgsMTEuODgyLDM2LjE3OSwxMi4wODMsMzUuOTM0LDEyLjA3NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMwMDc4ZDQiIGQ9Ik0xMi4wNjYsMzUuOTI1bDQuODM0LDAuMTY2YzAuMzQyLDAuMDEyLDAuNTEyLDAuNDIxLDAuMjc3LDAuNjcxbC00LjY1Nyw0Ljk3NWMtMC4yNDIsMC4yNTktMC42NzYsMC4wOTctMC42OS0wLjI1N2wtMC4yMDEtNS4xMTdDMTEuNjIsMzYuMTE4LDExLjgyMSwzNS45MTcsMTIuMDY2LDM1LjkyNXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik0zNS45MjUsMzUuOTM0bDAuMTY2LTQuODM0YzAuMDEyLTAuMzQyLDAuNDIxLTAuNTEyLDAuNjcxLTAuMjc3bDQuOTc1LDQuNjU3YzAuMjU5LDAuMjQyLDAuMDk3LDAuNjc2LTAuMjU3LDAuNjlsLTUuMTE3LDAuMjAxQzM2LjExOCwzNi4zOCwzNS45MTcsMzYuMTc5LDM1LjkyNSwzNS45MzR6IiAvPg0KICA8cGF0aCBmaWxsPSIjNTBlNmZmIiBkPSJNMTIuMDc1LDEyLjA2NkwxMS45MDksMTYuOWMtMC4wMTIsMC4zNDItMC40MjEsMC41MTItMC42NzEsMC4yNzdMNi4yNjIsMTIuNTJjLTAuMjU5LTAuMjQyLTAuMDk3LTAuNjc2LDAuMjU3LTAuNjlsNS4xMTctMC4yMDFDMTEuODgyLDExLjYyLDEyLjA4MywxMS44MjEsMTIuMDc1LDEyLjA2NnoiIC8+DQo8L3N2Zz4=)'
                         })
                     }
@@ -161,8 +166,8 @@
             switch (event.type) {
                 case 'ViewShowing':
                     let { target: view } = event;
-                    this.refreshThemesList();
-                    this.refreshThemeOptions();
+                    this.refreshThemesList(view.ownerDocument);
+                    this.refreshThemeOptions(view.ownerDocument);
                     let name = xPref.get("userChromeJS.CopyCat.theme", false, "");
                     view.querySelectorAll('[action="SetTheme"]').forEach(el => el.removeAttribute("checked"));
                     view.querySelector(`[action="SetTheme"][value="${name}"]`)?.setAttribute("checked", "true");
@@ -180,10 +185,13 @@
                     this.exec(this.THEME_PATH);
                     break;
                 case 'ReloadAllThemes':
-                    this.loadThemes();
-                    this.loadTheme();
-                    this.refreshThemesList();
-                    this.refreshThemeOptions();
+                    this.loadThemes(event.target.ownerDocument);
+                    this.loadTheme(event.target.ownerDocument);
+                    this.refreshThemesList(event.target.ownerDocument);
+                    this.refreshThemeOptions(event.target.ownerDocument);
+                    if (item.getAttribute("notice") == "true") {
+                        this.alert("Reload Theme Success")
+                    }
                     break;
                 case 'SetTheme':
                     if (event.button === 2) {
@@ -253,7 +261,7 @@
                 this.theme.register();
             }
         },
-        refreshThemesList: function () {
+        refreshThemesList: function (document) {
             let viewCache = getViewCache(document),
                 view = document.getElementById('CopyCat-ThemeMenu-View') || viewCache?.querySelector("#CopyCat-ThemeMenu-View")
             if (view) {
@@ -278,7 +286,7 @@
                 view.querySelector(`[action="SetTheme"][value="${name}"]`).setAttribute("checked", "true");
             }
         },
-        refreshThemeOptions() {
+        refreshThemeOptions: function (document) {
             let viewCache = getViewCache(document),
                 view = document.getElementById('CopyCat-ThemeMenu-View') || viewCache?.querySelector("#CopyCat-ThemeMenu-View")
             if (this.theme?.options && view) {
@@ -298,7 +306,7 @@
                 });
             }
         },
-        edit: function (pathOrFile, aLineNumber) {
+        edit: (pathOrFile, aLineNumber) => {
             let aFile = this.getFile(pathOrFile), editor;
             if (!aFile) {
                 this.error($L("param is invalid", "CopyCatTheme.edit", "pathOrFile"));
@@ -375,7 +383,7 @@
                 this.error(e);
             }
         },
-        getFile(pathOrFile) {
+        getFile: (pathOrFile) => {
             let aFile;
             if (pathOrFile instanceof Ci.nsIFile) {
                 aFile = pathOrFile;
@@ -413,6 +421,16 @@
                 delete this.STYLE
             }
             delete window.CopyCatTheme;
+        },
+        alert: function (aMsg, aTitle, aCallback) {
+            var callback = aCallback ? {
+                observe: function (subject, topic, data) {
+                    if ("alertclickcallback" != topic) return;
+                    aCallback.call(null);
+                }
+            } : null;
+            const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+            alertsService.showAlertNotification(this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
         },
         error: TopWindow.console.error,
         log: TopWindow.console.log
@@ -656,16 +674,17 @@
         return el;
     }
 
-    if (gBrowserInit.delayedStartupFinished) UC.CopyCatTheme.init();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                UC.CopyCatTheme.init();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
+    UC.CopyCatTheme.init(window);
+    // if (gBrowserInit.delayedStartupFinished) UC.CopyCatTheme.init();
+    // else {
+    //     let delayedListener = (subject, topic) => {
+    //         if (topic == "browser-delayed-startup-finished" && subject == window) {
+    //             Services.obs.removeObserver(delayedListener, topic);
+    //             UC.CopyCatTheme.init();
+    //         }
+    //     };
+    //     Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    // }
 })(`
 #CopyCat-ThemeMenu-View toolbaritem.toolbaritem-combined-buttons {
     padding: 0 !important;
