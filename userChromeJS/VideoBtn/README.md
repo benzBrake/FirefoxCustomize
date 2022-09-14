@@ -14,11 +14,13 @@ https://www.123pan.com/s/i3PRVv-gMRP3提取码:39Vw
 
 如果需要修改路径，请修改相关的高级首选项(about:config)
 
-`userChromeJS.VideoBtn.binPath`:视频下载工具存放路径，不填写自动读取`profieDir\chrome\resources\tools`
+`userChromeJS.VideoBtn.binPath`:视频下载工具存放路径，不填写自动读取`profieDir\chrome\UserTools`
 
 `userChromeJS.VideoBtn.savePath`:视频保存路径，不填写自动读取当前Windows账户的下载文件夹
 
-`userChromeJS.VideoBtn.cookiesPath` Netscape 格式 Cookies 保存路径，不填写自动读取`profieDir\chrome\resources\cookies`
+~~`userChromeJS.VideoBtn.cookiesPath` Netscape 格式 Cookies 保存路径，不填写自动读取`profieDir\chrome\resources\cookies`~~
+
+新版自动将 cookies 存放到临时目录下。
 
 ### 增加下载工具
 

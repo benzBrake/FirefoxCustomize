@@ -2,19 +2,21 @@
 // @name            VideoBtn.uc.js
 // @description     VideoBtn 视频一键下载
 // @author          Ryan
-// @version         0.1.0
-// @compatibility   Firefox 78 +
+// @version         0.1.2
+// @compatibility   Firefox 78
 // @startup         window.VideoBtn.init();
 // @shutdown        window.VideoBtn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.1.2 修复新窗口菜单样式异常
+// @version         0.1.1 修复新窗口报错，强制 Cookies 保存到临时路径
 // @version         0.1.0 初始版本
 // ==/UserScript==
-(function (css, debug) {
+(function (css) {
 
-    Cu.import("resource:///modules/CustomizableUI.jsm");
-    Cu.import("resource://gre/modules/Services.jsm");
-    Cu.import("resource://gre/modules/osfile/osfile_async_front.jsm");
-
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
+    const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const Downloads = globalThis.Downloads || Cu.import("resource://gre/modules/Downloads.jsm").Downloads;
+    const TopWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
     if (window.VideoBtn) {
         window.VideoBtn.destroy();
@@ -44,11 +46,107 @@
             "show in page context menu": "在右键菜单显示",
         }
     }
-    if (!window.cPref) {
-        window.cPref = {
-            get: function (prefPath, defaultValue, setDefaultValueIfUndefined) {
+
+    /** 相对路径，相对于配置目录 Relative path to profile directory */
+
+    const MENU_CONFIG = [{
+        class: 'showFirstText',
+        group: [{
+            label: $L("open downloads folder"),
+            class: 'folder',
+            condition: 'normal',
+            onclick: "event.target.ownerGlobal.VideoBtn.openDownloadsFolder();"
+        }, {
+            label: $L("set downloads folder"),
+            tooltiptext: $L("set downloads folder"),
+            class: 'option',
+            condition: 'normal',
+            oncommand: 'event.target.ownerGlobal.VideoBtn.setDownloadsFolder();',
+        }]
+    }, {}, {
+        label: $L("use you-get to download video"),
+        tool: '\\you-get.exe',
+        condition: 'normal link',
+        text: '-o %SAVE_PATH% -c %COOKIES_PATH% %LINK_OR_URL%',
+        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJncmVlbiI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIvPjxwYXRoIGQ9Ik0xNyA5LjJsNS4yMTMtMy42NWEuNS41IDAgMCAxIC43ODcuNDF2MTIuMDhhLjUuNSAwIDAgMS0uNzg3LjQxTDE3IDE0LjhWMTlhMSAxIDAgMCAxLTEgMUgyYTEgMSAwIDAgMS0xLTFWNWExIDEgMCAwIDEgMS0xaDE0YTEgMSAwIDAgMSAxIDF2NC4yem0wIDMuMTU5bDQgMi44VjguODRsLTQgMi44di43MTh6TTMgNnYxMmgxMlY2SDN6bTIgMmgydjJINVY4eiIvPjwvc3ZnPg=='
+    }, {
+        label: $L("use you-get to download album"),
+        tool: '\\you-get.exe',
+        condition: 'normal link',
+        text: '-l -o %SAVE_PATH% -c %COOKIES_PATH% %LINK_OR_URL%',
+        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJncmVlbiI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIvPjxwYXRoIGQ9Ik0xNyA5LjJsNS4yMTMtMy42NWEuNS41IDAgMCAxIC43ODcuNDF2MTIuMDhhLjUuNSAwIDAgMS0uNzg3LjQxTDE3IDE0LjhWMTlhMSAxIDAgMCAxLTEgMUgyYTEgMSAwIDAgMS0xLTFWNWExIDEgMCAwIDEgMS0xaDE0YTEgMSAwIDAgMSAxIDF2NC4yem0wIDMuMTU5bDQgMi44VjguODRsLTQgMi44di43MTh6TTMgNnYxMmgxMlY2SDN6bTIgMmgydjJINVY4eiIvPjwvc3ZnPg=='
+    }, {}, {
+        label: $L("use yt-dlp to download video"),
+        condition: 'normal link',
+        tool: '\\yt-dlp.exe',
+        text: "--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s  --merge-output-format mp4 %LINK_OR_URL%",
+        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
+    }, {
+        label: $L("use yt-dlp to download 1080p video"),
+        condition: 'normal link',
+        tool: '\\yt-dlp.exe',
+        text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s  --merge-output-format mp4 -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" %LINK_OR_URL%',
+        'image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
+    }, {
+        label: $L("use yt-dlp to download audio"),
+        condition: 'normal link',
+        tool: '\\yt-dlp.exe',
+        text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s -f bestaudio --extract-audio --audio-format mp3 --audio-quality 0 %LINK_OR_URL%',
+        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
+    }, {
+        label: $L("use yt-dlp to download subtitle"),
+        condition: 'normal link',
+        tool: '\\yt-dlp.exe',
+        text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s  --skip-download --write-sub --write-auto-sub --sub-lang en,en-US,zh-CN,zh-TW --convert-subs srt %LINK_OR_URL%',
+        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
+    }, {
+        label: $L("use yt-dlp to download album"),
+        condition: 'normal link',
+        tool: '\\yt-dlp.exe',
+        text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s   --merge-output-format mp4 --yes-playlist %LINK_OR_URL%',
+        image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
+    }, {
+
+    }, {
+        class: 'showFirstText',
+        group: [{
+            label: $L("use bbdown to donload video"),
+            condition: 'normal link',
+            tool: '\\BBDown.exe',
+            text: '--work-dir %SAVE_PATH% %LINK_OR_URL%',
+            image: 'chrome://devtools/skin/images/tool-webconsole.svg',
+        }, {
+            label: $L("bbdown login"),
+            tooltiptext: $L("bbdown login"),
+            tool: '\\BBDown.exe',
+            text: 'login',
+            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTAgMTFWOGw1IDQtNSA0di0zSDF2LTJoOXptLTcuNTQyIDRoMi4xMjRBOC4wMDMgOC4wMDMgMCAwIDAgMjAgMTIgOCA4IDAgMCAwIDQuNTgyIDlIMi40NThDMy43MzIgNC45NDMgNy41MjIgMiAxMiAyYzUuNTIzIDAgMTAgNC40NzcgMTAgMTBzLTQuNDc3IDEwLTEwIDEwYy00LjQ3OCAwLTguMjY4LTIuOTQzLTkuNTQyLTd6Ii8+PC9zdmc+',
+        }]
+    }, {}, {
+        label: "About Video Btn",
+        url: 'https://kkp.disk.st/firefox-one-click-download-web-video-scheme-videobtn.html',
+        condition: 'normal link',
+        where: 'tab',
+        style: 'list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=)'
+    }];
+
+    var VideoBtn = {
+        ENV_PATHS: [],
+        $C: $C,
+        $L: $L,
+        get appVersion() { return Services.appinfo.version.split(".")[0]; },
+        get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
+        get debug() { return this.prefs.get("userChromeJS.VideoBtn.debug", false); },
+        get BIN_PATH() {
+            return this.handleRelativePath(this.prefs.get(this.PREF_BIN_PATH, "\\chrome\\UserTools"));
+        },
+        get SAVE_PATH() {
+            return this.handleRelativePath(this.prefs.get(this.PREF_SAVE_PATH, this._DEFAULT_SAVE_PATH));
+        },
+        get COOKIES_SAVE_PATH() { return this.handleRelativePath("{tmpDir}"); },
+        prefs: {
+            get: function (prefPath, defaultValue) {
                 const sPrefs = Services.prefs;
-                setDefaultValueIfUndefined = setDefaultValueIfUndefined || false;
                 try {
                     switch (sPrefs.getPrefType(prefPath)) {
                         case 0:
@@ -61,18 +159,14 @@
                             return sPrefs.getBoolPref(prefPath);
                     }
                 } catch (ex) {
-                    if (setDefaultValueIfUndefined && typeof defaultValue !== undefined) this.set(prefPath, defaultValue);
                     return defaultValue;
                 }
-                return
+                return;
             },
             getType: function (prefPath) {
                 const sPrefs = Services.prefs;
                 const map = {
-                    0: undefined,
-                    32: 'string',
-                    64: 'int',
-                    128: 'boolean'
+                    0: undefined, 32: 'string', 64: 'int', 128: 'boolean'
                 }
                 try {
                     return map[sPrefs.getPrefType(prefPath)];
@@ -93,140 +187,24 @@
                 return;
             },
             addListener: (a, b) => {
-                let o = (q, w, e) => (b(cPref.get(e), e));
+                let o = (q, w, e) => (b(this.prefs.get(e), e));
                 Services.prefs.addObserver(a, o);
-                return { pref: a, observer: o }
-            },
-            removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
-        };
-    }
-
-    /** 相对路径，相对于配置目录 Relative path to profile directory */
-    const DEFAULT_TOOLS_PATH = "\\chrome\\resources\\tools";
-    const DEFAULT_COOKIES_PATH = "\\chrome\\resources\\cookies"
-
-    const MENU_CONFIG = {
-        id: 'VideoBtn-btn',
-        label: $L("videobtn btn name"),
-        tooltiptext: $L("videobtn btn name"),
-        condition: 'normal link',
-        style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBIMjRWMjRIMHoiLz48cGF0aCBkPSJNMTYgNGMuNTUyIDAgMSAuNDQ4IDEgMXY0LjJsNS4yMTMtMy42NWMuMjI2LS4xNTguNTM4LS4xMDMuNjk3LjEyNC4wNTguMDg0LjA5LjE4NC4wOS4yODZ2MTIuMDhjMCAuMjc2LS4yMjQuNS0uNS41LS4xMDMgMC0uMjAzLS4wMzItLjI4Ny0uMDlMMTcgMTQuOFYxOWMwIC41NTItLjQ0OCAxLTEgMUgyYy0uNTUyIDAtMS0uNDQ4LTEtMVY1YzAtLjU1Mi40NDgtMSAxLTFoMTR6bS0xIDJIM3YxMmgxMlY2em0tNSAydjRoM2wtNCA0LTQtNGgzVjhoMnptMTEgLjg0MWwtNCAyLjh2LjcxOGw0IDIuOFY4Ljg0eiIvPjwvc3ZnPg==);",
-        popup: [{
-            class: 'showFirstText',
-            group: [{
-                label: $L("open downloads folder"),
-                class: 'folder',
-                condition: 'normal',
-                onclick: "VideoBtn.openDownloadsFolder();"
-            }, {
-                label: $L("set downloads folder"),
-                tooltiptext: $L("set downloads folder"),
-                class: 'option',
-                condition: 'normal',
-                oncommand: 'VideoBtn.setDownloadsFolder();',
-            }]
-        }, {}, {
-            label: $L("use you-get to download video"),
-            tool: '\\you-get.exe',
-            condition: 'normal link',
-            text: '-o %SAVE_PATH% -c %COOKIES_PATH% %LINK_OR_URL%',
-            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJncmVlbiI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIvPjxwYXRoIGQ9Ik0xNyA5LjJsNS4yMTMtMy42NWEuNS41IDAgMCAxIC43ODcuNDF2MTIuMDhhLjUuNSAwIDAgMS0uNzg3LjQxTDE3IDE0LjhWMTlhMSAxIDAgMCAxLTEgMUgyYTEgMSAwIDAgMS0xLTFWNWExIDEgMCAwIDEgMS0xaDE0YTEgMSAwIDAgMSAxIDF2NC4yem0wIDMuMTU5bDQgMi44VjguODRsLTQgMi44di43MTh6TTMgNnYxMmgxMlY2SDN6bTIgMmgydjJINVY4eiIvPjwvc3ZnPg=='
-        }, {
-            label: $L("use you-get to download album"),
-            tool: '\\you-get.exe',
-            condition: 'normal link',
-            text: '-l -o %SAVE_PATH% -c %COOKIES_PATH% %LINK_OR_URL%',
-            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJncmVlbiI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIvPjxwYXRoIGQ9Ik0xNyA5LjJsNS4yMTMtMy42NWEuNS41IDAgMCAxIC43ODcuNDF2MTIuMDhhLjUuNSAwIDAgMS0uNzg3LjQxTDE3IDE0LjhWMTlhMSAxIDAgMCAxLTEgMUgyYTEgMSAwIDAgMS0xLTFWNWExIDEgMCAwIDEgMS0xaDE0YTEgMSAwIDAgMSAxIDF2NC4yem0wIDMuMTU5bDQgMi44VjguODRsLTQgMi44di43MTh6TTMgNnYxMmgxMlY2SDN6bTIgMmgydjJINVY4eiIvPjwvc3ZnPg=='
-        }, {}, {
-            label: $L("use yt-dlp to download video"),
-            condition: 'normal link',
-            tool: '\\yt-dlp.exe',
-            text: "--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s  --merge-output-format mp4 %LINK_OR_URL%",
-            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
-        }, {
-            label: $L("use yt-dlp to download 1080p video"),
-            condition: 'normal link',
-            tool: '\\yt-dlp.exe',
-            text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s  --merge-output-format mp4 -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" %LINK_OR_URL%',
-            'image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
-        }, {
-            label: $L("use yt-dlp to download audio"),
-            condition: 'normal link',
-            tool: '\\yt-dlp.exe',
-            text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s -f bestaudio --extract-audio --audio-format mp3 --audio-quality 0 %LINK_OR_URL%',
-            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
-        }, {
-            label: $L("use yt-dlp to download subtitle"),
-            condition: 'normal link',
-            tool: '\\yt-dlp.exe',
-            text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s  --skip-download --write-sub --write-auto-sub --sub-lang en,en-US,zh-CN,zh-TW --convert-subs srt %LINK_OR_URL%',
-            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
-        }, {
-            label: $L("use yt-dlp to download album"),
-            condition: 'normal link',
-            tool: '\\yt-dlp.exe',
-            text: '--cookies-from-browser firefox:%PROFILE_PATH% -P %SAVE_PATH% -o %(title)s.%(ext)s   --merge-output-format mp4 --yes-playlist %LINK_OR_URL%',
-            image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJyZWQiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
-        }, {
-
-        }, {
-            class: 'showFirstText',
-            group: [{
-                label: $L("use bbdown to donload video"),
-                condition: 'normal link',
-                tool: '\\BBDown.exe',
-                text: '--work-dir %SAVE_PATH% %LINK_OR_URL%',
-                image: 'chrome://devtools/skin/images/tool-webconsole.svg',
-            }, {
-                label: $L("bbdown login"),
-                tooltiptext: $L("bbdown login"),
-                tool: '\\BBDown.exe',
-                text: 'login',
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTAgMTFWOGw1IDQtNSA0di0zSDF2LTJoOXptLTcuNTQyIDRoMi4xMjRBOC4wMDMgOC4wMDMgMCAwIDAgMjAgMTIgOCA4IDAgMCAwIDQuNTgyIDlIMi40NThDMy43MzIgNC45NDMgNy41MjIgMiAxMiAyYzUuNTIzIDAgMTAgNC40NzcgMTAgMTBzLTQuNDc3IDEwLTEwIDEwYy00LjQ3OCAwLTguMjY4LTIuOTQzLTkuNTQyLTd6Ii8+PC9zdmc+',
-            }]
-        }, {}, {
-            label: $L("show in page context menu"),
-            type: 'checkbox',
-            pref: 'userChromeJS.VideoBtn.showInContextMenu',
-            condition: 'normal link',
-            postcommand: 'VideoBtn.rebuild()'
-        }, {
-            label: "About Video Btn",
-            url: 'https://kkp.disk.st/firefox-one-click-download-web-video-scheme-videobtn.html',
-            condition: 'normal link',
-            where: 'tab',
-            style: 'list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=)'
-        }]
-    }
-
-    window.VideoBtn = {
-        PREF_LISTENER: [],
-        _paths: [],
-        $C: $C,
-        $L: $L,
-        get appVersion() { return Services.appinfo.version.split(".")[0]; },
-        get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
-        get btnId() {
-            if (!this._btnId) this._btnId = 1;
-            return this._btnId++;
+                return {
+                    pref: a, observer: o
+                }
+            }, removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
         },
-        get debug() { return cPref.get("userChromeJS.VideoBtn.debug", false); },
-        get menuCfg() {
-            if (!this._menuCfg) this._menuCfg = cloneObj(MENU_CONFIG);
-            return this._menuCfg;
-        },
-        get BIN_PATH() {
-            return this.handleRelativePath(cPref.get(this.PREF_BIN_PATH, this._DEFAULT_BIN_PATH));
-        },
-        get SAVE_PATH() {
-            return this.handleRelativePath(cPref.get(this.PREF_SAVE_PATH, this._DEFAULT_SAVE_PATH));
-        },
-        get COOKIES_SAVE_PATH() { return this.handleRelativePath("{tmpDir}"); },
         async init() {
             if (this.debug) this.log("VideoBtn init");
-            this._DEFAULT_BIN_PATH = DEFAULT_TOOLS_PATH;
+
+            ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
+                var path = Services.dirsvc.get(key, Ci.nsIFile);
+                this.ENV_PATHS[key] = path.path;
+            });
+
             this._DEFAULT_SAVE_PATH = await Downloads.getSystemDownloadsDirectory();
-            this._DEFAULT_COOKIES_SAVE_PATH = DEFAULT_COOKIES_PATH;
+
+            // 初始化正则
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -257,94 +235,83 @@
             this.regexp = new RegExp(
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIES_PATH, rSAVE_PATH, rPROFILE_PATH].join("|"), "ig");
 
+
             if (!MENU_CONFIG) {
                 if (this.debug) this.log($L("menu config some mistake"));
                 return;
             }
 
-            ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
-                var path = Services.dirsvc.get(key, Ci.nsIFile);
-                this._paths[key] = path.path;
-            });
-
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
+
             gBrowser.tabpanels.addEventListener("mouseup", this, false);
+
             this.style = addStyle(css);
-            this.rebuild();
+            this.makeMenu();
         },
-        uninit() {
-            if (this.mainEl) {
-                $JJ('.VideoBtn-Replacement[original-id]').forEach(item => {
-                    // 还原移动的菜单
-                    let orgId = item.getAttribute('original-id') || "";
-                    if (orgId.length) {
-                        let org = $(orgId);
-                        item.parentNode.insertBefore(org, item);
-                        item.parentNode.removeChild(item);
-                    }
+        makeMenu() {
+            if (this.prefs.get("userChromeJS.VideoBtn.showInContextMenu")) {
+                let MENU_CFG = cloneObj(MENU_CONFIG);
+                let menu = $C(document, 'menu', {
+                    id: 'VideoBtn-Menu',
+                    class: 'menu-iconic VideoBtn',
+                    label: $L("videobtn btn name"),
+                    tooltiptext: $L("videobtn btn name"),
+                    condition: 'normal link',
                 })
-                if (this.debug) this.log($L("VideoBtn: destroying element"), this.mainEl);
-                if (this.mainEl.localName == 'toolbarbutton')
-                    CustomizableUI.destroyWidget(this.mainEl.id);
-                else
-                    this.mainEl.parentNode.removeChild(this.mainEl);
-            }
-            this.PREF_LISTENER.forEach(l => cPref.removeListener(l));
-            this.PREF_LISTENER = [];
-        },
-        rebuild() {
-            this.uninit();
-            if (cPref.get(this.PREF_SWITCH_TO_CONTEXTMENU, false)) {
-                let menu = $C(document, 'menu', this.menuCfg, ["popup"]);
-                menu.classList.add("menu-iconic");
-                menu.classList.add("VideoBtn");
-                let ins = $("context-media-eme-separator");
+                let popup = menu.appendChild($C(document, 'menupopup', {
+                    class: 'VideoBtn-Popup'
+                }));
+                MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(document, obj)));
+
+                let ins = $J("#contentAreaContextMenu menuseparator:last-child");
                 if (ins) {
-                    ins.parentNode.insertBefore(menu, ins);
+                    ins.after(menu);
                 } else {
-                    this.error($L("VideoBtn: contextmenu has no insert point"));
+                    $("contentAreaContextMenu").appendChild(menu);
                 }
-                this.mainEl = menu;
-                if (this.menuCfg.popup)
-                    this.mainEl.appendChild(this.newMenuPopup(document, this.menuCfg.popup));
-            } else {
-                let widgetId = this.menuCfg.id || "VideoBtn-Button-" + this.btnId;
+            }
+
+            if (!CustomizableUI.getWidget("VideoBtn-Button"))
                 CustomizableUI.createWidget({
-                    id: widgetId,
-                    type: 'custom',
+                    id: "VideoBtn-Button",
+                    type: 'button',
                     localized: false,
-                    defaultArea: this.menuCfg.defaultArea || CustomizableUI.AREA_NAVBAR,
-                    onBuild: function (aDoc) {
-                        let btn;
-                        try {
-                            btn = VideoBtn.$C(aDoc, 'toolbarbutton', VideoBtn.menuCfg, ['type', 'group', 'popup', 'condition']);
-                            'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
-                            if (VideoBtn.menuCfg.popup) {
-                                let popup = VideoBtn.newMenuPopup(aDoc, VideoBtn.menuCfg.popup);
-                                if (popup) {
-                                    $A(btn, {
-                                        type: "menu",
-                                        menu: btn.id + "-popup"
-                                    });
-                                    popup.setAttribute('id', btn.id + "-popup");
-                                    btn.appendChild(popup);
-                                }
-                            }
-                        } catch (e) {
-                            VideoBtn.error(e);
-                        }
-                        return btn;
+                    removeable: true,
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    onCreated: node => {
+                        let popup = $C(node.ownerDocument, 'menupopup', {
+                            id: 'VideoBtn-Button-popup',
+                            class: 'VideoBtn-Popup',
+                        });
+                        let MENU_CFG = cloneObj(MENU_CONFIG);
+                        MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(node.ownerDocument, obj)));
+                        $A(node, {
+                            label: $L("videobtn btn name"),
+                            tooltiptext: $L("videobtn btn name"),
+                            type: 'menu',
+                            menu: 'VideoBtn-Button-popup'
+                        });
+                        node.appendChild(popup);
                     }
                 });
-                this.mainEl = CustomizableUI.getWidget(widgetId).forWindow(window).node;
-            }
         },
         destroy() {
-            this.uninit();
+            if (this.debug) this.log($L("VideoBtn: destroying element"));
+            $JJ('.VideoBtn-Replacement[original-id]').forEach(item => {
+                // 还原移动的菜单
+                let orgId = item.getAttribute('original-id') || "";
+                if (orgId.length) {
+                    let org = $(orgId);
+                    item.parentNode.insertBefore(org, item);
+                    item.parentNode.removeChild(item);
+                }
+            });
+            CustomizableUI.destroyWidget("VideBtn-Button");
+            $R($J("#VideBtn-Menu"));
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             gBrowser.tabpanels.removeEventListener("mouseup", this, false);
-            if (this.style && this.style.parentNode) {
-                this.style.parentNode.removeChild(this.style);
+            if (this.style && this.style.url && this.style.type) {
+                removeStyle(this.style);
                 this.style = null;
             }
             delete window.VideoBtn;
@@ -429,38 +396,6 @@
                 return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
             }
         },
-        createButton(obj, aDoc) {
-            obj.id = obj.id || "VideoBtn-Button-" + this.btnId;
-            obj.label = obj.label || "VideoBtn";
-            obj.defaultArea = obj.defaultArea || CustomizableUI.AREA_NAVBAR;
-            obj.class = obj.class ? obj.class + ' videobtn-button' : 'videobtn-button';
-            CustomizableUI.createWidget({
-                id: obj.id,
-                type: 'custom',
-                localized: false,
-                defaultArea: obj.defaultArea,
-                onBuild: function (doc) {
-                    let btn;
-                    try {
-                        btn = $C(doc, 'toolbarbutton', obj, ['type', 'group', 'popup']);
-                        'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
-                        if (obj.popup) {
-                            let id = obj.id + '-popup';
-                            btn.setAttribute('type', 'menu');
-                            btn.setAttribute('menu', id);
-                            let popup = $C(doc, 'menupopup', { id: id, class: 'VideoBtn-Popup' });
-                            btn.appendChild(popup);
-                            obj.popup.forEach(child => popup.appendChild(VideoBtn.createMenu(child, doc, popup, true)));
-                        }
-                        if (obj.onBuild && typeof obj.onBuild == 'function') obj.onBuild(btn, aDoc);
-                    } catch (e) {
-                        VideoBtn.error(e);
-                    }
-                    return btn;
-                }
-            });
-            return CustomizableUI.getWidget(obj.id).forWindow(window).node;
-        },
         newMenuPopup(doc, obj) {
             if (!obj) return;
             let popup = $C(doc, 'menupopup');
@@ -502,7 +437,7 @@
 
                 let classList = [],
                     tagName = obj.type || 'menuitem';
-                if (['separator', 'menuseparator'].includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.image && !obj.command && !obj.pref) {
+                if (['separator', 'menuseparator'].includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.image && !obj.command) {
                     return $C(doc, 'menuseparator', obj, ['type', 'group', 'popup']);
                 }
 
@@ -535,45 +470,9 @@
                     if (classList.length) item.setAttribute('class', classList.join(' '));
                     $A(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type']);
                     item.setAttribute('label', obj.label || obj.command || obj.oncommand);
-
-                    if (obj.pref) {
-                        let type = cPref.getType(obj.pref) || obj.type || 'unknown';
-                        const map = {
-                            string: 'prompt',
-                            int: 'prompt',
-                            bool: 'checkbox',
-                            boolean: 'checkbox',
-                        }
-                        const defaultVal = {
-                            string: '',
-                            int: 0,
-                            bool: false,
-                            boolean: false
-                        }
-                        if (map[type]) item.setAttribute('type', map[type]);
-                        if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
-                        if (map[type] === 'checkbox') {
-                            item.setAttribute('checked', !!cPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
-                            this.addPrefListener(obj.pref, function (value, pref) {
-                                item.setAttribute('checked', value);
-                                if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
-                            });
-                        } else {
-                            let value = cPref.get(obj.pref);
-                            if (value) {
-                                item.setAttribute('value', value);
-                                item.setAttribute('label', $S(obj.label, value));
-                            }
-                            this.addPrefListener(obj.pref, function (value, pref) {
-                                item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
-                                if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
-                            });
-                        }
-                    }
                 }
 
-
-                if (!obj.pref && !obj.onclick)
+                if (!obj.onclick)
                     item.setAttribute("onclick", "checkForMiddleClick(this, event)");
 
                 if (obj.onBuild) {
@@ -596,7 +495,7 @@
             if (obj.oncommand || obj.command)
                 return item;
 
-            item.setAttribute("oncommand", "VideoBtn.onCommand(event);");
+            item.setAttribute("oncommand", "event.target.ownerGlobal.VideoBtn.onCommand(event);");
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
@@ -609,14 +508,12 @@
             if (item.hasAttribute("precommand")) {
                 eval(item.getAttribute('precommand'));
             }
-            let pref = item.getAttribute("pref") || "",
-                text = item.getAttribute("text") || "",
+            let text = item.getAttribute("text") || "",
                 exec = item.getAttribute("exec") || "",
                 edit = item.getAttribute("edit") || "",
-                url = item.getAttribute("url") || "";
-            where = item.getAttribute("where") || "";
-            if (pref) this.handlePref(event, pref);
-            else if (exec) this.exec(exec, this.convertText(text));
+                url = item.getAttribute("url") || "",
+                where = item.getAttribute("where") || "";
+            if (exec) this.exec(exec, this.convertText(text));
             else if (edit) this.edit(edit);
             else if (url) this.openCommand(event, url, where);
             if (item.hasAttribute("postcommand")) {
@@ -652,33 +549,6 @@
                         })
                     } catch (e) { }
                     break;
-            }
-        },
-        handlePref(event, pref) {
-            let item = event.target;
-            if (item.getAttribute('type') === 'checkbox') {
-                let setVal = cPref.get(pref, false, !!item.getAttribute('defaultValue'));
-                cPref.set(pref, !setVal);
-                item.setAttribute('checked', !setVal);
-            } else if (item.getAttribute('type') === 'prompt') {
-                let type = item.getAttribute('valueType') || 'string',
-                    val = prompt(item.getAttribute('label'), cPref.get(pref, item.getAttribute('default') || ""));
-                if (val) {
-                    switch (type) {
-                        case 'int':
-                            val = parseInt(val);
-                            break;
-                        case 'boolean':
-                            val = !!val;
-                            break;
-                        case 'string':
-                        default:
-                            val = "" + val;
-                            break;
-                    }
-                    cPref.set(pref, val);
-                }
-
             }
         },
         openCommand: function (event, url, where, postData) {
@@ -730,8 +600,8 @@
         },
         edit: function (edit) {
             if (this.debug) this.log('edit', edit);
-            if (cPref.get("view_source.editor.path"))
-                this.exec(cPref.get("view_source.editor.path"), this.handleRelativePath(edit));
+            if (this.prefs.get("view_source.editor.path"))
+                this.exec(this.prefs.get("view_source.editor.path"), this.handleRelativePath(edit));
             else
                 this.exec(this.handleRelativePath(edit));
         },
@@ -766,9 +636,6 @@
                 this.error(e);
             }
         },
-        addPrefListener(pref, callback) {
-            this.PREF_LISTENER[pref] = cPref.addListener(pref, callback);
-        },
         handleRelativePath: function (path, parentPath) {
             if (path) {
                 let handled = false;
@@ -787,7 +654,7 @@
                 ]);
                 ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
                     if (path.includes("{" + key + "}")) {
-                        path = path.replace("{" + key + "}", this._paths[key] || "");
+                        path = path.replace("{" + key + "}", this.ENV_PATHS[key] || "");
                         handled = true;
                     }
                 })
@@ -943,17 +810,10 @@
         log: function () {
             this.browserWin.console.log(Array.prototype.slice.call(arguments));
         },
-        PREF_SWITCH_TO_CONTEXTMENU: 'userChromeJS.VideoBtn.showInContextMenu',
         PREF_BIN_PATH: 'userChromeJS.VideoBtn.binPath',
         PREF_SAVE_PATH: 'userChromeJS.VideoBtn.savePath',
     }
 
-    /**
-    * 获取  DOM 元素
-    * @param {string} id 
-    * @param {Document} aDoc 
-    * @returns 
-    */
     function $(id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
@@ -966,13 +826,6 @@
         return (aDoc || document).querySelectorAll(selector);
     }
 
-    /**
-     * 创建 DOM 元素
-     * @param {string} tag DOM 元素标签
-     * @param {object} attr 属性对象
-     * @param {array} skipAttrs 跳过属性
-     * @returns 
-     */
     function $C(aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
@@ -980,13 +833,6 @@
         return $A(el, attrs, skipAttrs);
     }
 
-    /**
-     * 应用属性
-     * @param {Element} el DOM 对象
-     * @param {object} obj 属性对象
-     * @param {array} skipAttrs 跳过属性
-     * @returns 
-     */
     function $A(el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
@@ -1001,12 +847,18 @@
         return el;
     }
 
-    /**
-     * 获取本地化文本
-     * @param {string} str 
-     * @param {string|null} replace 
-     * @returns 
-     */
+    function $R(el) {
+        if (el && el.parentNode) {
+            try {
+                el.parentNode.removeChild(el);
+                return true;
+            } catch (e) {
+                this.error(e);
+            }
+        }
+        return false;
+    }
+
     function $L(str, replace) {
         const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
         if (str) {
@@ -1016,12 +868,6 @@
             return "";
     }
 
-    /**
-     * 替换 %s 为指定文本
-     * @param {string} str 
-     * @param {string} replace 
-     * @returns 
-     */
     function $S(str, replace) {
         str || (str = '');
         if (typeof replace !== "undefined") {
@@ -1030,27 +876,35 @@
         return str || "";
     }
 
+    const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
-    function $toogleText() {
-        if (cPref.get("userChromeJS.VideoBtn.showInContextMenu", false))
-            return $L("show in page context menu");
-        return $L("show in navigation bar");
+    function addStyle(cssOrStyle, type) {
+        try {
+            if (typeof cssOrStyle === "string") {
+                let style = {
+                    type: type || sss.AUTHOR_SHEET,
+                    url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(cssOrStyle))
+                };
+                sss.loadAndRegisterSheet(style.url, style.type);
+            }
+            if (typeof cssOrStyle === "object" && cssOrStyle.url && cssOrStyle.type) {
+                sss.loadAndRegisterSheet(cssOrStyle.url, cssOrStyle.type);
+                return cssOrStyle;
+            }
+        } catch (e) {
+            TopWindow.console.error(e);
+        }
+        return false;
     }
 
-
-    function addStyle(css) {
-        var pi = document.createProcessingInstruction(
-            'xml-stylesheet',
-            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-        );
-        return document.insertBefore(pi, document.documentElement);
+    function removeStyle(style) {
+        if (typeof style === "object" && style.url && style.type) {
+            sss.unregisterSheet(style.url, style.type);
+            return true;
+        }
+        return false;
     }
 
-    /**
-     * 克隆对象
-     * @param {object} o 
-     * @returns 
-     */
     function cloneObj(o) {
         if (typeof (o) === typeof (1) || typeof ('') === typeof (o) || typeof (o) === typeof (true) ||
             typeof (o) === typeof (undefined)) {
@@ -1124,11 +978,45 @@
         foStream.close();
     }
 
-    window.VideoBtn.init();
-    // setTimeout(function () { window.VideoBtn.rebuild(); }, 1000);//1秒
-    // setTimeout(function () { window.VideoBtn.rebuild(); }, 3000);//3秒
+    function VideoBtnInit() {
+        window.VideoBtn = VideoBtn;
+        window.VideoBtn.init(window);
+        Services.obs.addObserver(this, 'domwindowopened', false);
+    }
+
+    VideoBtnInit.prototype = {
+        observe: function (aSubject, aTopic, aData) {
+            aSubject.addEventListener('load', this, true);
+        },
+        handleEvent: function (aEvent) {
+            if (aEvent.type === "load") {
+                let document = aEvent.originalTarget,
+                    win = document.ownerGlobal;
+                if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
+                    win.VideoBtn = VideoBtn;
+                    win.VideoBtn.init(win);
+                }
+            }
+        }
+    }
+
+    // 延时启动
+    if (gBrowserInit.delayedStartupFinished) new VideoBtnInit();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                new VideoBtnInit();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
 })(`
-    #contentAreaContextMenu[VideoBtn] .VideoBtn:not(menuseparator):not(menugroup) {
+    #VideoBtn-Button,#VideoBtn-Menu {
+        list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBIMjRWMjRIMHoiLz48cGF0aCBkPSJNMTYgNGMuNTUyIDAgMSAuNDQ4IDEgMXY0LjJsNS4yMTMtMy42NWMuMjI2LS4xNTguNTM4LS4xMDMuNjk3LjEyNC4wNTguMDg0LjA5LjE4NC4wOS4yODZ2MTIuMDhjMCAuMjc2LS4yMjQuNS0uNS41LS4xMDMgMC0uMjAzLS4wMzItLjI4Ny0uMDlMMTcgMTQuOFYxOWMwIC41NTItLjQ0OCAxLTEgMUgyYy0uNTUyIDAtMS0uNDQ4LTEtMVY1YzAtLjU1Mi40NDgtMSAxLTFoMTR6bS0xIDJIM3YxMmgxMlY2em0tNSAydjRoM2wtNCA0LTQtNGgzVjhoMnptMTEgLjg0MWwtNCAyLjh2LjcxOGw0IDIuOFY4Ljg0eiIvPjwvc3ZnPg==);
+    }
+    #contentAreaContextMenu[VideoBtn] .VideoBtn:not(menuseparator):not(menugroup),
+    #contentAreaContextMenu #VideoBtn-Menu~menuseparator {
         visibility: collapse;
     }
     #contentAreaContextMenu[VideoBtn~="link"] .VideoBtn[condition~="link"],
@@ -1186,8 +1074,7 @@
         list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
     }
 
-    .VideoBtn-Popup .menu-iconic.skin,
-    .VideoBtn-Popup .menuitem-iconic.skin {
-        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik03MDYuNTQ1IDEyOC4wMTlhNjMuOTg1IDYzLjk4NSAwIDAgMSA0OC41OTkgMjIuMzYzbDE3Mi44MzUgMjAxLjc2My02My45OTYgMTI3Ljg1Ny00MS4zNzQtNDEuMzcxYy02LjI1LTYuMjQ4LTE0LjQzNy05LjM3Mi0yMi42MjQtOS4zNzItOC4xODggMC0xNi4zNzQgMy4xMjQtMjIuNjI0IDkuMzcyYTMyLjAwNiAzMi4wMDYgMCAwIDAtOS4zNzUgMjIuNjI2djQwMi43MjdjMCAxNy42NzItMTQuMzI3IDMxLjk5OC0zMS45OTkgMzEuOTk4SDMyMC4wMWMtMTcuNjcxIDAtMzEuOTk4LTE0LjMyNi0zMS45OTgtMzEuOTk4VjQ2MS4yNTZjMC0xNy42NzItMTQuMzI4LTMxLjk5OC0zMi0zMS45OThhMzEuOTk3IDMxLjk5NyAwIDAgMC0yMi42MjQgOS4zNzJsLTQxLjM3MyA0MS4zNzFMOTYuMDIgMzUyLjAwN2wxNzIuODM1LTIwMS42NGE2My45ODcgNjMuOTg3IDAgMCAxIDQ4LjU5Mi0yMi4zNDhoNi41MDdhOTUuOTcgOTUuOTcgMCAwIDEgNTAuMTMgMTQuMTMyQzQyOC4zNyAxNzUuMzk0IDQ3NC4zMzggMTkyLjAxNSA1MTIgMTkyLjAxNXM4My42MjktMTYuNjIxIDEzNy45MTUtNDkuODY0YTk1Ljk2OCA5NS45NjggMCAwIDEgNTAuMTMtMTQuMTMyaDYuNW0wLTYzLjk5OGgtNi41YTE1OS44OSAxNTkuODkgMCAwIDAtODMuNTU3IDIzLjU1OEM1NjEuOTA0IDEyMSA1MjkuNTM3IDEyOC4wMTggNTEyIDEyOC4wMThjLTE3LjUzOCAwLTQ5LjkwNC03LjAxNy0xMDQuNDk1LTQwLjQ0NmExNTkuODgxIDE1OS44ODEgMCAwIDAtODMuNTUtMjMuNTVoLTYuNTA4YTEyNy44MjMgMTI3LjgyMyAwIDAgMC05Ny4xODIgNDQuNzAxTDQ3LjQyOCAzMTAuMzZjLTE5LjUyMiAyMi43NzQtMjAuNiA1Ni4wNS0yLjYxIDgwLjA0N0wxNDAuODE1IDUxOC40YTYzLjk5OCA2My45OTggMCAwIDAgODMuMTk5IDE3LjAyNXYzMjguNTU4YzAgNTIuOTMyIDQzLjA2IDk1Ljk5NSA5NS45OTUgOTUuOTk1aDQxNS45OGM1Mi45MzUgMCA5NS45OTYtNDMuMDYzIDk1Ljk5Ni05NS45OTVWNTM1LjQyNWE2NC4wMjggNjQuMDI4IDAgMCAwIDQyLjI0IDcuNzQ5IDY0LjAxNCA2NC4wMTQgMCAwIDAgNDYuOTktMzQuNTI4bDYzLjk5Ny0xMjcuODU3YzExLjUyMi0yMy4wMjggOC4xMjUtNTAuNzIyLTguNjMzLTcwLjI3OUw4MDMuNzQ0IDEwOC43NDdjLTI0LjMzNi0yOC40MjItNTkuNzctNDQuNzI2LTk3LjItNDQuNzI2eiIgcC1pZD0iMTI4MiI+PC9wYXRoPjwvc3ZnPg==) !important;
+    .VideoBtn-Popup menuitem:is([type="checkbox"], [checked="true"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon {
+        display: block !important;
     }
-`, true);
+`);
