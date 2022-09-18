@@ -1,0 +1,293 @@
+/* ==UserStyle==
+ * @name            单行主题（卡饭）
+ * @description     来自 卡饭 的单行主题
+ * @author          Ryan, ylcs006, exdsoft
+ * @version         0.1.0
+ * @compatibility   Firefox 90
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+ * @l10n            { 'userChromeJS.oneline.urlbarOnRight':'地址栏在右', 'userChromeJS.oneline.appButtonOnLeft': '三道杠按钮在左边', 'userChromeJS.oneline.hideControlButton': '隐藏控制按钮' }
+ * @note            修改自：https://bbs.kafan.cn/thread-2172443-1-1.html，三道杠在左边的功能有bug，建议使用脚本实现：https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/movablePanelUIButton.uc.js
+==/UserStyle== */
+:root {
+  --uc-urlbar-min-width: 50vw;
+}
+
+.titlebar-spacer[type="pre-tabs"],
+.titlebar-spacer[type="post-tabs"] {
+  display: none;
+}
+
+#navigator-toolbox {
+  display: grid;
+  border: none !important;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "navbar titlebar"
+    "PersonalToolbar PersonalToolbar";
+}
+
+#titlebar {
+  grid-area: titlebar;
+  -moz-appearance: none !important;
+  background-color: var(--toolbar-bgcolor);
+  background-image: var(--toolbar-bgimage);
+  background-clip: padding-box;
+  color: var(--toolbar-color);
+  -moz-box-orient: horizontal !important;
+}
+
+#toolbar-menubar {
+  -moz-box-ordinal-group: 3;
+}
+
+#toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+  max-width: 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+}
+
+#main-menubar {
+  -moz-box-flex: 1 !important;
+}
+
+#toolbar-menubar #menubar-items {
+  -moz-box-pack: center !important;
+}
+
+#main-menubar>menu>menupopup {
+  margin-block: calc(0px - var(--menupopup-inner-box-margin) - ((var(--tab-min-height) - 16px - 4px - 5px) / 2)) !important;
+  margin-inline: calc(0px - var(--menupopup-inner-box-margin) + 2px) !important;
+}
+
+#toolbar-menubar #main-menubar>menu {
+  appearance: none !important;
+  background-color: transparent !important;
+  padding-inline: 2px;
+}
+
+#toolbar-menubar #main-menubar>menu>label {
+  -moz-box-flex: 1000 !important;
+  margin: 0 !important;
+  padding: 4px 8px 5px 8px !important;
+  border-radius: var(--toolbarbutton-border-radius) !important;
+}
+
+#toolbar-menubar #main-menubar>menu[_moz-menuactive="true"]>label {
+  background-color: var(--toolbarbutton-hover-background) !important;
+}
+
+#toolbar-menubar #main-menubar>menu[open]>label {
+  background-color: var(--toolbarbutton-active-background) !important;
+}
+
+#nav-bar {
+  grid-area: navbar;
+  border-left-width: 0px !important
+}
+
+#customization-panelWrapper>.panel-arrowbox>.panel-arrow {
+  margin-inline-end: initial !important;
+}
+
+#urlbar[breakout] {
+  position: relative;
+}
+
+#urlbar[breakout][open] {
+  position: absolute;
+}
+
+#urlbar[open]:focus-within {
+  min-width: var(--uc-urlbar-min-width, none) !important;
+  left: 0 !important;
+  right: auto !important;
+}
+
+@supports -moz-bool-pref("userChromeJS.oneline.appButtonOnLeft") {
+  #PanelUI-button {
+    -moz-box-ordinal-group: 0;
+  }
+
+  #PanelUI-menu-button {
+    padding-right: 0;
+  }
+}
+
+#PersonalToolbar {
+  grid-area: PersonalToolbar;
+}
+
+#urlbar-container {
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+#urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
+#searchbar:focus-within {
+  outline: none;
+}
+
+#urlbar:hover,
+.searchbar-textbox:hover {
+  background-color: hsla(240, 5%, 5%, .1) !important;
+}
+
+@supports -moz-bool-pref("userChromeJS.oneline.urlbarOnRight") {
+  #navigator-toolbox {
+    grid-template-areas:
+      "titlebar titlebar navbar"
+      "PersonalToolbar PersonalToolbar PersonalToolbar";
+  }
+
+  .titlebar-buttonbox-container {
+    -moz-box-ordinal-group: 0;
+  }
+
+  #toolbar-menubar[autohide="false"]:not([inactive="true"]):not([customizing="true"])>.titlebar-buttonbox-container {
+    visibility: collapse;
+    display: none;
+  }
+
+  :root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"]+#TabsToolbar>.titlebar-buttonbox-container {
+    display: -moz-box !important;
+  }
+
+  .titlebar-button {
+    display: -moz-box !important;
+    border: none;
+    margin: 0 !important;
+    padding: 8px 17px;
+    -moz-context-properties: fill, stroke !important;
+    stroke: none !important;
+    fill: none !important;
+  }
+
+  :root:not([sizemode="maximized"],
+    [inFullscreen]) :is(.titlebar-restore,
+    .uc-titlebar-restore),
+  :root:is([sizemode="maximized"],
+    [inFullscreen]) :is(.titlebar-max,
+    .uc-titlebar-max) {
+    display: none !important;
+  }
+
+  /* Firefox 不在最前面时 */
+  :root:-moz-window-inactive:not([customizing]) .titlebar-buttonbox>toolbarbutton:not(:hover) {
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCgyMjcsIDE5JSwgNDglKSIgcj0iNTciIC8+Cjwvc3ZnPg==) !important;
+  }
+
+  .titlebar-buttonbox .toolbarbutton-icon {
+    opacity: 1 !important;
+  }
+
+  .titlebar-button>.toolbarbutton-icon {
+    appearance: none !important;
+    width: 15.3px !important;
+    height: 15.3px !important;
+    stroke: inherit !important;
+  }
+
+  .titlebar-buttonbox {
+    appearance: none !important;
+  }
+
+  /** 最大化/还原 */
+  .titlebar-max,
+  .uc-titlebar-max,
+  .titlebar-restore,
+  .uc-titlebar-restore {
+    appearance: none !important;
+    padding: 0px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    background-color: transparent !important;
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+    grid-column: 1 !important;
+    order: 1 !important;
+    -moz-box-ordinal-group: 3 !important;
+  }
+
+  /** 最大化 鼠标悬浮 */
+  :is(.titlebar-max,
+    .uc-titlebar-max):hover {
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNMjcuNyA0N3YzMC45YzAgNC43IDMuOSA4LjYgOC42IDguNmgzMC45YzEuOCAwIDIuNy0yLjIgMS40LTMuNEwzMS4xIDQ1LjZjLTEuMi0xLjMtMy40LS40LTMuNCAxLjR6bTUwLjQtMTguNEg0Ny4zYy0xLjggMC0yLjcgMi4yLTEuNCAzLjRsMzcuNCAzNy40YzEuMyAxLjMgMy40LjQgMy40LTEuNFYzNy4yYzAtNC44LTMuOS04LjYtOC42LTguNnoiIC8+Cjwvc3ZnPg==) !important;
+  }
+
+  /** 还原 鼠标悬浮 */
+  :root:is([sizemode="maximized"],
+    [inFullscreen]) :is(.titlebar-max,
+    .uc-titlebar-max):hover,
+  :is(.titlebar-restore,
+    .uc-titlebar-restore):hover {
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNNzcuNSAyNy4xSDM3LjRjLTYuMyAwLTExLjQgNS4xLTExLjQgMTEuNHYzOWMwIDYuMyA1LjEgMTEuNCAxMS40IDExLjRoNDAuMWM2LjMgMCAxMS40LTUuMSAxMS40LTExLjR2LTM5YzAtNi4zLTUuMS0xMS40LTExLjQtMTEuNHptLTUuNCA0OC40SDQyLjljLTEuNiAwLTIuOS0xLjMtMi45LTIuOVY0My40YzAtMS42IDEuMy0yLjkgMi45LTIuOWgyOS4yYzEuNiAwIDIuOSAxLjMgMi45IDIuOXYyOS4yYzAgMS42LTEuMyAyLjktMi45IDIuOXoiIC8+Cjwvc3ZnPg==) !important;
+  }
+
+  /** 最小化 */
+  :is(.titlebar-min,
+    .uc-titlebar-min) {
+    appearance: none !important;
+    padding: 0px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    background-color: transparent !important;
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KPC9zdmc+) !important;
+    -moz-box-ordinal-group: 2 !important;
+  }
+
+  /** 最小化 鼠标悬浮 */
+  :is(.titlebar-min,
+    .uc-titlebar-min):hover {
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KICAgIDxwYXRoIGQ9Ik04OC4yIDUwLjJIMjUuOGMtMy43IDAtNi44IDMtNi44IDYuOCAwIDMuNyAzIDYuOCA2LjggNi44aDYyLjRjMy43IDAgNi44LTMgNi44LTYuOC0uMS0zLjctMy4xLTYuOC02LjgtNi44eiIKICAgICAgICBmaWxsPSJjb250ZXh0LXN0cm9rZSBoc2woMzIsIDYyJSwgMzglKSIgLz4KPC9zdmc+) !important;
+  }
+
+  /** 关闭 */
+  .titlebar-close,
+  .uc-titlebar-close {
+    appearance: none !important;
+    padding: 0px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    background-color: transparent !important;
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+    -moz-box-ordinal-group: 1 !important;
+  }
+
+  /** 关闭 鼠标悬浮 */
+  :is(.titlebar-close,
+    .uc-titlebar-close):hover {
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNODMuOCA3NC4zTDM5LjcgMzAuMmMtMi42LTIuNi02LjktMi42LTkuNiAwLTIuNiAyLjYtMi42IDYuOSAwIDkuNmw0NC4xIDQ0LjFjMi42IDIuNiA2LjkgMi42IDkuNiAwIDIuNy0yLjcgMi43LTcgMC05LjZ6IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNMzkuNyA4My44bDQ0LjEtNDQuMWMyLjYtMi42IDIuNi02LjkgMC05LjYtMi42LTIuNi02LjktMi42LTkuNiAwbC00NCA0NC4yYy0yLjYgMi42LTIuNiA2LjkgMCA5LjYgMi42IDIuNiA2LjkgMi42IDkuNS0uMXoiIC8+Cjwvc3ZnPg==) !important;
+  }
+
+  #PanelUI-button {
+    -moz-box-ordinal-group: 999;
+    padding: 0 var(--toolbarbutton-outer-padding);
+  }
+
+  #urlbar[open]:focus-within {
+    min-width: var(--uc-urlbar-min-width, none) !important;
+    right: 0 !important;
+    left: auto !important;
+  }
+}
+
+@supports -moz-bool-pref("userChromeJS.oneline.hideControlButton") {
+  .titlebar-buttonbox {
+    visibility: collapse;
+    display: none;
+  }
+}

@@ -1,0 +1,171 @@
+@import "./variables.css";
+
+/**======== 扩展管理 ========*/
+@supports -moz-bool-pref("userChromeJS.sidra.addons.compact") {
+  @-moz-document url-prefix(about:addons),
+  url-prefix(chrome: //mozapps/content/extensions/aboutaddons.html), url-prefix(chrome://mozapps/content/extensions/aboutaddons.xhtml) {
+
+    @media (min-width: 960px) {
+
+      /* :root {
+            --section-width: calc(100% - 56px);
+        } */
+      .main-search,
+      .main-heading,
+      #main {
+        max-width: calc(100% - 56px);
+      }
+
+      .extension-enabled-section,
+      .extension-disabled-section,
+      .userchromejs-enabled-section,
+      .userchromejs-disabled-section,
+      .theme-disabled-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-column-gap: 20px;
+      }
+
+      .extension-enabled-section >.list-section-heading,
+      .extension-disabled-section > .list-section-heading,
+      .userchromejs-enabled-section > .list-section-heading,
+      .userchromejs-disabled-section>.list-section-heading,
+      .theme-disabled-section>.list-section-heading {
+        grid-column-start: 1;
+        grid-column-end: 3;
+      }
+
+      .card-heading-image {
+        width: calc(100% + 32px);
+        height: calc(100% / 3);
+        min-height: 32px;
+      }
+
+      .monochromatic-addon-list > section {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-column-gap: 10px;
+      }
+
+      .monochromatic-addon-list > section > .header-name,
+      .monochromatic-addon-list > section > .list-section-subheading {
+        grid-column-start: 1;
+        grid-column-end: 4;
+      }
+
+      .monochromatic-addon-list addon-card .card {
+        width: 100%;
+        height: auto;
+      }
+    }
+
+    @media (min-width: 1290px) {
+
+      .extension-enabled-section,
+      .extension-disabled-section,
+      .userchromejs-enabled-section,
+      .userchromejs-disabled-section,
+      .monochromatic-addon-list > section {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .extension-enabled-section >.list-section-heading,
+      .extension-disabled-section > .list-section-heading,
+      .userchromejs-enabled-section > .list-section-heading,
+      .userchromejs-disabled-section>.list-section-heading {
+        grid-column-start: 1;
+        grid-column-end: 4;
+      }
+
+      .monochromatic-addon-list > section {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+      }
+
+      .monochromatic-addon-list > section > .header-name,
+      .monochromatic-addon-list > section > .list-section-subheading {
+        grid-column-start: 1;
+        grid-column-end: 5;
+      }
+    }
+
+    .addon-card-message[type="warning"] {
+      display: none;
+    }
+
+    panel-list>panel-item-separator {
+      display: none;
+    }
+
+    :is(addon-page-options, addon-options)>panel-list[role="menu"]>panel-item {
+      background-repeat: no-repeat;
+      background-position: 8px center;
+			background-size: 16px;
+    }
+
+    [action="check-for-updates"] {
+      background-image: url("./images/update.svg");
+    }
+
+    [action="view-recent-updates"] {
+      background-image: url("./images/aboutaddons/new.svg");
+    }
+
+    [action="install-from-file"] {
+      background-image: url("./images/aboutaddons/browse.svg");
+    }
+
+    [action="debug-addons"] {
+      background-image: url("./images/aboutaddons/bug.svg");
+    }
+
+    [action="reset-update-states"] {
+      background-image: url("./images/skin/reset.svg");
+    }
+
+    [action="manage-shortcuts"] {
+      background-image: url("./images/aboutaddons/keyboard.svg");
+    }
+
+    [action="preferences"],
+    [action="expand"] {
+      background-image: url("chrome://global/skin/icons/settings.svg");
+    }
+
+    [action="AM-browse-dir"] {
+      background-image: url("./images/document-search.svg");
+    }
+
+    [action="AM-copy-name"] {
+      background-image: url("./images/aboutaddons/copy.svg");
+    }
+
+    [action="AM-open-url"] {
+      background-image: url("./images/aboutaddons/open-in-new.svg");
+    }
+
+    [action="AM-edit-script"] {
+      background-image: url("./images/aboutaddons/editor.svg");
+    }
+
+    /* Checkbox */
+    [action="set-update-automatically"],
+    [action="always-activate"],
+    [action="never-activate"] {
+      background-image: url("./images/skin/checkbox.svg");
+    }
+
+    .addon-permissions-list>li {
+      background-image: url("./images/skin/checkbox.svg");
+    }
+
+    [action="set-update-automatically"][checked],
+    [action="always-activate"][checked],
+    [action="never-activate"][checked] {
+      background-image: url("./images/skin/checkbox-checked.svg");
+    }
+
+    .addon-permissions-list>li.permission-checked {
+      background-image: url("./images/skin/checkbox-checked.svg");
+    }
+  }
+}
