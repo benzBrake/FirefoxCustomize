@@ -58,43 +58,6 @@
                 defaultArea: CustomizableUI.AREA_NAVBAR,
                 localized: false,
                 onCreated: node => this.initButton(node)
-                ,
-                // onViewShowing: async event => {
-                //     let { ownerDocument: document } = event.target;
-                //     if (!gUnifiedExtensions._listView) {
-                //         gUnifiedExtensions._listView = PanelMultiView.getViewNode(
-                //             document,
-                //             "unified-extensions-view"
-                //         );
-                //         gUnifiedExtensions._listView.addEventListener("ViewShowing", unifiedExtensionsEnhance);
-                //         gUnifiedExtensions._listView.addEventListener("click", unifiedExtensionsEnhance);
-                //         gUnifiedExtensions._listView.addEventListener("ViewHiding", gUnifiedExtensions);
-
-                //         if (unifiedExtensionsEnhance.appVersion == 104)
-                //             gUnifiedExtensions._listView.classList.add('scroll');
-
-                //         // Lazy-load the l10n strings.
-                //         if (document
-                //             .getElementById("unified-extensions-context-menu"))
-                //             document
-                //                 .getElementById("unified-extensions-context-menu")
-                //                 .querySelectorAll("[data-lazy-l10n-id]")
-                //                 .forEach(el => {
-                //                     el.setAttribute(
-                //                         "data-l10n-id",
-                //                         el.getAttribute("data-lazy-l10n-id")
-                //                     )
-                //                         ;
-                //                     el.removeAttribute("data-lazy-l10n-id");
-                //                 });
-                //     }
-                //     if (gUnifiedExtensions._listView.getAttribute('visible') === "true") {
-                //         PanelMultiView.hidePopup(gUnifiedExtensions._listView.closest("panel"));
-                //     } else {
-                //         await PanelUI.showSubView("unified-extensions-view", event.target, event);
-                //         unifiedExtensionsEnhance.onViewShowing(gUnifiedExtensions._listView);
-                //     }
-                // }
             });
             if (gUnifiedExtensions.togglePanel.length === 2 && !gUnifiedExtensions.togglePanel.toString().includes("UnifiedExtensionsTogglePanel")) {
                 gUnifiedExtensions.togglePanel = async function (anchor, aEvent) {
@@ -156,6 +119,7 @@
                 await BrowserOpenAddonsMgr("addons://discover/");
                 return;
             }
+            if (this.appVersion == 104) view.classList.add("scroll");
             if ($('unified-extensions-context-menu', document))
                 $('unified-extensions-context-menu', document)
                     .querySelectorAll("[data-lazy-l10n-id]")
@@ -169,7 +133,6 @@
                         }
                     });
             view.addEventListener('click', this.onClick);
-
 
             let list = view.querySelector(".unified-extensions-list");
             let extensions = await gUnifiedExtensions.getActiveExtensions();
