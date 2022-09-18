@@ -62,18 +62,6 @@
 			"to": "https://recaptcha.net/recaptcha/$2"
 		},
 		{
-			"enable": false,
-			"name": "Sourceforge下载 >> 镜像站点",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/sourceforge\\.net\\/projects\\/(((\\w)\\w).*)\\/files\\/(.*)\\/download",
-			"exclude": "",
-			"group": "重定向",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "http://master.dl.sourceforge.net/project/$1/$4"
-		},
-		{
 			"enable": true,
 			"name": "维基百科 繁体 >> 简体",
 			"ruleType": "redirect",
@@ -155,7 +143,7 @@
 			"group": "加速",
 			"isFunction": false,
 			"action": "redirect",
-			"to": "https://raw-gh.gcdn.mirr.one/$1"
+			"to": "https://raw.fastgit.org/$1"
 		},
 		{
 			"enable": true,
@@ -796,6 +784,20 @@
 			"action": {
 				"name": "user-agent",
 				"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15"
+			}
+		},
+		{
+			"enable": true,
+			"name": "CAPCUT_UA",
+			"ruleType": "modifySendHeader",
+			"matchType": "regexp",
+			"pattern": "https?:\\/\\/.*\\.capcut\\.cn\\/.*",
+			"exclude": "",
+			"group": "用户代理",
+			"isFunction": false,
+			"action": {
+				"name": "user-agent",
+				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
 			}
 		}
 	],
