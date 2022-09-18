@@ -141,7 +141,8 @@
             this.STYLE = this.addStyle(css, this.sss.AGENT_SHEET);
 
             // create CopyCat button
-            if (!CustomizableUI.getWidget('CopyCat-Btn').forWindow(window).node)
+            let w = CustomizableUI.getWidget('CopyCat-Btn');
+            if (!w || !w.node)
                 CustomizableUI.createWidget({
                     id: 'CopyCat-Btn',
                     type: 'view',
@@ -627,7 +628,7 @@
             if (pref)
                 this.handlePref(event, pref);
             else if (edit)
-                this.edit(edit);
+                this.edit(this.handleRelativePath(edit));
             else if (exec)
                 this.exec(exec, text);
             else if (url)
