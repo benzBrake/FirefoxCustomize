@@ -3,15 +3,19 @@ Ryan 的 Firefox 自定义资源收藏夹
 
 ## 分类说明
 
-> ConfigBackup: 存放插件的配置备份
+> 
 >
 > extensions: 存放收集的插件
 >
-> resources: 存放相关资源
->
 > userChromeJS: 存放收集、修改过的 UC 脚本
 >
+> UserConfig: 存放各种配置文件
+>
 > UserScript: 存放收集、修改过油猴脚本
+>
+> UserThemes: 存放本人 DIY 的 CSS 主题
+>
+> UserTools: 存放相关工具的信息
 
 ## UC 脚本说明
 
