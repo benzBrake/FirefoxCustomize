@@ -1972,6 +1972,11 @@ by underlining them (requires urlbarMods.uc.js) */
     /** 菜单文字颜色 */
     menupopup:not([class="in-menulist"]) :is(menu, menuitem) {
         color: var(--menu-color);
+        background-image: var(--menuitem-image);
+        background-repeat: no-repeat;
+        background-position: 8px 50%;
+        background-size: var(--icon-width, 16px);
+        -moz-context-properties: fill, fill-opacity !important;
     }
 
     menupopup:not([class="in-menulist"]) :is(menu[disabled="true"], menuitem[disabled="true"], menu[_moz-menuactive="true"][disabled="true"], menuitem[_moz-menuactive="true"][disabled="true"]) {
@@ -2229,7 +2234,7 @@ by underlining them (requires urlbarMods.uc.js) */
     /* Subviewbutton 添加图标 */
     .subviewbutton>.toolbarbutton-icon {
         -moz-context-properties: fill, fill-opacity;
-        fill: currentColor;
+        fill: inherit;
         margin: 0;
         width: var(--icon-width, 16px);
         height: var(--icon-width, 16px);
@@ -4610,12 +4615,12 @@ by underlining them (requires urlbarMods.uc.js) */
         list-style-image: url("./images/extensions/bookmarksorganizer/book.svg") !important;
     }
 
-    [id^="bookmarksorganizer_agenedia_com"] {
-        --menuitem-image: url("./images/extensions/bookmarksorganizer/book.svg");
+    [id^="bookmarksorganizer_agenedia_com"] .menu-iconic-icon {
+        visibility: hidden;
     }
 
-    [id^="bookmarksorganizer_agenedia_com"] .menu-iconic-left {
-        visibility: hidden;
+    [id^="bookmarksorganizer_agenedia_com"] {
+        --menuitem-image : url("./images/extensions/bookmarksorganizer/book.svg");
     }
 
     /** Links Gopher */
@@ -5063,8 +5068,9 @@ by underlining them (requires urlbarMods.uc.js) */
     }
 
     /* SingleFile */
-    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action {
-        list-style-image: url("./images/extensions/singlefile/singlefile.svg");
+    #_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action,
+    #button__531906d3-e22f-4a6c-a102-8057b88a1a63_-sidebar-action {
+        list-style-image: url("./images/extensions/singlefile/singlefile.svg") !important;
     }
 
     #tabContextMenu [id^="_531906d3-e22f-4a6c-a102-8057b88a1a63_"][ext-type="top-level-menu"]>.menu-iconic-left {
@@ -5128,16 +5134,31 @@ by underlining them (requires urlbarMods.uc.js) */
 
     /** Bitwarden */
     #firefox-enpass_enpass_io-browser-action,
-    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action {
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action,
+    #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action {
         list-style-image: url("./images/password-management/vault_unlocked.svg") !important;
     }
 
-    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="gray.png"] {
+    /** 修改右键菜单插件图标示例 */
+    /* #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root .menu-iconic-icon {
+        visibility: hidden;
+    }
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root {
+        --menuitem-image: url("./images/password-management/vault_unlocked.svg");
+    }
+
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root {
+        fill:  #0A84E1;
+    } */
+
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="gray.png"],
+    #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action[style*="gray.png"] {
         fill: grey !important;
         list-style-image: url("./images/password-management/vault_locked.svg") !important;
     }
 
-    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="locked.png"] {
+    #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="locked.png"],
+    #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action[style*="locked.png"] {
         fill: red !important;
         list-style-image: url("./images/password-management/vault_locked.svg") !important;
     }
