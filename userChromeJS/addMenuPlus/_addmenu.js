@@ -641,7 +641,7 @@ new function () {
         label: locale.includes("zh-") ? 'Yandex搜图' : 'Yandex',
         where: 'tab',
         condition: 'image',
-        url: "https://yandex.com/images/search?source=collections&&url=%IMAGE_URL%&rpt=imageview",
+        url: "https://yandex.com/images/search?source=collections&url=%IMAGE_URL%&rpt=imageview",
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABI0lEQVQ4jZ3OvUrDYBjF8f8m6FbBltJakyZv0i9BXBxcnJ3ES3DyAoRugkWr96Gbm1chuLgVFxGkWhDphxbSkhyXClJoTfOOz/uc33Mg5htanMhDcqjPXBrb7Mrn8BFWpv8iw3NURG8ZKjOB0KUhH3WzHP2dBzlqKqGRzc3cmu0s6zIoMtxPNWvKIBXYmwsAvFrcqYT6S3i/Mxm6nxZf/4YBnjLsq4YGBc4A6stsq4w+HJqxgMnFYduhB9DJcKkyeljFjw28p2mogkYpdrRBa+zRih0G6KSxQ4Pk8iIPDdY4XggA+Ha4lUHy6fVypBYG+mscqIyCHNcLhwGCPFX5KMhzkQyw2IwcJMN5YkAuCosJgVGBrQlwlaxBkapcFNqcztv7Ae/0dba36CN6AAAAAElFTkSuQmCC"
     }, {
         label: locale.includes("zh-") ? 'TinEye搜图' : 'TinEye',
