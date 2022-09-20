@@ -88,6 +88,7 @@
             }, {
                 label: $L("open themes directory"),
                 action: "OpenThemesDirectory",
+                style: 'list-style-image: url(chrome://global/skin/icons/folder.svg)',
                 onclick: 'UC.CopyCatTheme._onclick(event)'
             }, {}, {
                 type: 'html:h2',
@@ -143,7 +144,8 @@
             this.refreshThemesList(document);
             this.refreshThemeOptions(document);
 
-            if (this.debug && !CustomizableUI.getWidget("CopyCat-ReloadTheme")) {
+            if (!this.debug) return;
+            if (!CustomizableUI.getWidget("CopyCat-ReloadTheme") || !CustomizableUI.getWidget("CopyCat-ReloadTheme").forWindow(window).node) {
                 CustomizableUI.createWidget({
                     id: 'CopyCat-ReloadTheme',
                     label: $L("reload themes"),
@@ -227,7 +229,7 @@
         },
         handleRelativePath: function (path) {
             if (path) {
-                path = path.replace(/\//g, '\\').toLocaleLowerCase();
+                path = path.replace(/\//g, '\\');
                 var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
                 if (/^(\\)/.test(path)) {
                     return ffdir + path;
