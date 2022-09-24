@@ -86,14 +86,13 @@
                     menuitem = menuitem.previousSibling;
                 }
                 if (!(scrollbox.width == box.scrollWidth)) {
-                    var firstItem = menupopup.querySelector('menuitem');
-                    // var columns = 0;
-                    var offset = 0;
-                    if (firstItem) {
-                        // columns = parseInt(box.scrollWidth / parseInt(getComputedStyle(firstItem).width))
-                        offset = offsetX(firstItem) / 2;
+                    let firstItem = menupopup.querySelector('menuitem');
+                    let offset = 0;
+                    let BMB = $('BMB_bookmarksPopup', menupopup.ownerDocument)
+                    if (BMB && BMB.contains(menupopup) && firstItem) {
+                        offset = offsetX(firstItem);
                     }
-                    scrollbox.width = box.scrollWidth + offset;
+                    scrollbox.width = box.scrollWidth - offset;
                 }
             }
         },
@@ -123,6 +122,7 @@
         }
     }
 
+
     function $(id, aDoc) {
         id = id || "";
         let doc = aDoc || document;
@@ -131,9 +131,9 @@
     }
 
     function offsetX(elm) {
-        var elmMargin, elmPadding;
+        var elmMargin, elmPadding = 0;
         elmMargin = parseInt(document.defaultView.getComputedStyle(elm, '').getPropertyValue('margin-inline-start')) + parseInt(document.defaultView.getComputedStyle(elm, '').getPropertyValue('margin-right'));
-        elmPadding = parseInt(document.defaultView.getComputedStyle(elm, '').getPropertyValue('padding-inline-end')) + parseInt(document.defaultView.getComputedStyle(elm, '').getPropertyValue('padding-inline-end'));
+        // elmPadding = parseInt(document.defaultView.getComputedStyle(elm, '').getPropertyValue('padding-inline-end')) + parseInt(document.defaultView.getComputedStyle(elm, '').getPropertyValue('padding-inline-end'));
         return elmMargin + elmPadding;
     }
 
