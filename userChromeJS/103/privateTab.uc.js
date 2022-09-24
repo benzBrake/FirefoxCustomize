@@ -1,5 +1,6 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name            PrivateTab
+// @description     无痕标签页
 // @author          xiaoxiaoflood
 // @include         main
 // @include         chrome://browser/content/places/bookmarksSidebar.xhtml
@@ -7,14 +8,12 @@
 // @include         chrome://browser/content/places/places.xhtml
 // @startup         UC.privateTab.exec(win);
 // @shutdown        UC.privateTab.destroy();
-// @compatibility   firefox 103
 // @homepageURL     https://github.com/xiaoxiaoflood/firefox-scripts/
 // @onlyonce
 // ==/UserScript==
 
 const {
   AddonManager,
-  BrowserWindowTracker,
   ContextualIdentityService,
   customElements,
   CustomizableUI,
@@ -75,7 +74,7 @@ UC.privateTab = {
       label: this.strstr('在%s标签中打开'),
       accesskey: 'v',
       class: 'menuitem-iconic privatetab-icon',
-      oncommand: 'let view = event.target.parentElement._view; PlacesUIUtils._openNodeIn(view.selectedNode, "tab", view.ownerWindow, { aPrivate: false, userContextId: ' + UC.privateTab.container.userContextId + '})',
+      oncommand: 'let view = event.target.parentElement._view; PlacesUIUtils._openNodeIn(view.selectedNode, "tab", view.ownerWindow, false, ' + UC.privateTab.container.userContextId + ')',
     });
     openTab.insertAdjacentElement('afterend', openPrivate);
 
@@ -195,14 +194,14 @@ UC.privateTab = {
 
     win.addEventListener('XULFrameLoaderCreated', gBrowser.privateListener);
 
-    if (this.observePrivateTabs)
+    if(this.observePrivateTabs)
       gBrowser.tabContainer.addEventListener('TabClose', this.onTabClose);
 
     MozElements.MozTab.prototype.getAttribute = function (att) {
       if (att == 'usercontextid' && this.isToggling) {
         delete this.isToggling;
         return UC.privateTab.orig_getAttribute.call(this, att) ==
-          UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
+               UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
       } else {
         return UC.privateTab.orig_getAttribute.call(this, att);
       }
@@ -304,23 +303,18 @@ UC.privateTab = {
       }
     });
 
-    const lazy = {
-      BrowserWindowTracker,
-      PrivateBrowsingUtils,
-    };
-
-    // resource:///modules/PlacesUIUtils.sys.mjs
-    function getBrowserWindow(aWindow) {
-      return aWindow &&
-        aWindow.document.documentElement.getAttribute('windowtype') ==
-        'navigator:browser'
-        ? aWindow
-        : lazy.BrowserWindowTracker.getTopWindow();
-    }
-
+    let { getBrowserWindow } = Cu.import('resource:///modules/PlacesUIUtils.jsm');
     eval('PlacesUIUtils.openTabset = function ' +
-      PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
-        '$1$2$1userContextId: aEvent.userContextId || 0,'));
+          PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
+                                                      '$1$2$1userContextId: aEvent.userContextId || 0,')
+                                             .replace(/\blazy\./g, ''));
+                                                      
+    eval('PlacesUIUtils._openNodeIn = ' +
+          PlacesUIUtils._openNodeIn.toString().replace(/(\s+)(aPrivate = false)\n/,
+                                                       '$1$2,$1userContextId = 0\n')
+                                              .replace(/(\s+)(private: aPrivate,)\n/,
+                                                       '$1$2$1userContextId,\n')
+                                              .replace(/\blazy\./g, ''));
 
     let { UUIDMap } = Cu.import('resource://gre/modules/Extension.jsm');
     let TST_ID = 'treestyletab@piro.sakura.ne.jp';
@@ -457,6 +451,7 @@ UC.privateTab = {
   orig_insertBefore: customElements.get('tabbrowser-tabs').prototype.insertBefore,
   orig__updateNewTabVisibility: customElements.get('tabbrowser-tabs').prototype._updateNewTabVisibility,
   orig_openTabset: PlacesUIUtils.openTabset,
+  orig__openNodeIn: PlacesUIUtils._openNodeIn,
 
   BTN_ID: 'privateTab-button',
   BTN2_ID: 'newPrivateTab-button',
@@ -572,6 +567,7 @@ UC.privateTab = {
     CustomizableUI.destroyWidget(this.BTN_ID);
 
     PlacesUIUtils.openTabset = this.orig_openTabset;
+    PlacesUIUtils._openNodeIn = this.orig__openNodeIn;
 
     delete UC.privateTab;
   }
