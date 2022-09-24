@@ -943,7 +943,7 @@ new function () {
             let popupNode = this.querySelector('menupopup');
             popupNode.querySelectorAll('.auto-generated').forEach(m => { m.parentNode.removeChild(m); })
             let ins = popupNode.firstChild;
-            Services.search.getEngines().then(
+            Services.search.getVisibleEngines().then(
                 engines => engines.forEach((item) => {
                     let menuitem;
                     menuitem = addMenu.newMenuitem({
