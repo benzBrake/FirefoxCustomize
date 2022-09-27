@@ -5,6 +5,7 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
+// @version         2022.09.27 Fx106
 // @version         2022.02.04 Fx98
 // @version         2021.03.31 Fx89
 // @version         2021.02.05 Fx87
@@ -40,6 +41,16 @@
 
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/AddonManager.jsm");
+
+    const LANG = {
+        'zh-CN': {
+            "set editor path": "请打开 about:config 页面并设置 view_source.editor.path 的值为编辑器路径。",
+            "edit": "编辑",
+            "browse directory": "浏览路径",
+            "open url": "打开安装网址",
+            "copy name": "复制名称"
+        }
+    }
 
     window.AM_Helper = {
         init() {
@@ -146,7 +157,7 @@
         launchEditor(path) {
             var editor = Services.prefs.getCharPref("view_source.editor.path");
             if (!editor) {
-                alert('请打开 about:config 页面并设置 view_source.editor.path 的值为编辑器路径。');
+                alert($L("set editor path"));
                 return;
             }
 
@@ -159,7 +170,7 @@
             appfile.initWithPath(editor);
             var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             process.init(appfile);
-            process.run(false, [path], 1, {});
+            process.runw(false, [path], 1, {});
         },
         copyName(aAddon) {
             this.copyToClipboard(aAddon.name);
@@ -171,6 +182,7 @@
 
             const tr1 = {
                 "userchromejs-heading": "userChrome JS",
+                "addon-category-userchromejs": "userChrome JS", // fx 106
             }
             const tr2 = {
                 "userchromejs-enabled-heading": "extension-enabled-heading",
@@ -193,7 +205,6 @@
         injectView(doc) {
             const header = doc.getElementById("page-header");
             if (!header) return;
-
             doc.querySelectorAll("addon-card").forEach(card => {
                 const addon = card.addon;
                 if (addon.type === "userchromejs") {
@@ -222,28 +233,28 @@
                     if (addon.type === "userchromejs") {
                         item = $C(doc, "panel-item", {
                             action: "AM-edit-script",
-                            "#text": "编辑",
+                            "#text": $L("edit"),
                         }, optionMenu);
                         item.addEventListener("click", this, true);
                     }
 
                     item = $C(doc, "panel-item", {
                         action: "AM-browse-dir",
-                        "#text": "浏览路径"
+                        "#text": $L("browse directory")
                     }, optionMenu);
                     item.addEventListener("click", this, true);
 
                     if (this.getInstallURL(addon)) {
                         item = $C(doc, "panel-item", {
                             action: "AM-open-url",
-                            "#text": "打开安装网址"
+                            "#text": $L("open url")
                         }, optionMenu);
                         item.addEventListener("click", this, true);
                     }
 
                     item = $C(doc, "panel-item", {
                         action: "AM-copy-name",
-                        "#text": "复制名称"
+                        "#text": $L("copy name")
                     }, optionMenu);
                     item.addEventListener("click", this, true);
                 }
@@ -274,7 +285,6 @@
                 localeBtn.parentElement.insertBefore(ucjsBtn, localeBtn);
             }
         },
-
 
         getTargetAddon(target) {
             const card = target.closest("[addon-id]");
@@ -692,7 +702,8 @@
                 }
             });
         }
-        if (parent instanceof Node) {
+        // if(parent instanceof Node) {
+        if (parent && typeof parent.insertBefore === "function") { // fx 106
             parent.insertBefore(node, reference);
         }
         return node;
@@ -789,6 +800,33 @@
                 Services.prefs.removeObserver(obs.prefPath, obs.observer);
             }
         }
+    }
+
+    function $L(key, replace) {
+        const _LOCALE = getLocale() || "zh-CN";
+        let str = arguments[0];
+        if (str) {
+            if (!arguments.length) return "";
+            str = LANG[_LOCALE][str] || str;
+            for (let i = 1; i < arguments.length; i++) {
+                str = str.replace("%s", arguments[i]);
+            }
+            return str;
+        } else return "";
+    }
+
+    function getLocale() {
+        let LOCALE = Services.prefs.getCharPref("general.useragent.locale", "");
+        if (!LOCALE) {
+            let sLocales = Services.locale.appLocalesAsBCP47;
+            for (let key in sLocales) {
+                if (LANG.hasOwnProperty(sLocales[key])) {
+                    LOCALE = sLocales[key];
+                    break;
+                }
+            }
+        }
+        return LOCALE;
     }
 
     AM_Helper.init();
