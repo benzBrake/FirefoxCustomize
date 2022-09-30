@@ -96,7 +96,7 @@
       display: none;
     }
 
-    :is(addon-page-options, addon-options)>panel-list[role="menu"]>panel-item {
+    :is(addon-page-options, addon-options, plugin-options)>panel-list[role="menu"]>panel-item {
       background-repeat: no-repeat;
       background-position: 8px center;
 			background-size: 16px;
@@ -152,6 +152,7 @@
     [action="always-activate"],
     [action="never-activate"] {
       background-image: url("./images/skin/checkbox.svg");
+      --icon: unset;
     }
 
     .addon-permissions-list>li {
