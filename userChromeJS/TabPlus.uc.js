@@ -81,7 +81,6 @@
             "set delay": "设置延时",
             "horizontal tabs panel": "横向标签栏",
             "vertical tabs panel": "垂直标签栏",
-
             "other options": "其他选项",
             "insert tab after current tab": "在当前标签右侧打开新标签页",
             "close window with last tab": "关闭最后一个标签页后关闭窗口",
@@ -594,46 +593,10 @@
     }
 
     TabPlus.modules.switchOnScroll = {
-        PREF: 'browser.tabs.switchOnScroll',
         menus: {
             label: $L("switch tab on scroll"),
             type: 'checkbox',
-            pref: 'browser.tabs.switchOnScroll'
-        },
-        initEvent(win) {
-            let { gBrowser } = win || window;
-            gBrowser.tabContainer.parentNode.addEventListener('wheel', this, false);
-        },
-        destroyEvent(win) {
-            let { gBrowser } = win || window;
-            gBrowser.tabContainer.parentNode.removeEventListener('wheel', this, false);
-        },
-        init(win) {
-            if (cPref.get(this.PREF))
-                this.initEvent(win);
-            function callback(value, pref) {
-                if (value)
-                    TabPlus.modules.switchOnScroll.initEvent();
-                else
-                    TabPlus.modules.switchOnScroll.destroyEvent();
-            }
-            this.PREF_LISTENER = cPref.addListener(this.PREF, callback);
-        },
-        handleEvent(event) {
-            if (!cPref.get(this.PREF, false)) return;
-            let { target } = event,
-                { ownerGlobal: win } = target,
-                { gBrowser } = win;
-
-            let dir = -1 * Math.sign(event.deltaY);
-            setTimeout(function () {
-                gBrowser.tabContainer.advanceSelectedTab(dir, true);
-            }, 0);
-        },
-        destroy(win) {
-            this.destroyEvent(win);
-            if (this.PREF_LISTENER)
-                cPref.removeListener(this.PREF_LISTENER);
+            pref: 'toolkit.tabbox.switchByScrolling'
         }
     }
 
