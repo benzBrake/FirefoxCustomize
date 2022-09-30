@@ -5,6 +5,7 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
+// @version         2022.10.01 支持隐藏自身
 // @version         2022.09.27 Fx106
 // @version         2022.02.04 Fx98
 // @version         2021.03.31 Fx89
@@ -29,6 +30,8 @@
     "use strict";
 
     const iconURL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";  // uc 脚本列表的图标
+    const AM_FILENAME = Components.stack.filename.split("/").pop().split("?")[0];
+    const EXCLUED_SCRIPTS = [AM_FILENAME];
 
     if (window.AM_Helper) {  // 修改调试用，重新载入无需重启
         window.AM_Helper.uninit();
@@ -38,6 +41,8 @@
         window.userChromeJSAddon.uninit();
         delete window.userChromeJSAddon;
     }
+
+
 
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/AddonManager.jsm");
@@ -471,8 +476,9 @@
                 delete window.AM_Helper;
             }
 
-            scripts.forEach((script, i) => {
-                this.scripts[i] = new ScriptAddon(script);
+            scripts.forEach((script) => {
+                if (!EXCLUED_SCRIPTS.includes(script.filename))
+                    this.scripts.push(new ScriptAddon(script));
             });
         },
         getScriptById(aId) {
