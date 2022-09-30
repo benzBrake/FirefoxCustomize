@@ -1779,7 +1779,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (aEvent.type === "load") {
                     let document = aEvent.originalTarget,
                         win = document.ownerGlobal;
-                    win.console.log("addMenu");
                     if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
                         setTimeout(function () {
                             document.ownerGlobal.addMenu.rebuild();
