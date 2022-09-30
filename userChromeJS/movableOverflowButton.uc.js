@@ -64,8 +64,7 @@
                 onCreated: node => {
                     node.addEventListener('mousedown', this);
                     node.addEventListener('keypress', this);
-                    let pNode = node.ownerDocument.getElementById('nav-bar-overflow-button');
-                    ['label', 'tooltiptext'].forEach(attr => node.setAttribute(attr, pNode.getAttribute(attr)));
+                    node.setAttribute('data-l10n-id', 'navbar-overflow');
                 }
             });
             window.addEventListener('OriginalOverflowButtonShow', this);
@@ -105,7 +104,7 @@
         let windows = Services.wm.getEnumerator('navigator:browser');
         while (windows.hasMoreElements()) {
             let win = windows.getNext();
-            if (!win._uc)
+            if (!window.movableOverflowButton)
                 continue;
             let { document, location } = win;
             if (fun(document, win, location))
