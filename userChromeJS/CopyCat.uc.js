@@ -141,8 +141,7 @@
             this.STYLE = this.addStyle(css, this.sss.AGENT_SHEET);
 
             // create CopyCat button
-            let w = CustomizableUI.getWidget('CopyCat-Btn');
-            if (!w || !w.node)
+            if (!CustomizableUI.getWidget("CopyCat-Btn") || !CustomizableUI.getWidget("CopyCat-Btn").forWindow(window).node)
                 CustomizableUI.createWidget({
                     id: 'CopyCat-Btn',
                     type: 'view',
@@ -920,11 +919,14 @@
                 this.error(e)
             });
         },
-        addStyle: function (cssOrStyle, type = 0) {
+        copyText: function (aText) {
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
+        },
+        addStyle: function (cssOrStyle, type) {
             try {
                 if (typeof cssOrStyle === "string") {
                     let style = {
-                        type,
+                        type: type || 0,
                         url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(cssOrStyle))
                     };
                     this.sss.loadAndRegisterSheet(style.url, style.type);
