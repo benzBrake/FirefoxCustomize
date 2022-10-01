@@ -271,7 +271,7 @@
                 }
             }
 
-            if (!CustomizableUI.getWidget("VideoBtn-Button"))
+            if (!CustomizableUI.getWidget("VideoBtn-Button") || !CustomizableUI.getWidget("VideoBtn-Button").forWindow(window).node)
                 CustomizableUI.createWidget({
                     id: "VideoBtn-Button",
                     type: 'button',
