@@ -107,16 +107,22 @@
                     view.addEventListener('ViewShowing', unifiedExtensionsEnhance);
             }
         },
-        handleEvent: function (event) {
+        handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
                 this.onViewShowing(event);
+            }
+            if (event.target.id === "unified-extensions-disable-all") {
+                let extensions = await gUnifiedExtensions.getActiveExtensions();
+                for (let extension of extensions)
+                    extension.disable();
             }
         },
 
         onViewShowing: async function (event) {
             let { ownerDocument: document } = view = event.target;
-            if ((await gUnifiedExtensions.getActiveExtensions()).length === 0) {
+            if ((await gUnifiedExtensions.getActiveExtensions()).length == 0) {
                 await BrowserOpenAddonsMgr("addons://discover/");
+                view.closest("panel").hidePopup();
                 return;
             }
             if (this.appVersion == 104) view.classList.add("scroll");
@@ -152,9 +158,17 @@
                     })
                 }
             }
+            if (!$Q("#unified-extensions-disable-all", view)) {
+                let disableAll = view.insertBefore($C(document, 'toolbarbutton', {
+                    id: 'unified-extensions-disable-all',
+                    class: "subviewbutton",
+                    label: "Disable all extensions",
+                }), $Q("#unified-extensions-manage-extensions", view));
+                disableAll.addEventListener('click', this);
+            }
         },
         onClick: function (event) {
-            var { addon } = vbox = getParentOfLocalName(event.target, 'unified-extensions-item');
+            var { addon } = vbox = event.target.closest('unified-extensions-item');
             var { classList } = event.target;
             if (classList.contains('unified-extensions-item-action') || classList.contains('unified-extensions-item-contents') || classList.contains('unified-extensions-item-name') || classList.contains('unified-extensions-item-message') || classList.contains('unified-extensions-item-icon')) {
                 switch (event.button) {
@@ -204,6 +218,15 @@
         destroy: function () {
             this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
             CustomizableUI.destroyWidget('movable-unified-extensions');
+            let view = PanelMultiView.getViewNode(
+                document,
+                "unified-extensions-view"
+            );
+            if (view) {
+                let btn = $Q("unified-extensions-disable-all", view);
+                if (btn)
+                    btn.parentNode.removeChild(btn);
+            }
             delete window.unifiedExtensionsEnhance;
         }
     }
@@ -239,43 +262,6 @@
             }
         });
         return el;
-    }
-
-    function uAlert(aMsg, aTitle, aCallback) {
-        var callback = aCallback ? {
-            observe: function (subject, topic, data) {
-                if ("alertclickcallback" != topic)
-                    return;
-                aCallback.call(null);
-            }
-        } : null;
-        var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-        alertsService.showAlertNotification("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "unifiedExtensionsEnhance",
-            aMsg + "", !!callback, "", callback);
-    }
-
-    function getParentOfLocalName(el, localName) {
-        if (el == document) return;
-        if (el.localName == localName) return el;
-        return getParentOfLocalName(el.parentNode, localName);
-    }
-
-    const SSS = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
-
-    function addStyle(css, type = 0) {
-        let STYLE = {
-            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)), type: type
-        }
-        SSS.loadAndRegisterSheet(STYLE.url, STYLE.type);
-        return STYLE;
-    }
-
-    function removeStyle(style) {
-        if (style && style.url && style.type) {
-            SSS.unregisterSheet(style.url, style.type);
-            return true;
-        }
-        return false;
     }
 
     if (gBrowserInit.delayedStartupFinished) window.unifiedExtensionsEnhance.init();
