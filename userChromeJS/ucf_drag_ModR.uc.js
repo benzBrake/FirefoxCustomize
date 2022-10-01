@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name            ucf_drag_ModR.uc.js
-// @description     鼠标拖拽 Drag & Go
-// @note            来自于 Mozilla-Russia 论坛，Ryan 修改自用
+// @description     鼠标拖拽 Drag & Go，来自于 Mozilla-Russia 论坛，Ryan 修改自用
 // @author          Ryan, Dumby
+// @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @referenceURL    https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234
 // @onlyonce
@@ -311,6 +311,28 @@
 
         return file;
     },
+    getDroppedURL_Fixup: function getDroppedURL_Fixup(url) {
+        if (!url) return null;
+        if (/^h?.?.p(s?):(.+)$/i.test(url)) {
+            url = "http" + RegExp.$1 + ':' + RegExp.$2;
+            if (!RegExp.$2) return null;
+        }
+        try {
+            url = Services.uriFixup.getFixupURIInfo(url, Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP).preferredURI.spec;
+            // valid urls don't contain spaces ' '; if we have a space it
+            // isn't a valid url, or if it's a javascript: or data: url,
+            // bail out
+            if (!url ||
+                !url.length ||
+                url.indexOf(" ", 0) != -1 ||
+                /^\s*javascript:/.test(url) ||
+                /^\s*data:/.test(url) && !/^\s*data:image\//.test(url))
+                return null;
+            return url;
+        } catch (e) {
+            return null;
+        }
+    },
     printDataTransferTypes: function (e) {
         var dt = e.dataTransfer;
         console.info("print dataTransfer type:");
@@ -364,8 +386,12 @@
             var txt = dt.getData("text/plain");
             if (txt) {
                 this.val = txt;
-                if (!this.textLinkRe.test(txt)) this.type = this.text;
-                if (this.imageLinkRe.test(txt)) this.type = this.image;
+                if (false) {
+                    // 未来加入特殊文本处理 比如网盘链接
+                } else {
+                    if (!this.textLinkRe.test(txt)) this.type = this.text;
+                    if (this.imageLinkRe.test(txt)) this.type = this.image;
+                }
             }
             else return;
         }
