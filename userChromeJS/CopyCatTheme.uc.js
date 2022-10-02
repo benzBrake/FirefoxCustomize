@@ -13,6 +13,7 @@
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
+
     const LANG = {
         "zh-CN": {
             "theme settings": "主题设置",
@@ -31,6 +32,11 @@
 
     const TopWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
+    const resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
+    if (!resourceHandler.hasSubstitution("copycat-uchrm")) {
+        resourceHandler.setSubstitution("copycat-uchrm", Services.io.newFileURI(Services.dirsvc.get('UChrm', Ci.nsIFile)));
+    }
+
     UC.CopyCatTheme = {
         PREF_LISTENER_LIST: {},
         CACHED_VIEWS: [],
@@ -46,7 +52,7 @@
             let URI = this.THEME_PATH.replace(Services.dirsvc.get('UChrm', Ci.nsIFile).path, "");
             URI = URI.replace(/(\w)\/\//g, "$1/").replaceAll("\\", "/");
             if (URI.charAt(0) == "/") URI = URI.substring(1);
-            return this.THEME_URL_PREFIX = "resource://userchromejs/" + URI;
+            return this.THEME_URL_PREFIX = "resource://copycat-uchrm/" + URI;
         },
         get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
         get debug() { return xPref.get("userChromeJS.CopyCat.debug", false, false); },
@@ -145,24 +151,24 @@
             this.refreshThemeOptions(document);
 
             if (!this.debug) return;
-            if (!CustomizableUI.getWidget("CopyCat-ReloadTheme") || !CustomizableUI.getWidget("CopyCat-ReloadTheme").forWindow(window).node) {
-                CustomizableUI.createWidget({
-                    id: 'CopyCat-ReloadTheme',
-                    label: $L("reload themes"),
-                    tooltiptext: $L("reload themes"),
-                    removable: true,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    localized: false,
-                    onCreated: node => {
-                        $A(node, {
-                            action: 'ReloadAllThemes',
-                            onclick: 'UC.CopyCatTheme._onclick(event)',
-                            notice: true,
-                            style: 'list-style-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+DQogIDxwYXRoIGZpbGw9IiM1MGU2ZmYiIGQ9Ik0xMC4yMjgsMTUuODg1TDcuMzIsMTIuOTc3QzUuMjI2LDE2LjEzOCw0LDE5LjkyNCw0LDI0YzAsMy42NjgsMC45OTMsNy4xMDMsMi43MTksMTAuMDU4YzAuMjkzLDAuNTAyLDAuOTk0LDAuNTczLDEuNDA1LDAuMTYxbDEuNjQtMS42NGMwLjI3NS0wLjI3NSwwLjMyNi0wLjY5MywwLjE0Mi0xLjAzNUM4LjY5NywyOS4yOTUsOCwyNi43MzIsOCwyNEM4LDIxLjAzNCw4LjgyMSwxOC4yNjcsMTAuMjI4LDE1Ljg4NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik00MCwyNGMwLDIuOTY2LTAuODIxLDUuNzMzLTIuMjI4LDguMTE1bDIuOTA4LDIuOTA4QzQyLjc3NCwzMS44NjIsNDQsMjguMDc1LDQ0LDI0YzAtMy42NjgtMC45OTMtNy4xMDMtMi43MTktMTAuMDU4Yy0wLjI5My0wLjUwMi0wLjk5NC0wLjU3Mi0xLjQwNS0wLjE2MWwtMS42NCwxLjY0Yy0wLjI3NSwwLjI3NS0wLjMyNiwwLjY5My0wLjE0MiwxLjAzNUMzOS4zMDMsMTguNzA1LDQwLDIxLjI2OCw0MCwyNHoiIC8+DQogIDxwYXRoIGZpbGw9IiMzNWMxZjEiIGQ9Ik0xNS40MjEsOS43NjRjMC4yNzUsMC4yNzUsMC42OTMsMC4zMjYsMS4wMzUsMC4xNDJDMTguNzA1LDguNjk3LDIxLjI2OCw4LDI0LDhjMi45NjYsMCw1LjczMywwLjgyMSw4LjExNSwyLjIyOGwyLjkwOS0yLjkwOUMzMS44NjIsNS4yMjYsMjguMDc2LDQsMjQsNGMtMy42NSwwLTcuMDY4LDAuOTgzLTEwLjAxMywyLjY5M2MtMC41MjEsMC4zMDMtMC42MzEsMS4wMDYtMC4yMDUsMS40MzJMMTUuNDIxLDkuNzY0eiIgLz4NCiAgPHBhdGggZmlsbD0iIzAwNzhkNCIgZD0iTTMyLjU3OSwzOC4yMzZjLTAuMjc1LTAuMjc1LTAuNjkzLTAuMzI2LTEuMDM1LTAuMTQyQzI5LjI5NSwzOS4zMDMsMjYuNzMyLDQwLDI0LDQwYy0yLjk2NiwwLTUuNzMzLTAuODIxLTguMTE1LTIuMjI4bC0yLjkwOCwyLjkwOEMxNi4xMzgsNDIuNzc0LDE5LjkyNSw0NCwyNCw0NGMzLjY2OCwwLDcuMTAzLTAuOTkzLDEwLjA1OC0yLjcxOWMwLjUwMi0wLjI5MywwLjU3My0wLjk5NCwwLjE2MS0xLjQwNUwzMi41NzksMzguMjM2eiIgLz4NCiAgPHBhdGggZmlsbD0iIzM1YzFmMSIgZD0iTTM1LjkzNCwxMi4wNzVMMzEuMSwxMS45MDljLTAuMzQyLTAuMDEyLTAuNTEyLTAuNDIxLTAuMjc3LTAuNjcxbDQuNjU3LTQuOTc1YzAuMjQyLTAuMjU5LDAuNjc2LTAuMDk3LDAuNjksMC4yNTdsMC4yMDEsNS4xMTdDMzYuMzgsMTEuODgyLDM2LjE3OSwxMi4wODMsMzUuOTM0LDEyLjA3NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMwMDc4ZDQiIGQ9Ik0xMi4wNjYsMzUuOTI1bDQuODM0LDAuMTY2YzAuMzQyLDAuMDEyLDAuNTEyLDAuNDIxLDAuMjc3LDAuNjcxbC00LjY1Nyw0Ljk3NWMtMC4yNDIsMC4yNTktMC42NzYsMC4wOTctMC42OS0wLjI1N2wtMC4yMDEtNS4xMTdDMTEuNjIsMzYuMTE4LDExLjgyMSwzNS45MTcsMTIuMDY2LDM1LjkyNXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik0zNS45MjUsMzUuOTM0bDAuMTY2LTQuODM0YzAuMDEyLTAuMzQyLDAuNDIxLTAuNTEyLDAuNjcxLTAuMjc3bDQuOTc1LDQuNjU3YzAuMjU5LDAuMjQyLDAuMDk3LDAuNjc2LTAuMjU3LDAuNjlsLTUuMTE3LDAuMjAxQzM2LjExOCwzNi4zOCwzNS45MTcsMzYuMTc5LDM1LjkyNSwzNS45MzR6IiAvPg0KICA8cGF0aCBmaWxsPSIjNTBlNmZmIiBkPSJNMTIuMDc1LDEyLjA2NkwxMS45MDksMTYuOWMtMC4wMTIsMC4zNDItMC40MjEsMC41MTItMC42NzEsMC4yNzdMNi4yNjIsMTIuNTJjLTAuMjU5LTAuMjQyLTAuMDk3LTAuNjc2LDAuMjU3LTAuNjlsNS4xMTctMC4yMDFDMTEuODgyLDExLjYyLDEyLjA4MywxMS44MjEsMTIuMDc1LDEyLjA2NnoiIC8+DQo8L3N2Zz4=)'
-                        })
-                    }
-                })
-            }
+            if (CustomizableUI.getPlacementOfWidget("CopyCat-ReloadTheme", true)) return;
+            CustomizableUI.createWidget({
+                id: 'CopyCat-ReloadTheme',
+                label: $L("reload themes"),
+                tooltiptext: $L("reload themes"),
+                removable: true,
+                defaultArea: CustomizableUI.AREA_NAVBAR,
+                localized: false,
+                onCreated: node => {
+                    $A(node, {
+                        badged: true,
+                        action: 'ReloadAllThemes',
+                        onclick: 'UC.CopyCatTheme._onclick(event)',
+                        notice: true,
+                        style: 'list-style-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+DQogIDxwYXRoIGZpbGw9IiM1MGU2ZmYiIGQ9Ik0xMC4yMjgsMTUuODg1TDcuMzIsMTIuOTc3QzUuMjI2LDE2LjEzOCw0LDE5LjkyNCw0LDI0YzAsMy42NjgsMC45OTMsNy4xMDMsMi43MTksMTAuMDU4YzAuMjkzLDAuNTAyLDAuOTk0LDAuNTczLDEuNDA1LDAuMTYxbDEuNjQtMS42NGMwLjI3NS0wLjI3NSwwLjMyNi0wLjY5MywwLjE0Mi0xLjAzNUM4LjY5NywyOS4yOTUsOCwyNi43MzIsOCwyNEM4LDIxLjAzNCw4LjgyMSwxOC4yNjcsMTAuMjI4LDE1Ljg4NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik00MCwyNGMwLDIuOTY2LTAuODIxLDUuNzMzLTIuMjI4LDguMTE1bDIuOTA4LDIuOTA4QzQyLjc3NCwzMS44NjIsNDQsMjguMDc1LDQ0LDI0YzAtMy42NjgtMC45OTMtNy4xMDMtMi43MTktMTAuMDU4Yy0wLjI5My0wLjUwMi0wLjk5NC0wLjU3Mi0xLjQwNS0wLjE2MWwtMS42NCwxLjY0Yy0wLjI3NSwwLjI3NS0wLjMyNiwwLjY5My0wLjE0MiwxLjAzNUMzOS4zMDMsMTguNzA1LDQwLDIxLjI2OCw0MCwyNHoiIC8+DQogIDxwYXRoIGZpbGw9IiMzNWMxZjEiIGQ9Ik0xNS40MjEsOS43NjRjMC4yNzUsMC4yNzUsMC42OTMsMC4zMjYsMS4wMzUsMC4xNDJDMTguNzA1LDguNjk3LDIxLjI2OCw4LDI0LDhjMi45NjYsMCw1LjczMywwLjgyMSw4LjExNSwyLjIyOGwyLjkwOS0yLjkwOUMzMS44NjIsNS4yMjYsMjguMDc2LDQsMjQsNGMtMy42NSwwLTcuMDY4LDAuOTgzLTEwLjAxMywyLjY5M2MtMC41MjEsMC4zMDMtMC42MzEsMS4wMDYtMC4yMDUsMS40MzJMMTUuNDIxLDkuNzY0eiIgLz4NCiAgPHBhdGggZmlsbD0iIzAwNzhkNCIgZD0iTTMyLjU3OSwzOC4yMzZjLTAuMjc1LTAuMjc1LTAuNjkzLTAuMzI2LTEuMDM1LTAuMTQyQzI5LjI5NSwzOS4zMDMsMjYuNzMyLDQwLDI0LDQwYy0yLjk2NiwwLTUuNzMzLTAuODIxLTguMTE1LTIuMjI4bC0yLjkwOCwyLjkwOEMxNi4xMzgsNDIuNzc0LDE5LjkyNSw0NCwyNCw0NGMzLjY2OCwwLDcuMTAzLTAuOTkzLDEwLjA1OC0yLjcxOWMwLjUwMi0wLjI5MywwLjU3My0wLjk5NCwwLjE2MS0xLjQwNUwzMi41NzksMzguMjM2eiIgLz4NCiAgPHBhdGggZmlsbD0iIzM1YzFmMSIgZD0iTTM1LjkzNCwxMi4wNzVMMzEuMSwxMS45MDljLTAuMzQyLTAuMDEyLTAuNTEyLTAuNDIxLTAuMjc3LTAuNjcxbDQuNjU3LTQuOTc1YzAuMjQyLTAuMjU5LDAuNjc2LTAuMDk3LDAuNjksMC4yNTdsMC4yMDEsNS4xMTdDMzYuMzgsMTEuODgyLDM2LjE3OSwxMi4wODMsMzUuOTM0LDEyLjA3NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMwMDc4ZDQiIGQ9Ik0xMi4wNjYsMzUuOTI1bDQuODM0LDAuMTY2YzAuMzQyLDAuMDEyLDAuNTEyLDAuNDIxLDAuMjc3LDAuNjcxbC00LjY1Nyw0Ljk3NWMtMC4yNDIsMC4yNTktMC42NzYsMC4wOTctMC42OS0wLjI1N2wtMC4yMDEtNS4xMTdDMTEuNjIsMzYuMTE4LDExLjgyMSwzNS45MTcsMTIuMDY2LDM1LjkyNXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik0zNS45MjUsMzUuOTM0bDAuMTY2LTQuODM0YzAuMDEyLTAuMzQyLDAuNDIxLTAuNTEyLDAuNjcxLTAuMjc3bDQuOTc1LDQuNjU3YzAuMjU5LDAuMjQyLDAuMDk3LDAuNjc2LTAuMjU3LDAuNjlsLTUuMTE3LDAuMjAxQzM2LjExOCwzNi4zOCwzNS45MTcsMzYuMTc5LDM1LjkyNSwzNS45MzR6IiAvPg0KICA8cGF0aCBmaWxsPSIjNTBlNmZmIiBkPSJNMTIuMDc1LDEyLjA2NkwxMS45MDksMTYuOWMtMC4wMTIsMC4zNDItMC40MjEsMC41MTItMC42NzEsMC4yNzdMNi4yNjIsMTIuNTJjLTAuMjU5LTAuMjQyLTAuMDk3LTAuNjc2LDAuMjU3LTAuNjlsNS4xMTctMC4yMDFDMTEuODgyLDExLjYyLDEyLjA4MywxMS44MjEsMTIuMDc1LDEyLjA2NnoiIC8+DQo8L3N2Zz4=)'
+                    })
+                }
+            });
         },
         handleEvent: function (event) {
             switch (event.type) {
@@ -402,7 +408,9 @@
             return fph.getURLSpecFromFile ? fph.getURLSpecFromFile(aFile) : fph.getURLSpecFromActualFile(aFile);
         },
         destroy: function () {
-            CustomizableUI.destroyWidget("CopyCat-ReloadTheme");
+            try {
+                CustomizableUI.destroyWidget("CopyCat-ReloadTheme");
+            } catch (e) { }
             let view = $('CopyCat-ThemeMenu-View')
             if (view) {
                 view.closest('panelmultiview').goBack();
