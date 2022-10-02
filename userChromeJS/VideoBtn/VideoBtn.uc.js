@@ -270,30 +270,30 @@
                     $("contentAreaContextMenu").appendChild(menu);
                 }
             }
-
-            if (!CustomizableUI.getWidget("VideoBtn-Button") || !CustomizableUI.getWidget("VideoBtn-Button").forWindow(window).node)
-                CustomizableUI.createWidget({
-                    id: "VideoBtn-Button",
-                    type: 'button',
-                    localized: false,
-                    removeable: true,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    onCreated: node => {
-                        let popup = $C(node.ownerDocument, 'menupopup', {
-                            id: 'VideoBtn-Button-popup',
-                            class: 'VideoBtn-Popup',
-                        });
-                        let MENU_CFG = cloneObj(MENU_CONFIG);
-                        MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(node.ownerDocument, obj)));
-                        $A(node, {
-                            label: $L("videobtn btn name"),
-                            tooltiptext: $L("videobtn btn name"),
-                            type: 'menu',
-                            menu: 'VideoBtn-Button-popup'
-                        });
-                        node.appendChild(popup);
-                    }
-                });
+            if (!this.debug) return;
+            if (CustomizableUI.getPlacementOfWidget("VideoBtn-Button", true)) return;
+            CustomizableUI.createWidget({
+                id: "VideoBtn-Button",
+                type: 'button',
+                localized: false,
+                removeable: true,
+                defaultArea: CustomizableUI.AREA_NAVBAR,
+                onCreated: node => {
+                    let popup = $C(node.ownerDocument, 'menupopup', {
+                        id: 'VideoBtn-Button-popup',
+                        class: 'VideoBtn-Popup',
+                    });
+                    let MENU_CFG = cloneObj(MENU_CONFIG);
+                    MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(node.ownerDocument, obj)));
+                    $A(node, {
+                        label: $L("videobtn btn name"),
+                        tooltiptext: $L("videobtn btn name"),
+                        type: 'menu',
+                        menu: 'VideoBtn-Button-popup'
+                    });
+                    node.appendChild(popup);
+                }
+            });
         },
         destroy() {
             if (this.debug) this.log($L("VideoBtn: destroying element"));
