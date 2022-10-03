@@ -83,7 +83,7 @@
                         star.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? "左键：将此页加入书签(CTRL+D)\n中键：显示/隐藏书签工具栏\n右键：打开书签管理器" : "Left click: show extensions options menu(CTRL+D)\nMiddle click: toggle places toolbar\nRight click: open addons management")
                         let clickFn = function (e) {
                             if (e.button === 0) {
-                                BrowserPageActions.doCommandForAction(PageActions.actionForID('bookmark'), e, this);
+                                return;
                             } else if (e.button === 1) {
                                 e.preventDefault();
                                 e.stopPropagation();
