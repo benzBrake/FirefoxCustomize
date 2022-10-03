@@ -844,7 +844,7 @@
             data = suConverter.ConvertFromUnicode(data);
 
             let foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
-            foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+            foStream.init(aFile, 0x02 | 0x08 | 0x20, 0664, 0);
             foStream.write(data, data.length);
             foStream.close();
         },
