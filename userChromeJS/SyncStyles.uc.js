@@ -17,7 +17,6 @@
             if (location.href.startsWith('chrome://browser/content/browser.x')) {
                 this.initMain();
             } else {
-                console.log(_uc, location.href);
                 this.initStyles();
             }
         }
