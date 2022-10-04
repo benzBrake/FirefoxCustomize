@@ -259,7 +259,7 @@
             if (this.debug) this.log($L("CustomButtons: creating buttons"));
             let btnIds = [];
             Object.values(BTN_CONFIG).forEach(obj => {
-                if (obj.id && !CustomizableUI.getWidget(obj.id)) {
+                if (obj.id && !CustomizableUI.getPlacementOfWidget(obj.id, true)) {
                     let btn = this.createButton(obj);
                 }
                 btnIds.push(obj.id);
