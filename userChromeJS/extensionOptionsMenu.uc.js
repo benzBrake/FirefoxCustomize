@@ -28,8 +28,6 @@ UC.extensionOptionsMenu = {
           tooltiptext: '拓展设置菜单',
           type: 'menu',
           class: 'toolbarbutton-1 chromeclass-toolbar-additional',
-          image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzdmcgdD0iMTY0NjY2Nzk2OTgyNyIgY2xhc3M9Imljb24iIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTkxNS4yIDEwMTUuMDRIMTA4LjhhOTcuMjggOTcuMjggMCAwIDEtOTcuMjgtOTYuNjRWMTExLjM2QTk3LjI4IDk3LjI4IDAgMCAxIDEwOC44IDE0LjcyaDgwNi40YTk3LjI4IDk3LjI4IDAgMCAxIDk3LjI4IDk2LjY0djgwNy4wNGE5Ny4yOCA5Ny4yOCAwIDAgMS05Ny4yOCA5Ni42NHpNMTA4LjggODAuNjRhMzAuNzIgMzAuNzIgMCAwIDAtMzAuNzIgMzAuNzJ2ODA3LjA0YTMwLjcyIDMwLjcyIDAgMCAwIDMwLjcyIDMwLjcyaDgwNi40YTMwLjcyIDMwLjcyIDAgMCAwIDMwLjcyLTMwLjcyVjExMS4zNmEzMC43MiAzMC43MiAwIDAgMC0zMC43Mi0zMC43MnoiIHAtaWQ9IjIxMTgiPjwvcGF0aD48cGF0aCBkPSJNMzIzLjg0IDgxNy4yOGEzMi42NCAzMi42NCAwIDAgMS0zMi42NC0zMy4yOFYyNDUuNzZhMzMuMjggMzMuMjggMCAxIDEgNjQgMHY1MzguMjRhMzMuMjggMzMuMjggMCAwIDEtMzEuMzYgMzMuMjh6IiBwLWlkPSIyMTE5Ij48L3BhdGg+PHBhdGggZD0iTTMyMy44NCA2MzguMDhtLTk2LjY0IDBhOTYuNjQgOTYuNjQgMCAxIDAgMTkzLjI4IDAgOTYuNjQgOTYuNjQgMCAxIDAtMTkzLjI4IDBaIiBwLWlkPSIyMTIwIj48L3BhdGg+PHBhdGggZD0iTTcwMC4xNiA4MTcuMjhhMzMuMjggMzMuMjggMCAwIDEtMzMuMjgtMzMuMjhWMjQ1Ljc2YTMzLjI4IDMzLjI4IDAgMSAxIDY0IDB2NTM4LjI0YTMyLjY0IDMyLjY0IDAgMCAxLTMwLjcyIDMzLjI4eiIgcC1pZD0iMjEyMSI+PC9wYXRoPjxwYXRoIGQ9Ik03MDAuMTYgMzkxLjY4bS05Ni42NCAwYTk2LjY0IDk2LjY0IDAgMSAwIDE5My4yOCAwIDk2LjY0IDk2LjY0IDAgMSAwLTE5My4yOCAwWiIgcC1pZD0iMjEyMiI+PC9wYXRoPjwvc3ZnPg==',
-          onclick: 'if (event.button == 1) BrowserOpenAddonsMgr("addons://list/extension")'
         });
 
         let mp = _uc.createElement(doc, 'menupopup', {
@@ -236,6 +234,7 @@ UC.extensionOptionsMenu = {
           .uninstalling label:after { content: '!' !important; }
           .noOptions { color: gray; }
           .disabled { color: gray; font-style: italic; }
+          #eom-button { list-style-image: url("chrome://mozapps/skin/extensions/extension.svg"); }
         }
       `)),
       type: _uc.sss.USER_SHEET
