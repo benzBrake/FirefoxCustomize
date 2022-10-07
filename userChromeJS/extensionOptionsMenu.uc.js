@@ -7,16 +7,16 @@
 // ==/UserScript==
 
 // inspired by https://addons.mozilla.org/en-US/firefox/addon/extension-options-menu/
-
+let { CustomizableUI } = window;
 UC.extensionOptionsMenu = {
   // config
-  showVersion:    true,
-  showHidden:     false,
-  showDisabled:   true,
-  enabledFirst:   true,
+  showVersion: true,
+  showHidden: false,
+  showDisabled: true,
+  enabledFirst: true,
   blackListArray: [],
 
-  init: function() {
+  init: function () {
     CustomizableUI.createWidget({
       id: 'eom-button',
       type: 'custom',
@@ -34,9 +34,9 @@ UC.extensionOptionsMenu = {
 
         let mp = _uc.createElement(doc, 'menupopup', {
           id: 'eom-button-popup',
-          onclick: function() {
-              event.preventDefault();
-              event.stopPropagation();
+          onclick: function () {
+            event.preventDefault();
+            event.stopPropagation();
           },
         });
         btn.appendChild(mp);
@@ -75,8 +75,8 @@ UC.extensionOptionsMenu = {
       return (ka < kb) ? -1 : 1;
     }).forEach(addon => {
       if (!blackListArray.includes(addon.id) &&
-          (!addon.hidden || UC.extensionOptionsMenu.showHidden) &&
-          (!addon.userDisabled || UC.extensionOptionsMenu.showDisabled)) {
+        (!addon.hidden || UC.extensionOptionsMenu.showHidden) &&
+        (!addon.userDisabled || UC.extensionOptionsMenu.showDisabled)) {
         if (showDisabled && enabledFirst && prevState && addon.isActive != prevState)
           popup.appendChild(doc.createXULElement('menuseparator'));
         prevState = addon.isActive;
@@ -98,7 +98,7 @@ UC.extensionOptionsMenu = {
     });
   },
 
-  handleClick: function(e) {
+  handleClick: function (e) {
     e.preventDefault();
     e.stopPropagation();
     let win = e.view;
