@@ -1802,15 +1802,18 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 
-    if (typeof userChrome_js !== 'undefined') {
-        setTimeout(function () {
-            window.addMenu.rebuild()
-        }, 2000);
+    /** 防止 data-l10n 无法读取 , 用不到可以注释下面这几行 */
+    setTimeout(function () {
+        window.addMenu.rebuild()
+    }, 1000);
 
-        setTimeout(function () {
-            window.addMenu.rebuild()
-        }, 5000);
-    }
+    setTimeout(function () {
+        window.addMenu.rebuild()
+    }, 2000);
+
+    setTimeout(function () {
+        window.addMenu.rebuild()
+    }, 5000);
 })(`
 .addMenuHide
   { display: none !important; }
