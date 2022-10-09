@@ -3,11 +3,12 @@
 // @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能）
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         0.1.1
+// @version         0.1.2
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.1.2 修复按钮不存在导致脚本中断
 // @note            0.1.1 修复新窗口不生效的问题
 // ==/UserScript==
 (function () {
@@ -116,39 +117,35 @@
                     reload.addEventListener('mouseover', callback);
                 }
             }
-            if (config["right click extensions options menu button to open addons management"]) {
+            if (config["right click extensions options menu button to open addons management"] && CustomizableUI.getPlacementOfWidget('eom-button', true)) {
                 let eom = CustomizableUI.getWidget('eom-button').forWindow(window).node;
-                if (eom) {
-                    let callback = function () {
-                        eom.removeEventListener('mouseover', callback);
-                        eom.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
-                        let clickFn = function (event) {
-                            if (event.button == 2 && event.target.localName == 'toolbarbutton') {
-                                event.preventDefault();
-                                event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
-                            }
+                let callback = function () {
+                    eom.removeEventListener('mouseover', callback);
+                    eom.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
+                    let clickFn = function (event) {
+                        if (event.button == 2 && event.target.localName == 'toolbarbutton') {
+                            event.preventDefault();
+                            event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
                         }
-                        eom.addEventListener('click', clickFn);
-                    };
-                    eom.addEventListener('mouseover', callback);
-                }
+                    }
+                    eom.addEventListener('click', clickFn);
+                };
+                eom.addEventListener('mouseover', callback);
             }
-            if (config["right click styloaix button to open themes management"]) {
+            if (config["right click styloaix button to open themes management"] && CustomizableUI.getPlacementOfWidget('styloaix-button', true)) {
                 let btn = CustomizableUI.getWidget('styloaix-button').forWindow(window).node;
-                if (btn) {
-                    let callback = function () {
-                        btn.removeEventListener('mouseover', callback);
-                        btn.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
-                        let clickFn = function (event) {
-                            if (event.button == 2 && event.target.localName == 'toolbarbutton') {
-                                event.preventDefault();
-                                event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/theme');
-                            }
+                let callback = function () {
+                    btn.removeEventListener('mouseover', callback);
+                    btn.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
+                    let clickFn = function (event) {
+                        if (event.button == 2 && event.target.localName == 'toolbarbutton') {
+                            event.preventDefault();
+                            event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/theme');
                         }
-                        btn.addEventListener('click', clickFn);
-                    };
-                    btn.addEventListener('mouseover', callback);
-                }
+                    }
+                    btn.addEventListener('click', clickFn);
+                };
+                btn.addEventListener('mouseover', callback);
             }
             if (config["downloads button add middle and right click"]) {
                 let btn = CustomizableUI.getWidget('downloads-button').forWindow(window).node;
