@@ -270,7 +270,6 @@
                     $("contentAreaContextMenu").appendChild(menu);
                 }
             }
-            if (!this.debug) return;
             if (CustomizableUI.getPlacementOfWidget("VideoBtn-Button", true)) return;
             CustomizableUI.createWidget({
                 id: "VideoBtn-Button",
@@ -804,14 +803,11 @@
                 this.appVersion >= 78 ? "chrome://global/skin/icons/info.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "VideoBtn",
                 aMsg + "", !!callback, "", callback);
         },
-        error: function () {
-            Cu.reportError(Array.prototype.slice.call(arguments));
-        },
-        log: function () {
-            this.browserWin.console.log(Array.prototype.slice.call(arguments));
-        },
+        error: TopWindow.console.error,
+        log: TopWindow.console.log,
         PREF_BIN_PATH: 'userChromeJS.VideoBtn.binPath',
         PREF_SAVE_PATH: 'userChromeJS.VideoBtn.savePath',
+        PREF_CONTEXT_MENU: '',
     }
 
     function $(id, aDoc) {
