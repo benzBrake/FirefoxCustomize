@@ -51,14 +51,15 @@
             if (!gUnifiedExtensions) {
                 return;
             }
-            CustomizableUI.createWidget({
-                id: 'movable-unified-extensions',
-                type: "view",
-                viewId: "unified-extensions-view",
-                defaultArea: CustomizableUI.AREA_NAVBAR,
-                localized: false,
-                onCreated: node => this.initButton(node)
-            });
+            if (!CustomizableUI.getPlacementOfWidget("movable-unified-extensions", true))
+                CustomizableUI.createWidget({
+                    id: 'movable-unified-extensions',
+                    type: "view",
+                    viewId: "unified-extensions-view",
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    localized: false,
+                    onCreated: node => this.initButton(node)
+                });
             if (gUnifiedExtensions.togglePanel.length === 2 && !gUnifiedExtensions.togglePanel.toString().includes("UnifiedExtensionsTogglePanel")) {
                 gUnifiedExtensions.togglePanel = async function (anchor, aEvent) {
                     if (anchor.getAttribute("open") == "true") {
