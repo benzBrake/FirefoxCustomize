@@ -3,6 +3,7 @@
 // @description    书签工具栏自动隐藏
 // @compatibility  Firefox 68
 // @author         Ryan
+// @included       chrome://browser/content/browser.xhtml
 // @shutdown       UC.PersonalToolbarAutoHide.unload();
 // @homepage       https://github.com/benzBrake/FirefoxCustomize
 // @version        1.0
@@ -11,6 +12,7 @@
 UC.PersonalToolbarAutoHide = {
     appVersion: parseInt(Services.appinfo.version),
     init: function () {
+        const { document, console, getComputedStyle } = window;
         if (
             this.appversion >= 76 &&
             location != "chrome://browser/content/browser.xhtml"
@@ -38,7 +40,7 @@ UC.PersonalToolbarAutoHide = {
                 });
             });
             this.observer.observe(document.getElementById('PlacesToolbarItems'), config)
-        } catch (e) { alert(e) }
+        } catch (e) { console.log(e) }
     },
     addEvent() {
         const target = document.getElementById('PlacesToolbarItems');
