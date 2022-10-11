@@ -2,7 +2,7 @@
 // @name            AutoCopySelectionText.uc.js
 // @description     自动复制选中文本（ScrLk 亮起时不复制）
 // @author          Ryan
-// @version         2022.07.28
+// @version         2022.10.11
 // @compatibility   Firefox 87
 // @charset         UTF-8
 // @system          windows
@@ -10,6 +10,7 @@
 // @include         main
 // @shutdown        window.AutoCopySelectionText.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         2022.10.11 增加文本框开关
 // @version         2022.07.28 网页支持文本框
 // @version         2022.07.18 支持长按延时
 // @version         2022.07.16 重写代码，支持热插拔，采用 异步消息，支持 Firefox 内置页面
@@ -29,7 +30,8 @@
 
                 // implement read from about:config preferences in future
                 var WAIT_TIME = 0; // Change it to any number as you want
-                var TRIM_SELECTION = true; // remove spaces before and after the string
+                var TRIM_SELECTION = false; // remove spaces before and after the string
+                var DISABLE_IN_TEXTBOX = true; // disable auto copy when focus on textboxes
 
                 // Do not modify below ------------------------------------------
                 var LONG_PRESS = false;
@@ -70,6 +72,7 @@
                         };
 
                         if (isOnTextInput(element)) {
+                            if (DISABLE_IN_TEXTBOX) return;
                             selection = element.value.substring(element.selectionStart,
                                 element.selectionEnd);
                         }
