@@ -1,0 +1,7 @@
+@import "./variables.css";
+
+@supports -moz-bool-pref("userChromeJS.sidra.menupopup.compact") {
+    .toolbaritem-combined-buttons.showFirstText>toolbarbutton.subviewbutton:first-child {
+        padding-left: var(--icon-gap, 12px) !important;
+    }
+}

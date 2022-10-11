@@ -1,0 +1,65 @@
+{
+    "name": "Sidra",
+    "description": "Ryan 自用 Firefox 主题",
+    "version": "0.1.1",
+    "minVersion": "Firefox 90",
+    "homepageURL": "https://github.com/benzBrake/FirefoxCustomize",
+    "files": [
+        {
+            "filename": "userChrome.css"
+        },
+        {
+            "filename": "userChrome.ag.css"
+        },
+        {
+            "filename": "userChrome.au.css"
+        },
+        {
+            "filename": "userChrome.us.css"
+        }
+    ],
+    "options": [
+        "userChromeJS.sidra.controlButton.OSXStyle",
+        "userChromeJS.sidra.tabbox.compact",
+        "userChromeJS.sidra.tabbox.pinNewtabBtn",
+        "userChromeJS.sidra.titlebarHorizontal",
+        "userChromeJS.sidra.navbar.compact",
+        "userChromeJS.sidra.placesToolbar.alignCenter",
+        "userChromeJS.sidra.placesToolbar.iconsOnly",
+        "userChromeJS.sidra.urlbar.compact",
+        "userChromeJS.sidra.urlbar.hideBookmarksButtonOnSystemPages",
+        "userChromeJS.sidra.button.compact",
+        "userChromeJS.sidra.menupopup.compact",
+        "userChromeJS.sidra.menupopup.hideNavigation",
+        "userChromeJS.sidra.panel.adaptedBgColor",
+        "userChromeJS.sidra.organizer.compact",
+        "userChromeJS.sidra.sidebar.compact",
+        "userChromeJS.sidra.findbar.compact",
+        "userChromeJS.sidra.icon.complementary",
+        "userChromeJS.sidra.addons.compact",
+        "userChromeJS.sidra.extensions.compact"
+    ],
+    "locales": {
+        "zh-CN": {
+            "userChromeJS.sidra.controlButton.OSXStyle": "OSX 风格控制按钮",
+            "userChromeJS.sidra.tabbox.compact": "标签栏样式",
+            "userChromeJS.sidra.tabbox.pinNewtabBtn": "固定新建标签按钮",
+            "userChromeJS.sidra.titlebarHorizontal": "主菜单栏显示在标签栏右侧",
+            "userChromeJS.sidra.navbar.compact": "导航栏样式",
+            "userChromeJS.sidra.placesToolbar.alignCenter": "书签工具栏居中显示",
+            "userChromeJS.sidra.placesToolbar.iconsOnly": "书签工具栏仅显示图标",
+            "userChromeJS.sidra.urlbar.compact": "地址栏样式",
+            "userChromeJS.sidra.urlbar.hideBookmarksButtonOnSystemPages": "内置页面隐藏星号按钮",
+            "userChromeJS.sidra.button.compact": "按钮样式",
+            "userChromeJS.sidra.menupopup.compact": "弹出菜单样式",
+            "userChromeJS.sidra.menupopup.hideNavigation": "隐藏右键导航",
+            "userChromeJS.sidra.panel.adaptedBgColor": "弹出面板跟随主题色",
+            "userChromeJS.sidra.organizer.compact": "足迹管理样式",
+            "userChromeJS.sidra.sidebar.compact": "侧边栏样式",
+            "userChromeJS.sidra.findbar.compact": "查找栏样式",
+            "userChromeJS.sidra.icon.complementary": "图标补全",
+            "userChromeJS.sidra.addons.compact": "扩展管理样式",
+            "userChromeJS.sidra.extensions.compact": "扩展样式"
+        }
+    }
+}
