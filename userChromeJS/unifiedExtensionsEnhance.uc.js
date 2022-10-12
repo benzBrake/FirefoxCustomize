@@ -27,6 +27,9 @@
             delete this.sss;
             return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
         },
+        get showDisabled() {
+            return Services.prefs.getBoolPref("extensions.unifiedExtensions.showDisabled", true);
+        },
         STYLE: {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
             #unified-extensions,
@@ -41,14 +44,14 @@
                 overflow-y: scroll;
             }
             unified-extensions-item.no-options .unified-extensions-item-name {
-                color: color-mix(in srgb, currentColor 50%, transparent);
+                color: var(--menu-disabled-color, var(--panel-disabled-color));
             }
             unified-extensions-item.disabled .unified-extensions-item-name {
                 font-style: italic;
             }`)),
         },
         init: function () {
-            if (!gUnifiedExtensions) {
+            if (!Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false) || !gUnifiedExtensions) {
                 return;
             }
             if (!CustomizableUI.getPlacementOfWidget("movable-unified-extensions", true))
@@ -118,7 +121,6 @@
                     extension.disable();
             }
         },
-
         onViewShowing: async function (event) {
             let { ownerDocument: document } = view = event.target;
             if ((await gUnifiedExtensions.getActiveExtensions()).length == 0) {
@@ -141,24 +143,36 @@
                     });
             view.addEventListener('click', this.onClick);
 
-            let list = view.querySelector(".unified-extensions-list");
-            let extensions = await gUnifiedExtensions.getActiveExtensions();
+            let list = $Q('.unified-extensions-list', view);
+            $QA('unified-extensions-item', list).forEach(item => {
+                $R(item);
+            })
+            $R($Q('.generated-separator', list))
+            let extensions = await this.getAllExtensions(),
+                prevState;
 
-            for (const extension of extensions) {
-                if (unifiedExtensionsEnhance.appVersion > 104) {
-                    const item = document.createElement("unified-extensions-item");
-                    if (!extension.optionsURL) {
-                        item.classList.add('no-options');
-                    }
-                    item.setAddon(extension);
-                    list.appendChild(item);
-                } else {
-                    $QA('unified-extensions-item', list).forEach(item => {
-                        if (!item.addon.optionsURL)
-                            item.classList.add('no-options');
-                    })
+            extensions.sort((a, b) => {
+                let ka = (a.isActive ? '0' : '1') + a.name.toLowerCase();
+                let kb = (b.isActive ? '0' : '1') + b.name.toLowerCase();
+                return (ka < kb) ? -1 : 1;
+            }).forEach(addon => {
+                if (this.showDisabled && prevState && prevState != addon.isActive) {
+                    list.appendChild($C(document, 'toolbarseparator', { class: 'generated-separator' }));
                 }
-            }
+                prevState = addon.isActive;
+                const item = document.createElement("unified-extensions-item");
+                if (!addon.optionsURL) {
+                    item.classList.add('no-options');
+                }
+                item.setAddon(addon);
+                list.appendChild(item);
+            });
+            $QA('unified-extensions-item', list).forEach(item => {
+                if (!item.addon.optionsURL)
+                    item.classList.add('no-options');
+                if (!item.addon.isActive)
+                    item.classList.add('disabled');
+            })
             if (!$Q("#unified-extensions-disable-all", view)) {
                 let disableAll = view.insertBefore($C(document, 'toolbarbutton', {
                     id: 'unified-extensions-disable-all',
@@ -169,6 +183,7 @@
             }
         },
         onClick: function (event) {
+            if (!event.target.closest('unified-extensions-item')) return;
             var { addon } = vbox = event.target.closest('unified-extensions-item');
             var { classList } = event.target;
             if (classList.contains('unified-extensions-item-action') || classList.contains('unified-extensions-item-contents') || classList.contains('unified-extensions-item-name') || classList.contains('unified-extensions-item-message') || classList.contains('unified-extensions-item-icon')) {
@@ -189,6 +204,14 @@
                         break;
                 }
             }
+        },
+        getAllExtensions: async function (event) {
+            let addons = await AddonManager.getAddonsByTypes(["extension"]);
+            addons = addons.filter(addon => !addon.hidden);
+            if (!this.showDisabled) {
+                addons = addons.filter(addon => addon.isActive);
+            }
+            return addons;
         },
         openAddonOptions: function (addon, win) {
             if (!addon.isActive || !addon.optionsURL)
@@ -224,9 +247,12 @@
                 "unified-extensions-view"
             );
             if (view) {
-                let btn = $Q("unified-extensions-disable-all", view);
-                if (btn)
-                    btn.parentNode.removeChild(btn);
+                let list = $Q('.unified-extensions-list', view);
+                $QA('unified-extensions-item', list).forEach(item => {
+                    $R(item);
+                })
+                $R($Q('.generated-separator', list))
+                $R($Q("unified-extensions-disable-all", view));
             }
             delete window.unifiedExtensionsEnhance;
         }
@@ -263,6 +289,11 @@
             }
         });
         return el;
+    }
+
+    function $R(el) {
+        if (!el || !el.parentNode) return;
+        el.parentNode.removeChild(el);
     }
 
     if (gBrowserInit.delayedStartupFinished) window.unifiedExtensionsEnhance.init();
