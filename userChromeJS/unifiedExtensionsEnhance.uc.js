@@ -4,7 +4,7 @@
 // Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.2
+// @version         0.1.3
 // @compatibility   Firefox 104
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
