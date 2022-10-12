@@ -30,6 +30,10 @@ url("about:downloads") {
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.controlButton.OSXStyle") {
+        .titlebar-buttonbox-container {
+            -moz-box-align: center;
+        }
+
         .titlebar-button {
             display: -moz-box !important;
             border: none;
@@ -737,11 +741,10 @@ url("about:downloads") {
                     border-radius: 4px;
                 }
 
-                @media (-moz-windows-default-theme) {
-                    #navigator-toolbox-background {
-                        background-color: var(--lwt-accent-color);
-                    }
+                #navigator-toolbox-background {
+                    background-color: transparent;
                 }
+
             }
         }
     }
@@ -761,8 +764,19 @@ url("about:downloads") {
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.titlebarHorizontal") {
-        #titlebar {
-            height: var(--tab-min-height);
+        @media(-moz-platform: windows-win7) {
+            :root[tabsintitlebar][sizemode="normal"] #titlebar {
+                height: var(--tab-min-height);
+            }
+
+            :root[tabsintitlebar][sizemode="normal"] #TabsToolbar {
+                margin-top: -7px;
+            }
+
+            :root[tabsintitlebar][sizemode="normal"] #TabsToolbar>.titlebar-buttonbox-container {
+                margin-top: 7px;
+                -moz-box-align: center;
+            }
         }
 
         /** 主菜单占满高度 */
@@ -797,8 +811,16 @@ url("about:downloads") {
             box-shadow: 0px 0px 8px -5px hsla(240, 4%, 0%, 0.5), 0px 0px 15px 0px hsla(0, 0%, 0%, 0.2) !important;
         }
 
-        #navigator-toolbox:-moz-window-inactive:-moz-lwtheme {
-            background-color: var(--lwt-accent-color-inactive, var(--lwt-accent-color));
+        @media not (-moz-windows-glass) {
+            #navigator-toolbox:-moz-window-inactive:-moz-lwtheme {
+                background-color: var(--lwt-accent-color-inactive, var(--lwt-accent-color));
+            }
+        }
+
+        @media (-moz-windows-glass) {
+            #navigator-toolbox {
+                background-color: transparent;
+            }
         }
 
         /** 工具栏颜色 */
@@ -1911,15 +1933,14 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         menupopup {
-            --menu-color: var(--sidra-menu-color, var(--arrowpanel-color));
-            --menu-disabled-color: var(--sidra-menu-disabled-color, var(--panel-disabled-color));
-            --menu-border-color: var(--sidra-menu-border-color, var(--arrowpanel-border-color));
-            --menu-border-radius: var(--sidra-menu-border-radius, var(--arrowpanel-border-radius));
-            --menu-border-width: var(--sidra-menu-border-width, 1px);
-            --menu-background-color: var(--sidra-menu-background, var(--arrowpanel-background));
-            --menuitem-hover-background-color: var(--sidra-menuitem-hover-background, var(--panel-item-hover-bgcolor));
-            --menu-separator-color: var(--sidra-menu-separator-color, var(--menu-border-color));
-            --menu-border-image: var(--sidra-menu-border-image);
+            --menu-color: var(--arrowpanel-color);
+            --menu-disabled-color: var(--panel-disabled-color);
+            --menu-border-color: var(--arrowpanel-border-color);
+            --menu-border-radius: var(--arrowpanel-border-radius);
+            --menu-border-width: 1px;
+            --menu-background-color: var(--arrowpanel-background);
+            --menuitem-hover-background-color: var(--panel-item-hover-bgcolor);
+            --menu-separator-color: var(--menu-border-color);
             background-color: transparent;
             padding: 0;
             border: var(--menu-border-width, 1px) solid transparent;
@@ -1970,12 +1991,20 @@ by underlining them (requires urlbarMods.uc.js) */
             visibility: visible !important;
         }
 
-        menupopup menuitem,
-        menupopup menu,
-        menupopup checkbox,
+        menupopup :is(menu, menuitem, checkbox),
         menugroup>menuitem {
             padding-inline-start: var(--icon-gap, 12px) !important;
             padding-block: var(--menuitem-padding, .5em) !important;
+            color: var(--menu-color);
+            appearance: none;
+        }
+
+        menupopup :is(menu, menuitem, checkbox):hover,
+        menupopup :is(menu, menuitem, checkbox):focus,
+        menupopup :is(menu, menuitem, checkbox):active,
+        menupopup :is(menu, menuitem, checkbox)[_moz-menuactive="true"] {
+            color: var(--menu-color) !important;
+            background-color: var(--menuitem-hover-background-color) !important;
         }
 
         menupopup checkbox,
@@ -2037,12 +2066,6 @@ by underlining them (requires urlbarMods.uc.js) */
         menulist>menupopup>menucaption,
         menulist>menupopup>menu {
             padding-block: 2px;
-        }
-
-        menupopup menu[_moz-menuactive="true"],
-        menupopup menuitem[_moz-menuactive="true"] {
-            background-color: var(--menuitem-hover-background-color);
-            appearance: none;
         }
 
         /* checkbox */
@@ -2300,6 +2323,21 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #sidebarMenu-popup>.subviewbutton>.toolbarbutton-icon {
             fill-opacity: 0.8;
+        }
+
+        @media not (prefers-contrast) {
+
+            .sidepanel-icon:hover,
+            .sidepanel-browser-icon:hover,
+            .sidebar2-icon:hover {
+                box-shadow: unset;
+                background-color: var(--toolbarbutton-hover-background);
+            }
+
+            .sidepanel-icon[checked="true"] {
+                box-shadow: unset;
+                background-color: var(--toolbarbutton-active-background);
+            }
         }
 
         /** 侧边栏书签条目/文件夹 上色 */
@@ -4048,6 +4086,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/tab/duplicate-tab.svg");
         }
 
+        #syncedTabsOpenSelectedInContainerTab {
+            background-image: url("./images/tab/open-in-container.svg");
+        }
+
         #syncedTabsOpenSelected {
             background-image: url("./images/tab/open-in-current.svg");
         }
@@ -4344,7 +4386,11 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #sidebar-reverse-position {
-            list-style-image: url("./images/sidebar/arrow-swap.svg");
+            list-style-image: url("./images/skin/switch.svg");
+        }
+
+        [data-l10n-id="sidebar-menu-close"] {
+            list-style-image: url("./images/skin/quit.svg");
         }
 
 
@@ -4856,10 +4902,17 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/extensions/singlefile/link.svg");
         }
 
-        #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-selected,
+        #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-selected {
+            background-image: url("./images/extensions/singlefile/text.svg");
+        }
+
         #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_button-save-selected-tabs,
         #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-selected-tabs {
             background-image: url("./images/extensions/singlefile/tick.svg");
+        }
+
+        #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-frame {
+            background-image: url("./images/extensions/singlefile/frame.svg");
         }
 
         #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-tabs {
@@ -5235,8 +5288,6 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] .blocked-info>* {
             display: block;
-            margin: var(--arrowpanel-menuitem-margin);
-            padding: var(--arrowpanel-menuitem-padding);
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed {
@@ -5252,6 +5303,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry>.entry-content {
             padding: var(--arrowpanel-menuitem-padding);
+            padding-left: 0;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry>.entry-content:focus {
@@ -5259,11 +5311,43 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name {
-            padding-left: calc(var(--label-padding-start, 32px) - 8px);
+            padding-left: var(--label-padding-start, 32px);
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name :is(.checker, .svg-icon) {
+            position: relative;
+            left: unset;
+            top: 0;
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name .checker {
+            position: absolute;
+            width: var(--icon-width, 16px);
+            height: 100%;
+            left: var(--icon-gap, 12px);
+            border: 0px;
+            background-position: 0 50%;
+            background-color: transparent;
+            background-repeat: no-repeat;
+            background-image: url("./images/extensions/stylus/checkbox.svg");
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name .checker:checked {
+            background-image: url("./images/extensions/stylus/checkbox-checked.svg");
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name .svg-icon {
+            display: none;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name::before {
             content: none;
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry .style-name .checkmate {
+            display: flex;
+            align-items: center;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #stylus-popup #installed>.entry::before {
@@ -5295,6 +5379,7 @@ by underlining them (requires urlbarMods.uc.js) */
             padding: 0;
             display: flex;
             flex-direction: column;
+            align-items: unset;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #disable-all-wrapper {
@@ -5329,9 +5414,14 @@ by underlining them (requires urlbarMods.uc.js) */
             visibility: collapse;
         }
 
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"].all-disabled #disableAll-label,
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #installed.disabled+.actions #disableAll-label {
             fill: hsl(0, 50%, 56%);
             background-image: url("./images/extensions/stylus/checkbox-checked.svg");
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"].all-disabled #disableAll-label:hover {
+            color: hsl(0, 50%, 56%);
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #disableAll-label .svg-icon {
@@ -5360,7 +5450,7 @@ by underlining them (requires urlbarMods.uc.js) */
             font: menu;
         }
 
-        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] :is(#disableAll-label, #find-styles, #write-style):hover {
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] :is(#disableAll-label, #find-styles):hover {
             background-color: var(--panel-item-hover-bgcolor);
             color: var(--arrowpanel-color);
         }
@@ -5392,6 +5482,7 @@ by underlining them (requires urlbarMods.uc.js) */
             background-repeat: no-repeat;
             background-position: var(--icon-gap, 12px) 50%;
             -moz-context-properties: fill, fill-opacity;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #find-styles-inline-group>label>input:checked~span {
@@ -5399,39 +5490,29 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-style {
-            margin: var(--arrowpanel-menuitem-margin);
-            padding: 4px 0;
-            padding-left: var(--label-padding-start, 32px);
-            border-radius: var(--arrowpanel-menuitem-border-radius) !important;
-            background-image: url("./images/extensions/stylus/css.svg");
-            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
-            background-color: transparent;
-            background-repeat: no-repeat;
-            background-position: var(--icon-gap, 12px) 50%;
-            -moz-context-properties: fill, fill-opacity;
-        }
-
-        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-style:hover {
-            background-color: var(--panel-item-hover-bgcolor);
-        }
-
-        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-style-for {
             margin: 0;
-        }
-
-        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] .match[data-frame-id="0"] {
-            min-width: unset;
-
+            padding: var(--panel-subview-body-padding);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-areas:
+                "usercss newstyle"
+                "more url";
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-as {
+            grid-area: usercss;
             position: relative;
-            left: 8px;
+            left: unset;
             width: auto;
             display: flex;
             flex-wrap: nowrap;
             align-items: center;
-            height: auto;
+            height: 16px;
+            padding: var(--arrowpanel-menuitem-padding);
+            margin: var(--arrowpanel-menuitem-margin);
+            padding-left: var(--icon-gap, 12px);
+            margin-right: 0;
+            padding-right: 0;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-as .svg-icon {
@@ -5439,9 +5520,48 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-as>div {
-            width: 12px;
-            height: 12px;
-            margin: 1px;
+            width: var(--icon-gap);
+            height: var(--icon-gap);
+            margin: 0px;
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-for-frames {
+            grid-area: more;
+            background: unset;
+            margin: var(--arrowpanel-menuitem-margin);
+            margin-right: 0;
+            padding-right: 0;
+            height: 16px;
+            width: calc(var(--icon-gap, 12px) + var(--icon-width));
+            background-image: url("./images/extensions/stylus/add.svg");
+            background-repeat: no-repeat;
+            background-position: var(--icon-gap, 12px) 50%;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-for-frames.expanded {
+            background-image: url("./images/extensions/stylus/minus.svg");
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-for-frames::after {
+            content: none;
+        }
+
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-style-for {
+            grid-area: newstyle;
+            padding: var(--arrowpanel-menuitem-padding);
+            padding-left: 0;
+            height: 16px;
+            display: flex;
+            flex: 1;
+            align-items: center;
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] .match[data-frame-id="0"] {
+            grid-area: url;
+            min-width: unset;
+            padding-left: 0;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #newStyleAsUsercss {
@@ -5920,6 +6040,30 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #brandon_subdavis_com-browser-action {
             list-style-image: url("./images/extensions/password/keepass.svg") !important;
+        }
+
+        #rf-firefox_siber_com-menuitem-_SaveForms {
+            background-image: url("./images/extensions/password/save.svg");
+        }
+
+        #rf-firefox_siber_com-menuitem-_ResetFields {
+            background-image: url("./images/extensions/password/reset.svg");
+        }
+
+        #rf-firefox_siber_com-menuitem-_ClearFields {
+            background-image: url("./images/extensions/password/clean.svg");
+        }
+
+        #rf-firefox_siber_com-menuitem-_PasswordGenerator {
+            background-image: url("./images/extensions/password/generate-password.svg");
+        }
+
+        #rf-firefox_siber_com-menuitem-_Editor {
+            background-image: url("./images/extensions/password/edit.svg");
+        }
+
+        #rf-firefox_siber_com-menuitem-_Options {
+            background-image: url("chrome://global/skin/icons/settings.svg");
         }
 
         /** Header Editor */
