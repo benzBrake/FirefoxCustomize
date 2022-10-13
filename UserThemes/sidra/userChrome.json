@@ -21,6 +21,7 @@
     "options": [
         "userChromeJS.sidra.controlButton.OSXStyle",
         "userChromeJS.sidra.tabbox.compact",
+        "userChromeJS.sidra.tabbox.showInactiveTabsDivider",
         "userChromeJS.sidra.tabbox.pinNewtabBtn",
         "userChromeJS.sidra.titlebarHorizontal",
         "userChromeJS.sidra.navbar.compact",
@@ -43,6 +44,7 @@
         "zh-CN": {
             "userChromeJS.sidra.controlButton.OSXStyle": "OSX 风格控制按钮",
             "userChromeJS.sidra.tabbox.compact": "标签栏样式",
+            "userChromeJS.sidra.tabbox.showInactiveTabsDivider": "显示非激活标签分隔符",
             "userChromeJS.sidra.tabbox.pinNewtabBtn": "固定新建标签按钮",
             "userChromeJS.sidra.titlebarHorizontal": "主菜单栏显示在标签栏右侧",
             "userChromeJS.sidra.navbar.compact": "导航栏样式",

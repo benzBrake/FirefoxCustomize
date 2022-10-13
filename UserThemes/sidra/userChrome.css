@@ -458,17 +458,20 @@ url("about:downloads") {
             outline: none;
         }
 
-        /* 非激活标签分隔符 */
-        .tabbrowser-tab:not(:hover):not([selected=true]):not([multiselected=true]):not([beforeselected-visible="true"]) .tab-background::after {
-            content: "";
-            display: block;
-            position: absolute;
-            background: color-mix(in srgb, currentColor 17%, transparent) !important;
-            height: var(--tab-separator-height);
-            width: 1px;
-            top: var(--tab-separator-top);
-            right: -2px;
-            z-index: 5;
+        @supports -moz-bool-pref("userChromeJS.sidra.tabbox.showInactiveTabsDivider") {
+
+            /* 非激活标签分隔符 */
+            .tabbrowser-tab:not(:hover):not([selected=true]):not([multiselected=true]):not([beforeselected-visible="true"]) .tab-background::after {
+                content: "";
+                display: block;
+                position: absolute;
+                background: color-mix(in srgb, currentColor 17%, transparent) !important;
+                height: var(--tab-separator-height);
+                width: 1px;
+                top: var(--tab-separator-top);
+                right: -2px;
+                z-index: 5;
+            }
         }
 
         .tabbrowser-tab:not([usercontextid], [multiselected]) .tab-context-line {
