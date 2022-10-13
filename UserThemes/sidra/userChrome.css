@@ -5495,7 +5495,7 @@ by underlining them (requires urlbarMods.uc.js) */
             display: grid;
             grid-template-columns: auto 1fr;
             grid-template-areas:
-                "usercss newstyle"
+                "newstyle newstyle"
                 "more url";
         }
 
@@ -5529,14 +5529,17 @@ by underlining them (requires urlbarMods.uc.js) */
             grid-area: more;
             background: unset;
             margin: var(--arrowpanel-menuitem-margin);
+            padding: var(--arrowpanel-menuitem-padding);
             margin-right: 0;
             padding-right: 0;
-            height: 16px;
-            width: calc(var(--icon-gap, 12px) + var(--icon-width));
+            height: var(--icon-height, 16px);
+            width: calc(var(--icon-gap, 12px) + var(--icon-width, 16px));
             background-image: url("./images/extensions/stylus/add.svg");
             background-repeat: no-repeat;
             background-position: var(--icon-gap, 12px) 50%;
             background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+            position: unset;
+            display: block;
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-for-frames.expanded {
@@ -5550,18 +5553,37 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-style-for {
             grid-area: newstyle;
+            margin: var(--arrowpanel-menuitem-margin);
             padding: var(--arrowpanel-menuitem-padding);
-            padding-left: 0;
+            padding-left: var(--label-padding-start, 32px);
             height: 16px;
             display: flex;
             flex: 1;
             align-items: center;
+            position: relative;
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-style-for:before {
+            content: "";
+            display: block;
+            background-image: url("./images/extensions/stylus/css.svg");
+            background-repeat: no-repeat;
+            width: var(--icon-width, 16px);
+            height: var(--icon-height, 16px);
+            position: absolute;
+            left: var(--icon-gap, 12px);
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] .match[data-frame-id="0"] {
             grid-area: url;
             min-width: unset;
+            margin: var(--arrowpanel-menuitem-margin);
+            padding: var(--arrowpanel-menuitem-padding);
             padding-left: 0;
+        }
+
+        [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #write-for-frames[hidden]~ :is(#write-style-for, .match[data-frame-id="0"]) {
+            padding-left: var(--label-padding-start, 32px);
         }
 
         [uc-extension-id="{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}"] #newStyleAsUsercss {
