@@ -19,7 +19,6 @@
                 attributeFilter: [
                     "hidden",
                     "sidebarcommand",
-                    "hidden"
                 ]
             });
             document.documentElement.setAttribute('sidebarCommand', document.getElementById("sidebar-box").getAttribute("sidebarcommand") || "");
