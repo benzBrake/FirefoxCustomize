@@ -6,7 +6,7 @@
 
 自从2020年11月开始就基于 xiaoxiaoflood 的 [userChromeJS](https://github.com/xiaoxiaoflood/firefox-scripts/) 来修改脚本。
 
-我的当前 Firefox 版本 Firefox 104a1
+我的当前 Firefox 版本 Firefox 106
 
 最低支持 101 版本就会放 101 目录里
 
@@ -59,6 +59,7 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 | ❌    | 96   | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |                                                              |
 |      | 100  | [showLimitedTimeTheme](showLimitedTimeTheme.uc.js)           | 主题中心显示过期的限时主题                                   | [📃](https://bbs.kafan.cn/thread-2234549-1-1.html)            |
 |      | 90   | [showPersonalToolbarOnDemand](showPersonalToolbarOnDemand.uc.js) | 按需显示书签工具栏（主要是为了解决在新标签页在显示书签工具栏的功能不能用于`about:blank`） |                                                              |
+|      | 78   | [sidebarAttrubesDetector](sidebarAttrubesDetector.uc.js)     | 浏览器主窗口增加`sidebarHidden`和`sidebarCommand`属性        |                                                              |
 | ❌    | 102  | [status-bar](status-bar.uc.js)                               | 状态栏                                                       | [📃](https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/status-bar.uc.js) |
 |      | 78   | [SyncStyles](SyncStyles.uc.js)                               | 非浏览器主窗口的窗口自动读取浏览器主窗口 CSS 属性            |                                                              |
 |      | 90   | [TabPlus](TabPlus.uc.js)                                     | TabMixPlus 极度简陋 userChromeJS 版本<br />需要配置 about:config 才能启用响应功能，不能直接使用<br />PS: Tab Mix Plus 复活了，支持 FF78+ https://github.com/onemen/TabMixPlus | [📃](https://github.com/runningcheese/RunningCheese-Firefox/blob/master/userChrome.js/Tabplus.uc.js) |
@@ -93,3 +94,88 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 ## 特殊说明
 
 （2022.07.01）91.11ESR 安装 [xiaoxiaoflood userChromeJS 环境 6.23 版](https://github.com/xiaoxiaoflood/firefox-scripts/tree/7f4e96000baf44398e7308b0aed24781ec29ea82) 之后，启动Firefox时提示“读取配置文件失败，请联系您的系统管理员”，并且也不能安装老式扩展，可以点[这里](91.11ESR/xiaoxiaoflood)查看可用的版本
+
+
+
+## 脚本使用
+
+### sidebarCommandDetector
+
+安装这个 UC 脚本后，浏览器主窗口会增加`sidebarCommand`属性
+
+我主要用来在Tree Style Tab打开的情况下隐藏横向标签栏，参考 CSS 如下：
+
+```css
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #navigator-toolbox {
+     display: grid;
+     border: none !important;
+     grid-template-columns: auto 1fr;
+     grid-template-areas: "navbar navbar titlebar" "PersonalToolbar PersonalToolbar PersonalToolbar";
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #TabsToolbar>.toolbar-items {
+     visibility: collapse;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #titlebar {
+     grid-area: titlebar;
+     -moz-appearance: none !important;
+     background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
+     background-image: var(--toolbar-bgimage);
+     background-clip: padding-box;
+     color: var(--toolbar-color);
+     height: 100%;
+     -moz-box-align: center;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #titlebar {
+     -moz-box-orient: horizontal !important;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
+     visibility: collapse !important;
+}
+:root:not([chromehidden~="menubar"], [operatingsystem="linux"], [operatingsystem="macosx"]) #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive])+#TabsToolbar .titlebar-spacer {
+     display: none;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar {
+     -moz-box-ordinal-group: 3;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+     max-width: 0 !important;
+     min-width: 0 !important;
+     width: 0 !important;
+     padding: 0 !important;
+     margin: 0 !important;
+     opacity: 0 !important;
+}
+:root[inFullscreen] #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar {
+     visibility: visible !important;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive="true"]) {
+     background: var(--titlebar-background);
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #main-menubar {
+     -moz-box-flex: 1 !important;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar #main-menubar>menu {
+     appearance: none !important;
+     background-color: transparent !important;
+     padding-inline: 2px;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #nav-bar {
+     grid-area: navbar;
+     max-width: unset;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #urlbar-container {
+     max-width: unset !important;
+}
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #PersonalToolbar {
+     grid-area: PersonalToolbar;
+}
+/* 总是隐藏标签栏拖拽区域，书签工具栏也可以拖拽的 */
+#main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #TabsToolbar .titlebar-spacer, #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar>spacer {
+     width: 0 !important;
+     visibility: collapse;
+}
+```
+
+效果如图所示：
+
+![TST](Screenshots/TST.gif)
