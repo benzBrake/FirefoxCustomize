@@ -1179,7 +1179,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         .urlbarView-row[dynamicType="quickactions"] .urlbarView-quickaction-row {
-            background: var(--arrowpanel-faint) !important;
+
             border-radius: 20px !important;
             padding: 4px 7px !important;
             align-items: normal !important;
@@ -1193,6 +1193,18 @@ by underlining them (requires urlbarMods.uc.js) */
             gap: 4px !important;
             font-size: 0.85em !important;
             color: var(--panel-description-color) !important;
+        }
+
+        .urlbarView-row[dynamicType="quickactions"] .urlbarView-quickaction-row:hover {
+            background: var(--panel-item-hover-bgcolor) !important;
+        }
+
+        .urlbarView-row[dynamicType="quickactions"] .urlbarView-quickaction-row:focus {
+            background: var(--panel-item-focus-bgcolor) !important;
+        }
+
+        .urlbarView-row[dynamicType="quickactions"] .urlbarView-favicon {
+            margin-inline-end: 0;
         }
 
         #tracking-protection-icon-box,
@@ -2963,11 +2975,11 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** 书签 Start */
         #appMenu-bookmarks-button {
-            list-style-image: url("./images/organizer/bookmark-plus.svg");
+            list-style-image: url("./images/organizer/book.svg");
         }
 
         #panelMenuBookmarkThisPage {
-            list-style-image: url("./images/organizer/star-line-horizontal.svg");
+            list-style-image: url("./images/organizer/bookmark.svg");
         }
 
         #panelMenu_searchBookmarks {
@@ -2988,7 +3000,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #BMB_bookmarksShowAllTop {
-            background-image: url("./images/organizer/bookmark-plus.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #BMB_viewBookmarksToolbar {
@@ -3000,7 +3012,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #BMB_bookmarksShowAll {
-            background-image: url("./images/organizer/bookmark-plus.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         /** 书签 End */
@@ -3256,7 +3268,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #context-keywordfield {
-            background-image: url("./images/organizer/bookmark-plus.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         [anonid="paste-and-go"],
@@ -3337,7 +3349,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #context-bookmarklink {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #context-savelink {
@@ -3470,7 +3482,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #context-bookmarkframe {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #context-saveframe {
@@ -3536,7 +3548,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #context_bookmarkTab,
         #toolbar-context-bookmarkSelectedTab {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #context_moveTabOptions {
@@ -3926,7 +3938,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #menu_bookmarkThisPage {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #menu_openDownloads {
@@ -4110,7 +4122,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #syncedTabsBookmarkSelected {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #syncedTabsCopySelected {
@@ -4179,7 +4191,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #placesContext_add\:bookmark {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #placesContext_update_bookmark\:info {
@@ -4246,7 +4258,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #placesContext_showAllBookmarks {
-            background-image: url("./images/organizer/bookmark-plus.svg");
+            background-image: url("./images/organizer/book.svg");
         }
 
         #orgClose {
@@ -4334,6 +4346,7 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/organizer/delete-row.svg");
         }
 
+        menuitem[command="downloadsCmd_clearList"],
         menuitem[command="downloadsCmd_clearDownloads"] {
             background-image: url("./images/organizer/clean.svg");
         }
@@ -4476,6 +4489,18 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/copycat/skin.svg");
         }
 
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0\:0 {
+            background-image: url("chrome://browser/skin/sidebars.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0\:1 {
+            background-image: url("chrome://mozapps/skin/extensions/category-themes.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0\:14 {
+            background-image: url("./images/tab/drop.svg");
+        }
+
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:1 {
             background-image: url("./images/skin/menu.svg");
         }
@@ -4503,7 +4528,8 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_reloadTab,
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_reloadTree,
-        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:reloadTree {
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:reloadTree,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_reloadDescendants {
             background-image: url("./images/tab/reload-tab.svg");
         }
 
@@ -4529,7 +4555,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_bookmarkTab,
         #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:bookmarkTree {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_moveTab {
@@ -4599,7 +4625,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         [data-item-id="noContextTab:context_bookmarkSelected"]>span.icon {
-            background-image: url("./images/organizer/star-line-horizontal.svg");
+            background-image: url("./images/organizer/bookmark.svg");
         }
 
         [data-item-id="noContextTab:context_selectAllTabs"]>span.icon {
@@ -4855,7 +4881,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #tmAddBookmark {
-            background-image: url("./images/extensions/tabmixplus/bookmark-plus.svg");
+            background-image: url("./images/extensions/tabmixplus/bookmark.svg");
         }
 
         /** 翻译 */
@@ -5127,13 +5153,9 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-left: calc(var(--icon-gap, 12px) + var(--icon-width, 16px));
         }
 
-        /* [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .script-name {
-            height: var(--icon-width, 16px) !important;
-        } */
-
         [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .menu-scripts .submenu-buttons {
-            right: 8px;
-            top: 8px;
+            right: calc(var(--arrowpanel-menuitem-margin-inline) / 2);
+            top: calc(var(--arrowpanel-menuitem-margin-inline) / 2);
             min-height: unset;
             height: auto;
         }
@@ -5151,7 +5173,19 @@ by underlining them (requires urlbarMods.uc.js) */
             padding: var(--arrowpanel-menuitem-padding);
         }
 
-        [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .submenu-buttons:focus .submenu-button {
+        [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .script>.submenu-buttons>.submenu-button {
+            padding: 0;
+            margin-left: 4px;
+        }
+
+        [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .script>.submenu-buttons>.submenu-button>.icon {
+            padding: 4px;
+            width: calc(var(--icon-width, 16px) + 8px);
+            height: calc(var(--icon-height, 16px) + 8px);
+        }
+
+
+        [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .script>.submenu-buttons>.submenu-button:hover {
             background-color: var(--panel-item-hover-bgcolor);
         }
 
@@ -6218,6 +6252,45 @@ by underlining them (requires urlbarMods.uc.js) */
         menuitem[id^="bookmarksorganizer_agenedia_com"] {
             background-image: url("./images/extensions/bookmarksorganizer/book.svg");
         }
+
+        /** Custom Buttons */
+        [data-l10n-id="custombuttons-viewmenu-item"] {
+            background-image: url("./images/extensions/custombuttons/buttons.svg");
+        }
+
+        #custombuttons-contextpopup .menu-iconic-left {
+            visibility: hidden !important;
+        }
+
+        #custombuttons-contextpopup-edit {
+            background-image: url("./images/extensions/custombuttons/edit.svg");
+        }
+
+        #custombuttons-contextpopup-remove {
+            background-image: url("./images/extensions/custombuttons/remove.svg");
+        }
+
+        #custombuttons-contextpopup-clone {
+            background-image: url("./images/extensions/custombuttons/copy.svg");
+        }
+
+        #custombuttons-contextpopup-copyURI {
+            background-image: url("./images/extensions/custombuttons/copy-link.svg");
+        }
+
+        #custombuttons-contextpopup-bookmarkButton {
+            background-image: url("./images/extensions/custombuttons/bookmark.svg");
+        }
+
+        #custombuttons-contextpopup-buttonHelp {
+            background-image: url("chrome://global/skin/icons/help.svg");
+        }
+
+        #custombuttons-contextpopup-customize {
+            background-image: url("./images/extensions/custombuttons/customize.svg");
+        }
+
+
     }
 }
 

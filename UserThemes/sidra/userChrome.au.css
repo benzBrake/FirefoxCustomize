@@ -3,7 +3,7 @@
 /**======== 扩展管理 ========*/
 @supports -moz-bool-pref("userChromeJS.sidra.addons.compact") {
     @-moz-document url-prefix(about:addons),
-    url-prefix(chrome: //mozapps/content/extensions/aboutaddons.html), url-prefix(chrome://mozapps/content/extensions/aboutaddons.xhtml) {
+    url-prefix(chrome: //mozapps/content/extensions/aboutaddons.xhtml) {
 
         @media (min-width: 960px) {
 
@@ -103,7 +103,7 @@
         }
 
         [action="check-for-updates"] {
-            background-image: url("./images/update.svg");
+            background-image: url("./images/aboutaddons/update.svg");
         }
 
         [action="view-recent-updates"] {
@@ -119,7 +119,7 @@
         }
 
         [action="reset-update-states"] {
-            background-image: url("./images/skin/reset.svg");
+            background-image: url("./images/aboutaddons/reset.svg");
         }
 
         [action="manage-shortcuts"] {
@@ -167,6 +167,21 @@
 
         .addon-permissions-list>li.permission-checked {
             background-image: url("./images/skin/checkbox-checked.svg");
+        }
+
+        button.category[name="custombuttons"] {
+            background-image: url("./images/extensions/custombuttons/buttons.svg") !important;
+            background-size: 24px 24px;
+        }
+
+        [data-l10n-id="remove-addon-button"] {
+            --icon: unset !important;
+            background-image: url("./images/extensions/custombuttons/remove.svg");
+        }
+
+        [data-l10n-id="custombuttons-edit-button"] {
+            --icon: unset !important;
+            background-image: url("./images/extensions/custombuttons/edit.svg");
         }
     }
 }
