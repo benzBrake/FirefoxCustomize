@@ -12,6 +12,7 @@
 (function (css) {
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const { gBrowserInit } = window;
 
 
     const LANG = {
@@ -40,6 +41,17 @@
     UC.CopyCatTheme = {
         PREF_LISTENER_LIST: {},
         CACHED_VIEWS: [],
+        get locale() {
+            delete this.locale;
+            try {
+                this.locale = Services.prefs.getCharPref("general.useragent.locale");
+            } catch (e) { }
+
+            if (!this.locale) {
+                this.locale = Services.locale.appLocaleAsBCP47 || "en-US";
+            }
+            return this.locale;
+        },
         get THEME_RELATED_PATH() {
             return "\\chrome\\UserThemes";
         },
@@ -475,36 +487,68 @@
             this.styles = [];
             this.id = aFile.leafName.replace(/\.css$/, '');
             if (aFile.isDirectory()) {
-                let themeJson = aFile.clone();
-                themeJson.append("theme.json");
-                if (themeJson.exists()) {
-                    // 存在主题数据 // 暂时不实现
-                } else {
-                    let userChromeCss = aFile.clone();
-                    userChromeCss.append('userChrome.css');
-                    if (userChromeCss.exists()) {
-                        Object.entries(readStyleInfo(userChromeCss)).forEach(([key, value]) => {
-                            this[key] = value;
-                        });
-                        this.styles.push({
-                            url: Services.io.newURI(UC.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/userChrome.css'),
-                            type: getStyleType(aFile.leafName),
-                            file: userChromeCss
-                        });
+                let themeConfigFile = aFile.clone();
+                themeConfigFile.append("userChrome.json");
+                let fileList = [{
+                    filename: "userChrome.css"
+                }, {
+
+                    filename: "userChrome.au.css"
+                }, {
+                    filename: "userChrome.ag.css"
+                }, {
+                    filename: "userChrome.us.css"
+                }],
+                    themeConfig = null;
+                if (themeConfigFile.exists()) {
+                    themeConfig = JSON.parse(readFile(themeConfigFile, false));
+                    fileList = themeConfig.files;
+                }
+                fileList.forEach(file => {
+                    let tFile = aFile.clone();
+                    tFile.append(file.filename);
+                    if (tFile.exists()) {
                         this.isTheme = true;
                         this.filename = aFile.leafName;
-                    }
-                    ["userChrome.au.css", "userChrome.ag.css", "userChrome.us.css"].forEach(name => {
-                        let tFile = aFile.clone();
-                        tFile.append(name);
-                        if (tFile.exists()) {
-                            this.styles.push({
-                                url: Services.io.newURI(UC.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
-                                type: getStyleType(tFile.leafName),
-                                file: tFile
+                        if (file.filename === "userChrome.css" && !themeConfig) {
+                            Object.entries(readStyleInfo(tFile)).forEach(([key, value]) => {
+                                this[key] = value;
                             });
                         }
+                        this.styles.push({
+                            url: Services.io.newURI(UC.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
+                            type: file.hasOwnProperty("type") ? file.type : getStyleType(tFile.leafName),
+                            file: tFile
+                        });
+                    }
+                });
+                if (themeConfig) {
+                    const attrKeys = ["name", "author", "charset", "version", "description", "homepageURL", "downloadURL", "updateURL", "optionsURL", "license", "licenseURL"];
+                    attrKeys.forEach((key) => {
+                        if (themeConfig.hasOwnProperty(key)) {
+                            this[key] = themeConfig[key];
+                        }
                     });
+                    if (themeConfig.locales) {
+                        let arr = Object.keys(themeConfig.locales);
+                        this.lang = arr.includes(UC.CopyCatTheme.locale) ? themeConfig.locales[UC.CopyCatTheme.locale] : themeConfig.locales[arr[0]];
+                    }
+                    if (themeConfig.options) {
+                        this._options = [];
+                        themeConfig.options.forEach(key => {
+                            let name = this.lang[key] || key;
+                            this._options.push({
+                                name: name,
+                                pref: key,
+                                get value() {
+                                    return xPref.get(key, false, false)
+                                },
+                                toggle: function (value) {
+                                    xPref.set(key, !!this.value);
+                                }
+                            });
+                        })
+                    }
                 }
             } else if (aFile.leafName.endsWith('.css')) {
                 this.isTheme = true;
@@ -548,7 +592,6 @@
 
         get options() {
             if (!this._options) {
-                this._options = [];
                 let keys = {};
                 this.styles.forEach(style => {
                     let content = readFile(style.file),
@@ -568,8 +611,8 @@
                                         xPref.set(key, !!this.value);
                                     }
                                 });
-                                keys[key] = true;
                             }
+                            keys[key] = true;
                         });
                 });
             }
@@ -685,16 +728,19 @@
     }
 
     UC.CopyCatTheme.init(window);
-    // if (gBrowserInit.delayedStartupFinished) UC.CopyCatTheme.init();
-    // else {
-    //     let delayedListener = (subject, topic) => {
-    //         if (topic == "browser-delayed-startup-finished" && subject == window) {
-    //             Services.obs.removeObserver(delayedListener, topic);
-    //             UC.CopyCatTheme.init();
-    //         }
-    //     };
-    //     Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    // }
+    let reloadTarget = $C(window.document, 'toolbarbutton', {
+        action: "ReloadAllThemes"
+    })
+    if (gBrowserInit.delayedStartupFinished) UC.CopyCatTheme._onclick({ target: reloadTarget })
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                UC.CopyCatTheme._onclick({ target: reloadTarget });
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
 })(`
 #CopyCat-ThemeMenu-View toolbaritem.toolbaritem-combined-buttons {
     padding: 0 !important;
