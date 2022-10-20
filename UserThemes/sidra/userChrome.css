@@ -361,12 +361,46 @@ url("about:downloads") {
             --tabs-border-color: transparent !important;
         }
 
+        #TabsToolbar #firefox-view-button {
+            position: relative;
+            margin-inline-start: var(--tab-corner-rounding) !important;
+        }
+
+        #TabsToolbar #tabbrowser-tabs~#firefox-view-button {
+            margin-inline-start: 0 !important;
+        }
+
+        #TabsToolbar #firefox-view-button::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: 0px;
+            left: calc(0px - var(--tab-corner-rounding));
+            width: 1px;
+            height: 100%;
+            border-inline-start: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+        }
+
+        #TabsToolbar #tabbrowser-tabs~#firefox-view-button::before,
+        #TabsToolbar #tabbrowser-tabs~#wrapper-firefox-view-button>#firefox-view-button::before {
+            content: none;
+        }
+
+        #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon,
         tab[visuallyselected] .tab-background {
             box-shadow: 0px 2px 6px -2px black !important;
         }
 
+        #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon {
+            
+        }
+
+        [first-visible-unpinned-tab] {
+            margin-left: calc(var(--tab-corner-rounding) + 2px) !important;
+        }
+
         [last-visible-tab] {
-            margin-right: calc(var(--tab-rounding) + 2px) !important;
+            margin-right: calc(var(--tab-corner-rounding) + 2px) !important;
             /* fix unexpected tab overflow */
         }
 
@@ -446,21 +480,16 @@ url("about:downloads") {
             color: color-mix(in srgb, currentColor 70%, white);
         }
 
-        /* 去除当前标签 outline 边框 */
-        #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon:-moz-lwtheme,
-        .tab-background[selected]:-moz-lwtheme {
-            outline: none;
-        }
-
         /* 去除主题引入的选中标签 outline */
         #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon:-moz-lwtheme,
         .tab-background[selected]:not([multiselected="true"]):-moz-lwtheme {
-            outline: none;
+            outline: none !important;
         }
 
         @supports -moz-bool-pref("userChromeJS.sidra.tabbox.showInactiveTabsDivider") {
 
             /* 非激活标签分隔符 */
+            #firefox-view-button[role="tab"]::after,
             .tabbrowser-tab:not(:hover):not([selected=true]):not([multiselected=true]):not([beforeselected-visible="true"]) .tab-background::after {
                 content: "";
                 display: block;
@@ -471,6 +500,11 @@ url("about:downloads") {
                 top: var(--tab-separator-top);
                 right: -2px;
                 z-index: 5;
+            }
+
+            #tabbrowser-tabs~#firefox-view-button::after,
+            #tabbrowser-tabs~#wrapper-firefox-view-button>#firefox-view-button::after {
+                content: none;
             }
         }
 
@@ -499,7 +533,9 @@ url("about:downloads") {
 
         /** 来自 Lepton */
         :root:not([customizing="true"]) tab[visuallyselected]>stack::before,
-        :root:not([customizing="true"]) tab[visuallyselected]>stack::after {
+        :root:not([customizing="true"]) tab[visuallyselected]>stack::after,
+        :root:not([customizing="true"]) #firefox-view-button[role="tab"]>image::before,
+        :root:not([customizing="true"]) #firefox-view-button>.toolbarbutton-icon>image {
             content: "" !important;
             /* Box */
             display: block !important;
@@ -562,7 +598,7 @@ url("about:downloads") {
         }
 
 
-
+        #firefox-button[role="tab"],
         #tabbrowser-tabs {
             --lwt-selected-tab-background-color: var(--toolbar-bgcolor);
         }
@@ -672,7 +708,7 @@ url("about:downloads") {
 
         /* firefox view 按钮调整到和标签一样 */
         :root:not([privatebrowsingmode="temporary"]) :is(#firefox-view-button, #wrapper-firefox-view-button)+#tabbrowser-tabs {
-            border-inline-start: 0;
+            border-inline-start-width: 0 !important;
             padding-inline-start: 0 !important;
             margin-inline-start: 0 !important;
         }
@@ -683,13 +719,7 @@ url("about:downloads") {
         }
 
         #TabsToolbar #firefox-view-button>.toolbarbutton-icon {
-            --toolbarbutton-inner-padding: calc((var(--tab-min-height) - 16px) / 2);
-            border-radius: var(--tab-rounding, 0) !important;
-        }
-
-        #firefox-view-button[open]>.toolbarbutton-icon {
-            background-image: unset !important;
-            background-color: var(--toolbar-bgcolor, var(--toolbar-bgcolor)) !important;
+            --toolbarbutton-inner-padding: calc((var(--tab-min-height) - var(--icon-width, 16px)) / 2);
         }
 
         /** 新建标签按钮 */
@@ -704,10 +734,6 @@ url("about:downloads") {
 
         #TabsToolbar #tabs-newtab-button {
             margin-left: 5px !important;
-        }
-
-        #TabsToolbar :is(#tabs-newtab-button, #newPrivateTab-button)>.toolbarbutton-icon {
-            border-radius: var(--tab-rounding, 0px) !important;
         }
 
         #tabbrowser-tabs:not([overflow]) #tabs-newtab-button {
@@ -3242,7 +3268,8 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/text/copy.svg");
         }
 
-        [data-l10n-id="text-action-paste"] {
+        [data-l10n-id="text-action-paste"],
+        [data-l10n-id="text-action-paste-no-formatting"] {
             background-image: url("./images/text/paste.svg");
         }
 
@@ -3273,7 +3300,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [anonid="paste-and-go"],
         .searchbar-paste-and-search {
-            background-image: url("./images/text/paste-and-go.svg");
+            background-image: url("./images/text/go.svg");
         }
 
         .searchbar-clear-history {
