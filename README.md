@@ -1,6 +1,10 @@
 # FirefoxCustomize
 Ryan 的 Firefox 自定义资源收藏夹
 
+## 成品预览
+
+![截图](images/screenshot.jpg)
+
 ## 分类说明
 
 > extensions: 存放收集的插件
@@ -14,6 +18,10 @@ Ryan 的 Firefox 自定义资源收藏夹
 > UserThemes: 存放本人 DIY 的 CSS 主题
 >
 > UserTools: 存放相关工具的信息
+>
+> ---
+>
+> images: 相关图片
 
 ## UC 脚本说明
 
