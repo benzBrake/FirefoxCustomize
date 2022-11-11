@@ -100,7 +100,9 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 
 ## 脚本使用
 
-### sidebarCommandDetector
+### sidebarAttrubesDetector
+
+（别吐槽英文了，瞌睡打的英文）
 
 安装这个 UC 脚本后，浏览器主窗口会增加`sidebarCommand`属性
 
