@@ -114,11 +114,15 @@
         },
 
         onClick(event) {
-            if (event.button === 0) {
+            if (event.button === 0 && event.target.id === "ucjs-undo-close-tab-button") {
+                console.log(event.target.id)
+                event.preventDefault();
+                event.stopPropagation();
+                undoCloseTab();
+            } else if (event.button == 1) {
                 switch (event.originalTarget.localName) {
                     case "box": // -Fx65
                     case "scrollbox": // Fx66-
-                    case "toolbarbutton":
                         event.preventDefault();
                         event.stopPropagation();
                         undoCloseTab();
