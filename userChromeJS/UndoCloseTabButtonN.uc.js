@@ -128,14 +128,10 @@
                         undoCloseTab();
                         break;
                 }
-            } else if (event.button === 2) {
-                switch (event.originalTarget.localName) {
-                    case "toolbarbutton":
-                        event.preventDefault();
-                        event.stopPropagation();
-                        event.target.querySelector("menupopup").openPopup(event.target, "after_end");
-                        break;
-                }
+            } else if (event.button === 2 && event.target.id === "ucjs-undo-close-tab-button") {
+                event.preventDefault();
+                event.stopPropagation();
+                event.target.querySelector("menupopup").openPopup(event.target, "after_end");
             }
         },
 
