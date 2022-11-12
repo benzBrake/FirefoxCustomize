@@ -24,9 +24,13 @@
             let user32 = ctypes.open("user32.dll");
             this.getKeyState = user32.declare('GetKeyState', ctypes.winapi_abi, ctypes.bool, ctypes.int);
             function frameScript() {
-                const { Services } = Components.utils.import(
-                    "resource://gre/modules/Services.jsm"
-                );
+                const Services = Components.utils.import("resource://gre/modules/Services.jsm").Services;
+                let BrowserOrSelectionUtils = Components.utils.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
+                try {
+                    if (!BrowserOrSelectionUtils.hasOwnProperty("getSelectionDetails")) {
+                        BrowserOrSelectionUtils = Components.utils.import("resource://gre/modules/SelectionUtils.jsm").SelectionUtils;
+                    }
+                } catch (e) { }
 
                 // implement read from about:config preferences in future
                 var WAIT_TIME = 0; // Change it to any number as you want
@@ -40,9 +44,6 @@
                     if (event.button !== 0) return; // only trigger when left button up
                     if (TIMEOUT_ID)
                         content.clearTimeout(TIMEOUT_ID);
-                    const focusedElement =
-                        Services.focus.focusedElement ||
-                        event.originalTarget.ownerDocument?.activeElement;
 
                     switch (event.type) {
                         case 'mousemove':
@@ -52,38 +53,12 @@
                         case 'mouseup':
                             // copy text on mouse button up
                             if (LONG_PRESS) {
-                                let data = { text: getSelection(content, focusedElement) }
+                                let data = { text: BrowserOrSelectionUtils.getSelectionDetails(event.target.ownerGlobal).fullText }
                                 sendSyncMessage("acst_selectionData", data);
                             }
                             break;
                     }
                     LONG_PRESS = false;
-                }
-
-                // From addMenuPlus.uc.js
-                function getSelection(win, focusedElement) {
-                    win || (win = content);
-                    var selection = win.getSelection().toString();
-                    if (!selection) {
-                        let element = focusedElement;
-                        let isOnTextInput = function (elem) {
-                            return elem instanceof HTMLTextAreaElement ||
-                                (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
-                        };
-
-                        if (isOnTextInput(element)) {
-                            if (DISABLE_IN_TEXTBOX) return;
-                            selection = element.value.substring(element.selectionStart,
-                                element.selectionEnd);
-                        }
-                    }
-
-                    if (TRIM_SELECTION && selection) {
-                        selection = selection.replace(/^\s+/, "")
-                            .replace(/\s+$/, "")
-                            .replace(/\s+/g, " ");
-                    }
-                    return selection;
                 }
 
                 ["mousemove", "mouseup"].forEach((t) => addEventListener(t, handleEvent, false));
