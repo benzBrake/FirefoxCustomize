@@ -4,6 +4,7 @@
 // @version         1.2.6
 // @include         main
 // @charset         UTF-8
+// @note            2022/11/12 修改左中右按键行为
 // @note            2021/12/12 Fx95 SessionStore.getClosedTabData / getClosedWindowData の戻り値がJSONからArrayに変更
 // @note            2019/01/23 Fx66でタブバー中クリックが効かないのを修正
 // @note            2019/07/04 Fx69
@@ -113,7 +114,7 @@
         },
 
         onClick(event) {
-            if (event.button === 1) {
+            if (event.button === 0) {
                 switch (event.originalTarget.localName) {
                     case "box": // -Fx65
                     case "scrollbox": // Fx66-
@@ -121,6 +122,14 @@
                         event.preventDefault();
                         event.stopPropagation();
                         undoCloseTab();
+                        break;
+                }
+            } else if (event.button === 2) {
+                switch (event.originalTarget.localName) {
+                    case "toolbarbutton":
+                        event.preventDefault();
+                        event.stopPropagation();
+                        event.target.querySelector("menupopup").openPopup(event.target, "after_end");
                         break;
                 }
             }
@@ -156,13 +165,12 @@
                     const btn = ucjsUndoCloseTabButtonService.$C(doc, "toolbarbutton", {
                         id: buttonId,
                         class: "toolbarbutton-1 chromeclass-toolbar-additional",
-                        type: "menu",
+                        type: "contextmenu",
                         anchor: "dropmarker",
                         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "已关闭的标签" : "閉じたタブ",
                         tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? "查看已经关闭的标签\n中键快速打开最后一个关闭的标签" : "閉じたタブ\n中クリックで最後に閉じたタブを復元",
                         image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj4KICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMjQiIGZpbGw9IiM1NTU1NTUiIHN0cm9rZT0iI2ZmZmZmZiIgZD0iTSA2IDQ4MCBsIDUwMCAwIGwgMCAtNjAgbCAtNTAgMCBsIDAgLTIyMCBsIC00MDAgMCBsIDAgMjIwIGwgLTUwIDAgeiIvPgogICAgPHBhdGggc3Ryb2tlLXdpZHRoPSIzMCIgZmlsbD0iIzQ0ODhmZiIgc3Ryb2tlPSIjZGRlZWZmIiBkPSJNIDI3MiAzMiBsIC0xNjAgMTMwIGwgMTYwIDEzMCBsIDAgLTc1IGwgNjAgMCBhIDYwIDYwIDAgMCAxIDAgMTIwIGwgLTIwIDAgbCAwIDExMCBsIDIwIDAgYSAxNzAgMTcwIDAgMCAwIDAgLTM0MCBsIC02MCAwIHoiLz4KPC9zdmc+",
                         onclick: "ucjsUndoCloseTabButtonService.onClick(event);",
-                        oncontextmenu: "event.preventDefault();",
                     });
                     const menu = ucjsUndoCloseTabButtonService.$C(doc, "menupopup", {
                         tooltip: "bhTooltip",
