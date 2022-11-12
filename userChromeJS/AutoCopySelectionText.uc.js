@@ -3,7 +3,7 @@
 // @description     自动复制选中文本（ScrLk 亮起时不复制）
 // @author          Ryan
 // @version         2022.10.11
-// @compatibility   Firefox 87
+// @compatibility   Firefox 57
 // @charset         UTF-8
 // @system          windows
 // @license         MIT License
