@@ -2,11 +2,11 @@
 // @name            VideoBtn.uc.js
 // @description     VideoBtn 视频一键下载
 // @author          Ryan
-// @version         0.1.2
+// @version         0.1.3
 // @compatibility   Firefox 78
-// @startup         window.VideoBtn.init();
 // @shutdown        window.VideoBtn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.1.3 忘记修复了什么
 // @version         0.1.2 修复新窗口菜单样式异常
 // @version         0.1.1 修复新窗口报错，强制 Cookies 保存到临时路径
 // @version         0.1.0 初始版本
@@ -197,13 +197,29 @@
         async init() {
             if (this.debug) this.log("VideoBtn init");
 
+            this.makePaths();
+            this.makeRegExp();
+
+            if (!MENU_CONFIG) {
+                if (this.debug) this.log($L("menu config some mistake"));
+                return;
+            }
+
+            $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
+            gBrowser.tabpanels.addEventListener("mouseup", this, false);
+
+            this.style = addStyle(css);
+            this.makeMenu();
+        },
+        async makePaths() {
             ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
                 var path = Services.dirsvc.get(key, Ci.nsIFile);
                 this.ENV_PATHS[key] = path.path;
             });
 
             this._DEFAULT_SAVE_PATH = await Downloads.getSystemDownloadsDirectory();
-
+        },
+        makeRegExp() {
             // 初始化正则
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
@@ -234,23 +250,14 @@
 
             this.regexp = new RegExp(
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIES_PATH, rSAVE_PATH, rPROFILE_PATH].join("|"), "ig");
-
-
-            if (!MENU_CONFIG) {
-                if (this.debug) this.log($L("menu config some mistake"));
-                return;
-            }
-
-            $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
-
-            gBrowser.tabpanels.addEventListener("mouseup", this, false);
-
-            this.style = addStyle(css);
-            this.makeMenu();
         },
         makeMenu() {
-            if (this.prefs.get("userChromeJS.VideoBtn.showInContextMenu")) {
+            if (this.prefs.get("userChromeJS.VideoBtn.showInContextMenu") && !$("VideoBtn-Menu", document)) {
                 let MENU_CFG = cloneObj(MENU_CONFIG);
+                let refNode = $C(document, 'menuseparator', {
+                    class: 'VideoBtn-Hidden',
+                    id: 'VideoBtn-RefNode'
+                })
                 let menu = $C(document, 'menu', {
                     id: 'VideoBtn-Menu',
                     class: 'menu-iconic VideoBtn',
@@ -262,11 +269,12 @@
                     class: 'VideoBtn-Popup'
                 }));
                 MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(document, obj)));
-
                 let ins = $J("#contentAreaContextMenu menuseparator:last-child");
                 if (ins) {
                     ins.after(menu);
+                    ins.after(refNode);
                 } else {
+                    $("contentAreaContextMenu").appendChild(refNode);
                     $("contentAreaContextMenu").appendChild(menu);
                 }
             }
@@ -306,6 +314,7 @@
                 }
             });
             CustomizableUI.destroyWidget("VideBtn-Button");
+            $R($J("#VideBtn-RefNode"));
             $R($J("#VideBtn-Menu"));
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             gBrowser.tabpanels.removeEventListener("mouseup", this, false);
@@ -537,7 +546,7 @@
                             state.push("image");
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
-                        event.currentTarget.setAttribute("VideoBtn", state.join(" "));
+                        event.currentTarget.querySelector("#VideoBtn-RefNode")?.setAttribute("VideoBtn", state.join(" "));
                     }
                     break;
                 case 'mouseup':
@@ -807,7 +816,6 @@
         log: TopWindow.console.log,
         PREF_BIN_PATH: 'userChromeJS.VideoBtn.binPath',
         PREF_SAVE_PATH: 'userChromeJS.VideoBtn.savePath',
-        PREF_CONTEXT_MENU: '',
     }
 
     function $(id, aDoc) {
@@ -876,17 +884,19 @@
 
     function addStyle(cssOrStyle, type) {
         try {
+            let style;
             if (typeof cssOrStyle === "string") {
-                let style = {
+                style = {
                     type: type || sss.AUTHOR_SHEET,
                     url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(cssOrStyle))
                 };
-                sss.loadAndRegisterSheet(style.url, style.type);
             }
             if (typeof cssOrStyle === "object" && cssOrStyle.url && cssOrStyle.type) {
-                sss.loadAndRegisterSheet(cssOrStyle.url, cssOrStyle.type);
-                return cssOrStyle;
+                style = cssOrStyle;
             }
+            if (sss.sheetRegistered(style.url, style.type))
+                sss.unregisterSheet(style.url, style.type)
+            sss.loadAndRegisterSheet(style.url, style.type);
         } catch (e) {
             TopWindow.console.error(e);
         }
@@ -1008,20 +1018,23 @@
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 })(`
+    .VideoBtn-Hidden {
+        display: none !important;
+    }
     #VideoBtn-Button,#VideoBtn-Menu {
         list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBIMjRWMjRIMHoiLz48cGF0aCBkPSJNMTYgNGMuNTUyIDAgMSAuNDQ4IDEgMXY0LjJsNS4yMTMtMy42NWMuMjI2LS4xNTguNTM4LS4xMDMuNjk3LjEyNC4wNTguMDg0LjA5LjE4NC4wOS4yODZ2MTIuMDhjMCAuMjc2LS4yMjQuNS0uNS41LS4xMDMgMC0uMjAzLS4wMzItLjI4Ny0uMDlMMTcgMTQuOFYxOWMwIC41NTItLjQ0OCAxLTEgMUgyYy0uNTUyIDAtMS0uNDQ4LTEtMVY1YzAtLjU1Mi40NDgtMSAxLTFoMTR6bS0xIDJIM3YxMmgxMlY2em0tNSAydjRoM2wtNCA0LTQtNGgzVjhoMnptMTEgLjg0MWwtNCAyLjh2LjcxOGw0IDIuOFY4Ljg0eiIvPjwvc3ZnPg==);
     }
-    #contentAreaContextMenu[VideoBtn] .VideoBtn:not(menuseparator):not(menugroup),
+    #VideoBtn-RefNode[VideoBtn] + .VideoBtn:not(menuseparator):not(menugroup),
     #contentAreaContextMenu #VideoBtn-Menu~menuseparator {
         visibility: collapse;
     }
-    #contentAreaContextMenu[VideoBtn~="link"] .VideoBtn[condition~="link"],
-    #contentAreaContextMenu[VideoBtn~="image"] .VideoBtn[condition~="image"],
-    #contentAreaContextMenu[VideoBtn~="canvas"] .VideoBtn[condition~="canvas"],
-    #contentAreaContextMenu[VideoBtn~="select"] .VideoBtn[condition~="select"],
-    #contentAreaContextMenu[VideoBtn~="input"] .VideoBtn[condition~="input"],
-    #contentAreaContextMenu[VideoBtn~="mailto"] .VideoBtn[condition~="mailto"],
-    #contentAreaContextMenu[VideoBtn=""] .VideoBtn[condition~="normal"] {
+    #VideoBtn-RefNode[VideoBtn~="link"] + .VideoBtn[condition~="link"],
+    #VideoBtn-RefNode[VideoBtn~="image"] +.VideoBtn[condition~="image"],
+    #VideoBtn-RefNode[VideoBtn~="canvas"] + .VideoBtn[condition~="canvas"],
+    #VideoBtn-RefNode[VideoBtn~="select"] +.VideoBtn[condition~="select"],
+    #VideoBtn-RefNode[VideoBtn~="input"] + .VideoBtn[condition~="input"],
+    #VideoBtn-RefNode[VideoBtn~="mailto"] + .VideoBtn[condition~="mailto"],
+    #VideoBtn-RefNode[VideoBtn=""] + .VideoBtn[condition~="normal"] {
         visibility: visible;
     }
     .VideoBtn-Group > .menuitem-iconic {
