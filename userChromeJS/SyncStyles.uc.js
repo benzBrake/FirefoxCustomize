@@ -2,62 +2,77 @@
 // @name           Sync Styles
 // @version        1.0
 // @author         Ryan
-// @include        *
+// @include        main
 // @compatibility  Firefox 78
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    非浏览器同步主窗口 CSS 属性
+// @onlyonce
 // ==/UserScript==
 (function () {
     'use strict';
-    const { Components, document, location } = window;
-    const { Cu } = Components;
+    let { Components, setTimeout, clearTimeout } = window;
+    let {
+        classes: Cc,
+        interfaces: Ci,
+        utils: Cu,
+        results: Cr
+    } = Components;
+    const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
-    class SyncStyles {
-        constructor() {
-            if (location.href.startsWith('chrome://browser/content/browser.x')) {
-                this.initMain();
-            } else {
-                this.initStyles();
-            }
-        }
-        initMain() {
+    window.SyncStyle = {
+        init() {
+            let { document } = window;
+            this.initObserver();
+            CustomizableUI.addListener(this.listener);
+            Services.prefs.addObserver('browser.uidensity', this.observer);
+            this.updateStyle(document.documentElement);
+            window.addEventListener('unload', function () {
+                if (this.mutationObserver)
+                    this.mutationObserver.disconnect();
+                if (this.STYLE) {
+                    sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
+                }
+                Services.prefs.removeObserver("browser.uidensity", this.observer);
+                CustomizableUI.removeListener(this.listener);
+            });
+        },
+        initObserver() {
+            let { document, MutationObserver } = window;
             // add a mutation for attribute styles
             this.mutationObserver = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                        this.trigger();
+                        this.trigger(mutation.target)
                     }
                 });
             });
             this.mutationObserver.observe(document.documentElement, {
                 attributes: true,
             });
-        }
-        initStyles() {
-            let bw = Services.wm.getMostRecentWindow("navigator:browser");
-            this.syncStyles(bw, window);
-            window.addEventListener('unload', function () {
-                if (window.document.documentElement.styles) {
-                    removeElement(window.document.documentElement.styles);
-                    delete window.document.documentElement.styles;
-                }
-            })
-        }
-        trigger() {
-            clearTimeout(this.timer);
-            const { syncStyles } = this;
-            this.timer = setTimeout(() => {
-                windows(function (document, win, location) {
-                    if (!location.href.startsWith('chrome://browser/content/browser.x')) {
-                        let bw = Services.wm.getMostRecentWindow("navigator:browser");
-                        syncStyles(bw, win);
-                    }
-                })
+        },
+        observer: function () {
+            window.SyncStyle.trigger(window.document.documentElement);
+        },
+        listener: {
+            onCustomizeEnd(win) {
+                win.SyncStyle.trigger(win.document.documentElement);
+            }
+        },
+        trigger(target) {
+            clearTimeout(window.SyncStyle.timer);
+            const { updateStyle } = window.SyncStyle;
+            window.SyncStyle.timer = setTimeout(() => {
+                updateStyle(target);
             }, 200);
-        }
-        syncStyles(fromWin, toWin) {
-            let doc = toWin.document;
-            let styles = getComputedStyle(fromWin.document.documentElement);
+        },
+        updateStyle(documentElement) {
+            const { ownerGlobal: window } = documentElement;
+            const { getComputedStyle } = window;
+            if (window.SyncStyle.STYLE) {
+                sss.unregisterSheet(window.SyncStyle.STYLE.url, window.SyncStyle.STYLE.type);
+            }
+            let styles = getComputedStyle(documentElement);
             let cssArr = [];
             [...styles].forEach(function (name) {
                 if (name.startsWith('--')) {
@@ -65,39 +80,14 @@
                     cssArr.push(`${name}: ${val};`);
                 }
             });
-            let css = ":root{\n" + cssArr.join("\n") + "\n}";
-            removeElement(doc.documentElement.syncedStyles);
-            doc.documentElement.syncedStyles = addStyle(doc, css);
+            let css = ':root{\n' + cssArr.join("\n") + "\n}";
+            window.SyncStyle.STYLE = {
+                url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
+                type: 2,
+            }
+            sss.loadAndRegisterSheet(window.SyncStyle.STYLE.url, window.SyncStyle.STYLE.type);
         }
     }
 
-    function addStyle(doc, css) {
-        var pi = doc.createProcessingInstruction(
-            'xml-stylesheet',
-            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-        );
-        return doc.insertBefore(pi, doc.documentElement);
-    }
-
-    function removeElement(elm) {
-        if (elm && elm.parentNode) elm.parentNode.removeChild(elm);
-    }
-
-    function windows(fun) {
-        let windows = Services.wm.getEnumerator(null);
-        while (windows.hasMoreElements()) {
-            let win = windows.getNext();
-            let frames = win.docShell.getAllDocShellsInSubtree(Ci.nsIDocShellTreeItem.typeAll, Ci.nsIDocShell.ENUMERATE_FORWARDS);
-            let res = frames.some(frame => {
-                let fWin = frame.domWindow;
-                let { document, location } = fWin;
-                if (fun(document, fWin, location))
-                    return true;
-            });
-            if (res)
-                break;
-        }
-    }
-
-    new SyncStyles();
+    window.SyncStyle.init();
 })();
