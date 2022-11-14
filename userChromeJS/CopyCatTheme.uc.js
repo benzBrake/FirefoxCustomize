@@ -2,7 +2,7 @@
 // @name            CopyCatTheme.uc.js
 // @description     CopyCat 主题专用加载脚本
 // @license         MIT License
-// @shutdown        UC.CopyCatTheme.destroy();
+// @shutdown        UC.CopyCatTheme.destroy(win);
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
@@ -13,7 +13,6 @@
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const { gBrowserInit } = window;
-
 
     const LANG = {
         "zh-CN": {
@@ -73,12 +72,28 @@
             type: 2,
         },
         init: function (win) {
-            let { document, CustomizableUI } = win;
+            let { document, CustomizableUI, MutationObserver } = win;
             this.STYLE = _uc.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+
+            this.globalStyleMutationObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        this.loadTheme();
+                    }
+                });
+            });
+            this.globalStyleMutationObserver.observe(document.documentElement, {
+                attributes: true,
+            });
+            CustomizableUI.addListener(this.globalStyleListener);
+            Services.prefs.addObserver('browser.uidensity', this.globalStyleObserver);
+            win.addEventListener('CopyCatThemeUnloaded', this);
+            win.addEventListener('CopyCatThemeLoaded', this);
+
             let viewCache = getViewCache(document);
             let view = document.getElementById("CopyCat-ThemeMenu-View") || viewCache.querySelector("#CopyCat-ThemeMenu-View");
             if (!view) {
-                viewCache.appendChild(window.MozXULElement.parseXULToFragment(`
+                viewCache.appendChild(win.MozXULElement.parseXULToFragment(`
             <panelview id="CopyCat-ThemeMenu-View" class="CopyCatTheme-View PanelUI-subView">
                 <box class="panel-header">
                     <toolbarbutton class="subviewbutton subviewbutton-iconic subviewbutton-back" closemenu="none" tabindex="0"><image class="toolbarbutton-icon"/><label class="toolbarbutton-text" crop="right" flex="1"/></toolbarbutton>
@@ -192,6 +207,13 @@
                     view.querySelectorAll('[action="SetTheme"]').forEach(el => el.removeAttribute("checked"));
                     view.querySelector(`[action="SetTheme"][value="${name}"]`)?.setAttribute("checked", "true");
                     break;
+
+                case "CopyCatThemeLoaded":
+                    this.refreshGlobalStyle(event.target.document, true);
+                    break;
+                case "CopyCatThemeUnloaded":
+                    this.refreshGlobalStyle(event.target.document, false);
+                    break;
             }
         },
         _onclick: function (event) {
@@ -274,12 +296,15 @@
                 // 卸载主题
                 this.theme.unregister();
                 delete this.theme;
+                window.dispatchEvent(new CustomEvent("CopyCatThemeUnloaded"));
             }
             let name = xPref.get("userChromeJS.CopyCat.theme", false, "");
             if (name && this.themes[name]) {
                 this.theme = this.themes[name]
                 this.theme.register();
+                window.dispatchEvent(new CustomEvent("CopyCatThemeLoaded"));
             }
+
         },
         refreshThemesList: function (document) {
             let viewCache = getViewCache(document),
@@ -324,6 +349,39 @@
                         onclick: 'UC.CopyCatTheme._onclick(event)'
                     }), ins);
                 });
+            }
+        },
+        globalStyleListener: {
+            onCustomizeEnd(win) {
+                UC.CopyCatTheme.loadTheme();
+            }
+        },
+        globalStyleObserver: function () {
+            UC.CopyCatTheme.loadTheme();
+        },
+        refreshGlobalStyle: function (document, isEnabled = true) {
+            document || (document = window.document);
+            if (!document) throw new Error("document is required");
+            const { _uc, getComputedStyle, Services } = document.ownerGlobal;
+            if (this.SYNCED_STYLE) {
+                _uc.sss.unregisterSheet(UC.CopyCatTheme.SYNCED_STYLE.url, UC.CopyCatTheme.SYNCED_STYLE.type);
+                delete this.SYNCED_STYLE;
+            }
+            if (isEnabled) {
+                let styles = getComputedStyle(document.documentElement);
+                let cssArr = [];
+                [...styles].forEach(function (name) {
+                    if (name.startsWith('--')) {
+                        let val = styles.getPropertyValue(name);
+                        cssArr.push(`${name}: ${val};`);
+                    }
+                });
+                let css = ':root{\n' + cssArr.join("\n") + "\n}";
+                UC.CopyCatTheme.SYNCED_STYLE = {
+                    url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
+                    type: _uc.sss.AUTHOR_SHEET,
+                }
+                _uc.sss.loadAndRegisterSheet(UC.CopyCatTheme.SYNCED_STYLE.url, UC.CopyCatTheme.SYNCED_STYLE.type);
             }
         },
         edit: (pathOrFile, aLineNumber) => {
@@ -419,18 +477,26 @@
             const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
             return fph.getURLSpecFromFile ? fph.getURLSpecFromFile(aFile) : fph.getURLSpecFromActualFile(aFile);
         },
-        destroy: function () {
+        destroy: function (win) {
+            const { document, CustomizableUI, Services } = win;
+            if (this.globalStyleMutationObserver)
+                this.globalStyleMutationObserver.disconnect();
+            Services.prefs.removeObserver("browser.uidensity", this.globalStyleObserver);
+            CustomizableUI.removeListener(this.globalStyleListener);
+            win.removeEventListener('CopyCatThemeUnloaded', this);
+            win.removeEventListener('CopyCatThemeLoaded', this);
+            this.refreshGlobalStyle(document, false);
             try {
                 CustomizableUI.destroyWidget("CopyCat-ReloadTheme");
             } catch (e) { }
-            let view = $('CopyCat-ThemeMenu-View')
+            let view = $('CopyCat-ThemeMenu-View', document)
             if (view) {
                 view.closest('panelmultiview').goBack();
                 $R(view);
             } else {
                 $R(getViewCache(document).querySelector("#CopyCat-ThemeMenu-View"));
             }
-            let button = $('CopyCat-ThemeMenu');
+            let button = $('CopyCat-ThemeMenu', document);
             if (button) {
                 $R(button);
             } else {
@@ -465,7 +531,6 @@
     function getViewCache(aDoc) {
         return ($('appMenu-viewCache', aDoc) && $('appMenu-viewCache', aDoc).content) || $('appMenu-multiView', aDoc);
     }
-
 
     function $L() {
         const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
@@ -712,7 +777,6 @@
             el = doc.createXULElement(tag);
         return $A(el, attrs, skipAttrs);
     }
-
 
     function $A(el, attrs, skipAttrs) {
         skipAttrs = skipAttrs || [];
