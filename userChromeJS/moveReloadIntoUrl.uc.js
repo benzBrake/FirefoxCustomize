@@ -6,7 +6,8 @@
 // @include        main
 // @shutdown       window.moveReloadIntoURL.unload();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
-// @version        1.2.3
+// @version        1.2.4
+// @note           1.2.4 修正 xiaoxiaoflood UC 环境兼容性
 // @note           1.2.3 修复在新窗口不生效，热插拔有事时候不能用
 // @note           1.2.2 修复 Firefox 103 兼容性
 // @note           1.2 改成可热插拔，兼容夜间模式，图片内置到脚本
@@ -23,21 +24,9 @@
         delete window.moveReloadIntoURL;
     }
 
-    function moveReloadIntoURL() {
-        Services.obs.addObserver(this, 'domwindowopened', false);
-    }
-
-    moveReloadIntoURL.prototype = {
-        observe: function (aSubject, aTopic, aData) {
-            aSubject.addEventListener('load', this, true);
-        },
+    window.moveReloadIntoURL = {
         handleEvent: function (aEvent) {
-            if (aEvent.type === "load") {
-                let document = aEvent.originalTarget;
-                if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
-                    this.init(document, document.ownerGlobal);
-                }
-            } else if (aEvent.type === "MoveReloadIntoUrlUnload") {
+            if (aEvent.type === "MoveReloadIntoUrlUnload") {
                 let win = aEvent.originalTarget,
                     doc = win.document;
                 let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
@@ -54,7 +43,7 @@
                     delete win.moveReloadIntoURL;
             }
         },
-        init: function (doc, win) {
+        init: function (win) {
             if (win.moveReloadIntoURL) {
                 this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
                 this.STYLE = {
@@ -79,7 +68,7 @@
             }
             let PABTN = CustomizableUI.getWidget("pageActionButton").forWindow(win).node;
             let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
-            let BTN = $C(doc, 'hbox', {
+            let BTN = $C(win.document, 'hbox', {
                 id: "new-stop-reload-button",
                 class: "urlbar-page-action urlbar-addon-page-action",
                 "tooltiptext": Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
@@ -97,7 +86,7 @@
                 }
             })
 
-            BTN.appendChild($C(doc, 'image', {
+            BTN.appendChild($C(win.document, 'image', {
                 class: 'urlbar-icon',
             }));
 
@@ -149,17 +138,14 @@
         return el;
     }
 
-    window.moveReloadIntoURL = new moveReloadIntoURL();
-
-    if (gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(document, window, true)
+    if (window.gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(window)
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                window.moveReloadIntoURL.init(subject.document, subject, true);
+                window.moveReloadIntoURL.init(subject);
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
-
 })();
