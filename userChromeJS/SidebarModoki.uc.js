@@ -69,7 +69,7 @@ var SidebarModoki = {
   }, {
     hidden: async function () {
       let tst = await AddonManager.getAddonByID("treestyletab@piro.sakura.ne.jp");
-      return !tst.isActive;
+      return !tst?.isActive;
     },
     src: async function () {
       let tst = await AddonManager.getAddonByID("treestyletab@piro.sakura.ne.jp");
