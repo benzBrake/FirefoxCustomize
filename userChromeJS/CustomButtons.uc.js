@@ -2,11 +2,10 @@
 // @name            CustomButtons.uc.js
 // @description     添加多个自定义按钮，截图、UndoCloseTab、证书管理器、放大缩小、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
-// @version         0.1.3
+// @version         0.1.4
 // @compatibility   Firefox 70 +
 // @include         main
-// @startup         window.CustomButtons.init();
-// @shutdown        window.CustomButtons.destroy();
+// @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            从 CopyCat.uc.js 修改而来
 // ==/UserScript==
@@ -16,7 +15,7 @@
 
 
     if (window.CustomButtons) {
-        window.CustomButtons.destroy();
+        window.CustomButtons.destroy(window);
         delete window.CustomButtons;
     }
 
@@ -87,8 +86,9 @@
             tooltiptext: $L("undo close tab tooltip"),
             defaultArea: CustomizableUI.AREA_TABSTRIP,
             oncommand: "undoCloseTab();",
-            image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNNzkzIDI0MkgzNjZ2LTc0YzAtNi43LTcuNy0xMC40LTEyLjktNi4zbC0xNDIgMTEyYTggOCAwIDAgMCAwIDEyLjZsMTQyIDExMmM1LjIgNC4xIDEyLjkgMC40IDEyLjktNi4zdi03NGg0MTV2NDcwSDE3NWMtNC40IDAtOCAzLjYtOCA4djYwYzAgNC40IDMuNiA4IDggOGg2MThjMzUuMyAwIDY0LTI4LjcgNjQtNjRWMzA2YzAtMzUuMy0yOC43LTY0LTY0LTY0eiI+PC9wYXRoPjwvc3ZnPg==",
+            image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgZmlsbD0iY29udGV4dC1maWxsIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNNS44MjggN2wyLjUzNiAyLjUzNkw2Ljk1IDEwLjk1IDIgNmw0Ljk1LTQuOTUgMS40MTQgMS40MTRMNS44MjggNUgxM2E4IDggMCAxIDEgMCAxNkg0di0yaDlhNiA2IDAgMSAwIDAtMTJINS44Mjh6Ii8+PC9zdmc+",
             onclick: function (event) {
+                if (event.target.localName !== "toolbarbutton") return;
                 if (event.button === 1) {
                     try {
                         SessionStore.restoreLastSession();
@@ -98,7 +98,7 @@
                 }
                 if (event.button !== 2) return;
                 const doc = (event.view && event.view.document) || document;
-                const menu = doc.getElementById(event.target.getAttribute('contextmenu'));
+                const menu = event.target.querySelector("menupopup");
                 menu.querySelectorAll('.undo-item').forEach(i => i.remove());
                 let data = SessionStore.getClosedTabData(window);
                 if (typeof (data) === "string") {
@@ -125,8 +125,10 @@
                     if (typeof item.image === 'string') m.setAttribute('image', item.image);
                     menu.insertBefore(m, doc.getElementById('CB-undoCloseTab-menuseparator'));
                 }
+
+                event.preventDefault();
+                menu.openPopup(event.target, "after_end", 0, 0);
             },
-            type: "contextmenu",
             popup: [{
                 id: 'CB-undoCloseTab-menuseparator'
             }, {
@@ -233,11 +235,11 @@
             this.rebuild();
             if (this.debug) this.log("CustomButtons: init complete!");
         },
-        uninit: function () {
+        uninit: function (win) {
             if (this.btnIds instanceof Array) {
                 this.btnIds.forEach(id => {
                     if (this.debug) this.log($L("CustomButtons: destroying button [%s]"), id);
-                    CustomizableUI.destroyWidget(id);
+                    win.CustomizableUI.destroyWidget(id);
                 });
             }
             this.btnIds = null;
@@ -246,10 +248,10 @@
             this.uninit();
             this.btnIds = this.createButtons();
         },
-        destroy() {
-            this.uninit();
+        destroy(win) {
+            this.uninit(win);
             if (this.style) removeStyle(this.sss, this.style);
-            delete window.CustomButtons;
+            delete win.CustomButtons;
         },
         createButtons() {
             if (!BTN_CONFIG) {
@@ -260,7 +262,7 @@
             let btnIds = [];
             Object.values(BTN_CONFIG).forEach(obj => {
                 if (obj.id && !CustomizableUI.getPlacementOfWidget(obj.id, true)) {
-                    let btn = this.createButton(obj);
+                    this.createButton(obj);
                 }
                 btnIds.push(obj.id);
             });
