@@ -170,7 +170,7 @@ var SidebarModoki = {
     let style = `
       @namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
       #appcontent {
-        -moz-box-ordinal-group: 5 !important;
+        -moz-box-ordinal-group: 4 !important;
       }
       #SM_toolbox
       {
