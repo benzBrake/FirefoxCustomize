@@ -7,7 +7,7 @@
 // ==/UserScript==
 
 // inspired by https://addons.mozilla.org/en-US/firefox/addon/extension-options-menu/
-let { CustomizableUI } = window;
+let { CustomizableUI, AddonManager } = window;
 UC.extensionOptionsMenu = {
   // config
   showVersion: true,
