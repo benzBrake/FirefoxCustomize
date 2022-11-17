@@ -63,13 +63,20 @@
 
             this.itemTag = 'unified-extensions-item';
 
+            let definedItem;
             if (this.appVersion >= 107) {
                 // Tempoarily compat for legacy addons
-                let definedItem = customElements.get("unified-extensions-item").toString().replace("lazy.OriginControls.getAttention(policy, this.ownerGlobal)", "this.addon.isWebExtension && this.addon.isActive ? lazy.OriginControls.getAttention(policy, this.ownerGlobal): ''").replaceAll("this._updateStateMessage", "if (this.addon.isWebExtension && this.addon.isActive) this._updateStateMessage");
-                eval('customElements.define("new-unified-extensions-item",' + definedItem + ');');
-
+                definedItem = customElements.get("unified-extensions-item").toString().replace("lazy.OriginControls.getAttention(policy, this.ownerGlobal)", "this.addon.isWebExtension && this.addon.isActive ? lazy.OriginControls.getAttention(policy, this.ownerGlobal): ''").replaceAll("this._updateStateMessage", "if (this.addon.isWebExtension && this.addon.isActive) this._updateStateMessage").replace("let policy = WebExtensionPolicy.getByID(this.addon.id);", "let policy = this.addon.isWebExtension ? WebExtensionPolicy.getByID(this.addon.id) : '';");
                 this.itemTag = 'new-unified-extensions-item';
             }
+
+            if (this.appVersion >= 108) {
+                definedItem = definedItem.replace("_hasAction() {", "_hasAction() {\n      if(!this.addon.isWebExtension) return false;");
+                gUnifiedExtensions.panel
+            }
+
+            if (definedItem) eval('customElements.define("new-unified-extensions-item",' + definedItem + ');');
+
 
             if (!CustomizableUI.getPlacementOfWidget("movable-unified-extensions", true))
                 CustomizableUI.createWidget({
