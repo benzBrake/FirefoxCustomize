@@ -4,6 +4,10 @@
 url-prefix("moz-extension://"),
 url("about:downloads") {
 
+    :root[tabposition="2"] #navigator-toolbox {
+        display: grid;
+    }
+
     /* Change Colour of page when loading */
     :root:not(:-moz-lwtheme) #tabbrowser-tabpanels,
     :root[style*="--lwt-accent-color: rgb(240, 240, 244)"] #tabbrowser-tabpanels {
@@ -30,6 +34,14 @@ url("about:downloads") {
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.controlButton.OSXStyle") {
+        #nav-bar {
+            --uc-window-control-width: 80px;
+        }
+
+        :root[uidensity="touch"] #nav-bar {
+            --uc-window-control-width: 100px;
+        }
+
         .titlebar-buttonbox-container {
             -moz-box-align: center;
         }
@@ -238,9 +250,21 @@ url("about:downloads") {
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.tabbox.compact") {
+        #TabsToolbar {
+            max-height: var(--tab-min-height);
+        }
+
+        #TabsToolbar>.titlebar-buttonbox-container {
+            z-index: 99;
+        }
+
         :root {
             --tab-border-radius: var(--tab-rounding) !important;
             --tab-block-margin: 0 !important;
+        }
+
+        :root[tabposition="3"] #TabsToolbar .tabbrowser-tab {
+            margin-top: 4px;
         }
 
         @media not (-moz-platform: windows-win7) {
@@ -254,12 +278,7 @@ url("about:downloads") {
                 }
             }
         }
-
-        #toolbar-menubar[inactive="true"]~#TabsToolbar,
-        #toolbar-menubar:not([inactive="true"]) {
-            padding-inline-end: 3px !important;
-        }
-
+        
         /** 标签前的空格 */
         #TabsToolbar .titlebar-spacer[type="pre-tabs"] {
             border-inline-end: 0px !important;
@@ -391,9 +410,7 @@ url("about:downloads") {
             box-shadow: 0px 2px 6px -2px black !important;
         }
 
-        #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon {
-            
-        }
+        #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon {}
 
         [first-visible-unpinned-tab] {
             margin-left: calc(var(--tab-corner-rounding) + 2px) !important;
@@ -677,6 +694,20 @@ url("about:downloads") {
             outline: 0px;
         }
 
+        :root[tabposition="4"] tab[visuallyselected]>stack::before {
+            transform: rotate(180deg);
+            background-image: url("./images/skin/tab-bottom-corner-right.svg") !important;
+        }
+
+        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected])::before {
+            background-image: unset !important;
+        }
+
+        :root[tabposition="4"] tab[visuallyselected]>stack::after {
+            transform: rotate(180deg);
+            background-image: url("./images/skin/tab-bottom-corner-left.svg") !important;
+        }
+
         /** 调整无痕指示器的大小 */
         :root:not([accessibilitymode]) .private-browsing-indicator,
         .accessibility-indicator {
@@ -778,6 +809,37 @@ url("about:downloads") {
         }
     }
 
+    @supports -moz-bool-pref("userChromeJS.sidra.tabbox.verticalOrient") {
+        #main-window[tstopened="true"][tabposition="0"] #navigator-toolbox {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main-window[tstopened="true"][tabposition="0"] #titlebar {
+            position: absolute;
+            right: 0;
+            display: flex;
+            z-index: 99;
+            appearance: none;
+            top: 0;
+        }
+
+        #main-window[tstopened="true"][tabposition="0"] #TabsToolbar .titlebar-buttonbox-container {
+            height: calc(2px + 2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+        }
+
+        #main-window[tstopened="true"][tabposition="0"] #toolbar-menubar,
+        #main-window[tstopened="true"][tabposition="0"] #TabsToolbar>*:not(.titlebar-buttonbox-container) {
+            visibility: collapse;
+        }
+
+        #main-window[tstopened="true"][tabposition="0"] #nav-bar {
+            flex: 1;
+            width: 100%;
+            padding-right: calc(var(--toolbarbutton-inner-padding) + var(--uc-window-control-width, 0px)) !important;
+        }
+    }
+
     /**======== 固定新建 ========*/
     @supports -moz-bool-pref("userChromeJS.sidra.tabbox.pinNewtabBtn") {
 
@@ -824,13 +886,58 @@ url("about:downloads") {
         }
 
         /** 标签栏和菜单栏同一行 */
-        #titlebar {
+        :root:not([tabposition="2"]) #titlebar {
             -moz-box-orient: horizontal !important;
         }
 
         /* 菜单栏显示在标签栏右边 */
         #toolbar-menubar {
             -moz-box-ordinal-group: 2;
+        }
+
+        :root[hideTabsToolbar="true"] #TabsToolbar .titlebar-buttonbox-container {
+            position: absolute;
+            visibility: visible;
+            display: flex;
+            right: 0;
+            top: 0;
+            height: var(--tab-min-height);
+        }
+    }
+
+    @supports -moz-bool-pref("floorp.enable.multitab") {
+        :root #TabsToolbar {
+            --tab-block-margin: 4px;
+            --tab-border-radius: var(--tab-corner-rounding) var(--tab-corner-rounding) var(--tab-corner-rounding) var(--tab-corner-rounding);
+        }
+
+        #TabsToolbar tab[visuallyselected]>stack::before,
+        #TabsToolbar tab[visuallyselected]>stack::after {
+            display: none !important;
+        }
+
+        #navigator-toolbox>#titlebar {
+            -moz-box-orient: vertical !important;
+            display: block;
+        }
+
+        #toolbar-menubar {
+            -moz-box-ordinal-group: 1;
+        }
+
+        #TabsToolbar {
+            -moz-box-ordinal-group: 2;
+            width: 100%;
+            max-height: unset;
+        }
+
+        #TabsToolbar #tabbrowser-tabs {
+            width: 100%;
+        }
+
+        #TabsToolbar #tabs-newtab-button,
+        #TabsToolbar #newPrivateTab-button {
+            margin: var(--tab-block-margin) !important;
         }
     }
 
@@ -852,9 +959,22 @@ url("about:downloads") {
             }
         }
 
+        :root[tabposition="2"] #toolbar-menubar[autohide="true"] .titlebar-buttonbox-container {
+            visibility: collapse;
+        }
+
+        #nav-bar {
+            --uc-window-drag-space-pre: 0px;
+        }
+
         /** 工具栏颜色 */
         .browser-toolbar:not(.titlebar-color) {
             background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
+        }
+
+        /** 去除 WE 扩展图标下的点 */
+        .webextension-browser-action[attention="true"] {
+            background-image: unset;
         }
 
         /** 书签按钮边距 */
@@ -1099,7 +1219,6 @@ url("about:downloads") {
             z-index: 11;
         }
 
-
         .urlbarView {
             margin-inline: 0 !important;
             width: auto !important;
@@ -1125,7 +1244,6 @@ url("about:downloads") {
         .urlbarView .urlbarView-body-inner {
             border-top: none !important;
         }
-
 
         .urlbarView-row-inner {
             padding-block: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2 + var(--urlbar-container-padding));
@@ -1154,7 +1272,6 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #urlbar-container {
-            transform: none !important;
             position: relative;
         }
 
@@ -2329,6 +2446,10 @@ by underlining them (requires urlbarMods.uc.js) */
                 var(--findbar-textbox-bg-transition-duration, 200ms) background-color !important;
         }
 
+        .textbox-search-icons {
+            margin-right: 4px;
+        }
+
         /* 搜索框选中边框动画 */
         :is(#sidebar-search-container, .sidebar-search-container) search-textbox:focus {
             background-color: var(--toolbar-field-focus-background-color) !important;
@@ -2929,7 +3050,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #appMenu-fxa-status2.toolbaritem-combined-buttons {
-            background-image: url("./images/sync/profile.svg");
+            background-image: url("./images/skin/profile.svg");
         }
 
         #appMenu-fxa-label2 {
@@ -3266,6 +3387,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [data-l10n-id="text-action-copy"] {
             background-image: url("./images/text/copy.svg");
+        }
+
+        [data-l10n-id="text-action-copy"]>.menu-iconic-left {
+            visibility: hidden !important;
         }
 
         [data-l10n-id="text-action-paste"],
@@ -3977,7 +4102,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #sync-setup {
-            background-image: url("./images/sync/profile.svg");
+            background-image: url("./images/skin/profile.svg");
         }
 
         #sync-enable {
@@ -3985,7 +4110,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #sync-unverifieditem {
-            background-image: url("./images/sync/profile.svg");
+            background-image: url("./images/skin/profile.svg");
         }
 
         #sync-syncnowitem {
@@ -3994,6 +4119,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #sync-reauthitem {
             background-image: url("./images/sync/exchange.svg");
+        }
+
+        #menu_openFirefoxView {
+            background-image: url("chrome://devtools/skin/images/browsers/firefox.svg");
         }
 
         #toolsbar_KeyChanger_rebuild {
@@ -4232,10 +4361,13 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #placesContext_deleteFolder,
-        #placesContext_deleteBookmark,
-        #placesContext_delete_history,
-        #placesContext_delete {
+        #placesContext_delete_history {
             background-image: url("chrome://global/skin/icons/delete.svg");
+        }
+
+        #placesContext_deleteBookmark,
+        #placesContext_delete {
+            background-image: url("./images/organizer/delete-bookmark.svg");
         }
 
         #placesContext_deleteHost {
@@ -4411,6 +4543,16 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/skin/report.svg");
         }
 
+        /** 忘记 */
+        #panic-button {
+            list-style-image: url("./images/navbar/forget.svg");
+        }
+
+        /** 截图 */
+        #screenshot-button {
+            list-style-image: url("./images/skin/screenshot.svg");
+        }
+
         /* CopyCat */
         #CopyCat-ThemeMenu {
             list-style-image: url("./images/copycat/skin.svg");
@@ -4436,7 +4578,6 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/skin/quit.svg");
         }
 
-
         /** Browser Sidebar Menu */
         #muteMenu {
             background-image: url("./images/skin/sound.svg");
@@ -4444,6 +4585,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #unloadWebpanelMenu {
             background-image: url("./images/skin/quit.svg");
+        }
+
+        #changeUAWebpanelMenu {
+            background-image: url("./images/skin/profile.svg");
         }
 
         /** UC 脚本 */
@@ -4544,6 +4689,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/tab/drag.svg");
         }
 
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:4\:14 {
+            background-image: url("./images/tab/cursor-in-window.svg");
+        }
+
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:5 {
             background-image: url("./images/moretools/more.svg");
         }
@@ -4556,7 +4705,8 @@ by underlining them (requires urlbarMods.uc.js) */
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_reloadTab,
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_reloadTree,
         #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:reloadTree,
-        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_reloadDescendants {
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_reloadDescendants,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:reloadDescendants {
             background-image: url("./images/tab/reload-tab.svg");
         }
 
@@ -4581,7 +4731,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_bookmarkTab,
-        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:bookmarkTree {
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:bookmarkTree,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_bookmarkTree {
             background-image: url("./images/organizer/bookmark.svg");
         }
 
@@ -4618,33 +4769,53 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/text/select-all.svg");
         }
 
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:collapseTree,
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_collapseTree,
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_collapseAll,
         #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:collapseTreeRecursively,
-        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:collapseAll {
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:collapseAll,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_collapseTreeRecursively {
             background-image: url("./images/tab/fold.svg");
         }
 
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:expandTree,
         #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:expandTreeRecursively,
-        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:expandAll {
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:expandAll,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_expandTree,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_expandTreeRecursively,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_expandAll {
             background-image: url("./images/tab/unfold.svg");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_closeTab,
-        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:closeTree {
-            background-image: url("./images/skin/quit.svg");
-        }
-
-        #treestyletab_piro_sakura_ne_jp-menuitem-_context_closeMultipleTabs {
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:closeTree,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:closeDescendants,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:closeOthers,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_closeTree,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_closeMultipleTabs,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_closeDescendants,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_topLevel_closeOthers {
             background-image: url("./images/skin/quit.svg");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_closeTabsToTheStart {
-            background-image: url("");
+            background-image: url("./images/skin/arrow-up.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_closeTabsToTheEnd {
+            background-image: url("./images/skin/arrow-down.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_context_closeOtherTabs {
+            background-image: url("./images/tab/");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_undoCloseTab {
             background-image: url("./images/tab/unde-close.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_grouped\:sendTreeToDevice {
+            background-image: url("./images/sync/send-to-device.svg");
         }
 
         [data-item-id="noContextTab:context_reloadTab"]>span.icon {
@@ -5808,26 +5979,31 @@ by underlining them (requires urlbarMods.uc.js) */
             border-bottom-color: var(--arrowpanel-background) !important;
         }
 
-        /** I dont't care about cookies */
-        #jid1-kkzogwgsw3ao4q_jetpack-browser-action {
+        /** I dont't care about cookies / I still dont't care about cookies */
+        #jid1-kkzogwgsw3ao4q_jetpack-browser-action,
+        #idcac-pub_guus_ninja-browser-action {
             list-style-image: url("./images/extensions/idontcareaboutcookies/cookie.svg") !important;
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"]>body {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"]>body,
+        [uc-extension-id="idcac-pub@guus.ninja"]>body {
             background: unset;
             background-color: var(--arrowpanel-background);
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div,
+        [uc-extension-id="idcac-pub@guus.ninja"] body>div {
             padding: var(--panel-subview-body-padding) !important;
             width: unset !important;
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div>div {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div>div,
+        [uc-extension-id="idcac-pub@guus.ninja"] body>div>div {
             padding: 0 !important;
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div>div>a[id] {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div>div>a[id],
+        [uc-extension-id="idcac-pub@guus.ninja"] body>div>div>a[id] {
             border-top: 0;
             display: block;
             color: var(--arrowpanel-color);
@@ -5841,23 +6017,28 @@ by underlining them (requires urlbarMods.uc.js) */
             background-position: var(--icon-gap, 12px) 50%;
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div>div>a[id]:hover {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] body>div>div>a[id]:hover,
+        [uc-extension-id="idcac-pub@guus.ninja"] body>div>div>a[id]:hover {
             background-color: var(--panel-item-hover-bgcolor);
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #toggle {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #toggle,
+        [uc-extension-id="idcac-pub@guus.ninja"] #toggle {
             background-image: url("./images/extensions/idontcareaboutcookies/switch.svg");
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #report {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #report,
+        [uc-extension-id="idcac-pub@guus.ninja"] #report {
             background-image: url("./images/extensions/idontcareaboutcookies/report.svg");
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #options {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #options,
+        [uc-extension-id="idcac-pub@guus.ninja"] #options {
             background-image: url("chrome://global/skin/icons/settings.svg");
         }
 
-        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #support {
+        [uc-extension-id="jid1-KKzOGWgsW3Ao4Q@jetpack"] #support,
+        [uc-extension-id="idcac-pub@guus.ninja"] #support {
             background-image: url("chrome://global/skin/icons/help.svg");
         }
 
@@ -6305,6 +6486,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/extensions/custombuttons/copy-link.svg");
         }
 
+        #custombuttons-contextpopup-updateButton {
+            background-image: url("./images/extensions/custombuttons/paste.svg");
+        }
+
         #custombuttons-contextpopup-bookmarkButton {
             background-image: url("./images/extensions/custombuttons/bookmark.svg");
         }
@@ -6317,10 +6502,25 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/extensions/custombuttons/customize.svg");
         }
 
+        /** ClearURLS */
+        #_74145f27-f039-47ce-a470-a662b129930a_-browser-action {
+            list-style-image: url("./images/extensions/clearurls/remove.svg");
+        }
 
+        /** Distill Web Monitor */
+        #_7a73dc4b-1b38-40e7-ac56-7d356dd4af34_-browser-action {
+            list-style-image: url("./images/extensions/distillwebmonitor/drop.svg");
+        }
+
+        /** FetchV */
+        #meetsingletoo_gmail_com-browser-action {
+            list-style-image: url("./images/extensions/fetchv/playlist.svg");
+        }
     }
 }
 
-
-
-@supports -moz-bool-pref("userChromeJS.sidra.organizer.compact") {}
+@-moz-document url-prefix("about:preferences") {
+    #bookmarkfocusmode {
+        display: none;
+    }
+}

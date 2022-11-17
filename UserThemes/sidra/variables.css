@@ -96,10 +96,15 @@
 @media (prefers-color-scheme: dark) {}
 
 :root[uidensity="compact"] {
-    --tab-min-height: 30px;
+    --tab-height: 30px;
+    --tab-min-height: var(--tab-height);
     --panel-padding-x: 4px;
     --menuitem-padding: 4px;
     --icon-gap: 8px;
 }
 
 :root[uidensity="touch"] {}
+
+:root[tabposition="4"] {
+    --tab-rounding: 0 0 var(--tab-corner-rounding) var(--tab-corner-rounding);
+}
