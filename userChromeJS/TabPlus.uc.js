@@ -87,6 +87,7 @@
             "horizontal tabs panel": "横向标签栏",
             "vertical tabs panel": "垂直标签栏",
             "other options": "其他选项",
+            "show all tabs button": "显示所有标签按钮",
             "insert tab after current tab": "在当前标签右侧打开新标签页",
             "close window with last tab": "关闭最后一个标签页后关闭窗口",
             "right click new tab button open url in clipboard": "右键新标签按钮打开剪贴板内容",
@@ -281,7 +282,7 @@
                 item.setAttribute('checked', !setVal);
             } else if (item.getAttribute('type') === 'prompt') {
                 let type = item.getAttribute('valueType') || 'string',
-                    val = prompt(item.getAttribute('label'), cPref.get(pref, item.getAttribute('default') || ""));
+                    val = prompt(item.getAttribute('label'), cPref.get(pref, item.getAttribute('defaultValue') || ""));
                 if (val) {
                     switch (type) {
                         case 'int':
@@ -411,9 +412,9 @@
             class: 'subview-subheader',
             content: $L("load in background")
         }, {
-            label: $L("image link"), type: 'checkbox', default: 1, pref: 'browser.tabs.loadImageInBackground'
+            label: $L("image link"), type: 'checkbox', pref: 'browser.tabs.loadImageInBackground'
         }, {
-            label: $L("middle click link"), type: 'checkbox', default: 1, pref: 'browser.tabs.loadInBackground',
+            label: $L("middle click link"), type: 'checkbox', pref: 'browser.tabs.loadInBackground',
         }, {}],
         replace(win) {
             win || (win = window);
@@ -473,7 +474,7 @@
             pref: 'browser.tabs.switchOnHoverDelay',
             type: 'prompt',
             valueType: 'int',
-            default: 150,
+            defaultValue: 150,
             style: 'list-style-image: url("chrome://browser/skin/history.svg");'
         }, {
             label: $L("horizontal tabs panel"),
@@ -536,14 +537,19 @@
             class: 'subview-subheader',
             content: $L("other options")
         }, {
+            label: $L("show all tabs button"),
+            type: 'checkbox',
+            defaultValue: false,
+            pref: 'browser.tabs.tabmanager.enabled'
+        }, {
             label: $L("insert tab after current tab"),
             type: 'checkbox',
-            default: 0,
+            defaultValue: false,
             pref: 'browser.tabs.insertAfterCurrent'
         }, {
             label: $L("close window with last tab"),
             type: 'checkbox',
-            default: 1,
+            defaultValue: true,
             pref: 'browser.tabs.closeWindowWithLastTab'
         }, {
             label: $L("keep menupopup opened when middle click bookmark menu"),
@@ -575,10 +581,11 @@
                 if (!url) {
                     win.BrowserOpenTab();
                 } else {
+                    url = url.trim();
                     try {
                         switchToTabHavingURI(url, true);
                     } catch (ex) {
-                        if (/((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
+                        if (/^((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
                             win.gBrowser.loadOneTab(encodeURIComponent(url), {
                                 inBackground: false,
                                 relatedToCurrent: false,
