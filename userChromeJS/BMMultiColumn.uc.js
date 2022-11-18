@@ -5,6 +5,7 @@
 // @include         main
 // @charset         UTF-8
 // @version         2022.11.19
+// @compatibility   Firefox 108
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
 // @note            fx 108 不完美修复
