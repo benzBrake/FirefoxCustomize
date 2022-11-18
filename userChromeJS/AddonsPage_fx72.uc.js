@@ -5,6 +5,7 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
+// @version         2022.11.18 支持 fx-autoconfig
 // @version         2022.10.01 支持隐藏自身
 // @version         2022.09.27 Fx106
 // @version         2022.02.04 Fx98
@@ -449,7 +450,6 @@
     window.userChromeJSAddon = {
         scripts: [],
         unloads: [],
-        isXXF: false,
 
         init() {
             if (AddonManager.hasAddonType && AddonManager.hasAddonType("userchromejs") ||
@@ -464,12 +464,14 @@
             this.unloads.forEach(function (func) { func(); });
         },
         initScripts() {
+            this.scripts = [];
             let scripts;
             if (window.userChrome_js) {
                 scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
             } else if (window._uc && !window._uc.isFaked) {
-                this.isXXF = true;
                 scripts = Object.values(_uc.scripts);
+            } else if (typeof _ucUtils === 'object') {
+                scripts = _ucUtils.getScriptData();
             } else {
                 // 不支持其他环境
                 window.AM_Helper.uninit();
@@ -498,6 +500,7 @@
                     if (aTypes && !aTypes.includes("userchromejs")) {
                         return [];
                     } else {
+                        userChromeJSAddon.initScripts();
                         return userChromeJSAddon.scripts;
                     }
                 },
@@ -548,7 +551,7 @@
         this.id = "ucjs:" + this._script.filename;  //this._script.url.replace(/\//g, "|");
         this.name = this._script.filename;
         this.description = this._script.description || "";
-        if (window.userChromeJSAddon.isXXF) {
+        if (this._script.hasOwnProperty("isEnabled")) {
             this.enabled = this._script.isEnabled;
         } else {
             this.enabled = !userChrome_js.scriptDisable[this.name];
@@ -607,7 +610,7 @@
             if (window.userChromejs) {
                 userChromejs.chgScriptStat(this.name);
             } else if (typeof userChrome_js !== "undefined") {
-                var s = xPref.get("userChrome.disable.script", "");
+                var s = Services.prefs.getStringPref("userChrome.disable.script", "");
                 var afilename = this.name;
                 if (!userChrome_js.scriptDisable[afilename]) {
                     s = (s + ',').replace(afilename + ',', '') + afilename + ',';
@@ -615,8 +618,11 @@
                     s = (s + ',').replace(afilename + ',', '');
                 }
                 s = s.replace(/,,/g, ',').replace(/^,/, '');
-                xPref.set("userChrome.disable.script", s);
+                Services.prefs.setStringPref("userChrome.disable.script", s);
                 userChrome_js.scriptDisable = restoreState(s.split(','));
+            } else if (typeof _ucUtils === "object") {
+                let obj = _ucUtils.toggleScript(this.name);
+                this.enabled = obj.enabled;
             }
 
             AddonManagerPrivate.callAddonListeners(val ? 'onEnabled' : 'onDisabled', this);
