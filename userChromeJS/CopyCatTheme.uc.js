@@ -2,7 +2,7 @@
 // @name            CopyCatTheme.uc.js
 // @description     CopyCat 主题专用加载脚本
 // @license         MIT License
-// @shutdown        UC.CopyCatTheme.destroy(win);
+// @shutdown        window.CopyCatTheme.destroy(win);
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
@@ -31,13 +31,67 @@
     }
 
     const TopWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
     const resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
     if (!resourceHandler.hasSubstitution("copycat-uchrm")) {
         resourceHandler.setSubstitution("copycat-uchrm", Services.io.newFileURI(Services.dirsvc.get('UChrm', Ci.nsIFile)));
     }
 
-    UC.CopyCatTheme = {
+    const cPref = {
+        get: function (prefPath, defaultValue) {
+            const sPrefs = Services.prefs;
+            try {
+                switch (sPrefs.getPrefType(prefPath)) {
+                    case 0:
+                        return defaultValue;
+                    case 32:
+                        return sPrefs.getStringPref(prefPath);
+                    case 64:
+                        return sPrefs.getIntPref(prefPath);
+                    case 128:
+                        return sPrefs.getBoolPref(prefPath);
+                }
+            } catch (ex) {
+                return defaultValue;
+            }
+            return
+        },
+        getType: function (prefPath) {
+            const sPrefs = Services.prefs;
+            const map = {
+                0: undefined,
+                32: 'string',
+                64: 'int',
+                128: 'boolean'
+            }
+            try {
+                return map[sPrefs.getPrefType(prefPath)];
+            } catch (ex) {
+                return map[0];
+            }
+        },
+        set: function (prefPath, value) {
+            const sPrefs = Services.prefs;
+            switch (typeof value) {
+                case 'string':
+                    return sPrefs.setCharPref(prefPath, value) || value;
+                case 'number':
+                    return sPrefs.setIntPref(prefPath, value) || value;
+                case 'boolean':
+                    return sPrefs.setBoolPref(prefPath, value) || value;
+            }
+            return;
+        },
+        addListener: (a, b) => {
+            let o = (q, w, e) => (b(cPref.get(e), e));
+            Services.prefs.addObserver(a, o);
+            return { pref: a, observer: o }
+        },
+        removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
+    };
+
+    window.CopyCatTheme = {
         PREF_LISTENER_LIST: {},
         CACHED_VIEWS: [],
         get locale() {
@@ -52,7 +106,8 @@
             return this.locale;
         },
         get THEME_RELATED_PATH() {
-            return "\\chrome\\UserThemes";
+            delete this.THEME_RELATED_PATH;
+            return this.gPrefs("THEME_RELATED_PATH", "\\chrome\\UserThemes");
         },
         get THEME_PATH() {
             delete this.THEME_PATH;
@@ -65,16 +120,28 @@
             if (URI.charAt(0) == "/") URI = URI.substring(1);
             return this.THEME_URL_PREFIX = "resource://copycat-uchrm/" + URI;
         },
-        get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
-        get debug() { return xPref.get("userChromeJS.CopyCat.debug", false, false); },
-        STYLE: {
-            url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
-            type: 2,
+        sPrefs(key, val) {
+            cPref.set("userChromeJS.CopyCat." + key, val);
+        },
+        gPrefs(key, defaultValue) {
+            return cPref.get("userChromeJS.CopyCat." + key, defaultValue);
+        },
+        get debug() { return this.gPrefs("debug", false); },
+        set STYLE(css) {
+            delete this.STYLE;
+            this.STYLE = {
+                url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)),
+                type: this.sss.USER_SHEET,
+            }
+            this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+        },
+        get sss() {
+            delete this.sss;
+            return this.sss = sss;
         },
         init: function (win) {
             let { document, CustomizableUI, MutationObserver } = win;
-            this.STYLE = _uc.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
-
+            this.STYLE = css;
             this.globalStyleMutationObserver = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
@@ -116,13 +183,13 @@
             [{
                 action: 'ReloadAllThemes',
                 label: $L("reload themes"),
-                onclick: 'UC.CopyCatTheme._onclick(event)',
+                onclick: 'window.CopyCatTheme._onclick(event)',
                 style: 'list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);',
             }, {
                 label: $L("open themes directory"),
                 action: "OpenThemesDirectory",
                 style: 'list-style-image: url(chrome://global/skin/icons/folder.svg)',
-                onclick: 'UC.CopyCatTheme._onclick(event)'
+                onclick: 'window.CopyCatTheme._onclick(event)'
             }, {}, {
                 type: 'html:h2',
                 class: 'subview-subheader',
@@ -135,7 +202,7 @@
                 value: '',
                 action: 'SetTheme',
                 closemenu: true,
-                onclick: 'UC.CopyCatTheme._onclick(event)'
+                onclick: 'window.CopyCatTheme._onclick(event)'
             }, {
                 id: 'CopyCat-ThemeMenu-Themes-InsertPoint'
             }, {
@@ -190,7 +257,7 @@
                     $A(node, {
                         badged: true,
                         action: 'ReloadAllThemes',
-                        onclick: 'UC.CopyCatTheme._onclick(event)',
+                        onclick: 'window.CopyCatTheme._onclick(event)',
                         notice: true,
                         style: 'list-style-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+DQogIDxwYXRoIGZpbGw9IiM1MGU2ZmYiIGQ9Ik0xMC4yMjgsMTUuODg1TDcuMzIsMTIuOTc3QzUuMjI2LDE2LjEzOCw0LDE5LjkyNCw0LDI0YzAsMy42NjgsMC45OTMsNy4xMDMsMi43MTksMTAuMDU4YzAuMjkzLDAuNTAyLDAuOTk0LDAuNTczLDEuNDA1LDAuMTYxbDEuNjQtMS42NGMwLjI3NS0wLjI3NSwwLjMyNi0wLjY5MywwLjE0Mi0xLjAzNUM4LjY5NywyOS4yOTUsOCwyNi43MzIsOCwyNEM4LDIxLjAzNCw4LjgyMSwxOC4yNjcsMTAuMjI4LDE1Ljg4NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik00MCwyNGMwLDIuOTY2LTAuODIxLDUuNzMzLTIuMjI4LDguMTE1bDIuOTA4LDIuOTA4QzQyLjc3NCwzMS44NjIsNDQsMjguMDc1LDQ0LDI0YzAtMy42NjgtMC45OTMtNy4xMDMtMi43MTktMTAuMDU4Yy0wLjI5My0wLjUwMi0wLjk5NC0wLjU3Mi0xLjQwNS0wLjE2MWwtMS42NCwxLjY0Yy0wLjI3NSwwLjI3NS0wLjMyNiwwLjY5My0wLjE0MiwxLjAzNUMzOS4zMDMsMTguNzA1LDQwLDIxLjI2OCw0MCwyNHoiIC8+DQogIDxwYXRoIGZpbGw9IiMzNWMxZjEiIGQ9Ik0xNS40MjEsOS43NjRjMC4yNzUsMC4yNzUsMC42OTMsMC4zMjYsMS4wMzUsMC4xNDJDMTguNzA1LDguNjk3LDIxLjI2OCw4LDI0LDhjMi45NjYsMCw1LjczMywwLjgyMSw4LjExNSwyLjIyOGwyLjkwOS0yLjkwOUMzMS44NjIsNS4yMjYsMjguMDc2LDQsMjQsNGMtMy42NSwwLTcuMDY4LDAuOTgzLTEwLjAxMywyLjY5M2MtMC41MjEsMC4zMDMtMC42MzEsMS4wMDYtMC4yMDUsMS40MzJMMTUuNDIxLDkuNzY0eiIgLz4NCiAgPHBhdGggZmlsbD0iIzAwNzhkNCIgZD0iTTMyLjU3OSwzOC4yMzZjLTAuMjc1LTAuMjc1LTAuNjkzLTAuMzI2LTEuMDM1LTAuMTQyQzI5LjI5NSwzOS4zMDMsMjYuNzMyLDQwLDI0LDQwYy0yLjk2NiwwLTUuNzMzLTAuODIxLTguMTE1LTIuMjI4bC0yLjkwOCwyLjkwOEMxNi4xMzgsNDIuNzc0LDE5LjkyNSw0NCwyNCw0NGMzLjY2OCwwLDcuMTAzLTAuOTkzLDEwLjA1OC0yLjcxOWMwLjUwMi0wLjI5MywwLjU3My0wLjk5NCwwLjE2MS0xLjQwNUwzMi41NzksMzguMjM2eiIgLz4NCiAgPHBhdGggZmlsbD0iIzM1YzFmMSIgZD0iTTM1LjkzNCwxMi4wNzVMMzEuMSwxMS45MDljLTAuMzQyLTAuMDEyLTAuNTEyLTAuNDIxLTAuMjc3LTAuNjcxbDQuNjU3LTQuOTc1YzAuMjQyLTAuMjU5LDAuNjc2LTAuMDk3LDAuNjksMC4yNTdsMC4yMDEsNS4xMTdDMzYuMzgsMTEuODgyLDM2LjE3OSwxMi4wODMsMzUuOTM0LDEyLjA3NXoiIC8+DQogIDxwYXRoIGZpbGw9IiMwMDc4ZDQiIGQ9Ik0xMi4wNjYsMzUuOTI1bDQuODM0LDAuMTY2YzAuMzQyLDAuMDEyLDAuNTEyLDAuNDIxLDAuMjc3LDAuNjcxbC00LjY1Nyw0Ljk3NWMtMC4yNDIsMC4yNTktMC42NzYsMC4wOTctMC42OS0wLjI1N2wtMC4yMDEtNS4xMTdDMTEuNjIsMzYuMTE4LDExLjgyMSwzNS45MTcsMTIuMDY2LDM1LjkyNXoiIC8+DQogIDxwYXRoIGZpbGw9IiMxOTliZTIiIGQ9Ik0zNS45MjUsMzUuOTM0bDAuMTY2LTQuODM0YzAuMDEyLTAuMzQyLDAuNDIxLTAuNTEyLDAuNjcxLTAuMjc3bDQuOTc1LDQuNjU3YzAuMjU5LDAuMjQyLDAuMDk3LDAuNjc2LTAuMjU3LDAuNjlsLTUuMTE3LDAuMjAxQzM2LjExOCwzNi4zOCwzNS45MTcsMzYuMTc5LDM1LjkyNSwzNS45MzR6IiAvPg0KICA8cGF0aCBmaWxsPSIjNTBlNmZmIiBkPSJNMTIuMDc1LDEyLjA2NkwxMS45MDksMTYuOWMtMC4wMTIsMC4zNDItMC40MjEsMC41MTItMC42NzEsMC4yNzdMNi4yNjIsMTIuNTJjLTAuMjU5LTAuMjQyLTAuMDk3LTAuNjc2LDAuMjU3LTAuNjlsNS4xMTctMC4yMDFDMTEuODgyLDExLjYyLDEyLjA4MywxMS44MjEsMTIuMDc1LDEyLjA2NnoiIC8+DQo8L3N2Zz4=)'
                     })
@@ -203,7 +270,7 @@
                     let { target: view } = event;
                     this.refreshThemesList(view.ownerDocument);
                     this.refreshThemeOptions(view.ownerDocument);
-                    let name = xPref.get("userChromeJS.CopyCat.theme", false, "");
+                    let name = this.gPrefs("theme", "");
                     view.querySelectorAll('[action="SetTheme"]').forEach(el => el.removeAttribute("checked"));
                     view.querySelector(`[action="SetTheme"][value="${name}"]`)?.setAttribute("checked", "true");
                     break;
@@ -237,9 +304,9 @@
                     break;
                 case 'SetTheme':
                     if (event.button === 2) {
-                        let name = item.getAttribute('value');
-                        if (name && this.themes[name]) {
-                            let theme = this.themes[name];
+                        let id = item.getAttribute('value');
+                        if (id && this.themes[id]) {
+                            let theme = this.themes[id];
                             if (theme.file.isDirectory()) {
                                 if (theme.styles.length === 1)
                                     this.edit(theme.styles[0].file.path);
@@ -250,7 +317,7 @@
                             }
                         }
                     } else {
-                        xPref.set("userChromeJS.CopyCat.theme", item.getAttribute('value'));
+                        this.sPrefs("theme", item.getAttribute('value'));
                         if (event.button === 1) // 避免相对定位导致面板被假隐藏
                             item.ownerDocument.querySelectorAll("panelview[visible=true]").forEach(view => view.closest('panel').hidePopup());
                         this.loadTheme();
@@ -258,8 +325,8 @@
                     break;
                 case 'SetOption':
                     let pref = item.getAttribute('pref');
-                    let value = xPref.get(pref, false, false);
-                    xPref.set(pref, !value);
+                    let value = cPref.get(pref, false);
+                    cPref.set(pref, !value);
                     item.checked = !value;
                     this.loadTheme();
                     break;
@@ -287,7 +354,7 @@
                 let file = files.getNext().QueryInterface(Ci.nsIFile);
                 let theme = new UserStyle(file);
                 if (theme.isTheme) {
-                    this.themes[theme.filename] = theme;
+                    this.themes[theme.id] = theme;
                 }
             }
         },
@@ -298,7 +365,7 @@
                 delete this.theme;
                 window.dispatchEvent(new CustomEvent("CopyCatThemeUnloaded"));
             }
-            let name = xPref.get("userChromeJS.CopyCat.theme", false, "");
+            let name = cPref.get("userChromeJS.CopyCat.theme", false, "");
             if (name && this.themes[name]) {
                 this.theme = this.themes[name]
                 this.theme.register();
@@ -322,11 +389,11 @@
                         class: "subviewbutton",
                         type: 'radio',
                         action: 'SetTheme',
-                        value: theme.filename,
-                        onclick: 'UC.CopyCatTheme._onclick(event)'
+                        value: theme.id,
+                        onclick: 'window.CopyCatTheme._onclick(event)'
                     }), ins);
                 });
-                let name = xPref.get("userChromeJS.CopyCat.theme", false, "");
+                let name = window.CopyCatTheme.gPrefs("theme", false, "");
                 view.querySelectorAll('[action="SetTheme"]').forEach(el => el.removeAttribute("checked"));
                 view.querySelector(`[action="SetTheme"][value="${name}"]`).setAttribute("checked", "true");
             }
@@ -340,31 +407,35 @@
                 Object.values(this.theme.options).forEach(option => {
                     let el = ins.parentNode.insertBefore($C(view.ownerDocument, 'toolbarbutton', {
                         label: option.name,
+                        tooltiptext: option.name,
                         class: "subviewbutton",
                         type: 'checkbox',
                         pref: option.pref,
                         action: 'SetOption',
                         closemenu: false,
-                        checked: xPref.get(option.pref, false, false),
-                        onclick: 'UC.CopyCatTheme._onclick(event)'
+                        checked: cPref.get(option.pref, false, false),
+                        onclick: 'window.CopyCatTheme._onclick(event)'
                     }), ins);
                 });
             }
         },
         globalStyleListener: {
             onCustomizeEnd(win) {
-                UC.CopyCatTheme.loadTheme();
+                window.CopyCatTheme.loadTheme();
             }
         },
         globalStyleObserver: function () {
-            UC.CopyCatTheme.loadTheme();
+            let reloadTarget = $C(window.document, 'toolbarbutton', {
+                action: "ReloadAllThemes"
+            });
+            window.CopyCatTheme._onclick({ target: reloadTarget });
         },
         refreshGlobalStyle: function (document, isEnabled = true) {
             document || (document = window.document);
             if (!document) throw new Error("document is required");
-            const { _uc, getComputedStyle, Services } = document.ownerGlobal;
+            const { getComputedStyle, Services } = document.ownerGlobal;
             if (this.SYNCED_STYLE) {
-                _uc.sss.unregisterSheet(UC.CopyCatTheme.SYNCED_STYLE.url, UC.CopyCatTheme.SYNCED_STYLE.type);
+                window.CopyCatTheme.sss.unregisterSheet(window.CopyCatTheme.SYNCED_STYLE.url, window.CopyCatTheme.SYNCED_STYLE.type);
                 delete this.SYNCED_STYLE;
             }
             if (isEnabled) {
@@ -377,11 +448,11 @@
                     }
                 });
                 let css = ':root{\n' + cssArr.join("\n") + "\n}";
-                UC.CopyCatTheme.SYNCED_STYLE = {
+                window.CopyCatTheme.SYNCED_STYLE = {
                     url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
-                    type: _uc.sss.AUTHOR_SHEET,
+                    type: window.CopyCatTheme.sss.AUTHOR_SHEET,
                 }
-                _uc.sss.loadAndRegisterSheet(UC.CopyCatTheme.SYNCED_STYLE.url, UC.CopyCatTheme.SYNCED_STYLE.type);
+                window.CopyCatTheme.sss.loadAndRegisterSheet(window.CopyCatTheme.SYNCED_STYLE.url, window.CopyCatTheme.SYNCED_STYLE.type);
             }
         },
         edit: (pathOrFile, aLineNumber) => {
@@ -461,7 +532,7 @@
                 this.error(e);
             }
         },
-        getFile: (pathOrFile) => {
+        getFile: function (pathOrFile) {
             let aFile;
             if (pathOrFile instanceof Ci.nsIFile) {
                 aFile = pathOrFile;
@@ -469,7 +540,7 @@
                 aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
                 aFile.initWithPath(pathOrFile);
             } else {
-                this.error($L("param is invalid", "CopyCatTheme.getFile", "pathOrFile"));
+                this.error($L("param is invalid", "CopyCatTheme.getFile", "pathOrFile", pathOrFile));
             }
             return aFile;
         },
@@ -550,6 +621,8 @@
             this.file = aFile;
             this.isTheme = false;
             this.styles = [];
+            this.PrefObservers = {};
+            this.MutationObservers = [];
             this.id = aFile.leafName.replace(/\.css$/, '');
             if (aFile.isDirectory()) {
                 let themeConfigFile = aFile.clone();
@@ -581,7 +654,7 @@
                             });
                         }
                         this.styles.push({
-                            url: Services.io.newURI(UC.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
+                            url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
                             type: file.hasOwnProperty("type") ? file.type : getStyleType(tFile.leafName),
                             file: tFile
                         });
@@ -596,7 +669,7 @@
                     });
                     if (themeConfig.locales) {
                         let arr = Object.keys(themeConfig.locales);
-                        this.lang = arr.includes(UC.CopyCatTheme.locale) ? themeConfig.locales[UC.CopyCatTheme.locale] : themeConfig.locales[arr[0]];
+                        this.lang = arr.includes(window.CopyCatTheme.locale) ? themeConfig.locales[window.CopyCatTheme.locale] : themeConfig.locales[arr[0]];
                     }
                     if (themeConfig.options) {
                         this._options = [];
@@ -606,13 +679,44 @@
                                 name: name,
                                 pref: key,
                                 get value() {
-                                    return xPref.get(key, false, false)
+                                    return cPref.get(key, false)
                                 },
                                 toggle: function (value) {
-                                    xPref.set(key, !!this.value);
+                                    cPref.set(key, !!this.value);
                                 }
                             });
                         })
+                    }
+                    if (themeConfig.monitors) {
+                        themeConfig.monitors.forEach(item => {
+                            if (item.pref) {
+                                this.PrefObservers[item.pref] = {
+                                    target: window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
+                                    targetAttr: item.targetAttr || item.pref
+                                }
+                            }
+                            if (item.from && item.attr) {
+                                let from = window.document.querySelector(item.from),
+                                    target = window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
+                                    targetAttr = item.targetAttr || item.attr;
+                                if (from && target) {
+                                    let config = {
+                                        from: from,
+                                        attr: item.attr,
+                                        target: target,
+                                        targetAttr: targetAttr,
+                                        observer: new window.MutationObserver((mutations) => {
+                                            mutations.forEach((mutation) => {
+                                                if (mutation.type === 'attributes' && mutation.attributeName === item.attr) {
+                                                    target.setAttribute(targetAttr, mutation.target.getAttribute(item.attr));
+                                                }
+                                            });
+                                        })
+                                    };
+                                    this.MutationObservers.push(config);
+                                }
+                            }
+                        });
                     }
                 }
             } else if (aFile.leafName.endsWith('.css')) {
@@ -621,7 +725,7 @@
                     this[key] = value;
                 });
                 this.styles.push({
-                    url: Services.io.newURI(UC.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName),
+                    url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName),
                     type: getStyleType(aFile.leafName),
                     file: aFile
                 });
@@ -631,14 +735,41 @@
         }
 
         register() {
-            if (!this.isEnabled)
-                this.styles.forEach(style => _uc.sss.loadAndRegisterSheet(style.url, style.type));
+            for (let pref in this.PrefObservers) {
+                if (this.PrefObservers[pref].target) this.PrefObservers[pref].target.setAttribute(this.PrefObservers[pref].targetAttr, cPref.get(pref));
+                if (this.PrefObservers[pref].target && !this.PrefObservers[pref].listener) {
+                    const { target, targetAttr } = this.PrefObservers[pref];
+                    this.PrefObservers[pref].listener = cPref.addListener(pref, (value) => {
+                        target.setAttribute(targetAttr, value);
+                    });
+                }
+            }
+            this.MutationObservers.forEach(config => {
+                config.observer.observe(config.from, { attributes: true });
+            });
+            if (!this.isEnabled) {
+                this.styles.forEach(style => sss.loadAndRegisterSheet(style.url, style.type));
+            }
             this.isEnabled = true;
         }
 
         unregister() {
-            if (this.isEnabled)
-                this.styles.forEach(style => _uc.sss.unregisterSheet(style.url, style.type));
+            for (let pref in this.PrefObservers) {
+                if (this.PrefObservers[pref].hasOwnProperty("listener")) {
+                    try {
+                        this.PrefObservers[pref].target.removeAttribute(this.PrefObservers[pref].targetAttr);
+                        cPref.removeListener(pref, this.PrefObservers[pref].listener);
+                        delete this.PrefObservers[pref].listener;
+                    } catch (e) { }
+                }
+            }
+            if (this.isEnabled) {
+                this.MutationObservers.forEach(config => {
+                    config.target.removeAttribute(config.targetAttr);
+                    config.observer.disconnect();
+                });
+                this.styles.forEach(style => window.CopyCatTheme.sss.unregisterSheet(style.url, style.type));
+            }
             this.isEnabled = false;
         }
 
@@ -657,6 +788,7 @@
 
         get options() {
             if (!this._options) {
+                this._options = [];
                 let keys = {};
                 this.styles.forEach(style => {
                     let content = readFile(style.file),
@@ -670,10 +802,10 @@
                                     name: name,
                                     pref: key,
                                     get value() {
-                                        return xPref.get(key, false, false)
+                                        return cPref.get(key, false, false)
                                     },
                                     toggle: function (value) {
-                                        xPref.set(key, !!this.value);
+                                        cPref.set(key, !!this.value);
                                     }
                                 });
                             }
@@ -739,17 +871,17 @@
             var typePrefix = name.substring(name.length - 6, name.length - 4);
             switch (typePrefix) {
                 case "au":
-                    type = _uc.sss.AUTHOR_SHEET;
+                    type = sss.AUTHOR_SHEET;
                     break;
                 case "ag":
-                    type = _uc.sss.AGENT_SHEET;
+                    type = sss.AGENT_SHEET;
                     break;
                 case "us":
-                    type = _uc.sss.USER_SHEET;
+                    type = sss.USER_SHEET;
                     break;
             }
         } else {
-            type = _uc.sss.AUTHOR_SHEET;
+            type = sss.AUTHOR_SHEET;
         }
         return type;
     }
@@ -791,16 +923,16 @@
         return el;
     }
 
-    UC.CopyCatTheme.init(window);
+    window.CopyCatTheme.init(window);
     let reloadTarget = $C(window.document, 'toolbarbutton', {
         action: "ReloadAllThemes"
     })
-    if (gBrowserInit.delayedStartupFinished) UC.CopyCatTheme._onclick({ target: reloadTarget })
+    if (gBrowserInit.delayedStartupFinished) window.CopyCatTheme._onclick({ target: reloadTarget })
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                UC.CopyCatTheme._onclick({ target: reloadTarget });
+                window.CopyCatTheme._onclick({ target: reloadTarget });
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
