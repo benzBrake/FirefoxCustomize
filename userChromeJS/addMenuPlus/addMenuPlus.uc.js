@@ -15,7 +15,7 @@
 // @oohomepageURL  https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效
+// @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
 // @note           0.1.1 Places keywords API を使うようにした
@@ -249,14 +249,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         get locale() {
             delete this.locale;
+            // 读取语言代码
+            let _locale;
             try {
-                this.locale = Services.prefs.getCharPref("general.useragent.locale");
+                let _locales, osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
+                if (osPrefs.hasOwnProperty("getRegionalPrefsLocales").hasOwnProperty("getRegionalPrefsLocales"))
+                    _locales = osPrefs.getRegionalPrefsLocales();
+                else
+                    _locales = osPrefs.regionalPrefsLocales;
+                for (let i = 0; i < _locales.length; i++) {
+                    if (LANG.hasOwnProperty(_locales[i])) {
+                        _locale = _locales[i];
+                        break;
+                    }
+                }
             } catch (e) { }
-
-            if (!this.locale) {
-                this.locale = Services.locale.appLocaleAsBCP47 || "en-US";
-            }
-            return this.locale;
+            return this.locale = _locale || "en-US";
         },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
