@@ -166,7 +166,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         delete window.addMenu;
     }
 
-    const LANG = {
+    const ADDMENU_LANG = {
         'zh-CN': {
             'config example': '// 这是一个 addMenuPlus 配置文件\n' +
                 '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
@@ -209,6 +209,23 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
     }
 
+    // 读取语言代码
+    let _locale;
+    try {
+        let _locales, osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
+        if (osPrefs.hasOwnProperty("getRegionalPrefsLocales").hasOwnProperty("getRegionalPrefsLocales"))
+            _locales = osPrefs.getRegionalPrefsLocales();
+        else
+            _locales = osPrefs.regionalPrefsLocales;
+        for (let i = 0; i < _locales.length; i++) {
+            if (ADDMENU_LANG.hasOwnProperty(_locales[i])) {
+                _locale = _locales[i];
+                break;
+            }
+        }
+    } catch (e) { }
+    const ADDMENU_LOCALE = _locale || "en-US";
+
     window.addMenu = {
         get prefs() {
             delete this.prefs;
@@ -249,22 +266,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         get locale() {
             delete this.locale;
-            // 读取语言代码
-            let _locale;
-            try {
-                let _locales, osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
-                if (osPrefs.hasOwnProperty("getRegionalPrefsLocales").hasOwnProperty("getRegionalPrefsLocales"))
-                    _locales = osPrefs.getRegionalPrefsLocales();
-                else
-                    _locales = osPrefs.regionalPrefsLocales;
-                for (let i = 0; i < _locales.length; i++) {
-                    if (LANG.hasOwnProperty(_locales[i])) {
-                        _locale = _locales[i];
-                        break;
-                    }
-                }
-            } catch (e) { }
-            return this.locale = _locale || "en-US";
+            return this.locale = ADDMENU_LOCALE || "en-US";
         },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
@@ -1752,9 +1754,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         foStream.close();
     }
 
+    function capitalize(s) {
+        return s && s[0].toUpperCase() + s.slice(1);
+    }
+
     function $L(key, replace) {
-        const _LOCALE = Services.prefs.getCharPref("general.useragent.locale", "zh-CN");
-        let str = LANG[_LOCALE].hasOwnProperty(key) ? LANG[_LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
+        if (!key) return "";
+        let str = ADDMENU_LANG[ADDMENU_LOCALE][key] || capitalize(key);
         if (typeof replace !== "undefined") {
             str = str.replace("%s", replace);
         }
