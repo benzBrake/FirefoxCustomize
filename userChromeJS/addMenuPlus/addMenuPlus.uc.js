@@ -1758,13 +1758,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return s && s[0].toUpperCase() + s.slice(1);
     }
 
-    function $L(key, replace) {
-        if (!key) return "";
-        let str = ADDMENU_LANG[ADDMENU_LOCALE][key] || capitalize(key);
-        if (typeof replace !== "undefined") {
-            str = str.replace("%s", replace);
-        }
-        return str || "";
+    function $L() {
+        let key = arguments[0];
+        if (key) {
+            if (!ADDMENU_LANG[ADDMENU_LOCALE].hasOwnProperty(key)) return capitalize(key);
+            let str = ADDMENU_LANG[ADDMENU_LOCALE][key];
+            for (let i = 1; i < arguments.length; i++) {
+                str = str.replace("%s", arguments[i]);
+            }
+            return str;
+        } else return "";
     }
 
     function isDef(v) {
