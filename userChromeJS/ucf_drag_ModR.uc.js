@@ -138,7 +138,7 @@
         },
         LD: {
             name: "谷歌搜图（新标签，前台）", cmd(val) {
-                var TERM = "https://www.google.com/searchbyimage?image_url=" + val;
+                var TERM = "https://lens.google.com/uploadbyurl?url=" + val;
                 if (val)
                     win.openUILinkIn(TERM, "tab", this.opts);
             }
