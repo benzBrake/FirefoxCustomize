@@ -249,7 +249,7 @@ display: none;
                 this.log = console.log;
                 this.error = console.error;
                 this.prefs = Services.prefs.getBranch("addMenu.");
-                this.appVersion = parseInt(Services.appinfo.version);
+                this.appVersion = parseFloat(Services.appinfo.version);
                 this.locale = ADDMENU_LOCALE;
                 this.panelId = Math.floor(Math.random() * 900000 + 99999);
                 // 读取配置文件路径
@@ -358,7 +358,7 @@ display: none;
                             class: "addMenu-insert-point"
                         })
                         this.MENU_ATTRS[type].insertId = insertPoint.id;
-                        ins.after(insertPoint);
+                        ins.parentNode.insertBefore(insertPoint, ins.nextSibling);
                         delete this.MENU_ATTRS[type].insRef;
                     } else {
                         delete this.MENU_ATTRS[type];
@@ -629,7 +629,7 @@ display: none;
                             }
                             event.currentTarget.setAttribute("addMenu", state.join(" "));
                         }
-
+                        const window = event.originalTarget.ownerGlobal;
                         this.customShowings.forEach(function (obj) {
                             var curItem = obj.item;
                             try {
@@ -680,6 +680,7 @@ display: none;
                     if (!obj) continue;
                     let menuitem;
 
+                    // clone menuitem and set attribute
                     if (obj.id && (menuitem = $(obj.id, doc))) {
                         let dupMenuitem;
                         let isDupMenu = (obj.clone != false);
@@ -1743,6 +1744,7 @@ display: none;
             }
             window.addMenu = ChromeUtils.import(`resource://addmenu-ucjs/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`).AddMenu;
             window.addMenu.init(window);
+            console.log(123);
         }
     } catch (e) { console.error(e); }
 }

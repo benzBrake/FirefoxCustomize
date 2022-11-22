@@ -226,13 +226,48 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     } catch (e) { }
     const ADDMENU_LOCALE = _locale || "en-US";
 
+    // 增加菜单类型请在这里加入插入点，不能是 IdentGroup
+    var MENU_ATTRS = {
+        tab: {
+            insRef: $("context_closeTab"),
+            current: "tab",
+            submenu: "TabMenu",
+            groupmenu: "TabGroup"
+        },
+        page: {
+            insRef: $("context-viewsource"),
+            current: "page",
+            submenu: "PageMenu",
+            groupmenu: "PageGroup"
+        },
+        tool: {
+            insRef: $("prefSep") || $("webDeveloperMenu"),
+            current: "tool",
+            submenu: "ToolMenu",
+            groupmenu: "ToolGroup"
+        },
+        app: {
+            insRef: $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem"),
+            current: "app",
+            submenu: "AppMenu",
+            groupmenu: "AppGroup"
+        },
+        nav: {
+            insRef: $("toolbar-context-undoCloseTab") || $("toolbarItemsMenuSeparator"),
+            current: "nav",
+            submenu: "NavMenu",
+            groupmenu: "NavGroup"
+        }
+    };
+
     window.addMenu = {
         get prefs() {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("addMenu.")
         },
         get appVersion() {
-            return Services.appinfo.version.split(".")[0]
+            delete this.appVersion;
+            return this.appVersion = parseFloat(Services.appinfo.version);
         },
         get FILE() {
             try {
@@ -267,6 +302,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         get locale() {
             delete this.locale;
             return this.locale = ADDMENU_LOCALE || "en-US";
+        },
+        get panelId() {
+            delete this.panelId;
+            return this.panelId = Math.floor(Math.random() * 900000 + 99999);
         },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
@@ -308,52 +347,38 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.regexp = new RegExp(
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
 
-            // 增加菜单类型请在这里加入插入点，同时修改 rebuild 函数里的菜单类型
-            var ins;
-            ins = $("context-viewsource");
-            ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-page-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
-            ins = $("context_closeTab");
-            ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-tab-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
-            ins = $("prefSep") || $("webDeveloperMenu");
-            ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-tool-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
-            ins = $("toolbar-context-undoCloseTab") || $("toolbarItemsMenuSeparator");
-            ins.parentNode.insertBefore(
-                $C("menuseparator", {
-                    id: "addMenu-nav-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins.nextSibling);
-            ins = $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem");
-            ins.parentNode.insertBefore(
-                $C(ins.localName === "toolbarbutton" ? "toolbarseparator" : "menuseparator", {
-                    id: "addMenu-app-insertpoint",
-                    class: "addMenu-insert-point"
-                }), ins);
-            ins = $("devToolsSeparator");
-            ins.parentNode.insertBefore($C("menuitem", {
-                id: "addMenu-rebuild",
-                label: $L('addmenuplus label'),
-                tooltiptext: $L('addmenuplus tooltip'),
-                oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
-                onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
-            }), ins);
+
+            // add menuitem insertpoint
+            for (let type in MENU_ATTRS) {
+                let ins = MENU_ATTRS[type].insRef;
+                if (ins) {
+                    let tag = ins.localName.startsWith("menu") ? "menuseparator" : "toolbarseparator";
+                    let insertPoint = $C(tag, {
+                        id: `addMenu-${type}-insertpoint`,
+                        class: "addMenu-insert-point"
+                    })
+                    MENU_ATTRS[type].insertId = insertPoint.id;
+                    ins.parentNode.insertBefore(insertPoint, ins.nextSibling);
+                    delete MENU_ATTRS[type].insRef;
+                } else {
+                    delete MENU_ATTRS[type];
+                }
+            }
+
+            // old style groupmenu compatibility
+            MENU_ATTRS['group'] = {
+                current: "group",
+                submenu: "GroupMenu",
+                insertId: "addMenu-page-insertpoint"
+            }
+
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
             $("toolbar-context-menu").addEventListener("popupshowing", this, false);
+            $("menu_FilePopup").addEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
 
-            // 单击三杠按钮时移动菜单到 AppMenu
+            // move menuitems to Hamburger menu when firstly clicks the PanelUI button 
             PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, {
                 once: true
             });
@@ -363,7 +388,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 // SSL 小锁右键菜单
                 this.identityBox.addEventListener("click", this, false);
                 this.identityBox.setAttribute('contextmenu', false);
-                var popup = ins.appendChild($C('menupopup', {
+                var popup = $("mainPopupSet").appendChild($C('menupopup', {
                     id: 'identity-box-contextmenu'
                 }));
                 popup.appendChild($C("menuseparator", {
@@ -371,7 +396,23 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     class: "addMenu-insert-point"
                 }));
                 $("mainPopupSet").appendChild(popup);
+                MENU_ATTRS['ident'] = {
+                    current: "ident",
+                    submenu: "IdentMenu",
+                    groupmenu: "IdentGroup",
+                    insertId: 'addMenu-identity-insertpoint'
+                }
             }
+
+            // 增加工具菜单
+            var ins = $("devToolsSeparator");
+            ins.parentNode.insertBefore($C("menuitem", {
+                id: "addMenu-rebuild",
+                label: $L('addmenuplus label'),
+                tooltiptext: $L('addmenuplus tooltip'),
+                oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
+                onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
+            }), ins);
 
             // 内容进程运行 JS
             function frameScript() {
@@ -521,7 +562,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         try {
                             eval('(' + obj.fnSource + ').call(curItem, curItem)');
                         } catch (ex) {
-                            console.error($L('custom showing method error'), obj.fnSource);
+                            console.error($L('custom showing method error'), obj.fnSource, ex);
                         }
                     });
                     break;
@@ -541,7 +582,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         receiveMessage(message) {
             switch (message.name) {
                 case 'addMenu_selectionData':
-                    this._selectedTXT = message.data.text;
+                    this._selectedText = message.data.text;
                     break;
             }
         },
@@ -705,45 +746,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
-            // 增加菜单类型需要修改这里
-            var aiueo = [{
-                current: "page",
-                submenu: "PageMenu",
-                insertId: "addMenu-page-insertpoint"
-            },
-            {
-                current: "tab",
-                submenu: "TabMenu",
-                insertId: "addMenu-tab-insertpoint"
-            },
-            {
-                current: "tool",
-                submenu: "ToolMenu",
-                insertId: "addMenu-tool-insertpoint"
-            },
-            {
-                current: "nav",
-                submenu: "NavMenu",
-                insertId: "addMenu-nav-insertpoint"
-            },
-            {
-                current: "app",
-                submenu: "AppMenu",
-                insertId: "addMenu-app-insertpoint"
-            },
-            {
-                current: "group",
-                submenu: "GroupMenu",
-                insertId: "addMenu-page-insertpoint"
-            },
-            ];
-
-            if (enableidentityBoxContextMenu) aiueo.push({
-                current: "ident",
-                submenu: "IdentMenu",
-                insertId: "addMenu-identity-insertpoint"
-            });
-
             var data = loadText(aFile);
 
             var sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
@@ -754,12 +756,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             sandbox.Cr = Cr;
             sandbox.Cu = Cu;
             sandbox.Services = Services;
-            try {
-                sandbox.locale = Services.prefs.getCharPref("general.useragent.locale", "zh-CN");
-            } catch (e) {
-                sandbox.locale = "en-US";
-            }
-
+            sandbox.locale = this.locale;
+            sandbox.addMenu = this;
+            sandbox.$L = $L;
 
             var includeSrc = "";
             sandbox.include = function (aLeafName) {
@@ -769,12 +768,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             };
             sandbox._css = [];
 
-            aiueo.forEach(function ({
+            Object.values(MENU_ATTRS).forEach(function ({
                 current,
-                submenu
+                submenu,
+                groupmenu
             }) {
                 sandbox["_" + current] = [];
-                if (submenu != 'GroupMenu') {
+                if (submenu !== "GroupMenu") {
                     sandbox[current] = function (itemObj) {
                         ps(itemObj, sandbox["_" + current]);
                     }
@@ -790,6 +790,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         ps(itemObj, menuObj._items);
                     }
                 }
+                if (isDef(groupmenu))
+                    sandbox[groupmenu] = function (menuObj) {
+                        if (!menuObj)
+                            menuObj = {};
+                        menuObj._items = [];
+                        menuObj._group = true;
+                        sandbox["_" + current].push(menuObj);
+                        return function (itemObj) {
+                            ps(itemObj, menuObj._items);
+                        }
+                    }
             }, this);
 
             function ps(item, array) {
@@ -812,19 +823,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.style2.parentNode.removeChild(this.style2);
             if (sandbox._css.length)
                 this.style2 = addStyle(sandbox._css.join("\n"));
+
             this.removeMenuitem();
 
             this.customShowings = [];
 
-            aiueo.forEach(function ({
+            Object.values(MENU_ATTRS).forEach(function ({
                 current,
                 submenu,
+                groupmenu,
                 insertId
             }) {
                 if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
                 let insertPoint = $(insertId);
                 this.createMenuitem(sandbox["_" + current], insertPoint);
             }, this);
+
 
             if (isAlert) this.alert(U($L('config has reload')));
         },
@@ -844,6 +858,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 var val = menuObj[key];
                 if (key === "_items") return;
                 if (key === "_group") return;
+                if (key === "framescript") {
+                    if (typeof val !== "string")
+                        val = val.toString();
+
+                    menuObj[key] = val = btoa(encodeURIComponent(val));
+                }
                 if (typeof val == "function")
                     menuObj[key] = val = "(" + val.toString() + ").call(this, event);";
                 group.setAttribute(key, val);
@@ -878,7 +898,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             const viewCache = ($('appMenu-viewCache') && $('appMenu-viewCache').content) || $('appMenu-multiView');
             if (isAppMenu && viewCache) {
                 menu.setAttribute('closemenu', "none");
-                panelId = menuObj.id ? menuObj.id + "-panel" : "addMenu-panel-" + Math.floor(Math.random() * 900000 + 99999);
+                panelId = menuObj.id ? menuObj.id + "-panel" : "addMenu-panel-" + this.panelId++;
                 popup = viewCache.appendChild($C('panelview', {
                     'id': panelId,
                     'class': 'addMenu PanelUI-subView'
@@ -902,7 +922,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     delete menuObj.onshowing;
                     continue;
                 }
+                if (key === "framescript") {
+                    if (typeof val !== "string")
+                        val = val.toString();
 
+                    menuObj[key] = val = btoa(encodeURIComponent(val));
+                }
                 if (typeof val == "function")
                     menuObj[key] = val = "(" + val.toString() + ").call(this, event);"
                 menu.setAttribute(key, val);
@@ -1034,6 +1059,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             for (let key in obj) {
                 let val = obj[key];
                 if (key === "command") continue;
+                if (key === "framescript") {
+                    if (typeof val !== "string")
+                        val = val.toString();
+
+                    obj[key] = val = btoa(encodeURIComponent(val));
+                }
                 if (typeof val == "function")
                     obj[key] = val = "(" + val.toString() + ").call(this, event);";
                 menuitem.setAttribute(key, val);
@@ -1105,17 +1136,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return menuitem;
         },
         createMenuitem: function (itemArray, insertPoint) {
-
             var chldren = $A(insertPoint.parentNode.children);
             //Symbol.iterator
             for (let obj of itemArray) {
-
                 if (!obj) continue;
                 let menuitem;
+
                 // clone menuitem and set attribute
-
                 if (obj.id && (menuitem = $(obj.id))) {
-
                     let dupMenuitem;
                     let isDupMenu = (obj.clone != false);
                     if (isDupMenu) {
@@ -1135,6 +1163,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
                     for (let key in obj) {
                         let val = obj[key];
+                        if (key === "framescript") {
+                            if (typeof val !== "string")
+                                val = val.toString();
+
+                            obj[key] = val = btoa(encodeURIComponent(val));
+                        }
                         if (typeof val == "function")
                             obj[key] = val = "(" + val.toString() + ").call(this, event);";
 
@@ -1463,7 +1497,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
         },
         getSelectedText() {
-            return this._selectedTXT;
+            return this._selectedText;
         },
         /**
          * 获取选区
