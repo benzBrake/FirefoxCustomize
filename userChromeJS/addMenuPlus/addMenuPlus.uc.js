@@ -153,6 +153,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
+    var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关，有需要再开
 
     let {
         classes: Cc,
@@ -471,20 +472,23 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             window.messageManager.loadFrameScript(frameScriptURI, true);
             window.messageManager.addMessageListener("addMenu_selectionData", this);
 
+            // Photon Compact
+            if (enableContentAreaContextMenuCompact)
+                $("contentAreaContextMenu").setAttribute("photoncompact", "true");
+
             // 响应鼠标键释放事件（eg：获取选中文本）
             (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
 
             this.style = addStyle(css);
             this.rebuild();
         },
-        uninit: function () {
+        destroy: function () {
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             $("tabContextMenu").removeEventListener("popupshowing", this, false);
             $("toolbar-context-menu").removeEventListener("popupshowing", this, false);
+            $("menu_FilePopup").removeEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
-        },
-        destroy: function () {
-            this.uninit();
+            $("contentAreaContextMenu").removeAttribute("photoncompact");
             window.messageManager.broadcastAsyncMessage("addMenu_destroy");
             window.messageManager.removeMessageListener("addMenu_selectionData", this);
             (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
@@ -1922,8 +1926,8 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
     -moz-context-properties: fill, fill-opacity !important;
     fill: currentColor !important;
 }
-#contentAreaContextMenu:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
-#contentAreaContextMenu:not([needsgutter]) > menugroup.addMenu >.addMenu:first-child > .menu-iconic-left {
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu:first-child > .menu-iconic-left {
     visibility: collapse;
 }
 /* menugroup.addMenu {
