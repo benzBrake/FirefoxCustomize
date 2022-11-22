@@ -49,6 +49,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     var enableIdentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
+    var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关，有需要再开
     const ADDMENU_LANG = {
         'zh-CN': {
             'config example': '// 这是一个 addMenuPlus 配置文件\n' +
@@ -148,8 +149,8 @@ list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53
 -moz-context-properties: fill, fill-opacity !important;
 fill: currentColor !important;
 }
-#contentAreaContextMenu:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
-#contentAreaContextMenu:not([needsgutter]) > menugroup.addMenu >.addMenu:first-child > .menu-iconic-left {
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu:first-child > .menu-iconic-left {
 visibility: collapse;
 }
 /* menugroup.addMenu {
@@ -415,6 +416,10 @@ display: none;
                     onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
                 }), ins);
 
+                // Photon Compact
+                if (enableContentAreaContextMenuCompact)
+                    $("contentAreaContextMenu", doc).setAttribute("photoncompact", "true");
+
                 // 响应鼠标键释放事件（eg：获取选中文本）
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
 
@@ -551,7 +556,7 @@ display: none;
             }
             destroy(win) {
                 win || (win = this.win);
-                const { doc } = win;
+                const { document: doc } = win;
                 $("contentAreaContextMenu", doc).removeEventListener("popupshowing", this, false);
                 $("tabContextMenu", doc).removeEventListener("popupshowing", this, false);
                 $("toolbar-context-menu", doc).removeEventListener("popupshowing", this, false);
@@ -562,6 +567,7 @@ display: none;
                 $$('#addMenu-rebuild, .addMenu-insert-point', doc).forEach(function (e) {
                     e.parentNode.removeChild(e)
                 });
+                $("contentAreaContextMenu", doc).removeAttribute("photoncompact");
                 if ($('identity-box-contextmenu', doc)) {
                     var popup = $('identity-box-contextmenu', doc);
                     popup.parentNode.removeChild(popup);
