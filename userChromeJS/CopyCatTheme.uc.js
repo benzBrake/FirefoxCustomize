@@ -624,6 +624,7 @@
             this.PrefObservers = {};
             this.MutationObservers = [];
             this.id = aFile.leafName.replace(/\.css$/, '');
+            let themeConfig;
             if (aFile.isDirectory()) {
                 let themeConfigFile = aFile.clone();
                 themeConfigFile.append("userChrome.json");
@@ -636,8 +637,7 @@
                     filename: "userChrome.ag.css"
                 }, {
                     filename: "userChrome.us.css"
-                }],
-                    themeConfig = null;
+                }];
                 if (themeConfigFile.exists()) {
                     themeConfig = JSON.parse(readFile(themeConfigFile, false));
                     fileList = themeConfig.files;
@@ -660,65 +660,6 @@
                         });
                     }
                 });
-                if (themeConfig) {
-                    const attrKeys = ["name", "author", "charset", "version", "description", "homepageURL", "downloadURL", "updateURL", "optionsURL", "license", "licenseURL"];
-                    attrKeys.forEach((key) => {
-                        if (themeConfig.hasOwnProperty(key)) {
-                            this[key] = themeConfig[key];
-                        }
-                    });
-                    if (themeConfig.locales) {
-                        let arr = Object.keys(themeConfig.locales);
-                        this.lang = arr.includes(window.CopyCatTheme.locale) ? themeConfig.locales[window.CopyCatTheme.locale] : themeConfig.locales[arr[0]];
-                    }
-                    if (themeConfig.options) {
-                        this._options = [];
-                        themeConfig.options.forEach(key => {
-                            let name = this.lang[key] || key;
-                            this._options.push({
-                                name: name,
-                                pref: key,
-                                get value() {
-                                    return cPref.get(key, false)
-                                },
-                                toggle: function (value) {
-                                    cPref.set(key, !!this.value);
-                                }
-                            });
-                        })
-                    }
-                    if (themeConfig.monitors) {
-                        themeConfig.monitors.forEach(item => {
-                            if (item.pref) {
-                                this.PrefObservers[item.pref] = {
-                                    target: window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
-                                    targetAttr: item.targetAttr || item.pref
-                                }
-                            }
-                            if (item.from && item.attr) {
-                                let from = window.document.querySelector(item.from),
-                                    target = window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
-                                    targetAttr = item.targetAttr || item.attr;
-                                if (from && target) {
-                                    let config = {
-                                        from: from,
-                                        attr: item.attr,
-                                        target: target,
-                                        targetAttr: targetAttr,
-                                        observer: new window.MutationObserver((mutations) => {
-                                            mutations.forEach((mutation) => {
-                                                if (mutation.type === 'attributes' && mutation.attributeName === item.attr) {
-                                                    target.setAttribute(targetAttr, mutation.target.getAttribute(item.attr));
-                                                }
-                                            });
-                                        })
-                                    };
-                                    this.MutationObservers.push(config);
-                                }
-                            }
-                        });
-                    }
-                }
             } else if (aFile.leafName.endsWith('.css')) {
                 this.isTheme = true;
                 Object.entries(readStyleInfo(aFile)).forEach(([key, value]) => {
@@ -729,6 +670,65 @@
                     type: getStyleType(aFile.leafName),
                     file: aFile
                 });
+            }
+            if (themeConfig) {
+                const attrKeys = ["name", "author", "charset", "version", "description", "homepageURL", "downloadURL", "updateURL", "optionsURL", "license", "licenseURL"];
+                attrKeys.forEach((key) => {
+                    if (themeConfig.hasOwnProperty(key)) {
+                        this[key] = themeConfig[key];
+                    }
+                });
+                if (themeConfig.locales) {
+                    let arr = Object.keys(themeConfig.locales);
+                    this.lang = arr.includes(window.CopyCatTheme.locale) ? themeConfig.locales[window.CopyCatTheme.locale] : themeConfig.locales[arr[0]];
+                }
+                if (themeConfig.options) {
+                    this._options = [];
+                    themeConfig.options.forEach(key => {
+                        let name = this.lang[key] || key;
+                        this._options.push({
+                            name: name,
+                            pref: key,
+                            get value() {
+                                return cPref.get(key, false)
+                            },
+                            toggle: function (value) {
+                                cPref.set(key, !!this.value);
+                            }
+                        });
+                    })
+                }
+                if (themeConfig.monitors) {
+                    themeConfig.monitors.forEach(item => {
+                        if (item.pref) {
+                            this.PrefObservers[item.pref] = {
+                                target: window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
+                                targetAttr: item.targetAttr || item.pref
+                            }
+                        }
+                        if (item.from && item.attr) {
+                            let from = window.document.querySelector(item.from),
+                                target = window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
+                                targetAttr = item.targetAttr || item.attr;
+                            if (from && target) {
+                                let config = {
+                                    from: from,
+                                    attr: item.attr,
+                                    target: target,
+                                    targetAttr: targetAttr,
+                                    observer: new window.MutationObserver((mutations) => {
+                                        mutations.forEach((mutation) => {
+                                            if (mutation.type === 'attributes' && mutation.attributeName === item.attr) {
+                                                target.setAttribute(targetAttr, mutation.target.getAttribute(item.attr));
+                                            }
+                                        });
+                                    })
+                                };
+                                this.MutationObservers.push(config);
+                            }
+                        }
+                    });
+                }
             }
             if ((this.name || "").length === 0) this.name = this.id;
             this.isEnabled = false;
@@ -791,26 +791,23 @@
                 this._options = [];
                 let keys = {};
                 this.styles.forEach(style => {
-                    let content = readFile(style.file),
-                        optionKeys = content.match(/-moz-bool-pref\("([\w\.\-]+)"\)/gm);
-                    if (optionKeys)
-                        optionKeys.forEach(option => {
-                            let [, key] = option.match(/"([\w\.\-]+)"/);
+                    let prefs = getPrefsFromFile(style.file);
+                    prefs.forEach(key => {
+                        if (!keys[key]) {
                             let name = this.lang[key] || key;
-                            if (!keys[key]) {
-                                this._options.push({
-                                    name: name,
-                                    pref: key,
-                                    get value() {
-                                        return cPref.get(key, false, false)
-                                    },
-                                    toggle: function (value) {
-                                        cPref.set(key, !!this.value);
-                                    }
-                                });
-                            }
-                            keys[key] = true;
-                        });
+                            this._options.push({
+                                name: name,
+                                pref: key,
+                                get value() {
+                                    return cPref.get(key, false, false)
+                                },
+                                toggle: function (value) {
+                                    cPref.set(key, !!this.value);
+                                }
+                            });
+                        }
+                        keys[key] = true;
+                    })
                 });
             }
             return this._options;
@@ -884,6 +881,41 @@
             type = sss.AUTHOR_SHEET;
         }
         return type;
+    }
+
+    function getPrefsFromFile(aFile) {
+        const regexImport = /@import url\("([^"]+)"\)/m;
+        let content = readFile(aFile, false);
+        let prefs = [];
+        prefs = matchPrefs(content);
+        let files = content.match(regexImport);
+        if (files) {
+            files.filter(m => !m.startsWith("@import")).map(m => m.replaceAll(/\//g, "\\\\")).forEach(m => {
+                let file = aFile.parent.clone();
+                file.appendRelativePath(m);
+                if (file.exists()) {
+                    let content = readFile(file, false);
+                    let ps = matchPrefs(content);
+                    ps.forEach(p => {
+                        if (!prefs.includes(p)) prefs.push(p);
+                    })
+                }
+            });
+        }
+        return prefs;
+    }
+
+    function matchPrefs(content) {
+        const regexPref = /-moz-bool-pref\("([^"]+)"\)/gm;
+        let matches = content.match(regexPref);
+        let options = [];
+        if (matches) {
+            matches.forEach(m => {
+                let [, key] = m.match(/"([\w\.\-]+)"/);
+                if (!options.includes(key)) options.push(key);
+            })
+        }
+        return options;
     }
 
     function $R(el) {
