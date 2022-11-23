@@ -356,7 +356,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     let tag = ins.localName.startsWith("menu") ? "menuseparator" : "toolbarseparator";
                     let insertPoint = $C(tag, {
                         id: `addMenu-${type}-insertpoint`,
-                        class: "addMenu-insert-point"
+                        class: "addMenu-insert-point",
+                        hidden: true
                     })
                     MENU_ATTRS[type].insertId = insertPoint.id;
                     ins.parentNode.insertBefore(insertPoint, ins.nextSibling);
@@ -394,7 +395,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }));
                 popup.appendChild($C("menuseparator", {
                     id: "addMenu-identity-insertpoint",
-                    class: "addMenu-insert-point"
+                    class: "addMenu-insert-point",
+                    hidden: true
                 }));
                 $("mainPopupSet").appendChild(popup);
                 MENU_ATTRS['ident'] = {
@@ -735,7 +737,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     // addMenu.removeMenuitem();
                     ins = $C('toolbarseparator', {
                         'id': 'addMenu-app-insertpoint',
-                        class: "addMenu-insert-point"
+                        class: "addMenu-insert-point",
+                        hidden: true
                     });
                     separator.parentNode.insertBefore(ins, separator);
                     addMenu.rebuild();

@@ -356,7 +356,8 @@ display: none;
                         let tag = ins.localName.startsWith("menu") ? "menuseparator" : "toolbarseparator";
                         let insertPoint = $C(doc, tag, {
                             id: `addMenu-${type}-insertpoint`,
-                            class: "addMenu-insert-point"
+                            class: "addMenu-insert-point",
+                            hidden: true
                         })
                         this.MENU_ATTRS[type].insertId = insertPoint.id;
                         ins.parentNode.insertBefore(insertPoint, ins.nextSibling);
@@ -395,7 +396,8 @@ display: none;
                     popup.addEventListener("popupshowing", this, false);
                     popup.appendChild($C(doc, "menuseparator", {
                         id: "addMenu-identity-insertpoint",
-                        class: "addMenu-insert-point"
+                        class: "addMenu-insert-point",
+                        hidden: true
                     }));
                     $("mainPopupSet", doc).appendChild(popup);
                     this.MENU_ATTRS['ident'] = {
@@ -672,7 +674,8 @@ display: none;
                         // AddMenu.removeMenuitem();
                         ins = $C(doc, 'toolbarseparator', {
                             'id': 'addMenu-app-insertpoint',
-                            class: "addMenu-insert-point"
+                            class: "addMenu-insert-point",
+                            hidden: true
                         });
                         separator.parentNode.insertBefore(ins, separator);
                         AddMenu.rebuild();
@@ -1048,7 +1051,7 @@ display: none;
                     this.setCondition(menuitem, obj.condition);
 
                 // separator はここで終了
-                if (menuitem.localName == "menuseparator")
+                if (menuitem.localName == separatorType)
                     return menuitem;
 
                 if (!obj.onclick)
@@ -1750,7 +1753,6 @@ display: none;
             }
             window.addMenu = ChromeUtils.import(`resource://addmenu-ucjs/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`).AddMenu;
             window.addMenu.init(window);
-            console.log(123);
         }
     } catch (e) { console.error(e); }
 }
