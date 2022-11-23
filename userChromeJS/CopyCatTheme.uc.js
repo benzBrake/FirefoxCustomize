@@ -276,7 +276,7 @@
                     break;
 
                 case "CopyCatThemeLoaded":
-                    this.refreshGlobalStyle(event.target.document, true);
+                    this.refreshGlobalStyle(event.target.document, this.gPrefs("theme", "") !== "");
                     break;
                 case "CopyCatThemeUnloaded":
                     this.refreshGlobalStyle(event.target.document, false);
@@ -371,7 +371,6 @@
                 this.theme.register();
                 window.dispatchEvent(new CustomEvent("CopyCatThemeLoaded"));
             }
-
         },
         refreshThemesList: function (document) {
             let viewCache = getViewCache(document),
