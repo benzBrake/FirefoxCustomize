@@ -36,6 +36,12 @@ body:
         - 其他
     validations:
       required: true
+  - type: input
+    id: which-script
+    attributes:
+      label: 哪个脚本有问题
+      description: 如果标题写上了，这里可以不写
+      placeholder: eg. CopyCat.uc.js
   - type: textarea
     id: what-happened
     attributes:
