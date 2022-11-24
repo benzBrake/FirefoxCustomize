@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        为了更迅速的处理规则请求，请仔细阅读填写说明并正确填写。
+        为了更迅速的处理请求，请仔细阅读填写说明并正确填写。
   - type: dropdown
     id: browsers
     attributes:
@@ -23,7 +23,7 @@ body:
     id: browser-version
     attributes:
       label: 浏览器版本号
-      description: 建议通过浏览器内容工具箱输入 Services.appinfo.version 获取?
+      description: 建议通过浏览器内容工具箱输入 Services.appinfo.version 获取
       placeholder: eg. 102.3
   - type: dropdown
     id: uc-loader

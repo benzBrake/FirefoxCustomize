@@ -1,0 +1,69 @@
+name: Bug report（JS）
+description: If script has some problem, select this.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        In order to process the request more quickly, please read the filling instructions carefully and fill it out correctly.
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: What browser are you using?
+      options:
+        - Firefox
+        - Waterfox
+        - Floorp
+        - Pale Moon
+        - Other Firefox Fork
+    validations:
+      required: true
+  - type: input
+    id: browser-version
+    attributes:
+      label: Browser version
+      description: It is recommended to enter Services.appinfo.version through the browser content toolbox to obtain
+      placeholder: eg. 102.3
+  - type: dropdown
+    id: uc-loader
+    attributes:
+      label: What UC scripts loader are you using?
+      options:
+        - xiaoxiaoflood
+        - MrOtherGuy(fx-autoconfig)
+        - alice0775
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: which-script
+    attributes:
+      label: which script has  bug
+      description: If the title is written, it is not necessary to write here
+      placeholder: eg. CopyCat.uc.js
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What's wrong with the script?
+      description: You can also explain the operation that caused the error so that I can reproduce the problem.
+      value: "Script is breakdown"
+    validations:
+      required: true
+  - type: textarea
+    id: error-log
+    attributes:
+      label: Error log
+      placeholder: Please fill in the error log output by the browser content toolbox
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: necessary-information
+    attributes:
+      label: Supplement necessary information
+      placeholder: |
+        1. If the display is abnormal, you can take a screenshot
+        2. If you know how to fix it, you can also talk about it
+    validations:
+      required: false
