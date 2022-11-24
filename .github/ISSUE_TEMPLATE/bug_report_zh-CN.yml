@@ -1,0 +1,44 @@
+name: 错误报告（JS）
+description: 脚本有问题就选这个
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        为了更迅速的处理规则请求，请仔细阅读填写说明并正确填写。
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: 你在用什么浏览器
+      options:
+        - Firefox
+        - Waterfox
+        - Floorp
+        - Pale Moon
+        - 其他 Firefox Fork
+  - type: dropdown
+    id: uc-loader
+    attributes:
+      label: 你在用什么 UC 环境(引导器)
+      options:
+        - xiaoxiaoflood
+        - MrOtherGuy(fx-autoconfig)
+        - alice0775
+        - 其他
+  - type: textarea
+  	id: error-log
+    attributes:
+      label: 错误日志
+      placeholder: 请填写浏览器内容工具箱输出的错误日志
+    validations:
+      required: true
+  - type: textarea
+    id: Necessary-information
+    attributes:
+      label: 补充必要的信息：
+      placeholder: |
+        1. 如果是显示异常，可以截图
+        2. 有什么操作引起的，也请说明
+    validations:
+      required: false
