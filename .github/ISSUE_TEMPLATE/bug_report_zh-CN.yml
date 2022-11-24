@@ -17,6 +17,14 @@ body:
         - Floorp
         - Pale Moon
         - 其他 Firefox Fork
+    validations:
+      required: true
+  - type: input
+    id: browser-version
+    attributes:
+      label: 浏览器版本号
+      description: 建议通过浏览器内容工具箱输入 Services.appinfo.version 获取?
+      placeholder: eg. 102.3
   - type: dropdown
     id: uc-loader
     attributes:
@@ -26,19 +34,30 @@ body:
         - MrOtherGuy(fx-autoconfig)
         - alice0775
         - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 脚本有什么问题？
+      description: 你也可以说明一下引起错误的操作，方便我复现问题。
+      value: "脚本挂了"
+    validations:
+      required: true
   - type: textarea
     id: error-log
     attributes:
       label: 错误日志
       placeholder: 请填写浏览器内容工具箱输出的错误日志
+      render: shell
     validations:
       required: true
   - type: textarea
-    id: Necessary-information
+    id: necessary-information
     attributes:
       label: 补充必要的信息：
       placeholder: |
         1. 如果是显示异常，可以截图
-        2. 有什么操作引起的，也请说明
+        2. 你懂怎么修也可以说说
     validations:
       required: false
