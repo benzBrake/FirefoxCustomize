@@ -27,7 +27,7 @@ body:
         - alice0775
         - 其他
   - type: textarea
-  	id: error-log
+    id: error-log
     attributes:
       label: 错误日志
       placeholder: 请填写浏览器内容工具箱输出的错误日志
