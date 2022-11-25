@@ -85,10 +85,11 @@
             label: $L("undo close tab"),
             tooltiptext: $L("undo close tab tooltip"),
             defaultArea: CustomizableUI.AREA_TABSTRIP,
-            oncommand: "undoCloseTab();",
+            oncommand: function (event) { if (event.explicitOriginalTarget.tagName === "toolbarbutton") undoCloseTab(); },
+            type: "contextmenu",
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgZmlsbD0iY29udGV4dC1maWxsIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNNS44MjggN2wyLjUzNiAyLjUzNkw2Ljk1IDEwLjk1IDIgNmw0Ljk1LTQuOTUgMS40MTQgMS40MTRMNS44MjggNUgxM2E4IDggMCAxIDEgMCAxNkg0di0yaDlhNiA2IDAgMSAwIDAtMTJINS44Mjh6Ii8+PC9zdmc+",
             onclick: function (event) {
-                if (event.target.localName !== "toolbarbutton") return;
+                if (event.explicitOriginalTarget.localName !== "toolbarbutton") return;
                 if (event.button === 1) {
                     try {
                         SessionStore.restoreLastSession();
@@ -308,7 +309,12 @@
                             }
                         }
                         if (!obj.oncommand)
-                            btn.setAttribute("oncommand", "CustomButtons.onCommand(event);");
+                            $A(btn, {
+                                oncommand: function (event) {
+                                    if (event.target !== event.explicitOriginalTarget) return;
+                                    CustomButtons.onCommand(event);
+                                }
+                            })
                     } catch (e) {
                         this.error(e);
                     }
@@ -461,8 +467,6 @@
             return item;
         },
         onCommand: function (event) {
-            event.stopPropagation();
-            event.preventDefault();
             let item = event.target;
             let precommand = item.getAttribute('precommand') || "",
                 postcommand = item.getAttribute("postcommand") || "",
