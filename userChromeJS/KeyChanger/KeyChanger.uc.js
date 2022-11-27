@@ -6,7 +6,8 @@
 // @description    Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
-// @version        2022.06.03
+// @version        2022.11.27
+// @note           2022.11.27 修复 gBrowser 
 // @note           2022.06.03 新增 getSelctionText()，修增 saveFile 不存在
 // @note           0.0.2 メニューを右クリックで設定ファイルを開けるようにした
 // @note           0.0.2 Meta キーを装飾キーに使えるようになったかもしれない（未テスト）
@@ -379,9 +380,6 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         }
     };
 
-    window.KeyChanger.init();
-
-
     function saveFile(fileOrName, data) {
         var file;
         if (typeof fileOrName == "string") {
@@ -399,5 +397,16 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
         foStream.write(data, data.length);
         foStream.close();
+    }
+
+    if (gBrowserInit.delayedStartupFinished) window.KeyChanger.init();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                window.KeyChanger.init();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 })();
