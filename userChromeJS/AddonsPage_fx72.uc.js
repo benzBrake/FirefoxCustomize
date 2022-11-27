@@ -471,7 +471,25 @@
             } else if (window._uc && !window._uc.isFaked) {
                 scripts = Object.values(_uc.scripts);
             } else if (typeof _ucUtils === 'object') {
-                scripts = _ucUtils.getScriptData();
+                scripts = _ucUtils.getScriptData().map(script => {
+                    let aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+                    let path = resolveChromeURL(`chrome://userscripts/content/${script.filename}`);
+                    path = path.replace("file:///", "").replace(/\//g, '\\\\');
+                    aFile.initWithPath(path);
+                    return Object.assign(script, {
+                        file: aFile
+                    });
+                });
+                function resolveChromeURL(str) {
+                    const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
+                    try {
+                        return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
+                    } catch (e) {
+                        console.error(e);
+                        return ""
+                    }
+                }
+
             } else {
                 // 不支持其他环境
                 window.AM_Helper.uninit();
