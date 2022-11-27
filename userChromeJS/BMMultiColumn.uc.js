@@ -133,7 +133,6 @@
     if (typeof _ucUtils !== 'undefined') {
         _ucUtils.startupFinished()
             .then(() => {
-                console.log("startup done");
                 window.BMMultiColumn.init();
             });
     } else {
