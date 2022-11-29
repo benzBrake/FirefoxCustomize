@@ -131,7 +131,13 @@
             } else if (event.button === 2 && event.target.id === "ucjs-undo-close-tab-button") {
                 event.preventDefault();
                 event.stopPropagation();
-                event.target.querySelector("menupopup").openPopup(event.target, "after_end");
+                let pos = "after_end", x, y;
+                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
+                    pos = "after_position";
+                    x = 0;
+                    y = 0 + event.target.clientHeight;
+                }
+                event.target.querySelector("menupopup").openPopup(event.target, pos, x, y);
             }
         },
 
