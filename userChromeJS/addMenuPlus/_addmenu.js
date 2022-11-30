@@ -41,7 +41,7 @@ ident([
     {
         label: locale.includes("zh-") ? '解除网页限制' : 'Remove web pages limit',
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTAuMDM3IDAuNTI2IEMgNC44MTEgMC41MjYgMC41NzIgNC43NjQgMC41NzIgOS45OTEgQyAwLjU3MiAxNS4yMTggNC44MTEgMTkuNDU2IDEwLjAzNyAxOS40NTYgQyAxNS4yNjUgMTkuNDU2IDE5LjUwMiAxNS4yMTggMTkuNTAyIDkuOTkxIEMgMTkuNTAyIDQuNzY0IDE1LjI2NSAwLjUyNiAxMC4wMzcgMC41MjYgWiBNIDEwLjAzNyAxNy44NSBDIDUuNjk4IDE3Ljg1IDIuMTc4IDE0LjMzMSAyLjE3OCA5Ljk5MSBDIDIuMTc4IDguMTExIDIuODM5IDYuMzgzIDMuOTQyIDUuMDMxIEwgMTQuOTk4IDE2LjA4NiBDIDEzLjY0NiAxNy4xODkgMTEuOTE4IDE3Ljg1IDEwLjAzNyAxNy44NSBaIE0gMTYuMTMzIDE0Ljk1MiBMIDUuMDc3IDMuODk2IEMgNi40MjkgMi43OTMgOC4xNTcgMi4xMzEgMTAuMDM3IDIuMTMxIEMgMTQuMzc3IDIuMTMxIDE3Ljg5NyA1LjY1MiAxNy44OTcgOS45OTEgQyAxNy44OTcgMTEuODcyIDE3LjIzNSAxMy42IDE2LjEzMyAxNC45NTIgWiIgc3R5bGU9IiIvPgo8L3N2Zz4=",
-        url: "javascript:(function(bookmarklets)%7Bfor(var%20i=0;i%3Cbookmarklets.length;i++)%7Bvar%20code=bookmarklets%5Bi%5D.url;if(code.indexOf(%22javascript:%22)!=-1)%7Bcode=code.replace(%22javascript:%22,%22%22);eval(code)%7Delse%7Bcode=code.replace(/%5Es+%7Cs+$/g,%22%22);if(code.length%3E0)%7Bwindow.open(code)%7D%7D%7D%7D)(%5B%7Btitle:%22%E7%A0%B4%E9%99%A4%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95%E9%99%90%E5%88%B6%22,url:%22javascript:function%20applyWin(a)%7Bif(typeof%20a.__nnANTImm__===%5Cx22undefined%5Cx22)%7Ba.__nnANTImm__=%7B%7D;a.__nnANTImm__.evts=%5B%5Cx22mousedown%5Cx22,%5Cx22mousemove%5Cx22,%5Cx22copy%5Cx22,%5Cx22contextmenu%5Cx22%5D;a.__nnANTImm__.initANTI=function()%7Ba.__nnantiflag__=true;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.addEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__)%7D;a.__nnANTImm__.clearANTI=function()%7Bdelete%20a.__nnantiflag__;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.removeEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__);delete%20a.__nnANTImm__%7D;a.__nnANTImm__.fnANTI=function(b)%7Bb.stopPropagation();return%20true%7D;a.addEventListener(%5Cx22unload%5Cx22,function(b)%7Ba.removeEventListener(%5Cx22unload%5Cx22,arguments.callee,false);if(a.__nnantiflag__===true)%7Ba.__nnANTImm__.clearANTI()%7D%7D,false)%7Da.__nnantiflag__===true?a.__nnANTImm__.clearANTI():a.__nnANTImm__.initANTI()%7DapplyWin(top);var%20fs=top.document.querySelectorAll(%5Cx22frame,%20iframe%5Cx22);for(var%20i=0,len=fs.length;i%3Clen;i++)%7Bvar%20win=fs%5Bi%5D.contentWindow;try%7Bwin.document%7Dcatch(ex)%7Bcontinue%7DapplyWin(fs%5Bi%5D.contentWindow)%7D;void%200;%22%7D,%7Btitle:%22%E7%A0%B4%E9%99%A4%E9%80%89%E6%8B%A9%E5%A4%8D%E5%88%B6%E9%99%90%E5%88%B6%22,url:%22javascript:(function()%7Bvar%20doc=document;var%20bd=doc.body;bd.onselectstart=bd.oncopy=bd.onpaste=bd.onkeydown=bd.oncontextmenu=bd.onmousemove=bd.onselectstart=bd.ondragstart=doc.onselectstart=doc.oncopy=doc.onpaste=doc.onkeydown=doc.oncontextmenu=null;doc.onselectstart=doc.oncontextmenu=doc.onmousedown=doc.onkeydown=function%20()%7Breturn%20true;%7D;with(document.wrappedJSObject%7C%7Cdocument)%7Bonmouseup=null;onmousedown=null;oncontextmenu=null;%7Dvar%20arAllElements=document.getElementsByTagName(%5Cx27*%5Cx27);for(var%20i=arAllElements.length-1;i%3E=0;i--)%7Bvar%20elmOne=arAllElements;with(elmOne.wrappedJSObject%7C%7CelmOne)%7Bonmouseup=null;onmousedown=null;%7D%7Dvar%20head=document.getElementsByTagName(%5Cx27head%5Cx27)%5B0%5D;if(head)%7Bvar%20style=document.createElement(%5Cx27style%5Cx27);style.type=%5Cx27text/css%5Cx27;style.innerHTML=%5Cx22html,*%7B-moz-user-select:auto!important;%7D%5Cx22;head.appendChild(style);%7Dvoid(0);%7D)();%22%7D%5D)"
+        url: "javascript:(function(bookmarklets)%7Bfor(var%20i=0;i%3Cbookmarklets.length;i++)%7Bvar%20code=bookmarklets%5Bi%5D.url;if(code.indexOf(%22javascript:%22)!=-1)%7Bcode=code.replace(%22javascript:%22,%22%22);eval(code)%7Delse%7Bcode=code.replace(/%5Es+%7Cs+$/g,%22%22);if(code.length%3E0)%7BaddMenu.win.open(code)%7D%7D%7D%7D)(%5B%7Btitle:%22%E7%A0%B4%E9%99%A4%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95%E9%99%90%E5%88%B6%22,url:%22javascript:function%20applyWin(a)%7Bif(typeof%20a.__nnANTImm__===%5Cx22undefined%5Cx22)%7Ba.__nnANTImm__=%7B%7D;a.__nnANTImm__.evts=%5B%5Cx22mousedown%5Cx22,%5Cx22mousemove%5Cx22,%5Cx22copy%5Cx22,%5Cx22contextmenu%5Cx22%5D;a.__nnANTImm__.initANTI=function()%7Ba.__nnantiflag__=true;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.addEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__)%7D;a.__nnANTImm__.clearANTI=function()%7Bdelete%20a.__nnantiflag__;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.removeEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__);delete%20a.__nnANTImm__%7D;a.__nnANTImm__.fnANTI=function(b)%7Bb.stopPropagation();return%20true%7D;a.addEventListener(%5Cx22unload%5Cx22,function(b)%7Ba.removeEventListener(%5Cx22unload%5Cx22,arguments.callee,false);if(a.__nnantiflag__===true)%7Ba.__nnANTImm__.clearANTI()%7D%7D,false)%7Da.__nnantiflag__===true?a.__nnANTImm__.clearANTI():a.__nnANTImm__.initANTI()%7DapplyWin(top);var%20fs=top.document.querySelectorAll(%5Cx22frame,%20iframe%5Cx22);for(var%20i=0,len=fs.length;i%3Clen;i++)%7Bvar%20win=fs%5Bi%5D.contentWindow;try%7Bwin.document%7Dcatch(ex)%7Bcontinue%7DapplyWin(fs%5Bi%5D.contentWindow)%7D;void%200;%22%7D,%7Btitle:%22%E7%A0%B4%E9%99%A4%E9%80%89%E6%8B%A9%E5%A4%8D%E5%88%B6%E9%99%90%E5%88%B6%22,url:%22javascript:(function()%7Bvar%20doc=document;var%20bd=doc.body;bd.onselectstart=bd.oncopy=bd.onpaste=bd.onkeydown=bd.oncontextmenu=bd.onmousemove=bd.onselectstart=bd.ondragstart=doc.onselectstart=doc.oncopy=doc.onpaste=doc.onkeydown=doc.oncontextmenu=null;doc.onselectstart=doc.oncontextmenu=doc.onmousedown=doc.onkeydown=function%20()%7Breturn%20true;%7D;with(document.wrappedJSObject%7C%7Cdocument)%7Bonmouseup=null;onmousedown=null;oncontextmenu=null;%7Dvar%20arAllElements=document.getElementsByTagName(%5Cx27*%5Cx27);for(var%20i=arAllElements.length-1;i%3E=0;i--)%7Bvar%20elmOne=arAllElements;with(elmOne.wrappedJSObject%7C%7CelmOne)%7Bonmouseup=null;onmousedown=null;%7D%7Dvar%20head=document.getElementsByTagName(%5Cx27head%5Cx27)%5B0%5D;if(head)%7Bvar%20style=document.createElement(%5Cx27style%5Cx27);style.type=%5Cx27text/css%5Cx27;style.innerHTML=%5Cx22html,*%7B-moz-user-select:auto!important;%7D%5Cx22;head.appendChild(style);%7Dvoid(0);%7D)();%22%7D%5D)"
     }, {
         label: locale.includes("zh-") ? "编辑当前页面" : 'Edit current page',
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTUuNjk0IDEuNzE4IEMgMTQuOTE5IDEuNzIgMTQuMTc0IDIuMDMxIDEzLjYzIDIuNTg0IEwgMi4zOTUgMTMuODE3IEwgMi4zNTEgMTQuMDQgTCAxLjU3NCAxNy45NDggTCAxLjM1MiAxOC45OTEgTCAyLjM5NiAxOC43NjkgTCA2LjMwMyAxNy45OTEgTCA2LjUyNCAxNy45NDcgTCAxNy43NTkgNi43MTQgQyAxOC45MTUgNS41NzggMTguOTE1IDMuNzE4IDE3Ljc1OSAyLjU4MyBDIDE3LjIxNCAyLjAzMSAxNi40NzEgMS43MiAxNS42OTQgMS43MTggWiBNIDE1LjY5NCAzLjA3MiBDIDE2LjA1MiAzLjA3MiAxNi40MTMgMy4yMzYgMTYuNzYgMy41ODMgQyAxNy40NTEgNC4yNzQgMTcuNDUxIDUuMDIyIDE2Ljc2IDUuNzE1IEwgMTYuMjUgNi4yMDMgTCAxNC4xMzkgNC4wOTMgTCAxNC42MjkgMy41ODMgQyAxNC45NzYgMy4yMzYgMTUuMzM2IDMuMDcyIDE1LjY5NCAzLjA3MiBaIE0gMTMuMTQxIDUuMDkzIEwgMTUuMjQ5IDcuMjAyIEwgNi42NTkgMTUuNzkzIEMgNi4xOTQgMTQuODg2IDUuNDU2IDE0LjE0OCA0LjU0OCAxMy42ODQgWiBNIDMuNjM5IDE0LjgzOSBDIDQuNDg5IDE1LjE4MSA1LjE2MyAxNS44NTUgNS41MDMgMTYuNzA1IEwgMy4xNzIgMTcuMTcxIFoiIHN0eWxlPSJzdHJva2UtbWl0ZXJsaW1pdDogMTsgc3Ryb2tlLXdpZHRoOiAwcHg7Ii8+Cjwvc3ZnPg==",
@@ -64,7 +64,7 @@ ident([
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTYuOTE4IDQuMjMzIEwgMTAuMjIxIDEwLjkzMSBMIDMuNTIzIDQuMjMzIE0gMy41MjMgMTUuMzk2IEwgMTYuOTE4IDE1LjM5NiIgc3R5bGU9InN0cm9rZS13aWR0aDogMnB4OyBzdHJva2UtbGluZWpvaW46IHJvdW5kOyBzdHJva2UtbGluZWNhcDogcm91bmQ7IiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTSAxNy42MjUgNC45NCBMIDEwLjIyMSAxMi4zNDUgTCAyLjgxNiA0Ljk0IEwgNC4yMyAzLjUyNiBMIDEwLjIyMSA5LjUxNyBMIDE2LjIxMSAzLjUyNiBaIE0gMTYuOTE4IDE2LjM5NiBMIDMuNTIzIDE2LjM5NiBMIDMuNTIzIDE0LjM5NiBMIDE2LjkxOCAxNC4zOTYgWiIgc3R5bGU9IiIvPgo8L3N2Zz4="
     }, {
         label: locale.includes("zh-") ? "页面自动刷新" : "Auto refresh",
-        url: "javascript:(function(p){open('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3EForce%3C/a%3E%3Cscript%3Efunction%20i(n){return%20d.getElementById(n)}function%20z(){c+=0.2;if(c%3E=t){c=0;e.location=u;r++}x()}function%20x(){s=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0||c/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22Reloads:%20%22+r;i(3).innerHTML=%22Time:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)}c=r=0;d=document;e=opener.top;u=prompt(%22URL%22,e.location.href);t=u?prompt(%22Seconds%22,60):0;setInterval(%22z()%22,200);if(!t){window.close()}%3C/script%3E%3C/body%3E')})('status=0,scrollbars=0,width=100,height=115,left=1,top=1')",
+        url: "javascript:(function(p){open('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3EForce%3C/a%3E%3Cscript%3Efunction%20i(n){return%20d.getElementById(n)}function%20z(){c+=0.2;if(c%3E=t){c=0;e.location=u;r++}x()}function%20x(){s=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0||c/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22Reloads:%20%22+r;i(3).innerHTML=%22Time:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)}c=r=0;d=document;e=opener.top;u=prompt(%22URL%22,e.location.href);t=u?prompt(%22Seconds%22,60):0;setInterval(%22z()%22,200);if(!t){addMenu.win.close()}%3C/script%3E%3C/body%3E')})('status=0,scrollbars=0,width=100,height=115,left=1,top=1')",
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTcuMTQ1IDkuNjUxIEMgMTcuMTQzIDkuNjQyIDE3LjAwNyA4Ljg3NSAxNi45MTUgOC41NDggQyAxNi44MjIgOC4yMTkgMTYuNzE5IDcuOTI4IDE2LjU4NiA3LjYyNSBDIDE2LjMyNSA3LjAxOSAxNi4wMTQgNi41MTEgMTUuNjExIDYuMDE4IEMgMTUuMjE2IDUuNTIyIDE0Ljc5MyA1LjEyMiAxNC4yODYgNC43NTIgQyAxMy43ODUgNC4zNzkgMTMuMjc4IDQuMDk3IDEyLjY5OCAzLjg2NSBDIDEyLjEyMSAzLjYyNyAxMS41NjEgMy40NzYgMTAuOTQgMy4zOTQgQyAxMC4zMTkgMy4zMDcgOS43MzcgMy4zIDkuMTA3IDMuMzc5IEMgOC40NzQgMy40NTMgNy44OTYgMy41OTkgNy4yODggMy44NTMgQyA2LjY3NSA0LjEgNi4xMjUgNC40MTUgNS41NjMgNC44NTcgQyA1LjQzNyA0Ljk1NSA1LjMyNiA1LjA0OCA1LjIwNSA1LjE1NCBDIDUuMDg4IDUuMjU5IDQuOTgyIDUuMzYgNC44NjggNS40NzQgQyA0Ljc1NiA1LjU4NiA0LjY1OSA1LjY5MSA0LjU1NiA1LjgxIEMgNC40NTIgNS45MyA0LjM2IDYuMDQzIDQuMjY0IDYuMTY5IEMgNC4xNjggNi4yOTQgNC4wODQgNi40MTIgMy45OTYgNi41NDQgQyAzLjk2NiA2LjU5IDMuOTM3IDYuNjM0IDMuOTA4IDYuNjc4IEwgNi4wNjYgNi42NzggTCA2LjA2NiA4LjI1NCBMIDEuMzMzIDguMjU0IEwgMS4zMzMgMy41MiBMIDIuOTA5IDMuNTIgTCAyLjkwOSA1LjM1MiBDIDIuOTQzIDUuMzA1IDIuOTc4IDUuMjU4IDMuMDEyIDUuMjEzIEMgMy4xMjMgNS4wNjkgMy4yNDYgNC45MTcgMy4zNjYgNC43NzggQyAzLjQ4NyA0LjYzOSAzLjYyMyA0LjQ5MyAzLjc1MyA0LjM2MSBDIDMuODgxIDQuMjMzIDQuMDI0IDQuMDk4IDQuMTYyIDMuOTc1IEMgNC4yOTkgMy44NTMgNC40NTEgMy43MjcgNC41OTcgMy42MTMgQyA1LjI0OSAzLjExMSA1Ljk4MyAyLjY4OCA2LjY5MSAyLjM5NSBDIDcuNDA0IDIuMTA3IDguMTg2IDEuOTA3IDguOTE4IDEuODE1IEMgOS42NTIgMS43MyAxMC40MzYgMS43MzkgMTEuMTU0IDEuODM0IEMgMTEuODcyIDEuOTM2IDEyLjYyMSAyLjEzNyAxMy4yOSAyLjQwNSBDIDEzLjk1OCAyLjY3OSAxNC42MzUgMy4wNTcgMTUuMjIgMy40ODQgQyAxNS44MDEgMy45MTYgMTYuMzcgNC40NTYgMTYuODM3IDUuMDI4IEMgMTcuMjk4IDUuNjA1IDE3LjcxOSA2LjI5NCAxOC4wMyA2Ljk5NiBDIDE4LjMzMyA3LjY5OSAxOC42MjUgOS4xMjQgMTguNjI1IDkuMTI0IEMgMTguNjQzIDkuMTcyIDE3LjE0MiA5LjYyNSAxNy4xNDUgOS42NTEgWiBNIDE3LjE0NSA5LjY1MSBDIDE3LjE0NSA5LjY1MSAxNy4xNDUgOS42NTEgMTcuMTQ1IDkuNjUxIEMgMTcuMTQ1IDkuNjUxIDE3LjE0NSA5LjY1MSAxNy4xNDUgOS42NTEgWiIgc3R5bGU9IiIvPgogIDxwYXRoIGQ9Ik0gMi44NzkgMTEuMTk4IEMgMi44ODEgMTEuMjA3IDMuMDE3IDExLjk3NCAzLjEwOSAxMi4zMDIgQyAzLjIwMiAxMi42MyAzLjMwNSAxMi45MjEgMy40MzggMTMuMjI0IEMgMy42OTkgMTMuODMxIDQuMDExIDE0LjMzOSA0LjQxMyAxNC44MzEgQyA0LjgwOCAxNS4zMjggNS4yMzEgMTUuNzI4IDUuNzM4IDE2LjA5OCBDIDYuMjQgMTYuNDcxIDYuNzQ4IDE2Ljc1IDcuMzI2IDE2Ljk4NSBDIDcuOTA0IDE3LjIyIDguNDY0IDE3LjM3NCA5LjA4NSAxNy40NTYgQyA5LjcwNSAxNy41NDQgMTAuMjg4IDE3LjU1MSAxMC45MTggMTcuNDcxIEMgMTEuNTQ5IDE3LjM5OSAxMi4xMjcgMTcuMjUxIDEyLjczNyAxNi45OTggQyAxMy4zNTEgMTYuNzUgMTMuODk5IDE2LjQzNiAxNC40NiAxNS45OTQgQyAxNC41ODYgMTUuODk2IDE0LjY5OCAxNS44MDIgMTQuODE4IDE1LjY5NiBDIDE0LjkzOCAxNS41OSAxNS4wNDIgMTUuNDkyIDE1LjE1MyAxNS4zNzkgQyAxNS4yNjYgMTUuMjY0IDE1LjM2NiAxNS4xNTggMTUuNDY4IDE1LjA0IEMgMTUuNTcxIDE0LjkyMiAxNS42NjIgMTQuODA4IDE1Ljc2IDE0LjY4IEMgMTUuODU2IDE0LjU1NiAxNS45NCAxNC40MzggMTYuMDI4IDE0LjMwNSBDIDE2LjA1OCAxNC4yNiAxNi4wODcgMTQuMjE2IDE2LjExNSAxNC4xNzIgTCAxMy45NTggMTQuMTcyIEwgMTMuOTU4IDEyLjU5NiBMIDE4LjY5MSAxMi41OTYgTCAxOC42OTEgMTcuMzI5IEwgMTcuMTE1IDE3LjMyOSBMIDE3LjExNSAxNS40OTggQyAxNy4wODEgMTUuNTQ1IDE3LjA0NiAxNS41OTEgMTcuMDExIDE1LjYzNyBDIDE2LjkwMSAxNS43OCAxNi43NzkgMTUuOTMyIDE2LjY1OCAxNi4wNzIgQyAxNi41MzYgMTYuMjEyIDE2LjQgMTYuMzU4IDE2LjI3MyAxNi40ODcgQyAxNi4xNDMgMTYuNjE4IDE1Ljk5OSAxNi43NTMgMTUuODYyIDE2Ljg3NSBDIDE1LjcyNSAxNi45OTcgMTUuNTc0IDE3LjEyMiAxNS40MjggMTcuMjM2IEMgMTQuNzc1IDE3Ljc0IDE0LjA0IDE4LjE2MiAxMy4zMzMgMTguNDU2IEMgMTIuNjIxIDE4Ljc0MyAxMS44NCAxOC45NDMgMTEuMTA4IDE5LjAzNSBDIDEwLjM3NCAxOS4xMjEgOS41ODkgMTkuMTEyIDguODcxIDE5LjAxNiBDIDguMTUyIDE4LjkxNCA3LjQwMiAxOC43MTYgNi43MzQgMTguNDQ1IEMgNi4wNjYgMTguMTc0IDUuMzg5IDE3Ljc5MyA0LjgwNCAxNy4zNjYgQyA0LjIyMyAxNi45MzQgMy42NTQgMTYuMzk0IDMuMTg3IDE1LjgyIEMgMi43MjcgMTUuMjQ1IDIuMzA1IDE0LjU1NyAxLjk5NCAxMy44NTMgQyAxLjY5MSAxMy4xNSAxLjM5OSAxMS43MjUgMS4zOTkgMTEuNzI1IEMgMS4zODEgMTEuNjc3IDIuODgyIDExLjIyNCAyLjg3OSAxMS4xOTggWiBNIDIuODc5IDExLjE5OCBDIDIuODc5IDExLjE5OCAyLjg3OSAxMS4xOTggMi44NzkgMTEuMTk4IEMgMi44NzkgMTEuMTk4IDIuODc5IDExLjE5OCAyLjg3OSAxMS4xOTggWiIgc3R5bGU9IiIvPgo8L3N2Zz4="
     }, {}, {
         label: locale.includes("zh-") ? "页面另存为" : " Save page",
@@ -112,7 +112,7 @@ new function () {
             const prefs = addMenu.prefs, locale = addMenu.locale;
             function chooseBrowser() {
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                fp.init(window, locale.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
+                fp.init(addMenu.win, locale.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
                 fp.appendFilter(locale.includes("zh-") ? "执行文件" : "Executable file", "*.exe"); // 非 Windows 必须注释这一行，不过不一定能用
                 fp.open(res => {
                     if (res != Ci.nsIFilePicker.returnOK) return;
@@ -173,7 +173,7 @@ new function () {
         class: 'showText',
         insertBefore: 'context_bookmarkSelectedTabs',
         onshowing: function (item) {
-            item.hidden = window.gBrowser.currentURI.spec.startsWith('file')
+            item.hidden = addMenu.win.gBrowser.currentURI.spec.startsWith('file')
         }
     });
     groupMenu([{
@@ -193,7 +193,7 @@ new function () {
         class: 'showFirstText',
         insertBefore: 'context_bookmarkSelectedTabs',
         onshowing: function (item) {
-            item.hidden = window.gBrowser.currentURI.spec.startsWith('file')
+            item.hidden = addMenu.win.gBrowser.currentURI.spec.startsWith('file')
         }
     });
     groupMenu([{
@@ -215,7 +215,7 @@ new function () {
         class: 'showFirstText',
         insertAfter: 'context_bookmarkTab',
         onshowing: function (item) {
-            const { gBrowser } = window;
+            const { gBrowser } = addMenu.win;
             item.hidden = gBrowser.currentURI.spec.startsWith('file') || !gBrowser.getIcon(gBrowser.selectedTab);
         }
     });
@@ -251,7 +251,7 @@ new function () {
         label: locale.includes("zh-") ? '站内搜索...' : 'Site search...',
         condition: 'normal',
         onshowing: function (item) {
-            item.hidden = !window.gBrowser.currentURI.spec.startsWith('http');
+            item.hidden = !addMenu.win.gBrowser.currentURI.spec.startsWith('http');
         }
     }),
         groupMenuSelect = new PageGroup({
@@ -261,7 +261,7 @@ new function () {
             condition: 'select',
             insertAfter: 'context-searchselect',
             onshowing: function (item) {
-                item.hidden = !window.gBrowser.currentURI.spec.startsWith('http');
+                item.hidden = !addMenu.win.gBrowser.currentURI.spec.startsWith('http');
             }
         });
     var items = [{
@@ -289,7 +289,7 @@ new function () {
     }, {
         label: locale.includes("zh-") ? '百度站内搜索' : 'Baidu site search',
         onshowing: function (item) {
-            item.hidden = !window.gBrowser.currentURI.host.includes("www.baidu.com");
+            item.hidden = !addMenu.win.gBrowser.currentURI.host.includes("www.baidu.com");
         },
         oncommand: function (e) {
             const locale = addMenu.locale;
@@ -371,13 +371,13 @@ new function () {
         insertBefore: 'context-openlinkincurrent',
         onshowing: function () {
             // open in private tab need privateTab.uc.js https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js
-            let privateBtn = window.document.getElementById('addMenu-openLink-tab-private')
+            let privateBtn = addMenu.win.document.getElementById('addMenu-openLink-tab-private')
             if (privateBtn) {
-                if (typeof window.UC === "undefined") {
+                if (typeof addMenu.win.UC === "undefined") {
                     privateBtn.hidden = true;
                     return;
                 }
-                privateBtn.hidden = typeof window.UC.privateTab === "undefined";
+                privateBtn.hidden = typeof addMenu.win.UC.privateTab === "undefined";
             }
         }
     });
@@ -560,7 +560,7 @@ page([{
     class: "copy",
     text: "%SVG_BASE64%",
     onshowing: function (item) {
-        let uri = window.gBrowser.currentURI.spec;
+        let uri = addMenu.win.gBrowser.currentURI.spec;
         if (!uri.endsWith(".svg")) {
             item.hidden = true;
         } else {
@@ -644,7 +644,7 @@ new function () {
         condition: 'select',
         insertAfter: 'context-copy',
         onshowing: function (item) {
-            const { document } = window;
+            const { document } = addMenu.win;
             document.getElementById("context-print-selection-new").setAttribute("tooltiptext", document.getElementById("context-print-selection-new").label);
             document.getElementById("context-viewpartialsource-selection-new").setAttribute("tooltiptext", document.getElementById("context-viewpartialsource-selection-new").label);
             item.removeAttribute("onshowing");
@@ -729,31 +729,104 @@ new function () {
         insertBefore: 'context-searchselect',
         onshowinglabel: locale.includes("zh-") ? "搜索: %SEL%" : "Search %SEL% by",
         onshowing: function (item) {
-            const { Services, document, addMenu } = window;
-            let popupNode = item.querySelector('menupopup');
-            popupNode.querySelectorAll('.auto-generated').forEach(m => { m.parentNode.removeChild(m); })
+            const { Services, document } = addMenu.win;
+            let searchConfigFile = Services.dirsvc.get('UChrm', Ci.nsIFile), searchJson = false, popupNode = item.querySelector('menupopup');
+            searchConfigFile.append("UserConfig"); // 配置文件存放在 UserConfig 目录下
+            if (searchConfigFile.exists()) {
+                searchConfigFile.append("_allsearch.json"); // 配置文件名为 _allsearch.json
+            }
+            popupNode.querySelectorAll('.auto-generated').forEach(m => { m.parentNode.removeChild(m); });
             let ins = popupNode.firstChild;
-            Services.search.getVisibleEngines().then(
-                engines => engines.forEach((item) => {
-                    let alias = item._definedAliases[0] || item._metaData.alias;
-                    if (alias) {
-                        let menuitem = addMenu.newMenuitem({
-                            label: item._name,
-                            class: "auto-generated",
-                            where: 'tab',
-                            text: "%s",
-                            keyword: alias
-                        }, {
-                            isTopMenuitem: true,
-                            insertPoint: ins
-                        }, document);
-                        ins.parentNode.insertBefore(menuitem, ins);
-                    }
-                }))
-        },
+            if (searchConfigFile.exists()) {
+                var searchConfig = loadText(searchConfigFile);
+                try {
+                    searchJson = JSON.parse(searchConfig);
+                } catch (e) {
+                    addMenu.error(e);
+                }
+                if (searchJson)
+                    searchJson.forEach(g => {
+                        if (Array.isArray(g.list) && g.list.length) {
+                            let obj = {
+                                label: g.nameZh || g.name,
+                                class: "auto-generated search-menu showFirstText",
+                                hidden: g.data.visible === false,
+                                onclick: function (event) {
+                                    if (event.target != event.currentTarget) return; var firstItem = event.currentTarget.querySelector('menuitem'); if (!firstItem) return; if (event.button === 1) { checkForMiddleClick(firstItem, event); } else { firstItem.doCommand(); closeMenus(event.currentTarget); }
+                                },
+                            }
+
+                            let items;
+                            obj._items = items = g.list.map(e => {
+                                return {
+                                    label: e.nameZh || e.name,
+                                    where: 'tab',
+                                    url: e.url,
+                                    hidden: e.data.visible === false
+                                }
+                            });
+
+                            // 显示为横排菜单，如果想显示成三级菜单，注释下面这三句
+                            // obj._group = true;
+                            // obj.class = ((obj.class || "") + " search-menu-group").trim();
+                            // items.unshift({
+                            //     label: g.nameZh || g.name,
+                            //     hidden: g.data.visible === false,
+                            //     onclick: function (event) {
+                            //         if (event.target != event.currentTarget) return;
+                            //         let nextSib = event.target.nextSibling;
+                            //         while (nextSib) {
+                            //             if (nextSib.hidden === false)
+                            //                 nextSib.click(event);
+                            //             nextSib = nextSib.nextSibling;
+                            //         }
+                            //     },
+                            // })
+
+                            let menu = addMenu.newMenu(obj, {
+                                isTopMenuitem: true,
+                                insertPoint: ins
+                            }, document);
+                            ins.parentNode.insertBefore(menu, ins);
+                        }
+                    });
+            } else {
+                Services.search.getVisibleEngines().then(
+                    engines => engines.forEach((item) => {
+                        let alias = item._definedAliases[0] || item._metaData.alias;
+                        if (alias) {
+                            let menuitem = addMenu.newMenuitem({
+                                label: item._name,
+                                class: "auto-generated",
+                                where: 'tab',
+                                text: "%s",
+                                keyword: alias
+                            }, {
+                                isTopMenuitem: true,
+                                insertPoint: ins
+                            }, document);
+                            ins.parentNode.insertBefore(menuitem, ins);
+                        }
+                    }));
+            }
+        }
     });
     menu(items);
     css("#context-searchselect { display: none } #contentAreaContextMenu #addMenu-search-select .menu-accel-container { visibility: hidden; }");
+    function loadText(aFile) {
+        var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+        var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+        fstream.init(aFile, -1, 0, 0);
+        sstream.init(fstream);
+
+        var data = sstream.read(sstream.available());
+        try {
+            data = decodeURIComponent(escape(data));
+        } catch (e) { }
+        sstream.close();
+        fstream.close();
+        return data;
+    }
 };
 // 文本右键菜单 End ==============================================================
 // 输入右键菜单 Start ============================================================

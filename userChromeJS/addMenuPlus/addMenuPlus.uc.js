@@ -309,6 +309,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return this.panelId = Math.floor(Math.random() * 900000 + 99999);
         },
         init: function () {
+            this.win = window;
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";

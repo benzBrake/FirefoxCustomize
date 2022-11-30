@@ -594,7 +594,7 @@ display: none;
                         }
 
                         if (event.target.id == 'contentAreaContextMenu') {
-                            const { gContextMenu } = win;
+                            var { gContextMenu } = win;
                             var state = [];
                             if (gContextMenu.onTextInput)
                                 state.push("input");
@@ -637,8 +637,8 @@ display: none;
                             }
                             event.currentTarget.setAttribute("addMenu", state.join(" "));
                         }
-                        const window = event.originalTarget.ownerGlobal;
-                        const addMenu = this;
+
+                        var addMenu = this;
                         this.customShowings.forEach(function (obj) {
                             var curItem = obj.item;
                             try {
