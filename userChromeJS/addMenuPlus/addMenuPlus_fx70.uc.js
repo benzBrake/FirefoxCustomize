@@ -544,8 +544,8 @@ display: none;
 
                 $$('.addMenuOriginal', doc).forEach((e) => {
                     let id = e.getAttribute('original-id');
-                    if (id && $(id))
-                        e.parentNode.insertBefore($(id), e);
+                    if (id && $(id, doc))
+                        e.parentNode.insertBefore($(id, doc), e);
                     e.parentNode.removeChild(e);
                 });
 
@@ -565,7 +565,7 @@ display: none;
                 $("menu_FilePopup", doc).removeEventListener("popupshowing", this, false);
                 $("menu_ToolsPopup", doc).removeEventListener("popupshowing", this, false);
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
-                this.removeMenuitem();
+                this.removeMenuitem(doc);
                 $$('#addMenu-rebuild, .addMenu-insert-point', doc).forEach(function (e) {
                     e.parentNode.removeChild(e)
                 });
@@ -638,6 +638,7 @@ display: none;
                             event.currentTarget.setAttribute("addMenu", state.join(" "));
                         }
                         const window = event.originalTarget.ownerGlobal;
+                        const addMenu = this;
                         this.customShowings.forEach(function (obj) {
                             var curItem = obj.item;
                             try {
@@ -1743,16 +1744,37 @@ display: none;
     try {
         if (parseInt(Services.appinfo.version) < 101) {
             window.addMenu = ChromeUtils.import(Components.stack.filename).AddMenu;
-            window.addMenu.init(window);
         } else {
-            const fileHandler = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-            const scriptFile = fileHandler.getFileFromURLSpec(Components.stack.filename);
-            const resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
+            let fileHandler = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
+            let scriptPath = Components.stack.filename;
+            if (scriptPath.startsWith("chrome")) {
+                scriptPath = resolveChromeURL(scriptPath);
+                function resolveChromeURL(str) {
+                    const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
+                    try {
+                        return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
+                    } catch (e) {
+                        console.error(e);
+                        return ""
+                    }
+                }
+            }
+            let scriptFile = fileHandler.getFileFromURLSpec(scriptPath);
+            let resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
             if (!resourceHandler.hasSubstitution("addmenu-ucjs")) {
                 resourceHandler.setSubstitution("addmenu-ucjs", Services.io.newFileURI(scriptFile.parent));
             }
             window.addMenu = ChromeUtils.import(`resource://addmenu-ucjs/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`).AddMenu;
-            window.addMenu.init(window);
+        }
+        if (gBrowserInit.delayedStartupFinished) window.addMenu.init(window);
+        else {
+            let delayedListener = (subject, topic) => {
+                if (topic == "browser-delayed-startup-finished" && subject == window) {
+                    Services.obs.removeObserver(delayedListener, topic);
+                    window.addMenu.init(window);
+                }
+            };
+            Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
         }
     } catch (e) { console.error(e); }
 }
