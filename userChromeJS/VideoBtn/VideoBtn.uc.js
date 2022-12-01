@@ -1026,7 +1026,7 @@
     }
     #VideoBtn-RefNode[VideoBtn] + .VideoBtn:not(menuseparator):not(menugroup),
     #contentAreaContextMenu #VideoBtn-Menu~menuseparator {
-        visibility: collapse;
+        display: none;
     }
     #VideoBtn-RefNode[VideoBtn~="link"] + .VideoBtn[condition~="link"],
     #VideoBtn-RefNode[VideoBtn~="image"] +.VideoBtn[condition~="image"],
@@ -1035,7 +1035,7 @@
     #VideoBtn-RefNode[VideoBtn~="input"] + .VideoBtn[condition~="input"],
     #VideoBtn-RefNode[VideoBtn~="mailto"] + .VideoBtn[condition~="mailto"],
     #VideoBtn-RefNode[VideoBtn=""] + .VideoBtn[condition~="normal"] {
-        visibility: visible;
+        display: block;
     }
     .VideoBtn-Group > .menuitem-iconic {
         padding-block: 0.5em;
