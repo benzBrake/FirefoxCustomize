@@ -6,8 +6,7 @@
 // @include        main
 // @shutdown       window.moveReloadIntoURL.unload();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
-// @version        1.2.4
-// @note           1.2.4 修正 xiaoxiaoflood UC 环境兼容性
+// @version        1.2.3
 // @note           1.2.3 修复在新窗口不生效，热插拔有事时候不能用
 // @note           1.2.2 修复 Firefox 103 兼容性
 // @note           1.2 改成可热插拔，兼容夜间模式，图片内置到脚本
@@ -23,6 +22,7 @@
         window.moveReloadIntoURL.unload();
         delete window.moveReloadIntoURL;
     }
+
 
     window.moveReloadIntoURL = {
         handleEvent: function (aEvent) {
@@ -43,7 +43,7 @@
                     delete win.moveReloadIntoURL;
             }
         },
-        init: function (win) {
+        init: function (doc, win) {
             if (win.moveReloadIntoURL) {
                 this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
                 this.STYLE = {
@@ -68,7 +68,7 @@
             }
             let PABTN = CustomizableUI.getWidget("pageActionButton").forWindow(win).node;
             let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
-            let BTN = $C(win.document, 'hbox', {
+            let BTN = $C(doc, 'hbox', {
                 id: "new-stop-reload-button",
                 class: "urlbar-page-action urlbar-addon-page-action",
                 "tooltiptext": Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
@@ -86,7 +86,7 @@
                 }
             })
 
-            BTN.appendChild($C(win.document, 'image', {
+            BTN.appendChild($C(doc, 'image', {
                 class: 'urlbar-icon',
             }));
 
@@ -138,14 +138,15 @@
         return el;
     }
 
-    if (window.gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(window)
+    if (gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(document, window)
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                window.moveReloadIntoURL.init(subject);
+                window.moveReloadIntoURL.init(subject.document, subject);
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
+
 })();
