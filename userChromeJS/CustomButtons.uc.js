@@ -13,12 +13,6 @@
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
-
-    if (window.CustomButtons) {
-        window.CustomButtons.destroy(window);
-        delete window.CustomButtons;
-    }
-
     const LANG = {
         'zh-CN': {
             "take snapshot": "高级截图",
@@ -61,7 +55,10 @@
                 image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2aWV3Qm94PSIwIDAgMjAgMjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy4zNjcgNC43OCBMIDMuODM3IDQuNzggTCAzLjgzNyA4LjI5NyBMIDUuNjAyIDguMjk3IEwgNS42MDIgNi41MzggTCA3LjM2NyA2LjUzOCBNIDE2LjE5MSA4LjI5NyBMIDE0LjQyNiA4LjI5NyBMIDE0LjQyNiAxMC4wNTUgTCAxMi42NiAxMC4wNTUgTCAxMi42NiAxMS44MTQgTCAxNi4xOTEgMTEuODE0IE0gMTcuOTU1IDEzLjU3MiBMIDIuMDczIDEzLjU3MiBMIDIuMDczIDMuMDIxIEwgMTcuOTU1IDMuMDIxIE0gMTcuOTU1IDEuMjYzIEwgMi4wNzMgMS4yNjMgQyAxLjA5MyAxLjI2MyAwLjMwOCAyLjA0NiAwLjMwOCAzLjAyMSBMIDAuMzA4IDEzLjU3MiBDIDAuMzA4IDE0LjU0MyAxLjA5NyAxNS4zMzIgMi4wNzMgMTUuMzMyIEwgOC4yNDkgMTUuMzMyIEwgOC4yNDkgMTcuMDkgTCA2LjQ4NCAxNy4wOSBMIDYuNDg0IDE4Ljg0OSBMIDEzLjU0NCAxOC44NDkgTCAxMy41NDQgMTcuMDkgTCAxMS43NzggMTcuMDkgTCAxMS43NzggMTUuMzMyIEwgMTcuOTU1IDE1LjMzMiBDIDE4LjkzIDE1LjMzMiAxOS43MiAxNC41NDMgMTkuNzIgMTMuNTcyIEwgMTkuNzIgMy4wMjEgQyAxOS43MiAyLjA1IDE4LjkzIDEuMjYzIDE3Ljk1NSAxLjI2MyIgc3R5bGU9IiIvPgo8L3N2Zz4='
             }, {
                 label: $L("scroll snapshot"),
-                oncommand: 'ScreenshotsUtils.notify(window, "shortcut");',
+                oncommand: function () {
+                    const ScreenshotsUtils = globalThis.ScreenshotsUtils || Cu.import("resource:///modules/ScreenshotsUtils.jsm");
+                    ScreenshotsUtils.notify(window, "shortcut");
+                },
                 image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik01IDZMNSAxNEw3IDE0TDcgMTFMOSAxMUw5IDlMNyA5TDcgOEwxMCA4TDEwIDYgWiBNIDExIDZMMTEgMTFDMTEgMTIuNjQ0NTMxIDEyLjM1NTQ2OSAxNCAxNCAxNEMxNS42NDQ1MzEgMTQgMTcgMTIuNjQ0NTMxIDE3IDExTDE3IDZMMTUgNkwxNSAxMUMxNSAxMS41NjY0MDYgMTQuNTY2NDA2IDEyIDE0IDEyQzEzLjQzMzU5NCAxMiAxMyAxMS41NjY0MDYgMTMgMTFMMTMgNiBaIE0gMTggNkwxOCAxNEwyMiAxNEwyMiAxMkwyMCAxMkwyMCA2IFogTSAyMyA2TDIzIDE0TDI3IDE0TDI3IDEyTDI1IDEyTDI1IDYgWiBNIDUgMTZMNSAyNkw3IDI2TDcgMThMMTUgMThMMTUgMjIuNTYyNUwxMy43MTg3NSAyMS4yODEyNUwxMi4yODEyNSAyMi43MTg3NUwxNS4yODEyNSAyNS43MTg3NUwxNiAyNi40MDYyNUwxNi43MTg3NSAyNS43MTg3NUwxOS43MTg3NSAyMi43MTg3NUwxOC4yODEyNSAyMS4yODEyNUwxNyAyMi41NjI1TDE3IDE4TDI1IDE4TDI1IDI2TDI3IDI2TDI3IDE2WiIvPjwvc3ZnPg=='
             }, {
                 label: $L("color picker"),
@@ -98,7 +95,7 @@
                     return;
                 }
                 if (event.button !== 2) return;
-                const doc = (event.view && event.view.document) || document;
+                const doc = (event.view && event.view.document) || event.target.ownerDocument;
                 const menu = event.target.querySelector("menupopup");
                 menu.querySelectorAll('.undo-item').forEach(i => i.remove());
                 let data = SessionStore.getClosedTabData(window);
@@ -128,7 +125,13 @@
                 }
 
                 event.preventDefault();
-                menu.openPopup(event.target, "after_end", 0, 0);
+                let pos = "after_end", x, y;
+                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
+                    pos = "after_position";
+                    x = 0;
+                    y = 0 + event.target.clientHeight;
+                }
+                menu.openPopup(event.target, pos, x, y);
             },
             popup: [{
                 id: 'CB-undoCloseTab-menuseparator'
@@ -262,15 +265,14 @@
             if (this.debug) this.log($L("CustomButtons: creating buttons"));
             let btnIds = [];
             Object.values(BTN_CONFIG).forEach(obj => {
-                if (obj.id && !CustomizableUI.getPlacementOfWidget(obj.id, true)) {
-                    this.createButton(obj);
-                }
+                obj.id = obj.id || "CB-" + this.btnId;
+                if (CustomizableUI.getWidget(obj.id) && CustomizableUI.getWidget(obj.id).forWindow(window)?.node) return;
+                this.createButton(obj);
                 btnIds.push(obj.id);
             });
             return btnIds;
         },
         createButton(obj) {
-            obj.id = obj.id || "CB-" + this.btnId;
             obj.label = obj.label || "Custom Button";
             obj.defaultArea = obj.defaultArea || CustomizableUI.AREA_NAVBAR;
             obj.class = obj.class ? obj.class + ' custom-button' : 'custom-button';
@@ -310,18 +312,14 @@
                         }
                         if (!obj.oncommand)
                             $A(btn, {
-                                oncommand: function (event) {
-                                    if (event.target !== event.explicitOriginalTarget) return;
-                                    CustomButtons.onCommand(event);
-                                }
-                            })
+                                oncommand: " if (event.target !== event.explicitOriginalTarget) return;CustomButtons.onCommand(event);"
+                            });
                     } catch (e) {
                         this.error(e);
                     }
                     return btn;
                 }
             });
-            return CustomizableUI.getWidget(obj.id).forWindow(window).node;
         },
         newMenuPopup(doc, obj) {
             if (!obj) return;
