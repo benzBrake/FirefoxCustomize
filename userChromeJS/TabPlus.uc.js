@@ -421,7 +421,7 @@
             win.document.getElementById('context-viewimage').setAttribute('oncommand', null);
             win.document.getElementById('context-viewimage').addEventListener('command', this, false);
         },
-        handleEvent(event) {
+        handleEvent(e) {
             e.preventDefault();
             let where = whereToOpenLink(e, false, false);
             if (where == "current") {
