@@ -133,7 +133,7 @@
         createOptionsMenu(doc, obj, firstWin) {
             let panelId = "TabPlus-Panel";
             let viewCache = getViewCache(doc);
-
+            if ($(panelId, viewCache)) return;
             let viewFragment = doc.ownerGlobal.MozXULElement.parseXULToFragment(`
             <panelview id="${panelId}" class="TabPlus-View PanelUI-subView">
                 <box class="panel-header">
