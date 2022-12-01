@@ -593,6 +593,19 @@ display: none;
                             this.updateModifiedFile();
                         }
 
+                        event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
+                            // 强制去除隐藏属性
+                            m.removeAttribute("hidden");
+                            // 显示时自动更新标签
+                            if (m.hasAttribute('onshowinglabel')) {
+                                onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
+                                var sel = this.convertText(m.getAttribute('onshowinglabel'))
+                                if (sel && sel.length > 15)
+                                    sel = sel.substr(0, 15) + "...";
+                                m.setAttribute('label', sel);
+                            }
+                        }, this);
+
                         if (event.target.id == 'contentAreaContextMenu') {
                             var { gContextMenu } = win;
                             var state = [];
@@ -609,17 +622,6 @@ display: none;
                             if (gContextMenu.onVideo || gContextMenu.onAudio)
                                 state.push("media");
                             event.currentTarget.setAttribute("addMenu", state.join(" "));
-
-                            event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
-                                // 显示时自动更新标签
-                                if (m.hasAttribute('onshowinglabel')) {
-                                    onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
-                                    var sel = this.convertText(m.getAttribute('onshowinglabel'))
-                                    if (sel && sel.length > 15)
-                                        sel = sel.substr(0, 15) + "...";
-                                    m.setAttribute('label', sel);
-                                }
-                            }, this);
                         }
 
                         if (event.target.id === "toolbar-context-menu") {

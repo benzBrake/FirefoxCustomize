@@ -520,6 +520,19 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         this.updateModifiedFile();
                     }
 
+                    event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
+                        // 强制去除隐藏属性
+                        m.removeAttribute("hidden");
+                        // 显示时自动更新标签
+                        if (m.hasAttribute('onshowinglabel')) {
+                            onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
+                            var sel = addMenu.convertText(m.getAttribute('onshowinglabel'))
+                            if (sel && sel.length > 15)
+                                sel = sel.substr(0, 15) + "...";
+                            m.setAttribute('label', sel);
+                        }
+                    });
+
                     if (event.target.id == 'contentAreaContextMenu') {
                         var state = [];
                         if (gContextMenu.onTextInput)
@@ -552,17 +565,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         }
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
                     }
-
-                    event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
-                        // 显示时自动更新标签
-                        if (m.hasAttribute('onshowinglabel')) {
-                            onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
-                            var sel = addMenu.convertText(m.getAttribute('onshowinglabel'))
-                            if (sel && sel.length > 15)
-                                sel = sel.substr(0, 15) + "...";
-                            m.setAttribute('label', sel);
-                        }
-                    });
 
                     this.customShowings.forEach(function (obj) {
                         var curItem = obj.item;
