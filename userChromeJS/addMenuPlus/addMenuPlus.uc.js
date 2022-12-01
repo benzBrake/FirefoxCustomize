@@ -520,7 +520,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         this.updateModifiedFile();
                     }
 
-                    event.target.querySelectorAll(`.addMenu[condition]`).forEach(m => {
+                    event.target.querySelectorAll(`.addMenu`).forEach(m => {
                         // 强制去除隐藏属性
                         m.removeAttribute("hidden");
                         // 显示时自动更新标签
