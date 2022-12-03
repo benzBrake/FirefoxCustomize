@@ -711,13 +711,20 @@
             },
             handleRelativePath: function (path, parentPath) {
                 if (path) {
-                    path = path.replace(/\//g, '\\');
                     var ffdir = parentPath ? parentPath : Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
-                    if (/^(\\)/.test(path)) {
-                        return ffdir + path;
+                    // windows 的目录分隔符不一样
+                    if (this.platform === "win") {
+                        path = path.replace(/\//g, '\\');
+                        if (/^(\\)/.test(path)) {
+                            return ffdir + path;
+                        }
                     } else {
-                        return path;
+                        path = path.replace(/\\/g, '//');
+                        if (/^(\/\/)/.test(path)) {
+                            return ffdir + path.replace(/^\/\//, "/");
+                        }
                     }
+                    return path;
                 }
             },
             edit: function (pathOrFile, aLineNumber) {
@@ -787,7 +794,8 @@
                         return;
                     }
 
-                    if (aFile.isExecutable()) {
+                    // Linux 下目录也是 executable
+                    if (!aFile.isDirectory() && aFile.isExecutable()) {
                         process.init(aFile);
                         process.runw(false, a, a.length);
                     } else {
