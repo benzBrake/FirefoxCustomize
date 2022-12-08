@@ -12,8 +12,42 @@
 // ==/UserScript==
 "use strict";
 (function () {
-    const { document, location, console, customElements } = window;
+    const { document, location, console } = window;
     const Rules = {
+        "www.jhssd.com": {
+            style: `body > :not([class^="main"]), .footer {
+                display: none !important;
+            }`,
+            contentSel: '#nr',
+            exec: function () {
+                let content = document.querySelector("#nr").querySelector(":nth-child(4)");
+                if (content)
+                    [...content.querySelectorAll('span')].map(e => {
+                        return {
+                            search: e.outerHTML,
+                            replace: getComputedStyle(e, ':before').getPropertyValue('content').replace(/"/g, "")
+                        }
+                    }).forEach(pair => {
+                        content.innerHTML = content.innerHTML.replaceAll(pair.search, pair.replace);
+                    });
+            }
+        },
+        "wap.jhssd.com": {
+            contentSel: '#nr',
+            exec: function () {
+                console.log("exec");
+                let content = document.querySelector("#nr");
+                if (content)
+                    [...content.querySelectorAll('span')].map(e => {
+                        return {
+                            search: e.outerHTML,
+                            replace: getComputedStyle(e, ':before').getPropertyValue('content').replace(/"/g, "")
+                        }
+                    }).forEach(pair => {
+                        content.innerHTML = content.innerHTML.replaceAll(pair.search, pair.replace);
+                    });
+            }
+        },
         "www.bidige.com": {
             "style": `#wrapper > :not(#content_read) {
                 display: none;
@@ -81,6 +115,7 @@
                 toolbarInsertPoint: "body",
                 contentSel: "body"
             }, _config);
+            console.log(this.config);
             // 插入专用样式
             if (this.config.style)
                 GM_addStyle(this.config.style);
@@ -99,6 +134,10 @@
                 window.addEventListener("scroll", this);
             } else {
                 console.error("Cannot find a insert point: " + sel || "html");
+            }
+            // 运行自定义函数
+            if (this.config.exec && typeof this.config.exec === "function") {
+                this.config.exec();
             }
         },
         initZoom() {
