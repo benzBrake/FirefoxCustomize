@@ -6,4 +6,4 @@
 
 [NovelsReadingHelper.user.js](NovelsReadingHelper.user.js) 小说阅读辅助工具，目前只适配了一个我正在用来看小说的网站
 
-[tencent-developer-fulltext.js](tencent-developer-fulltext.js) 腾讯开发者社区不关注查看全文
+[tencent-developer-fulltext.js](tencent-developer-fulltext.js) 腾讯开发者社区不关注查看全文（无效，只能看一小部分）
