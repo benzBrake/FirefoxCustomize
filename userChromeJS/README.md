@@ -8,6 +8,8 @@
 
 自从 2022年12月1日开始基于 [alice0775](https://github.com/alice0775/userChrome.js) 的 UC 环境来修脚本。
 
+或者你可以安装我打包好的 [UC 环境](Loader)
+
 我的当前 Firefox 版本 Firefox 108beta7
 
 最低支持 101 版本就会放 101 目录里
