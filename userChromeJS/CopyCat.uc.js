@@ -142,7 +142,7 @@
                 this.STYLE = this.addStyle(css, this.sss.AGENT_SHEET);
 
                 // create CopyCat button
-                if (!CustomizableUI.getPlacementOfWidget('CopyCat-Btn', true))
+                if (!(CustomizableUI.getWidget('CopyCat-Btn') && CustomizableUI.getWidget('CopyCat-Btn').forWindow(window)?.node))
                     CustomizableUI.createWidget({
                         id: 'CopyCat-Btn',
                         type: 'view',
