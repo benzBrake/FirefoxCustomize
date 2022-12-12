@@ -103,6 +103,10 @@
             $C: $C,
             $L: $L,
             initializing: false,
+            get platform() {
+                delete this.platform;
+                return this.platform = AppConstants.platform;
+            },
             get FILE() {
                 var path = cPref.get("userChromeJS.CopyCat.FILE_PATH", "_copycat.js")
                 var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
@@ -1192,10 +1196,11 @@
 }
 .CopyCat-View .toolbaritem-combined-buttons > .subviewbutton:not(.subviewbutton-iconic) > .toolbarbutton-text,
 .CopyCat-View .subviewbutton > .toolbarbutton-text {
-    padding-inline-start: 8px;
+    padding-inline-start: 8px !important;
 }
-.CopyCat-View .toolbaritem-combined-buttons.showFirstText > .subviewbutton:first-child > .toolbarbutton-text {
+.CopyCat-View .toolbaritem-combined-buttons:is(.showFirstText,.showText) > .subviewbutton:first-child > .toolbarbutton-text {
     display: -moz-inline-box !important;
+    padding-inline-start: 8px !important;
 }
 .CopyCat-View .toolbaritem-combined-buttons.showFirstText > .subviewbutton:not(:first-child) > .toolbarbutton-text {
     display: none !important;
