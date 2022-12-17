@@ -4,9 +4,10 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2022.11.19
+// @version         2022.12.17
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            修复宽度异常，书签栏太多的话无法横向滚动，需要搭配 bookmarksmenu_scrollbar.uc.js 使用
 // @note            fx 108 不完美修复
 // @note            修复菜单延迟调整宽度的 BUG
 // @note            修复边距问题，支持书签工具栏溢出菜单
@@ -77,7 +78,8 @@
             menupopup.style.maxWidth = "calc(100vw - 20px)";
 
             if (inited) {
-                scrollbox.style.width = scrollbox.scrollWidth + "px";
+                let maxWidth = parseInt(getComputedStyle(menupopup)['max-width']);
+                scrollbox.style.width = Math.min(maxWidth, scrollbox.scrollWidth) + "px";
                 if (event.type == "click") {
                     if (!(arrowscrollbox.clientWidth == scrollbox.scrollWidth)) {
                         arrowscrollbox.width = scrollbox.scrollWidth;
@@ -152,7 +154,4 @@
     max-width: calc(100vw - 20px);
     max-height: calc(100vh - 129px);
   }
-#PlacesToolbarItems menupopup > :is(menuitem, menuseparator) {
-    width: 240px;
-}
 `)
