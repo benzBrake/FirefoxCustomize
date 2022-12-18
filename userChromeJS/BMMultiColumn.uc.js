@@ -73,6 +73,7 @@
                 scrollbox.style.display = "flex";
                 scrollbox.style.flexFlow = "column wrap";
                 scrollbox.style.overflow = "-moz-hidden-unscrollable";
+                scrollbox.style.width = "unset";
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
             }
             menupopup.style.maxWidth = "calc(100vw - 20px)";
