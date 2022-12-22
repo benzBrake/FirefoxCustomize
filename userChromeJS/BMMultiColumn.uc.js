@@ -4,12 +4,13 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2022.12.17
+// @version         2022.12.22
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
-// @note            修复宽度异常，书签栏太多的话无法横向滚动，需要搭配 bookmarksmenu_scrollbar.uc.js 使用
-// @note            fx 108 不完美修复
-// @note            修复菜单延迟调整宽度的 BUG
+// @notes           2022.12.22 融合 bookmarksmenu_scrollbar.uc.js，修复没超过最大宽度也会显示横向滚动条的 bug，支持主菜单的书签菜单
+// @note            2022.12.17 修复宽度异常，书签栏太多的话无法横向滚动，需要搭配 bookmarksmenu_scrollbar.uc.js 使用
+// @note            2022.11.19 fx 108 不完美修复
+// @note            2022.09.02 修复菜单延迟调整宽度的 BUG
 // @note            修复边距问题，支持书签工具栏溢出菜单
 // @note            修复有时候无法启用
 // @note            适配Firefox57+
@@ -26,41 +27,75 @@
     }
 
     window.BMMultiColumn = {
-        BUTTON_INITED: false,
+        menupopup: ["historyMenuPopup",
+            "bookmarksMenuPopup",
+            'PlacesToolbar',
+            'BMB_bookmarksPopup'],
+        timer: [],
+        count: [],
         sss: Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService),
-        init() {
+        init: function () {
             this.style = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css));
             this.sss.loadAndRegisterSheet(this.style, 2);
-            this.TOOLBAR = $("PlacesToolbarItems");
-            if (this.TOOLBAR) {
-                this.TOOLBAR.addEventListener('popupshowing', this, false);
+            window.removeEventListener("load", this, false);
+            window.addEventListener('unload', this, false);
+            window.addEventListener("aftercustomization", this, false);
+            this.delayedStartup();
+        },
+        delayedStartup: function () {
+            //wait till construction of bookmarksBarContent is completed.
+            for (var i = 0; i < this.menupopup.length; i++) {
+                this.count[i] = 0;
+                this.timer[i] = setInterval(function (self, i) {
+                    if (++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
+                        clearInterval(self.timer[i]);
+                        var menupopup = document.getElementById(self.menupopup[i]);
+                        if (menupopup) {
+                            menupopup.addEventListener('popupshowing', self, false);
+                        }
+                    }
+                }, 250, this, i);
             }
-            this.BMB_POPUP = document.getElementById('BMB_bookmarksPopup')
-            if (this.BMB_POPUP) {
-                this.BMB_POPUP.addEventListener('click', this)
-                this.BMB_POPUP.addEventListener('popupshowing', this)
+        },
+        uninit: function () {
+            for (var i = 0; i < this.menupopup.length; i++) {
+                this.count[i] = 0;
+                this.timer[i] = setInterval(function (self, i) {
+                    if (++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
+                        clearInterval(self.timer[i]);
+                        var menupopup = document.getElementById(self.menupopup[i]);
+                        self.resetPopup(menupopup);
+                        if (menupopup) {
+                            menupopup.removeEventListener('popupshowing', self, false);
+                        }
+                    }
+                }, 250, this, i);
             }
         },
         destroy() {
+            window.removeEventListener('unload', this, false);
+            window.removeEventListener("aftercustomization", this, false);
+            this.uninit();
             this.sss.unregisterSheet(this.style, 2);
-            if (this.TOOLBAR) {
-                this.TOOLBAR.querySelectorAll("menupopup").forEach(menupopup => this.resetPopup(menupopup));
-                this.TOOLBAR.removeEventListener('popupshowing', this, false);
-            }
-            if (this.BMB_POPUP) {
-                this.BMB_POPUP.querySelectorAll("menupopup").forEach(menupopup => this.resetPopup(menupopup));
-                this.BMB_POPUP.removeEventListener('click', this, false);
-                this.BMB_POPUP.removeEventListener('popupshowing', this, false);
-            }
         },
         handleEvent(event) {
-            let menupopup;
-            if (event.target.tagName == 'menu' || event.target.tagName == 'toolbarbutton') {
-                menupopup = event.target.menupopup;
-            } else if (event.target.tagName == 'menupopup') {
-                menupopup = event.target;
-            } else return;
-            this.initPopup(menupopup, event);
+            switch (event.type) {
+                case 'popupshowing':
+                    let menupopup;
+                    if (event.target.tagName == 'menu' || event.target.tagName == 'toolbarbutton') {
+                        menupopup = event.target.menupopup;
+                    } else if (event.target.tagName == 'menupopup') {
+                        menupopup = event.target;
+                    } else return;
+                    this.initPopup(menupopup, event);
+                    break;
+                case 'aftercustomization':
+                    setTimeout(function (self) { self.delayedStartup(self); }, 0, this);
+                    break;
+                case 'unload':
+                    this.destroy();
+                    break;
+            }
         },
         initPopup(menupopup, event) {
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
@@ -81,10 +116,14 @@
             if (inited) {
                 let maxWidth = parseInt(getComputedStyle(menupopup)['max-width']);
                 scrollbox.style.width = Math.min(maxWidth, scrollbox.scrollWidth) + "px";
-                if (event.type == "click") {
-                    if (!(arrowscrollbox.clientWidth == scrollbox.scrollWidth)) {
-                        arrowscrollbox.width = scrollbox.scrollWidth;
-                    }
+                if (maxWidth < scrollbox.scrollWidth) {
+                    scrollbox.style.setProperty("overflow-x", "auto", "important");
+                    scrollbox.style.setProperty("margin-top", "0", "important");
+                    scrollbox.style.setProperty("margin-bottom", "0", "important");
+                    // 上下のスクロールボタン
+                    event.originalTarget.on_DOMMenuItemActive = function (event) { };
+                    arrowscrollbox._scrollButtonUp.style.display = "none";
+                    arrowscrollbox._scrollButtonDown.style.display = "none";
                 }
                 let lastmenu = menupopup.lastChild;
                 while (lastmenu) {
