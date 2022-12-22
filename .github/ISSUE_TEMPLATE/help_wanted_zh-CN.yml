@@ -1,0 +1,44 @@
+name: 请求帮助
+description: 你可以请求，但是我不一定有空，也不一定搞得定
+title: "[NEED HELP]: "
+labels: ["help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        为了更迅速的处理请求，请仔细阅读填写说明并正确填写。
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: 你在用什么浏览器
+      options:
+        - Firefox
+        - Waterfox
+        - Floorp
+        - Pale Moon
+        - 其他 Firefox Fork
+    validations:
+      required: true
+  - type: input
+    id: browser-version
+    attributes:
+      label: 浏览器版本号
+      description: 建议通过浏览器内容工具箱输入 Services.appinfo.version 获取
+      placeholder: eg. 102.3
+  - type: dropdown
+    id: uc-loader
+    attributes:
+      label: 你在用什么 UC 环境(引导器)
+      options:
+        - 没有使用
+        - xiaoxiaoflood
+        - MrOtherGuy(fx-autoconfig)
+        - alice0775
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: your-problem
+    attributes:
+      label: 有什么问题
+      description: 如果标题写上了，这里可以补充一下
