@@ -8,17 +8,7 @@
     --tab-separator-top: var(--tab-corner-rounding);
     --tab-separator-height: calc(100% - var(--tab-corner-rounding) * 2);
     --button-corner-rounding: 6px;
-    --low-warning-background: hsla(48, 100%, 66%, 0.2);
-    --low-warning-color: hsl(40, 100%, 57%);
-    --low-warning-text-color: hsl(40, 100%, 70%);
-    --low-warning-border-color: hsla(35, 70%, 76%, 0.2);
-    --low-warning-icon-background: hsl(44, 95%, 60%);
-    --low-warning-icon-detail: hsl(32, 52%, 35%);
-    --low-warning-icon-stroke: hsl(40, 93%, 53%);
     --menu-corner-rounding: 7px;
-    --panel-padding-x: 8px;
-    --panel-padding-y: 4px;
-    --panel-padding: var(--panel-padding-y) var(--sidra-padding-x);
     --animation-speed: 0.13s;
     --icon-width: 16px;
     --icon-height: 16px;
@@ -98,9 +88,10 @@
 :root[uidensity="compact"] {
     --tab-height: 30px;
     --tab-min-height: var(--tab-height);
-    --panel-padding-x: 4px;
     --menuitem-padding: 4px;
     --icon-gap: 8px;
+    --arrowpanel-menuitem-padding: 0 4px !important;
+    --arrowpanel-menuitem-padding: 4px 4px !important;
 }
 
 :root[uidensity="touch"] {}

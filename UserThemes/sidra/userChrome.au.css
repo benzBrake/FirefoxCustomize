@@ -4,7 +4,6 @@
 @supports -moz-bool-pref("userChromeJS.sidra.addons.compact") {
     @-moz-document url-prefix(about:addons),
     url-prefix(chrome: //mozapps/content/extensions/aboutaddons.xhtml) {
-
         @media (min-width: 960px) {
 
             /* :root {
@@ -88,7 +87,8 @@
             }
         }
 
-        .addon-card-message[type="warning"] {
+        .addon-card-message[type="warning"],
+        .addon-card-message[type="error"] {
             display: none;
         }
 

@@ -250,7 +250,7 @@ url("about:downloads") {
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.tabbox.compact") {
-        #TabsToolbar {
+        :root[appname="Floorp"] #TabsToolbar {
             max-height: var(--tab-min-height);
         }
 
@@ -278,7 +278,7 @@ url("about:downloads") {
                 }
             }
         }
-        
+
         /** 标签前的空格 */
         #TabsToolbar .titlebar-spacer[type="pre-tabs"] {
             border-inline-end: 0px !important;
@@ -1548,11 +1548,15 @@ by underlining them (requires urlbarMods.uc.js) */
             padding-inline-end: 0;
         }
 
+        #customization-palette toolbarpaletteitem {
+            transform-style: preserve-3d !important;
+        }
+
+
         /** 按钮边距 */
         toolbarpaletteitem>toolbarspring {
             margin-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2) !important;
             outline: none !important;
-            border: 1px solid var(--arrowpanel-dimmed-even-further) !important;
             outline-offset: 0 !important;
             border-radius: var(--toolbarbutton-border-radius) !important;
         }
@@ -1565,16 +1569,15 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* 工具栏按钮上标 */
-        :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):not([attention])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
+        :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):is(:not([attention]), [attention="false"])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background-color: var(--uc-toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
             color: var(--toolbar-color, white) !important;
-            box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026,
-                0 1px 3px #1e1e2033 !important;
+            box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026, 0 1px 3px #1e1e2033 !important;
             min-width: 10.5px !important;
             height: 10.5px !important;
             -moz-box-align: end !important;
             font-size: 9px !important;
-            font-weight: var(--font-weight-bold, 600) !important;
+            font-weight: var(--uc-font-weight-bold, 600) !important;
             line-height: 10px !important;
             filter: none !important;
             margin: -6px -6px 0 -6px !important;
@@ -1600,8 +1603,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         :is(.customization-target, .widget-overflow-list) #downloads-button[attention="warning"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--low-warning-icon-detail) !important;
-            fill: var(--low-warning-icon-background) !important;
+            background-color: var(--low-warning-icon-detail, hsl(32, 52%, 35%)) !important;
+            fill: var(--low-warning-icon-background, hsl(44, 95%, 60%)) !important;
             border-radius: 50% !important;
         }
 
@@ -1613,8 +1616,8 @@ by underlining them (requires urlbarMods.uc.js) */
 
         :is(.customization-target, .widget-overflow-list) #fxa-toolbar-menu-button[badge-status="login_failed"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
             background: url("./images/skin/controlcenter/warning.svg") no-repeat center/contain !important;
-            stroke: var(--low-warning-icon-detail) !important;
-            fill: var(--low-warning-icon-background) !important;
+            stroke: var(--low-warning-icon-detail, hsl(32, 52%, 35%)) !important;
+            fill: var(--low-warning-icon-background, hsl(44, 95%, 60%)) !important;
             box-shadow: none !important;
             -moz-context-properties: fill, stroke !important;
             padding: 0 !important;
@@ -1624,7 +1627,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #tabbrowser-tabs[hiddensoundplaying]~#alltabs-button>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background: transparent url(./images/skin/audioUnmutedButton.svg) center/contain !important;
+            background: transparent url("./images/skin/audioUnmutedButton.svg") center/contain !important;
             box-shadow: none !important;
             color: inherit !important;
             display: block !important;
@@ -1634,6 +1637,14 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-inline-end: -6px !important;
             min-width: 12px !important;
             min-height: 12px !important;
+        }
+
+        .widget-overflow-list .toolbarbutton-1>.toolbarbutton-text {
+            padding-inline-start: var(--icon-gap, 8px) !important;
+        }
+
+        .widget-overflow-list .toolbaritem-combined-buttons .toolbarbutton-1>.toolbarbutton-text {
+            padding-inline-end: 4px !important;
         }
 
         /* 让紧凑模式的按钮更加紧凑 */
@@ -1649,6 +1660,7 @@ by underlining them (requires urlbarMods.uc.js) */
             padding: 0;
         }
 
+        /** 缩放按钮 */
         .widget-overflow-list #zoom-controls[cui-areatype="toolbar"]>#zoom-reset-button>.toolbarbutton-text {
             min-width: calc(5ch + 4px) !important;
             padding-inline: 0 !important;
@@ -1658,53 +1670,89 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-inline: 0 !important;
         }
 
-        toolbar :not(toolbarpaletteitem)>.toolbaritem-combined-buttons.chromeclass-toolbar-additional {
+        :is(toolbar, .customization-palette) :not(toolbarpaletteitem)>.toolbaritem-combined-buttons.chromeclass-toolbar-additional {
             -moz-box-align: stretch !important;
         }
 
-        toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional:not(:hover)>separator {
-            content: "";
-            display: -moz-box;
+        :is(toolbar, .customization-palette) .toolbaritem-combined-buttons.chromeclass-toolbar-additional:not(:hover)>separator {
             width: 0.67px !important;
             height: 20px !important;
             margin-inline-end: -0.67px !important;
-            background-image: linear-gradient(currentColor 0, currentColor 100%);
-            background-position: center;
-            background-repeat: no-repeat;
+            background-image: linear-gradient(currentColor 0, currentColor 100%) !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
             background-size: 1px 20px !important;
-            opacity: 0.2;
+            opacity: 0.2 !important;
         }
 
-        toolbar .toolbarbutton-combined-buttons-dropmarker,
+        /** 组合按钮 */
+        :is(toolbar, .customization-palette) .toolbarbutton-combined-buttons-dropmarker,
         #PersonalToolbar .toolbaritem-combined-buttons .toolbarbutton-combined-buttons-dropmarker {
             margin-block: var(--toolbarbutton-inner-padding) !important;
         }
 
-        toolbar .toolbarbutton-combined-buttons-dropmarker>.toolbarbutton-icon {
+        .customization-palette .toolbarbutton-1 {
+            appearance: none !important;
+            margin: 0 !important;
+            padding: 0 var(--toolbarbutton-outer-padding) !important;
+            -moz-box-pack: center !important;
+        }
+
+        .customization-palette .toolbarbutton-1>.toolbarbutton-icon {
+            width: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+            height: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+        }
+
+        .customization-palette .toolbarbutton-1>.toolbarbutton-icon,
+        toolbar .toolbarbutton-1>.toolbarbutton-text,
+        toolbar .toolbarbutton-1>.toolbarbutton-badge-stack {
+            padding: var(--toolbarbutton-inner-padding) !important;
+            border-radius: var(--toolbarbutton-border-radius) !important;
+        }
+
+        :is(toolbar, .customization-palette) .toolbarbutton-combined-buttons-dropmarker>.toolbarbutton-icon {
             padding-inline: 2px !important;
             padding-block: 2px !important;
             height: 20px !important;
             width: 16px !important;
         }
 
-        toolbar:not(#PersonalToolbar) #edit-controls>#cut-button,
-        toolbar #profiler-button>#profiler-button-button {
+        :is(toolbar, .customization-palette) .toolbaritem-combined-buttons.unified-extensions-item toolbarbutton {
+            background-color: transparent !important;
+            padding: 0 var(--toolbarbutton-outer-padding) !important;
+        }
+
+
+        /* 缩放按钮续 */
+
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #edit-controls>#cut-button,
+        :is(toolbar, .customization-palette) #profiler-button>#profiler-button-button {
             padding-left: 2px !important;
         }
 
-        toolbar:not(#PersonalToolbar) #edit-controls>#paste-button,
-        toolbar #profiler-button>#profiler-button-dropmarker {
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #edit-controls>#paste-button,
+        :is(toolbar, .customization-palette) #profiler-button>#profiler-button-dropmarker {
             padding-right: 2px !important;
         }
 
-        toolbar:not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button) {
+        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-out-button,
+        #wrapper-edit-controls[place="palette"]>#edit-controls>#cut-button,
+        #wrapper-profiler-button[place="palette"]>#profiler-button>#profiler-button-button,
+        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-in-button,
+        #wrapper-edit-controls[place="palette"]>#edit-controls>#paste-button,
+        #wrapper-profiler-button[place="palette"]>#profiler-button>#profiler-button-dropmarker {
+            -moz-box-align: center !important;
+            -moz-box-flex: 0 !important;
+        }
+
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button) {
             margin-block: var(--toolbarbutton-inner-padding) !important;
             width: unset !important;
             padding: 0 !important;
             padding-inline: 2px !important;
         }
 
-        toolbar:not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button)>.toolbarbutton-icon {
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button)>.toolbarbutton-icon {
             height: 20px !important;
             width: 20px !important;
             padding: 4px !important;
@@ -1714,32 +1762,46 @@ by underlining them (requires urlbarMods.uc.js) */
             padding-inline-start: 0 !important;
         }
 
-        toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button {
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls>#zoom-reset-button {
             margin-block: var(--toolbarbutton-inner-padding) !important;
         }
 
-        toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button:not([disabled]):is(:hover, :focus-visible)>.toolbarbutton-text {
+        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-reset-button {
+            display: revert !important;
+        }
+
+        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-reset-button::before {
+            content: "100%" !important;
+            line-height: 1.5em !important;
+            height: 20px !important;
+            min-height: 20px !important;
+            box-sizing: border-box !important;
+            font-size: 0.98em;
+            padding-inline: 5px !important;
+            background: hsla(0, 0%, 100%, 0.045);
+            border: 1px solid var(--toolbarbutton-hover-background);
+            border-radius: 10px !important;
+            opacity: 0.4 !important;
+        }
+
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls>#zoom-reset-button:not([disabled]):is(:hover, :focus-visible)>.toolbarbutton-text {
             border-color: transparent;
         }
 
-        toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button>.toolbarbutton-text {
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls>#zoom-reset-button>.toolbarbutton-text {
             height: 20px !important;
             min-height: 20px !important;
             font-size: 0.98em;
-            padding-block: 1px !important;
             background: hsla(0, 0%, 100%, 0.045);
             border: 1px solid var(--toolbarbutton-hover-background);
             border-radius: 10px !important;
         }
 
-        toolbar:not(#PersonalToolbar) #zoom-controls separator {
+        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls separator {
             display: none !important;
         }
 
-        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1 {
-            opacity: 1 !important;
-        }
-
+        /* 停止重载按钮 */
         :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:not([checked], [open], :active):hover>.toolbarbutton-icon {
             background-color: var(--toolbarbutton-hover-background);
         }
@@ -2109,7 +2171,7 @@ by underlining them (requires urlbarMods.uc.js) */
         :is(menupopup, panel)[type="arrow"],
         :is(panel, menupopup)::part(content) {
             --panel-padding: var(--panel-padding);
-            --panel-subview-body-padding: var(--panel-padding-x) 0;
+            --panel-subview-body-padding: var(--panel-padding-x, 4px) 0;
         }
 
         :is(#history-menu, #bookmarksMenu) menupopup::part(content),
@@ -3819,12 +3881,12 @@ by underlining them (requires urlbarMods.uc.js) */
         #identity-popup-security-ev-content-owner,
         .identity-popup-warning-box,
         .identity-popup-security-connection {
-            background-position-x: calc(var(--panel-padding-x) + var(--icon-gap, 12px));
+            background-position-x: calc(var(--panel-padding-x, 4px) + var(--icon-gap, 12px));
         }
 
         .identity-popup-connection-secure.security-view,
         .identity-popup-connection-not-secure.security-view {
-            margin-inline-start: calc(var(--panel-padding-x) + var(--label-padding-start, 32px));
+            margin-inline-start: calc(var(--panel-padding-x, 4px) + var(--label-padding-start, 32px));
         }
 
         /** 扩展安装提醒 */
@@ -4346,6 +4408,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/tab/open-in-container.svg");
         }
 
+        .placesContext_showNodeInfo {
+            background-image: url("chrome://global/skin/icons/info.svg");
+        }
+
         #placesContext_add\:bookmark {
             background-image: url("./images/organizer/bookmark.svg");
         }
@@ -4838,7 +4904,8 @@ by underlining them (requires urlbarMods.uc.js) */
     @supports -moz-bool-pref("userChromeJS.sidra.extensions.compact") {
 
         /** Add custom search engine */
-        #_af37054b-3ace-46a2-ac59-709e4412bec6_-browser-action {
+        #_af37054b-3ace-46a2-ac59-709e4412bec6_-browser-action,
+        #_af37054b-3ace-46a2-ac59-709e4412bec6_-BAP {
             list-style-image: url("./images/extensions/addcustomsearchengine/search-plus.svg") !important;
         }
 
@@ -5084,7 +5151,8 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** 翻译 */
         #pageAction-urlbar-_036a55b4-5e72-4d05-a06c-cba2dfcc134a_,
-        #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-browser-action {
+        #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-browser-action,
+        #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-BAP {
             list-style-image: url("./images/extensions/traduzirpaginasweb/translate.svg") !important;
         }
 
@@ -5108,6 +5176,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /* SingleFile */
         #_531906d3-e22f-4a6c-a102-8057b88a1a63_-browser-action,
+        #_531906d3-e22f-4a6c-a102-8057b88a1a63_-BAP,
         #button__531906d3-e22f-4a6c-a102-8057b88a1a63_-sidebar-action {
             list-style-image: url("./images/extensions/singlefile/singlefile.svg") !important;
         }
@@ -5169,7 +5238,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** OneTab */
-        #extension_one-tab_com-browser-action {
+        #extension_one-tab_com-browser-action,
+        #extension_one-tab_com-BAP {
             list-style-image: url("./images/extensions/onetab/onetab.svg") !important;
         }
 
@@ -5212,7 +5282,9 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** Links Gopher */
         #linkgopher_oooninja_com-browser-action,
-        #linkgopher_kkp_disk_st-browser-action {
+        #linkgopher_oooninja_com-BAP,
+        #linkgopher_kkp_disk_st-browser-action,
+        #linkgopher_kkp_disk_st-BAP {
             list-style-image: url("./images/extensions/linkgopher/grab-links.svg");
         }
 
@@ -5269,12 +5341,14 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** IDM */
-        #mozilla_cc3_internetdownloadmanager_com-browser-action {
+        #mozilla_cc3_internetdownloadmanager_com-browser-action,
+        #mozilla_cc3_internetdownloadmanager_com-BAP {
             list-style-image: url("./images/extensions/internetdownloadmanager/downloads.svg") !important;
         }
 
         /** Violent Monkey */
-        #_aecec67f-0d10-4fa7-b7c7-609a2db280cf_-browser-action {
+        #_aecec67f-0d10-4fa7-b7c7-609a2db280cf_-browser-action,
+        #_aecec67f-0d10-4fa7-b7c7-609a2db280cf_-BAP {
             list-style-image: url("./images/extensions/violentmonkey/javascript.svg") !important;
         }
 
@@ -5289,7 +5363,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .menu {
             border-top-color: var(--arrowpanel-border-color);
-            padding: var(--panel-padding-x) 0;
+            padding: var(--panel-padding-x, 4px) 0;
         }
 
 
@@ -5360,7 +5434,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .menu.expand>.submenu {
             scrollbar-width: thin;
-            padding-top: var(--panel-padding-y);
+            padding-top: var(--panel-padding-y, 4px);
         }
 
         [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .menu-item:hover+.submenu-buttons .submenu-button:not(:focus) {
@@ -5445,7 +5519,7 @@ by underlining them (requires urlbarMods.uc.js) */
             margin: 0;
             display: flex;
             position: relative;
-            margin-bottom: var(--panel-padding-y);
+            margin-bottom: var(--panel-padding-y, 4px);
         }
 
         [uc-extension-id="{aecec67f-0d10-4fa7-b7c7-609a2db280cf}"] .menu,
@@ -5487,7 +5561,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Tampermonkey */
-        #firefox_tampermonkey_net-browser-action {
+        #firefox_tampermonkey_net-browser-action,
+        #firefox_tampermonkey_net-BAP {
             list-style-image: url("./images/extensions/tampermonkey/javascript.svg") !important;
         }
 
@@ -5501,7 +5576,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Stylus */
-        #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-browser-action {
+        #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-browser-action,
+        #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-BAP {
             list-style-image: url("./images/extensions/stylus/css.svg");
         }
 
@@ -5878,7 +5954,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* xStyle */
-        #xstyle-amo_addon_firefoxcn_net-browser-action {
+        #xstyle-amo_addon_firefoxcn_net-browser-action,
+        #xstyle-amo_addon_firefoxcn_net-BAP {
             list-style-image: url("./images/extensions/xstyle/xstyle.svg") !important;
         }
 
@@ -5893,7 +5970,8 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** Sound Fixer */
         #soundfixer_unrelenting_technology-browser-action,
-        #soundfixer_kkp_disk_st-browser-action {
+        #soundfixer_kkp_disk_st-browser-action,
+        #soundfixer_unrelenting_technology-BAP {
             list-style-image: url("./images/extensions/soundfixer/sound.svg") !important;
         }
 
@@ -5907,7 +5985,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** X-Nofifier */
-        #_37fa1426-b82d-11db-8314-0800200c9a66_-browser-action {
+        #_37fa1426-b82d-11db-8314-0800200c9a66_-browser-action,
+        #_37fa1426-b82d-11db-8314-0800200c9a66_-BAP {
             list-style-image: url("./images/extensions/x-notifier/notification-center.svg");
         }
 
@@ -5965,7 +6044,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Safe In Cloud */
-        #info_safe-in-cloud_com-browser-action {
+        #info_safe-in-cloud_com-browser-action,
+        #info_safe-in-cloud_com-BAP {
             list-style-image: url("./images/extensions/safeincloud/safeincloud.svg");
         }
 
@@ -5981,7 +6061,9 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** I dont't care about cookies / I still dont't care about cookies */
         #jid1-kkzogwgsw3ao4q_jetpack-browser-action,
-        #idcac-pub_guus_ninja-browser-action {
+        #jid1-kkzogwgsw3ao4q_jetpack-BAP,
+        #idcac-pub_guus_ninja-browser-action,
+        #idcac-pub_guus_ninja-BAP {
             list-style-image: url("./images/extensions/idontcareaboutcookies/cookie.svg") !important;
         }
 
@@ -6043,7 +6125,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** 京价保 */
-        #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-browser-action {
+        #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-browser-action,
+        #_42f0bbb4-0214-49d1-a01a-bdead05c5540_-BAP {
             list-style-image: url("./images/extensions/jjb/shop.svg") !important;
         }
 
@@ -6057,7 +6140,9 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** Switchy Omega */
         #switchyomega_feliscatus_addons_mozilla_org-browser-action,
-        #smartproxy_salarcode_com-browser-action {
+        #switchyomega_feliscatus_addons_mozilla_org-BAP,
+        #smartproxy_salarcode_com-browser-action,
+        #smartproxy_salarcode_com-BAP {
             list-style-image: url("chrome://global/skin/icons/defaultFavicon.svg") !important;
         }
 
@@ -6118,7 +6203,9 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /* Adguard */
         #adguardadblocker_adguard_com-browser-action,
-        #browserassistant_adguard_com-browser-action {
+        #adguardadblocker_adguard_com-BAP,
+        #browserassistant_adguard_com-browser-action,
+        #browserassistant_adguard_com-BAP {
             list-style-image: url("./images/extensions/adguard/adguard.svg") !important;
         }
 
@@ -6175,7 +6262,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* uBlock Origin */
-        #ublock0_raymondhill_net-browser-action {
+        #ublock0_raymondhill_net-browser-action,
+        #ublock0_raymondhill_net-BAP {
             list-style-image: url("./images/extensions/ublock/block.svg");
         }
 
@@ -6184,12 +6272,14 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Adblock Plus */
-        #_d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d_-browser-action {
+        #_d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d_-browser-action,
+        #_d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d_-BAP {
             list-style-image: url("./images/extensions/adblockplus/remove.svg");
         }
 
         /** Video Download Helper */
-        #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-browser-action .toolbarbutton-icon {
+        #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-browser-action .toolbarbutton-icon,
+        #_b9db16a4-6edc-47ec-a1f4-b86292ed211d_-BAP {
             list-style-image: url("./images/extensions/videodownloadhelper/video-clip.svg") !important;
         }
 
@@ -6206,7 +6296,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Image Picka */
-        #image-picka_eight04_blogspot_com-browser-action {
+        #image-picka_eight04_blogspot_com-browser-action,
+        #image-picka_eight04_blogspot_com-BAP {
             list-style-image: url("./images/extensions/imagepicka/photos.svg");
         }
 
@@ -6217,7 +6308,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* EverSync */
-        #fvdmedia_gmail_com-browser-action {
+        #fvdmedia_gmail_com-browser-action,
+        #fvdmedia_gmail_com-BAP {
             list-style-image: url("./images/extensions/eversync/sync.svg") !important;
         }
 
@@ -6239,29 +6331,30 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** 密码管理 Bitwarden / Safeincloud / Enpass / Roboform / Keepass tusk */
         #firefox-enpass_enpass_io-browser-action,
+        #firefox-enpass_enpass_io-BAP,
         #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action,
+        #_446900e4-71c2-419f-a6a7-df9c091e268b_-BAP,
         #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action {
             list-style-image: url("./images/extensions/password/vault_unlocked.svg") !important;
         }
 
         #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="gray.png"],
+        #_446900e4-71c2-419f-a6a7-df9c091e268b_-BAP[style*="gray.png"],
         #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action[style*="gray.png"] {
             fill: grey !important;
             list-style-image: url("./images/extensions/password/vault_locked.svg") !important;
         }
 
         #_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action[style*="locked.png"],
+        #_446900e4-71c2-419f-a6a7-df9c091e268b_-BAP[style*="locked.png"],
         #button__446900e4-71c2-419f-a6a7-df9c091e268b_-sidebar-action[style*="locked.png"] {
             fill: red !important;
             list-style-image: url("./images/extensions/password/vault_locked.svg") !important;
         }
 
-        #rf-firefox_siber_com-browser-action {
+        #rf-firefox_siber_com-browser-action,
+        #rf-firefox_siber_com-BAP {
             list-style-image: url("./images/extensions/password/form.svg");
-        }
-
-        #info_safe-in-cloud_com-browser-action {
-            list-style-image: url("./images/extensions/password/safeincloud.svg");
         }
 
         [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_generate-password"],
@@ -6305,7 +6398,8 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/extensions/password/unlock.svg");
         }
 
-        #brandon_subdavis_com-browser-action {
+        #brandon_subdavis_com-browser-action,
+        #brandon_subdavis_com-BAP {
             list-style-image: url("./images/extensions/password/keepass.svg") !important;
         }
 
@@ -6334,48 +6428,58 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Header Editor */
-        #headereditor-amo_addon_firefoxcn_net-browser-action {
+        #headereditor-amo_addon_firefoxcn_net-browser-action,
+        #headereditor-amo_addon_firefoxcn_net-BAP {
             list-style-image: url("./images/extensions/headereditor/editor.svg");
         }
 
         /** AutoFill / Aria2 */
         #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-browser-action,
-        #_e2488817-3d73-4013-850d-b66c5e42d505_-browser-action {
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-BAP,
+        #_e2488817-3d73-4013-850d-b66c5e42d505_-browser-action,
+        #_e2488817-3d73-4013-850d-b66c5e42d505_-BAP {
             list-style-image: url("./images/extensions/autofill/autofill.svg");
         }
 
         /** 迅雷 */
-        #xl_webbrowserstore_xunlei_com-browser-action {
+        #xl_webbrowserstore_xunlei_com-browser-action,
+        #xl_webbrowserstore_xunlei_com-BAP {
             list-style-image: url("./images/extensions/xunlei/xunlei.svg");
         }
 
         /** Youtube Enhancer */
-        #enhancerforyoutube_maximerf_addons_mozilla_org-browser-action {
+        #enhancerforyoutube_maximerf_addons_mozilla_org-browser-action,
+        #enhancerforyoutube_maximerf_addons_mozilla_org-BAP {
             list-style-image: url("./images/extensions/youtubeenhancer/youtube.svg");
         }
 
         /** Downloadfile Encoding */
-        #download-filename-encoding_qw_linux-2g64_local-browser-action {
+        #download-filename-encoding_qw_linux-2g64_local-browser-action,
+        #download-filename-encoding_qw_linux-2g64_local-BAP {
             list-style-image: url("./images/extensions/downloadfilenameencoding/encoding.svg");
         }
 
         /** Universal Bypass */
-        #_529b261b-df0b-4e3b-bf42-07b462da0ee8_-browser-action {
+        #_529b261b-df0b-4e3b-bf42-07b462da0ee8_-browser-action,
+        #_529b261b-df0b-4e3b-bf42-07b462da0ee8_-BAP {
             list-style-image: url("./images/extensions/universalbypass/skip.svg") !important;
         }
 
         /** 终结内容农场 */
-        #content-farm-terminator_danny0838_addons_mozilla_org-browser-action {
+        #content-farm-terminator_danny0838_addons_mozilla_org-browser-action,
+        #content-farm-terminator_danny0838_addons_mozilla_org-BAP {
             list-style-image: url("./images/extensions/contentfarmterminator/unavailable.svg") !important;
         }
 
         /** uBlockList */
-        #_ublacklist-browser-action {
+        #_ublacklist-browser-action,
+        #_ublacklist-BAP {
             list-style-image: url("./images/extensions/ublacklist/ublacklist.svg") !important;
         }
 
         /** Feedbro */
-        #_a9c2ad37-e940-4892-8dce-cd73c6cbbc0c_-browser-action {
+        #_a9c2ad37-e940-4892-8dce-cd73c6cbbc0c_-browser-action,
+        #_a9c2ad37-e940-4892-8dce-cd73c6cbbc0c_-BAP {
             list-style-image: url("./images/extensions/feedbro/rss.svg");
         }
 
@@ -6386,7 +6490,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] div#menuitems div.menuitem {
             margin: var(--arrowpanel-menuitem-margin);
-            padding: var(--panel-padding-y) var(--panel-padding-x);
+            padding: var(--panel-padding-y, 4px) var(--panel-padding-x, 4px);
             padding-inline-start: var(--label-padding-start, 32px);
             -moz-context-properties: fill, fill-opacity !important;
             fill: currentColor !important;
@@ -6434,22 +6538,26 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Github */
-        #_a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad_-browser-action {
+        #_a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad_-browser-action,
+        #_a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad_-BAP {
             list-style-image: url("./images/extensions/redefinedgithub/github.svg");
         }
 
         /** Instagram */
-        #dp-instagram_dp-develop_com-browser-action {
+        #dp-instagram_dp-develop_com-browser-action,
+        #dp-instagram_dp-develop_com-BAP {
             list-style-image: url("./images/extensions/instagram/instagram.svg");
         }
 
         /** Vue JS */
-        #_5caff8cc-3d2e-4110-a88a-003cc85b3858_-browser-action {
+        #_5caff8cc-3d2e-4110-a88a-003cc85b3858_-browser-action,
+        #_5caff8cc-3d2e-4110-a88a-003cc85b3858_-BAP {
             list-style-image: url("./images/extensions/vuejs/vuejs.svg");
         }
 
         /** Bookmarks Organizer */
-        #bookmarksorganizer_agenedia_com-browser-action {
+        #bookmarksorganizer_agenedia_com-browser-action,
+        #bookmarksorganizer_agenedia_com-BAP {
             list-style-image: url("./images/extensions/bookmarksorganizer/book.svg") !important;
         }
 
@@ -6503,18 +6611,43 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** ClearURLS */
-        #_74145f27-f039-47ce-a470-a662b129930a_-browser-action {
+        #_74145f27-f039-47ce-a470-a662b129930a_-browser-action,
+        #_74145f27-f039-47ce-a470-a662b129930a_-BAP {
             list-style-image: url("./images/extensions/clearurls/remove.svg");
         }
 
         /** Distill Web Monitor */
-        #_7a73dc4b-1b38-40e7-ac56-7d356dd4af34_-browser-action {
+        #_7a73dc4b-1b38-40e7-ac56-7d356dd4af34_-browser-action,
+        #_7a73dc4b-1b38-40e7-ac56-7d356dd4af34_-BAP {
             list-style-image: url("./images/extensions/distillwebmonitor/drop.svg");
         }
 
+        #toolbar-context-menu [label="Monitor Full Page"],
+        #toolbar-context-menu [label="Monitor Parts of Page"] {
+            background-image: url("./images/extensions/distillwebmonitor/drop.svg");
+        }
+
         /** FetchV */
-        #meetsingletoo_gmail_com-browser-action {
+        #meetsingletoo_gmail_com-browser-action,
+        #meetsingletoo_gmail_com-BAP {
             list-style-image: url("./images/extensions/fetchv/playlist.svg");
+        }
+
+        /** TST Search Tab */
+        #_tst-search-browser-action,
+        #_tst-search-BAP {
+            list-style-image: url("./images/extensions/tstsearchtab/search-in-list.svg");
+        }
+
+        /** Lovely Fork */
+        #github-forks-addon_musicallyut_in-browser-action,
+        #github-forks-addon_musicallyut_in-BAP {
+            list-style-image: url("./images/extensions/lovelyforks/heart.svg");
+        }
+
+        /** 凌云网盘助手 */
+        #_9f41038f-f64e-4ef1-bd30-4f84c87ea2f7_-BAP {
+            list-style-image: url("./images/extensions/lywpzs/cloud.svg");
         }
     }
 }
