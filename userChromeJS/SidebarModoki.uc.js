@@ -63,6 +63,7 @@ var SidebarModoki = {
         src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
         "data-l10n-id": "library-bookmarks-menu",
         image: "chrome://browser/skin/bookmark-star-on-tray.svg",
+        // shortcut: { key: "Q", modifiers: "accel,alt" } // uncomment to enable shortcut
     }, {
         src: "chrome://browser/content/places/historySidebar.xhtml",
         "data-l10n-id": "appmenuitem-history",
@@ -85,7 +86,6 @@ var SidebarModoki = {
         label: "Checkmarks"
     }],
     // -- config --
-
     kSM_Open: "userChrome.SidebarModoki.Open",
     kSM_lastSelectedTabIndex: "userChrome.SidebarModoki.lastSelectedTabIndex",
     kSM_lastSelectedTabWidth: "userChrome.SidebarModoki.lastSelectedTabWidth",
@@ -373,6 +373,13 @@ var SidebarModoki = {
             if (tab.hasOwnProperty("image")) {
                 tab.iconized = true;
             }
+            if (tab.hasOwnProperty("shortcut")) {
+                let shortcut = tab["shortcut"];
+                shortcut.oncommand = `SidebarModoki.switchToTab(${i})`
+                let template = ["key", shortcut];
+                document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
+                delete tab["shortcut"];
+            }
             template[3][2].push(["tab", tab]);
             let browser = { id: "SM_tab" + i + "-browser", flex: "1", autoscroll: "false", src: "" };
             if (tab.src.startsWith("moz")) {
@@ -547,6 +554,15 @@ var SidebarModoki = {
             addEventListener("resize", this, false);
         } else {
             this.close();
+        }
+    },
+
+    switchToTab: function (tabNo) {
+        this.toggle(true);
+        let tab = document.getElementById("SM_tab" + tabNo);
+        if (tab) {
+            document.getElementById("SM_tabs").selectedIndex = tabNo;
+            this.onSelect();
         }
     },
 
