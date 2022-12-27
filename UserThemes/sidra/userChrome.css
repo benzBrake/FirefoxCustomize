@@ -1718,6 +1718,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         :is(toolbar, .customization-palette) .toolbaritem-combined-buttons.unified-extensions-item toolbarbutton {
+            --toolbarbutton-outer-padding: 0;
             background-color: transparent !important;
             padding: 0 var(--toolbarbutton-outer-padding) !important;
         }
