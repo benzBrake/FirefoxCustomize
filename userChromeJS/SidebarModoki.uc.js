@@ -566,6 +566,12 @@ var SidebarModoki = {
         }
     },
 
+    advanceSelectedTab: function (dir) {
+        if (typeof dir == "undefined") return;
+        document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
+        this.onSelect();
+    },
+
     close: function () {
         removeEventListener("resize", this, false);
         this.Button = document.getElementById("SM_Button");
