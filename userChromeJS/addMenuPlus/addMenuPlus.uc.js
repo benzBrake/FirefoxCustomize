@@ -270,6 +270,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             delete this.appVersion;
             return this.appVersion = parseFloat(Services.appinfo.version);
         },
+        get platform() {
+            delete this.platform;
+            return this.platform = AppConstants.platform;
+        },
         get FILE() {
             try {
                 // addMenu.FILE_PATH があればそれを使う
