@@ -10,8 +10,9 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
-(function () {
+(function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const MENU_LABEL = "状态栏";
 
     window.StatusBar = {
         init: function () {
@@ -19,10 +20,15 @@
                 `
             <toolbar id="status-bar" customizable="true" style="border-top: 1px solid var(--chrome-content-separator-color)"
                      class="browser-toolbar customization-target" mode="icons" context="toolbar-context-menu" accesskey="A">
-                     <hbox id="status-text" align="center" flex="1" class="statusbar-padding"/>
+                     <hbox id="status-text" align="center" flex="1" class="statusbar-padding">
+                         <vbox id="status-text-inner" flex="1" hidden="true" />
+                     </hbox>
             </toolbar>
             `
             );
+
+            //insert style
+            this.style = addStyle(css);
 
             document.getElementById("navigator-toolbox").appendChild(toolbarElem);
 
@@ -44,7 +50,7 @@
             //menuitem for status bar
             let toggleItem = $C("menuitem", {
                 id: "toggle_status-bar",
-                label: "状态栏",
+                label: MENU_LABEL,
                 type: "checkbox",
                 checked: String(Services.prefs.getBoolPref("browser.display.statusbar", false)),
                 oncommand: "StatusBar.togglePref();",
@@ -58,6 +64,7 @@
             } else {
                 this.hide();
             }
+
             Services.prefs.addObserver("browser.display.statusbar", function () {
                 let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
                 document.getElementById("toggle_status-bar").setAttribute("checked", String(checked));
@@ -67,44 +74,46 @@
                     StatusBar.hide();
                 }
             });
+
+            this.observer = new MutationObserver(this.observe);
+            this.observer.observe(document.getElementById("statuspanel"), {
+                attributes: true,
+                attributeFilter: [
+                    "hidden",
+                    "inactive",
+                    "previoustype"
+                ]
+            });
         },
         togglePref: function () {
             let checked = document.getElementById("toggle_status-bar").getAttribute("checked") == "true";
             Services.prefs.setBoolPref("browser.display.statusbar", checked);
         },
-        displayStatusbar: `
-            background: var(--toolbar-bgcolor);
-            border: none !important;
-        `,
         show: function () {
-            //remove CSS
-            document.getElementById("statusBarCSS")?.remove();
-
             //move statustext to statusbar
-            document.getElementById("status-text").appendChild(document.getElementById("statuspanel-label"));
+            document.getElementById("status-text-inner").appendChild(document.getElementById("statuspanel-label"));
 
-            //add CSS
-            document.getElementById("statuspanel-label").setAttribute("style", this.displayStatusbar);
+            //remove hidden attribute
+            document.getElementById("status-bar").removeAttribute("hidden");
         },
-        hiddenStatusBar: `
-            #status-bar {
-                display: none;
-            }
-            :root[customizing] #status-bar {
-                display: inherit !important;
-            }
-        `,
         hide: function () {
-            var Tag = document.createElement("style");
-            Tag.setAttribute("id", "statusBarCSS");
-            Tag.innerText = this.hiddenStatusBar;
-            document.getElementsByTagName("head")[0].insertAdjacentElement("beforeend", Tag);
+            //add hidden attribute
+            document.getElementById("status-bar").setAttribute("hidden", "true");
 
             //revert statustext to statuspanel
             document.getElementById("statuspanel").appendChild(document.getElementById("statuspanel-label"));
-
-            //remove CSS
-            document.getElementById("statuspanel-label").removeAttribute("style");
+        },
+        observe: function (mutationList, observer) {
+            const statusText = document.getElementById("status-text-inner");
+            for (const mutation of mutationList) {
+                if (mutation.type === 'attributes') {
+                    if (mutation.target.hasAttribute(mutation.attributeName)) {
+                        statusText.setAttribute(mutation.attributeName, mutation.target.getAttribute(mutation.attributeName));
+                    } else {
+                        statusText.removeAttribute(mutation.attributeName);
+                    }
+                }
+            }
         }
     }
 
@@ -123,6 +132,14 @@
         return el;
     }
 
+    function addStyle(css) {
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
+    }
+
     if (gBrowserInit.delayedStartupFinished) window.StatusBar.init();
     else {
         let delayedListener = (subject, topic) => {
@@ -133,4 +150,15 @@
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
-})()
+})(`
+#status-text-inner[inactive="true"] {
+    display: none;
+}
+#status-text-inner #statuspanel-label {
+    background: var(--toolbar-bgcolor);
+    border: none !important;
+}
+:root[customizing] #status-bar {
+    display: inherit !important;
+}
+`)
