@@ -211,7 +211,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         } catch (e) { }
         const ADDMENU_LOCALE = _locale || "en-US";
 
-        // 增加菜单类型请在这里加入插入点，不能是 IdentGroup
+        // 增加菜单类型请在这里加入插入点，名称不能是 ident 或者 group
         var MENU_ATTRS = {
             tab: {
                 insRef: $("context_closeTab"),
@@ -254,6 +254,10 @@ if (typeof window === "undefined" || globalThis !== window) {
             get appVersion() {
                 delete this.appVersion;
                 return this.appVersion = parseFloat(Services.appinfo.version);
+            },
+            get platform() {
+                delete this.platform;
+                return this.platform = AppConstants.platform;
             },
             get FILE() {
                 try {
