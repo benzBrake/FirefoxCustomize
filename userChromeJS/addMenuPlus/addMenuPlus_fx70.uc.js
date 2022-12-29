@@ -375,6 +375,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                     once: true
                 });
 
+                // PanelUI 增加 CustomShowing 支持
+                PanelUI.mainView.addEventListener("ViewShowing", this);
+
+                this.APP_LITENER_REMOVER = function () {
+                    PanelUI.mainView.removeEventListener("ViewShowing", this);
+                }
+
                 this.identityBox = $('identity-icon') || $('identity-box')
                 if (enableidentityBoxContextMenu && this.identityBox) {
                     // SSL 小锁右键菜单
@@ -425,6 +432,8 @@ if (typeof window === "undefined" || globalThis !== window) {
                 $("menu_FilePopup").removeEventListener("popupshowing", this, false);
                 $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
                 $("contentAreaContextMenu").removeAttribute("photoncompact");
+                if (typeof this.APP_LITENER_REMOVER === "function")
+                    this.APP_LITENER_REMOVER();
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
                 this.removeMenuitem();
                 $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
@@ -443,8 +452,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 delete window.addMenu;
             },
             handleEvent: function (event) {
-                const { ownerDocument: doc, ownerGlobal: win } = event.target;
+                const { ownerGlobal: win } = event.target;
                 switch (event.type) {
+                    case "ViewShowing":
                     case "popupshowing":
                         if (event.target != event.currentTarget) return;
                         if (enableFileRefreshing) {
@@ -463,6 +473,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 m.setAttribute('label', sel);
                             }
                         });
+
+                        let insertPoint = "";
+
                         if (event.target.id == 'contentAreaContextMenu') {
                             var state = [];
                             if (gContextMenu.onTextInput)
@@ -478,6 +491,8 @@ if (typeof window === "undefined" || globalThis !== window) {
                             if (gContextMenu.onVideo || gContextMenu.onAudio)
                                 state.push("media");
                             event.currentTarget.setAttribute("addMenu", state.join(" "));
+
+                            insertPoint = "addMenu-page-insertpoint";
                         }
 
                         if (event.target.id === "toolbar-context-menu") {
@@ -494,9 +509,27 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 state.push("button");
                             }
                             event.currentTarget.setAttribute("addMenu", state.join(" "));
+
+                            insertPoint = "addMenu-nav-insertpoint";
                         }
 
-                        this.customShowings.forEach(function (obj) {
+                        if (event.target.id === "tabContextMenu") {
+                            insertPoint = "addMenu-tab-insertpoint";
+                        }
+
+                        if (event.target.id === "identity-box-contextmenu") {
+                            insertPoint = "addMenu-identity-insertpoint";
+                        }
+
+                        if (event.target.id === "menu_FilePopup" || event.target.id === "appMenu-protonMainView") {
+                            insertPoint = "addMenu-app-insertpoint";
+                        }
+
+                        if (event.target.id === "menu_ToolsPopup") {
+                            insertPoint = "addMenu-tool-insertpoint";
+                        }
+
+                        this.customShowings.filter(obj => obj.insertPoint === insertPoint).forEach(function (obj) {
                             var curItem = obj.item;
                             try {
                                 eval('(' + obj.fnSource + ').call(curItem, curItem)');
@@ -789,13 +822,14 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 if (isAlert) this.alert(U($L('config has reload')));
             },
-            newGroupMenu: function (menuObj) {
+            newGroupMenu: function (menuObj, opt) {
                 var group = $C('menugroup');
 
                 // 增加 onshowing 事件
                 if (menuObj.onshowing) {
                     this.customShowings.push({
                         item: group,
+                        insertPoint: opt.insertPoint.id,
                         fnSource: menuObj.onshowing
                     });
                     delete menuObj.onshowing;
@@ -832,7 +866,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             newMenu: function (menuObj, opt) {
                 opt || (opt = {});
                 if (menuObj._group) {
-                    return this.newGroupMenu(menuObj);
+                    return this.newGroupMenu(menuObj, opt);
                 }
                 var isAppMenu = opt.insertPoint && opt.insertPoint.localName === "toolbarseparator" && opt.insertPoint.id === 'addMenu-app-insertpoint',
                     separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
@@ -864,6 +898,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (!isAppMenu && key === 'onshowing') {
                         this.customShowings.push({
                             item: menu,
+                            insertPoint: opt.insertPoint.id,
                             fnSource: menuObj.onshowing.toString()
                         });
                         delete menuObj.onshowing;
@@ -997,6 +1032,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 if (opt.isTopMenuitem && obj.onshowing) {
                     this.customShowings.push({
                         item: menuitem,
+                        insertPoint: opt.insertPoint.id,
                         fnSource: obj.onshowing.toString()
                     });
                     delete obj.onshowing;

@@ -390,6 +390,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 once: true
             });
 
+            // PanelUI 增加 CustomShowing 支持
+            PanelUI.mainView.addEventListener("ViewShowing", this);
+
+            this.APP_LITENER_REMOVER = function () {
+                PanelUI.mainView.removeEventListener("ViewShowing", this);
+            }
+
             this.identityBox = $('identity-icon') || $('identity-box')
             if (enableidentityBoxContextMenu && this.identityBox) {
                 // SSL 小锁右键菜单
@@ -496,6 +503,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $("menu_FilePopup").removeEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
             $("contentAreaContextMenu").removeAttribute("photoncompact");
+            if (typeof this.APP_LITENER_REMOVER === "function")
+                this.APP_LITENER_REMOVER();
             window.messageManager.broadcastAsyncMessage("addMenu_destroy");
             window.messageManager.removeMessageListener("addMenu_selectionData", this);
             (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
@@ -517,6 +526,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         handleEvent: function (event) {
             switch (event.type) {
+                case "ViewShowing":
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
 
@@ -537,6 +547,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         }
                     });
 
+                    let insertPoint = "";
+
                     if (event.target.id == 'contentAreaContextMenu') {
                         var state = [];
                         if (gContextMenu.onTextInput)
@@ -552,6 +564,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
+
+                        insertPoint = "addMenu-page-insertpoint";
                     }
 
                     if (event.target.id === "toolbar-context-menu") {
@@ -568,9 +582,27 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             state.push("button");
                         }
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
+
+                        insertPoint = "addMenu-nav-insertpoint";
                     }
 
-                    this.customShowings.forEach(function (obj) {
+                    if (event.target.id === "tabContextMenu") {
+                        insertPoint = "addMenu-tab-insertpoint";
+                    }
+
+                    if (event.target.id === "identity-box-contextmenu") {
+                        insertPoint = "addMenu-identity-insertpoint";
+                    }
+
+                    if (event.target.id === "menu_FilePopup" || event.target.id === "appMenu-protonMainView") {
+                        insertPoint = "addMenu-app-insertpoint";
+                    }
+
+                    if (event.target.id === "menu_ToolsPopup") {
+                        insertPoint = "addMenu-tool-insertpoint";
+                    }
+
+                    this.customShowings.filter(obj => obj.insertPoint === insertPoint).forEach(function (obj) {
                         var curItem = obj.item;
                         try {
                             eval('(' + obj.fnSource + ').call(curItem, curItem)');
@@ -864,13 +896,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             if (isAlert) this.alert(U($L('config has reload')));
         },
-        newGroupMenu: function (menuObj) {
+        newGroupMenu: function (menuObj, opt) {
             var group = $C('menugroup');
 
             // 增加 onshowing 事件
             if (menuObj.onshowing) {
                 this.customShowings.push({
                     item: group,
+                    insertPoint: opt.insertPoint.id,
                     fnSource: menuObj.onshowing
                 });
                 delete menuObj.onshowing;
@@ -907,7 +940,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         newMenu: function (menuObj, opt) {
             opt || (opt = {});
             if (menuObj._group) {
-                return this.newGroupMenu(menuObj);
+                return this.newGroupMenu(menuObj, opt);
             }
             var isAppMenu = opt.insertPoint && opt.insertPoint.localName === "toolbarseparator" && opt.insertPoint.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
@@ -939,6 +972,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (!isAppMenu && key === 'onshowing') {
                     this.customShowings.push({
                         item: menu,
+                        insertPoint: opt.insertPoint.id,
                         fnSource: menuObj.onshowing.toString()
                     });
                     delete menuObj.onshowing;
@@ -1072,6 +1106,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (opt.isTopMenuitem && obj.onshowing) {
                 this.customShowings.push({
                     item: menuitem,
+                    insertPoint: opt.insertPoint.id,
                     fnSource: obj.onshowing.toString()
                 });
                 delete obj.onshowing;
