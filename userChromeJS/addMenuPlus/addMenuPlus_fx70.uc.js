@@ -73,6 +73,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                     case "AM:SetSeletedText":
                         addMenu.setSelectedText(data.text);
                         break;
+                    case "AM:FaviconLink":
+                        if (typeof data.href !== "undefined" && typeof data.hash !== "undefined") {
+                            win.gBrowser.tabs.filter(t => t.getAttribute("favicon-hash") === data.hash).forEach(t => t.setAttribute("favicon-url", data.href));
+                        }
+                        break;
                 }
             }
         }
@@ -93,8 +98,22 @@ if (typeof window === "undefined" || globalThis !== window) {
                         let obj = {
                             text: BrowserOrSelectionUtils.getSelectionDetails(win).fullText
                         }
-
                         actor.sendAsyncMessage("AM:SetSeletedText", obj);
+                        break;
+                    case "AM:GetFaviconLink":
+                        let link = doc.head.querySelector('[rel~="shortcut"]');
+                        let href = "";
+                        if (link) {
+                            href = link.getAttribute("href");
+                            if (href.startsWith("//")) {
+                                href = doc.location.protocol + href;
+                            } else if (href.startsWith("/")) {
+                                href = doc.location.protocol + "//" + doc.location.host + "/" + href;
+                            }
+                        } else {
+                            href = doc.location.protocol + "//" + doc.location.host + "/" + "favicon.ico";
+                        }
+                        actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
                         break;
                     case "AM:ExectueScript":
                         if (data && data.script) {
@@ -421,6 +440,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 // 响应鼠标键释放事件（eg：获取选中文本）
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
 
+                // 响应标签修改事件
+                gBrowser.tabContainer.addEventListener('TabAttrModified', this);
+
                 this.style = addStyle(css);
                 this.rebuild();
             },
@@ -435,6 +457,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 if (typeof this.APP_LITENER_REMOVER === "function")
                     this.APP_LITENER_REMOVER();
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
+                gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
                 this.removeMenuitem();
                 $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                     e.parentNode.removeChild(e)
@@ -555,7 +578,35 @@ if (typeof window === "undefined" || globalThis !== window) {
                             $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
 
                         break;
+                    case 'TabAttrModified':
+                        let tab = event.target;
+                        if (typeof tab === "undefined" || tab.hasAttribute("favicon"))
+                            return;
+                        try {
+                            let hash = calculateHashFromStr(tab.linkedBrowser.currentURI.spec)
+                            tab.setAttribute("favicon-hash", hash);
+                            let actor = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
+                            actor.sendAsyncMessage("AM:GetFaviconLink", { hash: hash });
+                        } catch (error) { }
+                        break;
                 }
+                function calculateHashFromStr(data) {
+                    // Lazily create a reusable hasher
+                    let gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
+                        Ci.nsICryptoHash
+                    );
+
+                    gCryptoHash.init(gCryptoHash.MD5);
+
+                    // Convert the data to a byte array for hashing
+                    gCryptoHash.update(
+                        data.split("").map(c => c.charCodeAt(0)),
+                        data.length
+                    );
+                    // Request the has result as ASCII base64
+                    return gCryptoHash.finish(true);
+                }
+
             },
             updateModifiedFile: function () {
                 if (!this.FILE.exists()) return;
@@ -1402,9 +1453,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                         case "%CLIPBOARD%":
                             return readFromClipboard() || "";
                         case "%FAVICON%":
-                            return gBrowser.getIcon(tab ? tab : null) || "";
+                            return tab.getAttribute("favicon-url") || gBrowser.getIcon(tab ? tab : null) || "";
                         case "%FAVICON_BASE64%":
-                            return img2base64(gBrowser.getIcon(tab ? tab : null));
+                            let image = tab.getAttribute("favicon-url") || gBrowser.getIcon(tab ? tab : null);
+                            if (image && image.startsWith("data:image")) return image;
+                            return img2base64(image);
                         case "%EMAIL%":
                             return getEmailAddress() || "";
                         case "%EOL%":
@@ -1485,11 +1538,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                 return this._selectedText;
             },
             /**
-         * 获取选区
-         * @param {*} win
-         * @returns
-         * @deprecated use getSelectedText instead
-         */
+             * 获取选区
+             * @param {*} win
+             * @returns
+             * @deprecated use getSelectedText instead
+             */
             getSelection: function (win) {
                 // from getBrowserSelection Fx19
                 win || (win = this.focusedWindow);
