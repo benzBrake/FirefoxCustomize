@@ -75,8 +75,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case "AM:FaviconLink":
                         if (typeof data.href !== "undefined" && typeof data.hash !== "undefined") {
-                            win.gBrowser.tabs.filter(t => t.getAttribute("favicon-hash") === data.hash).forEach(t => t.setAttribute("favicon-url", data.href));
+                            win.gBrowser.tabs.filter(t => t.faviconHash === data.hash).forEach(t => t.faviconUrl = data.href);
                         }
+                        break;
+                    case "AM:ExectueScriptEnd":
                         break;
                 }
             }
@@ -580,11 +582,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case 'TabAttrModified':
                         let tab = event.target;
-                        if (typeof tab === "undefined" || tab.hasAttribute("favicon"))
+                        if (typeof tab === "undefined")
                             return;
                         try {
                             let hash = calculateHashFromStr(tab.linkedBrowser.currentURI.spec)
-                            tab.setAttribute("favicon-hash", hash);
+                            tab.faviconHash = hash;
                             let actor = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
                             actor.sendAsyncMessage("AM:GetFaviconLink", { hash: hash });
                         } catch (error) { }
@@ -858,6 +860,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 this.removeMenuitem();
 
                 this.customShowings = [];
+                this.customFrameResult = [];
 
                 Object.values(MENU_ATTRS).forEach(function ({
                     current,
@@ -886,16 +889,25 @@ if (typeof window === "undefined" || globalThis !== window) {
                     delete menuObj.onshowing;
                 }
 
+                if (menuObj.framescript) {
+                    if (typeof menuObj.framescript === "function") {
+                        menuObj.framescript = menuObj.framescript.toString();
+                    } else if (menuObj.framescript.keyword && menuObj.framescript.result && menuObj.framescript.script) {
+                        this.customFrameResult.push({
+                            keyword: menuObj.framescript.keyword,
+                            result: menuObj.framescript.result,
+                        })
+                        if (typeof menuObj.framescript.script === "function") {
+                            menuObj.framescript = menuObj.framescript.script.toString();
+                        }
+                    }
+                    menuObj.framescript = btoa(encodeURIComponent(menuObj.framescript));
+                }
+
                 Object.keys(menuObj).map(function (key) {
                     var val = menuObj[key];
                     if (key === "_items") return;
                     if (key === "_group") return;
-                    if (key === "framescript") {
-                        if (typeof val !== "string")
-                            val = val.toString();
-
-                        menuObj[key] = val = btoa(encodeURIComponent(val));
-                    }
                     if (typeof val == "function")
                         menuObj[key] = val = "(" + val.toString() + ").call(this, event);";
                     group.setAttribute(key, val);
@@ -942,25 +954,34 @@ if (typeof window === "undefined" || globalThis !== window) {
                 } else {
                     popup = menu.appendChild($C("menupopup"));
                 }
+
+                if (menuObj.onshowing) {
+                    this.customShowings.push({
+                        item: menu,
+                        insertPoint: opt.insertPoint.id,
+                        fnSource: menuObj.onshowing.toString()
+                    });
+                    delete menuObj.onshowing;
+                }
+
+                if (menuObj.framescript) {
+                    if (typeof menuObj.framescript === "function") {
+                        menuObj.framescript = menuObj.framescript.toString();
+                    } else if (menuObj.framescript.keyword && menuObj.framescript.result && menuObj.framescript.script) {
+                        this.customFrameResult.push({
+                            keyword: menuObj.framescript.keyword,
+                            result: menuObj.framescript.result,
+                        })
+                        if (typeof menuObj.framescript.script === "function") {
+                            menuObj.framescript = menuObj.framescript.script.toString();
+                        }
+                    }
+                    menuObj.framescript = btoa(encodeURIComponent(menuObj.framescript));
+                }
+
                 for (let key in menuObj) {
                     let val = menuObj[key];
                     if (key === "_items") continue;
-
-                    if (!isAppMenu && key === 'onshowing') {
-                        this.customShowings.push({
-                            item: menu,
-                            insertPoint: opt.insertPoint.id,
-                            fnSource: menuObj.onshowing.toString()
-                        });
-                        delete menuObj.onshowing;
-                        continue;
-                    }
-                    if (key === "framescript") {
-                        if (typeof val !== "string")
-                            val = val.toString();
-
-                        menuObj[key] = val = btoa(encodeURIComponent(val));
-                    }
                     if (typeof val == "function")
                         menuObj[key] = val = "(" + val.toString() + ").call(this, event);"
                     menu.setAttribute(key, val);
@@ -1089,16 +1110,24 @@ if (typeof window === "undefined" || globalThis !== window) {
                     delete obj.onshowing;
                 }
 
+                if (obj.framescript) {
+                    if (typeof obj.framescript === "function") {
+                        obj.framescript = obj.framescript.toString();
+                    } else if (obj.framescript.keyword && obj.framescript.result && obj.framescript.script) {
+                        this.customFrameResult.push({
+                            keyword: obj.framescript.keyword,
+                            result: obj.framescript.result,
+                        })
+                        if (typeof obj.framescript.script === "function") {
+                            obj.framescript = obj.framescript.script.toString();
+                        }
+                    }
+                    obj.framescript = btoa(encodeURIComponent(obj.framescript));
+                }
 
                 for (let key in obj) {
                     let val = obj[key];
                     if (key === "command") continue;
-                    if (key === "framescript") {
-                        if (typeof val !== "string")
-                            val = val.toString();
-
-                        obj[key] = val = btoa(encodeURIComponent(val));
-                    }
                     if (typeof val == "function")
                         obj[key] = val = "(" + val.toString() + ").call(this, event);";
                     menuitem.setAttribute(key, val);
@@ -1195,14 +1224,22 @@ if (typeof window === "undefined" || globalThis !== window) {
                                     class: 'addMenuOriginal',
                                 }), dupMenuitem);
                         }
+                        if (obj.framescript) {
+                            if (typeof obj.framescript === "function") {
+                                obj.framescript = obj.framescript.toString();
+                            } else if (obj.framescript.keyword && obj.framescript.result && obj.framescript.script) {
+                                this.customFrameResult.push({
+                                    keyword: obj.framescript.keyword,
+                                    result: obj.framescript.result,
+                                })
+                                if (typeof obj.framescript.script === "function") {
+                                    obj.framescript = obj.framescript.script.toString();
+                                }
+                            }
+                            obj.framescript = btoa(encodeURIComponent(obj.framescript));
+                        }
                         for (let key in obj) {
                             let val = obj[key];
-                            if (key === "framescript") {
-                                if (typeof val !== "string")
-                                    val = val.toString();
-
-                                obj[key] = val = btoa(encodeURIComponent(val));
-                            }
                             if (typeof val == "function")
                                 obj[key] = val = "(" + val.toString() + ").call(this, event);";
 
@@ -1453,9 +1490,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                         case "%CLIPBOARD%":
                             return readFromClipboard() || "";
                         case "%FAVICON%":
-                            return tab.getAttribute("favicon-url") || gBrowser.getIcon(tab ? tab : null) || "";
+                            return tab.faviconUrl || gBrowser.getIcon(tab ? tab : null) || "";
                         case "%FAVICON_BASE64%":
-                            let image = tab.getAttribute("favicon-url") || gBrowser.getIcon(tab ? tab : null);
+                            let image = tab.faviconUrl || gBrowser.getIcon(tab ? tab : null);
                             if (image && image.startsWith("data:image")) return image;
                             return img2base64(image);
                         case "%EMAIL%":
