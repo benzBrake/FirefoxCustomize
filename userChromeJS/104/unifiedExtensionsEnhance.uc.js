@@ -4,10 +4,11 @@
 // Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.3
+// @version         0.1.4
 // @compatibility   Firefox 104
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.4 Fx 107 Tempoarily compat for legacy addons & disabled addons
 // @note            参考了 https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/extensionOptionsMenu.uc.js
 // ==/UserScript==
 (function () {
@@ -43,10 +44,15 @@
                 overflow-x: hidden;
                 overflow-y: scroll;
             }
-            unified-extensions-item.no-options .unified-extensions-item-name {
+            new-unified-extensions-item {
+                display: flex;
+            }
+            unified-extensions-item.no-options .unified-extensions-item-name,
+            new-unified-extensions-item.no-options .unified-extensions-item-name {
                 color: var(--menu-disabled-color, var(--panel-disabled-color));
             }
-            unified-extensions-item.disabled .unified-extensions-item-name {
+            unified-extensions-item.disabled .unified-extensions-item-name,
+            new-unified-extensions-item.disabled .unified-extensions-item-name {
                 font-style: italic;
             }`)),
         },
@@ -54,6 +60,24 @@
             if (!Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false) || !gUnifiedExtensions) {
                 return;
             }
+
+            this.itemTag = 'unified-extensions-item';
+
+            let definedItem;
+            if (this.appVersion >= 107) {
+                // Tempoarily compat for legacy addons
+                definedItem = customElements.get("unified-extensions-item").toString().replace("lazy.OriginControls.getAttention(policy, this.ownerGlobal)", "this.addon.isWebExtension && this.addon.isActive ? lazy.OriginControls.getAttention(policy, this.ownerGlobal): ''").replaceAll("this._updateStateMessage", "if (this.addon.isWebExtension && this.addon.isActive) this._updateStateMessage").replace("let policy = WebExtensionPolicy.getByID(this.addon.id);", "let policy = this.addon.isWebExtension ? WebExtensionPolicy.getByID(this.addon.id) : '';");
+                this.itemTag = 'new-unified-extensions-item';
+            }
+
+            if (this.appVersion >= 108) {
+                definedItem = definedItem.replace("_hasAction() {", "_hasAction() {\n      if(!this.addon.isWebExtension) return false;");
+                gUnifiedExtensions.panel
+            }
+
+            if (definedItem) eval('customElements.define("new-unified-extensions-item",' + definedItem + ');');
+
+
             if (!CustomizableUI.getPlacementOfWidget("movable-unified-extensions", true))
                 CustomizableUI.createWidget({
                     id: 'movable-unified-extensions',
@@ -144,7 +168,7 @@
             view.addEventListener('click', this.onClick);
 
             let list = $Q('.unified-extensions-list', view);
-            $QA('unified-extensions-item', list).forEach(item => {
+            $QA(this.itemTag, list).forEach(item => {
                 $R(item);
             })
             $R($Q('.generated-separator', list))
@@ -160,14 +184,14 @@
                     list.appendChild($C(document, 'toolbarseparator', { class: 'generated-separator' }));
                 }
                 prevState = addon.isActive;
-                const item = document.createElement("unified-extensions-item");
+                const item = document.createElement(this.itemTag);
                 if (!addon.optionsURL) {
                     item.classList.add('no-options');
                 }
                 item.setAddon(addon);
                 list.appendChild(item);
             });
-            $QA('unified-extensions-item', list).forEach(item => {
+            $QA(this.itemTag, list).forEach(item => {
                 if (!item.addon.optionsURL)
                     item.classList.add('no-options');
                 if (!item.addon.isActive)
@@ -183,8 +207,9 @@
             }
         },
         onClick: function (event) {
-            if (!event.target.closest('unified-extensions-item')) return;
-            var { addon } = vbox = event.target.closest('unified-extensions-item');
+            const { itemTag } = window.unifiedExtensionsEnhance;
+            if (!event.target.closest(itemTag)) return;
+            var { addon } = vbox = event.target.closest(itemTag);
             var { classList } = event.target;
             if (classList.contains('unified-extensions-item-action') || classList.contains('unified-extensions-item-contents') || classList.contains('unified-extensions-item-name') || classList.contains('unified-extensions-item-message') || classList.contains('unified-extensions-item-icon')) {
                 switch (event.button) {
