@@ -1,0 +1,30 @@
+/* Firefox Quantum userChrome.css tweaks ************************************************/
+/* Github: https://github.com/aris-t2/customcssforfx ************************************/
+/****************************************************************************************/
+:root {
+  --statusbar_background_color: grey;
+  --statusbar_font_color: black;
+}
+
+#statuspanel {
+	left: 5px !important;
+        max-width: 95% !important;
+	bottom: 5px !important;
+	transition-duration: 0s !important;
+	transition-delay: 0s !important;
+	transition-property: none !important;
+	border: 1px solid #505050 !important;
+        padding: 2px !important;
+        border-radius: 3px !important;
+        box-shadow: 1px 1px 2px #000 !important;
+        background-image: linear-gradient(#FFF, #c0c0c0) !important;       
+}
+#statuspanel-inner {
+	height: 14px !important;
+}
+#statuspanel-label {
+	border: none !important;
+	padding: 0px !important;
+	background: transparent !important;
+}
+	

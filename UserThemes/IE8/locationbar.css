@@ -1,0 +1,76 @@
+/* Firefox Quantum userChrome.css tweaks ************************************************/
+/* Github: https://github.com/aris-t2/customcssforfx ************************************/
+/****************************************************************************************/
+
+.searchbar-textbox,
+#urlbar {
+    background-image: url("image/comboboxbutton.png") !important;
+    background-repeat: no-repeat !important;
+    padding: 0px !important;
+    background-position: right center !important;
+    margin: 2px !important;
+    box-shadow: none !important;
+    background-color: var(--base-color) !important;
+    border: solid !important;
+    border-radius: 0 !important;
+    border-width: 2px 2px 2px 2px !important;
+    border-image: url("image/combobox.png") !important;
+    border-image-slice: 2 2 2 2 !important;
+    min-height: 27px !important;
+    height: 27px !important;
+}
+
+.searchbar-textbox:active,
+.searchbar-textbox:checked,
+#urlbar:active,
+#urlbar:checked {
+    background-image: url("image/comboboxbutton_pressed.png") !important;
+    background-repeat: no-repeat !important;
+    border-radius: 0 !important;
+    padding: 0px !important;
+    background-position: right center !important;
+    margin: 2px !important;
+    box-shadow: none !important;
+    background-color: var(--base-color) !important;
+    border: solid !important;
+    padding: 0px !important;
+    border-width: 2px 2px 2px 2px !important;
+    border-image: url("image/combobox.png") !important;
+    border-image-slice: 2 2 2 2 !important;
+}
+
+#AppContent {
+    border: solid !important;
+    padding: 5px !important;
+    background-color: #000 !important;
+    border-width: 2px 2px 2px 2px !important;
+    border-image: url("image/combobox.png") !important;
+    border-image-slice: 2 2 2 2 !important;
+}
+
+#urlbar-input-container {
+    padding-right: 60px !important;
+}
+
+#PlacesChevron {
+    max-height: 10px !important;
+}
+
+.urlbar-history-dropmarker,
+.urlbar-history-dropmarker:hover {
+    -moz-box-ordinal-group: 99 !important;
+    margin-right: 0px;
+    opacity: 0 !important;
+}
+
+/* identity box */
+#identity-box {
+    padding-inline-start: 4px !important;
+}
+
+/* adjust icons for compact mode */
+#main-window[uidensity="compact"] .urlbar-icon {
+    width: 22px !important;
+    height: 22px !important;
+    padding: 3px !important;
+}

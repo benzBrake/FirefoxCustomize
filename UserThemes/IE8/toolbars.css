@@ -1,0 +1,132 @@
+.browser-toolbar:not(.titlebar-color) {
+    background-color: #c0c0c0 !important;
+}
+
+#toolbar-menubar {
+    height: var(--tab-min-height) !important;
+}
+
+#main-window[tabsintitlebar="true"] #toolbar-menubar {
+    background-image: linear-gradient(to right, #000160, #4097e3) !important;
+}
+
+#main-window:not([tabsintitlebar="true"]) #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+    max-width: 0 !important;
+    min-width: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+}
+
+#main-window:not([tabsintitlebar="true"]) #titlebar {
+    -moz-box-orient: horizontal !important;
+}
+
+#navigator-toolbox>*:not(#titlebar) {
+    -moz-box-ordinal-group: 1;
+}
+
+#titlebar {
+    -moz-box-ordinal-group: 2;
+}
+
+/** 菜单置顶 */
+#main-window[tabsintitlebar="true"] #toolbar-menubar {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: var(--tab-min-height);
+}
+
+#main-window:not([tabsintitlebar="true"]) #toolbar-menubar {
+    background-image: linear-gradient(#c3dcfa, #e3eefc) !important;
+}
+
+/* 菜单文本垂直居中 */
+#menubar-items {
+    -moz-box-pack: center;
+}
+
+/* 菜单文本设置为白色 */
+#main-window[tabsintitlebar="true"] #main-menubar>menu {
+    color: #fff !important;
+}
+
+#main-menubar>menu:hover,
+#main-menubar>menu:focus,
+#main-menubar>menu:active,
+#main-menubar>menu[_moz-menuactive="true"],
+#main-menubar>menu[open="true"] {
+    color: #fff !important;
+    background-color: rgb(0, 78, 152);
+}
+
+/* 留出菜单空白 */
+#main-window[tabsintitlebar="true"] #nav-bar {
+    padding-top: var(--tab-min-height) !important;
+}
+
+/* 自动隐藏菜单栏时保留控制按钮 */
+#toolbar-menubar[autohide="true"][inactive="true"]~#TabsToolbar .titlebar-buttonbox-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: var(--tab-min-height) !important;
+}
+
+#toolbar-menubar[autohide="true"][inactive="true"]~#TabsToolbar .titlebar-buttonbox-container .toolbarbutton-icon {
+    -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
+    fill: currentColor;
+    color: white;
+}
+
+#main-window[tabsintitlebar="true"] #toolbar-menubar[autohide="true"][inactive="true"]~#TabsToolbar::before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: var(--tab-min-height) !important;
+    width: 100%;
+    background-image: linear-gradient(to right, #000160, #4097e3) !important;
+}
+
+#toolbar-menubar[autohide="true"]:not([inactive="true"])~#TabsToolbar .titlebar-buttonbox-container {
+    visibility: collapse;
+}
+
+/* 去除标签栏前后的空白 */
+#TabsToolbar .titlebar-spacer {
+    visibility: collapse;
+}
+
+toolbar:not(#TabsToolbar):not(#toolbar-menubar):not(#nav-bar):not(:-moz-lwtheme) {
+    background-image: url("image/bottom.png") !important;
+    background-color: inherit !important;
+    margin-bottom: -3px !important;
+    background-image: none !important;
+    background-image: linear-gradient(#FFF, #c3dcfa) !important;
+    padding: 2px !important;
+}
+
+#TabsToolbar {
+    padding-left: 4px !important;
+    padding-top: 3px !important;
+    display: block !important;
+    width: 100vw !important;
+    appearance: none !important;
+    background-color: #e3eefc !important;
+    background-image: linear-gradient(#c3dcfa, #e3eefc) !important;
+    max-height: 31px !important;
+    border-bottom: 1px solid #505050 !important;
+}
+
+#browser {
+    border: solid !important;
+    padding: 0px !important;
+    margin-top: -1px !important;
+    border-width: 2px 2px 2px 2px !important;
+    border-image: url("image/combobox.png") !important;
+    border-image-slice: 2 2 2 2 !important;
+}

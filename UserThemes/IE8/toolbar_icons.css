@@ -1,0 +1,100 @@
+/* Firefox Quantum userChrome.css tweaks ************************************************/
+/* Github: https://github.com/aris-t2/customcssforfx ************************************/
+/****************************************************************************************/
+
+toolbar:not(#TabsToolbar) toolbaritem .toolbarbutton-1:not([type="menu-button"]),
+toolbar:not(#TabsToolbar) .toolbarbutton-1:not([type="menu-button"]),
+toolbar:not(#TabsToolbar) .toolbarbutton-1[type="menu-button"] toolbarbutton {
+    -moz-box-orient: horizontal !important;
+}
+
+toolbar:not(#TabsToolbar) #bookmarks-menu-button::after {
+    visibility: collapse !important;
+}
+
+/* remove load/stop button animations */
+toolbar:not(#TabsToolbar) #stop-button .toolbarbutton-animatable-image,
+toolbar:not(#TabsToolbar) #reload-button .toolbarbutton-animatable-image {
+    visibility: collapse !important;
+}
+
+toolbar:not(#TabsToolbar) #stop-reload-button[animate]>#reload-button>.toolbarbutton-icon,
+toolbar:not(#TabsToolbar) #stop-reload-button[animate]>#reload-button[displaystop]+#stop-button>.toolbarbutton-icon {
+    fill: unset !important;
+}
+
+/*button*/
+
+#main-window:not(uidensity="compact") #nav-bar .toolbarbutton-1:not([disabled="true"]):hover {
+    border-image: url("image/toolbar_button.png") !important;
+    border-image-slice: 1 1 1 1 !important;
+}
+
+#main-window:not(uidensity="compact") #nav-bar .toolbarbutton-1:not([disabled="true"]):active {
+    border-image: url("image/toolbar_button_pressed.png") !important;
+    border-image-slice: 1 1 1 1 !important;
+}
+
+#nav-bar .toolbarbutton-1>.toolbarbutton-text {
+    visibility: collapse !important;
+}
+
+#PersonalToolbar toolbarbutton {
+    margin-top: -2px !important;
+    margin-bottom: -2px !important;
+    padding: 6px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    border-radius: 0 !important;
+    border: 1px solid transparent !important;
+    margin: 0px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    border: 1px solid transparent !important;
+    background-color: transparent !important;
+}
+
+#PersonalToolbar toolbarbutton>.toolbarbutton-icon {
+    margin-right: 2px !important;
+    border: none !important;
+}
+
+#PersonalToolbar toolbarbutton>.toolbarbutton-text {
+    margin: 0px !important;
+}
+
+#main-window #PersonalToolbar toolbarbutton:hover {
+    background-image: linear-gradient(#fff, #aacdf6, #ecf2f9) !important;
+    box-shadow: 1px 1px #fff inset !important;
+    border-radius: 3px !important;
+    border: 1px solid #638c94 !important;
+}
+
+.toolbarbutton-animatable-box {
+    display: none !important;
+}
+
+/*
+#main-window[uidensity="normal"] #TabsToolbar toolbarbutton:not([id="tabs-newtab-button"]) {
+  background: unset !important;
+  border-radius: 0 !important;
+  margin-top: -4px !important;
+  margin-right: -4px !important;
+  margin-left: -4px !important;
+}
+
+#TabsToolbar toolbarbutton:not([id="tabs-newtab-button"]) .toolbarbutton-1 {
+  padding: 0px !important;
+  min-height: 12px !important;
+  min-width: 12px !important;
+}
+*/
+.tabbrowser-tab>.tab-stack>.tab-content>.tab-close-button {
+    margin-top: calc((var(--tab-min-height) - 20px) / 2);
+    padding: 1px !important;
+    width: 20px !important;
+    height: 20px !important;
+    max-height: 20px !important;
+    max-width: 20px !important;
+    margin-right: -5px !important;
+}

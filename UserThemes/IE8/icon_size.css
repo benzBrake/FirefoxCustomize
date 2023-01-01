@@ -1,0 +1,109 @@
+/*#back-button {
+  -moz-image-region: rect(0px, 54px, 18px, 36px) !important;
+}
+
+#main-window:not([uidensity=compact]) #back-button {
+  -moz-image-region: rect(0px, 36px, 18px, 18px) !important;
+}
+
+#main-window:not([uidensity=compact]) #back-button .toolbarbutton-icon {
+  padding: 7px !important;
+}*/
+#bookmarks-toolbar-placeholder {
+  -moz-image-region: rect(0px, 162px, 18px, 144px) !important;
+}
+#library-button {
+  -moz-image-region: rect(0px, 630px, 18px, 612px) !important;
+}
+#downloads-button .toolbarbutton-icon,
+#downloads-button:not([indicator="true"]) {
+  -moz-image-region: rect(0px, 198px, 18px, 180px) !important;
+}
+#add-ons-button	{
+  -moz-image-region: rect(0px, 216px, 18px, 198px) !important;
+}
+#open-file-button {
+  -moz-image-region: rect(0px, 234px, 18px, 216px) !important;
+}
+#save-page-button {
+  -moz-image-region: rect(0px, 252px, 18px, 234px) !important;
+}
+#sync-button {
+  -moz-image-region: rect(0px, 270px, 18px, 252px) !important;
+}
+#feed-button {
+  -moz-image-region: rect(0px, 288px, 18px, 270px) !important;
+}
+#characterencoding-button{
+  -moz-image-region: rect(0px, 324px, 18px, 306px) !important;
+}
+#e10s-button,
+#new-window-button {
+  -moz-image-region: rect(0px, 342px, 18px, 324px) !important;
+}
+#new-tab-button {
+  -moz-image-region: rect(0px, 360px, 18px, 342px) !important;
+}
+#privatebrowsing-button {
+  -moz-image-region: rect(0px, 378px, 18px, 360px) !important;
+}
+#find-button {
+  -moz-image-region: rect(0px, 396px, 18px, 378px) !important;
+}
+#print-button {
+  -moz-image-region: rect(0px, 414px, 18px, 396px) !important;
+}
+#fullscreen-button {
+  -moz-image-region: rect(0px, 432px, 18px, 414px) !important;
+}
+#developer-button {
+  -moz-image-region: rect(0px, 450px, 18px, 432px) !important;
+}
+#preferences-button {
+  -moz-image-region: rect(0px, 468px, 18px, 450px) !important;
+}
+#cut-button {
+  -moz-image-region: rect(0px, 504px, 18px, 486px) !important;
+}
+#copy-button {
+  -moz-image-region: rect(0px, 522px, 18px, 504px) !important;
+}
+#paste-button {
+  -moz-image-region: rect(0px, 540px, 18px, 522px) !important;
+}
+#zoom-out-button {
+  -moz-image-region: rect(0px, 558px, 18px, 540px) !important;
+}
+#zoom-in-button {
+  -moz-image-region: rect(0px, 576px, 18px, 558px) !important;
+}
+#tabview-button {
+  -moz-image-region: rect(0px, 648px, 18px, 630px) !important;
+}
+#email-link-button {
+  -moz-image-region: rect(0px, 666px, 18px, 648px) !important;
+}
+#sidebar-button {
+  -moz-image-region: rect(0px, 684px, 18px, 666px) !important;
+}
+#panic-button:not([open]) {
+  -moz-image-region: rect(0px, 702px, 18px, 684px) !important;
+}
+#web-apps-button {
+  -moz-image-region: rect(0px, 720px, 18px, 702px) !important;
+}
+#webide-button {
+  -moz-image-region: rect(0px, 738px, 18px, 720px) !important;
+}
+#developer-button {
+  -moz-image-region: rect(0px, 756px, 18px, 738px) !important;
+}
+#containers-panelmenu {
+  -moz-image-region: rect(0px, 810px, 18px, 792px) !important;
+}
+#nav-bar-overflow-button {
+  -moz-image-region: rect(0px, 612px, 18px, 594px) !important;
+}
+#alltabs-button {
+  -moz-image-region: rect(0px, 648px, 18px, 630px) !important;
+}

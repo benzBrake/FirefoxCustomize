@@ -1,0 +1,78 @@
+.titlebar-close {
+  background-color: transparent !important;
+  align-content: flex-start !important;
+  top: 0px !important;
+  margin: 0px !important;
+  margin-right: 3px !important;
+  padding: 0 !important;
+}
+
+.titlebar-min, .titlebar-max, .titlebar-restore {
+  background-color: transparent !important;
+  align-content: flex-start !important;
+  top: 0px !important;
+  margin: 0px !important;
+  padding: 0 !important;
+}
+
+.titlebar-close .toolbarbutton-icon {
+  min-width: 32px !important;
+  min-height: 19px !important;
+  list-style-image: url("image/close.png"); !important;
+  -moz-appearance: none !important;
+}
+
+.titlebar-max .toolbarbutton-icon {
+  list-style-image: url("image/maximize.png"); !important;
+  min-width: 25px !important;
+  min-height: 18px !important;
+  -moz-appearance: none !important;
+}
+
+.titlebar-restore .toolbarbutton-icon {
+  list-style-image: url("image/unmaximize.png"); !important;
+  min-width: 25px !important;
+  min-height: 18px !important;
+  -moz-appearance: none !important;
+}
+
+.titlebar-min .toolbarbutton-icon {
+   list-style-image: url("image/minimize.png"); !important;
+  min-width: 25px !important;
+  min-height: 18px !important;
+  border: none !important;
+  -moz-appearance: none !important;
+}
+
+.titlebar-close:hover .toolbarbutton-icon {
+  list-style-image: url("image/close-hover.png"); !important;
+}
+
+.titlebar-max:hover .toolbarbutton-icon {
+   list-style-image: url("image/maximize-hover.png"); !important;
+}
+
+.titlebar-restore:hover .toolbarbutton-icon {
+   list-style-image: url("image/unmaximize-hover.png"); !important;
+}
+
+.titlebar-min:hover .toolbarbutton-icon {
+   list-style-image: url("image/minimize-hover.png"); !important;
+}
+
+
+.titlebar-close:active .toolbarbutton-icon {
+  list-style-image: url("image/close-active.png"); !important;
+}
+
+.titlebar-max:active .toolbarbutton-icon {
+   list-style-image: url("image/maximize-active.png"); !important;
+}
+
+.titlebar-restore:active .toolbarbutton-icon {
+   list-style-image: url("image/unmaximize-active.png"); !important;
+}
+
+.titlebar-min:active .toolbarbutton-icon {
+   list-style-image: url("image/minimize-active.png"); !important;
+}

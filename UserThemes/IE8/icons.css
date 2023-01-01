@@ -1,0 +1,240 @@
+/* Firefox Quantum userChrome.css tweaks ************************************************/
+/* Github: https://github.com/aris-t2/customcssforfx ************************************/
+/****************************************************************************************/
+
+/* Use master list-style-image for various icons, icon_size.css defines icon images within the master list-image file */
+
+@import "icon_size.css";
+
+:-moz-any(#add-ons-button, #open-file-button, #save-page-button, #sync-button, #feed-button, #characterencoding-button, #e10s-button,
+    #new-window-button, #new-tab-button, #privatebrowsing-button, #find-button, #print-button, #fullscreen-button, #developer-button,
+    #preferences-button, #cut-button, #copy-button, #paste-button, #zoom-out-button, #zoom-in-button,
+    #tabview-button, #email-link-button, #sidebar-button, #web-apps-button, #webide-button, #developer-button, #containers-panelmenu,
+    #library-button, #bookmarks-toolbar-placeholder, #nav-bar-overflow-button, #alltabs-button) {
+    list-style-image: url("image/toolbar_fx3_strata.png") !important;
+}
+
+toolbar .toolbarbutton-1 {
+    --toolbarbutton-outer-padding: 0;
+    --toolbarbutton-inner-padding: 4px;
+}
+
+toolbar .toolbaritem-combined-buttons {
+    margin-inline: 0;
+}
+
+/* Button icon borders and background gradient */
+toolbar toolbaritem .toolbarbutton-1[disabled] .toolbarbutton-text,
+toolbar .toolbarbutton-1[disabled]:not([type="menu-button"]) .toolbarbutton-text,
+toolbar .toolbarbutton-1[type="menu-button"] toolbarbutton[disabled] .toolbarbutton-text {
+    opacity: 0.6 !important;
+}
+
+#nav-bar toolbarbutton[id="reload-button"],
+#nav-bar toolbarbutton[id="stop-button"] {
+    margin-left: -3px !important;
+}
+
+#nav-bar #downloads-button,
+#PanelUI-menu-button,
+#nav-bar .chromeclass-toolbar-additional,
+#nav-bar .toolbaritem-combined-buttons>.webextension-browser-action {
+    margin-left: -1px;
+    border-radius: 0;
+}
+
+#nav-bar :not(.toolbaritem-combined-buttons)>.chromeclass-toolbar-additional:not(#downloads-button) {
+    --toolbarbutton-inner-padding: 4.8px;
+}
+
+#nav-bar #downloads-button .toolbarbutton-badge-stack,
+#nav-bar .chromeclass-toolbar-additional:not([id="forward-button"]):not([id="back-button"])>.toolbarbutton-icon,
+#nav-bar .toolbaritem-combined-buttons>.webextension-browser-action>.toolbarbutton-badge-stack,
+#PanelUI-menu-button>.toolbarbutton-badge-stack {
+    background-image: linear-gradient(#eee, #fefefe, #fff) !important;
+    border-radius: 0;
+    border: 1px solid #909090 !important;
+    box-shadow: 1px 1px #fff inset !important;
+}
+
+/* 鼠标指向图标背景色 */
+#nav-bar #downloads-button:hover .toolbarbutton-badge-stack,
+#nav-bar toolbarbutton:not([id="forward-button"]):not([id="back-button"]):not(#PanelUI-menu-button):not([disabled]):hover .toolbarbutton-icon,
+#PanelUI-menu-button:hover .toolbarbutton-badge-stack,
+#nav-bar .toolbaritem-combined-buttons>.webextension-browser-action:hover .toolbarbutton-badge-stack {
+    background-image: linear-gradient(#fff, #98cfef) !important;
+}
+
+#PanelUI-button,
+#PanelUI-button .toolbarbutton-1 {
+    border: none !important;
+}
+
+/* Custom back,forward button image and size settings */
+
+#back-button,
+#forward-button {
+    border: 1px solid transparent !important;
+    margin: 0px !important;
+    border-radius: 0px !important;
+    /*list-style-image: url("image/bf_ie8.png");*/
+    list-style-image: url("image/ie8.png") !important;
+}
+
+:-moz-any(#back-button, #forward-button) .toolbarbutton-icon,
+:-moz-any(#back-button, #forward-button) .toolbarbutton-1 {
+    border: none !important;
+    border-radius: 0 !important;
+    background: unset !important;
+    background-color: unset !important;
+    padding: 0px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+}
+
+#back-button .toolbarbutton-icon {
+    min-width: 28px !important;
+    max-width: 28px !important;
+}
+
+#forward-button .toolbarbutton-icon {
+    min-width: 29px !important;
+    max-width: 29px !important;
+}
+
+#back-button[disabled],
+#forward-button[disabled] {
+    opacity: 1 !important;
+    filter: saturate(75%)
+}
+
+#back-button:not([disabled]):hover,
+#forward-button:not([disabled]):hover {
+    opacity: 1 !important;
+    filter: saturate(175%);
+}
+
+#back-button {
+    border-radius: 0px !important;
+    margin-right: -5px !important;
+    margin-left: 1px !important;
+    -moz-image-region: rect(0px, 28px, 32px, 0px) !important;
+}
+
+#forward-button {
+    -moz-image-region: rect(0px, 58px, 32px, 29px) !important;
+}
+
+/* custom icon images */
+
+#home-button .toolbarbutton-icon {
+    padding: 6px !important;
+    list-style-image: url("image/prefs_home.png") !important;
+}
+
+#fxa-toolbar-menu-button .toolbarbutton-icon {
+    list-style-image: url("image/account.png") !important;
+}
+
+#PanelUI-menu-button .toolbarbutton-icon {
+    list-style-image: url("image/menu.png") !important;
+}
+
+#nav-bar toolbarbutton[id="reload-button"],
+#nav-bar toolbarbutton[id="stop-button"] {
+    margin-left: -7px !important;
+    margin-right: 4px !important;
+}
+
+#nav-bar toolbarbutton#reload-button .toolbarbutton-icon,
+#nav-bar toolbarbutton#reload-button .toolbarbutton-1[disabled] .toolbarbutton-icon {
+    list-style-image: url("image/refresh.png") !important;
+    padding: 3px !important;
+}
+
+#nav-bar toolbarbutton#reload-button[disabled] {
+    opacity: 1 !important;
+    filter: grayscale(100%) !important;
+}
+
+#nav-bar toolbarbutton#stop-button .toolbarbutton-icon {
+    padding: 5px !important;
+    list-style-image: url("image/stop.png") !important;
+}
+
+#star-button-animatable-box {
+    display: none !important;
+}
+
+#nav-bar #star-button {
+    padding: 0px !important;
+    list-style-image: url("image/add_star1.png") !important;
+}
+
+#nav-bar #star-button[starred="true"] {
+    padding: 0px !important;
+    list-style-image: url("image/star.png") !important;
+}
+
+#bookmarks-menu-button .toolbarbutton-icon {
+    padding: 4px !important;
+    list-style-image: url("image/bookmarks.png") !important;
+}
+
+#history-panelmenu .toolbarbutton-icon {
+    padding: 2px !important;
+    list-style-image: url("image/history.png") !important;
+}
+
+#tabs-newtab-button {
+    list-style-image: none !important;
+}
+
+#tabs-newtab-button .toolbarbutton-icon {
+    height: 24px !important;
+    width: 24px !important;
+    padding: 3px !important;
+}
+
+.toolbarbutton-icon[label="Adblock Plus"] {
+    padding: 0px !important;
+    margin: 0px !important;
+    list-style-image: url("image/adblock.png") !important;
+}
+
+.toolbarbutton-icon[label="Facebook Container"] {
+    padding: 0px !important;
+    margin: 0px !important;
+    list-style-image: url("image/facebook_container.png") !important;
+}
+
+
+/*.verifiedDomain {
+  top: 1px !important;
+  bottom: 0px !important;
+  border-right: 1px solid #7bb788 !important;
+  border-left: 1px solid #7bb788 !important;
+  background-image: linear-gradient(#a3e6b1, #7bb788, #a3e6b1, transparent) !important;
+}
+*/
+
+#tracking-protection-icon-container:not([hidden])~#identity-box:-moz-any(.verifiedDomain, .verifiedIdentity) #identity-icon,
+:-moz-any(.verifiedDomain, .verifiedIdentity) #connection-icon {
+    list-style-image: url("image/padlock_modern.png") !important;
+}
+
+#tracking-protection-icon-container:not([hidden])~#identity-box:-moz-any(.insecureLoginForms, .mixedActiveContent, .notSecure) #identity-icon,
+:-moz-any(.insecureLoginForms, .mixedActiveContent, .notSecure) #connection-icon {
+    list-style-image: url("image/padlock_modern_mal.png") !important;
+}
+
+#tracking-protection-icon-container:not([hidden])~#identity-box:-moz-any(.weakCipher, .mixedDisplayContent, .mixedDisplayContentLoadedActiveBlocked, .certUserOverridden) #identity-icon,
+:-moz-any(.weakCipher, .mixedDisplayContent, .mixedDisplayContentLoadedActiveBlocked, .certUserOverridden) #connection-icon {
+    list-style-image: url("image/padlock_modern_mpl.png") !important;
+    -moz-image-region: rect(0, 16px, 16px, 0) !important;
+}
+
+#tracking-protection-icon-container:not([hidden])~#identity-box.mixedActiveBlocked #identity-icon,
+.mixedActiveBlocked #connection-icon {
+    list-style-image: url("image/padlock_modern_mab.png") !important;
+}

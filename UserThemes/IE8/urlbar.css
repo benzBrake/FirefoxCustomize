@@ -1,0 +1,132 @@
+/* Disable Megabar Animation */
+/* 隐藏蓝色框框 */
+#urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
+#searchbar:focus-within {
+    outline: none;
+}
+
+#urlbar-container[breakout] {
+    min-height: 25.6px !important;
+    max-height: 25.6px !important;
+    padding-block: 4px;
+}
+
+
+#main-window #urlbar-container[breakout] #urlbar {
+    margin-top: 0 !important;
+    min-height: 25.6px !important;
+    max-height: 25.6px !important;
+}
+
+#main-window #urlbar-container[breakout] #urlbar #urlbar-input-container {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+
+#urlbar>#urlbar-background {
+    animation-name: none !important;
+    border: none !important;
+    animation: none !important;
+    border-radius: 2px !important;
+    padding: 0px !important;
+    background-position: right center !important;
+    border: 1px solid #909090 !important;
+    min-height: 25.8px !important;
+    max-height: 25.8px !important;
+    background-image: linear-gradient(#eee, #fefefe, #fff) !important;
+    box-shadow: 1px 1px #fff inset !important;
+    height: 25.8px !important;
+}
+
+#search-container {
+    margin-top: -3px !important;
+}
+
+#searchbar {
+    margin: 0px !important;
+    margin-top: 1px !important;
+    animation-name: none !important;
+    border-radius: 2px !important;
+    animation: none !important;
+    border-radius: 0 !important;
+    padding: 0px !important;
+    box-shadow: none !important;
+    border: 1px solid #909090 !important;
+    min-height: 25px !important;
+    box-shadow: 1px 1px #fff inset !important;
+    background-image: linear-gradient(#eee, #fefefe, #fff) !important;
+    height: 25px !important;
+}
+
+#PopupAutoComplete,
+#PopupSearchAutoComplete {
+    box-shadow: 0px 1px 3px #000 !important;
+    opacity: 0.93 !important;
+    background-image: linear-gradient(#d6e6f9, #ecf2f9, #fff) !important;
+    background-color: #ffffff !important;
+    border: 1px solid #505050 !important;
+    border-top: none !important;
+}
+
+#urlbar,
+#urlbar[breakout][breakout-extend][breakout-extend-animate] {
+    margin-top: 1px !important;
+    padding-left: 3px !important;
+}
+
+#main-window[uidensity="compact"] #urlbar,
+#main-window[uidensity="compact"] #urlbar[breakout][breakout-extend][breakout-extend-animate] {
+    margin-top: 1px !important;
+    min-height: 25px !important;
+    max-height: 25px !important;
+    padding-left: 3px !important;
+}
+
+#urlbar[breakout-extend] {
+    top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+    left: calc((var(--urlbar-toolbar-width) - var(--urlbar-width)) / 2) !important;
+    width: 100% !important
+}
+
+#urlbar[breakout-extend] #urlbar-input-container {
+    height: calc(var(--tab-min-height) - 3px) !important;
+    padding: 0px !important
+}
+
+#main-window:not([uidensity="compact"]) #urlbar #urlbar-input-container,
+#main-window:not([uidensity="compact"]) #urlbar[breakout-extend] #urlbar-input-container {
+    margin-top: -2px !important;
+}
+
+/* Reduce row paddings to make them more compact */
+.urlbarView-row {
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+.urlbarView {
+    padding: 0px !important;
+    margin-top: 1px !important;
+    margin-left: -3px !important;
+    width: calc(100% + 51px) !important;
+    box-shadow: 1px 1px 1px #000 !important;
+    opacity: 0.96 !important;
+    background-image: linear-gradient(#fff, #efefef, #dedede) !important;
+    background-color: #ffffff !important;
+    border: 1px solid #505050 !important;
+    border-top: none !important;
+}
+
+.urlbarView-row:hover {
+    background-color: #7eb7f0 !important;
+}
+
+/*.urlbarView-body-outer {
+    filter: blur(2px) !important;
+}
+*/
+/* identity box */
+#identity-box {
+    padding-inline-start: 4px !important;
+}
