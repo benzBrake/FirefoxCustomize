@@ -35,14 +35,13 @@
 // @note           ツールの再読み込みメニューの右クリックで設定ファイルを開くようにした
 // @note           修复支持57+
 // ==/UserScript==
-const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
-let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
-try {
-    if (!BrowserOrSelectionUtils.hasOwnProperty("getSelectionDetails")) {
-        BrowserOrSelectionUtils = Cu.import("resource://gre/modules/SelectionUtils.jsm").SelectionUtils;
-    }
-} catch (e) { }
 if (typeof window === "undefined" || globalThis !== window) {
+    let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
+    try {
+        if (!BrowserOrSelectionUtils.hasOwnProperty("getSelectionDetails")) {
+            BrowserOrSelectionUtils = Cu.import("resource://gre/modules/SelectionUtils.jsm").SelectionUtils;
+        }
+    } catch (e) { }
     if (!Services.appinfo.remoteType) {
         this.EXPORTED_SYMBOLS = ["AddMenuParent"];
         try {
@@ -103,6 +102,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         actor.sendAsyncMessage("AM:SetSeletedText", obj);
                         break;
                     case "AM:GetFaviconLink":
+                        if (doc.location.href.startsWith("about")) return;
                         let link = doc.head.querySelector('[rel~="shortcut"]');
                         let href = "";
                         if (link) {
@@ -154,18 +154,25 @@ if (typeof window === "undefined" || globalThis !== window) {
         }
     } catch (e) { console.error(e); }
     (function (css) {
-        var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
-        var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
-        var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
-        var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-        var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关，有需要再开
-
         let {
             classes: Cc,
             interfaces: Ci,
             utils: Cu,
             results: Cr
         } = Components;
+
+        let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
+        try {
+            if (!BrowserOrSelectionUtils.hasOwnProperty("getSelectionDetails")) {
+                BrowserOrSelectionUtils = Cu.import("resource://gre/modules/SelectionUtils.jsm").SelectionUtils;
+            }
+        } catch (e) { }
+
+        var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
+        var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
+        var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
+        var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
+        var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关，有需要再开
 
         if (window && window.addMenu) {
             window.addMenu.destroy();
@@ -477,7 +484,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 delete window.addMenu;
             },
             handleEvent: function (event) {
-                const { ownerGlobal: win } = event.target;
                 switch (event.type) {
                     case "ViewShowing":
                     case "popupshowing":
@@ -566,13 +572,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case 'mouseup':
                         // get selected text
-                        if (win.gBrowser && win.gBrowser.selectedBrowser) {
-                            // 网页
-                            let actor = win.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
-                            actor.sendAsyncMessage("AM:GetSelectedText", {});
-                        } else {
+                        if (content) {
                             // 内置页面
-                            this.setSelectedText(BrowserOrSelectionUtils.getSelectionDetails(win).fullText);
+                            this.setSelectedText(BrowserOrSelectionUtils.getSelectionDetails(content).fullText);
+                        } else {
+                            // 网页
+                            let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
+                            actor.sendAsyncMessage("AM:GetSelectedText", {});
                         }
                         break;
                     case 'click':
@@ -582,6 +588,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case 'TabAttrModified':
                         let tab = event.target;
+                        if (content) return;
                         if (typeof tab === "undefined")
                             return;
                         try {
