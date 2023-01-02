@@ -39,6 +39,11 @@ toolbar:not(#TabsToolbar) #stop-reload-button[animate]>#reload-button[displaysto
     visibility: collapse !important;
 }
 
+#PersonalToolbar {
+    padding-bottom: 2px;
+    padding-inline: 8px !important;
+}
+
 #PersonalToolbar toolbarbutton.bookmark-item {
     margin-top: -2px !important;
     margin-bottom: -2px !important;
@@ -63,8 +68,11 @@ toolbar:not(#TabsToolbar) #stop-reload-button[animate]>#reload-button[displaysto
     margin: 0px !important;
 }
 
-:root[uidensity="compact"] #PersonalToolbar .toolbarbutton-1:not(.bookmark-item) {
-    --toolbarbutton-outer-padding: 0px;
+#PersonalToolbar .toolbaritem-combined-buttons>.webextension-browser-action {
+    margin-block: 0 !important;
+}
+
+#PersonalToolbar .toolbaritem-combined-buttons>.webextension-browser-action > .toolbarbutton-badge-stack {
     --toolbarbutton-inner-padding: 2px;
 }
 
