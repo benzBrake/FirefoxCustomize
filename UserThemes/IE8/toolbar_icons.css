@@ -39,7 +39,7 @@ toolbar:not(#TabsToolbar) #stop-reload-button[animate]>#reload-button[displaysto
     visibility: collapse !important;
 }
 
-#PersonalToolbar toolbarbutton {
+#PersonalToolbar toolbarbutton.bookmark-item {
     margin-top: -2px !important;
     margin-bottom: -2px !important;
     padding: 6px !important;
@@ -54,13 +54,18 @@ toolbar:not(#TabsToolbar) #stop-reload-button[animate]>#reload-button[displaysto
     background-color: transparent !important;
 }
 
-#PersonalToolbar toolbarbutton>.toolbarbutton-icon {
+#PersonalToolbar toolbarbutton.bookmark-item>.toolbarbutton-icon {
     margin-right: 2px !important;
     border: none !important;
 }
 
-#PersonalToolbar toolbarbutton>.toolbarbutton-text {
+#PersonalToolbar toolbarbutton.bookmark-item>.toolbarbutton-text {
     margin: 0px !important;
+}
+
+:root[uidensity="compact"] #PersonalToolbar .toolbarbutton-1:not(.bookmark-item) {
+    --toolbarbutton-outer-padding: 0px;
+    --toolbarbutton-inner-padding: 2px;
 }
 
 #main-window #PersonalToolbar toolbarbutton:hover {

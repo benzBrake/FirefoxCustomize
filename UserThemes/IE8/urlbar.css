@@ -19,10 +19,14 @@
 }
 
 #main-window #urlbar-container[breakout] #urlbar #urlbar-input-container {
-    padding-top: 0;
-    padding-bottom: 0;
+    padding-block: 0 !important;
+    padding-inline: 0 !important;
 }
 
+#main-window #urlbar[breakout][breakout-extend] > #urlbar-input-container {
+    padding-block: 0 !important;
+    padding-inline: 0 !important;
+}
 
 #urlbar>#urlbar-background {
     animation-name: none !important;
@@ -90,7 +94,7 @@
 }
 
 #urlbar[breakout-extend] #urlbar-input-container {
-    height: calc(var(--tab-min-height) - 3px) !important;
+    height: calc(var(--tab-min-height) - 4px) !important;
     padding: 0px !important
 }
 
@@ -103,6 +107,10 @@
 .urlbarView-row {
     margin: 0px !important;
     padding: 0px !important;
+}
+
+.urlbarView-row[label] {
+    margin-top: 16px !important;
 }
 
 .urlbarView {
