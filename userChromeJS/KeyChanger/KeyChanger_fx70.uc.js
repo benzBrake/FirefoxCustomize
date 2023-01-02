@@ -207,16 +207,15 @@ if (typeof window === "undefined" || globalThis !== window) {
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
             },
             handleEvent: function (event) {
-                const { ownerGlobal: win } = event.target;
                 switch (event.type) {
                     case 'mouseup':
                         // get selected text
-                        if (win.content) {
+                        if (content) {
                             // 内置页面
-                            this.setSelectedText(BrowserOrSelectionUtils.getSelectionDetails(win).fullText || "");
+                            this.setSelectedText(BrowserOrSelectionUtils.getSelectionDetails(content).fullText || "");
                         } else {
                             // 网页
-                            let actor = win.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("KeyChanger");
+                            let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("KeyChanger");
                             actor.sendAsyncMessage("KC:GetSelectedText", {});
                         }
                         break;
