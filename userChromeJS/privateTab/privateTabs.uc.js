@@ -159,7 +159,9 @@
                 label: "在无痕标签中打开",
                 accesskey: "v",
                 class: this.menuClass,
-                oncommand: `let view = event.target.parentElement._view; PlacesUIUtils._openNodeIn(view.selectedNode, "tab", view.ownerWindow, false, ${this.container.userContextId})`,
+                oncommand: `let view = event.target.parentElement._view; let url = view.selectedNode.uri; openLinkIn(url, "tab", { userContextId: privateTab.container.userContextId, triggeringPrincipal: /^(f|ht)tps?:/.test(url) ?
+                Services.scriptSecurityManager.createNullPrincipal({}) :
+                Services.scriptSecurityManager.getSystemPrincipal()});`,
             });
             openTab.after(openPrivate);
 
@@ -330,8 +332,8 @@
                     onBuild: doc => {
                         let btn = ptUtils.createElement(doc, "toolbarbutton", {
                             id: this.BTN_ID,
-                            label: "New Private Tab",
-                            tooltiptext: `Open a new private tab (${ShortcutUtils.prettifyShortcut(
+                            label: "新建无痕标签",
+                            tooltiptext: `新建一个无痕标签 (${ShortcutUtils.prettifyShortcut(
                                 newPrivateTabKey
                             )})`,
                             class: "toolbarbutton-1 chromeclass-toolbar-additional",
@@ -347,6 +349,7 @@
 
         init() {
             let { privateTabGlobal } = ptUtils.sharedGlobal;
+            const { CustomizableUI } = window;
             this.ContextualIdentityService.ensureDataReady();
             this.container = this.ContextualIdentityService._identities.find(
                 container => container.name == "无痕"
@@ -364,34 +367,6 @@
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
 
             CustomizableUI.addListener(this);
-
-            if (!privateTabGlobal.privateTabsInited) {
-                const lazy = {};
-                ChromeUtils.defineESModuleGetters(lazy, {
-                    PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-                });
-                XPCOMUtils.defineLazyModuleGetters(lazy, {
-                    BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-                    PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
-                });
-                function getBrowserWindow(aWindow) {
-                    // Prefer the caller window if it's a browser window, otherwise use
-                    // the top browser window.
-                    return aWindow &&
-                        aWindow.document.documentElement.getAttribute("windowtype") ==
-                        "navigator:browser"
-                        ? aWindow
-                        : lazy.BrowserWindowTracker.getTopWindow();
-                }
-                let openTabsetString = PlacesUIUtils.openTabset.toString();
-                eval(
-                    `PlacesUIUtils.openTabset = ${openTabsetString.startsWith("function") ? "" : "function "
-                    }${openTabsetString.replace(
-                        /(\s+)(inBackground: loadInBackground,)/,
-                        "$1$2$1userContextId: aEvent.userContextId || 0,"
-                    )}`
-                );
-            }
 
             const { WebExtensionPolicy } = Cu.getGlobalForObject(Services);
             let TST_ID = "treestyletab@piro.sakura.ne.jp";
