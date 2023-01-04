@@ -52,6 +52,7 @@
                 "privateTabs.clearDataOnDisable",
                 false
             ),
+            profileName: "无痕",
 
             // key for toggling private mode for the active tab. ctrl + alt + T by default.
             toggleHotkey: Services.prefs.getCharPref("privateTabs.toggleHotkey", "T"),
@@ -130,7 +131,7 @@
             );
             let openAllPrivate = ptUtils.createElement(document, "menuitem", {
                 id: "openAllPrivate",
-                label: "在无痕标签中全部打开",
+                label: strtr("在%s标签中全部打开", this.config.profileName),
                 accesskey: "v",
                 class: this.menuClass,
                 oncommand: `event.userContextId = ${this.container.userContextId
@@ -143,7 +144,7 @@
             let openAllLinks = document.getElementById("placesContext_openLinks:tabs");
             let openAllLinksPrivate = ptUtils.createElement(document, "menuitem", {
                 id: "openAllLinksPrivate",
-                label: "在无痕标签中全部打开",
+                label: strtr("在%s标签中全部打开", this.config.profileName),
                 accesskey: "v",
                 class: this.menuClass,
                 oncommand: `event.userContextId = ${this.container.userContextId
@@ -156,7 +157,7 @@
             let openTab = document.getElementById("placesContext_open:newtab");
             let openPrivate = ptUtils.createElement(document, "menuitem", {
                 id: "openPrivate",
-                label: "在无痕标签中打开",
+                label: strtr("在%s标签中打开", this.config.profileName),
                 accesskey: "v",
                 class: this.menuClass,
                 oncommand: `let view = event.target.parentElement._view; let url = view.selectedNode.uri; openLinkIn(url, "tab", { userContextId: privateTab.container.userContextId, triggeringPrincipal: /^(f|ht)tps?:/.test(url) ?
@@ -194,7 +195,7 @@
 
             let menuOpenLink = ptUtils.createElement(document, "menuitem", {
                 id: "menu_newPrivateTab",
-                label: "新建无痕标签",
+                label: strtr("新建%s标签", this.config.profileName),
                 accesskey: "v",
                 acceltext: ShortcutUtils.prettifyShortcut(newPrivateTabKey),
                 class: this.menuClass,
@@ -204,7 +205,7 @@
 
             let openLink = ptUtils.createElement(document, "menuitem", {
                 id: "openLinkInPrivateTab",
-                label: "在无痕标签中打开链接",
+                label: strtr("在%s标签中打开链接", this.config.profileName),
                 accesskey: "v",
                 class: this.menuClass,
                 hidden: true,
@@ -221,7 +222,7 @@
 
             let toggleTab = ptUtils.createElement(document, "menuitem", {
                 id: "toggleTabPrivateState",
-                label: "无痕标签",
+                label: strtr("%s标签", this.config.profileName),
                 type: "checkbox",
                 accesskey: "v",
                 acceltext: ShortcutUtils.prettifyShortcut(toggleKey),
@@ -239,10 +240,10 @@
 
             let btn2 = ptUtils.createElement(document, "toolbarbutton", {
                 id: this.BTN2_ID,
-                label: "新建无痕标签",
-                tooltiptext: `新建一个无痕标签 (${ShortcutUtils.prettifyShortcut(
+                label: strtr("新建%s标签", this.config.profileName),
+                tooltiptext: strtr(`新建一个%s标签 (${ShortcutUtils.prettifyShortcut(
                     newPrivateTabKey
-                )})`,
+                )})`, this.config.profileName),
                 class: "toolbarbutton-1 chromeclass-toolbar-additional",
             });
 
@@ -332,10 +333,10 @@
                     onBuild: doc => {
                         let btn = ptUtils.createElement(doc, "toolbarbutton", {
                             id: this.BTN_ID,
-                            label: "新建无痕标签",
-                            tooltiptext: `新建一个无痕标签 (${ShortcutUtils.prettifyShortcut(
+                            label: strtr("新建%s标签", this.config.profileName),
+                            tooltiptext: strtr(`新建一个%s标签 (${ShortcutUtils.prettifyShortcut(
                                 newPrivateTabKey
-                            )})`,
+                            )})`, this.config.profileName),
                             class: "toolbarbutton-1 chromeclass-toolbar-additional",
                             oncommand: "privateTab.BrowserOpenTabPrivate()",
                         });
@@ -352,12 +353,12 @@
             const { CustomizableUI } = window;
             this.ContextualIdentityService.ensureDataReady();
             this.container = this.ContextualIdentityService._identities.find(
-                container => container.name == "无痕"
+                container => container.name == this.config.profileName
             );
             if (!this.container) {
                 this.ContextualIdentityService.create("Private", "fingerprint", "purple");
                 this.container = this.ContextualIdentityService._identities.find(
-                    container => container.name == "无痕"
+                    container => container.name == this.config.profileName
                 );
             } else if (!this.config.neverClearData) {
                 this.clearData();
@@ -692,6 +693,16 @@
                 this.sss.loadAndRegisterSheet(this.TST_STYLE.uri, this.TST_STYLE.type);
             }
         }
+    }
+
+    function strtr() {
+        let str = arguments[0];
+        if (str) {
+            for (let i = 1; i < arguments.length; i++) {
+                str = str.replace("%s", arguments[i]);
+            }
+            return str;
+        } else return "";
     }
 
     window.privateTab = new PrivateTabManager();
