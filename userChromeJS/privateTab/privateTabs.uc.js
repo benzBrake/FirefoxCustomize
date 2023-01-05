@@ -349,14 +349,13 @@
         }
 
         init() {
-            let { privateTabGlobal } = ptUtils.sharedGlobal;
             const { CustomizableUI } = window;
             this.ContextualIdentityService.ensureDataReady();
             this.container = this.ContextualIdentityService._identities.find(
                 container => container.name == this.config.profileName
             );
             if (!this.container) {
-                this.ContextualIdentityService.create("Private", "fingerprint", "purple");
+                this.ContextualIdentityService.create(this.config.profileName, "fingerprint", "purple");
                 this.container = this.ContextualIdentityService._identities.find(
                     container => container.name == this.config.profileName
                 );
