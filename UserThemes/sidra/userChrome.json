@@ -1,10 +1,14 @@
 {
     "name": "Sidra",
     "description": "Ryan 自用 Firefox 主题",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "minVersion": "Firefox 90",
     "homepageURL": "https://github.com/benzBrake/FirefoxCustomize",
+    "enableGlobalVariables": true,
     "files": [
+        {
+            "filename": "variables.css"
+        },
         {
             "filename": "userChrome.css"
         },
@@ -19,20 +23,59 @@
         }
     ],
     "options": [
-        "userChromeJS.sidra.controlButton.OSXStyle",
+        {
+            "pref": "userChromeJS.sidra.controlButton.style",
+            "type": "select",
+            "defaultValue": "default",
+            "options": [
+                {
+                    "data-l10n-id": "default-style",
+                    "value": "default"
+                },
+                {
+                    "data-l10n-id": "sidra-controlbutton-style-osx",
+                    "value": "osx"
+                }
+            ]
+        },
         "userChromeJS.sidra.tabbox.compact",
-        "userChromeJS.sidra.tabbox.showInactiveTabsDivider",
-        "userChromeJS.sidra.tabbox.verticalOrient",
+        {
+            "pref": "userChromeJS.sidra.tabbox.style",
+            "type": "select",
+            "defaultValue": "default",
+            "options": [
+                {
+                    "data-l10n-id": "default-style",
+                    "value": "default"
+                },
+                {
+                    "data-l10n-id": "sidra-tabbox-style-sidra",
+                    "value": "sidra"
+                },
+                {
+                    "data-l10n-id": "sidra-tabbox-style-photon",
+                    "value": "photon"
+                },
+                {
+                    "data-l10n-id": "sidra-tabbox-style-australis",
+                    "value": "australis"
+                }
+            ]
+        },
         "userChromeJS.sidra.tabbox.pinNewtabBtn",
+        "userChromeJS.sidra.tabbox.showInactiveTabsDivider",
+        "userChromeJS.sidra.tabbox.showDeviderAfterTabbrowserTabs",
+        "userChromeJS.sidra.tabbox.verticalOrient",
         "userChromeJS.sidra.titlebarHorizontal",
         "userChromeJS.sidra.navbar.compact",
         "userChromeJS.sidra.placesToolbar.alignCenter",
         "userChromeJS.sidra.placesToolbar.iconsOnly",
         "userChromeJS.sidra.urlbar.compact",
+        "userChromeJS.sidra.urlbar.disableMegabar",
         "userChromeJS.sidra.urlbar.hideBookmarksButtonOnSystemPages",
-        "userChromeJS.sidra.button.compact",
         "userChromeJS.sidra.menupopup.compact",
         "userChromeJS.sidra.menupopup.hideNavigation",
+        "userChromeJS.sidra.menupopup.adaptedBgColor",
         "userChromeJS.sidra.panel.adaptedBgColor",
         "userChromeJS.sidra.organizer.compact",
         "userChromeJS.sidra.sidebar.compact",
@@ -47,27 +90,60 @@
             "targetAttr": "tabposition"
         },
         {
+            "pref": "userChromeJS.sidra.controlButton.style",
+            "targetAttr": "sidra-controlstyle",
+            "defaultValue": "default"
+        },
+        {
+            "pref": "userChromeJS.sidra.tabbox.compact",
+            "targetAttr": "sidra-tabbox-compact",
+            "defaultValue": "false"
+        },
+        {
+            "pref": "userChromeJS.sidra.tabbox.style",
+            "targetAttr": "sidra-tabstyle",
+            "defaultValue": "default"
+        },
+        {
             "from": "toolbarbutton[data-l10n-id=\"show-TST-sidebar\"]",
             "attr": "checked",
             "targetAttr": "tstopened"
+        },
+        {
+            "from": "#sidebar-box",
+            "attr": "sidebarcommand",
+            "targetAttr": "sidebarCommand"
+        },
+        {
+            "from": "#sidebar-box",
+            "attr": "hidden",
+            "targetAttr": "sidebarHidden"
         }
     ],
     "locales": {
         "zh-CN": {
-            "userChromeJS.sidra.controlButton.OSXStyle": "OSX 风格控制按钮",
-            "userChromeJS.sidra.tabbox.compact": "标签栏样式",
-            "userChromeJS.sidra.tabbox.showInactiveTabsDivider": "显示非激活标签分隔符",
-            "userChromeJS.sidra.tabbox.verticalOrient": "显示垂直标签栏时隐藏标签栏",
+            "userChromeJS.sidra.controlButton.style": "控制按钮样式",
+            "userChromeJS.sidra.tabbox.compact": "启用标签栏样式",
+            "default-style": "默认样式",
+            "sidra-controlbutton-style-osx": "OSX 样式",
+            "userChromeJS.sidra.tabbox.style": "标签样式",
+            "sidra-tabbox-style-sidra": "Sidra 样式",
+            "sidra-tabbox-style-photon": "Photon 样式",
+            "sidra-tabbox-style-australis": "Australis 样式",
             "userChromeJS.sidra.tabbox.pinNewtabBtn": "固定新建标签按钮",
+            "userChromeJS.sidra.tabbox.showInactiveTabsDivider": "显示非激活标签分隔符",
+            "userChromeJS.sidra.tabbox.showDeviderAfterTabbrowserTabs": "显示标签页与后方按钮的分隔符",
+            "userChromeJS.sidra.tabbox.verticalOrient": "显示垂直标签栏时隐藏标签栏",
             "userChromeJS.sidra.titlebarHorizontal": "主菜单栏显示在标签栏右侧",
             "userChromeJS.sidra.navbar.compact": "导航栏样式",
             "userChromeJS.sidra.placesToolbar.alignCenter": "书签工具栏居中显示",
             "userChromeJS.sidra.placesToolbar.iconsOnly": "书签工具栏仅显示图标",
             "userChromeJS.sidra.urlbar.compact": "地址栏样式",
+            "userChromeJS.sidra.urlbar.disableMegabar": "禁用地址选中后变大效果",
             "userChromeJS.sidra.urlbar.hideBookmarksButtonOnSystemPages": "内置页面隐藏星号按钮",
-            "userChromeJS.sidra.button.compact": "按钮样式",
             "userChromeJS.sidra.menupopup.compact": "弹出菜单样式",
             "userChromeJS.sidra.menupopup.hideNavigation": "隐藏右键导航",
+            "userChromeJS.sidra.menupopup.adaptedBgColor": "弹出菜单跟随主题色",
             "userChromeJS.sidra.panel.adaptedBgColor": "弹出面板跟随主题色",
             "userChromeJS.sidra.organizer.compact": "足迹管理样式",
             "userChromeJS.sidra.sidebar.compact": "侧边栏样式",

@@ -1,176 +1,159 @@
-@import "./variables.css";
-
 @-moz-document url-prefix("chrome://"),
 url-prefix("moz-extension://"),
 url("about:downloads") {
 
+    /* Fix Navigator Toolbox Layout For Floorp */
     :root[tabposition="2"] #navigator-toolbox {
         display: grid;
     }
 
-    /* Change Colour of page when loading */
+    /* Change Colour of page when loading 网页加载时网页背景色 */
     :root:not(:-moz-lwtheme) #tabbrowser-tabpanels,
     :root[style*="--lwt-accent-color: rgb(240, 240, 244)"] #tabbrowser-tabpanels {
         background-color: #f7f7f7 !important;
     }
 
-    :root[lwt-default-theme-in-dark-mode="true"] #tabbrowser-tabpanels,
-    :root[style*="--lwt-accent-color: rgb(28, 27, 34)"] #tabbrowser-tabpanels {
-        background-color: #252525 !important;
+    /* Control Buttons Style 控制按钮样式 */
+    :root[sidra-controlstyle="osx"] #toolbar-menubar {
+        min-height: var(--tab-min-height);
     }
 
-    /** 状态栏文本 */
-    #statuspanel-label {
-        background-color: var(--toolbar-field-focus-background-color) !important;
-        color: var(--toolbar-field-focus-color) !important;
-        border-color: transparent !important;
-        box-shadow: 0 2px 5px #0004, 0 0 0 1px #0002 !important;
+    :root[sidra-controlstyle="osx"] #nav-bar {
+        --uc-window-control-width: 80px;
     }
 
-    @media (prefers-color-scheme: dark) {
-        #statuspanel-label {
-            box-shadow: 0 2px 5px #0004, 0 0 0 1px #0004 !important;
-        }
+    :root[sidra-controlstyle="osx"][uidensity="touch"] #nav-bar {
+        --uc-window-control-width: 100px;
     }
 
-    @supports -moz-bool-pref("userChromeJS.sidra.controlButton.OSXStyle") {
-        #nav-bar {
-            --uc-window-control-width: 80px;
-        }
+    :root[sidra-controlstyle="osx"] .titlebar-buttonbox-container {
+        -moz-box-align: center;
+    }
 
-        :root[uidensity="touch"] #nav-bar {
-            --uc-window-control-width: 100px;
-        }
+    :root[sidra-controlstyle="osx"] .titlebar-button {
+        display: -moz-box !important;
+        border: none;
+        margin: 0 !important;
+        padding: 8px 17px;
+        -moz-context-properties: fill, stroke !important;
+        stroke: none !important;
+        fill: none !important;
+    }
 
-        .titlebar-buttonbox-container {
-            -moz-box-align: center;
-        }
+    :root[sidra-controlstyle="osx"]:not([sizemode="maximized"],
+        [inFullscreen]) :is(.titlebar-restore,
+        .uc-titlebar-restore),
+    :root[sidra-controlstyle="osx"]:is([sizemode="maximized"],
+        [inFullscreen]) :is(.titlebar-max,
+        .uc-titlebar-max) {
+        display: none !important;
+    }
 
-        .titlebar-button {
-            display: -moz-box !important;
-            border: none;
-            margin: 0 !important;
-            padding: 8px 17px;
-            -moz-context-properties: fill, stroke !important;
-            stroke: none !important;
-            fill: none !important;
-        }
+    /* Firefox 不在最前面时 */
+    :root[sidra-controlstyle="osx"]:-moz-window-inactive:not([customizing]) .titlebar-buttonbox>toolbarbutton:not(:hover) {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCgyMjcsIDE5JSwgNDglKSIgcj0iNTciIC8+Cjwvc3ZnPg==) !important;
+    }
 
-        :root:not([sizemode="maximized"],
-            [inFullscreen]) :is(.titlebar-restore,
-            .uc-titlebar-restore),
-        :root:is([sizemode="maximized"],
-            [inFullscreen]) :is(.titlebar-max,
-            .uc-titlebar-max) {
-            display: none !important;
-        }
+    :root[sidra-controlstyle="osx"] .titlebar-buttonbox .toolbarbutton-icon {
+        opacity: 1 !important;
+    }
 
-        /* Firefox 不在最前面时 */
-        :root:-moz-window-inactive:not([customizing]) .titlebar-buttonbox>toolbarbutton:not(:hover) {
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCgyMjcsIDE5JSwgNDglKSIgcj0iNTciIC8+Cjwvc3ZnPg==) !important;
-        }
+    :root[sidra-controlstyle="osx"] .titlebar-button>.toolbarbutton-icon {
+        appearance: none !important;
+        width: 15.3px !important;
+        height: 15.3px !important;
+        stroke: inherit !important;
+    }
 
-        .titlebar-buttonbox .toolbarbutton-icon {
-            opacity: 1 !important;
-        }
+    :root[sidra-controlstyle="osx"][uidensity="touch"] .titlebar-button>.toolbarbutton-icon {
+        width: 26px !important;
+        height: 26px !important;
+    }
 
-        .titlebar-button>.toolbarbutton-icon {
-            appearance: none !important;
-            width: 15.3px !important;
-            height: 15.3px !important;
-            stroke: inherit !important;
-        }
+    :root[sidra-controlstyle="osx"] .titlebar-buttonbox {
+        appearance: none !important;
+    }
 
-        :root[uidensity="touch"] .titlebar-button>.toolbarbutton-icon {
-            width: 26px !important;
-            height: 26px !important;
-        }
-
-        .titlebar-buttonbox {
-            appearance: none !important;
-        }
-
-        /** 最大化/还原 */
-        .titlebar-max,
+    /** 最大化/还原 */
+    :root[sidra-controlstyle="osx"] :is(.titlebar-max,
         .uc-titlebar-max,
         .titlebar-restore,
-        .uc-titlebar-restore {
-            appearance: none !important;
-            padding: 0px !important;
-            padding-left: 7px !important;
-            padding-right: 7px !important;
-            margin-left: 0px !important;
-            margin-right: 0px !important;
-            margin-top: 0px !important;
-            margin-bottom: 0px !important;
-            background-color: transparent !important;
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
-            grid-column: 1 !important;
-            order: 1 !important;
-            -moz-box-ordinal-group: 2 !important;
-        }
-
-        /** 最大化 鼠标悬浮 */
-        :is(.titlebar-max,
-            .uc-titlebar-max):hover {
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNMjcuNyA0N3YzMC45YzAgNC43IDMuOSA4LjYgOC42IDguNmgzMC45YzEuOCAwIDIuNy0yLjIgMS40LTMuNEwzMS4xIDQ1LjZjLTEuMi0xLjMtMy40LS40LTMuNCAxLjR6bTUwLjQtMTguNEg0Ny4zYy0xLjggMC0yLjcgMi4yLTEuNCAzLjRsMzcuNCAzNy40YzEuMyAxLjMgMy40LjQgMy40LTEuNFYzNy4yYzAtNC44LTMuOS04LjYtOC42LTguNnoiIC8+Cjwvc3ZnPg==) !important;
-        }
-
-        /** 还原 鼠标悬浮 */
-        :root:is([sizemode="maximized"],
-            [inFullscreen]) :is(.titlebar-max,
-            .uc-titlebar-max):hover,
-        :is(.titlebar-restore,
-            .uc-titlebar-restore):hover {
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNNzcuNSAyNy4xSDM3LjRjLTYuMyAwLTExLjQgNS4xLTExLjQgMTEuNHYzOWMwIDYuMyA1LjEgMTEuNCAxMS40IDExLjRoNDAuMWM2LjMgMCAxMS40LTUuMSAxMS40LTExLjR2LTM5YzAtNi4zLTUuMS0xMS40LTExLjQtMTEuNHptLTUuNCA0OC40SDQyLjljLTEuNiAwLTIuOS0xLjMtMi45LTIuOVY0My40YzAtMS42IDEuMy0yLjkgMi45LTIuOWgyOS4yYzEuNiAwIDIuOSAxLjMgMi45IDIuOXYyOS4yYzAgMS42LTEuMyAyLjktMi45IDIuOXoiIC8+Cjwvc3ZnPg==) !important;
-        }
-
-        /** 最小化 */
-        :is(.titlebar-min,
-            .uc-titlebar-min) {
-            appearance: none !important;
-            padding: 0px !important;
-            padding-left: 7px !important;
-            padding-right: 7px !important;
-            margin-left: 0px !important;
-            margin-right: 0px !important;
-            margin-top: 0px !important;
-            margin-bottom: 0px !important;
-            background-color: transparent !important;
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KPC9zdmc+) !important;
-            -moz-box-ordinal-group: 1 !important;
-        }
-
-        /** 最小化 鼠标悬浮 */
-        :is(.titlebar-min,
-            .uc-titlebar-min):hover {
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KICAgIDxwYXRoIGQ9Ik04OC4yIDUwLjJIMjUuOGMtMy43IDAtNi44IDMtNi44IDYuOCAwIDMuNyAzIDYuOCA2LjggNi44aDYyLjRjMy43IDAgNi44LTMgNi44LTYuOC0uMS0zLjctMy4xLTYuOC02LjgtNi44eiIKICAgICAgICBmaWxsPSJjb250ZXh0LXN0cm9rZSBoc2woMzIsIDYyJSwgMzglKSIgLz4KPC9zdmc+) !important;
-        }
-
-        /** 关闭 */
-        .titlebar-close,
-        .uc-titlebar-close {
-            appearance: none !important;
-            padding: 0px !important;
-            padding-left: 7px !important;
-            padding-right: 7px !important;
-            margin-left: 0px !important;
-            margin-right: 0px !important;
-            margin-top: 0px !important;
-            margin-bottom: 0px !important;
-            background-color: transparent !important;
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
-            -moz-box-ordinal-group: 3 !important;
-        }
-
-        /** 关闭 鼠标悬浮 */
-        :is(.titlebar-close,
-            .uc-titlebar-close):hover {
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNODMuOCA3NC4zTDM5LjcgMzAuMmMtMi42LTIuNi02LjktMi42LTkuNiAwLTIuNiAyLjYtMi42IDYuOSAwIDkuNmw0NC4xIDQ0LjFjMi42IDIuNiA2LjkgMi42IDkuNiAwIDIuNy0yLjcgMi43LTcgMC05LjZ6IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNMzkuNyA4My44bDQ0LjEtNDQuMWMyLjYtMi42IDIuNi02LjkgMC05LjYtMi42LTIuNi02LjktMi42LTkuNiAwbC00NCA0NC4yYy0yLjYgMi42LTIuNiA2LjkgMCA5LjYgMi42IDIuNiA2LjkgMi42IDkuNS0uMXoiIC8+Cjwvc3ZnPg==) !important;
-        }
+        .uc-titlebar-restore) {
+        appearance: none !important;
+        padding: 0px !important;
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        background-color: transparent !important;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+        grid-column: 1 !important;
+        order: 1 !important;
+        -moz-box-ordinal-group: 2 !important;
     }
 
-    /** Mac OSX Linux 强制控制按钮在左边 */
+    /** 最大化 鼠标悬浮 */
+    :root[sidra-controlstyle="osx"] :is(.titlebar-max,
+        .uc-titlebar-max):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNMjcuNyA0N3YzMC45YzAgNC43IDMuOSA4LjYgOC42IDguNmgzMC45YzEuOCAwIDIuNy0yLjIgMS40LTMuNEwzMS4xIDQ1LjZjLTEuMi0xLjMtMy40LS40LTMuNCAxLjR6bTUwLjQtMTguNEg0Ny4zYy0xLjggMC0yLjcgMi4yLTEuNCAzLjRsMzcuNCAzNy40YzEuMyAxLjMgMy40LjQgMy40LTEuNFYzNy4yYzAtNC44LTMuOS04LjYtOC42LTguNnoiIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    /** 还原 鼠标悬浮 */
+    :root[sidra-controlstyle="osx"]:is([sizemode="maximized"],
+        [inFullscreen]) :is(.titlebar-max,
+        .uc-titlebar-max):hover,
+    :root[sidra-controlstyle="osx"] :is(.titlebar-restore,
+        .uc-titlebar-restore):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNNzcuNSAyNy4xSDM3LjRjLTYuMyAwLTExLjQgNS4xLTExLjQgMTEuNHYzOWMwIDYuMyA1LjEgMTEuNCAxMS40IDExLjRoNDAuMWM2LjMgMCAxMS40LTUuMSAxMS40LTExLjR2LTM5YzAtNi4zLTUuMS0xMS40LTExLjQtMTEuNHptLTUuNCA0OC40SDQyLjljLTEuNiAwLTIuOS0xLjMtMi45LTIuOVY0My40YzAtMS42IDEuMy0yLjkgMi45LTIuOWgyOS4yYzEuNiAwIDIuOSAxLjMgMi45IDIuOXYyOS4yYzAgMS42LTEuMyAyLjktMi45IDIuOXoiIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    /** 最小化 */
+    :root[sidra-controlstyle="osx"] :is(.titlebar-min,
+        .uc-titlebar-min) {
+        appearance: none !important;
+        padding: 0px !important;
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        background-color: transparent !important;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KPC9zdmc+) !important;
+        -moz-box-ordinal-group: 1 !important;
+    }
+
+    /** 最小化 鼠标悬浮 */
+    :root[sidra-controlstyle="osx"] :is(.titlebar-min,
+        .uc-titlebar-min):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KICAgIDxwYXRoIGQ9Ik04OC4yIDUwLjJIMjUuOGMtMy43IDAtNi44IDMtNi44IDYuOCAwIDMuNyAzIDYuOCA2LjggNi44aDYyLjRjMy43IDAgNi44LTMgNi44LTYuOC0uMS0zLjctMy4xLTYuOC02LjgtNi44eiIKICAgICAgICBmaWxsPSJjb250ZXh0LXN0cm9rZSBoc2woMzIsIDYyJSwgMzglKSIgLz4KPC9zdmc+) !important;
+    }
+
+    /** 关闭 */
+    :root[sidra-controlstyle="osx"] :is(.titlebar-close,
+        .uc-titlebar-close) {
+        appearance: none !important;
+        padding: 0px !important;
+        padding-left: 7px !important;
+        padding-right: 7px !important;
+        margin-left: 0px !important;
+        margin-right: 0px !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        background-color: transparent !important;
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+        -moz-box-ordinal-group: 3 !important;
+    }
+
+    /** 关闭 鼠标悬浮 */
+    :root[sidra-controlstyle="osx"] :is(.titlebar-close,
+        .uc-titlebar-close):hover {
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNODMuOCA3NC4zTDM5LjcgMzAuMmMtMi42LTIuNi02LjktMi42LTkuNiAwLTIuNiAyLjYtMi42IDYuOSAwIDkuNmw0NC4xIDQ0LjFjMi42IDIuNiA2LjkgMi42IDkuNiAwIDIuNy0yLjcgMi43LTcgMC05LjZ6IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNMzkuNyA4My44bDQ0LjEtNDQuMWMyLjYtMi42IDIuNi02LjkgMC05LjYtMi42LTIuNi02LjktMi42LTkuNiAwbC00NCA0NC4yYy0yLjYgMi42LTIuNiA2LjkgMCA5LjYgMi42IDIuNiA2LjkgMi42IDkuNS0uMXoiIC8+Cjwvc3ZnPg==) !important;
+    }
+
+    /** Mac OSX / Linux 强制控制按钮在左边 */
     @media (-moz-platform: macos),
     (-moz-platform: linux) {
 
@@ -249,18 +232,23 @@ url("about:downloads") {
         }
     }
 
+    toolbarbutton menupopup[placespopup]> :is(menu, menuitem),
+    .subview-subheader,
+    panelview .toolbarbutton-1,
+    .subviewbutton,
+    .widget-overflow-list .toolbarbutton-1 {
+        min-height: var(--subviewbutton-height);
+    }
+
     @supports -moz-bool-pref("userChromeJS.sidra.tabbox.compact") {
+
+        /* Floorp 标签页修正 */
         :root[appname="Floorp"] #TabsToolbar {
             max-height: var(--tab-min-height);
         }
 
         #TabsToolbar>.titlebar-buttonbox-container {
             z-index: 99;
-        }
-
-        :root {
-            --tab-border-radius: var(--tab-rounding) !important;
-            --tab-block-margin: 0 !important;
         }
 
         :root[tabposition="3"] #TabsToolbar .tabbrowser-tab {
@@ -280,9 +268,8 @@ url("about:downloads") {
         }
 
         /** 标签前的空格 */
-        #TabsToolbar .titlebar-spacer[type="pre-tabs"] {
-            border-inline-end: 0px !important;
-            width: calc(var(--titlebar-spacer-width, 32px) / 2) !important;
+        .titlebar-spacer[type="pre-tabs"] {
+            display: none;
         }
 
         /** 调整标签栏后面的空格大小 */
@@ -300,6 +287,7 @@ url("about:downloads") {
         #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
             visibility: collapse !important;
         }
+
 
         /** 全屏模式显示菜单栏 */
         :root[inFullscreen] #toolbar-menubar {
@@ -330,6 +318,10 @@ url("about:downloads") {
             padding-left: 12px !important;
         }
 
+        #tabbrowser-tabs {
+            background-color: var(--lwt-accent-color) !important;
+        }
+
         /** 从一个窗口拖拽标签到另一个窗口的标签插入指示器原来是蓝色的哪个符号 */
         .tab-drop-indicator {
             background-image: url(./images/skin/tab-drag-indicator.svg) !important;
@@ -342,13 +334,63 @@ url("about:downloads") {
             width: 20px !important;
         }
 
+        #tabs-newtab-button {
+            padding-left: 4px !important;
+            z-index: 1 !important;
+            position: relative !important;
+        }
+
         #tabbrowser-tabs {
             margin-inline-end: 2px !important;
         }
 
-        /** 鼠标指向非激活标签的动画速度 */
-        tab:not(:active) .tab-background {
-            transition: background-color var(--animation-speed) !important;
+        /* non-overflowing tabs shouldn't draw shadows on new tab button since overflowing tabs don't draw shadows on the special new tab button */
+        #tabbrowser-tabs:not([overflow]) #tabs-newtab-button {
+            z-index: 5 !important;
+        }
+
+        #TabsToolbar .customization-target {
+            min-width: 0 !important;
+            overflow-x: clip !important;
+        }
+
+        /* 去除固定标签和普通标签之间的间隔 */
+        #tabbrowser-tabs[haspinnedtabs]:not([positionpinnedtabs])>#tabbrowser-arrowscrollbox>.tabbrowser-tab[first-visible-unpinned-tab] {
+            margin-left: 0 !important;
+        }
+
+        :root:not([sizemode="normal"]) .arrowscrollbox-overflow-end-indicator,
+        :root:not([sizemode="normal"]) .tabbrowser-arrowscrollbox>.arrowscrollbox-overflow-start-indicator {
+            visibility: collapse !important;
+        }
+
+        :is(tabbrowser, #TabsToolbar) toolbarbutton[class^="scrollbutton"] {
+            display: none !important;
+        }
+
+        /** 减少标签栏的按钮边距 */
+        #TabsToolbar .toolbarbutton-1 {
+            margin: 0;
+        }
+
+        :is(toolbarbutton, toolbaritem, toolbarpaletteitem)+#tabbrowser-tabs {
+            margin-inline-start: 2px !important;
+        }
+
+        /* firefox view 按钮调整到和标签一样 */
+        :root:not([privatebrowsingmode="temporary"]) :is(#firefox-view-button, #wrapper-firefox-view-button)+#tabbrowser-tabs {
+            border-inline-start-width: 0 !important;
+            padding-inline-start: 0 !important;
+            margin-inline-start: 0 !important;
+        }
+
+        :root:not([privatebrowsingmode="temporary"]) :is(#firefox-view-button, #wrapper-firefox-view-button) {
+            padding: 0;
+            margin: 0;
+        }
+
+        #TabsToolbar #firefox-view-button>.toolbarbutton-icon {
+            --toolbarbutton-inner-padding: calc((var(--tab-min-height) - var(--icon-width, 16px)) / 2);
         }
 
         /** 鼠标指向非激活标的颜色 */
@@ -356,11 +398,15 @@ url("about:downloads") {
             background-color: var(--toolbarbutton-hover-background) !important;
         }
 
+        /** 鼠标指向非激活标签的动画速度 */
+        tab:not(:active) .tab-background {
+            transition: unset !important;
+        }
+
         tab:not([beforeselected-visible])::after {
             margin-top: 4px !important;
             margin-bottom: 4px !important;
-            transition: border-color var(--animation-speed), margin-top var(--animation-speed) !important;
-
+            transition: border-color var(--animation-speed, .13s), margin-top var(--animation-speed, .13s) !important;
         }
 
         tab[beforehovered]::after,
@@ -368,7 +414,6 @@ url("about:downloads") {
             border-color: transparent !important;
             margin-top: 20px !important;
         }
-
 
         tab[beforehovered]::after,
         tab:hover::after {
@@ -380,27 +425,10 @@ url("about:downloads") {
             --tabs-border-color: transparent !important;
         }
 
-        #TabsToolbar #firefox-view-button {
-            position: relative;
-            margin-inline-start: var(--tab-corner-rounding) !important;
-        }
-
         #TabsToolbar #tabbrowser-tabs~#firefox-view-button {
             margin-inline-start: 0 !important;
         }
 
-        #TabsToolbar #firefox-view-button::before {
-            content: "";
-            display: block;
-            position: absolute;
-            top: 0px;
-            left: calc(0px - var(--tab-corner-rounding));
-            width: 1px;
-            height: 100%;
-            border-inline-start: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-        }
-
-        #TabsToolbar #tabbrowser-tabs~#firefox-view-button::before,
         #TabsToolbar #tabbrowser-tabs~#wrapper-firefox-view-button>#firefox-view-button::before {
             content: none;
         }
@@ -409,8 +437,6 @@ url("about:downloads") {
         tab[visuallyselected] .tab-background {
             box-shadow: 0px 2px 6px -2px black !important;
         }
-
-        #TabsToolbar #firefox-view-button[open]>.toolbarbutton-icon {}
 
         [first-visible-unpinned-tab] {
             margin-left: calc(var(--tab-corner-rounding) + 2px) !important;
@@ -421,7 +447,7 @@ url("about:downloads") {
             /* fix unexpected tab overflow */
         }
 
-        .tab-background {
+        tab-background {
             border-top: none !important;
             border-left: none !important;
             border-right: none !important;
@@ -448,25 +474,14 @@ url("about:downloads") {
             display: none;
         }
 
-        /* 去除固定标签和普通标签之间的间隔 */
-        #tabbrowser-tabs[haspinnedtabs]:not([positionpinnedtabs])>#tabbrowser-arrowscrollbox>.tabbrowser-tab[first-visible-unpinned-tab] {
-            margin-inline-start: 0 !important;
-        }
-
         .tab-close-button {
             border-radius: 3px;
-            transition: fill-opacity var(--animation-speed) !important;
-        }
-
-        :root:not([sizemode="normal"]) .arrowscrollbox-overflow-end-indicator,
-        :root:not([sizemode="normal"]) .tabbrowser-arrowscrollbox>.arrowscrollbox-overflow-start-indicator {
-            visibility: collapse !important;
+            transition: fill-opacity var(--animation-speed, .13s) !important;
         }
 
         :is(tabbrowser, #TabsToolbar) toolbarbutton[class^="scrollbutton"] {
             display: none !important;
         }
-
 
         #TabsToolbar .toolbarbutton-1> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
             border-radius: var(--toolbarbutton-border-radius) !important;
@@ -503,28 +518,6 @@ url("about:downloads") {
             outline: none !important;
         }
 
-        @supports -moz-bool-pref("userChromeJS.sidra.tabbox.showInactiveTabsDivider") {
-
-            /* 非激活标签分隔符 */
-            #firefox-view-button[role="tab"]::after,
-            .tabbrowser-tab:not(:hover):not([selected=true]):not([multiselected=true]):not([beforeselected-visible="true"]) .tab-background::after {
-                content: "";
-                display: block;
-                position: absolute;
-                background: color-mix(in srgb, currentColor 17%, transparent) !important;
-                height: var(--tab-separator-height);
-                width: 1px;
-                top: var(--tab-separator-top);
-                right: -2px;
-                z-index: 5;
-            }
-
-            #tabbrowser-tabs~#firefox-view-button::after,
-            #tabbrowser-tabs~#wrapper-firefox-view-button>#firefox-view-button::after {
-                content: none;
-            }
-        }
-
         .tabbrowser-tab:not([usercontextid], [multiselected]) .tab-context-line {
             display: none !important;
         }
@@ -548,171 +541,244 @@ url("about:downloads") {
             overflow: visible;
         }
 
-        /** 来自 Lepton */
-        :root:not([customizing="true"]) tab[visuallyselected]>stack::before,
-        :root:not([customizing="true"]) tab[visuallyselected]>stack::after,
-        :root:not([customizing="true"]) #firefox-view-button[role="tab"]>image::before,
-        :root:not([customizing="true"]) #firefox-view-button>.toolbarbutton-icon>image {
-            content: "" !important;
-            /* Box */
-            display: block !important;
-            position: absolute !important;
-            z-index: 1 !important;
-            /* Shape */
-            width: var(--tab-corner-rounding) !important;
-            height: 100% !important;
-            /* Color */
-            fill: var(--toolbar-bgcolor) !important;
-            stroke: var(--tab-line-color, var(--tabs-border-color, rgba(128, 128, 142, 0.9))) !important;
-            -moz-context-properties: fill, stroke !important;
-            /* Image */
-            background-size: var(--tab-corner-rounding);
-            background-repeat: no-repeat;
-            background-position-y: bottom;
+        .tabbrowser-tab {
+            --tab-loading-fill: currentColor !important;
+            --tab-attention-icon-color: currentColor !important;
+            --tab-label-mask-size: var(--inline-tab-padding) !important;
+            --inline-tab-padding: 10px !important;
+            color: inherit !important;
+            overflow-clip-margin: var(--tab-min-height) !important;
         }
 
-        :root:not([customizing="true"]):is([lwtheme-mozlightdark], [style*="--lwt-accent-color: rgb(28, 27, 34); --lwt-text-color: rgba(251, 251, 254);"]) #TabsToolbar[brighttext] #tabbrowser-tabs:not([noshadowfortests]) tab[visuallyselected]>stack:-moz-lwtheme::before,
-        :root:not([customizing="true"]):is([lwtheme-mozlightdark], [style*="--lwt-accent-color: rgb(28, 27, 34); --lwt-text-color: rgba(251, 251, 254);"]) #TabsToolbar[brighttext] #tabbrowser-tabs:not([noshadowfortests]) tab[visuallyselected]>stack:-moz-lwtheme::after {
-            /* As Selected Tab - Box Shadow */
-            stroke: var(--toolbar-color) !important;
+        .tabbrowser-tab[visuallyselected] {
+            --tab-loading-fill: var(--toolbar-field-focus-border-color) !important;
+            color: var(--lwt-tab-text, var(--toolbar-color)) !important;
         }
 
-        tab[visuallyselected]>stack::before {
-            left: var(--tab-corner-position) !important;
-            background-image: url("./images/skin/tab-bottom-corner-left.svg") !important;
+        .tabbrowser-tab[visuallyselected] .tab-background {
+            background-color: var(--toolbar-bgcolor) !important;
+            background-image: var(--toolbar-bgimage) !important;
+            filter: var(--special-main-outer-shadow) var(--special-additional-outer-shadow) !important;
         }
 
-        tab[visuallyselected]>stack::after {
-            left: auto;
-            right: var(--tab-corner-position);
-            background-image: url("./images/skin/tab-bottom-corner-right.svg") !important;
+        .tab-background {
+            position: relative !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            opacity: 1 !important;
+            border: none !important;
+            outline: none !important;
         }
 
-        @media (-moz-gtk-csd-available) {
-
-            /* Fill color for GTK */
-            :root:not([customizing="true"]):not([lwtheme="true"]) tab[visuallyselected]>stack::before,
-            :root:not([customizing="true"]):not([lwtheme="true"]) tab[visuallyselected]>stack::after {
-                /* As GTK Toolbar's background-color + backround-image
-                     * --toolbar-non-lwt-bgcolor: -moz-dialog;
-                     * --toolbar-non-lwt-bgimage: linear-gradient(rgba(255,255,255,.15), rgba(255,255,255,.15));
-                     */
-                fill: color-mix(in srgb, white 15%, -moz-dialog) !important;
-                stroke: transparent !important;
-            }
-
-            :root:not([customizing="true"]):not([lwtheme="true"]) #TabsToolbar[brighttext] tab[visuallyselected]>stack::before,
-            :root:not([customizing="true"]):not([lwtheme="true"]) #TabsToolbar[brighttext] tab[visuallyselected]>stack::after {
-                stroke: transparent !important;
-            }
+        .tabbrowser-tab:hover:not([visuallyselected], [multiselected]) .tab-background {
+            background-color: var(--toolbarbutton-hover-background) !important;
         }
 
-        /* 选中标签颜色 */
-        :root:not(:-moz-lwtheme) {
-            /* Fix for windows's system default theme. Using --toolbar-bgcolor fallback */
-            --tab-selected-bgcolor: unset !important;
-            /* Original: rgb(255,255,255); */
+        .tabbrowser-tab[multiselected]:not([visuallyselected]) .tab-background {
+            background-color: var(--toolbarbutton-active-background) !important;
         }
 
-
-        #firefox-button[role="tab"],
-        #tabbrowser-tabs {
-            --lwt-selected-tab-background-color: var(--toolbar-bgcolor);
+        .tabbrowser-tab[pinned] .tab-content {
+            padding: 0 calc((var(--tab-min-height) - 16px) / 2 + var(--pinned-tabs-width-offset, 0px)) !important;
         }
 
-        #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[multiselected="true"],
-        #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[selected="true"] {
-            background-image: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)), linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)), var(--lwt-header-image, none);
-            --uc-tab-corner-bg: var(--lwt-selected-tab-background-color, var(--toolbar-bgcolor));
-
+        :root[sidra-tabbox-compact="true"] .tab-close-button {
+            width: 20px !important;
+            height: 20px !important;
+            padding: 4px !important;
         }
 
-        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected]) {
-            background-color: color-mix(in srgb, white 30%, transparent) !important;
-            --uc-tab-corner-bg: color-mix(in srgb, white 30%, transparent) !important;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) {
+            --tab-block-margin: 0;
+            --tab-border-radius: 0;
         }
 
-
-        @media (prefers-color-scheme: dark) {
-
-            #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab,
-            :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected]) {
-                --lwt-selected-tab-background-color: color-mix(in srgb, var(--toolbar-bgcolor) 80%, white);
-                --uc-tab-corner-bg: var(--lwt-selected-tab-background-color, var(--toolbar-bgcolor));
-            }
-
-            :root:not([customizing="true"]) tab[visuallyselected]>stack::before,
-            :root:not([customizing="true"]) tab[visuallyselected]>stack::after {
-                fill: var(--lwt-selected-tab-background-color) !important;
-                stroke: var(--tab-line-color, var(--tabs-border-color, rgba(128, 128, 142, 0.9))) !important;
-            }
-
-            #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[multiselected="true"],
-            #tabbrowser-tabs:not([movingtab])>#tabbrowser-arrowscrollbox>.tabbrowser-tab>.tab-stack>.tab-background[selected="true"] {
-                background-image: linear-gradient(var(--lwt-selected-tab-background-color, transparent), var(--lwt-selected-tab-background-color, transparent)),
-                    linear-gradient(var(--toolbar-bgcolor), var(--toolbar-bgcolor)),
-                    var(--lwt-header-image, none);
-            }
-        }
-
-        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected])::before,
-        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected])::after {
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tab-background::before,
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tab-background::after {
             content: "";
-            /* Box */
-            display: block !important;
-            position: absolute !important;
-            z-index: 1 !important;
-            /* Shape */
-            width: var(--tab-corner-rounding) !important;
-            height: 100% !important;
-            /* Color */
-            fill: var(--uc-tab-corner-bg, var(--toolbarbutton-hover-background)) !important;
-            stroke: var(--tab-line-color, var(--tabs-border-color, rgba(128, 128, 142, 0.9))) !important;
-            -moz-context-properties: fill, stroke !important;
-            /* Image */
-            background-size: var(--tab-corner-rounding);
+            position: absolute;
+            bottom: 0%;
+            fill: transparent;
             background-repeat: no-repeat;
-            background-position-y: bottom;
+            pointer-events: none;
+            -moz-context-properties: fill;
         }
 
-        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected])::before {
-            top: 0;
-            bottom: unset;
-            left: var(--tab-corner-position) !important;
-            background-image: url("./images/skin/tab-bottom-corner-left.svg") !important;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tab-background::before {
+            right: 100%;
+            background-image: var(--left-side-svg);
         }
 
-        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected])::after {
-            left: auto;
-            top: 0;
-            bottom: unset;
-            right: var(--tab-corner-position);
-            background-image: url("./images/skin/tab-bottom-corner-right.svg") !important;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tab-background::after {
+            left: 100%;
+            background-image: var(--right-side-svg);
         }
 
-        .tab-background[multiselected="true"] {
-            outline: 0px;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[visuallyselected] .tab-background::before,
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[visuallyselected] .tab-background::after {
+            fill: var(--toolbar-bgcolor) !important;
         }
 
-        :root[tabposition="4"] tab[visuallyselected]>stack::before {
-            transform: rotate(180deg);
-            background-image: url("./images/skin/tab-bottom-corner-right.svg") !important;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab:hover .tab-background::before,
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab:hover .tab-background::after {
+            fill: var(--toolbarbutton-hover-background);
         }
 
-        :root .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected="true"], [multiselected])::before {
-            background-image: unset !important;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[multiselected] .tab-background::before,
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[multiselected] .tab-background::after {
+            fill: var(--toolbarbutton-active-background);
         }
 
-        :root[tabposition="4"] tab[visuallyselected]>stack::after {
-            transform: rotate(180deg);
-            background-image: url("./images/skin/tab-bottom-corner-left.svg") !important;
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[beforeselected-visible] .tab-background::after {
+            background-image: var(--right-side-svg-clipped);
         }
+
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[visuallyselected]:not([hidden])+.tabbrowser-tab .tab-background::before,
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) .tabbrowser-tab[visuallyselected]+.tabbrowser-tab[hidden]+.tabbrowser-tab .tab-background::before {
+            background-image: var(--left-side-svg-clipped);
+        }
+
+        :root[sidra-tabbox-compact="true"]:not([sidra-tabstyle="default"]) #tabbrowser-tabs[positionpinnedtabs] .tabbrowser-tab[first-visible-unpinned-tab] .tab-background::before {
+            background-image: var(--left-side-svg) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"]:is(:not(:-moz-lwtheme), [lwt-default-theme-in-dark-mode]) :is(#titlebar, #nav-bar, #PersonalToolbar) {
+            --toolbar-bgcolor: transparent !important;
+            --toolbar-bgimage: none !important;
+            --toolbar-field-background-color: Field !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"]:is(:not(:-moz-lwtheme), [lwt-default-theme-in-dark-mode]) .tabbrowser-tab[visuallyselected] .tab-background {
+            background-color: Field !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"]:is(:not(:-moz-lwtheme), [lwt-default-theme-in-dark-mode]) #TabsToolbar::before {
+            display: none !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"]:is(:not(:-moz-lwtheme), [lwt-default-theme-in-dark-mode]) #urlbar:not([focused], [open])>#urlbar-background,
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"]:is(:not(:-moz-lwtheme), [lwt-default-theme-in-dark-mode]) #searchbar:focus-within {
+            filter: var(--special-main-outer-shadow) var(--special-additional-outer-shadow) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"] #tabbrowser-tabs:not([overflow]) .tabbrowser-tab[first-visible-tab],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"] #tabbrowser-tabs[positionpinnedtabs],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"] #tabbrowser-tabs[overflow] .tabbrowser-tab[first-visible-unpinned-tab] {
+            margin-left: calc(var(--toolbar-start-end-padding) - 1px) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="default"] .tabbrowser-tab[last-visible-tab] {
+            margin-right: var(--toolbar-start-end-padding) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] {
+            /* --tab-min-height: 32px; */
+            --left-side-svg: url("images/tab/Sidra/Sidra_left_corners_of_tabs_32.svg");
+            --right-side-svg: url("images/tab/Sidra/Sidra_right_corners_of_tabs_32.svg");
+            --left-side-svg-clipped: url("images/tab/Sidra/Sidra_left_corners_of_tabs_32_clipped.svg");
+            --right-side-svg-clipped: url("images/tab/Sidra/Sidra_right_corners_of_tabs_32_clipped.svg");
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] .tab-background::before,
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] .tab-background::after {
+            width: calc(var(--tab-min-height) / 2);
+            height: var(--tab-min-height);
+            background-size: calc(var(--tab-min-height) / 2);
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] .tab-background {
+            margin-inline: calc(var(--tab-min-height) / 4) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] .tab-background {
+            position: relative !important;
+            border: 0 !important;
+            transition:
+                opacity var(--tab-transition-duration) var(--ease-basic),
+                background-color 0s var(--tab-transition-duration) var(--ease-basic) !important;
+            opacity: var(--tab-opacity) !important;
+            visibility: visible !important;
+            box-shadow: none !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] .tab-close-button {
+            border-radius: 4px;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] #tabbrowser-tabs:not([overflow]) .tabbrowser-tab[first-visible-tab],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] #tabbrowser-tabs[positionpinnedtabs],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] #tabbrowser-tabs[overflow] .tabbrowser-tab[first-visible-unpinned-tab] {
+            margin-left: calc(var(--tab-min-height) / 4 - 1px) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="sidra"] .tabbrowser-tab[last-visible-tab] {
+            margin-right: calc(var(--tab-min-height) / 4) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] .tab-close-button {
+            border-radius: 0px;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] #tabbrowser-tabs:not([overflow]) .tabbrowser-tab[first-visible-tab],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] #tabbrowser-tabs[positionpinnedtabs],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] #tabbrowser-tabs[overflow] .tabbrowser-tab[first-visible-unpinned-tab] {
+            margin-left: calc(var(--toolbar-start-end-padding) - 1px) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] .tabbrowser-tab[last-visible-tab] {
+            margin-right: var(--toolbar-start-end-padding) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] .tabbrowser-tab:is([image], [pinned]) .tab-content[attention]:not([selected]),
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="photon"] .tab-content[pinned][titlechanged]:not([selected]) {
+            background-position: center top !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] {
+            --left-side-svg: url("images/tab/Australis/Australis_left_corners_of_tabs_30.svg");
+            --right-side-svg: url("images/tab/Australis/Australis_right_corners_of_tabs_30.svg");
+            --left-side-svg-clipped: url("images/tab/Australis/Australis_left_corners_of_tabs_30_clipped.svg");
+            --right-side-svg-clipped: url("images/tab/Australis/Australis_right_corners_of_tabs_30_clipped.svg");
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] .tab-close-button {
+            width: 20px !important;
+            height: 20px !important;
+            padding: 4px !important;
+            border-radius: 50%;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] .tab-background::before,
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] .tab-background::after {
+            width: var(--tab-min-height);
+            height: var(--tab-min-height);
+            background-size: var(--tab-min-height);
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] .tabbrowser-tab[pinned] .tab-content {
+            padding: 0 calc((var(--tab-min-height) - 16px) / 2 + 2px + var(--pinned-tabs-width-offset, 0px)) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] .tab-background {
+            margin-inline: calc(var(--tab-min-height) / 2) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] #tabbrowser-tabs:not([overflow]) .tabbrowser-tab[first-visible-tab],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] #tabbrowser-tabs[positionpinnedtabs],
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] #tabbrowser-tabs[overflow] .tabbrowser-tab[first-visible-unpinned-tab] {
+            margin-left: calc(var(--tab-min-height) / 2 - 1px) !important;
+        }
+
+        :root[sidra-tabbox-compact="true"][sidra-tabstyle="australis"] .tabbrowser-tab[last-visible-tab] {
+            margin-right: calc(var(--tab-min-height) / 2) !important;
+        }
+
 
         /** 调整无痕指示器的大小 */
         :root:not([accessibilitymode]) .private-browsing-indicator,
         .accessibility-indicator {
             width: 15.3px;
-            height: 16.3px;
+            height: 100%;
             margin-inline-start: 0;
             margin-inline-end: 7px;
         }
@@ -727,53 +793,6 @@ url("about:downloads") {
         #TabsToolbar .tabbrowser-tab .tab-icon-image:not([src]):not([busy]):not([pending]):not([selected]) {
             display: inline !important;
             list-style-image: url("chrome://global/skin/icons/defaultFavicon.svg") !important;
-        }
-
-        #TabsToolbar .toolbarbutton-1 {
-            margin: 0;
-        }
-
-        :is(toolbarbutton, toolbaritem, toolbarpaletteitem)+#tabbrowser-tabs {
-            margin-inline-start: 2px !important;
-        }
-
-        /* firefox view 按钮调整到和标签一样 */
-        :root:not([privatebrowsingmode="temporary"]) :is(#firefox-view-button, #wrapper-firefox-view-button)+#tabbrowser-tabs {
-            border-inline-start-width: 0 !important;
-            padding-inline-start: 0 !important;
-            margin-inline-start: 0 !important;
-        }
-
-        :root:not([privatebrowsingmode="temporary"]) :is(#firefox-view-button, #wrapper-firefox-view-button) {
-            padding: 0;
-            margin: 0;
-        }
-
-        #TabsToolbar #firefox-view-button>.toolbarbutton-icon {
-            --toolbarbutton-inner-padding: calc((var(--tab-min-height) - var(--icon-width, 16px)) / 2);
-        }
-
-        /** 新建标签按钮 */
-        #TabsToolbar #tabs-newtab-button,
-        #TabsToolbar #newPrivateTab-button {
-            height: var(--tab-min-height);
-            width: var(--tab-min-height);
-            margin: 0 !important;
-            padding-left: 0px !important;
-            padding-right: 0 !important;
-        }
-
-        #TabsToolbar #tabs-newtab-button {
-            margin-left: 5px !important;
-        }
-
-        #tabbrowser-tabs:not([overflow]) #tabs-newtab-button {
-            z-index: 5 !important;
-        }
-
-        #TabsToolbar .customization-target {
-            min-width: 0 !important;
-            overflow-x: clip !important;
         }
 
         /** Win7 颜色修复 */
@@ -804,53 +823,267 @@ url("about:downloads") {
                 #navigator-toolbox-background {
                     background-color: transparent;
                 }
-
             }
         }
-    }
 
-    @supports -moz-bool-pref("userChromeJS.sidra.tabbox.verticalOrient") {
-        #main-window[tstopened="true"][tabposition="0"] #navigator-toolbox {
-            display: flex;
-            flex-direction: column;
+        /* 搜索栏放在菜单栏后方时减少空间占用 */
+        #toolbar-menubar #search-container {
+            padding: 0 !important;
+            margin: 0 2px !important;
+            min-height: 0 !important;
+            min-width: var(--menubar-searchbar-width) !important;
+            resize: horizontal !important;
+            height: 100% !important;
+            box-sizing: border-box !important;
         }
 
-        #main-window[tstopened="true"][tabposition="0"] #titlebar {
-            position: absolute;
-            right: 0;
-            display: flex;
-            z-index: 99;
-            appearance: none;
-            top: 0;
+        #toolbar-menubar #searchbar {
+            min-height: 28px !important;
+            border: none !important;
+            box-shadow: none !important;
         }
 
-        #main-window[tstopened="true"][tabposition="0"] #TabsToolbar .titlebar-buttonbox-container {
-            height: calc(2px + 2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+        #toolbar-menubar #searchbar .searchbar-search-icon {
+            margin-left: 5px !important;
         }
 
-        #main-window[tstopened="true"][tabposition="0"] #toolbar-menubar,
-        #main-window[tstopened="true"][tabposition="0"] #TabsToolbar>*:not(.titlebar-buttonbox-container) {
-            visibility: collapse;
+        #toolbar-menubar .searchbar-textbox {
+            min-height: 28px !important;
         }
 
-        #main-window[tstopened="true"][tabposition="0"] #nav-bar {
-            flex: 1;
-            width: 100%;
-            padding-right: calc(var(--toolbarbutton-inner-padding) + var(--uc-window-control-width, 0px)) !important;
-        }
-    }
-
-    /**======== 固定新建 ========*/
-    @supports -moz-bool-pref("userChromeJS.sidra.tabbox.pinNewtabBtn") {
-
-        #tabs-newtab-button,
-        #newPrivateTab-button {
-            display: none !important;
+        #toolbar-menubar #searchbar .search-go-button {
+            border-radius: 0 !important;
+            margin: 0 !important;
         }
 
-        #new-tab-button,
-        #privateTab-button {
-            display: -moz-box !important;
+        @supports -moz-bool-pref("floorp.enable.multitab") {
+            :root #TabsToolbar {
+                --tab-block-margin: 4px;
+                --tab-border-radius: var(--tab-corner-rounding) var(--tab-corner-rounding) var(--tab-corner-rounding) var(--tab-corner-rounding);
+            }
+
+            #TabsToolbar tab[visuallyselected]>stack::before,
+            #TabsToolbar tab[visuallyselected]>stack::after {
+                display: none !important;
+            }
+
+            #navigator-toolbox>#titlebar {
+                -moz-box-orient: vertical !important;
+                display: block;
+            }
+
+            #toolbar-menubar {
+                -moz-box-ordinal-group: 1;
+            }
+
+            #TabsToolbar {
+                -moz-box-ordinal-group: 2;
+                width: 100%;
+                max-height: unset;
+            }
+
+            #TabsToolbar #tabbrowser-tabs {
+                width: 100%;
+            }
+
+            #TabsToolbar #tabs-newtab-button,
+            #TabsToolbar #newPrivateTab-button {
+                margin: var(--tab-block-margin) !important;
+            }
+        }
+
+        /**======== 固定新建 ========*/
+        @supports -moz-bool-pref("userChromeJS.sidra.tabbox.pinNewtabBtn") {
+
+            #tabs-newtab-button,
+            #newPrivateTab-button {
+                display: none !important;
+            }
+
+            #new-tab-button,
+            #privateTab-button {
+                display: -moz-box !important;
+            }
+        }
+
+        @supports -moz-bool-pref("userChromeJS.sidra.tabbox.showInactiveTabsDivider") {
+            .tab-stack {
+                margin-left: 1px !important;
+            }
+
+            .tab-stack::before,
+            .tabbrowser-tab[last-visible-tab] .tab-stack::after {
+                content: "";
+                display: block;
+                position: absolute;
+                width: 1px;
+                height: 50%;
+                border-left: 1px solid currentColor;
+                top: 25%;
+                opacity: var(--separators-color-saturation, 0);
+                box-sizing: border-box;
+            }
+
+            .tab-stack::before {
+                right: 100%;
+            }
+
+            .tab-stack::after {
+                left: 100%;
+            }
+
+            .tabbrowser-tab:is([selected],
+                [selected]:not([hidden]) + .tabbrowser-tab,
+                [selected] + .tabbrowser-tab[hidden] + .tabbrowser-tab,
+                :hover,
+                :hover + .tabbrowser-tab,
+                :hover + .tabbrowser-tab[hidden] + .tabbrowser-tab,
+                [multiselected],
+                [multiselected] + .tabbrowser-tab,
+                [multiselected] + .tabbrowser-tab[hidden] + .tabbrowser-tab) .tab-stack::before,
+            .tabbrowser-tab:is([selected],
+                :hover,
+                [multiselected]) .tab-stack::after {
+                opacity: 0 !important;
+            }
+
+            .tabbrowser-tab[first-visible-tab] .tab-stack::before,
+            .tabbrowser-tab[last-visible-tab][pinned] .tab-stack::after,
+            #tabbrowser-tabs[overflow] .tabbrowser-tab[first-visible-unpinned-tab] .tab-stack::before,
+            #tabbrowser-tabs[overflow] .tab-stack::after {
+                opacity: 0 !important;
+            }
+
+            :root {
+                --separators-color-saturation: 0.5;
+            }
+        }
+
+        @supports -moz-bool-pref("userChromeJS.sidra.tabbox.showDeviderAfterTabbrowserTabs") {
+
+            /* 标签页与标签页后方按钮分隔线 */
+            #tabbrowser-tabs::after {
+                position: relative;
+                display: block;
+                content: "";
+                pointer-events: none;
+                box-shadow: 0 0px 3px 0px hsla(0, 0%, 0%, 0.32);
+                width: 20px;
+                margin-right: -20px;
+                z-index: 11;
+                clip-path: inset(-100% 20px -100% -100%);
+            }
+        }
+
+        /**======== 显示垂直标签栏时隐藏横向标签栏 ========*/
+        @supports -moz-bool-pref("userChromeJS.sidra.tabbox.verticalOrient") {
+
+            #main-window[tstopened="true"][tabposition="0"] #navigator-toolbox {
+                display: flex;
+                flex-direction: column;
+            }
+
+            #main-window[tstopened="true"][tabposition="0"] #titlebar {
+                position: absolute;
+                right: 0;
+                display: flex;
+                z-index: 99;
+                appearance: none;
+                top: 0;
+            }
+
+            #main-window[tstopened="true"][tabposition="0"] #TabsToolbar .titlebar-buttonbox-container {
+                height: calc(2px + 2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+            }
+
+            #main-window[tstopened="true"][tabposition="0"] #toolbar-menubar,
+            #main-window[tstopened="true"][tabposition="0"] #TabsToolbar>*:not(.titlebar-buttonbox-container) {
+                visibility: collapse;
+            }
+
+            #main-window[tstopened="true"][tabposition="0"] #nav-bar {
+                flex: 1;
+                width: 100%;
+                padding-right: calc(var(--toolbarbutton-inner-padding) + var(--uc-window-control-width, 0px)) !important;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #navigator-toolbox {
+                display: grid;
+                border: none !important;
+                grid-template-columns: auto 1fr;
+                grid-template-areas: "navbar navbar titlebar" "PersonalToolbar PersonalToolbar PersonalToolbar";
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #TabsToolbar>.toolbar-items {
+                visibility: collapse;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #titlebar {
+                grid-area: titlebar;
+                -moz-appearance: none !important;
+                background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
+                background-image: var(--toolbar-bgimage);
+                background-clip: padding-box;
+                color: var(--toolbar-color);
+                height: 100%;
+                -moz-box-align: center;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #titlebar {
+                -moz-box-orient: horizontal !important;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
+                visibility: collapse !important;
+            }
+
+            :root:not([chromehidden~="menubar"], [operatingsystem="linux"], [operatingsystem="macosx"]) #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive])+#TabsToolbar .titlebar-spacer {
+                display: none;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar {
+                -moz-box-ordinal-group: 3;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar[autohide="true"][inactive="true"]:not([customizing="true"]) {
+                max-width: 0 !important;
+                min-width: 0 !important;
+                width: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                opacity: 0 !important;
+            }
+
+            :root[inFullscreen] #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar {
+                visibility: visible !important;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive="true"]) {
+                background: var(--titlebar-background);
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #main-menubar {
+                -moz-box-flex: 1 !important;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar #main-menubar>menu {
+                appearance: none !important;
+                background-color: transparent !important;
+                padding-inline: 2px;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #nav-bar {
+                grid-area: navbar;
+                max-width: unset;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #urlbar-container {
+                max-width: unset !important;
+            }
+
+            #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #PersonalToolbar {
+                grid-area: PersonalToolbar;
+            }
         }
     }
 
@@ -905,42 +1138,6 @@ url("about:downloads") {
         }
     }
 
-    @supports -moz-bool-pref("floorp.enable.multitab") {
-        :root #TabsToolbar {
-            --tab-block-margin: 4px;
-            --tab-border-radius: var(--tab-corner-rounding) var(--tab-corner-rounding) var(--tab-corner-rounding) var(--tab-corner-rounding);
-        }
-
-        #TabsToolbar tab[visuallyselected]>stack::before,
-        #TabsToolbar tab[visuallyselected]>stack::after {
-            display: none !important;
-        }
-
-        #navigator-toolbox>#titlebar {
-            -moz-box-orient: vertical !important;
-            display: block;
-        }
-
-        #toolbar-menubar {
-            -moz-box-ordinal-group: 1;
-        }
-
-        #TabsToolbar {
-            -moz-box-ordinal-group: 2;
-            width: 100%;
-            max-height: unset;
-        }
-
-        #TabsToolbar #tabbrowser-tabs {
-            width: 100%;
-        }
-
-        #TabsToolbar #tabs-newtab-button,
-        #TabsToolbar #newPrivateTab-button {
-            margin: var(--tab-block-margin) !important;
-        }
-    }
-
     @supports -moz-bool-pref("userChromeJS.sidra.navbar.compact") {
         #navigator-toolbox {
             position: relative;
@@ -963,13 +1160,33 @@ url("about:downloads") {
             visibility: collapse;
         }
 
-        #nav-bar {
-            --uc-window-drag-space-pre: 0px;
+        #navigator-toolbox,
+        :root:not([sizemode="normal"]) #navigator-toolbox {
+            border: none !important;
+        }
+
+        #customization-palette toolbarpaletteitem {
+            transform-style: preserve-3d !important;
         }
 
         /** 工具栏颜色 */
         .browser-toolbar:not(.titlebar-color) {
             background-color: var(--sidra-toolbar-bgcolor, var(--toolbar-bgcolor));
+        }
+
+        toolbarpaletteitem>toolbarspring {
+            margin-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2) !important;
+            outline: none !important;
+            border: 1px solid var(--arrowpanel-dimmed-even-further) !important;
+            outline-offset: 0 !important;
+            border-radius: var(--toolbarbutton-border-radius) !important;
+        }
+
+        toolbarpaletteitem[place="palette"]>toolbarspring {
+            min-height: var(--urlbar-height) !important;
+            max-height: var(--urlbar-height) !important;
+            padding-block: 0 !important;
+            margin-block: 5px !important;
         }
 
         /** 去除 WE 扩展图标下的点 */
@@ -983,21 +1200,301 @@ url("about:downloads") {
             margin-inline: 2px !important;
         }
 
-        #wrapper-urlbar-container+toolbarpaletteitem>#search-container,
-        #nav-bar[customizing="true"] #urlbar-container+#search-container,
-        #wrapper-search-container+toolbarpaletteitem>#urlbar-container,
-        #nav-bar[customizing="true"] #search-container+#urlbar-container {
-            margin-inline-start: 1px !important;
+        #PersonalToolbar>toolbarpaletteitem>toolbarspring {
+            margin-block: revert !important;
+            margin-inline: 2px !important;
+        }
+
+        toolbarbutton,
+        .subviewbutton,
+        stack,
+        .toolbarbutton-icon,
+        vbox {
+            transition: background-color var(--animation-speed, .13s) !important;
+        }
+
+        /* toolbar button badges */
+        :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):is(:not([attention]), [attention="false"])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background-color: var(--toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
+            color: var(--badge-color, white) !important;
+            box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026, 0 1px 3px #1e1e2033 !important;
+            min-width: 10.5px !important;
+            height: 10.5px !important;
+            -moz-box-align: end !important;
+            font-size: 9px !important;
+            font-weight: var(--font-weight-bold, 600) !important;
+            line-height: 10px !important;
+            filter: none !important;
+            margin: -4px -4px 0 -4px !important;
+        }
+
+        :is(.customization-target, .widget-overflow-list) #downloads-button[attention]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            margin-right: -5.5px !important;
+            margin-top: -5.5px !important;
+            width: 10px !important;
+            height: 10px !important;
+            box-shadow: none !important;
+            background-image: url("./images/devtools/error.svg") !important;
+            background-size: contain !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+        }
+
+        :is(.customization-target, .widget-overflow-list) #downloads-button[attention="info"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background-color: transparent !important;
+            -moz-context-properties: none !important;
+            border-radius: revert !important;
+            background-image: url("./images/skin/indicator-tab-attention-purple.svg") !important;
+        }
+
+        :is(.customization-target, .widget-overflow-list) #downloads-button[attention="warning"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background-color: var(--low-warning-icon-detail, hsl(32, 52%, 35%)) !important;
+            fill: var(--low-warning-icon-background, hsl(44, 95%, 60%)) !important;
+            border-radius: 50% !important;
+        }
+
+        :is(.customization-target, .widget-overflow-list) #downloads-button[attention="severe"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background-color: var(--warning-icon-detail) !important;
+            fill: var(--warning-icon-background) !important;
+            border-radius: 50% !important;
+        }
+
+        :is(.customization-target, .widget-overflow-list) #fxa-toolbar-menu-button[badge-status="login_failed"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background: url("./images/skin/controlcenter/warning.svg") no-repeat center/contain !important;
+            stroke: var(--low-warning-icon-detail, hsl(32, 52%, 35%)) !important;
+            fill: var(--low-warning-icon-background, hsl(44, 95%, 60%)) !important;
+            box-shadow: none !important;
+            -moz-context-properties: fill, stroke !important;
+            padding: 0 !important;
+            margin: -7px 0 0 !important;
+            margin-inline-end: -6px !important;
+            filter: none !important;
+        }
+
+        #tabbrowser-tabs[hiddensoundplaying]~#alltabs-button>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            background: transparent url("./images/skin/audioUnmutedButton.svg") center/contain !important;
+            box-shadow: none !important;
+            color: inherit !important;
+            display: block !important;
+            -moz-context-properties: fill, fill-opacity !important;
+            fill: currentColor !important;
+            margin: -7px 0 0 !important;
+            margin-inline-end: -6px !important;
+            min-width: 12px !important;
+            min-height: 12px !important;
+        }
+
+        .widget-overflow-list .toolbarbutton-1>.toolbarbutton-text {
+            padding-inline-start: var(--icon-gap, 8px) !important;
+        }
+
+        .widget-overflow-list .toolbaritem-combined-buttons .toolbarbutton-1>.toolbarbutton-text {
+            padding-inline-end: 4px !important;
+        }
+
+        /* 让紧凑模式的按钮更加紧凑 */
+        #main-window[uidensity="compact"] #nav-bar #nav-bar-overflow-button,
+        #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target>toolbarbutton,
+        #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target>toolbaritem textbox,
+        #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target #stop-reload-button>toolbarbutton {
+            margin: 1px 0px !important;
+            padding: 0 !important;
+        }
+
+        #main-window[uidensity="compact"] toolbar .toolbarbutton-1 {
+            padding: 0;
+        }
+
+        .widget-overflow-list #zoom-controls[cui-areatype="toolbar"]>#zoom-reset-button>.toolbarbutton-text {
+            min-width: calc(5ch + 4px) !important;
+            padding-inline: 0 !important;
+        }
+
+
+
+        :is(toolbar, .customization-palette) :not(toolbarpaletteitem)>.toolbaritem-combined-buttons.chromeclass-toolbar-additional {
+            -moz-box-align: stretch !important;
+        }
+
+        toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional:not(:hover)>separator {
+            content: "";
+            display: -moz-box;
+            width: 0.67px !important;
+            height: 20px !important;
+            margin-inline-end: -0.67px !important;
+            background-image: linear-gradient(currentColor 0, currentColor 100%);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 1px 20px !important;
+            opacity: 0.2;
+        }
+
+        /** 组合按钮 */
+        toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional {
+            margin-inline: 0 !important;
+        }
+
+        :is(toolbar, .customization-palette) .toolbarbutton-combined-buttons-dropmarker,
+        #PersonalToolbar .toolbaritem-combined-buttons .toolbarbutton-combined-buttons-dropmarker {
+            margin-block: 0 !important;
+        }
+
+
+        toolbar .toolbarbutton-combined-buttons-dropmarker>.toolbarbutton-icon {
+            padding-inline: 2px !important;
+            padding-block: 2px !important;
+            height: 20px !important;
+            width: 16px !important;
+        }
+
+        .customization-palette .toolbarbutton-1 {
+            padding: 0 var(--toolbarbutton-outer-padding) !important;
+        }
+
+        toolbar:not(#PersonalToolbar) #edit-controls>#cut-button,
+        toolbar #profiler-button>#profiler-button-button {
+            padding-left: 2px !important;
+        }
+
+        toolbar:not(#PersonalToolbar) #edit-controls>#paste-button,
+        toolbar #profiler-button>#profiler-button-dropmarker {
+            padding-right: 2px !important;
+        }
+
+        toolbar:not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button) {
+            margin-block: 0 !important;
+            width: unset !important;
+            padding: 0 !important;
+            padding-inline: 2px !important;
+        }
+
+        /* 去除按钮 Hover 重复背景色 */
+        .toolbaritem-combined-buttons[cui-areatype="toolbar"]>toolbarbutton:not([disabled]):hover {
+            background-color: transparent;
+        }
+
+        /** 缩放按钮 */
+        toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button {
+            margin-block: var(--toolbarbutton-inner-padding) !important;
+        }
+
+        toolbar:not(#PersonalToolbar) #zoom-controls>#zoom-reset-button>.toolbarbutton-text {
+            height: 20px !important;
+            min-height: 20px !important;
+            font-size: 0.98em;
+            padding-block: 1px !important;
+            background: hsla(0, 0%, 100%, 0.045);
+            border: 1px solid var(--toolbarbutton-hover-background);
+            border-radius: 10px !important;
+        }
+
+        toolbar:not(#PersonalToolbar) #zoom-controls separator {
+            display: none !important;
+        }
+
+        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1 {
+            opacity: 1 !important;
+        }
+
+        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:not([checked], [open], :active):hover>.toolbarbutton-icon {
+            background-color: var(--toolbarbutton-hover-background);
+        }
+
+        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:is(:focus-visible, [checked="true"]):not([open], :hover, :active)>.toolbarbutton-icon {
+            background-color: var(--toolbarbutton-checked-background);
+        }
+
+        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:is([open], [checked], :hover:active)>.toolbarbutton-icon {
+            background-color: var(--toolbarbutton-active-background);
+        }
+
+        /* 修复停止按钮的偏移bug，如果没有问题，删掉 */
+        #stop-button .toolbarbutton-icon {
+            background-image: url("./images/skin/stop-button-fix.svg") !important;
+            background-repeat: no-repeat;
+            background-position: left 5px center;
+            list-style-image: none;
+        }
+
+
+        #nav-bar[brighttext] #panic-button[open] {
+            fill: var(--warning-color) !important;
+        }
+
+        #nav-bar {
+            padding-inline: 3px !important;
+        }
+
+        #TabsToolbar-customization-target>#back-button {
+            margin-inline-start: 2px !important;
+        }
+
+        #stop-reload-button {
+            pointer-events: none !important;
+        }
+
+        #stop-reload-button>* {
+            pointer-events: auto !important;
+        }
+
+        toolbar .toolbarbutton-1:not([disabled])[open]:hover>.toolbarbutton-icon {
+            background-color: var(--toolbarbutton-active-background) !important;
+        }
+
+        #PersonalToolbar toolbarbutton.bookmark-item {
+            padding-inline: var(--toolbarbutton-inner-padding) !important;
+        }
+
+        #PersonalToolbar .toolbarbutton-1:is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active),
+        toolbarbutton.bookmark-item:not(.subviewbutton):is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active),
+        toolbar .toolbarbutton-1:is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active)> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+            background-color: var(--toolbarbutton-checked-background) !important;
+            transition: none !important;
+        }
+
+        /* #PersonalToolbar .toolbarbutton-1>.toolbarbutton-icon,
+        #PersonalToolbar .toolbarbutton-1>.toolbarbutton-text,
+        #PersonalToolbar .toolbarbutton-1>.toolbarbutton-badge-stack {
+            background: none !important;
+        } */
+
+        toolbar .toolbarbutton-1:not([disabled], [open])[checked]> :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+            background-color: var(--toolbarbutton-checked-background, hsla(236, 100%, 83%, 0.17)) !important;
+        }
+
+        toolbar .toolbarbutton-1:not([disabled], [open])[checked]:hover:active>.toolbarbutton-icon {
+            background-color: var(--toolbarbutton-active-background, hsla(234, 100%, 83%, 0.25)) !important;
+        }
+
+
+        toolbar[customizing="true"] toolbarpaletteitem>#sidebar-button:not([disabled], [open])[checked]> :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+            background-color: revert !important;
+            transition: transform var(--drag-drop-transition-duration) cubic-bezier(0.6, 2, 0.75, 1.5) !important;
+        }
+
+        toolbarpaletteitem[place="palette"]:not([mousedown="true"]):focus-visible,
+        toolbarpaletteitem[place="menu-panel"]:not([mousedown="true"]):focus-visible,
+        toolbarpaletteitem[place="toolbar"]:not([mousedown="true"]):focus-visible {
+            transition: outline-width 0.01s linear var(--drag-drop-transition-duration);
+            outline: revert !important;
+        }
+
+        .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]::after {
+            content: "";
+            display: -moz-inline-box;
+            background: url("./images/skin/checkbox.svg") no-repeat center/contain;
+            fill: currentColor;
+            width: 16px;
+            height: 16px;
+            margin-inline-start: 6px;
         }
 
         #PersonalToolbar {
             visibility: visible !important;
             padding-inline: 2px !important;
             min-height: var(--urlbar-height) !important;
-            transition: min-height 200ms ease-in-out, max-height 200ms ease-in-out,
-                opacity 200ms ease-in-out, transform 200ms ease-in-out !important;
+            transition: min-height 200ms ease-in-out, max-height 200ms ease-in-out, opacity 200ms ease-in-out !important;
             overflow-y: visible !important;
-            padding-block: 0 var(--bookmark-block-padding, 0) !important;
             outline: none !important;
         }
 
@@ -1006,16 +1503,16 @@ url("about:downloads") {
             padding-block: 0 !important;
         }
 
-        #PersonalToolbar>toolbarpaletteitem:not([notransition])[place="toolbar"] {
-            transition: opacity 200ms ease-in-out, transform 200ms ease-in-out,
-                border-width var(--drag-drop-transition-duration) ease-in-out !important;
-        }
-
-
         #PersonalToolbar>* {
-            transition: opacity 200ms ease-in-out, transform 200ms ease-in-out !important;
+            transition: opacity 200ms ease-in-out, transform 150ms ease-in-out !important;
             overflow-y: visible !important;
+            margin-block: 0 var(--bookmark-block-padding) !important;
         }
+
+        #PersonalToolbar>toolbarpaletteitem:not([notransition])[place="toolbar"] {
+            transition: opacity 200ms ease-in-out, transform 150ms ease-in-out, border-width var(--drag-drop-transition-duration) ease-in-out !important;
+        }
+
 
         #PersonalToolbar[customizing][draggingover] {
             z-index: 4 !important;
@@ -1049,12 +1546,18 @@ url("about:downloads") {
             -moz-box-align: center !important;
         }
 
+        #PersonalToolbar .toolbarbutton-1,
+        toolbarbutton.bookmark-item:not(.subviewbutton) {
+            margin-block: 0 !important;
+        }
+
         #personal-toolbar-empty-description,
         #PersonalToolbar .toolbarbutton-1,
         toolbarbutton.bookmark-item:not(.subviewbutton) {
             margin: 2px;
             padding: var(--bookmark-block-padding) 4px;
         }
+
 
         #personal-toolbar-empty-description {
             min-height: 0 !important;
@@ -1068,10 +1571,6 @@ url("about:downloads") {
             min-width: 0 !important;
             padding: 0 !important;
             padding-right: 0 !important;
-        }
-
-        #PersonalToolbar .toolbaritem-combined-buttons {
-            min-height: 31.5px !important;
         }
 
         #PersonalToolbar #profiler-button>#profiler-button-dropmarker {
@@ -1128,11 +1627,6 @@ url("about:downloads") {
             background-color: var(--toolbarbutton-active-background) !important;
         }
 
-        /* fix a bug that occurs when pre-proton downloads button is installed along with navbar toolbarbutton slider script */
-        #nav-bar-toolbarbutton-slider {
-            overflow: -moz-hidden-unscrollable !important;
-        }
-
         /** 修正提示位置 */
         #tab-notification-deck,
         #PersonalToolbar~div {
@@ -1147,7 +1641,6 @@ url("about:downloads") {
         }
     }
 
-    /**======== 书签无字 ========*/
     @supports -moz-bool-pref("userChromeJS.sidra.placesToolbar.iconsOnly") {
         #PersonalToolbar toolbarbutton.bookmark-item:not(.subviewbutton, [id]) {
             margin-inline: 2px !important;
@@ -1171,9 +1664,9 @@ url("about:downloads") {
         }
 
         /* display the background on the icon, not the button, similar to regular
-    toolbar widgets. allows us to use padding to space the buttons instead of
-    margins, so when we drag a bookmark between buttons, it doesn't get dropped
-    at the end of the bookmarks */
+        toolbar widgets. allows us to use padding to space the buttons instead of
+        margins, so when we drag a bookmark between buttons, it doesn't get dropped
+        at the end of the bookmarks */
         :root:not([fluent-reveal-hover], [fluent-reveal-click]) #PersonalToolbar toolbarbutton.bookmark-item:not(.subviewbutton, [id]) {
             background: none !important;
             margin-inline: 0 !important;
@@ -1195,28 +1688,611 @@ url("about:downloads") {
 
     @supports -moz-bool-pref("userChromeJS.sidra.urlbar.compact") {
 
-        /* 隐藏蓝色框框 */
+        #urlbar,
+        .searchbar-textbox {
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: var(--urlbar-base-font-weight, 400);
+        }
+
+        /* 地址栏/搜索栏选中边框 */
         #urlbar[focused="true"]:not([suppress-focus-border])>#urlbar-background,
         #searchbar:focus-within {
-            outline: none;
+            outline-width: 0px;
         }
 
-        #urlbar[breakout] {
-            margin-inline-start: 0px !important;
-            width: 100% !important;
-            left: 0 !important;
-            top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+        toolbarpaletteitem[place="palette"]>#search-container {
+            min-height: 32px !important;
+            max-height: 32px !important;
+            padding-block: 0 !important;
+            margin: 5px 0 !important;
         }
 
-        #urlbar[breakout]:not([open]) {
-            bottom: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+        #nav-bar-customization-target #search-container {
+            padding-block: 0 !important;
+            margin-inline: var(--urlbar-margin-inline, 3px) !important;
         }
 
-        #urlbar-input-container {
-            padding: 1px 4px !important;
-            height: 100% !important;
+        .widget-overflow-list #search-container {
+            padding: 0 !important;
+            margin: var(--arrowpanel-menuitem-margin) !important;
+        }
+
+        .widget-overflow-list #searchbar {
+            box-shadow: none !important;
+            height: var(--subviewbutton-height) !important;
+            font-size: revert !important;
+        }
+
+        .widget-overflow-list #searchbar:not(:focus-within) {
+            background: transparent !important;
+        }
+
+        .widget-overflow-list #searchbar:hover {
+            background: var(--panel-item-hover-bgcolor) !important;
+        }
+
+        .widget-overflow-list #searchbar:focus-within {
+            background: var(--panel-item-active-bgcolor) !important;
+        }
+
+        .widget-overflow-list #searchbar:not(:focus-within) input {
+            cursor: default !important;
+        }
+
+        .widget-overflow-list #searchbar .searchbar-textbox {
+            min-height: var(--subviewbutton-height) !important;
+        }
+
+        .widget-overflow-list #searchbar .searchbar-textbox::placeholder {
+            opacity: 1 !important;
+            color: var(--lwt-text-color) !important;
+        }
+
+        .widget-overflow-list #searchbar .search-go-container {
+            -moz-box-pack: center !important;
+            -moz-box-align: center !important;
+        }
+
+        .widget-overflow-list #searchbar .search-go-button {
+            box-sizing: border-box !important;
+            width: calc(var(--subviewbutton-height) - 4px) !important;
+            height: calc(var(--subviewbutton-height) - 4px) !important;
+            padding: calc((var(--subviewbutton-height) - 16px - 2px) / 2) !important;
+        }
+
+        .widget-overflow-list #searchbar:not([disabled]) .searchbar-search-icon,
+        .widget-overflow-list #searchbar:not([disabled]):is(:hover, :focus-within) .searchbar-search-icon {
+            fill-opacity: 1 !important;
+            fill: var(--toolbarbutton-icon-fill) !important;
+        }
+
+        .widget-overflow-list #searchbar[disabled] .searchbar-search-icon {
+            fill-opacity: 1 !important;
+            fill: var(--menu-disabled-color) !important;
+        }
+
+        .widget-overflow-list #searchbar .searchbar-search-icon {
+            margin-inline: 6px 8px !important;
+            padding: 0.6px !important;
+        }
+
+        :root[chromehidden~="toolbar"] #urlbar-container {
+            margin-inline-start: 2px !important;
+        }
+
+        #nav-bar-customization-target #searchbar {
+            position: relative !important;
+            box-shadow: none !important;
             -moz-box-align: center;
-            z-index: 11;
+            border-radius: var(--toolbarbutton-border-radius) !important;
+            border: none !important;
+        }
+
+        #urlbar-search-splitter {
+            min-width: 6px !important;
+            margin-inline: -3px !important;
+            z-index: 1 !important;
+        }
+
+        #PopupSearchAutoComplete::part(content) {
+            border-radius: 0 0 5px 5px;
+            border-width: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 1)
+        }
+
+        .searchbar-engine-name,
+        #PopupSearchAutoComplete>richlistbox>richlistitem {
+            font-size: inherit !important;
+        }
+
+        #PopupSearchAutoComplete .search-panel-tree {
+            margin-inline: var(--arrowpanel-menuitem-margin-inline) !important;
+        }
+
+        #PopupSearchAutoComplete .autocomplete-richlistitem {
+            min-height: var(--subviewbutton-height) !important;
+            margin-inline: 0 !important;
+            padding: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline) !important;
+            border-radius: var(--arrowpanel-menuitem-border-radius) !important;
+            align-items: center !important;
+        }
+
+        #PopupSearchAutoComplete .autocomplete-richlistitem :is(.ac-site-icon, .ac-type-icon) {
+            margin-inline: 0 var(--icon-gap, 12px) !important;
+            width: var(--icon-width, 16px) !important;
+            height: var(--icon-height, 16px) !important;
+        }
+
+
+        #PopupSearchAutoComplete .autocomplete-richlistitem .ac-title-text {
+            font-weight: var(--urlbar-base-font-weight, 400) !important;
+            font-style: normal !important;
+            color: var(--panel-shortcut-color);
+        }
+
+        #PopupSearchAutoComplete .autocomplete-richlistitem .ac-emphasize-text {
+            color: var(--lwt-toolbar-field-color);
+        }
+
+        #PopupSearchAutoComplete .ac-type-icon {
+            -moz-context-properties: fill, fill-opacity !important;
+            fill: var(--panel-description-color) !important;
+        }
+
+        #PopupSearchAutoComplete .search-panel-tree>.autocomplete-richlistitem:is([originaltype="datalist-first"], [originaltype="null"])>.ac-type-icon {
+            list-style-image: url(images/skin/search-glass.svg);
+            fill-opacity: 0.6;
+        }
+
+        #PopupSearchAutoComplete[engine="Google"] .searchbar-engine-image {
+            background-image: url(images/engines/google.svg) !important;
+            padding-inline: 0 16px !important;
+        }
+
+        #searchbar .search-go-container {
+            margin-right: 2px !important;
+        }
+
+        #searchbar .search-go-button {
+            box-sizing: border-box !important;
+            width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding)) !important;
+            height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding)) !important;
+            padding: var(--urlbar-icon-padding) !important;
+        }
+
+        #searchbar .searchbar-search-icon {
+            fill-opacity: var(--urlbar-icon-fill-opacity) !important;
+            fill: currentColor !important;
+            margin-inline: 8px var(--icon-gap, 12px) !important;
+            padding: 0.6px !important;
+        }
+
+        #searchbar .searchbar-search-icon-overlay {
+            display: none !important;
+        }
+
+        #searchbar:not(:focus-within) .searchbar-search-icon {
+            fill-opacity: 0.4 !important;
+        }
+
+        #searchbar .searchbar-search-button:hover>.searchbar-search-icon {
+            fill-opacity: 0.8 !important;
+        }
+
+        #searchbar:focus-within .searchbar-search-button:hover>.searchbar-search-icon {
+            fill-opacity: 1 !important;
+        }
+
+        toolbarpaletteitem>#search-container #searchbar,
+        toolbarpaletteitem>#urlbar-container #urlbar-input-container,
+        toolbarpaletteitem>#stop-reload-button .toolbarbutton-icon {
+            transition: transform var(--drag-drop-transition-duration) cubic-bezier(0.6, 2, 0.75, 1.5), background-color var(--drag-drop-transition-duration) var(--uc-smooth-timing-function) !important;
+        }
+
+        toolbarpaletteitem[mousedown]>#search-container {
+            transform: none !important;
+        }
+
+        toolbarpaletteitem[mousedown]>#urlbar-container #urlbar-input-container,
+        toolbarpaletteitem[mousedown]>#search-container #searchbar {
+            transform: scale(1.04) !important;
+        }
+
+        toolbarpaletteitem[mousedown]>#stop-reload-button .toolbarbutton-icon {
+            transform: scale(1.3) !important;
+        }
+
+        toolbarpaletteitem[mousedown]>#search-container>#searchbar,
+        toolbarpaletteitem[mousedown]>#urlbar-container>#urlbar>#urlbar-background {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 1) !important;
+            box-shadow: none !important;
+        }
+
+        .urlbar-icon,
+        .urlbar-page-action {
+            filter: none !important;
+        }
+
+        .urlbar-page-action {
+            -moz-box-pack: center !important;
+        }
+
+        :not(.urlbar-page-action)>.urlbar-icon:not([disabled]):is(:hover, :focus-visible, [open]),
+        .urlbar-page-action:not([disabled]):is(:hover, :focus-visible, [open]) .urlbar-icon {
+            fill-opacity: 1 !important;
+        }
+
+        .urlbar-addon-page-action:not(#pageAction-urlbar-_testpilot-containers, #pageAction-urlbar-jid1-xufzosoflzsoxg_jetpack) .urlbar-icon {
+            opacity: var(--urlbar-icon-fill-opacity);
+            fill-opacity: 1 !important;
+        }
+
+        .urlbar-addon-page-action:not(#pageAction-urlbar-_testpilot-containers, #pageAction-urlbar-jid1-xufzosoflzsoxg_jetpack):not([disabled]):is(:hover, :focus-visible, [open]) .urlbar-icon {
+            opacity: 1;
+        }
+
+        #contextual-feature-recommendation {
+            --cfr-active-color: var(--button-hover-bgcolor) !important;
+        }
+
+        #cfr-label-container {
+            border-radius: var(--toolbarbutton-border-radius) !important;
+            font-size: 0.85em !important;
+            border: 1px solid transparent !important;
+            margin-block: 1px !important;
+        }
+
+        #urlbar:not([cfr-recommendation-state="expanded"]) #cfr-button {
+            transform: translateX(-2px);
+        }
+
+        #cfr-label-container:is(:hover, :focus-visible) {
+            filter: brightness(1.1) saturate(1.2);
+            border-color: var(--button-hover-bgcolor) !important;
+        }
+
+        #cfr-label-container:hover:active {
+            filter: brightness(1.2) saturate(1.4);
+            border-color: var(--button-active-bgcolor) !important;
+        }
+
+        #cfr-label {
+            padding-block: 0 !important;
+            padding-inline: 0 10px !important;
+        }
+
+        #cfr-button {
+            margin-block: 0 !important;
+        }
+
+        #urlbar[cfr-recommendation-state="expanded"] #cfr-button {
+            pointer-events: none !important;
+        }
+
+        #urlbar[cfr-recommendation-state="expanded"] #cfr-button .urlbar-icon {
+            fill-opacity: inherit !important;
+        }
+
+        #urlbar[usertyping]:is([focused], [open])>#urlbar-input-container>#urlbar-go-button {
+            display: -moz-inline-box !important;
+            -moz-box-ordinal-group: 2 !important;
+            margin-inline-end: calc(var(--urlbar-container-padding) + 1px) !important;
+        }
+
+        #urlbar[usertyping]:is([focused], [open])>#urlbar-input-container>#page-action-buttons {
+            margin-inline-end: 0 !important;
+        }
+
+        #urlbar[textoverflow="both"]>#urlbar-input-container>.urlbar-input-box>#urlbar-input {
+            mask-image: linear-gradient(to right, transparent, black 3ch, black calc(100% - 3ch), transparent);
+        }
+
+        #urlbar[textoverflow="right"]>#urlbar-input-container>.urlbar-input-box>#urlbar-input {
+            mask-image: linear-gradient(to left, transparent, black 3ch);
+        }
+
+        #urlbar[textoverflow="left"]>#urlbar-input-container>.urlbar-input-box>#urlbar-input {
+            mask-image: linear-gradient(to right, transparent, black 3ch);
+        }
+
+        #urlbar[textoverflow="both"][usertyping="true"] #urlbar-input {
+            mask-image: linear-gradient(to right, transparent, black 3ch, black calc(100% - 55px), transparent calc(100% - 5px)) !important;
+        }
+
+        #urlbar[textoverflow="right"][usertyping="true"] #urlbar-input {
+            mask-image: linear-gradient(to left, transparent 5px, black 55px) !important;
+        }
+
+        /* 地址栏内工具栏 */
+        #ucjs-Locationbar-toolbar {
+            padding: 0;
+        }
+
+        #urlbar-container[breakout][locationbarcollapsed] {
+            top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2 - 1px) !important;
+        }
+
+        /* 地址栏左侧按钮边距 */
+        #tracking-protection-icon-box,
+        #identity-icon {
+            margin-block: var(--urlbar-icon-padding)
+        }
+
+        /* 容器指示器 */
+        #userContext-indicator {
+            margin-inline-start: 6px !important;
+        }
+
+        /* iffy modification to center urlbar buttons not contained in page action button box */
+        #urlbar-input-container {
+            -moz-box-align: center;
+        }
+
+        #plugins-notification-icon {
+            margin-top: 1.4px;
+        }
+
+        .default-notification-icon {
+            list-style-image: url(./images/notifications/desktop-notification.svg) !important;
+        }
+
+        #page-action-buttons {
+            margin-inline-end: 0 !important;
+        }
+
+        /** 地址栏显示百分比圆角 */
+        #urlbar-zoom-button {
+            height: 20px !important;
+            border-radius: 10px !important;
+            border: 1px solid var(--urlbar-box-hover-bgcolor) !important;
+            background: var(--urlbar-box-bgcolor, hsla(0, 0%, 0%, 0.09)) !important;
+            margin-inline: 4px !important;
+            padding: 1px 8px !important;
+        }
+
+        #urlbar-zoom-button:focus-visible {
+            background-color: var(--urlbar-box-focus-bgcolor) !important;
+            border-color: transparent !important;
+        }
+
+        #urlbar-zoom-button:hover {
+            background-color: var(--urlbar-box-hover-bgcolor) !important;
+            border-color: transparent !important;
+        }
+
+        #urlbar-zoom-button:hover:active {
+            background-color: var(--urlbar-box-active-bgcolor) !important;
+        }
+
+        #urlbar-zoom-button[animate="true"] {
+            animation-name: uc-urlbar-zoom-reset-pulse !important;
+            animation-duration: 200ms !important;
+        }
+
+        @keyframes uc-urlbar-zoom-reset-pulse {
+            from {
+                transform: scale(1);
+            }
+
+            37.5% {
+                transform: scale(1.4);
+                animation-timing-function: ease-out;
+            }
+
+            to {
+                transform: scale(1);
+                animation-timing-function: ease-in;
+            }
+        }
+
+        .pageAction-panel-button[disabled="true"] {
+            display: none !important;
+        }
+
+        /* urlbar input highlight/selection color */
+        .urlbar-input-box input::selection,
+        .searchbar-textbox::selection {
+            background-color: var(--lwt-toolbar-field-highlight, Highlight) !important;
+            color: var(--lwt-toolbar-field-highlight-text, HighlightText) !important;
+        }
+
+        .urlbar-input-box input:not(:focus)::selection,
+        .searchbar-textbox:not(:focus-within)::selection {
+            background-color: var(--lwt-toolbar-field-highlight-disabled, text-select-disabled-background) !important;
+        }
+
+        #urlbar>#urlbar-input-container {
+            border: none !important;
+        }
+
+        #identity-box,
+        #tracking-protection-icon-container {
+            color: var(--lwt-toolbarbutton-icon-fill) !important;
+            fill-opacity: var(--urlbar-icon-fill-opacity) !important;
+        }
+
+        #identity-box {
+            margin-inline-end: 3px !important;
+        }
+
+        #protections-popup-content {
+            margin-bottom: 0 !important;
+            padding-block: 4px !important;
+        }
+
+        .protections-popup-category,
+        .protections-popup-footer-button {
+            border-radius: var(--arrowpanel-menuitem-border-radius) !important;
+            margin: var(--arrowpanel-menuitem-margin) !important;
+            padding-block: var(--arrowpanel-menuitem-padding-block) !important;
+            padding-inline: var(--arrowpanel-menuitem-padding-inline) !important;
+            min-height: var(--subviewbutton-height) !important;
+        }
+
+        .protections-popup-category-label {
+            padding-inline-start: var(--icon-gap, 8px) !important;
+            margin-inline-start: 0 !important;
+        }
+
+        .protections-popup-category:focus-visible,
+        .protections-popup-footer-button:focus-visible,
+        #protections-popup-show-report-stack:focus-visible>.protections-popup-footer-button {
+            background-color: var(--button-hover-bgcolor) !important;
+        }
+
+        #protections-popup-footer {
+            padding-top: 0 !important;
+        }
+
+        #protections-popup-footer-protection-type-label {
+            margin: var(--arrowpanel-menuitem-margin) !important;
+            padding: 0 0 0 var(--arrowpanel-menuitem-padding-inline) !important;
+        }
+
+        #protections-popup-trackers-blocked-counter-box {
+            margin: var(--arrowpanel-menuitem-margin) !important;
+            padding: 0 var(--arrowpanel-menuitem-padding-inline) !important;
+        }
+
+        #protections-popup-category-list {
+            margin-top: -10px !important;
+        }
+
+        #protections-popup-not-blocking-section-header {
+            padding-inline: 2px !important;
+            padding-block: 10px 2px !important;
+            margin-inline: auto !important;
+            height: 34px !important;
+        }
+
+        #protections-popup-blocking-section-header,
+        #protections-popup-not-found-section-header {
+            padding-block: 14px 6px !important;
+            height: 34px !important;
+            margin-inline: auto !important;
+        }
+
+        #protections-popup-not-blocking-section-description,
+        #protections-popup-not-blocking-section-why {
+            outline: none !important;
+            padding: 3.75px 4px !important;
+            height: revert !important;
+        }
+
+        :is(#protections-popup-not-blocking-section-description, #protections-popup-not-blocking-section-why, #protections-popup-blocking-section-header, #protections-popup-not-found-section-header):not([hidden="true"]) {
+            display: flex !important;
+        }
+
+        .urlbar-input-box input:-moz-locale-dir(rtl) {
+            padding-inline: 0 4px !important;
+        }
+
+        .urlbar-input-box input::placeholder,
+        .searchbar-textbox::placeholder {
+            opacity: 0.4 !important;
+            color: var(--toolbar-color) !important;
+        }
+
+        #urlbar:is([focused="true"], :focus-within, [open]) .urlbar-input-box input::placeholder,
+        .searchbar-textbox:focus::placeholder {
+            opacity: var(--urlbar-icon-fill-opacity) !important;
+        }
+
+        #urlbar-go-button,
+        #page-action-buttons {
+            color: var(--lwt-toolbarbutton-icon-fill) !important;
+        }
+
+        :root[customizing] #wrapper-urlbar-container[removable="false"] {
+            opacity: revert !important;
+        }
+
+        :root[customizing] #wrapper-urlbar-container[removable="false"] #urlbar>#urlbar-input-container image {
+            fill-opacity: 0.3 !important;
+        }
+
+        :root[customizing] #urlbar #tracking-protection-icon-container {
+            display: none !important;
+        }
+
+        #urlbar[pageproxystate="valid"] #tracking-protection-icon-container.chromeUI,
+        #identity-box.chromeUI[pageproxystate="valid"] #remote-control-icon {
+            display: none !important;
+        }
+
+        .notification-anchor-icon,
+        .blocked-permission-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        #notification-popup-box {
+            background: none !important;
+            height: revert !important;
+            border-radius: revert !important;
+        }
+
+        #identity-box[pageproxystate="invalid"] :is(#identity-permission-box, #notification-popup-box) {
+            display: none !important;
+        }
+
+        #urlbar #identity-box.chromeUI #notification-popup-box {
+            display: flex !important;
+            position: absolute !important;
+            left: 8px !important;
+            min-height: 100% !important;
+            align-items: center !important;
+            margin: 0 !important;
+        }
+
+        #urlbar #identity-box.chromeUI #notification-popup-box:-moz-locale-dir(rtl) {
+            left: revert !important;
+            right: 8px !important;
+        }
+
+        #urlbar #identity-box.chromeUI #notification-popup-box .notification-anchor-icon {
+            width: 0 !important;
+            min-height: 16px !important;
+            margin: 0 0 0 8px !important;
+        }
+
+        #identity-permission-box:not([open]) #webrtc-sharing-icon:not([paused="true"]) {
+            fill: currentColor !important;
+            -moz-context-properties: fill, fill-opacity !important;
+            animation: 3s linear identity-sharing-icon-pulse infinite;
+        }
+
+        .permission-popup-permission-icon.in-use:is(.camera-icon, .microphone-icon, .screen-icon) {
+            fill: currentColor !important;
+            -moz-context-properties: fill !important;
+            animation: 3s linear identity-sharing-icon-pulse infinite;
+        }
+
+        @keyframes identity-sharing-icon-pulse {
+
+            0%,
+            16.66%,
+            83.33%,
+            100% {
+                color: white;
+                fill-opacity: var(--urlbar-icon-fill-opacity);
+            }
+
+            33.33%,
+            66.66% {
+                color: var(--warning-color);
+                fill-opacity: 1;
+            }
+        }
+
+        .permission-popup-permission-icon.in-use:is(.camera-icon, .microphone-icon, .screen-icon) {
+            fill-opacity: 1 !important;
+        }
+
+        #identity-permission-box[open] #webrtc-sharing-icon {
+            fill: currentColor !important;
+            -moz-context-properties: fill, fill-opacity !important;
         }
 
         .urlbarView {
@@ -1350,11 +2426,6 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-inline-end: 0;
         }
 
-        #tracking-protection-icon-box,
-        #identity-icon {
-            margin-block: var(--urlbar-icon-padding)
-        }
-
         :root[uidensity="compact"] .urlbarView>.search-one-offs:not([hidden]) {
             padding-block: 0px !important;
         }
@@ -1366,156 +2437,27 @@ by underlining them (requires urlbarMods.uc.js) */
         :root[uidensity="touch"] .urlbarView>.search-one-offs:not([hidden]) {
             padding-block: 4px !important;
         }
+    }
 
+    @supports -moz-bool-pref("userChromeJS.sidra.urlbar.disableMegabar") {
 
-        /* 地址栏内工具栏 */
-        #ucjs-Locationbar-toolbar {
-            padding: 0;
+        /** 去除地址栏撑大效果 */
+        #urlbar[breakout] {
+            margin-inline-start: 0px !important;
+            width: 100% !important;
+            left: 0 !important;
+            top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
         }
 
-        #urlbar-container[breakout][locationbarcollapsed] {
-            top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2 - 1px) !important;
+        #urlbar[breakout]:not([open]) {
+            bottom: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
         }
 
-        #userContext-indicator {
-            margin-inline-start: 6px !important;
-        }
-
-        .default-notification-icon {
-            list-style-image: url(./images/notifications/desktop-notification.svg) !important;
-        }
-
-        #page-action-buttons {
-            margin-inline-end: calc(var(--urlbar-container-padding) + 1px) !important;
-        }
-
-        /** 地址栏显示百分比圆角 */
-        #urlbar-zoom-button {
-            height: 20px !important;
-            border-radius: 10px !important;
-            border: 1px solid var(--urlbar-box-hover-bgcolor) !important;
-            background: var(--urlbar-box-bgcolor, hsla(0, 0%, 0%, 0.09)) !important;
-            margin-inline: 4px !important;
-            padding: 1px 8px !important;
-        }
-
-        #urlbar-zoom-button:focus-visible {
-            background-color: var(--urlbar-box-focus-bgcolor) !important;
-            border-color: transparent !important;
-        }
-
-        #urlbar-zoom-button:hover {
-            background-color: var(--urlbar-box-hover-bgcolor) !important;
-            border-color: transparent !important;
-        }
-
-        #urlbar-zoom-button:hover:active {
-            background-color: var(--urlbar-box-active-bgcolor) !important;
-        }
-
-        #urlbar-zoom-button[animate="true"] {
-            animation-name: uc-urlbar-zoom-reset-pulse !important;
-            animation-duration: 200ms !important;
-        }
-
-        @keyframes uc-urlbar-zoom-reset-pulse {
-            from {
-                transform: scale(1);
-            }
-
-            37.5% {
-                transform: scale(1.4);
-                animation-timing-function: ease-out;
-            }
-
-            to {
-                transform: scale(1);
-                animation-timing-function: ease-in;
-            }
-        }
-
-        .pageAction-panel-button[disabled="true"] {
-            display: none !important;
-        }
-
-        /* urlbar input highlight/selection color */
-        .urlbar-input-box input::selection,
-        .searchbar-textbox::selection {
-            background-color: var(--lwt-toolbar-field-highlight, Highlight) !important;
-            color: var(--lwt-toolbar-field-highlight-text, HighlightText) !important;
-        }
-
-        .urlbar-input-box input:not(:focus)::selection,
-        .searchbar-textbox:not(:focus-within)::selection {
-            background-color: var(--lwt-toolbar-field-highlight-disabled,
-                    text-select-disabled-background) !important;
-        }
-
-        #protections-popup-content {
-            margin-bottom: 0 !important;
-            padding-block: 4px !important;
-        }
-
-        .protections-popup-category,
-        .protections-popup-footer-button {
-            border-radius: var(--arrowpanel-menuitem-border-radius) !important;
-            margin: 0 !important;
-            padding-inline: 6px !important;
-            min-height: var(--subviewbutton-height, 24px) !important;
-        }
-
-        .protections-popup-category-label {
-            padding-inline-start: var(--icon-gap, 8px) !important;
-            margin-inline-start: 0 !important;
-        }
-
-        .protections-popup-category:focus-visible,
-        .protections-popup-footer-button:focus-visible,
-        #protections-popup-show-report-stack:focus-visible>.protections-popup-footer-button {
-            background-color: var(--button-hover-bgcolor) !important;
-        }
-
-        #protections-popup-footer {
-            padding-top: 0 !important;
-        }
-
-        #protections-popup-footer-protection-type-label {
-            margin: var(--arrowpanel-menuitem-margin) !important;
-            padding: 0 0 0 var(--arrowpanel-menuitem-padding-inline) !important;
-        }
-
-        #protections-popup-trackers-blocked-counter-box {
-            margin: var(--arrowpanel-menuitem-margin) !important;
-            padding: 0 var(--arrowpanel-menuitem-padding-inline) !important;
-        }
-
-        #protections-popup-category-list {
-            margin-top: -10px !important;
-        }
-
-        #protections-popup-not-blocking-section-header {
-            padding-inline: 2px !important;
-            padding-block: 10px 2px !important;
-            margin-inline: auto !important;
-            height: 34px !important;
-        }
-
-        #protections-popup-blocking-section-header,
-        #protections-popup-not-found-section-header {
-            padding-block: 14px 6px !important;
-            height: 34px !important;
-            margin-inline: auto !important;
-        }
-
-        #protections-popup-not-blocking-section-description,
-        #protections-popup-not-blocking-section-why {
-            outline: none !important;
-            padding: 3.75px 4px !important;
-            height: revert !important;
-        }
-
-        :is(#protections-popup-not-blocking-section-description, #protections-popup-not-blocking-section-why, #protections-popup-blocking-section-header, #protections-popup-not-found-section-header):not([hidden="true"]) {
-            display: flex !important;
+        #urlbar-input-container {
+            padding: 2px 4px !important;
+            height: 100% !important;
+            -moz-box-align: center;
+            z-index: 11;
         }
     }
 
@@ -1530,380 +2472,6 @@ by underlining them (requires urlbarMods.uc.js) */
             visibility: hidden;
             width: 0 !important;
             min-width: 0 !important;
-        }
-    }
-
-    @supports -moz-bool-pref("userChromeJS.sidra.button.compact") {
-
-        toolbarbutton,
-        .subviewbutton,
-        stack,
-        .toolbarbutton-icon,
-        vbox {
-            transition: background-color var(--animation-speed) !important;
-
-        }
-
-        #PanelUI-menu-button {
-            padding-inline-end: 0;
-        }
-
-        #customization-palette toolbarpaletteitem {
-            transform-style: preserve-3d !important;
-        }
-
-
-        /** 按钮边距 */
-        toolbarpaletteitem>toolbarspring {
-            margin-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2) !important;
-            outline: none !important;
-            outline-offset: 0 !important;
-            border-radius: var(--toolbarbutton-border-radius) !important;
-        }
-
-        toolbarpaletteitem[place="palette"]>toolbarspring {
-            min-height: var(--urlbar-height) !important;
-            max-height: var(--urlbar-height) !important;
-            padding-block: 0 !important;
-            margin-block: 5px !important;
-        }
-
-        /* 工具栏按钮上标 */
-        :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):is(:not([attention]), [attention="false"])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--uc-toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
-            color: var(--toolbar-color, white) !important;
-            box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026, 0 1px 3px #1e1e2033 !important;
-            min-width: 10.5px !important;
-            height: 10.5px !important;
-            -moz-box-align: end !important;
-            font-size: 9px !important;
-            font-weight: var(--uc-font-weight-bold, 600) !important;
-            line-height: 10px !important;
-            filter: none !important;
-            margin: -6px -6px 0 -6px !important;
-        }
-
-        :is(.customization-target, .widget-overflow-list) #downloads-button[attention]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            margin-right: -5.5px !important;
-            margin-top: -5.5px !important;
-            width: 10px !important;
-            height: 10px !important;
-            box-shadow: none !important;
-            background-image: url("./images/devtools/error.svg") !important;
-            background-size: contain !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-        }
-
-        :is(.customization-target, .widget-overflow-list) #downloads-button[attention="info"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: transparent !important;
-            -moz-context-properties: none !important;
-            border-radius: revert !important;
-            background-image: url("./images/skin/indicator-tab-attention-purple.svg") !important;
-        }
-
-        :is(.customization-target, .widget-overflow-list) #downloads-button[attention="warning"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--low-warning-icon-detail, hsl(32, 52%, 35%)) !important;
-            fill: var(--low-warning-icon-background, hsl(44, 95%, 60%)) !important;
-            border-radius: 50% !important;
-        }
-
-        :is(.customization-target, .widget-overflow-list) #downloads-button[attention="severe"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--warning-icon-detail) !important;
-            fill: var(--warning-icon-background) !important;
-            border-radius: 50% !important;
-        }
-
-        :is(.customization-target, .widget-overflow-list) #fxa-toolbar-menu-button[badge-status="login_failed"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background: url("./images/skin/controlcenter/warning.svg") no-repeat center/contain !important;
-            stroke: var(--low-warning-icon-detail, hsl(32, 52%, 35%)) !important;
-            fill: var(--low-warning-icon-background, hsl(44, 95%, 60%)) !important;
-            box-shadow: none !important;
-            -moz-context-properties: fill, stroke !important;
-            padding: 0 !important;
-            margin: -7px 0 0 !important;
-            margin-inline-end: -6px !important;
-            filter: none !important;
-        }
-
-        #tabbrowser-tabs[hiddensoundplaying]~#alltabs-button>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background: transparent url("./images/skin/audioUnmutedButton.svg") center/contain !important;
-            box-shadow: none !important;
-            color: inherit !important;
-            display: block !important;
-            -moz-context-properties: fill, fill-opacity !important;
-            fill: currentColor !important;
-            margin: -7px 0 0 !important;
-            margin-inline-end: -6px !important;
-            min-width: 12px !important;
-            min-height: 12px !important;
-        }
-
-        .widget-overflow-list .toolbarbutton-1>.toolbarbutton-text {
-            padding-inline-start: var(--icon-gap, 8px) !important;
-        }
-
-        .widget-overflow-list .toolbaritem-combined-buttons .toolbarbutton-1>.toolbarbutton-text {
-            padding-inline-end: 4px !important;
-        }
-
-        /* 让紧凑模式的按钮更加紧凑 */
-        #main-window[uidensity="compact"] #nav-bar #nav-bar-overflow-button,
-        #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target>toolbarbutton,
-        #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target>toolbaritem textbox,
-        #main-window[uidensity="compact"] #nav-bar #nav-bar-customization-target #stop-reload-button>toolbarbutton {
-            margin: 1px 0px !important;
-            padding: 0 !important;
-        }
-
-        #main-window[uidensity="compact"] toolbar .toolbarbutton-1 {
-            padding: 0;
-        }
-
-        /** 缩放按钮 */
-        .widget-overflow-list #zoom-controls[cui-areatype="toolbar"]>#zoom-reset-button>.toolbarbutton-text {
-            min-width: calc(5ch + 4px) !important;
-            padding-inline: 0 !important;
-        }
-
-        toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional {
-            margin-inline: 0 !important;
-        }
-
-        :is(toolbar, .customization-palette) :not(toolbarpaletteitem)>.toolbaritem-combined-buttons.chromeclass-toolbar-additional {
-            -moz-box-align: stretch !important;
-        }
-
-        :is(toolbar, .customization-palette) .toolbaritem-combined-buttons.chromeclass-toolbar-additional:not(:hover)>separator {
-            width: 0.67px !important;
-            height: 20px !important;
-            margin-inline-end: -0.67px !important;
-            background-image: linear-gradient(currentColor 0, currentColor 100%) !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            background-size: 1px 20px !important;
-            opacity: 0.2 !important;
-        }
-
-        /** 组合按钮 */
-        :is(toolbar, .customization-palette) .toolbarbutton-combined-buttons-dropmarker,
-        #PersonalToolbar .toolbaritem-combined-buttons .toolbarbutton-combined-buttons-dropmarker {
-            margin-block: var(--toolbarbutton-inner-padding) !important;
-        }
-
-        .customization-palette .toolbarbutton-1 {
-            appearance: none !important;
-            margin: 0 !important;
-            padding: 0 var(--toolbarbutton-outer-padding) !important;
-            -moz-box-pack: center !important;
-        }
-
-        .customization-palette .toolbarbutton-1>.toolbarbutton-icon {
-            width: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
-            height: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
-        }
-
-        .customization-palette .toolbarbutton-1>.toolbarbutton-icon,
-        toolbar .toolbarbutton-1>.toolbarbutton-text,
-        toolbar .toolbarbutton-1>.toolbarbutton-badge-stack {
-            padding: var(--toolbarbutton-inner-padding) !important;
-            border-radius: var(--toolbarbutton-border-radius) !important;
-        }
-
-        :is(toolbar, .customization-palette) .toolbarbutton-combined-buttons-dropmarker>.toolbarbutton-icon {
-            padding-inline: 2px !important;
-            padding-block: 2px !important;
-            height: 20px !important;
-            width: 16px !important;
-        }
-
-        :is(toolbar, .customization-palette) .toolbaritem-combined-buttons.unified-extensions-item toolbarbutton {
-            --toolbarbutton-outer-padding: 0;
-            background-color: transparent !important;
-            padding: 0 var(--toolbarbutton-outer-padding) !important;
-        }
-
-
-        /* 缩放按钮续 */
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #edit-controls>#cut-button,
-        :is(toolbar, .customization-palette) #profiler-button>#profiler-button-button {
-            padding-left: 2px !important;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #edit-controls>#paste-button,
-        :is(toolbar, .customization-palette) #profiler-button>#profiler-button-dropmarker {
-            padding-right: 2px !important;
-        }
-
-        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-out-button,
-        #wrapper-edit-controls[place="palette"]>#edit-controls>#cut-button,
-        #wrapper-profiler-button[place="palette"]>#profiler-button>#profiler-button-button,
-        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-in-button,
-        #wrapper-edit-controls[place="palette"]>#edit-controls>#paste-button,
-        #wrapper-profiler-button[place="palette"]>#profiler-button>#profiler-button-dropmarker {
-            -moz-box-align: center !important;
-            -moz-box-flex: 0 !important;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button) {
-            margin-block: var(--toolbarbutton-inner-padding) !important;
-            width: unset !important;
-            padding: 0 !important;
-            padding-inline: 2px !important;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls> :is(#zoom-out-button, #zoom-in-button)>.toolbarbutton-icon {
-            height: 20px !important;
-            width: 20px !important;
-            padding: 4px !important;
-        }
-
-        #zoom-in-button>.toolbarbutton-icon {
-            padding-inline-start: 0 !important;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls>#zoom-reset-button {
-            margin-block: var(--toolbarbutton-inner-padding) !important;
-        }
-
-        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-reset-button {
-            display: revert !important;
-        }
-
-        #wrapper-zoom-controls[place="palette"]>#zoom-controls>#zoom-reset-button::before {
-            content: "100%" !important;
-            line-height: 1.5em !important;
-            height: 20px !important;
-            min-height: 20px !important;
-            box-sizing: border-box !important;
-            font-size: 0.98em;
-            padding-inline: 5px !important;
-            background: hsla(0, 0%, 100%, 0.045);
-            border: 1px solid var(--toolbarbutton-hover-background);
-            border-radius: 10px !important;
-            opacity: 0.4 !important;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls>#zoom-reset-button:not([disabled]):is(:hover, :focus-visible)>.toolbarbutton-text {
-            border-color: transparent;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls>#zoom-reset-button>.toolbarbutton-text {
-            height: 20px !important;
-            min-height: 20px !important;
-            font-size: 0.98em;
-            background: hsla(0, 0%, 100%, 0.045);
-            border: 1px solid var(--toolbarbutton-hover-background);
-            border-radius: 10px !important;
-        }
-
-        :is(toolbar, .customization-palette):not(#PersonalToolbar) #zoom-controls separator {
-            display: none !important;
-        }
-
-        /* 停止重载按钮 */
-        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:not([checked], [open], :active):hover>.toolbarbutton-icon {
-            background-color: var(--toolbarbutton-hover-background);
-        }
-
-        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:is(:focus-visible, [checked="true"]):not([open], :hover, :active)>.toolbarbutton-icon {
-            background-color: var(--toolbarbutton-checked-background);
-        }
-
-        :root:not([customizing]) #stop-reload-button>.toolbarbutton-1:is([open], [checked], :hover:active)>.toolbarbutton-icon {
-            background-color: var(--toolbarbutton-active-background);
-        }
-
-        /* 修复停止按钮的偏移bug，如果没有问题，删掉 */
-        /* #stop-button .toolbarbutton-icon {
-        background-image: url("./images/skin/stop-button-fix.svg") !important;
-        background-repeat: no-repeat;
-        background-position: left 5px center;
-        list-style-image: none;
-    } */
-
-        #nav-bar[brighttext] #panic-button[open] {
-            fill: var(--warning-color) !important;
-        }
-
-        #nav-bar {
-            padding-inline: 3px !important;
-        }
-
-        #TabsToolbar-customization-target>#back-button {
-            margin-inline-start: 2px !important;
-        }
-
-        #stop-reload-button {
-            pointer-events: none !important;
-        }
-
-        #stop-reload-button>* {
-            pointer-events: auto !important;
-        }
-
-        toolbar .toolbarbutton-1:not([disabled])[open]:hover>.toolbarbutton-icon {
-            background-color: var(--toolbarbutton-active-background) !important;
-        }
-
-        #PersonalToolbar toolbarbutton.bookmark-item {
-            padding-inline: var(--toolbarbutton-inner-padding) !important;
-        }
-
-        #PersonalToolbar .toolbarbutton-1:is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active),
-        toolbarbutton.bookmark-item:not(.subviewbutton):is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active),
-        toolbar .toolbarbutton-1:is(:focus-visible, [checked="true"]):not([disabled], [open], :hover, :active)> :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
-            background-color: var(--toolbarbutton-checked-background) !important;
-            transition: none !important;
-        }
-
-        #PersonalToolbar .toolbarbutton-1>.toolbarbutton-icon,
-        #PersonalToolbar .toolbarbutton-1>.toolbarbutton-text,
-        #PersonalToolbar .toolbarbutton-1>.toolbarbutton-badge-stack {
-            background: none !important;
-        }
-
-        toolbar .toolbarbutton-1:not([disabled], [open])[checked]:hover>.toolbarbutton-icon {
-            background-color: var(--toolbarbutton-hover-background) !important;
-        }
-
-        toolbar .toolbarbutton-1:not([disabled], [open])[checked]:hover:active>.toolbarbutton-icon {
-            background-color: var(--toolbarbutton-active-background) !important;
-        }
-
-        .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked] {
-            background-color: var(--button-bgcolor) !important;
-        }
-
-        .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]:is(:hover, :focus-visible) {
-            background-color: var(--button-hover-bgcolor) !important;
-        }
-
-        .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]:hover:active {
-            background-color: var(--button-active-bgcolor) !important;
-        }
-
-        toolbar[customizing="true"] toolbarpaletteitem>#sidebar-button:not([disabled], [open])[checked]> :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
-            background-color: revert !important;
-            transition: transform var(--drag-drop-transition-duration) cubic-bezier(0.6, 2, 0.75, 1.5) !important;
-        }
-
-        toolbarpaletteitem[place="palette"]:not([mousedown="true"]):focus-visible,
-        toolbarpaletteitem[place="menu-panel"]:not([mousedown="true"]):focus-visible,
-        toolbarpaletteitem[place="toolbar"]:not([mousedown="true"]):focus-visible {
-            transition: outline-width 0.01s linear var(--drag-drop-transition-duration);
-            outline: revert !important;
-        }
-
-        .widget-overflow-list .toolbarbutton-1:not([disabled], [open])[checked]::after {
-            content: "";
-            display: -moz-inline-box;
-            background: url("./images/skin/checkbox.svg") no-repeat center/contain;
-            fill: currentColor;
-            width: 16px;
-            height: 16px;
-            margin-inline-start: 6px;
         }
     }
 
@@ -1936,7 +2504,7 @@ by underlining them (requires urlbarMods.uc.js) */
         /* 缺少这一句的话，面板最后一个按钮有时候会贴着边界，与 userChrome.au.css 中的 .panel-subview-body 规则相关联 */
         .panel-header+.panel-subview-body {
             /* 出于某种原因，“最近关闭的标签”子视图没有
-     标题下的分隔符。 模拟一个。 */
+标题下的分隔符。 模拟一个。 */
             border-top: 1px solid transparent;
             border-image: linear-gradient(to right,
                     transparent 4px,
@@ -2149,8 +2717,8 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-bottom: 4px;
         }
 
-        .toolbaritem-combined-buttons.showText>.subviewbutton>image {
-            margin-left: calc(var(--icon-gap, 12px) - 8px) !important;
+        :root[uidensity="compact"] .toolbaritem-combined-buttons.showText>.subviewbutton>image {
+            margin-left: calc(var(--icon-gap, 12px) - 4px) !important;
         }
 
         menupopup {
@@ -2167,12 +2735,7 @@ by underlining them (requires urlbarMods.uc.js) */
             border: var(--menu-border-width, 1px) solid transparent;
             appearance: none;
             --windows-panel-box-shadow: unset;
-        }
-
-        :is(menupopup, panel)[type="arrow"],
-        :is(panel, menupopup)::part(content) {
-            --panel-padding: var(--panel-padding);
-            --panel-subview-body-padding: var(--panel-padding-x, 4px) 0;
+            --menuitem-padding: var(--arrowpanel-menuitem-padding-block);
         }
 
         :is(#history-menu, #bookmarksMenu) menupopup::part(content),
@@ -2212,6 +2775,7 @@ by underlining them (requires urlbarMods.uc.js) */
             visibility: visible !important;
         }
 
+        panelview :is(menu, menuitem, checkbox),
         menupopup :is(menu, menuitem, checkbox),
         menugroup>menuitem {
             padding-inline-start: var(--icon-gap, 12px) !important;
@@ -2266,6 +2830,7 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-inline-start: 0 !important;
         }
 
+        panelview :is(menu, menuitem)>.menu-iconic-text,
         menupopup :is(menu, menuitem)>.menu-iconic-text {
             padding-inline-start: var(--icon-gap, 12px) !important;
             margin-inline-start: 0 !important;
@@ -2309,11 +2874,16 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/skin/checkbox-checked.svg") !important;
         }
 
+        /* 修正用户菜单边距 */
+        #appMenu-header-description {
+            height: var(--icon-height, 16px);
+            margin: 0;
+        }
+
         /** Hide menuitem without label */
         menuitem:not([label]):not([data-l10n-id]) {
             visibility: collapse;
         }
-
 
         /* Fix for extensionOptionsMenu.uc.js */
         #eom-button-popup menuitem.noOptions {
@@ -2365,11 +2935,21 @@ by underlining them (requires urlbarMods.uc.js) */
             height: var(--icon-width, 16px);
         }
 
+        .subviewbutton,
+        .toolbaritem-combined-buttons,
+        :is(menu, menuitem) {
+            -moz-context-properties: fill, fill-opacity;
+            fill: currentColor;
+            background-repeat: no-repeat;
+            background-position: var(--icon-gap, 8px) 50%;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+        }
+
         #PlacesToolbar menuitem,
         #PlacesToolbar menu,
         .subview-subheader,
         panelview .toolbarbutton-1,
-        .subviewbutton:not(toolbaritem):not(.subviewbutton-back),
+        panelview .subviewbutton:not(toolbaritem):not(.subviewbutton-back),
         .widget-overflow-list .toolbarbutton-1,
         .PanelUI-remotetabs-clientcontainer>label:first-child {
             padding-inline-start: var(--icon-gap, 12px) !important;
@@ -2383,6 +2963,15 @@ by underlining them (requires urlbarMods.uc.js) */
         #context-copylink[hidden="true"]~#context-sep-copylink {
             display: none;
         }
+
+        .syncNowBtn {
+            visibility: visible;
+            -moz-box-ordinal-group: 1;
+        }
+
+        .syncnow-label {
+            padding-inline-start: var(--icon-gap, 8px);
+        }
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.menupopup.hideNavigation") {
@@ -2393,6 +2982,14 @@ by underlining them (requires urlbarMods.uc.js) */
             display: none !important;
         }
     }
+
+    @supports -moz-bool-pref("userChromeJS.sidra.menupopup.adaptedBgColor") {
+        menupopup {
+            --menu-color: var(--toolbar-color) !important;
+            --menu-background-color: var(--toolbar-bgcolor) !important;
+        }
+    }
+
 
     @supports -moz-bool-pref("userChromeJS.sidra.panel.adaptedBgColor") {
 
@@ -2433,7 +3030,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #searchFilter {
-            transition: background-color var(--animation-speed);
+            transition: background-color var(--animation-speed, .13s);
         }
 
         #searchFilter[focused] {
@@ -3102,15 +3699,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
     @supports -moz-bool-pref("userChromeJS.sidra.icon.complementary") {
 
-        .subviewbutton,
-        .toolbaritem-combined-buttons,
-        :is(menu, menuitem) {
-            -moz-context-properties: fill, fill-opacity;
-            fill: currentColor;
-            background-repeat: no-repeat;
-            background-position: var(--icon-gap, 8px) 50%;
-            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
-        }
+
 
         #appMenu-fxa-status2.toolbaritem-combined-buttons {
             background-image: url("./images/skin/profile.svg");
@@ -3146,15 +3735,6 @@ by underlining them (requires urlbarMods.uc.js) */
 
         toolbarseparator~.sendToDevice-device:not([clientId]) {
             list-style-image: url("chrome://global/skin/icons/settings.svg");
-        }
-
-        .syncNowBtn {
-            visibility: visible;
-            -moz-box-ordinal-group: 1;
-        }
-
-        .syncnow-label {
-            padding-inline-start: var(--icon-gap, 8px);
         }
 
         #PanelUI-remotetabs-view-managedevices {
@@ -3844,7 +4424,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         #identity-popup-security-button {
-            padding-inline-start: 0 !important;
+            padding-inline-start: var(--icon-gap, 12px) !important;
         }
 
         .identity-popup-security-connection.identity-button {
@@ -3858,7 +4438,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         .identity-popup-security-connection>hbox>label {
             margin-inline-start: 0;
-            padding-inline-start: var(--label-padding-start, 32px) !important;
+            padding-inline-start: 0 !important;
         }
 
         #identity-popup-clear-sitedata-button {
@@ -3882,12 +4462,7 @@ by underlining them (requires urlbarMods.uc.js) */
         #identity-popup-security-ev-content-owner,
         .identity-popup-warning-box,
         .identity-popup-security-connection {
-            background-position-x: calc(var(--panel-padding-x, 4px) + var(--icon-gap, 12px));
-        }
-
-        .identity-popup-connection-secure.security-view,
-        .identity-popup-connection-not-secure.security-view {
-            margin-inline-start: calc(var(--panel-padding-x, 4px) + var(--label-padding-start, 32px));
+            padding-inline-start: var(--icon-gap, 12px) !important;
         }
 
         /** 扩展安装提醒 */
@@ -4587,6 +5162,11 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #appMenu-library-downloads-button {
             list-style-image: url("chrome://browser/skin/downloads/downloads.svg");
+        }
+
+        /* Findbar Content Menu */
+        #findbar-menu-match-case {
+            background-image: url("./images/skin/case-sensitive.svg");
         }
 
         /* Unified Extensions */
@@ -6556,6 +7136,10 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/vuejs/vuejs.svg");
         }
 
+        :is(#_5caff8cc-3d2e-4110-a88a-003cc85b3858_-browser-action, #_5caff8cc-3d2e-4110-a88a-003cc85b3858_-BAP):not([style*="gray.png"]) {
+            fill: green;
+        }
+
         /** Bookmarks Organizer */
         #bookmarksorganizer_agenedia_com-browser-action,
         #bookmarksorganizer_agenedia_com-BAP {
@@ -6638,6 +7222,31 @@ by underlining them (requires urlbarMods.uc.js) */
         #_tst-search-browser-action,
         #_tst-search-BAP {
             list-style-image: url("./images/extensions/tstsearchtab/search-in-list.svg");
+        }
+
+        #subpanel-container #subpanel-selector-anchor>span.icon,
+        #subpanel-selector>li>span.icon {
+            visibility: hidden;
+            position: relative;
+        }
+
+        #subpanel-container #subpanel-selector-anchor>span.icon::before,
+        #subpanel-selector>li>span.icon:before {
+            visibility: visible;
+            content: "";
+            display: block;
+            background-image: url("./images/extensions/tstsearchtab/search-in-list.svg");
+            fill: currentColor;
+            width: 12px;
+            height: 12px;
+            position: absolute;
+            top: 2px;
+            left: -2px;
+        }
+
+        #subpanel-selector>li>span.icon:before {
+            left: 2px;
+            top: 3px;
         }
 
         /** Lovely Fork */

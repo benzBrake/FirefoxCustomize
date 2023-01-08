@@ -1,27 +1,41 @@
+/* 通用 */
 :root {
     --font-weight-bold: 600;
-    --titlebar-spacer-width: 0px;
-    --tab-corner-rounding: 7px;
-    --tab-rounding: var(--tab-corner-rounding) var(--tab-corner-rounding) 0 0;
-    --tab-corner-padding: 0px;
-    --tab-corner-position: calc(var(--tab-corner-padding) - var(--tab-corner-rounding));
-    --tab-separator-top: var(--tab-corner-rounding);
-    --tab-separator-height: calc(100% - var(--tab-corner-rounding) * 2);
-    --button-corner-rounding: 6px;
-    --menu-corner-rounding: 7px;
-    --animation-speed: 0.13s;
+    --titlebar-spacer-width: 16px;
+    /* 标签栏后的空格宽度 */
     --icon-width: 16px;
     --icon-height: 16px;
-    --icon-gap: 12px;
+    --icon-gap: 8px;
+    --menubar-searchbar-width: 256px;
+    /* 上标颜色 */
+    /* --badge-color: white */
+    --warning-text-color: hsl(355, 100%, 70%);
+    --warning-icon-background: hsl(358, 86%, 63%);
+    --warning-icon-detail: hsl(354, 69%, 30%);
+    --arrowpanel-dimmed: hsla(236, 100%, 83%, 0.17);
+    --arrowpanel-dimmed-further: hsla(234, 100%, 83%, 0.25);
+    --arrowpanel-dimmed-even-further: hsla(232, 100%, 85%, 0.3);
+    --toolbarbutton-badge-bgcolor: var(--lwt-toolbarbutton-icon-fill-attention);
+    --arrowpanel-menuitem-padding-block: 4px;
+    --arrowpanel-menuitem-padding-inline: 8px;
+    --arrowpanel-menuitem-padding: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
+    --arrowpanel-menuitem-margin-block: 0;
+    --arrowpanel-menuitem-margin-inline: 8px;
+    --arrowpanel-menuitem-margin: var(--arrowpanel-menuitem-margin-block) var(--arrowpanel-menuitem-margin-inline);
+    --subviewbutton-height: calc(var(--icon-height, 16px) + 2 * var(--arrowpanel-menuitem-margin-block) + 2 * var(--arrowpanel-menuitem-padding-block));
+    --menu-corner-rounding: 7px;
     --label-padding-start: calc(var(--icon-width, 16px) + 2 * var(--icon-gap, 12px));
 }
 
+/* 明亮主题 */
 :root[style*="--lwt-accent-color: rgb(240, 240, 244)"] {
     --lwt-accent-color: #cecece !important;
     --lwt-accent-color-inactive: #e8e8e8 !important;
     --lwt-text-color: #000 !important;
     --toolbar-bgcolor: #f7f7f7 !important;
     --toolbar-color: #000 !important;
+    --toolbarbutton-hover-background: rgba(0, 0, 0, 0.08) !important;
+    --toolbarbutton-active-background: rgba(0, 0, 0, 0.12) !important;
     --toolbarbutton-icon-fill: #000 !important;
     --chrome-content-separator-color: #bfbfbf !important;
     --lwt-toolbarbutton-icon-fill-attention: #0078D4 !important;
@@ -73,29 +87,21 @@
     --focus-outline-color: #0055D7 !important;
     --panel-shortcut-color: inherit !important;
     --uc-urlbar-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
-    --toolbarbutton-hover-background: rgba(0, 0, 0, 0.08) !important;
-    --toolbarbutton-active-background: rgba(0, 0, 0, 0.12) !important;
-    --arrowpanel-menuitem-padding-block: 0px;
-    --arrowpanel-menuitem-padding-inline: 8px;
-    --arrowpanel-menuitem-padding: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
-    --arrowpanel-menuitem-margin-inline: 4px;
-    --arrowpanel-menuitem-margin-block: 0;
-    --arrowpanel-menuitem-margin: var(--arrowpanel-menuitem-margin-block) var(--arrowpanel-menuitem-margin-inline);
 }
 
 @media (prefers-color-scheme: dark) {}
 
+/* 精简模式 */
 :root[uidensity="compact"] {
     --tab-height: 30px;
     --tab-min-height: var(--tab-height);
     --menuitem-padding: 4px;
-    --icon-gap: 8px;
-    --arrowpanel-menuitem-padding: 0 4px !important;
-    --arrowpanel-menuitem-padding: 4px 4px !important;
+    --icon-gap: 6px;
+    --arrowpanel-menuitem-padding-block: 4px;
+    --arrowpanel-menuitem-padding-inline: 4px;
+    --arrowpanel-menuitem-margin-block: 0;
+    --arrowpanel-menuitem-margin-inline: 4px;
 }
 
+/* 触控模式 */
 :root[uidensity="touch"] {}
-
-:root[tabposition="4"] {
-    --tab-rounding: 0 0 var(--tab-corner-rounding) var(--tab-corner-rounding);
-}
