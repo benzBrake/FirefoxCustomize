@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name            unifiedExtensionsEnhance.uc.js
-// @description     Unified Extensions Button Enhance script, left click open options page, right click to swith addon status.
-// Once Firefox has implemented the functionality, the script can be removed.
+// @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.5
+// @version         0.1.6
 // @compatibility   Firefox 109
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.6 Firefox 109 不全快速启用禁用和快速选项功能
 // @note            0.1.5 仅支持 Firefox 109 + 半成品
 // @note            0.1.4 Fx 107 Tempoarily compat for legacy addons & disabled addons
 // @note            参考了 https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/extensionOptionsMenu.uc.js
@@ -21,6 +21,33 @@
     }
 
     window.unifiedExtensionsEnhance = {
+        OPTION_BUTTON: {
+            label: "选项",
+            tooltiptext: "扩展选项",
+            "uni-action": "option",
+            class: "unified-extensions-item-option subviewbutton subviewbutton-iconic"
+        },
+        ENABLE_BUTTON: {
+            label: "启用",
+            tooltiptext: "启用扩展",
+            "uni-action": "enable",
+            closemenu: "none",
+            class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic"
+        },
+        DISABLE_BUTTON: {
+            label: "禁用",
+            tooltiptext: "禁用扩展",
+            closemenu: "none",
+            "uni-action": "disable",
+            class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic"
+        },
+        DISABLE_ALL_BUTTON: {
+            id: 'unified-extensions-disable-all',
+            class: "subviewbutton",
+            "uni-action": "disable-all",
+            label: "禁用所有扩展",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
+        },
         get appVersion() {
             delete this.appVersion;
             return this.appVersion = Services.appinfo.version.split(".")[0];
@@ -42,44 +69,62 @@
                 list-style-image: url("chrome://mozapps/skin/extensions/extension.svg");
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons {
-                margin: var(--arrowpanel-menuitem-margin);
-                max-width: max-content;
+                display: flex;
+                align-items: center;
+                margin-inline: 0;
             }
-            #unified-extensions-area {
-                padding-right: 20px;
+            panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton {
+                -moz-box-pack: start;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action  {
                 margin: var(--arrowpanel-menuitem-margin);
+                flex: 1;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action:hover {
                 background-color: var(--panel-item-hover-bgcolor) !important;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action > .toolbarbutton-badge-stack {
                 margin-inline-end: 0 !important;
+                padding-left: 0;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action:hover > .toolbarbutton-badge-stack {
                 background-color: transparent !important;
+            }
+            unified-extensions-item > .unified-extensions-item-action-button {
+                flex: 1;
             }
             unified-extensions-item.addon-disabled .unified-extensions-item-contents {
                 font-style: italic;
                 color: Gray;
             }
+            #unified-extensions-view .addon-no-options .unified-extensions-item-option {
+                display: none;
+            }
             #unified-extensions-view .unified-extensions-item-menu-button {
+                margin-inline-end: var(--arrowpanel-menuitem-margin-inline);
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
+            #unified-extensions-view .unified-extensions-item-option {
+                border: 1px solid transparent;
+                list-style-image: url("chrome://global/skin/icons/settings.svg");
+            }
             #unified-extensions-view .unified-extensions-item-enable {
+                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTMuNDU1IDFBMS41MDIgMS41MDIgMCAwMDIgMi41djExYTEuNSAxLjUgMCAwMDIuMjIzIDEuMzEzbDkuOTk4LTUuNWExLjQ5NyAxLjQ5NyAwIDAwMC0yLjYyNmwtOS45OTgtNS41QTEuNDgzIDEuNDgzIDAgMDAzLjQ1NSAxem0uMDMgMWEuNDk0LjQ5NCAwIDAxLjI1NS4wNjNsOS45OTggNS41YS41LjUgMCAwMTAgLjg3NWwtOS45OTggNS41QS41LjUgMCAwMTMgMTMuNXYtMTFhLjUuNSAwIDAxLjQ4NC0uNXoiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIvPjwvc3ZnPg==")
             }
             #unified-extensions-view .unified-extensions-item-disable {
+                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNMCAwaDI0djI0SDBWMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTIgMjMuNjU2QzUuNTYyIDIzLjY1Ni4zNDQgMTguNDM4LjM0NCAxMlM1LjU2Mi4zNDQgMTIgLjM0NCAyMy42NTYgNS41NjIgMjMuNjU2IDEyIDE4LjQzOCAyMy42NTYgMTIgMjMuNjU2em0wLTIuMzMxYTkuMzI1IDkuMzI1IDAgMTAwLTE4LjY1IDkuMzI1IDkuMzI1IDAgMDAwIDE4LjY1ek04LjUwMyA4LjUwM2g2Ljk5NHY2Ljk5NEg4LjUwM1Y4LjUwM3oiLz48L3N2Zz4=")
             }
-            #unified-extensions-view .unified-extensions-item:not(.addon-disabled) .unified-extensions-item-enable {
-                display: none;
-            }
-            #unified-extensions-view .unified-extensions-item.addon-disabled .unified-extensions-item-disable {
+            #unified-extensions-view .unified-extensions-item:not(.addon-disabled) .unified-extensions-item-enable,
+            #unified-extensions-view .unified-extensions-item.addon-disabled .unified-extensions-item-disable,
+            .unified-extensions-item-option > .toolbarbutton-text,
+            .unified-extensions-item-enable > .toolbarbutton-text,
+            .unified-extensions-item-disable > .toolbarbutton-text {
                 display: none;
             }
             #unified-extensions-view .subviewbutton-iconic:not([disabled]) {
+                margin: var(--arrowpanel-menuitem-margin);
                 padding: var(--arrowpanel-menuitem-padding-inline) !important;
             }
             #unified-extensions-view .subviewbutton-iconic:not([disabled]):hover {
@@ -132,88 +177,93 @@
             );
             view.addEventListener('ViewShowing', this);
             view.addEventListener('click', this);
-            view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', {
-                id: 'unified-extensions-disable-all',
-                class: "subviewbutton",
-                label: "Disable all extensions",
-                onclick: "unifiedExtensionsEnhance.handleEvent(event); "
-            }));
+            view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
+            view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
         },
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
-                // 删掉多余扩展项目
-                $QA("unified-extensions-item", $Q("#unified-extensions-list", event.target)).forEach(elm => $R(elm));
-                const panelview = event.target;
-                const list = panelview.querySelector(".unified-extensions-list");
-                const extensions = await this.getAllExtensions();
+                await this.refreshAddonsList(event.target);
+            } else if (event.type === "click") {
+                const { target: button } = event;
+                const panelview = button.closest("panelview");
+                let item;
+                switch (button.getAttribute("uni-action")) {
+                    case "disable-all":
+                        let extensions = await gUnifiedExtensions.getActiveExtensions();
+                        for (let extension of extensions)
+                            extension.disable();
+                        break;
+                    case "enable":
+                        item = button.closest("unified-extensions-item");
+                        await item.addon.enable();
+                        this.refreshAddonsList(panelview);
+                        break;
+                    case "disable":
+                        item = button.closest(".unified-extensions-item");
+                        let addonId = item.getAttribute("data-extensionid");
+                        let extension = await AddonManager.getAddonByID(addonId);
+                        await extension.disable();
+                        this.refreshAddonsList(panelview);
+                        break;
+                    case "option":
+                        let { parentNode } = button, addon;
+                        if (parentNode.localName === "unified-extensions-item") {
+                            addon = parentNode.addon;
+                        } else {
+                            addon = await AddonManager.getAddonByID(parentNode.getAttribute("data-extensionid"));
+                        }
+                        this.openAddonOptions(addon, button.ownerGlobal);
+                        break;
+                }
 
-                for (const extension of extensions) {
-                    let sel = extension.id.replace(/[@.{}]/g, "_") + "-browser-action";
-                    if (!document.getElementById(sel)) {
-                        const item = document.createElement("unified-extensions-item");
-                        if (!extension.isActive) {
-                            item.classList.add("addon-disabled");
-                        }
-                        if (!extension.optionsURL) {
-                            item.classList.add('addon-no-options');
-                        }
-                        item.setAddon(extension);
-                        list.appendChild(item);
+                if (!button.hasAttribute("closemenu") && event.button !== 1)
+                    event.target.closest("panel").hidePopup();
+            } else if (event.type === "DOMSubtreeModified") {
+                let elm = event.target;
+                if (elm.tagName === "toolbarbutton" && elm.classList.contains("webextension-browser-action")) {
+                    let parent = elm.parentNode;
+                    let extension = await AddonManager.getAddonByID(parent.getAttribute("data-extensionid"));
+                    if (!extension.optionsURL) {
+                        parent.classList.add('addon-no-options');
+                    }
+                    if (!$Q(".unified-extensions-item-disable", parent)) {
+                        elm.after($C(elm.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
+                    }
+                    if (!$Q(".unified-extensions-item-enable", parent)) {
+                        elm.after($C(elm.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.ENABLE_BUTTON));
+                    }
+                    if (!$Q(".unified-extensions-item-option", parent)) {
+                        elm.after($C(elm.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
                     }
                 }
+            }
+        },
+        refreshAddonsList: async function (aView) {
+            // 删掉多余扩展项目
+            $QA("unified-extensions-item", $Q("#unified-extensions-list", aView)).forEach(elm => $R(elm));
+            const aDoc = aView.ownerDocument;
+            const list = aView.querySelector(".unified-extensions-list");
+            const extensions = await this.getAllExtensions();
 
-                $QA("toolbaritem", $Q("#unified-extensions-area", panelview)).forEach(elm => {
-                    if (!$Q(".unified-extensions-item-enable", elm))
-                        $Q(".unified-extensions-item-menu-button", elm).before($C(panelview.ownerDocument, "toolbarbutton", {
-                            label: "启用",
-                            class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic"
-                        }));
-                    if (!$Q(".unified-extensions-item-disable", elm))
-                        $Q(".unified-extensions-item-menu-button", elm).before($C(panelview.ownerDocument, "toolbarbutton", {
-                            label: "禁用",
-                            class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic"
-                        }));
-                });
-            } else if (event.type === "click") {
-                if (event.target.id === "unified-extensions-disable-all") {
-                    let extensions = await gUnifiedExtensions.getActiveExtensions();
-                    for (let extension of extensions)
-                        extension.disable();
-                }
-
-                if (event.target.classList.contains("unified-extensions-item-disable")) {
-                    let item = event.target.closest(".unified-extensions-item");
-                    let addonId = item.getAttribute("data-extensionid");
-                    let extension = await AddonManager.getAddonByID(addonId);
-                    extension.disable();
+            for (const extension of extensions) {
+                let sel = extension.id.replace(/[@.{}]/g, "_") + "-browser-action";
+                if (!aDoc.getElementById(sel)) {
+                    let item = aDoc.createElement("unified-extensions-item");
+                    item.setAddon(extension);
+                    item = list.appendChild(item);
+                    if (extension.optionsURL) {
+                        item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
+                    }
+                    if (!extension.isActive) {
+                        item.classList.add("addon-disabled");
+                        item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.ENABLE_BUTTON));
+                    } else {
+                        item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
+                    }
                 }
             }
         },
-        onClick: function (event) {
-            const { itemTag } = window.unifiedExtensionsEnhance;
-            if (!event.target.closest(itemTag)) return;
-            var { addon } = vbox = event.target.closest(itemTag);
-            var { classList } = event.target;
-            if (classList.contains('unified-extensions-item-action') || classList.contains('unified-extensions-item-contents') || classList.contains('unified-extensions-item-name') || classList.contains('unified-extensions-item-message') || classList.contains('unified-extensions-item-icon')) {
-                switch (event.button) {
-                    case 0:
-                        unifiedExtensionsEnhance.openAddonOptions(addon, event.target.ownerGlobal);
-                        break;
-                    case 1:
-                        break;
-                    case 2:
-                        if (addon.userDisabled) {
-                            addon.enable();
-                            vbox.classList.remove('disabled');
-                        } else {
-                            addon.disable();
-                            vbox.classList.add('disabled');
-                        }
-                        break;
-                }
-            }
-        },
-        getAllExtensions: async function (event) {
+        getAllExtensions: async function () {
             let addons = await AddonManager.getAddonsByTypes(["extension"]);
             addons = addons.filter(addon => !addon.hidden);
             if (!this.showDisabled) {
