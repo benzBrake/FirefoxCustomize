@@ -186,6 +186,7 @@
             } else if (event.type === "click") {
                 const { target: button } = event;
                 const panelview = button.closest("panelview");
+                if (!button.hasAttribute("uni-action")) return;
                 let item;
                 switch (button.getAttribute("uni-action")) {
                     case "disable-all":
