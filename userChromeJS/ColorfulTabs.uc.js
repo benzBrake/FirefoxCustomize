@@ -22,12 +22,12 @@
                 let imageSrc = tab.getAttribute('image');
                 if (BLACK_LIST.includes(imageSrc)) {
                     if (tab.hasAttribute('colorful')) tab.removeAttribute('colorful');
+                    tab.style.removeProperty("-colorful-tab-background");
                     return;
                 }
                 let imgEl = document.createElement("img");
                 imgEl.src = imageSrc;
                 let rgb = this.getAverageRGB(imgEl);
-                console.log(imageSrc, rgb);
                 tab.setAttribute('colorful', true);
                 tab.style.setProperty("--colorful-tab-background", `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
             }
