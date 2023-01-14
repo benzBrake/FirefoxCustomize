@@ -76,9 +76,6 @@
         BTN_ID = "privateTab-button";
         BTN2_ID = "newPrivateTab-button";
         constructor() {
-            if (!ptUtils.sharedGlobal.privateTabGlobal) {
-                ptUtils.sharedGlobal.privateTabGlobal = {};
-            }
             // the internal duplicateTab method doesn't pass the skipAnimation parameter
             // to addTrustedTab. so we need to make our own function, which requires us
             // to access some private objects.
@@ -124,7 +121,6 @@
         }
 
         exec() {
-            let { privateTabGlobal } = ptUtils.sharedGlobal;
             if (PrivateBrowsingUtils.isWindowPrivate(window)) return;
             let openAll = document.getElementById(
                 "placesContext_openBookmarkContainer:tabs"
@@ -324,7 +320,7 @@
                 }
             };
             gBrowser.tabContainer._updateNewTabVisibility();
-            if (!privateTabGlobal.privateTabsInited) {
+            if (!(CustomizableUI.getWidget(this.BTN_ID) && CustomizableUI.getWidget(this.BTN_ID).forWindow(window)?.node)) {
                 CustomizableUI.createWidget({
                     id: this.BTN_ID,
                     type: "custom",
@@ -345,7 +341,6 @@
                     },
                 });
             }
-            privateTabGlobal.privateTabsInited = true;
         }
 
         init() {
