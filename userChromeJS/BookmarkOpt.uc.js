@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.2
+// @version         1.3.3
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.3 还原显示隐藏书签工具栏按钮
 // @version         1.3.2 书签弹出菜单支持插入到底部
 // @version         1.3.1 去除显示隐藏书签工具栏按钮
 // @version         1.3 尝试兼容 Firefox 57+
@@ -113,6 +114,7 @@
     }];
 
     const BTN_CFG = {
+        id: 'bmopt-Toggle-Personal-Toolbar',
         label: $L("toggle personalToolbar"),
         tooltiptext: $L("toggle personalToolbar"),
         style: 'list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg");',
@@ -380,6 +382,19 @@
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
+                if (BTN_CFG) {
+                    if (!(CustomizableUI.getWidget(BTN_CFG.id) && CustomizableUI.getWidget(BTN_CFG.id).forWindow(window)?.node)) {
+                        CustomizableUI.createWidget({
+                            id: BTN_CFG.id,
+                            removable: true,
+                            defaultArea: CustomizableUI.AREA_NAVBAR,
+                            localized: false,
+                            onCreated: node => {
+                                $A(node, BTN_CFG);
+                            }
+                        });
+                    }
+                }
             }
             this.style = addStyle(css);
         },
@@ -397,9 +412,12 @@
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
-                if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
-                delete window.BookmarkOpt;
+                if (BTN_CFG) {
+                    CustomizableUI.destroyWidget(BTN_CFG.id);
+                }
             }
+            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+            delete window.BookmarkOpt;
         }
     }
 
