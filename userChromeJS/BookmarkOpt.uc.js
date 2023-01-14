@@ -49,8 +49,6 @@
         }
     }
 
-
-
     // 右键菜单
     const PLACES_CONTEXT_ITEMS = [{
         id: 'placesContext_add:bookmark',
@@ -99,6 +97,9 @@
         insertBefore: 'placesContext_openSeparator',
         style: 'list-style-image: url(chrome://global/skin/icons/info.svg)',
     }];
+
+    // 书签弹出面板菜单插入到顶部
+    const PLACES_POPUP_INSERT_AT_TOP = true;
 
     // 书签弹出面板菜单
     const PLACES_POPUP_ITEMS = [{
@@ -176,26 +177,60 @@
                 // 防止影响其他方式添加书签
                 BookmarkOpt.clearPanelItems(target, true);
             } else if (event.type === 'popupshowing') {
-                let firstItem = target.firstChild;
-                if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
-                let last;
-                PLACES_POPUP_ITEMS.forEach(c => {
-                    let item;
-                    if (c.label) {
-                        item = $C('menuitem', c, event.target.ownerDocument);
-                        item.classList.add('bmopt-panel');
-                    } else {
-                        item = $C('menuseparator', {
-                            'class': 'bmopt-separator'
-                        }, event.target.ownerDocument);
+                if (PLACES_POPUP_INSERT_AT_TOP) {
+                    let firstItem = target.firstChild;
+                    if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
+                    let last;
+                    PLACES_POPUP_ITEMS.forEach(c => {
+                        let item;
+                        if (c.label) {
+                            item = $C('menuitem', c, event.target.ownerDocument);
+                            item.classList.add('bmopt-panel');
+                        } else {
+                            item = $C('menuseparator', {
+                                'class': 'bmopt-separator'
+                            }, event.target.ownerDocument);
+                        }
+                        if (last) {
+                            last.after(item);
+                        } else {
+                            firstItem.parentNode.insertBefore(item, firstItem);
+                        }
+                        last = item;
+                    });
+                } else {
+                    let lastChild = target.lastChild, last = lastChild, noNeedInsert = false;
+                    while (last.previousSibling) {
+                        if (last.classList.contains("bmopt-panel")) {
+                            noNeedInsert = true;
+                            break;
+                        }
+                        if (last.classList.contains("bookmarks-actions-menuseparator")) {
+                            break;
+                        }
+                        last = last.previousSibling;
                     }
-                    if (last) {
-                        last.after(item);
-                    } else {
-                        firstItem.parentNode.insertBefore(item, firstItem);
+                    if (!noNeedInsert) {
+                        PLACES_POPUP_ITEMS.forEach(c => {
+                            let item;
+                            if (c.label) {
+                                item = $C('menuitem', c, event.target.ownerDocument);
+                                item.classList.add('bmopt-panel');
+                            } else {
+                                item = $C('menuseparator', {
+                                    'class': 'bmopt-separator'
+                                }, event.target.ownerDocument);
+                            }
+                            if (last) {
+                                last.after(item);
+                            } else {
+                                lastChild.before(item);
+                            }
+                            last = item;
+                        });
                     }
-                    last = item;
-                });
+                }
+
             }
         },
         clearPanelItems: function (target, doNotRecursive = false) {
@@ -438,7 +473,8 @@
 
     window.BookmarkOpt.init();
 })(`
-.bmopt-separator+menuseparator{
+.bmopt-separator+menuseparator,
+.bookmarks-actions-menuseparator~.bmopt-separator{
     display: none;
 }
 #placesContext .bmopt[condition] {
