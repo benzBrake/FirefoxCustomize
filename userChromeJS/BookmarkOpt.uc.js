@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.1
+// @version         1.3.2
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.2 书签弹出菜单支持插入到底部
 // @version         1.3.1 去除显示隐藏书签工具栏按钮
 // @version         1.3 尝试兼容 Firefox 57+
 // @version         1.2.2 修改界面语言读取方式
