@@ -130,12 +130,14 @@
         style: 'list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=)'
     }];
 
-    var VideoBtn = {
+    window.VideoBtn = {
         ENV_PATHS: [],
         $C: $C,
         $L: $L,
-        get appVersion() { return Services.appinfo.version.split(".")[0]; },
-        get browserWin() { return Services.wm.getMostRecentWindow("navigator:browser"); },
+        get appVersion() {
+            delete this.appVersion;
+            return this.appVersion = Services.appinfo.version.split(".")[0];
+        },
         get debug() { return this.prefs.get("userChromeJS.VideoBtn.debug", false); },
         get BIN_PATH() {
             return this.handleRelativePath(this.prefs.get(this.PREF_BIN_PATH, "\\chrome\\UserTools"));
@@ -197,7 +199,7 @@
         async init() {
             if (this.debug) this.log("VideoBtn init");
 
-            this.makePaths();
+            await this.makePaths();
             this.makeRegExp();
 
             if (!MENU_CONFIG) {
@@ -278,29 +280,30 @@
                     $("contentAreaContextMenu").appendChild(menu);
                 }
             }
-            if (CustomizableUI.getPlacementOfWidget("VideoBtn-Button", true)) return;
-            CustomizableUI.createWidget({
-                id: "VideoBtn-Button",
-                type: 'button',
-                localized: false,
-                removeable: true,
-                defaultArea: CustomizableUI.AREA_NAVBAR,
-                onCreated: node => {
-                    let popup = $C(node.ownerDocument, 'menupopup', {
-                        id: 'VideoBtn-Button-popup',
-                        class: 'VideoBtn-Popup',
-                    });
-                    let MENU_CFG = cloneObj(MENU_CONFIG);
-                    MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(node.ownerDocument, obj)));
-                    $A(node, {
-                        label: $L("videobtn btn name"),
-                        tooltiptext: $L("videobtn btn name"),
-                        type: 'menu',
-                        menu: 'VideoBtn-Button-popup'
-                    });
-                    node.appendChild(popup);
-                }
-            });
+            if (!(CustomizableUI.getWidget("VideoBtn-Button") && CustomizableUI.getWidget("VideoBtn-Button").forWindow(window)?.node)) {
+                CustomizableUI.createWidget({
+                    id: "VideoBtn-Button",
+                    type: 'button',
+                    localized: false,
+                    removeable: true,
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    onCreated: node => {
+                        let popup = $C(node.ownerDocument, 'menupopup', {
+                            id: 'VideoBtn-Button-popup',
+                            class: 'VideoBtn-Popup',
+                        });
+                        let MENU_CFG = cloneObj(MENU_CONFIG);
+                        MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(node.ownerDocument, obj)));
+                        $A(node, {
+                            label: $L("videobtn btn name"),
+                            tooltiptext: $L("videobtn btn name"),
+                            type: 'menu',
+                            menu: 'VideoBtn-Button-popup'
+                        });
+                        node.appendChild(popup);
+                    }
+                });
+            }
         },
         destroy() {
             if (this.debug) this.log($L("VideoBtn: destroying element"));
@@ -984,35 +987,13 @@
         foStream.close();
     }
 
-    function VideoBtnInit() {
-        window.VideoBtn = VideoBtn;
-        window.VideoBtn.init(window);
-        Services.obs.addObserver(this, 'domwindowopened', false);
-    }
-
-    VideoBtnInit.prototype = {
-        observe: function (aSubject, aTopic, aData) {
-            aSubject.addEventListener('load', this, true);
-        },
-        handleEvent: function (aEvent) {
-            if (aEvent.type === "load") {
-                let document = aEvent.originalTarget,
-                    win = document.ownerGlobal;
-                if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
-                    win.VideoBtn = VideoBtn;
-                    win.VideoBtn.init(win);
-                }
-            }
-        }
-    }
-
     // 延时启动
-    if (gBrowserInit.delayedStartupFinished) new VideoBtnInit();
+    if (gBrowserInit.delayedStartupFinished) window.VideoBtn.init()
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                new VideoBtnInit();
+                window.VideoBtn.init();
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
