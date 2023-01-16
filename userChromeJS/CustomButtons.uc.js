@@ -50,8 +50,13 @@
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTEuOTkzIDE0LjQwN2wtMS41NTIgMS41NTJhNCA0IDAgMSAxLTEuNDE4LTEuNDFsMS41NTUtMS41NTYtMy4xMjQtMy4xMjVhMS41IDEuNSAwIDAgMSAwLTIuMTIxbC4zNTQtLjM1NCA0LjE4NSA0LjE4NSA0LjE4OS00LjE4OS4zNTMuMzU0YTEuNSAxLjUgMCAwIDEgMCAyLjEybC0zLjEyOCAzLjEzIDEuNTYxIDEuNTZhNCA0IDAgMSAxLTEuNDE0IDEuNDE0bC0xLjU2MS0xLjU2ek0xOSAxM1Y1SDV2OEgzVjRhMSAxIDAgMCAxIDEtMWgxNmExIDEgMCAwIDEgMSAxdjloLTJ6TTcgMjBhMiAyIDAgMSAwIDAtNCAyIDIgMCAwIDAgMCA0em0xMCAwYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiLz48L3N2Zz4=",
             popup: [{
                 label: $L("hide firefox to take snapshot"),
-                precommand: 'window.minimize();',
                 tool: "\\SnapShot.exe",
+                oncommand: function (event) {
+                    window.minimize();
+                    setTimeout(() => {
+                        CustomButtons.onCommand(event);
+                    }, 500);
+                },
                 image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2aWV3Qm94PSIwIDAgMjAgMjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy4zNjcgNC43OCBMIDMuODM3IDQuNzggTCAzLjgzNyA4LjI5NyBMIDUuNjAyIDguMjk3IEwgNS42MDIgNi41MzggTCA3LjM2NyA2LjUzOCBNIDE2LjE5MSA4LjI5NyBMIDE0LjQyNiA4LjI5NyBMIDE0LjQyNiAxMC4wNTUgTCAxMi42NiAxMC4wNTUgTCAxMi42NiAxMS44MTQgTCAxNi4xOTEgMTEuODE0IE0gMTcuOTU1IDEzLjU3MiBMIDIuMDczIDEzLjU3MiBMIDIuMDczIDMuMDIxIEwgMTcuOTU1IDMuMDIxIE0gMTcuOTU1IDEuMjYzIEwgMi4wNzMgMS4yNjMgQyAxLjA5MyAxLjI2MyAwLjMwOCAyLjA0NiAwLjMwOCAzLjAyMSBMIDAuMzA4IDEzLjU3MiBDIDAuMzA4IDE0LjU0MyAxLjA5NyAxNS4zMzIgMi4wNzMgMTUuMzMyIEwgOC4yNDkgMTUuMzMyIEwgOC4yNDkgMTcuMDkgTCA2LjQ4NCAxNy4wOSBMIDYuNDg0IDE4Ljg0OSBMIDEzLjU0NCAxOC44NDkgTCAxMy41NDQgMTcuMDkgTCAxMS43NzggMTcuMDkgTCAxMS43NzggMTUuMzMyIEwgMTcuOTU1IDE1LjMzMiBDIDE4LjkzIDE1LjMzMiAxOS43MiAxNC41NDMgMTkuNzIgMTMuNTcyIEwgMTkuNzIgMy4wMjEgQyAxOS43MiAyLjA1IDE4LjkzIDEuMjYzIDE3Ljk1NSAxLjI2MyIgc3R5bGU9IiIvPgo8L3N2Zz4='
             }, {
                 label: $L("scroll snapshot"),
@@ -312,7 +317,7 @@
                         }
                         if (!obj.oncommand)
                             $A(btn, {
-                                oncommand: " if (event.target !== event.explicitOriginalTarget) return;CustomButtons.onCommand(event);"
+                                oncommand: `if (event.target !== "${obj.id}") return; CustomButtons.onCommand(event);`
                             });
                     } catch (e) {
                         this.error(e);
