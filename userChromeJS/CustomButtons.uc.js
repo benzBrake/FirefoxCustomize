@@ -317,7 +317,7 @@
                         }
                         if (!obj.oncommand)
                             $A(btn, {
-                                oncommand: `if (event.target !== "${obj.id}") return; CustomButtons.onCommand(event);`
+                                oncommand: `if (event.target.id !== "${obj.id}") return; CustomButtons.onCommand(event);`
                             });
                     } catch (e) {
                         this.error(e);
