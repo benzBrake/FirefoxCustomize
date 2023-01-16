@@ -133,7 +133,7 @@
                     let label = $C(document, "html:label", {
                         for: theme.id
                     });
-                    label.innerText = theme.id;
+                    label.innerText = theme.name;
                     li.appendChild(label);
                     li.addEventListener("click", function (event) {
                         if (event.target.localName !== "input") return;
