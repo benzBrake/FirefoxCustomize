@@ -4,32 +4,30 @@
 
 //F1-12键
 //--------------------------------------------------------------------------------------------------------------------------------------------
-keys['F1'] = function () {
-    document.getElementById("cmd_newNavigatorTab").doCommand();
-}; // 新建标签页并光标定位到地址栏
-keys['F2'] = function () {
-    let tabs = gBrowser.tabs, i;
-    for (i = 0; i < tabs.length; i++) {
-        if (tabs[i] == gBrowser.selectedTab) break;
-    }
-    i = (i - 1 + tabs.length) % tabs.length;
-    gBrowser.selectTabAtIndex(i);
+// 新建标签页并光标定位到地址栏
+keys['F2'] = {
+    oncommand: "internal",
+    params: [
+        'tab',
+        'prev'
+    ]
 }; // 上一个标签页
 keys['F3'] = function () {
     gBrowser.getFindBar().then(findBar => {
         if (findBar.getAttribute('hidden')) {
-            let tabs = gBrowser.tabs, i;
-            for (i = 0; i < tabs.length; i++) {
-                if (tabs[i] == gBrowser.selectedTab) break;
-            }
-            i = (i + 1) % tabs.length;
-            gBrowser.selectTabAtIndex(i);
+            gBrowser.tabContainer.advanceSelectedTab(1, true);
         } else {
             findBar.getElement('find-next').doCommand();
         }
     });
 }; // 下一个标签页
-keys['F4'] = "duplicateTabIn(gBrowser.selectedTab, 'tab')"; //复制当前标签页
+keys['F4'] = {
+    oncommand: "internal",
+    params: [
+        'tab',
+        'duplicate'
+    ]
+}; //复制当前标签页
 //keys['F5'] =""; // 原生功能：刷新
 //keys['F6'] =""; // 原生功能：定位到地址栏
 //keys['F7'] =""; // 原生功能：启用浏览光标
@@ -76,7 +74,7 @@ keys['Alt+F'] = function () {
     setToolbarVisibility(bar, bar.collapsed);
 }; //显示或隐藏书签栏， 自带按键 Ctrl+Shift+B
 keys['Alt+G'] = function (event) {
-    let sel = KeyChanger.selectedText,
+    let sel = KeyChanger.getSelectedText(),
         win = event.target.ownerGlobal;
     if (!sel.length) {
         sel = win.prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '请输入搜索的关键词:' : 'Please input keyword:', '');
@@ -87,7 +85,7 @@ keys['Alt+G'] = function (event) {
     }
 }; //Google站内搜索
 keys['Alt+B'] = function (event) {
-    let sel = KeyChanger.selectedText,
+    let sel = KeyChanger.getSelectedText(),
         win = event.target.ownerGlobal;
     if (!sel.length) {
         sel = win.prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '请输入搜索的关键词:' : 'Please input keyword:', '');
@@ -149,7 +147,6 @@ keys['Ctrl+Shift+Alt+C'] = function () {
         gClipboardHelper.copyString(txt);
     })();
 } //复制所有网页 Markdown 链接
-
 //Ctrl+Shift 组合键
 //--------------------------------------------------------------------------------------------------------------------------------------------
 keys['Ctrl+Shift+F5'] = function () {

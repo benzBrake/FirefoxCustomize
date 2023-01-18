@@ -18,11 +18,64 @@
 location.href.startsWith("chrome://browser/content/browser.x") && (function () {
     var useScraptchpad = true;  // If the editor does not exist, use the code snippet shorthand, otherwise set the editor path
     //let {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+
+    const INTERNAL_MAP = {
+        tab: {
+            close: {
+                current: function () {
+                    gBrowser.removeTab(gBrowser.selectedTab);
+                },
+                all: function () {
+                    gBrowser.removeTabs(gBrowser.tabs);
+                },
+                other: function () {
+                    gBrowser.removeAllTabsBut(gBrowser.selectedTab);
+                }
+            },
+            pin: {
+                current: function () {
+                    gBrowser.pinTab(gBrowser.selectedTab);
+                },
+                all: function (event) {
+                    gBrowser.tabs.forEach(t => gBrowser.pinTab(t));
+                },
+            },
+            unpin: {
+                current: function () {
+                    gBrowser.unpinTab(gBrowser.selectedTab);
+                },
+                all: function (event) {
+                    gBrowser.tabs.forEach(t => gBrowser.unpinTab(t));
+                },
+            },
+            "toggle-pin": {
+                current: function () {
+                    if (gBrowser.selectedTab.pinned)
+                        gBrowser.unpinTab(gBrowser.selectedTab);
+                    else
+                        gBrowser.pinTab(gBrowser.selectedTab);
+                },
+                all: function (event) {
+                },
+            },
+            prev: function () {
+                gBrowser.tabContainer.advanceSelectedTab(-1, true);
+            },
+            next: function () {
+                gBrowser.tabContainer.advanceSelectedTab(1, true);
+            },
+            duplicate: function () {
+                duplicateTabIn(gBrowser.selectedTab, 'tab');
+            }
+        }
+    }
+
     window.KeyChanger = {
         get appVersion() {
             return Services.appinfo.version.split(".")[0];
         },
-        get file() {
+        get FILE() {
+            delete this.FILE;
             try {
                 path = this.prefs.getStringPref("FILE_PATH")
             } catch (e) {
@@ -34,48 +87,47 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                 saveFile(aFile, '');
                 alert('_keychanger.js 配置为空');
             }
-            delete this.file;
-            return this.file = aFile;
-        },
-        get FILE() {
-            return this.file;
+            return this.FILE = aFile;
         },
         get prefs() {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("keyChanger.")
         },
         isBuilding: false,
-        selectedText: "",
+        _selectedText: "",
+        KEYSETID: "keychanger-keyset",
         addEventListener: function () {
-            gBrowser.tabpanels.addEventListener("mouseup", this, false);
+            (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
         },
         handleEvent: function (event) {
             switch (event.type) {
                 case 'mouseup':
                     try {
                         gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
-                            this.selectedText = r.selectedText;
+                            this.setSelectedText(r.selectedText);
                         })
                     } catch (e) { }
                     break;
             }
         },
         getSelectedText: function () {
-            return this.selectedText;
+            return this._selectedText || "";
+        },
+        setSelectedText: function (text) {
+            this._selectedText = text;
         },
         makeKeyset: function (isAlert) {
-            KeyChanger.isBuilding = true;
+            this.isBuilding = true;
             var s = new Date();
             var keys = this.makeKeys();
             if (!keys) {
-                isBuilding = false;
+                this.isBuilding = false;
                 return this.alert('KeyChanger', 'Load error.');
             }
-            var keyset = document.getElementById('keychanger-keyset');
-            if (keyset)
-                keyset.parentNode.removeChild(keyset);
-            keyset = document.createXULElement('keyset');
-            keyset.setAttribute('id', 'keychanger-keyset');
+            $R(document.getElementById(this.KEYSETID)); // 删除 KeySet
+            let keyset = $C(document, "keyset", {
+                id: this.KEYSETID
+            })
             keyset.appendChild(keys);
 
             var df = document.createDocumentFragment();
@@ -95,7 +147,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
 
         },
         makeKeys: function () {
-            var str = this.loadText(this.file);
+            var str = loadText(this.FILE);
             if (!str)
                 return null;
 
@@ -200,6 +252,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                         break;
                     case 'object':
                         Object.keys(cmd).forEach(function (a) {
+                            if (a === 'oncommand' && cmd[a] === "internal")
+                                cmd[a] = "KeyChanger.internalCommand(event);";
                             elem.setAttribute(a, cmd[a]);
                         }, this);
                         break;
@@ -216,24 +270,30 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             menuitem.setAttribute('label', 'KeyChanger');
             menuitem.setAttribute('tooltiptext', '左键：重载配置\n右键：编辑配置');
             menuitem.setAttribute('oncommand', 'setTimeout(function(){ KeyChanger.makeKeyset(true); }, 10);');
-            menuitem.setAttribute('onclick', 'if (event.button == 2) { event.preventDefault();KeyChanger.edit(KeyChanger.file); }');
+            menuitem.setAttribute('onclick', 'if (event.button == 2) { event.preventDefault();KeyChanger.edit(KeyChanger.FILE); }');
             var insPos = document.getElementById('devToolsSeparator');
             insPos.parentNode.insertBefore(menuitem, insPos);
         },
-        loadText: function (aFile) {
-            var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-            var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-            fstream.init(aFile, -1, 0, 0);
-            sstream.init(fstream);
-
-            var data = sstream.read(sstream.available());
-            try {
-                data = decodeURIComponent(escape(data));
-            } catch (e) {
+        internalCommand: function (event) {
+            let params = event.target.getAttribute('params');
+            let cmd = this.internalParamsParse(params);
+            if (typeof cmd === "function") {
+                cmd.call(this, event);
+            } else {
+                this.log("Internal command is not complete or too long", params, cmd);
             }
-            sstream.close();
-            fstream.close();
-            return data;
+        },
+        internalParamsParse: function (params) {
+            let args = params.split(',');
+            let cmd = INTERNAL_MAP;
+            for (let i = 0; i < args.length; i++) {
+                if (cmd.hasOwnProperty(args[i])) {
+                    cmd = cmd[args[i]];
+                } else {
+                    return "";
+                }
+            }
+            return cmd;
         },
         openCommand: function (url, where, postData) {
             var uri;
@@ -271,19 +331,6 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                 }
                 openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
             }
-        },
-        alert: function (aMsg, aTitle, aCallback) {
-            var callback = aCallback ? {
-                observe: function (subject, topic, data) {
-                    if ("alertclickcallback" != topic)
-                        return;
-                    aCallback.call(null);
-                }
-            } : null;
-            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",
-                aMsg + "", !!callback, "", callback);
         },
         edit: function (aFile, aLineNumber) {
             if (KeyChanger.isBuilding) return;
@@ -325,12 +372,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             }
 
             var aURL = "";
-            if (typeof userChrome !== "undefined") {
-                aURL = userChrome.getURLSpecFromFile(aFile);
-            } else {
-                var fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-                aURL = fph.getURLSpecFromActualFile(aFile);
-            }
+            aURL = this.getURLSpecFromFile(aFile);
 
             var aDocument = null;
             var aCallBack = null;
@@ -370,6 +412,28 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                 this.log(e);
             }
         },
+        getURLSpecFromFile(aFile) {
+            var aURL;
+            if (this.appVersion < 92) {
+                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
+            } else {
+                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
+            }
+            return aURL;
+        },
+        alert: function (aMsg, aTitle, aCallback) {
+            var callback = aCallback ? {
+                observe: function (subject, topic, data) {
+                    if ("alertclickcallback" != topic)
+                        return;
+                    aCallback.call(null);
+                }
+            } : null;
+            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+            alertsService.showAlertNotification(
+                "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",
+                aMsg + "", !!callback, "", callback);
+        },
         log: function () {
             Services.console.logStringMessage("[KeyChanger] " + Array.prototype.slice.call(arguments));
         },
@@ -397,6 +461,48 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
         foStream.write(data, data.length);
         foStream.close();
+    }
+
+    function loadText(aFile) {
+        var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+        var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+        fstream.init(aFile, -1, 0, 0);
+        sstream.init(fstream);
+
+        var data = sstream.read(sstream.available());
+        try {
+            data = decodeURIComponent(escape(data));
+        } catch (e) {
+        }
+        sstream.close();
+        fstream.close();
+        return data;
+    }
+
+    function $C(aDoc, tag, attrs, skipAttrs) {
+        attrs = attrs || {};
+        skipAttrs = skipAttrs || [];
+        var el = (aDoc || document).createXULElement(tag);
+        return $A(el, attrs, skipAttrs);
+    }
+
+    function $A(el, obj, skipAttrs) {
+        skipAttrs = skipAttrs || [];
+        if (obj) Object.keys(obj).forEach(function (key) {
+            if (!skipAttrs.includes(key)) {
+                if (typeof obj[key] === 'function') {
+                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                } else {
+                    el.setAttribute(key, obj[key]);
+                }
+            }
+        });
+        return el;
+    }
+
+    function $R(el) {
+        if (!el || !el.parentNode) return;
+        el.parentNode.removeChild(el);
     }
 
     if (gBrowserInit.delayedStartupFinished) window.KeyChanger.init();

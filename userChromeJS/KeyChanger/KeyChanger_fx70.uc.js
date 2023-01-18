@@ -222,7 +222,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 }
             },
             getSelectedText: function () {
-                return this._selectedText;
+                return this._selectedText || "";
             },
             setSelectedText: function (text) {
                 this._selectedText = text;
@@ -381,7 +381,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 menuitem.setAttribute('label', 'KeyChanger');
                 menuitem.setAttribute('tooltiptext', '左键：重载配置\n右键：编辑配置');
                 menuitem.setAttribute('oncommand', 'setTimeout(function(){ KeyChanger.makeKeyset(true); }, 10);');
-                menuitem.setAttribute('onclick', 'if (event.button == 2) { event.preventDefault();KeyChanger.edit(KeyChanger.file); }');
+                menuitem.setAttribute('onclick', 'if (event.button == 2) { event.preventDefault();KeyChanger.edit(KeyChanger.FILE); }');
                 var insPos = document.getElementById('devToolsSeparator');
                 insPos.parentNode.insertBefore(menuitem, insPos);
             },
@@ -481,6 +481,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     }
                 }
 
+                var aURL = "";
                 aURL = this.getURLSpecFromFile(aFile);
 
                 var aDocument = null;
