@@ -78,6 +78,10 @@
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton {
                 -moz-box-pack: start;
             }
+            panelview#unified-extensions-view :is(.unified-extensions-item-name, .unified-extensions-item-message) {
+                padding-inline-start: 0;
+            }
+            
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action  {
                 margin: var(--arrowpanel-menuitem-margin);
                 flex: 1;
@@ -86,7 +90,7 @@
                 background-color: var(--panel-item-hover-bgcolor) !important;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action > .toolbarbutton-badge-stack {
-                margin-inline-end: 0 !important;
+                margin-inline-end: 6px;
                 padding-left: 0;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action:hover > .toolbarbutton-badge-stack {
