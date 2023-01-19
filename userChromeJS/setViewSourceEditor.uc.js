@@ -1,22 +1,25 @@
 // ==UserScript==
 // @name        setViewSourceEditor.uc.js
-// @description 设置默认编辑器为Notepad2，仅兼容 xiaoxiaoflood 的 userChromeJS 环境
+// @description 设置默认编辑器为Notepad2
 // @author      Ryan
-// @shutdown    UC.setViewSourceEditor.destroy();
+// @shutdown    window.setViewSourceEditor.destroy();
 // @homepageURL https://github.com/benzBrake/FirefoxCustomize
 // @onlyonce
 // ==/UserScript==
 
 // 需要把 Notepad2 放在 配置目录\chrome\resources\bin\Notepad2 文件夹内
 (function () {
-    UC.setViewSourceEditor = {
+    window.setViewSourceEditor = {
         init: function () {
-            let UChrm = Services.dirsvc.get('UChrm', Ci.nsIFile);
-            xPref.set('view_source.editor.path', UChrm.path + "\\resources\\tools\\Notepad2\\Notepad2.exe");
+            let targetPath = PathUtils.join(PathUtils.profileDir, "chrome", "UserTools", "NotePad2", "Notepad2.exe");
+            let targetFile = new FileUtils.File(targetPath);
+            if (targetFile.exists()) {
+                Services.prefs.setStringPref('view_source.editor.path', targetPath);
+            }
         },
         destroy: function () {
-            xPref.clear('view_source.editor.path');
+            Services.prefs.setStringPref('view_source.editor.path', "");
         }
     }
-    UC.setViewSourceEditor.init();
+    window.setViewSourceEditor.init();
 })()
