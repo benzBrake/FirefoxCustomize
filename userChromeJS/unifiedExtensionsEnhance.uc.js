@@ -25,21 +25,24 @@
             label: "选项",
             tooltiptext: "扩展选项",
             "uni-action": "option",
-            class: "unified-extensions-item-option subviewbutton subviewbutton-iconic"
+            class: "unified-extensions-item-option subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
         ENABLE_BUTTON: {
             label: "启用",
             tooltiptext: "启用扩展",
             "uni-action": "enable",
             closemenu: "none",
-            class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic"
+            class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
         DISABLE_BUTTON: {
             label: "禁用",
             tooltiptext: "禁用扩展",
             closemenu: "none",
             "uni-action": "disable",
-            class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic"
+            class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
         DISABLE_ALL_BUTTON: {
             id: 'unified-extensions-disable-all',
@@ -61,12 +64,11 @@
         },
         STYLE: {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
-            #unified-extensions,
-            #unified-extensions-button {
-                display: none !important;
-            }
             #movable-unified-extensions {
                 list-style-image: url("chrome://mozapps/skin/extensions/extension.svg");
+            }
+            #unified-extensions-panel toolbaritem.unified-extensions-item {
+                max-width: unset;
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons {
                 display: flex;
@@ -135,6 +137,7 @@
         },
         init: function () {
             if (!Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false) || !gUnifiedExtensions) {
+                // 没启用按钮脚本不工作
                 return;
             }
 
@@ -145,40 +148,41 @@
 
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
 
+            this.origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
+
             if (!CustomizableUI.getPlacementOfWidget("movable-unified-extensions", true))
                 CustomizableUI.createWidget({
                     id: 'movable-unified-extensions',
-                    type: "view",
-                    viewId: "unified-extensions-view",
+                    type: "custom",
                     defaultArea: CustomizableUI.AREA_NAVBAR,
                     localized: false,
-                    onCreated: node => this.initButton(node)
+                    onBuild: document => this.initButton(document)
                 });
-
-        },
-        initButton: function (node) {
-            let { ownerDocument: document } = node,
-                originalMenu = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
-            $A(node, {
-                label: originalMenu.getAttribute('label'),
-                tooltiptext: originalMenu.getAttribute('tooltiptext'),
-                style: 'list-style-image: url("chrome://mozapps/skin/extensions/extension.svg")',
-                contextmenu: false,
-                onclick: function (event) {
-                    if (event.target.id === "movable-unified-extensions" && event.button === 2) {
-                        event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/extension");
-                    }
-                }
-            });
+            this.btn = CustomizableUI.getWidget('movable-unified-extensions').forWindow(window).node;
+            this.origBtn.setAttribute('consumeanchor', 'movable-unified-extensions');
+            this.btn.appendChild(this.origBtn);
             gUnifiedExtensions.panel;
             let view = PanelMultiView.getViewNode(
                 document,
                 "unified-extensions-view"
             );
             view.addEventListener('ViewShowing', this);
-            view.addEventListener('click', this);
             view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
             view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
+        },
+        initButton: function (document) {
+            return $C(document, "toolbaritem", {
+                id: "movable-unified-extensions",
+                label: this.origBtn.getAttribute('label'),
+                class: "chromeclass-toolbar-additional",
+                tooltiptext: this.origBtn.getAttribute('tooltiptext'),
+                onclick: function (event) {
+                    if ((event.target.id === "movable-unified-extensions" || event.target.id === "unified-extensions-button") && event.button === 2) {
+                        event.preventDefault();
+                        event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/extension");
+                    }
+                }
+            });
         },
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
@@ -201,7 +205,7 @@
                         break;
                     case "disable":
                         item = button.closest(".unified-extensions-item");
-                        let addonId = item.getAttribute("data-extensionid");
+                        let addonId = item.getAttribute("data-extensionid") || item.getAttribute("extension-id");
                         let extension = await AddonManager.getAddonByID(addonId);
                         await extension.disable();
                         this.refreshAddonsList(panelview);
@@ -223,7 +227,7 @@
                 let elm = event.target;
                 if (elm.tagName === "toolbarbutton" && elm.classList.contains("webextension-browser-action")) {
                     let parent = elm.parentNode;
-                    let extension = await AddonManager.getAddonByID(parent.getAttribute("data-extensionid"));
+                    let extension = await AddonManager.getAddonByID(parent.getAttribute("data-extensionid") || parent.getAttribute("extension-id"));
                     if (!extension.optionsURL) {
                         parent.classList.add('addon-no-options');
                     }
@@ -241,16 +245,20 @@
         },
         refreshAddonsList: async function (aView) {
             // 删掉多余扩展项目
-            $QA("unified-extensions-item", $Q("#unified-extensions-list", aView)).forEach(elm => $R(elm));
+            const list = $Q(".unified-extensions-list", aView);
+            [...list.childNodes].forEach(node => $R(node));
             const aDoc = aView.ownerDocument;
-            const list = aView.querySelector(".unified-extensions-list");
+            const area = aDoc.getElementById("unified-extensions-area");
             const extensions = await this.getAllExtensions();
 
             for (const extension of extensions) {
-                let sel = extension.id.replace(/[@.{}]/g, "_") + "-browser-action";
-                if (!aDoc.getElementById(sel)) {
+                if (!area.querySelector(`[data-extensionid="${extension.id}"]`)) {
                     let item = aDoc.createElement("unified-extensions-item");
-                    item.setAddon(extension);
+                    if (typeof item.setExtension === "function") {
+                        item.setExtension(extension);
+                    } else {
+                        item.setAddon(extension);
+                    }
                     item = list.appendChild(item);
                     if (extension.optionsURL) {
                         item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
@@ -300,6 +308,11 @@
         },
         destroy: function () {
             this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
+            let navBar = $("nav-bar");
+            if (navBar.lastChild.id === "PanelUI-button")
+                navBar.insertBefore(this.origBtn, navBar.lastChild);
+            else
+                navBar.appendChild(this.origBtn);
             CustomizableUI.destroyWidget('movable-unified-extensions');
             delete window.unifiedExtensionsEnhance;
         }
