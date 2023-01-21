@@ -317,7 +317,7 @@
                         }
                         if (!obj.oncommand)
                             $A(btn, {
-                                oncommand: `if (event.target.loaclName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
+                                oncommand: `if (event.target !== event.explicitOriginalTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
                             });
                     } catch (e) {
                         this.error(e);
