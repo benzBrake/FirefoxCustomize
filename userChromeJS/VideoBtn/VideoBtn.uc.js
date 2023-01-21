@@ -134,10 +134,7 @@
         ENV_PATHS: [],
         $C: $C,
         $L: $L,
-        get appVersion() {
-            delete this.appVersion;
-            return this.appVersion = Services.appinfo.version.split(".")[0];
-        },
+        get appVersion() { return Services.appinfo.version.split(".")[0]; },
         get debug() { return this.prefs.get("userChromeJS.VideoBtn.debug", false); },
         get BIN_PATH() {
             return this.handleRelativePath(this.prefs.get(this.PREF_BIN_PATH, "\\chrome\\UserTools"));
@@ -255,7 +252,6 @@
         },
         makeMenu() {
             if (this.prefs.get("userChromeJS.VideoBtn.showInContextMenu") && !$("VideoBtn-Menu", document)) {
-                let MENU_CFG = cloneObj(MENU_CONFIG);
                 let refNode = $C(document, 'menuseparator', {
                     class: 'VideoBtn-Hidden',
                     id: 'VideoBtn-RefNode'
@@ -270,7 +266,7 @@
                 let popup = menu.appendChild($C(document, 'menupopup', {
                     class: 'VideoBtn-Popup'
                 }));
-                MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(document, obj)));
+                MENU_CONFIG.forEach(obj => popup.appendChild(this.newMenuitem(document, obj)));
                 let ins = $J("#contentAreaContextMenu menuseparator:last-child");
                 if (ins) {
                     ins.after(menu);
@@ -280,30 +276,51 @@
                     $("contentAreaContextMenu").appendChild(menu);
                 }
             }
-            if (!(CustomizableUI.getWidget("VideoBtn-Button") && CustomizableUI.getWidget("VideoBtn-Button").forWindow(window)?.node)) {
-                CustomizableUI.createWidget({
-                    id: "VideoBtn-Button",
-                    type: 'button',
-                    localized: false,
-                    removeable: true,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    onCreated: node => {
-                        let popup = $C(node.ownerDocument, 'menupopup', {
+            if (CustomizableUI.getPlacementOfWidget("VideoBtn-Button", true)) return;
+            CustomizableUI.createWidget({
+                id: "VideoBtn-Button",
+                type: 'button',
+                localized: false,
+                removeable: true,
+                defaultArea: CustomizableUI.AREA_NAVBAR,
+                onCreated: node => {
+                    let { ownerDocument: doc } = node;
+                    let mp = $("mainPopupSet", doc);
+                    if (!mp.querySelector("#VideoBtn-Button-popup")) {
+                        let menupopup = mp.appendChild($C(doc, 'menupopup', {
                             id: 'VideoBtn-Button-popup',
                             class: 'VideoBtn-Popup',
+                        }));
+                        MENU_CONFIG.forEach(obj => menupopup.appendChild(this.newMenuitem(doc, obj)));
+                        menupopup.addEventListener('popuphidden', (event) => {
+                            if (event.target.id === "VideoBtn-Button-popup") {
+                                event.target.ownerDocument.querySelector("#VideoBtn-Button").removeAttribute("open");
+                            }
                         });
-                        let MENU_CFG = cloneObj(MENU_CONFIG);
-                        MENU_CFG.forEach(obj => popup.appendChild(this.newMenuitem(node.ownerDocument, obj)));
-                        $A(node, {
-                            label: $L("videobtn btn name"),
-                            tooltiptext: $L("videobtn btn name"),
-                            type: 'menu',
-                            menu: 'VideoBtn-Button-popup'
-                        });
-                        node.appendChild(popup);
                     }
-                });
-            }
+                    $A(node, {
+                        label: $L("videobtn btn name"),
+                        tooltiptext: $L("videobtn btn name"),
+                    });
+                    node.addEventListener('click', (event) => {
+                        if (event.target.id !== "VideoBtn-Button") return;
+                        if (event.button === 0) {
+                            if (event.target.getAttribute("open") === "true") {
+                                closeMenus(event.target.ownerDocument.querySelector("#VideoBtn-Button-popup"));
+                            } else {
+                                let pos = "after_end", x, y;
+                                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
+                                    pos = "after_position";
+                                    x = 0;
+                                    y = 0 + event.target.clientHeight;
+                                }
+                                event.target.setAttribute("open", true);
+                                event.target.ownerDocument.querySelector("#VideoBtn-Button-popup").openPopup(event.target, pos, x, y);
+                            }
+                        }
+                    });
+                }
+            });
         },
         destroy() {
             if (this.debug) this.log($L("VideoBtn: destroying element"));
@@ -914,31 +931,6 @@
         return false;
     }
 
-    function cloneObj(o) {
-        if (typeof (o) === typeof (1) || typeof ('') === typeof (o) || typeof (o) === typeof (true) ||
-            typeof (o) === typeof (undefined)) {
-            return o
-        }
-        if (Array.isArray(o)) {
-            let arr = []
-            for (let key in o) {
-                arr.push(cloneObj(o[key]))
-            }
-            return arr
-        }
-        if (typeof (o) === typeof ({})) {
-            if (o === null) {
-                return o
-            }
-            let obj = {}
-            for (let key in o) {
-                obj[key] = cloneObj(o[key])
-            }
-            return obj
-        }
-        return o;
-    }
-
     function choosePathAndSave(title, prefKey, mode, filter, textIfCancel, textIfOk) {
         title = title || $L("choose path");
         textIfCancel = textIfCancel || $L("operation canceled");
@@ -988,7 +980,7 @@
     }
 
     // 延时启动
-    if (gBrowserInit.delayedStartupFinished) window.VideoBtn.init()
+    if (gBrowserInit.delayedStartupFinished) window.VideoBtn.init();
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
