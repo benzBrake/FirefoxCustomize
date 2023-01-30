@@ -853,7 +853,8 @@
                     var a;
                     if (typeof arg == "undefined") arg = []; // fix slice error
                     if (typeof arg == 'string' || arg instanceof String) {
-                        a = arg.split(/\s+/)
+                        if (arg === "") a = []
+                        else a = arg.split(/\s+/)
                     } else if (Array.isArray(arg)) {
                         a = arg;
                     } else {
