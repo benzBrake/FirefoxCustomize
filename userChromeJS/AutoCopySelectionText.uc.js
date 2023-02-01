@@ -137,7 +137,6 @@ if (typeof window === "undefined" || globalThis !== window) {
         var LONG_PRESS = false;
         var TIMEOUT_ID = null;
         window.AutoCopySelectionText = {
-            getKeyState: getKeyState,
             config: {
                 BLACK_TAG_LIST: BLACK_TAG_LIST
             },
@@ -147,7 +146,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 });
             },
             handleEvent: function (event) {
-                if (this.getKeyState(0x91)) return;
+                if (getKeyState(0x91)) return;
                 const { clearTimeout, setTimeout } = event.target.ownerGlobal;
                 if (TIMEOUT_ID)
                     clearTimeout(TIMEOUT_ID);
@@ -184,7 +183,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 LONG_PRESS = false;
             },
             setSelectedText: function (text, tag) {
-                if (this.getKeyState(0x91)) return;
                 if (tag && BLACK_TAG_LIST.includes(tag)) return;
                 if (typeof text !== undefined) {
                     this.copyText(text);
