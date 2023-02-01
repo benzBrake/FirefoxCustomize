@@ -32,6 +32,24 @@
         }
     }
 
+    const MENUS = [{
+        action: 'ReloadAllThemes',
+        label: $L("reload themes"),
+        oncommand: 'window.CopyCatTheme._onclick(event)',
+        style: 'list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);',
+        notice: true
+    }, {
+        label: $L("open themes directory"),
+        action: "OpenThemesDirectory",
+        style: 'list-style-image: url(chrome://global/skin/icons/folder.svg)',
+        oncommand: 'window.CopyCatTheme._onclick(event)'
+    }, {}, {
+        label: $L("theme options"),
+        style: 'list-style-image: url("chrome://global/skin/icons/settings.svg");',
+        action: "OpenThemesOptions",
+        oncommand: 'window.CopyCatTheme._onclick(event)'
+    }];
+
     const TopWindow = Services.wm.getMostRecentWindow("navigator:browser");
     const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
@@ -252,6 +270,10 @@
                 if (URI.charAt(0) == "/") URI = URI.substring(1);
                 return this.THEME_URL_PREFIX = "resource://copycat-uchrm/" + URI;
             },
+            get buildPanel() {
+                delete this.buildPanel;
+                return this.buildPanel = this.gPrefs("buildPanel", false);
+            },
             sPrefs(key, val) {
                 cPref.set("userChromeJS.CopyCat." + key, val);
             },
@@ -302,65 +324,105 @@
                 window.addEventListener('CopyCatThemeUnloaded', this);
                 window.addEventListener('CopyCatThemeLoaded', this);
 
-                if (this.showInToolsMenu) {
-                    let ins = $("devToolsSeparator", document);
-                    let menu = $C(document, "menu", {
-                        id: "CopyCatTheme-Menu",
-                        label: $L("theme settings"),
-                        class: "menu-iconic",
-                        style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTE1LjU5Mzc1IDIuOTY4NzVDMTUuMDYyNSAyLjk4NDM3NSAxNC41MTU2MjUgMy4wNDI5NjkgMTMuOTY4NzUgMy4xMjVMMTMuOTM3NSAzLjEyNUM4LjYxMzI4MSAzLjk5NjA5NCA0LjMwMDc4MSA4LjE5MTQwNiAzLjIxODc1IDEzLjVDMi44OTQ1MzEgMTUuMDExNzE5IDIuOTE0MDYzIDE2LjQyMTg3NSAzLjEyNSAxNy44MTI1QzMuMTMyODEzIDE3LjgxNjQwNiAzLjEyNSAxNy44MzU5MzggMy4xMjUgMTcuODQzNzVDMy40NTMxMjUgMjAuMTkxNDA2IDYuNSAyMS4yMTg3NSA4LjIxODc1IDE5LjVDOS40NDkyMTkgMTguMjY5NTMxIDExLjI2OTUzMSAxOC4yNjk1MzEgMTIuNSAxOS41QzEzLjczMDQ2OSAyMC43MzA0NjkgMTMuNzMwNDY5IDIyLjU1MDc4MSAxMi41IDIzLjc4MTI1QzEwLjc4MTI1IDI1LjUgMTEuODA4NTk0IDI4LjU0Njg3NSAxNC4xNTYyNSAyOC44NzVDMTQuMTY0MDYzIDI4Ljg3NSAxNC4xODM1OTQgMjguODY3MTg4IDE0LjE4NzUgMjguODc1QzE1LjU2NjQwNiAyOS4wODU5MzggMTYuOTY4NzUgMjkuMDk3NjU2IDE4LjQ2ODc1IDI4Ljc4MTI1QzE4LjQ4MDQ2OSAyOC43ODEyNSAxOC40ODgyODEgMjguNzgxMjUgMTguNSAyOC43ODEyNUMyMy44MjQyMTkgMjcuNzg5MDYzIDI4LjAwNzgxMyAyMy4zNzUgMjguODc1IDE4LjA2MjVMMjguODc1IDE4LjAzMTI1QzMwLjAwNzgxMyAxMC4zOTA2MjUgMjQuNDIxODc1IDMuNzE4NzUgMTcuMTU2MjUgMy4wMzEyNUMxNi42MzY3MTkgMi45ODA0NjkgMTYuMTI1IDIuOTUzMTI1IDE1LjU5Mzc1IDIuOTY4NzUgWiBNIDE1LjYyNSA0Ljk2ODc1QzE2LjA3ODEyNSA0Ljk1MzEyNSAxNi41MjczNDQgNC45NjA5MzggMTYuOTY4NzUgNUMyMy4xNjQwNjMgNS41NjY0MDYgMjcuODc1IDExLjIxNDg0NCAyNi45MDYyNSAxNy43NUMyNi4xNzU3ODEgMjIuMjI2NTYzIDIyLjU4NTkzOCAyNS45OTIxODggMTguMTI1IDI2LjgxMjVMMTguMDkzNzUgMjYuODEyNUMxNi44MTY0MDYgMjcuMDg1OTM4IDE1LjYzNjcxOSAyNy4wODk4NDQgMTQuNDM3NSAyNi45MDYyNUMxMy42MTcxODggMjYuODA0Njg4IDEzLjIzODI4MSAyNS44ODY3MTkgMTMuOTA2MjUgMjUuMjE4NzVDMTUuODc1IDIzLjI1IDE1Ljg3NSAyMC4wNjI1IDEzLjkwNjI1IDE4LjA5Mzc1QzExLjkzNzUgMTYuMTI1IDguNzUgMTYuMTI1IDYuNzgxMjUgMTguMDkzNzVDNi4xMTMyODEgMTguNzYxNzE5IDUuMTk1MzEzIDE4LjM4MjgxMyA1LjA5Mzc1IDE3LjU2MjVDNC45MTAxNTYgMTYuMzYzMjgxIDQuOTE0MDYzIDE1LjE4MzU5NCA1LjE4NzUgMTMuOTA2MjVDNi4xMDU0NjkgOS40MTc5NjkgOS43NzM0MzggNS44MjQyMTkgMTQuMjUgNS4wOTM3NUMxNC43MTg3NSA1LjAyMzQzOCAxNS4xNzE4NzUgNC45ODQzNzUgMTUuNjI1IDQuOTY4NzUgWiBNIDE0IDdDMTIuODk0NTMxIDcgMTIgNy44OTQ1MzEgMTIgOUMxMiAxMC4xMDU0NjkgMTIuODk0NTMxIDExIDE0IDExQzE1LjEwNTQ2OSAxMSAxNiAxMC4xMDU0NjkgMTYgOUMxNiA3Ljg5NDUzMSAxNS4xMDU0NjkgNyAxNCA3IFogTSAyMSA5QzE5Ljg5NDUzMSA5IDE5IDkuODk0NTMxIDE5IDExQzE5IDEyLjEwNTQ2OSAxOS44OTQ1MzEgMTMgMjEgMTNDMjIuMTA1NDY5IDEzIDIzIDEyLjEwNTQ2OSAyMyAxMUMyMyA5Ljg5NDUzMSAyMi4xMDU0NjkgOSAyMSA5IFogTSA5IDExQzcuODk0NTMxIDExIDcgMTEuODk0NTMxIDcgMTNDNyAxNC4xMDU0NjkgNy44OTQ1MzEgMTUgOSAxNUMxMC4xMDU0NjkgMTUgMTEgMTQuMTA1NDY5IDExIDEzQzExIDExLjg5NDUzMSAxMC4xMDU0NjkgMTEgOSAxMSBaIE0gMjMgMTZDMjEuODk0NTMxIDE2IDIxIDE2Ljg5NDUzMSAyMSAxOEMyMSAxOS4xMDU0NjkgMjEuODk0NTMxIDIwIDIzIDIwQzI0LjEwNTQ2OSAyMCAyNSAxOS4xMDU0NjkgMjUgMThDMjUgMTYuODk0NTMxIDI0LjEwNTQ2OSAxNiAyMyAxNiBaIE0gMTkgMjFDMTcuODk0NTMxIDIxIDE3IDIxLjg5NDUzMSAxNyAyM0MxNyAyNC4xMDU0NjkgMTcuODk0NTMxIDI1IDE5IDI1QzIwLjEwNTQ2OSAyNSAyMSAyNC4xMDU0NjkgMjEgMjNDMjEgMjEuODk0NTMxIDIwLjEwNTQ2OSAyMSAxOSAyMVoiIC8+DQo8L3N2Zz4=);"
-                    });
-                    let menupopup = menu.appendChild($C(document, "menupopup", {
-                        id: 'CopyCatTheme-Popup',
-                    }));
-                    menupopup.addEventListener("popupshowing", CopyCatTheme.handleEvent, { once: true });
-                    ins.parentNode.insertBefore(menu, ins);
-                } else {
+                if (this.buildPanel) {
                     if (!(CustomizableUI.getWidget('CopyCatTheme-Btn') && CustomizableUI.getWidget('CopyCatTheme-Btn').forWindow(window)?.node)) {
-                        CustomizableUI.createWidget({
-                            id: 'CopyCatTheme-Btn',
-                            removable: true,
-                            defaultArea: CustomizableUI.AREA_NAVBAR,
-                            localized: false,
-                            onCreated: node => {
-                                let menupopup = node.appendChild($C(node.ownerDocument, "menupopup", {
-                                    id: 'CopyCatTheme-Popup',
-                                    onpopuphidden: (event) => {
-                                        event.target.closest("toolbarbutton").removeAttribute("open");
-                                    }
-                                }));
-                                menupopup.addEventListener("popupshowing", CopyCatTheme.handleEvent, { once: true });
-                                $A(node, {
-                                    label: $L("copycat themes management"),
-                                    tooltiptext: $L("copycat themes management tooltip"),
-                                    style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTE1LjU5Mzc1IDIuOTY4NzVDMTUuMDYyNSAyLjk4NDM3NSAxNC41MTU2MjUgMy4wNDI5NjkgMTMuOTY4NzUgMy4xMjVMMTMuOTM3NSAzLjEyNUM4LjYxMzI4MSAzLjk5NjA5NCA0LjMwMDc4MSA4LjE5MTQwNiAzLjIxODc1IDEzLjVDMi44OTQ1MzEgMTUuMDExNzE5IDIuOTE0MDYzIDE2LjQyMTg3NSAzLjEyNSAxNy44MTI1QzMuMTMyODEzIDE3LjgxNjQwNiAzLjEyNSAxNy44MzU5MzggMy4xMjUgMTcuODQzNzVDMy40NTMxMjUgMjAuMTkxNDA2IDYuNSAyMS4yMTg3NSA4LjIxODc1IDE5LjVDOS40NDkyMTkgMTguMjY5NTMxIDExLjI2OTUzMSAxOC4yNjk1MzEgMTIuNSAxOS41QzEzLjczMDQ2OSAyMC43MzA0NjkgMTMuNzMwNDY5IDIyLjU1MDc4MSAxMi41IDIzLjc4MTI1QzEwLjc4MTI1IDI1LjUgMTEuODA4NTk0IDI4LjU0Njg3NSAxNC4xNTYyNSAyOC44NzVDMTQuMTY0MDYzIDI4Ljg3NSAxNC4xODM1OTQgMjguODY3MTg4IDE0LjE4NzUgMjguODc1QzE1LjU2NjQwNiAyOS4wODU5MzggMTYuOTY4NzUgMjkuMDk3NjU2IDE4LjQ2ODc1IDI4Ljc4MTI1QzE4LjQ4MDQ2OSAyOC43ODEyNSAxOC40ODgyODEgMjguNzgxMjUgMTguNSAyOC43ODEyNUMyMy44MjQyMTkgMjcuNzg5MDYzIDI4LjAwNzgxMyAyMy4zNzUgMjguODc1IDE4LjA2MjVMMjguODc1IDE4LjAzMTI1QzMwLjAwNzgxMyAxMC4zOTA2MjUgMjQuNDIxODc1IDMuNzE4NzUgMTcuMTU2MjUgMy4wMzEyNUMxNi42MzY3MTkgMi45ODA0NjkgMTYuMTI1IDIuOTUzMTI1IDE1LjU5Mzc1IDIuOTY4NzUgWiBNIDE1LjYyNSA0Ljk2ODc1QzE2LjA3ODEyNSA0Ljk1MzEyNSAxNi41MjczNDQgNC45NjA5MzggMTYuOTY4NzUgNUMyMy4xNjQwNjMgNS41NjY0MDYgMjcuODc1IDExLjIxNDg0NCAyNi45MDYyNSAxNy43NUMyNi4xNzU3ODEgMjIuMjI2NTYzIDIyLjU4NTkzOCAyNS45OTIxODggMTguMTI1IDI2LjgxMjVMMTguMDkzNzUgMjYuODEyNUMxNi44MTY0MDYgMjcuMDg1OTM4IDE1LjYzNjcxOSAyNy4wODk4NDQgMTQuNDM3NSAyNi45MDYyNUMxMy42MTcxODggMjYuODA0Njg4IDEzLjIzODI4MSAyNS44ODY3MTkgMTMuOTA2MjUgMjUuMjE4NzVDMTUuODc1IDIzLjI1IDE1Ljg3NSAyMC4wNjI1IDEzLjkwNjI1IDE4LjA5Mzc1QzExLjkzNzUgMTYuMTI1IDguNzUgMTYuMTI1IDYuNzgxMjUgMTguMDkzNzVDNi4xMTMyODEgMTguNzYxNzE5IDUuMTk1MzEzIDE4LjM4MjgxMyA1LjA5Mzc1IDE3LjU2MjVDNC45MTAxNTYgMTYuMzYzMjgxIDQuOTE0MDYzIDE1LjE4MzU5NCA1LjE4NzUgMTMuOTA2MjVDNi4xMDU0NjkgOS40MTc5NjkgOS43NzM0MzggNS44MjQyMTkgMTQuMjUgNS4wOTM3NUMxNC43MTg3NSA1LjAyMzQzOCAxNS4xNzE4NzUgNC45ODQzNzUgMTUuNjI1IDQuOTY4NzUgWiBNIDE0IDdDMTIuODk0NTMxIDcgMTIgNy44OTQ1MzEgMTIgOUMxMiAxMC4xMDU0NjkgMTIuODk0NTMxIDExIDE0IDExQzE1LjEwNTQ2OSAxMSAxNiAxMC4xMDU0NjkgMTYgOUMxNiA3Ljg5NDUzMSAxNS4xMDU0NjkgNyAxNCA3IFogTSAyMSA5QzE5Ljg5NDUzMSA5IDE5IDkuODk0NTMxIDE5IDExQzE5IDEyLjEwNTQ2OSAxOS44OTQ1MzEgMTMgMjEgMTNDMjIuMTA1NDY5IDEzIDIzIDEyLjEwNTQ2OSAyMyAxMUMyMyA5Ljg5NDUzMSAyMi4xMDU0NjkgOSAyMSA5IFogTSA5IDExQzcuODk0NTMxIDExIDcgMTEuODk0NTMxIDcgMTNDNyAxNC4xMDU0NjkgNy44OTQ1MzEgMTUgOSAxNUMxMC4xMDU0NjkgMTUgMTEgMTQuMTA1NDY5IDExIDEzQzExIDExLjg5NDUzMSAxMC4xMDU0NjkgMTEgOSAxMSBaIE0gMjMgMTZDMjEuODk0NTMxIDE2IDIxIDE2Ljg5NDUzMSAyMSAxOEMyMSAxOS4xMDU0NjkgMjEuODk0NTMxIDIwIDIzIDIwQzI0LjEwNTQ2OSAyMCAyNSAxOS4xMDU0NjkgMjUgMThDMjUgMTYuODk0NTMxIDI0LjEwNTQ2OSAxNiAyMyAxNiBaIE0gMTkgMjFDMTcuODk0NTMxIDIxIDE3IDIxLjg5NDUzMSAxNyAyM0MxNyAyNC4xMDU0NjkgMTcuODk0NTMxIDI1IDE5IDI1QzIwLjEwNTQ2OSAyNSAyMSAyNC4xMDU0NjkgMjEgMjNDMjEgMjEuODk0NTMxIDIwLjEwNTQ2OSAyMSAxOSAyMVoiIC8+DQo8L3N2Zz4=);",
-                                    contextmenu: false,
-                                    onclick: function (event) {
-                                        switch (event.button) {
-                                            case 0:
-                                                if (event.target.getAttribute("open") === "true") {
-                                                    closeMenus(event.target.querySelector("menupopup"));
-                                                } else {
-                                                    event.target.setAttribute("open", "true");
-                                                    let pos = "after_end", x, y;
-                                                    if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
-                                                        pos = "after_position";
-                                                        x = 0;
-                                                        y = 0 + event.target.clientHeight;
-                                                    }
-                                                    event.target.querySelector("menupopup").openPopup(event.target, pos, x, y);
-                                                }
-                                                break;
-                                            case 1:
-                                                window.CopyCatTheme._onclick({ target: window.CopyCatTheme.reloadTargetWithNotice });
-                                                break;
-                                        }
-
-                                    }
-                                });
-
-                            },
+                        let viewCache = getViewCache(document);
+                        let view = document.getElementById("CopyCat-ThemeMenu-View") || viewCache.querySelector("#CopyCat-ThemeMenu-View");
+                        if (!view) {
+                            viewCache.appendChild(window.MozXULElement.parseXULToFragment(`
+                            <panelview id="CopyCat-ThemeMenu-View" class="CopyCatTheme-View PanelUI-subView">
+                                <box class="panel-header">
+                                    <toolbarbutton class="subviewbutton subviewbutton-iconic subviewbutton-back" closemenu="none" tabindex="0"><image class="toolbarbutton-icon"/><label class="toolbarbutton-text" crop="right" flex="1"/></toolbarbutton>
+                                    <h1><span></span></h1>
+                                </box>
+                                <toolbarseparator />
+                                <vbox class="panel-subview-body" panelId="CopyCat-ThemeMenu-View">
+                                </vbox>
+                            </panelview>
+                            `))
+                            view = viewCache.querySelector('#CopyCat-ThemeMenu-View');
+                            $A(view.querySelector('.subviewbutton-back'), {
+                                oncommand: function () {
+                                    var mView = this.closest('panelmultiview');
+                                    if (mView) mView.goBack();
+                                }
+                            });
+                        }
+                        view.addEventListener('ViewShowing', this, { once: true });
+                        let themeMenu = $C(document, 'toolbarbutton', {
+                            id: 'CopyCatTheme-Menu',
+                            class: 'subviewbutton subviewbutton-nav',
+                            type: 'view',
+                            view: "CopyCat-ThemeMenu-View",
+                            closemenu: "none",
+                            label: $L("theme settings"),
+                            oncommand: "PanelUI.showSubView('CopyCat-ThemeMenu-View', this)"
                         });
+                        let mainView = getViewCache(document).querySelector('#appMenu-protonMainView'),
+                            ins = mainView.querySelector('#appMenu-more-button2');
+                        ins.before(themeMenu);
+                    }
+                } else {
+                    if (this.showInToolsMenu) {
+                        let ins = $("devToolsSeparator", document);
+                        let menu = $C(document, "menu", {
+                            id: "CopyCatTheme-Menu",
+                            label: $L("theme settings"),
+                            class: "menu-iconic",
+                            style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTE1LjU5Mzc1IDIuOTY4NzVDMTUuMDYyNSAyLjk4NDM3NSAxNC41MTU2MjUgMy4wNDI5NjkgMTMuOTY4NzUgMy4xMjVMMTMuOTM3NSAzLjEyNUM4LjYxMzI4MSAzLjk5NjA5NCA0LjMwMDc4MSA4LjE5MTQwNiAzLjIxODc1IDEzLjVDMi44OTQ1MzEgMTUuMDExNzE5IDIuOTE0MDYzIDE2LjQyMTg3NSAzLjEyNSAxNy44MTI1QzMuMTMyODEzIDE3LjgxNjQwNiAzLjEyNSAxNy44MzU5MzggMy4xMjUgMTcuODQzNzVDMy40NTMxMjUgMjAuMTkxNDA2IDYuNSAyMS4yMTg3NSA4LjIxODc1IDE5LjVDOS40NDkyMTkgMTguMjY5NTMxIDExLjI2OTUzMSAxOC4yNjk1MzEgMTIuNSAxOS41QzEzLjczMDQ2OSAyMC43MzA0NjkgMTMuNzMwNDY5IDIyLjU1MDc4MSAxMi41IDIzLjc4MTI1QzEwLjc4MTI1IDI1LjUgMTEuODA4NTk0IDI4LjU0Njg3NSAxNC4xNTYyNSAyOC44NzVDMTQuMTY0MDYzIDI4Ljg3NSAxNC4xODM1OTQgMjguODY3MTg4IDE0LjE4NzUgMjguODc1QzE1LjU2NjQwNiAyOS4wODU5MzggMTYuOTY4NzUgMjkuMDk3NjU2IDE4LjQ2ODc1IDI4Ljc4MTI1QzE4LjQ4MDQ2OSAyOC43ODEyNSAxOC40ODgyODEgMjguNzgxMjUgMTguNSAyOC43ODEyNUMyMy44MjQyMTkgMjcuNzg5MDYzIDI4LjAwNzgxMyAyMy4zNzUgMjguODc1IDE4LjA2MjVMMjguODc1IDE4LjAzMTI1QzMwLjAwNzgxMyAxMC4zOTA2MjUgMjQuNDIxODc1IDMuNzE4NzUgMTcuMTU2MjUgMy4wMzEyNUMxNi42MzY3MTkgMi45ODA0NjkgMTYuMTI1IDIuOTUzMTI1IDE1LjU5Mzc1IDIuOTY4NzUgWiBNIDE1LjYyNSA0Ljk2ODc1QzE2LjA3ODEyNSA0Ljk1MzEyNSAxNi41MjczNDQgNC45NjA5MzggMTYuOTY4NzUgNUMyMy4xNjQwNjMgNS41NjY0MDYgMjcuODc1IDExLjIxNDg0NCAyNi45MDYyNSAxNy43NUMyNi4xNzU3ODEgMjIuMjI2NTYzIDIyLjU4NTkzOCAyNS45OTIxODggMTguMTI1IDI2LjgxMjVMMTguMDkzNzUgMjYuODEyNUMxNi44MTY0MDYgMjcuMDg1OTM4IDE1LjYzNjcxOSAyNy4wODk4NDQgMTQuNDM3NSAyNi45MDYyNUMxMy42MTcxODggMjYuODA0Njg4IDEzLjIzODI4MSAyNS44ODY3MTkgMTMuOTA2MjUgMjUuMjE4NzVDMTUuODc1IDIzLjI1IDE1Ljg3NSAyMC4wNjI1IDEzLjkwNjI1IDE4LjA5Mzc1QzExLjkzNzUgMTYuMTI1IDguNzUgMTYuMTI1IDYuNzgxMjUgMTguMDkzNzVDNi4xMTMyODEgMTguNzYxNzE5IDUuMTk1MzEzIDE4LjM4MjgxMyA1LjA5Mzc1IDE3LjU2MjVDNC45MTAxNTYgMTYuMzYzMjgxIDQuOTE0MDYzIDE1LjE4MzU5NCA1LjE4NzUgMTMuOTA2MjVDNi4xMDU0NjkgOS40MTc5NjkgOS43NzM0MzggNS44MjQyMTkgMTQuMjUgNS4wOTM3NUMxNC43MTg3NSA1LjAyMzQzOCAxNS4xNzE4NzUgNC45ODQzNzUgMTUuNjI1IDQuOTY4NzUgWiBNIDE0IDdDMTIuODk0NTMxIDcgMTIgNy44OTQ1MzEgMTIgOUMxMiAxMC4xMDU0NjkgMTIuODk0NTMxIDExIDE0IDExQzE1LjEwNTQ2OSAxMSAxNiAxMC4xMDU0NjkgMTYgOUMxNiA3Ljg5NDUzMSAxNS4xMDU0NjkgNyAxNCA3IFogTSAyMSA5QzE5Ljg5NDUzMSA5IDE5IDkuODk0NTMxIDE5IDExQzE5IDEyLjEwNTQ2OSAxOS44OTQ1MzEgMTMgMjEgMTNDMjIuMTA1NDY5IDEzIDIzIDEyLjEwNTQ2OSAyMyAxMUMyMyA5Ljg5NDUzMSAyMi4xMDU0NjkgOSAyMSA5IFogTSA5IDExQzcuODk0NTMxIDExIDcgMTEuODk0NTMxIDcgMTNDNyAxNC4xMDU0NjkgNy44OTQ1MzEgMTUgOSAxNUMxMC4xMDU0NjkgMTUgMTEgMTQuMTA1NDY5IDExIDEzQzExIDExLjg5NDUzMSAxMC4xMDU0NjkgMTEgOSAxMSBaIE0gMjMgMTZDMjEuODk0NTMxIDE2IDIxIDE2Ljg5NDUzMSAyMSAxOEMyMSAxOS4xMDU0NjkgMjEuODk0NTMxIDIwIDIzIDIwQzI0LjEwNTQ2OSAyMCAyNSAxOS4xMDU0NjkgMjUgMThDMjUgMTYuODk0NTMxIDI0LjEwNTQ2OSAxNiAyMyAxNiBaIE0gMTkgMjFDMTcuODk0NTMxIDIxIDE3IDIxLjg5NDUzMSAxNyAyM0MxNyAyNC4xMDU0NjkgMTcuODk0NTMxIDI1IDE5IDI1QzIwLjEwNTQ2OSAyNSAyMSAyNC4xMDU0NjkgMjEgMjNDMjEgMjEuODk0NTMxIDIwLjEwNTQ2OSAyMSAxOSAyMVoiIC8+DQo8L3N2Zz4=);"
+                        });
+                        let menupopup = menu.appendChild($C(document, "menupopup", {
+                            id: 'CopyCatTheme-Popup',
+                        }));
+                        menupopup.addEventListener("popupshowing", CopyCatTheme.handleEvent, { once: true });
+                        ins.parentNode.insertBefore(menu, ins);
+                    } else {
+                        if (!(CustomizableUI.getWidget('CopyCatTheme-Btn') && CustomizableUI.getWidget('CopyCatTheme-Btn').forWindow(window)?.node)) {
+                            CustomizableUI.createWidget({
+                                id: 'CopyCatTheme-Btn',
+                                removable: true,
+                                defaultArea: CustomizableUI.AREA_NAVBAR,
+                                localized: false,
+                                onCreated: node => {
+                                    let menupopup = node.appendChild($C(node.ownerDocument, "menupopup", {
+                                        id: 'CopyCatTheme-Popup',
+                                        onpopuphidden: (event) => {
+                                            event.target.closest("toolbarbutton").removeAttribute("open");
+                                        }
+                                    }));
+                                    menupopup.addEventListener("popupshowing", CopyCatTheme.handleEvent, { once: true });
+                                    $A(node, {
+                                        label: $L("copycat themes management"),
+                                        tooltiptext: $L("copycat themes management tooltip"),
+                                        style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTE1LjU5Mzc1IDIuOTY4NzVDMTUuMDYyNSAyLjk4NDM3NSAxNC41MTU2MjUgMy4wNDI5NjkgMTMuOTY4NzUgMy4xMjVMMTMuOTM3NSAzLjEyNUM4LjYxMzI4MSAzLjk5NjA5NCA0LjMwMDc4MSA4LjE5MTQwNiAzLjIxODc1IDEzLjVDMi44OTQ1MzEgMTUuMDExNzE5IDIuOTE0MDYzIDE2LjQyMTg3NSAzLjEyNSAxNy44MTI1QzMuMTMyODEzIDE3LjgxNjQwNiAzLjEyNSAxNy44MzU5MzggMy4xMjUgMTcuODQzNzVDMy40NTMxMjUgMjAuMTkxNDA2IDYuNSAyMS4yMTg3NSA4LjIxODc1IDE5LjVDOS40NDkyMTkgMTguMjY5NTMxIDExLjI2OTUzMSAxOC4yNjk1MzEgMTIuNSAxOS41QzEzLjczMDQ2OSAyMC43MzA0NjkgMTMuNzMwNDY5IDIyLjU1MDc4MSAxMi41IDIzLjc4MTI1QzEwLjc4MTI1IDI1LjUgMTEuODA4NTk0IDI4LjU0Njg3NSAxNC4xNTYyNSAyOC44NzVDMTQuMTY0MDYzIDI4Ljg3NSAxNC4xODM1OTQgMjguODY3MTg4IDE0LjE4NzUgMjguODc1QzE1LjU2NjQwNiAyOS4wODU5MzggMTYuOTY4NzUgMjkuMDk3NjU2IDE4LjQ2ODc1IDI4Ljc4MTI1QzE4LjQ4MDQ2OSAyOC43ODEyNSAxOC40ODgyODEgMjguNzgxMjUgMTguNSAyOC43ODEyNUMyMy44MjQyMTkgMjcuNzg5MDYzIDI4LjAwNzgxMyAyMy4zNzUgMjguODc1IDE4LjA2MjVMMjguODc1IDE4LjAzMTI1QzMwLjAwNzgxMyAxMC4zOTA2MjUgMjQuNDIxODc1IDMuNzE4NzUgMTcuMTU2MjUgMy4wMzEyNUMxNi42MzY3MTkgMi45ODA0NjkgMTYuMTI1IDIuOTUzMTI1IDE1LjU5Mzc1IDIuOTY4NzUgWiBNIDE1LjYyNSA0Ljk2ODc1QzE2LjA3ODEyNSA0Ljk1MzEyNSAxNi41MjczNDQgNC45NjA5MzggMTYuOTY4NzUgNUMyMy4xNjQwNjMgNS41NjY0MDYgMjcuODc1IDExLjIxNDg0NCAyNi45MDYyNSAxNy43NUMyNi4xNzU3ODEgMjIuMjI2NTYzIDIyLjU4NTkzOCAyNS45OTIxODggMTguMTI1IDI2LjgxMjVMMTguMDkzNzUgMjYuODEyNUMxNi44MTY0MDYgMjcuMDg1OTM4IDE1LjYzNjcxOSAyNy4wODk4NDQgMTQuNDM3NSAyNi45MDYyNUMxMy42MTcxODggMjYuODA0Njg4IDEzLjIzODI4MSAyNS44ODY3MTkgMTMuOTA2MjUgMjUuMjE4NzVDMTUuODc1IDIzLjI1IDE1Ljg3NSAyMC4wNjI1IDEzLjkwNjI1IDE4LjA5Mzc1QzExLjkzNzUgMTYuMTI1IDguNzUgMTYuMTI1IDYuNzgxMjUgMTguMDkzNzVDNi4xMTMyODEgMTguNzYxNzE5IDUuMTk1MzEzIDE4LjM4MjgxMyA1LjA5Mzc1IDE3LjU2MjVDNC45MTAxNTYgMTYuMzYzMjgxIDQuOTE0MDYzIDE1LjE4MzU5NCA1LjE4NzUgMTMuOTA2MjVDNi4xMDU0NjkgOS40MTc5NjkgOS43NzM0MzggNS44MjQyMTkgMTQuMjUgNS4wOTM3NUMxNC43MTg3NSA1LjAyMzQzOCAxNS4xNzE4NzUgNC45ODQzNzUgMTUuNjI1IDQuOTY4NzUgWiBNIDE0IDdDMTIuODk0NTMxIDcgMTIgNy44OTQ1MzEgMTIgOUMxMiAxMC4xMDU0NjkgMTIuODk0NTMxIDExIDE0IDExQzE1LjEwNTQ2OSAxMSAxNiAxMC4xMDU0NjkgMTYgOUMxNiA3Ljg5NDUzMSAxNS4xMDU0NjkgNyAxNCA3IFogTSAyMSA5QzE5Ljg5NDUzMSA5IDE5IDkuODk0NTMxIDE5IDExQzE5IDEyLjEwNTQ2OSAxOS44OTQ1MzEgMTMgMjEgMTNDMjIuMTA1NDY5IDEzIDIzIDEyLjEwNTQ2OSAyMyAxMUMyMyA5Ljg5NDUzMSAyMi4xMDU0NjkgOSAyMSA5IFogTSA5IDExQzcuODk0NTMxIDExIDcgMTEuODk0NTMxIDcgMTNDNyAxNC4xMDU0NjkgNy44OTQ1MzEgMTUgOSAxNUMxMC4xMDU0NjkgMTUgMTEgMTQuMTA1NDY5IDExIDEzQzExIDExLjg5NDUzMSAxMC4xMDU0NjkgMTEgOSAxMSBaIE0gMjMgMTZDMjEuODk0NTMxIDE2IDIxIDE2Ljg5NDUzMSAyMSAxOEMyMSAxOS4xMDU0NjkgMjEuODk0NTMxIDIwIDIzIDIwQzI0LjEwNTQ2OSAyMCAyNSAxOS4xMDU0NjkgMjUgMThDMjUgMTYuODk0NTMxIDI0LjEwNTQ2OSAxNiAyMyAxNiBaIE0gMTkgMjFDMTcuODk0NTMxIDIxIDE3IDIxLjg5NDUzMSAxNyAyM0MxNyAyNC4xMDU0NjkgMTcuODk0NTMxIDI1IDE5IDI1QzIwLjEwNTQ2OSAyNSAyMSAyNC4xMDU0NjkgMjEgMjNDMjEgMjEuODk0NTMxIDIwLjEwNTQ2OSAyMSAxOSAyMVoiIC8+DQo8L3N2Zz4=);",
+                                        contextmenu: false,
+                                        onclick: function (event) {
+                                            switch (event.button) {
+                                                case 0:
+                                                    if (event.target.getAttribute("open") === "true") {
+                                                        closeMenus(event.target.querySelector("menupopup"));
+                                                    } else {
+                                                        event.target.setAttribute("open", "true");
+                                                        let pos = "after_end", x, y;
+                                                        if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
+                                                            pos = "after_position";
+                                                            x = 0;
+                                                            y = 0 + event.target.clientHeight;
+                                                        }
+                                                        event.target.querySelector("menupopup").openPopup(event.target, pos, x, y);
+                                                    }
+                                                    break;
+                                                case 1:
+                                                    window.CopyCatTheme._onclick({ target: window.CopyCatTheme.reloadTargetWithNotice });
+                                                    break;
+                                            }
+
+                                        }
+                                    });
+
+                                },
+                            });
+                        }
                     }
                 }
 
@@ -393,23 +455,7 @@
                         this.refreshGlobalStyle(event.target.document, false);
                         break;
                     case "popupshowing":
-                        [{
-                            action: 'ReloadAllThemes',
-                            label: $L("reload themes"),
-                            oncommand: 'window.CopyCatTheme._onclick(event)',
-                            style: 'list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);',
-                            notice: true
-                        }, {
-                            label: $L("open themes directory"),
-                            action: "OpenThemesDirectory",
-                            style: 'list-style-image: url(chrome://global/skin/icons/folder.svg)',
-                            oncommand: 'window.CopyCatTheme._onclick(event)'
-                        }, {}, {
-                            label: $L("theme options"),
-                            style: 'list-style-image: url("chrome://global/skin/icons/settings.svg");',
-                            action: "OpenThemesOptions",
-                            oncommand: 'window.CopyCatTheme._onclick(event)'
-                        }].forEach(obj => {
+                        MENUS.forEach(obj => {
                             let type = obj.type;
                             if (!type || ["radio", "checkbox"].includes(type)) type = "menuitem";
                             if (!obj.label && !obj.content) type = "menuseparator";
@@ -417,6 +463,16 @@
                             if (type === "menuitem")
                                 item.classList.add('menuitem-iconic');
                             event.target.appendChild(item);
+                        });
+                        break;
+                    case "ViewShowing":
+                        MENUS.forEach(obj => {
+                            let type = obj.type;
+                            if (!type || ["radio", "checkbox"].includes(type)) type = "toolbarbutton";
+                            if (!obj.label && !obj.content) type = "toolbarseparator";
+                            let item = $C(event.target.ownerDocument, type, obj);
+                            item.classList.add("subviewbutton")
+                            event.target.querySelector(':scope>vbox').appendChild(item);
                         });
                         break;
                 }
@@ -510,7 +566,7 @@
                             cssArr.push(`${name}: ${val};`);
                         }
                     });
-                    let css = ':root{\n' + cssArr.join("\n") + "\n}";
+                    let css = ':root{\n' + cssArr.join("\n") + "}\n";
                     window.CopyCatTheme.SYNCED_STYLE = {
                         url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
                         type: window.CopyCatTheme.sss.AUTHOR_SHEET,
@@ -977,6 +1033,10 @@
 
     function $(id, aDoc) {
         return (aDoc || document).getElementById(id);
+    }
+
+    function getViewCache(aDoc) {
+        return ($('appMenu-viewCache', aDoc) && $('appMenu-viewCache', aDoc).content) || $('appMenu-multiView', aDoc);
     }
 
     function $C(doc, tag, attrs, skipAttrs) {
