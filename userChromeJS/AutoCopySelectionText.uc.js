@@ -17,6 +17,8 @@
 // @version         2022.07.16 重写代码，支持热插拔，采用 异步消息，支持 Firefox 内置页面
 // @version         2022.07.13 初始化版本
 // ==/UserScript==
+
+const ACST_COPY_SUCCESS_NOTICE = "Auto Copyed!";
 if (typeof window === "undefined" || globalThis !== window) {
     let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
     try {
@@ -24,8 +26,6 @@ if (typeof window === "undefined" || globalThis !== window) {
             BrowserOrSelectionUtils = Cu.import("resource://gre/modules/SelectionUtils.jsm").SelectionUtils;
         }
     } catch (e) { }
-
-    const COPY_SUCCESS_NOTICE = "Auto Copyed!";
 
     if (!Services.appinfo.remoteType) {
         this.EXPORTED_SYMBOLS = ["ACSTParent"];
@@ -81,46 +81,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                         if (obj.text) {
                             actor.sendAsyncMessage("ACST:setSelectedText", obj);
                             if (data.SHOW_SUCCESS_NOTICE)
-                                this.showSuccessInfo();
+                                ACST_showSuccessInfo(this.contentWindow);
                         }
                         break;
                 }
-            }
-
-            /**
-             * 显示复制成功通知
-             */
-            showSuccessInfo() {
-                let win = this.contentWindow;
-                let { document } = win;
-                let wrapper = document.querySelector("#acst-success-info-wrapper");
-                if (!wrapper) {
-                    let wEl = document.createElement("div");
-                    wEl.setAttribute("id", "acst-success-info-wrapper");
-                    wEl.setAttribute("style", "z-index: 9999999; position: fixed; top: 20px; right: 20px; display: none; pointer-events:none; transition:all .2s")
-                    wrapper = document.querySelector("body").appendChild(wEl);
-                    wrapper.addEventListener("DOMSubtreeModified", function (event) {
-                        let target = event.target
-                        if (target.childNodes.length) {
-                            target.style.display = "block";
-                        } else {
-                            target.style.display = "none";
-                        }
-                    });
-                }
-                let div = document.createElement("div");
-                div.innerText = COPY_SUCCESS_NOTICE;
-                div.setAttribute("style", "pointer-events: initial; cursor: pointer; position: relative; opacity: 1; transition:all .2s; margin-top: 10px; padding: 10px 20px; color: white; background-color: #4ade80; border-radius: 5px;");
-                div = wrapper.appendChild(div);
-                div.addEventListener("click", (event) => {
-                    event.target.parentNode.removeChild(event.target);
-                });
-                win.setTimeout(() => {
-                    div.style.opacity = 0;
-                    win.setTimeout(() => {
-                        div.parentNode.removeChild(div);
-                    }, 200);
-                }, 2000);
             }
         }
     }
@@ -201,8 +165,12 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 let info = content.getSelection();
                                 // 黑名单不获取选中文本
                                 if (info && info.anchorNode && info.anchorNode.activeElement && BLACK_TAG_LIST.includes(info.anchorNode.activeElement.localName)) return;
-
-                                this.setSelectedText(BrowserOrSelectionUtils.getSelectionDetails(content).fullText);
+                                let text = BrowserOrSelectionUtils.getSelectionDetails(content).fullText;
+                                if (text) {
+                                    this.setSelectedText();
+                                    if (SHOW_SUCCESS_NOTICE)
+                                        ACST_showSuccessInfo(content);
+                                }
                             } else {
                                 // 网页
                                 let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("ACST");
@@ -226,4 +194,40 @@ if (typeof window === "undefined" || globalThis !== window) {
         }
         window.AutoCopySelectionText.init();
     })()
+}
+
+/**
+* 显示复制成功通知
+*/
+function ACST_showSuccessInfo(win) {
+    let { document } = win;
+    let main = document.querySelector("body") || document.documentElement;
+    let wrapper = document.querySelector("#acst-success-info-wrapper");
+    if (!wrapper) {
+        let wEl = document.createElement("div");
+        wEl.setAttribute("id", "acst-success-info-wrapper");
+        wEl.setAttribute("style", "z-index: 9999999; position: fixed; top: 20px; right: 20px; display: none; pointer-events:none; transition:all .2s")
+        wrapper = main.appendChild(wEl);
+        wrapper.addEventListener("DOMSubtreeModified", function (event) {
+            let target = event.target
+            if (target.childNodes.length) {
+                target.style.display = "block";
+            } else {
+                target.style.display = "none";
+            }
+        });
+    }
+    let div = document.createElement("div");
+    div.innerText = ACST_COPY_SUCCESS_NOTICE;
+    div.setAttribute("style", "pointer-events: initial; cursor: pointer; position: relative; opacity: 1; transition:all .2s; margin-top: 10px; padding: 10px 20px; color: white; background-color: #4ade80; border-radius: 5px;");
+    div = wrapper.appendChild(div);
+    div.addEventListener("click", (event) => {
+        event.target.parentNode.removeChild(event.target);
+    });
+    win.setTimeout(() => {
+        div.style.opacity = 0;
+        win.setTimeout(() => {
+            div.parentNode.removeChild(div);
+        }, 200);
+    }, 2000);
 }
