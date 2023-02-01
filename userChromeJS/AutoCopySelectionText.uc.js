@@ -147,6 +147,8 @@ if (typeof window === "undefined" || globalThis !== window) {
                 });
             },
             handleEvent: function (event) {
+                if (this.getKeyState(0x91)) return;
+                const { clearTimeout, setTimeout } = event.target.ownerGlobal;
                 if (TIMEOUT_ID)
                     clearTimeout(TIMEOUT_ID);
                 switch (event.type) {
