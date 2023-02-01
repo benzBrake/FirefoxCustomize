@@ -167,7 +167,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 // 黑名单不获取选中文本
                                 if (info && info.anchorNode && info.anchorNode.activeElement && BLACK_TAG_LIST.includes(info.anchorNode.activeElement.localName)) return;
                                 let text = BrowserOrSelectionUtils.getSelectionDetails(content).fullText;
-                                if (text) {
+                                if (text && text.length) {
                                     this.setSelectedText();
                                     if (SHOW_SUCCESS_NOTICE)
                                         ACST_showSuccessInfo(content);
