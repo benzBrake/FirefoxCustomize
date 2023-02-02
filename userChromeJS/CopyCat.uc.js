@@ -714,6 +714,7 @@
                 if (sandbox._css.length) {
                     windows((doc, win, location) => {
                         if (win.CopyCat) {
+                            if (win.CopyCat.STYLE2) $R(win.CopyCat.STYLE2);
                             win.CopyCat.STYLE2 = addStyle(sandbox._css.join("\n"))
                         }
                     });
