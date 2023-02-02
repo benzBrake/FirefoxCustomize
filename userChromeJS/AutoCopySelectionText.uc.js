@@ -18,7 +18,7 @@
 // @version         2022.07.13 初始化版本
 // ==/UserScript==
 
-const ACST_COPY_SUCCESS_NOTICE = "Auto Copyed!";
+const ACST_COPY_SUCCESS_NOTICE = "Auto Copied!";
 if (typeof window === "undefined" || globalThis !== window) {
     let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
     try {
