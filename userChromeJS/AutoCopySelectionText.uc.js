@@ -18,8 +18,12 @@
 // @version         2022.07.16 重写代码，支持热插拔，采用 异步消息，支持 Firefox 内置页面
 // @version         2022.07.13 初始化版本
 // ==/UserScript==
-
+// Configurations, implement read from about:config preferences in future
 const ACST_COPY_SUCCESS_NOTICE = "Auto Copied!";
+const ACST_WAIT_TIME = 0; // Change it to any number as you want
+const ACST_BLACK_LIST = ["input", "textarea"]; // disable auto copy when focus on textboxes
+const ACST_SHOW_SUCCESS_NOTICE = true; // show notice on webpace when copyed successful
+// =================================================================
 if (typeof window === "undefined" || globalThis !== window) {
     let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
     try {
@@ -67,21 +71,18 @@ if (typeof window === "undefined" || globalThis !== window) {
                 let win = this.contentWindow;
                 let actor = this.contentWindow.windowGlobalChild.getActor("ACST");
                 switch (name) {
-                    case "ACST:getConfiguration":
-                        this.config = data;
-                        break;
                     case "ACST:getSelectedText":
+                        if (win.document.activeElement) {
+                            if (ACST_ifItemTagInBackList(win.document.activeElement)) return;
+                        }
+
                         let obj = {
                             text: BrowserOrSelectionUtils.getSelectionDetails(win).fullText
                         }
 
-                        if (win.document.activeElement) {
-                            obj.tag = win.document.activeElement.tagName.toLowerCase();
-                        }
-
-                        if (obj.text) {
+                        if (obj.text && obj.text.length) {
                             actor.sendAsyncMessage("ACST:setSelectedText", obj);
-                            if (data.SHOW_SUCCESS_NOTICE)
+                            if (data.ACST_SHOW_SUCCESS_NOTICE)
                                 ACST_showSuccessInfo(this.contentWindow);
                         }
                         break;
@@ -121,10 +122,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         if (window.AutoCopySelectionText) {
             return;
         }
-        // Configurations, implement read from about:config preferences in future
-        const WAIT_TIME = 0; // Change it to any number as you want
-        const BLACK_TAG_LIST = ["input", "textarea"]; // disable auto copy when focus on textboxes
-        const SHOW_SUCCESS_NOTICE = true; // show notice on webpace when copyed successful
+
 
         // =========================================
         let user32 = ctypes.open("user32.dll");
@@ -140,9 +138,6 @@ if (typeof window === "undefined" || globalThis !== window) {
         var START_COPY = false;
         var DBL_NOTICE = false;
         window.AutoCopySelectionText = {
-            config: {
-                BLACK_TAG_LIST: BLACK_TAG_LIST
-            },
             init: function () {
                 ["mousedown", "mousemove", "dblclick", "mouseup"].forEach(type => {
                     (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener(type, this, false);
@@ -158,7 +153,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                             // 双击判定
                             setTimeout(function () {
                                 LONG_PRESS = true;
-                            }, WAIT_TIME);
+                            }, ACST_WAIT_TIME);
                         }
                         break;
                     case 'mousemove':
@@ -167,7 +162,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         TIMEOUT_ID = setTimeout(function () {
                             // 长按判定
                             LONG_PRESS = true;
-                        }, WAIT_TIME);
+                        }, ACST_WAIT_TIME);
                         break;
                     case 'dblclick':
                     case 'mouseup':
@@ -181,17 +176,17 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 // 内置页面
                                 let info = content.getSelection();
                                 // 黑名单不获取选中文本
-                                if (info && info.anchorNode && info.anchorNode.activeElement && BLACK_TAG_LIST.includes(info.anchorNode.activeElement.localName)) return;
+                                if (info && info.anchorNode && info.anchorNode.activeElement && ACST_ifItemTagInBackList(info.anchorNode.activeElement)) return;
                                 let text = BrowserOrSelectionUtils.getSelectionDetails(content).fullText;
                                 if (text && text.length) {
                                     this.setSelectedText();
-                                    if (SHOW_SUCCESS_NOTICE)
+                                    if (ACST_SHOW_SUCCESS_NOTICE)
                                         ACST_showSuccessInfo(content);
                                 }
                             } else {
                                 // 网页
                                 let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("ACST");
-                                actor.sendAsyncMessage("ACST:getSelectedText", { SHOW_SUCCESS_NOTICE: SHOW_SUCCESS_NOTICE });
+                                actor.sendAsyncMessage("ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE: ACST_SHOW_SUCCESS_NOTICE });
                             }
                         }
                         START_COPY = false;
@@ -206,7 +201,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 LONG_PRESS = false;
             },
             setSelectedText: function (text, tag) {
-                if (tag && BLACK_TAG_LIST.includes(tag)) return;
+                if (tag && ACST_BLACK_LIST.includes(tag)) return;
                 if (typeof text !== undefined) {
                     this.copyText(text);
                 }
@@ -220,8 +215,23 @@ if (typeof window === "undefined" || globalThis !== window) {
 }
 
 /**
-* 显示复制成功通知
-*/
+ * 检查是否在黑名单内选中文本
+ * @param {HTMLElement} item 
+ * @returns 
+ */
+function ACST_ifItemTagInBackList(item) {
+    console.log(item);
+    if (ACST_BLACK_LIST.includes(item.tagName.toLowerCase())) return true;
+    ACST_BLACK_LIST.forEach(tag => {
+        if (item.closest(tag)) return true;
+    });
+    return false;
+}
+
+/**
+ * 显示复制成功通知
+ * @param {*} win 
+ */
 function ACST_showSuccessInfo(win) {
     let { document } = win;
     let main = document.querySelector("body") || document.documentElement;
