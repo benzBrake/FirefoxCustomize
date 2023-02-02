@@ -1281,4 +1281,11 @@
 .CopyCat-Popup .menuitem-iconic.option {
     list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
 }
+.CopyCat-Popup menu:not(.menu-iconic),
+.CopyCat-Popup menuitem:not(.menuitem-iconic) {
+    padding-inline-start: 36px !important;
+}
+.CopyCat-Popup menu:not(.menu-iconic) > label {
+    margin-left: 0 !important;
+}
 `)
