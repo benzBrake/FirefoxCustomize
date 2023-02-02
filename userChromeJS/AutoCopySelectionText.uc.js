@@ -2,13 +2,14 @@
 // @name            AutoCopySelectionText.uc.js
 // @description     自动复制选中文本（ScrLk 亮起时不复制）
 // @author          Ryan
-// @version         2023.02.01
+// @version         2023.02.02
 // @compatibility   Firefox 70
 // @charset         UTF-8
 // @system          windows
 // @license         MIT License
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         2023.02.02 修复部分复制失败的情况
 // @version         2023.02.01 framescript 更换为 JSActor，增加复制成功通知
 // @version         2022.11.13 修复移动鼠标即复制
 // @version         2022.10.11 增加文本框开关
@@ -136,27 +137,42 @@ if (typeof window === "undefined" || globalThis !== window) {
         } catch (e) { }
         var LONG_PRESS = false;
         var TIMEOUT_ID = null;
+        var START_COPY = false;
+        var DBL_NOTICE = false;
         window.AutoCopySelectionText = {
             config: {
                 BLACK_TAG_LIST: BLACK_TAG_LIST
             },
             init: function () {
-                ["mousemove", "mouseup"].forEach(type => {
+                ["mousedown", "mousemove", "dblclick", "mouseup"].forEach(type => {
                     (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener(type, this, false);
                 });
             },
             handleEvent: function (event) {
                 if (getKeyState(0x91)) return;
                 const { clearTimeout, setTimeout } = event.target.ownerGlobal;
-                if (TIMEOUT_ID)
-                    clearTimeout(TIMEOUT_ID);
                 switch (event.type) {
+                    case 'mousedown':
+                        START_COPY = true;
+                        if (DBL_NOTICE) {
+                            // 双击判定
+                            setTimeout(function () {
+                                LONG_PRESS = true;
+                            }, WAIT_TIME);
+                        }
+                        break;
                     case 'mousemove':
+                        if (LONG_PRESS) return;
+                        if (TIMEOUT_ID) clearTimeout(TIMEOUT_ID);
                         TIMEOUT_ID = setTimeout(function () {
+                            // 长按判定
                             LONG_PRESS = true;
                         }, WAIT_TIME);
                         break;
+                    case 'dblclick':
                     case 'mouseup':
+                        if (!START_COPY) return;
+                        // 不响应左键事件
                         if (event.button !== 0) return;
                         // copy text on mouse button up
                         if (LONG_PRESS) {
@@ -178,6 +194,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 actor.sendAsyncMessage("ACST:getSelectedText", { SHOW_SUCCESS_NOTICE: SHOW_SUCCESS_NOTICE });
                             }
                         }
+                        START_COPY = false;
+                        DBL_CLICK = false;
+                        // 限定时间内判定双击
+                        DBL_NOTICE = true;
+                        setTimeout(() => {
+                            DBL_NOTICE = false;
+                        }, 150);
                         break;
                 }
                 LONG_PRESS = false;
