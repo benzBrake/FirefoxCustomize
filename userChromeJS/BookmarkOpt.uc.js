@@ -9,11 +9,9 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.3
+// @version         1.3.1
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @version         1.3.3 还原显示隐藏书签工具栏按钮
-// @version         1.3.2 书签弹出菜单支持插入到底部
 // @version         1.3.1 去除显示隐藏书签工具栏按钮
 // @version         1.3 尝试兼容 Firefox 57+
 // @version         1.2.2 修改界面语言读取方式
@@ -50,6 +48,8 @@
             "toggle personalToolbar": "Toggle PersonalToolbar"
         }
     }
+
+
 
     // 右键菜单
     const PLACES_CONTEXT_ITEMS = [{
@@ -100,9 +100,6 @@
         style: 'list-style-image: url(chrome://global/skin/icons/info.svg)',
     }];
 
-    // 书签弹出面板菜单插入到顶部
-    const PLACES_POPUP_INSERT_AT_TOP = true;
-
     // 书签弹出面板菜单
     const PLACES_POPUP_ITEMS = [{
         'label': $L("add bookmark here"),
@@ -114,7 +111,6 @@
     }];
 
     const BTN_CFG = {
-        id: 'bmopt-Toggle-Personal-Toolbar',
         label: $L("toggle personalToolbar"),
         tooltiptext: $L("toggle personalToolbar"),
         style: 'list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg");',
@@ -180,60 +176,26 @@
                 // 防止影响其他方式添加书签
                 BookmarkOpt.clearPanelItems(target, true);
             } else if (event.type === 'popupshowing') {
-                if (PLACES_POPUP_INSERT_AT_TOP) {
-                    let firstItem = target.firstChild;
-                    if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
-                    let last;
-                    PLACES_POPUP_ITEMS.forEach(c => {
-                        let item;
-                        if (c.label) {
-                            item = $C('menuitem', c, event.target.ownerDocument);
-                            item.classList.add('bmopt-panel');
-                        } else {
-                            item = $C('menuseparator', {
-                                'class': 'bmopt-separator'
-                            }, event.target.ownerDocument);
-                        }
-                        if (last) {
-                            last.after(item);
-                        } else {
-                            firstItem.parentNode.insertBefore(item, firstItem);
-                        }
-                        last = item;
-                    });
-                } else {
-                    let lastChild = target.lastChild, last = lastChild, noNeedInsert = false;
-                    while (last.previousSibling) {
-                        if (last.classList.contains("bmopt-panel")) {
-                            noNeedInsert = true;
-                            break;
-                        }
-                        if (last.classList.contains("bookmarks-actions-menuseparator")) {
-                            break;
-                        }
-                        last = last.previousSibling;
+                let firstItem = target.firstChild;
+                if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
+                let last;
+                PLACES_POPUP_ITEMS.forEach(c => {
+                    let item;
+                    if (c.label) {
+                        item = $C('menuitem', c, event.target.ownerDocument);
+                        item.classList.add('bmopt-panel');
+                    } else {
+                        item = $C('menuseparator', {
+                            'class': 'bmopt-separator'
+                        }, event.target.ownerDocument);
                     }
-                    if (!noNeedInsert) {
-                        PLACES_POPUP_ITEMS.forEach(c => {
-                            let item;
-                            if (c.label) {
-                                item = $C('menuitem', c, event.target.ownerDocument);
-                                item.classList.add('bmopt-panel');
-                            } else {
-                                item = $C('menuseparator', {
-                                    'class': 'bmopt-separator'
-                                }, event.target.ownerDocument);
-                            }
-                            if (last) {
-                                last.after(item);
-                            } else {
-                                lastChild.before(item);
-                            }
-                            last = item;
-                        });
+                    if (last) {
+                        last.after(item);
+                    } else {
+                        firstItem.parentNode.insertBefore(item, firstItem);
                     }
-                }
-
+                    last = item;
+                });
             }
         },
         clearPanelItems: function (target, doNotRecursive = false) {
@@ -258,11 +220,13 @@
                 currentTitle = aWin.gBrowser.contentTitle,
                 currentUrl = aWin.gBrowser.currentURI.spec,
                 nodeIsFolder = PlacesUtils.nodeIsFolder(aNode),
-                nodeIsHistoryFolder = PlacesUtils.nodeIsHistoryContainer(aNode);
+                nodeIsHistoryFolder = PlacesUtils.nodeIsHistoryContainer(aNode),
+                panelTriggered = false;
 
             switch (aMethod) {
                 case 'panelAdd':
                     BookmarkOpt.clearPanelItems(aTriggerNode);
+                    panelTriggered = true;
                 case 'add':
                     var info = {
                         title: currentTitle,
@@ -273,7 +237,10 @@
                     try {
                         PlacesUtils.bookmarks.insert(info);
                     } catch (e) {
-                        topWin.console.error(e);
+                        aWin.console.error(e);
+                    }
+                    if (panelTriggered) {
+                        closeMenus(aTriggerNode);
                     }
                     break;
                 case 'update':
@@ -294,7 +261,7 @@
                     try {
                         PlacesUtils.bookmarks.update(info);
                     } catch (e) {
-                        topWin.console.error(e);
+                        aWin.console.error(e);
                     }
                     break;
                 case 'copyTitle':
@@ -382,19 +349,6 @@
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
-                if (BTN_CFG) {
-                    if (!(CustomizableUI.getWidget(BTN_CFG.id) && CustomizableUI.getWidget(BTN_CFG.id).forWindow(window)?.node)) {
-                        CustomizableUI.createWidget({
-                            id: BTN_CFG.id,
-                            removable: true,
-                            defaultArea: CustomizableUI.AREA_NAVBAR,
-                            localized: false,
-                            onCreated: node => {
-                                $A(node, BTN_CFG);
-                            }
-                        });
-                    }
-                }
             }
             this.style = addStyle(css);
         },
@@ -412,12 +366,9 @@
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
-                if (BTN_CFG) {
-                    CustomizableUI.destroyWidget(BTN_CFG.id);
-                }
+                if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
+                delete window.BookmarkOpt;
             }
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
-            delete window.BookmarkOpt;
         }
     }
 
@@ -492,8 +443,7 @@
 
     window.BookmarkOpt.init();
 })(`
-.bmopt-separator+menuseparator,
-.bookmarks-actions-menuseparator~.bmopt-separator{
+.bmopt-separator+menuseparator{
     display: none;
 }
 #placesContext .bmopt[condition] {
