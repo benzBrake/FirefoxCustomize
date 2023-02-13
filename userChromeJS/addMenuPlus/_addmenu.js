@@ -13,7 +13,7 @@ app([{}, {
     'data-l10n-id': 'restart-button-label',
     'insertBefore': 'appMenu-quit-button2',
     'oncommand': `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-    'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+    'onclick': `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`
 }])
 css('#main-window[appname="Floorp"] #appMenu-restart-button2 { display: none;}');
 nav({
@@ -41,7 +41,7 @@ ident([
     {
         label: locale.includes("zh-") ? '解除网页限制' : 'Remove web pages limit',
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTAuMDM3IDAuNTI2IEMgNC44MTEgMC41MjYgMC41NzIgNC43NjQgMC41NzIgOS45OTEgQyAwLjU3MiAxNS4yMTggNC44MTEgMTkuNDU2IDEwLjAzNyAxOS40NTYgQyAxNS4yNjUgMTkuNDU2IDE5LjUwMiAxNS4yMTggMTkuNTAyIDkuOTkxIEMgMTkuNTAyIDQuNzY0IDE1LjI2NSAwLjUyNiAxMC4wMzcgMC41MjYgWiBNIDEwLjAzNyAxNy44NSBDIDUuNjk4IDE3Ljg1IDIuMTc4IDE0LjMzMSAyLjE3OCA5Ljk5MSBDIDIuMTc4IDguMTExIDIuODM5IDYuMzgzIDMuOTQyIDUuMDMxIEwgMTQuOTk4IDE2LjA4NiBDIDEzLjY0NiAxNy4xODkgMTEuOTE4IDE3Ljg1IDEwLjAzNyAxNy44NSBaIE0gMTYuMTMzIDE0Ljk1MiBMIDUuMDc3IDMuODk2IEMgNi40MjkgMi43OTMgOC4xNTcgMi4xMzEgMTAuMDM3IDIuMTMxIEMgMTQuMzc3IDIuMTMxIDE3Ljg5NyA1LjY1MiAxNy44OTcgOS45OTEgQyAxNy44OTcgMTEuODcyIDE3LjIzNSAxMy42IDE2LjEzMyAxNC45NTIgWiIgc3R5bGU9IiIvPgo8L3N2Zz4=",
-        url: "javascript:(function(bookmarklets)%7Bfor(var%20i=0;i%3Cbookmarklets.length;i++)%7Bvar%20code=bookmarklets%5Bi%5D.url;if(code.indexOf(%22javascript:%22)!=-1)%7Bcode=code.replace(%22javascript:%22,%22%22);eval(code)%7Delse%7Bcode=code.replace(/%5Es+%7Cs+$/g,%22%22);if(code.length%3E0)%7BaddMenu.win.open(code)%7D%7D%7D%7D)(%5B%7Btitle:%22%E7%A0%B4%E9%99%A4%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95%E9%99%90%E5%88%B6%22,url:%22javascript:function%20applyWin(a)%7Bif(typeof%20a.__nnANTImm__===%5Cx22undefined%5Cx22)%7Ba.__nnANTImm__=%7B%7D;a.__nnANTImm__.evts=%5B%5Cx22mousedown%5Cx22,%5Cx22mousemove%5Cx22,%5Cx22copy%5Cx22,%5Cx22contextmenu%5Cx22%5D;a.__nnANTImm__.initANTI=function()%7Ba.__nnantiflag__=true;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.addEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__)%7D;a.__nnANTImm__.clearANTI=function()%7Bdelete%20a.__nnantiflag__;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.removeEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__);delete%20a.__nnANTImm__%7D;a.__nnANTImm__.fnANTI=function(b)%7Bb.stopPropagation();return%20true%7D;a.addEventListener(%5Cx22unload%5Cx22,function(b)%7Ba.removeEventListener(%5Cx22unload%5Cx22,arguments.callee,false);if(a.__nnantiflag__===true)%7Ba.__nnANTImm__.clearANTI()%7D%7D,false)%7Da.__nnantiflag__===true?a.__nnANTImm__.clearANTI():a.__nnANTImm__.initANTI()%7DapplyWin(top);var%20fs=top.document.querySelectorAll(%5Cx22frame,%20iframe%5Cx22);for(var%20i=0,len=fs.length;i%3Clen;i++)%7Bvar%20win=fs%5Bi%5D.contentWindow;try%7Bwin.document%7Dcatch(ex)%7Bcontinue%7DapplyWin(fs%5Bi%5D.contentWindow)%7D;void%200;%22%7D,%7Btitle:%22%E7%A0%B4%E9%99%A4%E9%80%89%E6%8B%A9%E5%A4%8D%E5%88%B6%E9%99%90%E5%88%B6%22,url:%22javascript:(function()%7Bvar%20doc=document;var%20bd=doc.body;bd.onselectstart=bd.oncopy=bd.onpaste=bd.onkeydown=bd.oncontextmenu=bd.onmousemove=bd.onselectstart=bd.ondragstart=doc.onselectstart=doc.oncopy=doc.onpaste=doc.onkeydown=doc.oncontextmenu=null;doc.onselectstart=doc.oncontextmenu=doc.onmousedown=doc.onkeydown=function%20()%7Breturn%20true;%7D;with(document.wrappedJSObject%7C%7Cdocument)%7Bonmouseup=null;onmousedown=null;oncontextmenu=null;%7Dvar%20arAllElements=document.getElementsByTagName(%5Cx27*%5Cx27);for(var%20i=arAllElements.length-1;i%3E=0;i--)%7Bvar%20elmOne=arAllElements;with(elmOne.wrappedJSObject%7C%7CelmOne)%7Bonmouseup=null;onmousedown=null;%7D%7Dvar%20head=document.getElementsByTagName(%5Cx27head%5Cx27)%5B0%5D;if(head)%7Bvar%20style=document.createElement(%5Cx27style%5Cx27);style.type=%5Cx27text/css%5Cx27;style.innerHTML=%5Cx22html,*%7B-moz-user-select:auto!important;%7D%5Cx22;head.appendChild(style);%7Dvoid(0);%7D)();%22%7D%5D)"
+        url: "javascript:(function(bookmarklets)%7Bfor(var%20i=0;i%3Cbookmarklets.length;i++)%7Bvar%20code=bookmarklets%5Bi%5D.url;if(code.indexOf(%22javascript:%22)!=-1)%7Bcode=code.replace(%22javascript:%22,%22%22);eval(code)%7Delse%7Bcode=code.replace(/%5Es+%7Cs+$/g,%22%22);if(code.length%3E0)%7Bwindow.open(code)%7D%7D%7D%7D)(%5B%7Btitle:%22%E7%A0%B4%E9%99%A4%E5%8F%B3%E9%94%AE%E8%8F%9C%E5%8D%95%E9%99%90%E5%88%B6%22,url:%22javascript:function%20applyWin(a)%7Bif(typeof%20a.__nnANTImm__===%5Cx22undefined%5Cx22)%7Ba.__nnANTImm__=%7B%7D;a.__nnANTImm__.evts=%5B%5Cx22mousedown%5Cx22,%5Cx22mousemove%5Cx22,%5Cx22copy%5Cx22,%5Cx22contextmenu%5Cx22%5D;a.__nnANTImm__.initANTI=function()%7Ba.__nnantiflag__=true;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.addEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__)%7D;a.__nnANTImm__.clearANTI=function()%7Bdelete%20a.__nnantiflag__;a.__nnANTImm__.evts.forEach(function(c,b,d)%7Ba.removeEventListener(c,this.fnANTI,true)%7D,a.__nnANTImm__);delete%20a.__nnANTImm__%7D;a.__nnANTImm__.fnANTI=function(b)%7Bb.stopPropagation();return%20true%7D;a.addEventListener(%5Cx22unload%5Cx22,function(b)%7Ba.removeEventListener(%5Cx22unload%5Cx22,arguments.callee,false);if(a.__nnantiflag__===true)%7Ba.__nnANTImm__.clearANTI()%7D%7D,false)%7Da.__nnantiflag__===true?a.__nnANTImm__.clearANTI():a.__nnANTImm__.initANTI()%7DapplyWin(top);var%20fs=top.document.querySelectorAll(%5Cx22frame,%20iframe%5Cx22);for(var%20i=0,len=fs.length;i%3Clen;i++)%7Bvar%20win=fs%5Bi%5D.contentWindow;try%7Bwin.document%7Dcatch(ex)%7Bcontinue%7DapplyWin(fs%5Bi%5D.contentWindow)%7D;void%200;%22%7D,%7Btitle:%22%E7%A0%B4%E9%99%A4%E9%80%89%E6%8B%A9%E5%A4%8D%E5%88%B6%E9%99%90%E5%88%B6%22,url:%22javascript:(function()%7Bvar%20doc=document;var%20bd=doc.body;bd.onselectstart=bd.oncopy=bd.onpaste=bd.onkeydown=bd.oncontextmenu=bd.onmousemove=bd.onselectstart=bd.ondragstart=doc.onselectstart=doc.oncopy=doc.onpaste=doc.onkeydown=doc.oncontextmenu=null;doc.onselectstart=doc.oncontextmenu=doc.onmousedown=doc.onkeydown=function%20()%7Breturn%20true;%7D;with(document.wrappedJSObject%7C%7Cdocument)%7Bonmouseup=null;onmousedown=null;oncontextmenu=null;%7Dvar%20arAllElements=document.getElementsByTagName(%5Cx27*%5Cx27);for(var%20i=arAllElements.length-1;i%3E=0;i--)%7Bvar%20elmOne=arAllElements;with(elmOne.wrappedJSObject%7C%7CelmOne)%7Bonmouseup=null;onmousedown=null;%7D%7Dvar%20head=document.getElementsByTagName(%5Cx27head%5Cx27)%5B0%5D;if(head)%7Bvar%20style=document.createElement(%5Cx27style%5Cx27);style.type=%5Cx27text/css%5Cx27;style.innerHTML=%5Cx22html,*%7B-moz-user-select:auto!important;%7D%5Cx22;head.appendChild(style);%7Dvoid(0);%7D)();%22%7D%5D)"
     }, {
         label: locale.includes("zh-") ? "编辑当前页面" : 'Edit current page',
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTUuNjk0IDEuNzE4IEMgMTQuOTE5IDEuNzIgMTQuMTc0IDIuMDMxIDEzLjYzIDIuNTg0IEwgMi4zOTUgMTMuODE3IEwgMi4zNTEgMTQuMDQgTCAxLjU3NCAxNy45NDggTCAxLjM1MiAxOC45OTEgTCAyLjM5NiAxOC43NjkgTCA2LjMwMyAxNy45OTEgTCA2LjUyNCAxNy45NDcgTCAxNy43NTkgNi43MTQgQyAxOC45MTUgNS41NzggMTguOTE1IDMuNzE4IDE3Ljc1OSAyLjU4MyBDIDE3LjIxNCAyLjAzMSAxNi40NzEgMS43MiAxNS42OTQgMS43MTggWiBNIDE1LjY5NCAzLjA3MiBDIDE2LjA1MiAzLjA3MiAxNi40MTMgMy4yMzYgMTYuNzYgMy41ODMgQyAxNy40NTEgNC4yNzQgMTcuNDUxIDUuMDIyIDE2Ljc2IDUuNzE1IEwgMTYuMjUgNi4yMDMgTCAxNC4xMzkgNC4wOTMgTCAxNC42MjkgMy41ODMgQyAxNC45NzYgMy4yMzYgMTUuMzM2IDMuMDcyIDE1LjY5NCAzLjA3MiBaIE0gMTMuMTQxIDUuMDkzIEwgMTUuMjQ5IDcuMjAyIEwgNi42NTkgMTUuNzkzIEMgNi4xOTQgMTQuODg2IDUuNDU2IDE0LjE0OCA0LjU0OCAxMy42ODQgWiBNIDMuNjM5IDE0LjgzOSBDIDQuNDg5IDE1LjE4MSA1LjE2MyAxNS44NTUgNS41MDMgMTYuNzA1IEwgMy4xNzIgMTcuMTcxIFoiIHN0eWxlPSJzdHJva2UtbWl0ZXJsaW1pdDogMTsgc3Ryb2tlLXdpZHRoOiAwcHg7Ii8+Cjwvc3ZnPg==",
@@ -64,7 +64,7 @@ ident([
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTYuOTE4IDQuMjMzIEwgMTAuMjIxIDEwLjkzMSBMIDMuNTIzIDQuMjMzIE0gMy41MjMgMTUuMzk2IEwgMTYuOTE4IDE1LjM5NiIgc3R5bGU9InN0cm9rZS13aWR0aDogMnB4OyBzdHJva2UtbGluZWpvaW46IHJvdW5kOyBzdHJva2UtbGluZWNhcDogcm91bmQ7IiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTSAxNy42MjUgNC45NCBMIDEwLjIyMSAxMi4zNDUgTCAyLjgxNiA0Ljk0IEwgNC4yMyAzLjUyNiBMIDEwLjIyMSA5LjUxNyBMIDE2LjIxMSAzLjUyNiBaIE0gMTYuOTE4IDE2LjM5NiBMIDMuNTIzIDE2LjM5NiBMIDMuNTIzIDE0LjM5NiBMIDE2LjkxOCAxNC4zOTYgWiIgc3R5bGU9IiIvPgo8L3N2Zz4="
     }, {
         label: locale.includes("zh-") ? "页面自动刷新" : "Auto refresh",
-        url: "javascript:(function(p){open('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3EForce%3C/a%3E%3Cscript%3Efunction%20i(n){return%20d.getElementById(n)}function%20z(){c+=0.2;if(c%3E=t){c=0;e.location=u;r++}x()}function%20x(){s=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0||c/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22Reloads:%20%22+r;i(3).innerHTML=%22Time:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)}c=r=0;d=document;e=opener.top;u=prompt(%22URL%22,e.location.href);t=u?prompt(%22Seconds%22,60):0;setInterval(%22z()%22,200);if(!t){addMenu.win.close()}%3C/script%3E%3C/body%3E')})('status=0,scrollbars=0,width=100,height=115,left=1,top=1')",
+        url: "javascript:(function(p){open('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3EForce%3C/a%3E%3Cscript%3Efunction%20i(n){return%20d.getElementById(n)}function%20z(){c+=0.2;if(c%3E=t){c=0;e.location=u;r++}x()}function%20x(){s=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0||c/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22Reloads:%20%22+r;i(3).innerHTML=%22Time:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)}c=r=0;d=document;e=opener.top;u=prompt(%22URL%22,e.location.href);t=u?prompt(%22Seconds%22,60):0;setInterval(%22z()%22,200);if(!t){window.close()}%3C/script%3E%3C/body%3E')})('status=0,scrollbars=0,width=100,height=115,left=1,top=1')",
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTcuMTQ1IDkuNjUxIEMgMTcuMTQzIDkuNjQyIDE3LjAwNyA4Ljg3NSAxNi45MTUgOC41NDggQyAxNi44MjIgOC4yMTkgMTYuNzE5IDcuOTI4IDE2LjU4NiA3LjYyNSBDIDE2LjMyNSA3LjAxOSAxNi4wMTQgNi41MTEgMTUuNjExIDYuMDE4IEMgMTUuMjE2IDUuNTIyIDE0Ljc5MyA1LjEyMiAxNC4yODYgNC43NTIgQyAxMy43ODUgNC4zNzkgMTMuMjc4IDQuMDk3IDEyLjY5OCAzLjg2NSBDIDEyLjEyMSAzLjYyNyAxMS41NjEgMy40NzYgMTAuOTQgMy4zOTQgQyAxMC4zMTkgMy4zMDcgOS43MzcgMy4zIDkuMTA3IDMuMzc5IEMgOC40NzQgMy40NTMgNy44OTYgMy41OTkgNy4yODggMy44NTMgQyA2LjY3NSA0LjEgNi4xMjUgNC40MTUgNS41NjMgNC44NTcgQyA1LjQzNyA0Ljk1NSA1LjMyNiA1LjA0OCA1LjIwNSA1LjE1NCBDIDUuMDg4IDUuMjU5IDQuOTgyIDUuMzYgNC44NjggNS40NzQgQyA0Ljc1NiA1LjU4NiA0LjY1OSA1LjY5MSA0LjU1NiA1LjgxIEMgNC40NTIgNS45MyA0LjM2IDYuMDQzIDQuMjY0IDYuMTY5IEMgNC4xNjggNi4yOTQgNC4wODQgNi40MTIgMy45OTYgNi41NDQgQyAzLjk2NiA2LjU5IDMuOTM3IDYuNjM0IDMuOTA4IDYuNjc4IEwgNi4wNjYgNi42NzggTCA2LjA2NiA4LjI1NCBMIDEuMzMzIDguMjU0IEwgMS4zMzMgMy41MiBMIDIuOTA5IDMuNTIgTCAyLjkwOSA1LjM1MiBDIDIuOTQzIDUuMzA1IDIuOTc4IDUuMjU4IDMuMDEyIDUuMjEzIEMgMy4xMjMgNS4wNjkgMy4yNDYgNC45MTcgMy4zNjYgNC43NzggQyAzLjQ4NyA0LjYzOSAzLjYyMyA0LjQ5MyAzLjc1MyA0LjM2MSBDIDMuODgxIDQuMjMzIDQuMDI0IDQuMDk4IDQuMTYyIDMuOTc1IEMgNC4yOTkgMy44NTMgNC40NTEgMy43MjcgNC41OTcgMy42MTMgQyA1LjI0OSAzLjExMSA1Ljk4MyAyLjY4OCA2LjY5MSAyLjM5NSBDIDcuNDA0IDIuMTA3IDguMTg2IDEuOTA3IDguOTE4IDEuODE1IEMgOS42NTIgMS43MyAxMC40MzYgMS43MzkgMTEuMTU0IDEuODM0IEMgMTEuODcyIDEuOTM2IDEyLjYyMSAyLjEzNyAxMy4yOSAyLjQwNSBDIDEzLjk1OCAyLjY3OSAxNC42MzUgMy4wNTcgMTUuMjIgMy40ODQgQyAxNS44MDEgMy45MTYgMTYuMzcgNC40NTYgMTYuODM3IDUuMDI4IEMgMTcuMjk4IDUuNjA1IDE3LjcxOSA2LjI5NCAxOC4wMyA2Ljk5NiBDIDE4LjMzMyA3LjY5OSAxOC42MjUgOS4xMjQgMTguNjI1IDkuMTI0IEMgMTguNjQzIDkuMTcyIDE3LjE0MiA5LjYyNSAxNy4xNDUgOS42NTEgWiBNIDE3LjE0NSA5LjY1MSBDIDE3LjE0NSA5LjY1MSAxNy4xNDUgOS42NTEgMTcuMTQ1IDkuNjUxIEMgMTcuMTQ1IDkuNjUxIDE3LjE0NSA5LjY1MSAxNy4xNDUgOS42NTEgWiIgc3R5bGU9IiIvPgogIDxwYXRoIGQ9Ik0gMi44NzkgMTEuMTk4IEMgMi44ODEgMTEuMjA3IDMuMDE3IDExLjk3NCAzLjEwOSAxMi4zMDIgQyAzLjIwMiAxMi42MyAzLjMwNSAxMi45MjEgMy40MzggMTMuMjI0IEMgMy42OTkgMTMuODMxIDQuMDExIDE0LjMzOSA0LjQxMyAxNC44MzEgQyA0LjgwOCAxNS4zMjggNS4yMzEgMTUuNzI4IDUuNzM4IDE2LjA5OCBDIDYuMjQgMTYuNDcxIDYuNzQ4IDE2Ljc1IDcuMzI2IDE2Ljk4NSBDIDcuOTA0IDE3LjIyIDguNDY0IDE3LjM3NCA5LjA4NSAxNy40NTYgQyA5LjcwNSAxNy41NDQgMTAuMjg4IDE3LjU1MSAxMC45MTggMTcuNDcxIEMgMTEuNTQ5IDE3LjM5OSAxMi4xMjcgMTcuMjUxIDEyLjczNyAxNi45OTggQyAxMy4zNTEgMTYuNzUgMTMuODk5IDE2LjQzNiAxNC40NiAxNS45OTQgQyAxNC41ODYgMTUuODk2IDE0LjY5OCAxNS44MDIgMTQuODE4IDE1LjY5NiBDIDE0LjkzOCAxNS41OSAxNS4wNDIgMTUuNDkyIDE1LjE1MyAxNS4zNzkgQyAxNS4yNjYgMTUuMjY0IDE1LjM2NiAxNS4xNTggMTUuNDY4IDE1LjA0IEMgMTUuNTcxIDE0LjkyMiAxNS42NjIgMTQuODA4IDE1Ljc2IDE0LjY4IEMgMTUuODU2IDE0LjU1NiAxNS45NCAxNC40MzggMTYuMDI4IDE0LjMwNSBDIDE2LjA1OCAxNC4yNiAxNi4wODcgMTQuMjE2IDE2LjExNSAxNC4xNzIgTCAxMy45NTggMTQuMTcyIEwgMTMuOTU4IDEyLjU5NiBMIDE4LjY5MSAxMi41OTYgTCAxOC42OTEgMTcuMzI5IEwgMTcuMTE1IDE3LjMyOSBMIDE3LjExNSAxNS40OTggQyAxNy4wODEgMTUuNTQ1IDE3LjA0NiAxNS41OTEgMTcuMDExIDE1LjYzNyBDIDE2LjkwMSAxNS43OCAxNi43NzkgMTUuOTMyIDE2LjY1OCAxNi4wNzIgQyAxNi41MzYgMTYuMjEyIDE2LjQgMTYuMzU4IDE2LjI3MyAxNi40ODcgQyAxNi4xNDMgMTYuNjE4IDE1Ljk5OSAxNi43NTMgMTUuODYyIDE2Ljg3NSBDIDE1LjcyNSAxNi45OTcgMTUuNTc0IDE3LjEyMiAxNS40MjggMTcuMjM2IEMgMTQuNzc1IDE3Ljc0IDE0LjA0IDE4LjE2MiAxMy4zMzMgMTguNDU2IEMgMTIuNjIxIDE4Ljc0MyAxMS44NCAxOC45NDMgMTEuMTA4IDE5LjAzNSBDIDEwLjM3NCAxOS4xMjEgOS41ODkgMTkuMTEyIDguODcxIDE5LjAxNiBDIDguMTUyIDE4LjkxNCA3LjQwMiAxOC43MTYgNi43MzQgMTguNDQ1IEMgNi4wNjYgMTguMTc0IDUuMzg5IDE3Ljc5MyA0LjgwNCAxNy4zNjYgQyA0LjIyMyAxNi45MzQgMy42NTQgMTYuMzk0IDMuMTg3IDE1LjgyIEMgMi43MjcgMTUuMjQ1IDIuMzA1IDE0LjU1NyAxLjk5NCAxMy44NTMgQyAxLjY5MSAxMy4xNSAxLjM5OSAxMS43MjUgMS4zOTkgMTEuNzI1IEMgMS4zODEgMTEuNjc3IDIuODgyIDExLjIyNCAyLjg3OSAxMS4xOTggWiBNIDIuODc5IDExLjE5OCBDIDIuODc5IDExLjE5OCAyLjg3OSAxMS4xOTggMi44NzkgMTEuMTk4IEMgMi44NzkgMTEuMTk4IDIuODc5IDExLjE5OCAyLjg3OSAxMS4xOTggWiIgc3R5bGU9IiIvPgo8L3N2Zz4="
     }, {}, {
         label: locale.includes("zh-") ? "页面另存为" : " Save page",
@@ -112,7 +112,7 @@ new function () {
             const prefs = addMenu.prefs, locale = addMenu.locale;
             function chooseBrowser() {
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                fp.init(addMenu.win, locale.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
+                fp.init(window, locale.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
                 fp.appendFilter(locale.includes("zh-") ? "执行文件" : "Executable file", "*.exe"); // 非 Windows 必须注释这一行，不过不一定能用
                 fp.open(res => {
                     if (res != Ci.nsIFilePicker.returnOK) return;
@@ -173,7 +173,7 @@ new function () {
         class: 'showText',
         insertBefore: 'context_bookmarkSelectedTabs',
         onshowing: function (item) {
-            item.hidden = addMenu.win.gBrowser.currentURI.spec.startsWith('file')
+            item.hidden = gBrowser.currentURI.spec.startsWith('file')
         }
     });
     groupMenu([{
@@ -193,7 +193,7 @@ new function () {
         class: 'showFirstText',
         insertBefore: 'context_bookmarkSelectedTabs',
         onshowing: function (item) {
-            item.hidden = addMenu.win.gBrowser.currentURI.spec.startsWith('file')
+            item.hidden = gBrowser.currentURI.spec.startsWith('file')
         }
     });
     groupMenu([{
@@ -215,7 +215,6 @@ new function () {
         class: 'showFirstText',
         insertAfter: 'context_bookmarkTab',
         onshowing: function (item) {
-            const { gBrowser } = addMenu.win;
             item.hidden = gBrowser.currentURI.spec.startsWith('file') || !gBrowser.getIcon(gBrowser.selectedTab);
         }
     });
@@ -251,7 +250,7 @@ new function () {
         label: locale.includes("zh-") ? '站内搜索...' : 'Site search...',
         condition: 'normal',
         onshowing: function (item) {
-            item.hidden = !addMenu.win.gBrowser.currentURI.spec.startsWith('http');
+            item.hidden = !gBrowser.currentURI.spec.startsWith('http');
         }
     }),
         groupMenuSelect = new PageGroup({
@@ -261,7 +260,7 @@ new function () {
             condition: 'select',
             insertAfter: 'context-searchselect',
             onshowing: function (item) {
-                item.hidden = !addMenu.win.gBrowser.currentURI.spec.startsWith('http');
+                item.hidden = !gBrowser.currentURI.spec.startsWith('http');
             }
         });
     var items = [{
@@ -289,7 +288,7 @@ new function () {
     }, {
         label: locale.includes("zh-") ? '百度站内搜索' : 'Baidu site search',
         onshowing: function (item) {
-            item.hidden = !addMenu.win.gBrowser.currentURI.host.includes("www.baidu.com");
+            item.hidden = !gBrowser.currentURI.host.includes("www.baidu.com");
         },
         oncommand: function (e) {
             const locale = addMenu.locale;
@@ -347,7 +346,7 @@ new function () {
         image: "chrome://devtools/skin/images/tool-accessibility.svg",
         accesskey: "c"
     }]);
-    css('#context-viewsource, #context-inspect-a11y, #context-inspect, #context-viewpartialsource-selection { display: none }');
+    css('#context-viewsource, #context-inspect-a11y, #context-inspect, #context-viewpartialsource-selection, #contentAreaContextMenu[addMenu="input"] #inspect-separator { display: none }');
 }
 
 
@@ -365,19 +364,17 @@ css('#context-media-eme-learnmore-fork{ display: none } #context-media-eme-learn
 new function () {
     var groupMenu = GroupMenu({
         id: 'addMenu-openLink-tab',
-        class: 'showFirstText',
+        class: 'showText',
         label: locale.includes("zh-") ? "打开链接..." : "Open Link...",
         condition: 'link',
         insertBefore: 'context-openlinkincurrent',
         onshowing: function () {
             // open in private tab need privateTab.uc.js https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js
-            let privateBtn = addMenu.win.document.getElementById('addMenu-openLink-tab-private')
+            let privateBtn = document.getElementById('addMenu-openLink-tab-private')
             if (privateBtn) {
-                if (typeof addMenu.win.UC === "undefined") {
-                    privateBtn.hidden = true;
-                    return;
-                }
-                privateBtn.hidden = typeof addMenu.win.UC.privateTab === "undefined";
+                if (window.privateTab !== "undefined") privateBtn.hidden = false;
+                else if (typeof UC !== "undefined" && typeof UC.privateTab !== "undefined") privateBtn.hidden = false
+                else privateBtn.hidden = true;
             }
         }
     });
@@ -387,7 +384,8 @@ new function () {
         image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAxMjggMTI4IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjggMTI4OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7c3Ryb2tlOmN1cnJlbnRDb2xvcjtzdHJva2Utd2lkdGg6MztzdHJva2UtbWl0ZXJsaW1pdDoxMDt9Cjwvc3R5bGU+CjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xOS4xLDcuNGMtNi41LDAtMTEuNyw1LjItMTEuNywxMS43djEyLjZ2NzcuM2MwLDYuNSw1LjIsMTEuNywxMS43LDExLjdoODkuOGM2LjUsMCwxMS43LTUuMiwxMS43LTExLjdWMTkuMQoJYzAtNi41LTUuMi0xMS43LTExLjctMTEuN0MxMDguOSw3LjQsMTkuMSw3LjQsMTkuMSw3LjR6IE0xOS4xLDEyLjhoODkuOGMzLjUsMCw2LjMsMi44LDYuMyw2LjN2MTMuNUgxMi44VjE5LjEKCUMxMi44LDE1LjYsMTUuNiwxMi44LDE5LjEsMTIuOHogTTIyLjcsMjBjLTEuNSwwLTIuNywxLjItMi43LDIuN2MwLDEuNSwxLjIsMi43LDIuNywyLjdoMy42YzEuNSwwLDIuNy0xLjIsMi43LTIuNwoJYzAtMS41LTEuMi0yLjctMi43LTIuN0gyMi43eiBNMzcsMjBjLTEuNSwwLTIuNywxLjItMi43LDIuN2MwLDEuNSwxLjIsMi43LDIuNywyLjdoMy42YzEuNSwwLDIuNy0xLjIsMi43LTIuNwoJYzAtMS41LTEuMi0yLjctMi43LTIuN0gzN3ogTTEyLjgsMzcuOWgxMDIuNHY3MWMwLDMuNS0yLjgsNi4zLTYuMyw2LjNIMTkuMWMtMy41LDAtNi4zLTIuOC02LjMtNi4zQzEyLjgsMTA4LjksMTIuOCwzNy45LDEyLjgsMzcuOQoJeiBNNDIuNCw2NEMzNSw2NCwyOSw3MCwyOSw3Ny41QzI5LDg0LjksMzUsOTEsNDIuNCw5MWgxMC4zYzEuNSwwLDIuNy0xLjIsMi43LTIuN3MtMS4yLTIuNy0yLjctMi43SDQyLjRjLTQuNSwwLTguMS0zLjYtOC4xLTguMQoJYzAtNC41LDMuNi04LjEsOC4xLTguMWgxMC4zYzEuNSwwLDIuNy0xLjIsMi43LTIuN2MwLTEuNS0xLjItMi43LTIuNy0yLjdDNTIuOCw2NCw0Mi40LDY0LDQyLjQsNjR6IE03NS4yLDY0CgljLTEuNSwwLTIuNywxLjItMi43LDIuN2MwLDEuNSwxLjIsMi43LDIuNywyLjdoMTAuM2M0LjUsMCw4LjEsMy42LDguMSw4LjFjMCw0LjUtMy42LDguMS04LjEsOC4xSDc1LjJjLTEuNSwwLTIuNywxLjItMi43LDIuNwoJYzAsMS41LDEuMiwyLjcsMi43LDIuN2gxMC4zQzkzLDkxLDk5LDg0LjksOTksNzcuNUM5OSw3MCw5Myw2NCw4NS42LDY0Qzg1LjYsNjQsNzUuMiw2NCw3NS4yLDY0eiBNNTUsNzQuOGMtMS41LDAtMi43LDEuMi0yLjcsMi43CgljMCwxLjUsMS4yLDIuNywyLjcsMi43aDE4YzEuNSwwLDIuNy0xLjIsMi43LTIuN2MwLTEuNS0xLjItMi43LTIuNy0yLjdINTV6Ii8+Cjwvc3ZnPgo=",
         accesskey: "O"
     }, {
-        label: locale.includes("zh-") ? "在新标签中打开" : "Open in New Tab",
+        label: locale.includes("zh-") ? "新标签打开" : "Open in New Tab",
+        accesskey: "N",
         oncommand: function (event) {
             const containerTab = document.getElementById('context-openlinkincontainertab');
             if (containerTab) {
@@ -398,36 +396,56 @@ new function () {
             }
         },
         image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMyAxYy0xLjA5OSAwLTIgLjktMiAydjEwYzAgMS4wOTkuOSAyIDIgMmg0LjI5NWE1LjcwMiA1LjcwMiAwIDAgMS0uNjctMUgzYy0uNTYzIDAtMS0uNDM3LTEtMVYzYzAtLjU2My40MzctMSAxLTFoM3YxLjVDNiA0LjMyMyA2LjY3OCA1IDcuNSA1SDE0djEuNTk4Yy4zNTguMTgyLjY5My40MDUgMSAuNjYyVjNjMC0xLjA5OS0uOS0yLTItMkgzem00IDFoNmMuNTYzIDAgMSAuNDM3IDEgMXYxSDcuNWEuNDkzLjQ5MyAwIDAgMS0uNS0uNVYyeiIvPgogIDxwYXRoIGQ9Ik0xMS41IDdBNC41IDQuNSAwIDAgMCA3IDExLjVhNC41IDQuNSAwIDAgMCA0LjUgNC41IDQuNSA0LjUgMCAwIDAgNC41LTQuNUE0LjUgNC41IDAgMCAwIDExLjUgN3ptMCAyYS41LjUgMCAwIDEgLjUuNVYxMWgxLjVhLjUuNSAwIDAgMSAuNS41LjUuNSAwIDAgMS0uNS41SDEydjEuNWEuNS41IDAgMCAxLS41LjUuNS41IDAgMCAxLS41LS41VjEySDkuNWEuNS41IDAgMCAxLS41LS41LjUuNSAwIDAgMSAuNS0uNUgxMVY5LjVhLjUuNSAwIDAgMSAuNS0uNXoiLz4KPC9zdmc+Cg==",
-    }, {
+    }]);
+    css("#context-openlinkintab,#context-openlinkincontainertab,#context-openlinkincurrent { display:none }");
+};
+new function () {
+    var groupMenu = GroupMenu({
         id: 'addMenu-openLink-tab-private',
-        label: locale.includes("zh-") ? "在无痕标签中打开" : "Open in Private Tab",
+        class: 'showText',
+        label: locale.includes("zh-") ? "打开链接..." : "Open Link...",
+        condition: 'link',
+        insertBefore: 'context-openlinkincurrent',
+        onshowing: function () {
+            // open in private tab need privateTab.uc.js https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js
+            let privateBtn = document.getElementById('addMenu-openLink-tab-private')
+            if (privateBtn) {
+                if (window.privateTab !== "undefined") privateBtn.hidden = false;
+                else if (typeof UC !== "undefined" && typeof UC.privateTab !== "undefined") privateBtn.hidden = false
+                else privateBtn.hidden = true;
+            }
+        }
+    });
+    groupMenu([{
+        id: 'addMenu-openLink-tab-private',
+        label: locale.includes("zh-") ? "无痕标签打开" : "Open in Private Tab",
+        accesskey: "Q",
         oncommand: "var dom = document.getElementById('openLinkInPrivateTab'); if (dom) dom.doCommand();",
         image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNTAgNTAiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTIxLjk4MDQ2OSAyQzE4LjEzNjcxOSAyLjA4NTkzOCAxNS4zNzUgMy4xOTkyMTkgMTMuNzY1NjI1IDUuMzEyNUMxMS45NDkyMTkgNy43MDMxMjUgMTEuNjMyODEzIDExLjI2NTYyNSAxMi43OTY4NzUgMTYuMTk1MzEzQzEyLjM4NjcxOSAxNi43MjY1NjMgMTIuMDExNzE5IDE3LjU3NDIxOSAxMi4xMDkzNzUgMTguNzM0Mzc1QzEyLjQwMjM0NCAyMC44OTg0MzggMTMuMjI2NTYzIDIxLjc4OTA2MyAxMy44OTg0MzggMjIuMTUyMzQ0QzE0LjIzNDM3NSAyMy45NTMxMjUgMTUuMjE4NzUgMjUuODYzMjgxIDE2LjEwMTU2MyAyNi43NjU2MjVDMTYuMTA1NDY5IDI2Ljk4ODI4MSAxNi4xMDkzNzUgMjcuMjAzMTI1IDE2LjExMzI4MSAyNy40MTc5NjlDMTYuMTMyODEzIDI4LjM3NSAxNi4xNDQ1MzEgMjkuMjAzMTI1IDE2LjAxOTUzMSAzMC4yNjU2MjVDMTUuNDcyNjU2IDMxLjY3MTg3NSAxMy40NDE0MDYgMzIuNDc2NTYzIDExLjA5Mzc1IDMzLjQwNjI1QzcuMTkxNDA2IDM0Ljk1MzEyNSAyLjMzNTkzOCAzNi44Nzg5MDYgMiA0Mi45NDkyMTlMMS45NDUzMTMgNDRMMjUuMzcxMDk0IDQ0QzI1LjE3OTY4OCA0My42MDU0NjkgMjUuMDE1NjI1IDQzLjE5NTMxMyAyNC44NTkzNzUgNDIuNzgxMjVDMjQuNTY2NDA2IDM5LjI1IDIyLjUgMzUuODAwNzgxIDIyLjUgMzUuODAwNzgxTDI0LjY2Nzk2OSAzMy45MDIzNDRDMjQuMzkwNjI1IDMzLjM0NzY1NiAyNC4wNTg1OTQgMzIuOTI1NzgxIDIzLjczMDQ2OSAzMi41ODIwMzFMMjUuNTg5ODQ0IDMxLjU1MDc4MUMyNS43MzgyODEgMzEuMjY1NjI1IDI1LjkwNjI1IDMwLjk5MjE4OCAyNi4wNzQyMTkgMzAuNzE4NzVDMjYuMjgxMjUgMzAuMzc4OTA2IDI2LjUwMzkwNiAzMC4wNTA3ODEgMjYuNzM0Mzc1IDI5LjczNDM3NUMyNi43ODkwNjMgMjkuNjY0MDYzIDI2LjgzNTkzOCAyOS41ODk4NDQgMjYuODkwNjI1IDI5LjUxOTUzMUMyNy4xNzk2ODggMjkuMTQwNjI1IDI3LjQ4ODI4MSAyOC43NzM0MzggMjcuODEyNSAyOC40MjU3ODFDMjcuODA0Njg4IDI3Ljg3ODkwNiAyNy44MDA3ODEgMjcuMzQzNzUgMjcuODAwNzgxIDI2Ljc1MzkwNkMyOC42Njc5NjkgMjUuODM5ODQ0IDI5LjU4OTg0NCAyMy45MjU3ODEgMjkuOTcyNjU2IDIyLjE5MTQwNkMzMC42OTE0MDYgMjEuODUxNTYzIDMxLjU4OTg0NCAyMC45Njg3NSAzMS43OTY4NzUgMTguNjgzNTk0QzMxLjg5MDYyNSAxNy41NTg1OTQgMzEuNTgyMDMxIDE2LjczMDQ2OSAzMS4xNTYyNSAxNi4xOTkyMTlDMzEuODE2NDA2IDE0LjEyODkwNiAzMi45Mzc1IDkuNTM1MTU2IDMxLjA5Mzc1IDYuNDg4MjgxQzMwLjI1MzkwNiA1LjEwMTU2MyAyOC45NDE0MDYgNC4yMzA0NjkgMjcuMTgzNTk0IDMuODgyODEzQzI2LjIxODc1IDIuNjY0MDYzIDI0LjM5ODQzOCAyIDIxLjk4MDQ2OSAyIFogTSAyMiA0QzIzLjg5MDYyNSA0IDI1LjI1MzkwNiA0LjQ3NjU2MyAyNS43MzQzNzUgNS4zMDQ2ODhMMjUuOTgwNDY5IDUuNzIyNjU2TDI2LjQ1NzAzMSA1Ljc4OTA2M0MyNy44MzU5MzggNS45ODQzNzUgMjguNzkyOTY5IDYuNTUwNzgxIDI5LjM3ODkwNiA3LjUyMzQzOEMzMC42NjQwNjMgOS42NDA2MjUgMzAuMDA3ODEzIDEzLjUgMjkuMDU4NTk0IDE2LjE2MDE1NkwyOC43NDIxODggMTYuOTg0Mzc1TDI5LjUzNTE1NiAxNy4zODI4MTNDMjkuNjI1IDE3LjQ0NTMxMyAyOS44NjMyODEgMTcuNzg5MDYzIDI5LjgwNDY4OCAxOC41MDc4MTNDMjkuNjY3OTY5IDE5Ljk4ODI4MSAyOS4xOTkyMTkgMjAuMzgyODEzIDI5LjA5NzY1NiAyMC40MDIzNDRMMjguMjM0Mzc1IDIwLjQwMjM0NEwyOC4xMDkzNzUgMjEuMjYxNzE5QzI3LjgzNTkzOCAyMy4xODM1OTQgMjYuNjgzNTk0IDI1LjE1NjI1IDI2LjMwNDY4OCAyNS40MzM1OTRMMjUuODAwNzgxIDI1LjcxODc1TDI1LjgwMDc4MSAyNi4zMDA3ODFDMjUuODAwNzgxIDI3LjMyMDMxMyAyNS44MTI1IDI4LjE5NTMxMyAyNS44NDM3NSAyOS4xMjEwOTRMMjIgMzEuMjUzOTA2TDE4LjEwNTQ2OSAyOS4wOTM3NUMxOC4xMjUgMjguNTAzOTA2IDE4LjEyMTA5NCAyNy45NDUzMTMgMTguMTA5Mzc1IDI3LjM3ODkwNkMxOC4xMDU0NjkgMjcuMDM1MTU2IDE4LjA5NzY1NiAyNi42Nzk2ODggMTguMDk3NjU2IDI2LjI5Njg3NUwxOC4wMzUxNTYgMjUuNzM0Mzc1TDE3LjYwOTM3NSAyNS40Mzc1QzE3LjIxNDg0NCAyNS4xNjc5NjkgMTUuOTcyNjU2IDIzLjE3MTg3NSAxNS43OTY4NzUgMjEuMzA0Njg4TDE1Ljc4MTI1IDIwLjQwNjI1TDE0Ljg3NSAyMC40MDYyNUMxNC43MzA0NjkgMjAuMzUxNTYzIDE0LjI4NTE1NiAxOS44Nzg5MDYgMTQuMDkzNzUgMTguNTE1NjI1QzE0LjAyNzM0NCAxNy42Nzk2ODggMTQuNDUzMTI1IDE3LjMzMjAzMSAxNC40NTMxMjUgMTcuMzMyMDMxTDE1LjA0Njg3NSAxNi45Mzc1TDE0Ljg3MTA5NCAxNi4yNTM5MDZDMTMuNzA3MDMxIDExLjY2Nzk2OSAxMy44NjcxODggOC40ODQzNzUgMTUuMzU5Mzc1IDYuNTIzNDM4QzE2LjU3ODEyNSA0LjkyMTg3NSAxOC44MjAzMTMgNC4wNzAzMTMgMjIgNCBaIE0gMzggMjZDMzEuMzkwNjI1IDI2IDI2IDMxLjM5NDUzMSAyNiAzOEMyNiA0NC42MDU0NjkgMzEuMzkwNjI1IDUwIDM4IDUwQzQ0LjYwOTM3NSA1MCA1MCA0NC42MDU0NjkgNTAgMzhDNTAgMzEuMzk0NTMxIDQ0LjYwOTM3NSAyNiAzOCAyNiBaIE0gMzggMjhDNDMuNTIzNDM4IDI4IDQ4IDMyLjQ3NjU2MyA0OCAzOEM0OCA0My41MjM0MzggNDMuNTIzNDM4IDQ4IDM4IDQ4QzMyLjQ3NjU2MyA0OCAyOCA0My41MjM0MzggMjggMzhDMjggMzIuNDc2NTYzIDMyLjQ3NjU2MyAyOCAzOCAyOCBaIE0gMTcuNzczNDM4IDMxLjE5NTMxM0wyMC4yNjk1MzEgMzIuNTgyMDMxTDE3Ljk4ODI4MSAzNS40MTc5NjlMMTYuMTIxMDk0IDMzLjE1MjM0NEMxNi44NDM3NSAzMi42MTcxODggMTcuNDE0MDYzIDMxLjk4NDM3NSAxNy43NzM0MzggMzEuMTk1MzEzIFogTSAzNyAzMkwzNyAzN0wzMiAzN0wzMiAzOUwzNyAzOUwzNyA0NEwzOSA0NEwzOSAzOUw0NCAzOUw0NCAzN0wzOSAzN0wzOSAzMiBaIE0gMTQuMzc1IDM0LjE3OTY4OEwxNy4yMzA0NjkgMzcuNjM2NzE5QzE3LjQxNzk2OSAzNy44NjcxODggMTcuNzA3MDMxIDM4LjAwMzkwNiAxOC4wMDc4MTMgMzhDMTguMzA4NTk0IDM4IDE4LjU4OTg0NCAzNy44NTkzNzUgMTguNzgxMjUgMzcuNjI1TDIwLjc0MjE4OCAzNS4xODc1TDIxLjUgMzUuODAwNzgxQzIxLjUgMzUuODAwNzgxIDE5Ljc0NjA5NCAzOC44MTI1IDE5LjI0MjE4OCA0Mkw0LjEyMTA5NCA0MkM0Ljg1NTQ2OSAzOC4wMjczNDQgOC4zOTg0MzggMzYuNjI1IDExLjgyODEyNSAzNS4yNjU2MjVDMTIuNzE0ODQ0IDM0LjkxNDA2MyAxMy41NzgxMjUgMzQuNTY2NDA2IDE0LjM3NSAzNC4xNzk2ODhaIi8+PC9zdmc+"
+    }, {
+        label: locale.includes("zh-") ? '隐私窗口' : 'Private window',
+        oncommand: 'gContextMenu.openLinkInPrivateWindow();',
+        accesskey: 'P',
+        image: "chrome://browser/skin/privateBrowsing.svg"
     }]);
-    css("#openLinkInPrivateTab,#context-openlinkintab,#context-openlinkincontainertab,#context-openlinkincurrent { display:none }");
+    css("#openLinkInPrivateTab,#context-openlinkprivate { display:none }");
 };
-
 new function () {
     var groupMenu = GroupMenu({
         id: 'addMenu-openLink-window',
-        class: 'showFirstText',
+        class: 'showText',
         label: locale.includes("zh-") ? "打开链接..." : "Open Link...",
         condition: 'link',
         insertBefore: 'context-openlinkinusercontext-menu',
         onpopupshowing: syncHidden
     });
     groupMenu([{
-        label: locale.includes("zh-") ? '新窗口打开' : 'Open in new window',
+        label: locale.includes("zh-") ? '新窗口打开' : 'New window',
         oncommand: 'gContextMenu.openLink();',
         image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMy41IDFBMi41IDIuNSAwIDAgMCAxIDMuNXY5QTIuNSAyLjUgMCAwIDAgMy41IDE1aDlhMi41IDIuNSAwIDAgMCAyLjUtMi41di05QTIuNSAyLjUgMCAwIDAgMTIuNSAxaC05em0wIDFoOUExLjUgMS41IDAgMCAxIDE0IDMuNVY0SDJ2LS41QTEuNSAxLjUgMCAwIDEgMy41IDJ6TTIgNWgxMnY3LjVhMS41IDEuNSAwIDAgMS0xLjUgMS41aC05QTEuNSAxLjUgMCAwIDEgMiAxMi41VjV6Ii8+Cjwvc3ZnPgo=",
         accesskey: "W"
     }, {
-        label: locale.includes("zh-") ? '在隐私窗口中打开' : 'Open in private window',
-        oncommand: 'gContextMenu.openLinkInPrivateWindow();',
-        accesskey: 'P',
-        image: "chrome://browser/skin/privateBrowsing.svg"
-    }, {
-        label: locale.includes("zh-") ? "其他浏览器中打开" : "Open in other browser",
+        label: locale.includes("zh-") ? "其他浏览器" : "Other browser",
         id: 'context-open-with-browser',
         tooltiptext: locale.includes("zh-") ? "左键打开，右键设置浏览器路径" : "Left click: open in other browser\nRight click: set browser path",
         onclick: function (event) {
@@ -440,7 +458,7 @@ new function () {
         image: "chrome://devtools/skin/images/browsers/edge.svg",
         accesskey: 'e'
     }])
-    css("#context-openlink,#context-openlinkprivate { display: none }");
+    css("#context-openlink { display: none }");
 };
 
 css(`#contentAreaContextMenu:not([addMenu~="link"]) #context-sep-open { display: none }`);
@@ -560,7 +578,7 @@ page([{
     class: "copy",
     text: "%SVG_BASE64%",
     onshowing: function (item) {
-        let uri = addMenu.win.gBrowser.currentURI.spec;
+        let uri = gBrowser.currentURI.spec;
         if (!uri.endsWith(".svg")) {
             item.hidden = true;
         } else {
@@ -644,7 +662,6 @@ new function () {
         condition: 'select',
         insertAfter: 'context-copy',
         onshowing: function (item) {
-            const { document } = addMenu.win;
             document.getElementById("context-print-selection-new").setAttribute("tooltiptext", document.getElementById("context-print-selection-new").label);
             document.getElementById("context-viewpartialsource-selection-new").setAttribute("tooltiptext", document.getElementById("context-viewpartialsource-selection-new").label);
             item.removeAttribute("onshowing");
@@ -729,7 +746,6 @@ new function () {
         insertBefore: 'context-searchselect',
         onshowinglabel: locale.includes("zh-") ? "搜索: %SEL%" : "Search %SEL% by",
         onshowing: function (item) {
-            const { Services, document } = addMenu.win;
             let searchConfigFile = Services.dirsvc.get('UChrm', Ci.nsIFile), searchJson = false, popupNode = item.querySelector('menupopup');
             searchConfigFile.append("UserConfig"); // 配置文件存放在 UserConfig 目录下
             if (searchConfigFile.exists()) {
