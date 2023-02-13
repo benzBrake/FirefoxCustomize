@@ -3,7 +3,7 @@
    - If a copy of the CC BY-NC-SA 4.0 was not distributed with this
    - file, You can obtain one at http://creativecommons.org/licenses/by-nc-sa/4.0/
    - or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="context-fill"
     fill-opacity="context-fill-opacity">
     <path d="M14.4,2.4H7.104L6.4,0H1.6C0.72,0,0,0.72,0,1.6V12c0,0.88,0.72,1.6,1.6,1.6h5.6L8,16h6.4
 	c0.88,0,1.6-0.72,1.6-1.6V4C16,3.12,15.28,2.4,14.4,2.4z M4.136,10.072c-1.8,0-3.272-1.464-3.272-3.272s1.464-3.272,3.272-3.272

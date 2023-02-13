@@ -1,4 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="context-fill" fill-opacity="context-fill-opacity">
   <path d="M8.78125 2.28125L2.78125 8.28125L2.09375 9L2.78125 9.71875L8.78125 15.71875L10.21875 14.28125L5.9375 10L17 10C19.753906 10 22 12.246094 22 15C22 17.753906 19.753906 20 17 20L15 20L15 22L17 22C20.84375 22 24 18.84375 24 15C24 11.15625 20.84375 8 17 8L5.9375 8L10.21875 3.71875 Z M 3 20L3 22L5 22L5 20 Z M 7 20L7 22L9 22L9 20 Z M 11 20L11 22L13 22L13 20Z" />
 </svg>
