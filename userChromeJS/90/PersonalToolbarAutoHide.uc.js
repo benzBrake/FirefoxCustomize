@@ -4,12 +4,12 @@
 // @compatibility  Firefox 68
 // @author         Ryan
 // @included       chrome://browser/content/browser.xhtml
-// @shutdown       UC.PersonalToolbarAutoHide.unload();
+// @shutdown       window.PersonalToolbarAutoHide.unload();
 // @homepage       https://github.com/benzBrake/FirefoxCustomize
 // @version        1.0
 // @onlyonce
 // ==/UserScript==
-UC.PersonalToolbarAutoHide = {
+window.PersonalToolbarAutoHide = {
     appVersion: parseInt(Services.appinfo.version),
     init: function () {
         const { document, console, getComputedStyle } = window;
@@ -23,10 +23,11 @@ UC.PersonalToolbarAutoHide = {
             if (this.toolbar == null) return;
             this.context = document.getElementById('placesContext');
             this.toolbarHeight = getComputedStyle(this.toolbar).height;
+            this.position = this.appVersion >= 108 ? "relative" : "absolute";
             this.setStyle();
             if (this.context) {
-                this.context.addEventListener('popupshowing', UC.PersonalToolbarAutoHide.popupshowing, false);
-                this.context.addEventListener('popuphiding', UC.PersonalToolbarAutoHide.popuphiding, false);
+                this.context.addEventListener('popupshowing', window.PersonalToolbarAutoHide.popupshowing, false);
+                this.context.addEventListener('popuphiding', window.PersonalToolbarAutoHide.popuphiding, false);
             }
             let timeOut, config = { childList: true };
             this.observer = new MutationObserver(mutations => {
@@ -34,7 +35,7 @@ UC.PersonalToolbarAutoHide = {
                     if (m.type == 'childList') {
                         clearTimeout(timeOut);
                         setTimeout(function () {
-                            UC.PersonalToolbarAutoHide.addEvent();
+                            window.PersonalToolbarAutoHide.addEvent();
                         }, 300);
                     }
                 });
@@ -48,8 +49,8 @@ UC.PersonalToolbarAutoHide = {
             if (e.getAttribute('context') === 'placesContext') {
                 if (!e.getAttribute('pbah')) {
                     e.setAttribute('pbah', 'true');
-                    e.addEventListener('popupshowing', UC.PersonalToolbarAutoHide.popupshowing, true);
-                    e.addEventListener('popuphiding', UC.PersonalToolbarAutoHide.popuphiding, true);
+                    e.addEventListener('popupshowing', window.PersonalToolbarAutoHide.popupshowing, true);
+                    e.addEventListener('popuphiding', window.PersonalToolbarAutoHide.popuphiding, true);
                 }
             }
         });
@@ -61,8 +62,8 @@ UC.PersonalToolbarAutoHide = {
             this.toolbar.classList.remove('folder-open');
         }
         if (this.context) {
-            this.context.removeEventListener('popupshowing', UC.PersonalToolbarAutoHide.popupshowing);
-            this.context.removeEventListener('popuphiding', UC.PersonalToolbarAutoHide.popuphiding);
+            this.context.removeEventListener('popupshowing', window.PersonalToolbarAutoHide.popupshowing);
+            this.context.removeEventListener('popuphiding', window.PersonalToolbarAutoHide.popuphiding);
         }
         let target = document.getElementById('PlacesToolbarItems');
         target.querySelectorAll("menupopup").forEach(e => {
@@ -70,16 +71,16 @@ UC.PersonalToolbarAutoHide = {
                 e.removeAttribute('pbah');
                 if (!e.getAttribute('pbah')) {
                     e.setAttribute('pbah', 'true');
-                    e.addEventListener('popupshowing', UC.PersonalToolbarAutoHide.popupshowing, true);
-                    e.addEventListener('popuphiding', UC.PersonalToolbarAutoHide.popuphiding, true);
+                    e.addEventListener('popupshowing', window.PersonalToolbarAutoHide.popupshowing, true);
+                    e.addEventListener('popuphiding', window.PersonalToolbarAutoHide.popuphiding, true);
                 }
             }
         });
-        delete UC.PersonalToolbarAutoHide;
+        delete window.PersonalToolbarAutoHide;
     },
 
     popupshowing: function (e) {
-        let that = UC.PersonalToolbarAutoHide,
+        let that = window.PersonalToolbarAutoHide,
             toolbar = that.toolbar;
         if (e.id == 'placesContext') {
             toolbar.classList.add('context-open');
@@ -90,7 +91,7 @@ UC.PersonalToolbarAutoHide = {
 
 
     popuphiding: function (e) {
-        let that = UC.PersonalToolbarAutoHide,
+        let that = window.PersonalToolbarAutoHide,
             toolbar = that.toolbar;
         if (e.id == 'placesContext') {
             toolbar.classList.remove('context-open');
@@ -108,7 +109,7 @@ UC.PersonalToolbarAutoHide = {
                     z-index: 101;
                   }
                 #PersonalToolbar:not([customizing="true"]) {
-                  position: absolute;
+                  position: ${this.position};
                   width: 100%;
                   --margin-fix: -${this.toolbarHeight};
                   opacity: 0 !important;
@@ -149,4 +150,4 @@ UC.PersonalToolbarAutoHide = {
         this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
     },
 }
-UC.PersonalToolbarAutoHide.init();
+window.PersonalToolbarAutoHide.init();
