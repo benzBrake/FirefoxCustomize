@@ -298,13 +298,13 @@
                                     contextmenu: false,
                                     onclick: function (event) {
                                         event.preventDefault();
+                                        event.stopPropagation();
                                         if (event.target.id !== "CopyCat-Btn") return;
                                         if (event.button === 0) {
                                             let menupopup = event.target.ownerDocument.querySelector("#CopyCat-Popup");
-                                            if (menupopup.getAttribute("ex-open") === "true") {
+                                            if (menupopup.state === "open") {
                                                 if (!Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
                                                     closeMenus(menupopup);
-                                                    menupopup.removeAttribute("ex-open");
                                                     return;
                                                 }
                                             } else {
@@ -315,7 +315,6 @@
                                                     y = 0 + event.target.clientHeight;
                                                 }
                                                 menupopup.openPopup(event.target, pos, x, y);
-                                                menupopup.setAttribute("ex-open", true);
                                             }
                                         } else if (event.button === 2) {
                                             if (window.AM_Helper) {
@@ -340,16 +339,17 @@
                                     });
                                     this.rebuild(menupopup);
                                     menupopup.addEventListener('popupshowing', (event) => {
-                                        if (event.target.id === "CopyCat-Popup") {
-                                            event.target.ownerDocument.querySelector("#CopyCat-Btn").removeAttribute("open");
-                                            CopyCat.rebuild(event.target.ownerDocument.querySelector("#CopyCat-Popup"));
+                                        let menupopup = event.target;
+                                        if (menupopup.id === "CopyCat-Popup") {;
+                                            menupopup.ownerDocument.querySelector("#CopyCat-Btn").setAttribute("open", true);
+                                            CopyCat.rebuild(menupopup);
                                         }
                                     });
                                     menupopup.addEventListener('popuphidden', (event) => {
-                                        if (event.target.id === "CopyCat-Popup") {
-                                            event.target.removeAttribute("hasbeenopened");
-                                            event.target.removeAttribute("ex-open");
-                                            event.target.ownerDocument.querySelector("#CopyCat-Btn").removeAttribute("open");
+                                        let menupopup = event.target;
+                                        if (menupopup.id === "CopyCat-Popup") {
+                                            menupopup.removeAttribute("hasbeenopened");
+                                            menupopup.ownerDocument.querySelector("#CopyCat-Btn").removeAttribute("open");
                                         }
                                     });
                                 }
