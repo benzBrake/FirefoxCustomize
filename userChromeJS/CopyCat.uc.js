@@ -325,7 +325,7 @@
                                         menupopup.setAttribute("position", "before_start");
                                     } else if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
                                         menupopup.setAttribute("position", "before_start");
-                                     } else {
+                                    } else {
                                         menupopup.removeAttribute("position", "after_end");
                                     }
                                 });
@@ -457,24 +457,53 @@
                     // 移动菜单
                     let org = $(obj.command, doc) || $Q('#' + obj.command, getViewCache(doc));
                     if (org) {
-                        let replacement = $C(doc, 'menuseparator', {
-                            hidden: true, class: 'CopyCat-Replacement', 'original-id': obj.command
-                        });
-                        org.setAttribute('restoreBeforeUnload', 'true');
-                        org.parentNode.insertBefore(replacement, org);
-                        org.restoreHolder = replacement;
                         if (org.localName === "menu") {
                             if (org.hasAttribute('closemenu'))
                                 org.setAttribute('orgClosemenu', org.getAttribute('closemenu'));
                             org.setAttribute('closemenu', 'none');
                         }
-                        if (obj.onBuild) {
+                        if ('class' in obj) {
+                            org.setAttribute('orgClass', org.getAttribute('class'));
+                            org.setAttribute('class', obj.class);
+                            if (obj.class.split(' ').includes("menu-iconic")) {
+                                // fix menu left icon
+                                if  (!org.firstChild?.classList.contains('menu-iconic-left')) {
+                                    let left = org.insertBefore($C(doc, 'hbox', {
+                                        class: 'menu-iconic-left',
+                                        align: 'center',
+                                        pack: 'center',
+                                        'aria-hidden': true
+                                    }), org.firstChild);
+                                    left.appendChild($C(doc, 'image', {
+                                        class: 'menu-iconic-icon'
+                                    }));
+                                    org.setAttribute('removeMenuLeft', 'true');
+                                }
+                            }
+                        }
+                        // fix menu-right
+                        if (obj["menu-right"]) {
+                            org.setAttribute("removeMenuRight", "true");
+                            let right = org.appendChild($C(doc, 'hbox', {
+                                class: 'menu-right ml-auto',
+                                align: 'center',
+                                'aria-hidden': true
+                            }));
+                            right.appendChild($C(doc, 'image'));
+                        }
+                        if ('onBuild' in obj) {
                             if (typeof obj.onBuild === "function") {
                                 obj.onBuild(doc, org);
                             } else {
                                 eval("(" + obj.onBuild + ").call(org, doc, org)")
                             }
                         }
+                        let replacement = $C(doc, 'menuseparator', {
+                            hidden: true, class: 'CopyCat-Replacement', 'original-id': obj.command
+                        });
+                        org.setAttribute('restoreBeforeUnload', 'true');
+                        org.parentNode.insertBefore(replacement, org);
+                        org.restoreHolder = replacement;
                         return org;
                     } else {
                         return $C(doc, 'menuseparator', {
@@ -927,9 +956,18 @@
                 })
                 function restoreMenusInViewOrPopup(aViewOrPopup) {
                     $QA('[restoreBeforeUnload="true"]', aViewOrPopup).forEach(item => {
-                        if (item.hasAttribute('orgClosemenu')) {
-                            item.setAttribute('closemenu', item.getAttribute('orgClosemenu'));
-                            item.removeAttribute('orgClosemenu');
+                        item.removeAttribute("closemenu");
+                        item.getAttributeNames().filter(attr => attr.startsWith("org")).forEach(attr => {
+                            item.setAttribute(attr.substring(3, attr.length).toLowerCase(), item.getAttribute(attr));
+                            item.removeAttribute(attr);
+                        });
+                        if (item.getAttribute("removeMenuLeft") == "true") {
+                            $R(item.querySelector(":scope > .menu-iconic-left"));
+                            item.removeAttribute("removeMenuLeft")
+                        }
+                        if (item.getAttribute("removeMenuRight") == "true") {
+                            $R(item.querySelector(":scope > .menu-right"));
+                            item.removeAttribute("removeMenuRight")
                         }
                         let { restoreHolder } = item;
                         if (restoreHolder) {
@@ -1278,5 +1316,8 @@
 }
 .CopyCat-Popup menu:not(.menu-iconic) > label {
     margin-left: 0;
+}
+.CopyCat-Popup menu > .menu-right.ml-auto {
+    margin-left: auto;
 }
 `)
