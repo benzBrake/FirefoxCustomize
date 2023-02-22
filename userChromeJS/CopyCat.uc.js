@@ -141,7 +141,7 @@
             get TOOLS_PATH() {
                 delete this.TOOLS_PATH;
                 return this.TOOLS_PATH = handleRelativePath(this.TOOLS_RELATIVE_PATH);
-            },
+            }
         }
     }
 
@@ -282,7 +282,7 @@
                                     this.NEED_BUILD = false;
                                     this.rebuild(event.target);
                                 }
-                            },
+                            }
                         });
                     } else {
                         CustomizableUI.createWidget({
@@ -302,8 +302,9 @@
                                         if (event.target.id !== "CopyCat-Btn") return;
                                         if (event.button === 0) {
                                             let menupopup = event.target.ownerDocument.querySelector("#CopyCat-Popup");
-                                            if (menupopup.state === "open") {
+                                            if (event.target.getAttribute("force-close") === "true"|| menupopup.state === "open") {
                                                 if (!Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
+                                                    event.target.removeAttribute("force-close")
                                                     closeMenus(menupopup);
                                                     return;
                                                 }
@@ -324,6 +325,11 @@
                                         }
                                     }
                                 });
+                                node.addEventListener("mousedown", (event) => {
+                                    let menupopup = event.target.ownerDocument.querySelector("#CopyCat-Popup");
+                                    if (menupopup.state === "open")
+                                        event.target.setAttribute("force-close", "true");
+                                })
                                 let mp = $("mainPopupSet", document);
                                 if (!mp.querySelector("#CopyCat-Popup")) {
                                     let menupopup = mp.appendChild($C(document, "menupopup", {
@@ -751,6 +757,10 @@
                 else if (url)
                     this.openCommand(event, url, where);
                 if (postcommand) eval(postcommand);
+
+                if (event.button !== 2 && event.target.getAttribute("closemenu") !== "none") {
+                    closeMenus(event.target.closest("menupopup"));
+                }
             },
             handlePref: function (event, pref) {
                 let item = event.target;
