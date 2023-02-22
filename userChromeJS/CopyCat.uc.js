@@ -296,40 +296,8 @@
                                     label: $L("copycat-brand"),
                                     tooltiptext: $L("ccopycat-btn-tooltip"),
                                     contextmenu: false,
-                                    onclick: function (event) {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        if (event.target.id !== "CopyCat-Btn") return;
-                                        if (event.button === 0) {
-                                            let menupopup = event.target.ownerDocument.querySelector("#CopyCat-Popup");
-                                            if (event.target.getAttribute("force-close") === "true"|| menupopup.state === "open") {
-                                                if (!Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
-                                                    event.target.removeAttribute("force-close")
-                                                    closeMenus(menupopup);
-                                                    return;
-                                                }
-                                            } else {
-                                                let pos = "after_end", x, y;
-                                                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
-                                                    pos = "after_position";
-                                                    x = 0;
-                                                    y = 0 + event.target.clientHeight;
-                                                }
-                                                menupopup.openPopup(event.target, pos, x, y);
-                                            }
-                                        } else if (event.button === 2) {
-                                            if (window.AM_Helper) {
-                                                event.preventDefault();
-                                                event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/userchromejs");
-                                            }
-                                        }
-                                    }
+                                    type: "menu",
                                 });
-                                node.addEventListener("mousedown", (event) => {
-                                    let menupopup = event.target.ownerDocument.querySelector("#CopyCat-Popup");
-                                    if (menupopup.state === "open")
-                                        event.target.setAttribute("force-close", "true");
-                                })
                                 let mp = $("mainPopupSet", document);
                                 if (!mp.querySelector("#CopyCat-Popup")) {
                                     let menupopup = mp.appendChild($C(document, "menupopup", {
@@ -344,21 +312,23 @@
                                         menupopup.appendChild(menuitem);
                                     });
                                     this.rebuild(menupopup);
-                                    menupopup.addEventListener('popupshowing', (event) => {
-                                        let menupopup = event.target;
-                                        if (menupopup.id === "CopyCat-Popup") {;
-                                            menupopup.ownerDocument.querySelector("#CopyCat-Btn").setAttribute("open", true);
-                                            CopyCat.rebuild(menupopup);
-                                        }
-                                    });
-                                    menupopup.addEventListener('popuphidden', (event) => {
-                                        let menupopup = event.target;
-                                        if (menupopup.id === "CopyCat-Popup") {
-                                            menupopup.removeAttribute("hasbeenopened");
-                                            menupopup.ownerDocument.querySelector("#CopyCat-Btn").removeAttribute("open");
-                                        }
-                                    });
                                 }
+                                node.addEventListener("mouseover", (event) => {
+                                    let menupopup = node.ownerDocument.querySelector("#CopyCat-Popup");
+                                    if (menupopup.parentNode.id !== "CopyCat-Btn") {
+                                        this.rebuild(menupopup);
+                                        event.target.appendChild(menupopup);;
+                                    }
+                                    if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY < (event.target.ownerGlobal.innerHeight / 2)) {
+                                        menupopup.setAttribute("position", "after_end");
+                                    } else if (event.clientX < (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
+                                        menupopup.setAttribute("position", "before_start");
+                                    } else if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
+                                        menupopup.setAttribute("position", "before_start");
+                                     } else {
+                                        menupopup.removeAttribute("position", "after_end");
+                                    }
+                                });
                             },
                         });
                     }
