@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.1.9
+// @version         0.2.0
 // @compatibility   Firefox 78
 // @include         main
 // @include         chrome://userchrome/content/SubScript/CopyCat.html
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.2.0 修正点击按钮无法关闭菜单
 // @version         0.1.9 新增隐藏内置菜单选项 （userChromeJS.CopyCat.hideInternal）
 // @version         0.1.8 支持切换 panelview 到 menupopup （userChromeJS.CopyCat.buildPanel），修复运行参数问题
 // @version         0.1.7 主题设置分离到 CopyCatTheme.uc.js
@@ -296,10 +297,16 @@
                                     tooltiptext: $L("ccopycat-btn-tooltip"),
                                     contextmenu: false,
                                     onclick: function (event) {
+                                        event.preventDefault();
                                         if (event.target.id !== "CopyCat-Btn") return;
                                         if (event.button === 0) {
-                                            if (event.target.getAttribute("open") === "true") {
-                                                closeMenus(event.target.ownerDocument.querySelector("#CopyCat-Popup"));
+                                            let menupopup = event.target.ownerDocument.querySelector("#CopyCat-Popup");
+                                            if (menupopup.getAttribute("ex-open") === "true") {
+                                                if (!Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
+                                                    closeMenus(menupopup);
+                                                    menupopup.removeAttribute("ex-open");
+                                                    return;
+                                                }
                                             } else {
                                                 let pos = "after_end", x, y;
                                                 if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
@@ -307,8 +314,8 @@
                                                     x = 0;
                                                     y = 0 + event.target.clientHeight;
                                                 }
-                                                event.target.setAttribute("open", true);
-                                                event.target.ownerDocument.querySelector("#CopyCat-Popup").openPopup(event.target, pos, x, y);
+                                                menupopup.openPopup(event.target, pos, x, y);
+                                                menupopup.setAttribute("ex-open", true);
                                             }
                                         } else if (event.button === 2) {
                                             if (window.AM_Helper) {
@@ -334,11 +341,14 @@
                                     this.rebuild(menupopup);
                                     menupopup.addEventListener('popupshowing', (event) => {
                                         if (event.target.id === "CopyCat-Popup") {
+                                            event.target.ownerDocument.querySelector("#CopyCat-Btn").removeAttribute("open");
                                             CopyCat.rebuild(event.target.ownerDocument.querySelector("#CopyCat-Popup"));
                                         }
                                     });
                                     menupopup.addEventListener('popuphidden', (event) => {
                                         if (event.target.id === "CopyCat-Popup") {
+                                            event.target.removeAttribute("hasbeenopened");
+                                            event.target.removeAttribute("ex-open");
                                             event.target.ownerDocument.querySelector("#CopyCat-Btn").removeAttribute("open");
                                         }
                                     });
@@ -1284,9 +1294,9 @@
 }
 .CopyCat-Popup menu:not(.menu-iconic),
 .CopyCat-Popup menuitem:not(.menuitem-iconic) {
-    padding-inline-start: 36px !important;
+    padding-inline-start: 36px;
 }
 .CopyCat-Popup menu:not(.menu-iconic) > label {
-    margin-left: 0 !important;
+    margin-left: 0;
 }
 `)
