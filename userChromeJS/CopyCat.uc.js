@@ -504,7 +504,7 @@
                             }
                         }
                         // fix menu-right
-                        if (obj["menu-right"]) {
+                        if (!obj.clone && obj["menu-right"]) {
                             dest.setAttribute("removeMenuRight", "true");
                             let right = dest.appendChild($C(doc, 'hbox', {
                                 class: 'menu-right ml-auto',
@@ -1354,7 +1354,7 @@
 .CopyCat-Popup menu > label {
     -moz-box-flex: 1 !important;
 }
-.CopyCat-Popup menu > label:not(.menu-text):not(.menu-iconic-text) {
+.CopyCat-Popup menu > label.menu-text ~ label {
     display: none;
 }
 `)
