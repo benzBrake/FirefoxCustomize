@@ -2769,7 +2769,7 @@ by underlining them (requires urlbarMods.uc.js) */
             padding-inline-start: var(--label-padding-start, 32px) !important;
         }
 
-        menupopup menu:not(.menu-iconic) > .menubar-text {
+        menupopup menu:not(.menu-iconic)>.menubar-text {
             margin-left: 0 !important;
         }
 
@@ -2881,9 +2881,19 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* 修正用户菜单边距 */
-        #appMenu-header-description {
+        #appMenu-fxa-status2:not([fxastatus])>#appMenu-fxa-label2 {
+            padding: var(--arrowpanel-menuitem-padding);
+            background-image: unset;
+        }
+
+        #appMenu-fxa-status2:not([fxastatus]) #appMenu-header-description {
             height: var(--icon-height, 16px);
             margin: 0;
+            position: relative;
+        }
+
+        #appMenu-fxa-status2:not([fxastatus]) #appMenu-header-description::before {
+            font-size: 12px !important;
         }
 
         /** Hide menuitem without label */
@@ -3714,6 +3724,11 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #appMenu-fxa-label2 {
             background-image: var(--avatar-image-url);
+        }
+
+        #appMenu-fxa-status2:not([fxastatus])>#appMenu-fxa-label2 {
+            background-image: unset;
+            --label-padding-start: var(--icon-gap, 12px);
         }
 
         #PanelUI-fxa-menu-connect-device-button {
