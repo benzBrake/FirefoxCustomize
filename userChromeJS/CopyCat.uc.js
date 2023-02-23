@@ -297,6 +297,15 @@
                                     tooltiptext: $L("ccopycat-btn-tooltip"),
                                     contextmenu: false,
                                     type: "menu",
+                                    onclick: (event) => {
+                                        if (event.target.id !== "CopyCat-Btn") return;
+                                        if (event.button === 2) {
+                                            if (window.AM_Helper) {
+                                                event.preventDefault();
+                                                event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/userchromejs");
+                                            }
+                                        }
+                                    }
                                 });
                                 let mp = $("mainPopupSet", document);
                                 if (!mp.querySelector("#CopyCat-Popup")) {
