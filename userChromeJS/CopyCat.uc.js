@@ -222,7 +222,7 @@
             init: function () {
                 // load default style
                 this.STYLE = "data:text/css;charset=utf-8," + encodeURIComponent(css);
-                windowUtils.loadSheetUsingURIString(this.STYLE, windowUtils.USER_SHEET);
+                windowUtils.loadSheetUsingURIString(this.STYLE, windowUtils.AUTHOR_SHEET);
 
                 // create CopyCat button
                 if (!(CustomizableUI.getWidget('CopyCat-Btn') && CustomizableUI.getWidget('CopyCat-Btn').forWindow(window)?.node)) {
@@ -464,56 +464,72 @@
 
                 if (obj.command) {
                     // 移动菜单
-                    let org = $(obj.command, doc) || $Q('#' + obj.command, getViewCache(doc));
+                    obj.clone = obj.clone || false;
+                    let org = $(obj.command, doc) || $Q('#' + obj.command, getViewCache(doc)),
+                        dest;
                     if (org) {
-                        if (org.localName === "menu") {
-                            if (org.hasAttribute('closemenu'))
-                                org.setAttribute('orgClosemenu', org.getAttribute('closemenu'));
-                            org.setAttribute('closemenu', 'none');
+                        dest = dest = obj.clone ? org.cloneNode(true) : org;
+                        if (dest.localName === "menu") {
+                            // fix close menu
+                            if (dest.hasAttribute('closemenu'))
+                                dest.setAttribute('orgClosemenu', dest.getAttribute('closemenu'));
+                            dest.setAttribute('closemenu', 'none');
                         }
                         if ('class' in obj) {
-                            org.setAttribute('orgClass', org.getAttribute('class'));
-                            org.setAttribute('class', obj.class);
+                            // fix menu icon
+                            dest.setAttribute('orgClass', dest.getAttribute('class'));
+                            dest.setAttribute('class', obj.class);
                             if (obj.class.split(' ').includes("menu-iconic")) {
                                 // fix menu left icon
-                                if  (!org.firstChild?.classList.contains('menu-iconic-left')) {
-                                    let left = org.insertBefore($C(doc, 'hbox', {
+                                if (!dest.firstChild?.classList.contains('menu-iconic-left')) {
+                                    let left = dest.insertBefore($C(doc, 'hbox', {
                                         class: 'menu-iconic-left',
                                         align: 'center',
                                         pack: 'center',
                                         'aria-hidden': true
-                                    }), org.firstChild);
+                                    }), dest.firstChild);
                                     left.appendChild($C(doc, 'image', {
                                         class: 'menu-iconic-icon'
                                     }));
-                                    org.setAttribute('removeMenuLeft', 'true');
+                                    dest.setAttribute('removeMenuLeft', 'true');
+                                }
+                                // fix menu-text
+                                let nextEl = dest.firstChild?.nextSibling;
+                                if (nextEl && nextEl.localName.toLowerCase() === "label") {
+                                    if (!nextEl.classList.contains("menu-iconic-text")) {
+                                        nextEl.setAttribute('orgClass', nextEl.getAttribute("class"));
+                                        nextEl.setAttribute('class', 'menu-iconic-text');
+                                    }
                                 }
                             }
                         }
                         // fix menu-right
                         if (obj["menu-right"]) {
-                            org.setAttribute("removeMenuRight", "true");
-                            let right = org.appendChild($C(doc, 'hbox', {
+                            dest.setAttribute("removeMenuRight", "true");
+                            let right = dest.appendChild($C(doc, 'hbox', {
                                 class: 'menu-right ml-auto',
                                 align: 'center',
                                 'aria-hidden': true
                             }));
                             right.appendChild($C(doc, 'image'));
                         }
-                        if ('onBuild' in obj) {
+                        if ('onBuild' in obj && typeof dest !== 'undefined') {
                             if (typeof obj.onBuild === "function") {
                                 obj.onBuild(doc, org);
                             } else {
-                                eval("(" + obj.onBuild + ").call(org, doc, org)")
+                                eval("(" + obj.onBuild + ").call(org, doc, dest)")
                             }
                         }
                         let replacement = $C(doc, 'menuseparator', {
                             hidden: true, class: 'CopyCat-Replacement', 'original-id': obj.command
                         });
-                        org.setAttribute('restoreBeforeUnload', 'true');
-                        org.parentNode.insertBefore(replacement, org);
-                        org.restoreHolder = replacement;
-                        return org;
+                        if (!obj.clone) {
+                            dest.setAttribute('restoreBeforeUnload', 'true');
+                            dest.restoreHolder = replacement;
+                            dest.parentNode.insertBefore(replacement, dest);
+                        }
+
+                        return dest;
                     } else {
                         return $C(doc, 'menuseparator', {
                             class: "CopyCat-Replacement",
@@ -970,6 +986,15 @@
                             item.setAttribute(attr.substring(3, attr.length).toLowerCase(), item.getAttribute(attr));
                             item.removeAttribute(attr);
                         });
+                        let labels = [...item.childNodes].filter(el => el.localName.toLowerCase() === "label");
+                        if (labels.length) {
+                            labels.forEach(label => {
+                                label.getAttributeNames().filter(attr => attr.startsWith("org")).forEach(attr => {
+                                    label.setAttribute(attr.substring(3, attr.length).toLowerCase(), label.getAttribute(attr));
+                                    label.removeAttribute(attr);
+                                });
+                            })
+                        }
                         if (item.getAttribute("removeMenuLeft") == "true") {
                             $R(item.querySelector(":scope > .menu-iconic-left"));
                             item.removeAttribute("removeMenuLeft")
@@ -1324,9 +1349,12 @@
     padding-inline-start: 36px;
 }
 .CopyCat-Popup menu:not(.menu-iconic) > label {
-    margin-left: 0;
+    margin-left: 0 !important;
 }
-.CopyCat-Popup menu > .menu-right.ml-auto {
-    margin-left: auto;
+.CopyCat-Popup menu > label {
+    -moz-box-flex: 1 !important;
+}
+.CopyCat-Popup menu > label:not(.menu-text):not(.menu-iconic-text) {
+    display: none;
 }
 `)
