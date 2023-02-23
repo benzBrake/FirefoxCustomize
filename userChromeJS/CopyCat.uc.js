@@ -507,7 +507,7 @@
                         if (!obj.clone && obj["menu-right"]) {
                             dest.setAttribute("removeMenuRight", "true");
                             let right = dest.appendChild($C(doc, 'hbox', {
-                                class: 'menu-right ml-auto',
+                                class: 'menu-right',
                                 align: 'center',
                                 'aria-hidden': true
                             }));
