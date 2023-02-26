@@ -135,72 +135,28 @@
         $C: $C,
         $L: $L,
         get appVersion() { return Services.appinfo.version.split(".")[0]; },
-        get debug() { return this.prefs.get("userChromeJS.VideoBtn.debug", false); },
+        get debug() { return Services.prefs.getBoolPref("userChromeJS.VideoBtn.debug", false); },
         get BIN_PATH() {
-            return this.handleRelativePath(this.prefs.get(this.PREF_BIN_PATH, "\\chrome\\UserTools"));
+            return this.handleRelativePath(Services.prefs.getStringPref(this.PREF_BIN_PATH, "\\chrome\\UserTools"));
+        },
+        set BIN_PATH(path) {
+            Services.prefs.setStringPref(this.PREF_BIN_PATH, path);
         },
         get SAVE_PATH() {
-            return this.handleRelativePath(this.prefs.get(this.PREF_SAVE_PATH, this._DEFAULT_SAVE_PATH));
+            return this.handleRelativePath(Services.prefs.getStringPref(this.PREF_SAVE_PATH, this._DEFAULT_SAVE_PATH));
+        },
+        set SAVE_PATH(path) {
+            Services.prefs.setStringPref(this.PREF_SAVE_PATH, path);
         },
         get COOKIES_SAVE_PATH() { return this.handleRelativePath("{tmpDir}"); },
-        prefs: {
-            get: function (prefPath, defaultValue) {
-                const sPrefs = Services.prefs;
-                try {
-                    switch (sPrefs.getPrefType(prefPath)) {
-                        case 0:
-                            return defaultValue;
-                        case 32:
-                            return sPrefs.getStringPref(prefPath);
-                        case 64:
-                            return sPrefs.getIntPref(prefPath);
-                        case 128:
-                            return sPrefs.getBoolPref(prefPath);
-                    }
-                } catch (ex) {
-                    return defaultValue;
-                }
-                return;
-            },
-            getType: function (prefPath) {
-                const sPrefs = Services.prefs;
-                const map = {
-                    0: undefined, 32: 'string', 64: 'int', 128: 'boolean'
-                }
-                try {
-                    return map[sPrefs.getPrefType(prefPath)];
-                } catch (ex) {
-                    return map[0];
-                }
-            },
-            set: function (prefPath, value) {
-                const sPrefs = Services.prefs;
-                switch (typeof value) {
-                    case 'string':
-                        return sPrefs.setCharPref(prefPath, value) || value;
-                    case 'number':
-                        return sPrefs.setIntPref(prefPath, value) || value;
-                    case 'boolean':
-                        return sPrefs.setBoolPref(prefPath, value) || value;
-                }
-                return;
-            },
-            addListener: (a, b) => {
-                let o = (q, w, e) => (b(this.prefs.get(e), e));
-                Services.prefs.addObserver(a, o);
-                return {
-                    pref: a, observer: o
-                }
-            }, removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
-        },
         async init() {
-            if (this.debug) this.log("VideoBtn init");
-
+            // 读取默认路径
             await this.makePaths();
+            // 初始化正则表达式
             this.makeRegExp();
 
             if (!MENU_CONFIG) {
-                if (this.debug) this.log($L("menu config some mistake"));
+                this.error($L("menu config some mistake"));
                 return;
             }
 
@@ -251,31 +207,31 @@
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIES_PATH, rSAVE_PATH, rPROFILE_PATH].join("|"), "ig");
         },
         makeMenu() {
-            if (this.prefs.get("userChromeJS.VideoBtn.showInContextMenu") && !$("VideoBtn-Menu", document)) {
-                let refNode = $C(document, 'menuseparator', {
+            let popup = $C(document, 'menupopup', {
+                class: 'VideoBtn-Popup'
+            });
+            MENU_CONFIG.forEach(obj => popup.appendChild(this.newMenuitem(document, obj)));
+            if (Services.prefs.getBoolPref("userChromeJS.VideoBtn.showInContextMenu", false) && !$("VideoBtn-Context", document)) {
+                let ins = [...$J("#contentAreaContextMenu").childNodes].filter(el => el.localName.toLocaleLowerCase() === "menuseparator").pop() || $("#contentAreaContextMenu").lastChild;
+                let fragment = document.createDocumentFragment();
+                fragment.append($C(document, 'menuseparator', {
                     class: 'VideoBtn-Hidden',
                     id: 'VideoBtn-RefNode'
-                })
-                let menu = $C(document, 'menu', {
-                    id: 'VideoBtn-Menu',
+                }));
+                fragment.append($C(document, 'menu', {
+                    id: 'VideoBtn-Context',
                     class: 'menu-iconic VideoBtn',
                     label: $L("videobtn btn name"),
                     tooltiptext: $L("videobtn btn name"),
                     condition: 'normal link',
-                })
-                let popup = menu.appendChild($C(document, 'menupopup', {
-                    class: 'VideoBtn-Popup'
                 }));
-                MENU_CONFIG.forEach(obj => popup.appendChild(this.newMenuitem(document, obj)));
-                let ins = $J("#contentAreaContextMenu menuseparator:last-child");
-                if (ins) {
-                    ins.after(menu);
-                    ins.after(refNode);
-                } else {
-                    $("contentAreaContextMenu").appendChild(refNode);
-                    $("contentAreaContextMenu").appendChild(menu);
-                }
+                let menu = fragment.getElementById('VideoBtn-Context');
+                menu.appendChild(popup.cloneNode(true));
+                ins.after(fragment);
             }
+            let mp = $("mainPopupSet", document);
+            popup.setAttribute("id", "VideoBtn-Button-Popup");
+            mp.appendChild(popup);
             if (CustomizableUI.getPlacementOfWidget("VideoBtn-Button", true)) return;
             CustomizableUI.createWidget({
                 id: "VideoBtn-Button",
@@ -284,39 +240,24 @@
                 removeable: true,
                 defaultArea: CustomizableUI.AREA_NAVBAR,
                 onCreated: node => {
-                    let { ownerDocument: doc } = node;
-                    let mp = $("mainPopupSet", doc);
-                    if (!mp.querySelector("#VideoBtn-Button-popup")) {
-                        let menupopup = mp.appendChild($C(doc, 'menupopup', {
-                            id: 'VideoBtn-Button-popup',
-                            class: 'VideoBtn-Popup',
-                        }));
-                        MENU_CONFIG.forEach(obj => menupopup.appendChild(this.newMenuitem(doc, obj)));
-                        menupopup.addEventListener('popuphidden', (event) => {
-                            if (event.target.id === "VideoBtn-Button-popup") {
-                                event.target.ownerDocument.querySelector("#VideoBtn-Button").removeAttribute("open");
-                            }
-                        });
-                    }
                     $A(node, {
                         label: $L("videobtn btn name"),
                         tooltiptext: $L("videobtn btn name"),
+                        type: 'menu',
                     });
-                    node.addEventListener('click', (event) => {
-                        if (event.target.id !== "VideoBtn-Button") return;
-                        if (event.button === 0) {
-                            if (event.target.getAttribute("open") === "true") {
-                                closeMenus(event.target.ownerDocument.querySelector("#VideoBtn-Button-popup"));
-                            } else {
-                                let pos = "after_end", x, y;
-                                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
-                                    pos = "after_position";
-                                    x = 0;
-                                    y = 0 + event.target.clientHeight;
-                                }
-                                event.target.setAttribute("open", true);
-                                event.target.ownerDocument.querySelector("#VideoBtn-Button-popup").openPopup(event.target, pos, x, y);
-                            }
+                    node.addEventListener('mouseover', (event) => {
+                        let menupopup = node.ownerDocument.querySelector("#VideoBtn-Button-Popup");
+                        if (menupopup.parentNode.id !== "VideoBtn-Button") {
+                            event.target.appendChild(menupopup);;
+                        }
+                        if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY < (event.target.ownerGlobal.innerHeight / 2)) {
+                            menupopup.setAttribute("position", "after_end");
+                        } else if (event.clientX < (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
+                            menupopup.setAttribute("position", "before_start");
+                        } else if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
+                            menupopup.setAttribute("position", "before_start");
+                        } else {
+                            menupopup.removeAttribute("position", "after_end");
                         }
                     });
                 }
@@ -335,7 +276,8 @@
             });
             CustomizableUI.destroyWidget("VideBtn-Button");
             $R($J("#VideBtn-RefNode"));
-            $R($J("#VideBtn-Menu"));
+            $R($J("#VideBtn-Context"));
+            $R($J("#VideoBtn-Button-Popup"));
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             gBrowser.tabpanels.removeEventListener("mouseup", this, false);
             if (this.style && this.style.url && this.style.type) {
@@ -994,12 +936,12 @@
     .VideoBtn-Hidden {
         display: none !important;
     }
-    #VideoBtn-Button,#VideoBtn-Menu {
+    #VideoBtn-Button,#VideoBtn-Context {
         list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBIMjRWMjRIMHoiLz48cGF0aCBkPSJNMTYgNGMuNTUyIDAgMSAuNDQ4IDEgMXY0LjJsNS4yMTMtMy42NWMuMjI2LS4xNTguNTM4LS4xMDMuNjk3LjEyNC4wNTguMDg0LjA5LjE4NC4wOS4yODZ2MTIuMDhjMCAuMjc2LS4yMjQuNS0uNS41LS4xMDMgMC0uMjAzLS4wMzItLjI4Ny0uMDlMMTcgMTQuOFYxOWMwIC41NTItLjQ0OCAxLTEgMUgyYy0uNTUyIDAtMS0uNDQ4LTEtMVY1YzAtLjU1Mi40NDgtMSAxLTFoMTR6bS0xIDJIM3YxMmgxMlY2em0tNSAydjRoM2wtNCA0LTQtNGgzVjhoMnptMTEgLjg0MWwtNCAyLjh2LjcxOGw0IDIuOFY4Ljg0eiIvPjwvc3ZnPg==);
     }
     #VideoBtn-RefNode[VideoBtn] + .VideoBtn:not(menuseparator):not(menugroup),
     #contentAreaContextMenu #VideoBtn-Menu~menuseparator {
-        display: none;
+        visibility: collapse;
     }
     #VideoBtn-RefNode[VideoBtn~="link"] + .VideoBtn[condition~="link"],
     #VideoBtn-RefNode[VideoBtn~="image"] +.VideoBtn[condition~="image"],
@@ -1008,7 +950,7 @@
     #VideoBtn-RefNode[VideoBtn~="input"] + .VideoBtn[condition~="input"],
     #VideoBtn-RefNode[VideoBtn~="mailto"] + .VideoBtn[condition~="mailto"],
     #VideoBtn-RefNode[VideoBtn=""] + .VideoBtn[condition~="normal"] {
-        display: block;
+        visibility: visible;
     }
     .VideoBtn-Group > .menuitem-iconic {
         padding-block: 0.5em;
