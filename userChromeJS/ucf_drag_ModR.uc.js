@@ -455,7 +455,7 @@
             var unload = e => {
                 var w = e.target.ownerGlobal;
                 w.gBrowser.tabpanels.removeEventListener("dragstart", this, true);
-                if (w == win) win = null;
+                // if (w == win) win = null;
             }
             (this.observe = w => {
                 //if (!w.toolbar.visible) return;
