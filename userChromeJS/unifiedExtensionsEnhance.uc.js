@@ -107,7 +107,7 @@
                 color: Gray;
             }
             #unified-extensions-view .addon-no-options .unified-extensions-item-option {
-                display: none;
+                visibility: hidden;
             }
             #unified-extensions-view .unified-extensions-item-menu-button {
                 margin-inline-end: var(--arrowpanel-menuitem-margin-inline);
