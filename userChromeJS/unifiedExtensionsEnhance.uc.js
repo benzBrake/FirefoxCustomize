@@ -126,7 +126,10 @@
             #unified-extensions-view .unified-extensions-item.addon-disabled .unified-extensions-item-disable,
             .unified-extensions-item-option > .toolbarbutton-text,
             .unified-extensions-item-enable > .toolbarbutton-text,
-            .unified-extensions-item-disable > .toolbarbutton-text {
+            .unified-extensions-item-disable > .toolbarbutton-text,
+            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-option,
+            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-enable,
+            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable {
                 display: none;
             }
             #unified-extensions-view .subviewbutton-iconic:not([disabled]) {
@@ -140,21 +143,23 @@
             type: 2
         },
         init: function () {
-            if (!Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false) || !gUnifiedExtensions) {
+            if (this.appVersion < 111 && !Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false) || !gUnifiedExtensions) {
                 // 没启用按钮脚本不工作
                 return;
             }
 
             if (this.appVersion < 109) {
-                console.error("仅支持 Firefox 109(包括)+")
+                console.error("仅支持 Firefox 109(包括)+");
                 return;
             }
 
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+            if (!CustomizableUI.getWidget('unified-extensions-button')?.forWindow(window)?.node) {
+                console.error("没有找到扩展按钮");
+                return;
+            }
 
-            this.origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
-
-            if (!CustomizableUI.getPlacementOfWidget("movable-unified-extensions", true))
+            if (!CustomizableUI.getWidget('movable-unified-extensions')?.forWindow(window)?.node) {
                 CustomizableUI.createWidget({
                     id: 'movable-unified-extensions',
                     type: "custom",
@@ -162,24 +167,27 @@
                     localized: false,
                     onBuild: document => this.initButton(document)
                 });
-            this.btn = CustomizableUI.getWidget('movable-unified-extensions').forWindow(window).node;
-            this.origBtn.setAttribute('consumeanchor', 'movable-unified-extensions');
-            this.btn.appendChild(this.origBtn);
+            }
+
             gUnifiedExtensions.panel;
             let view = PanelMultiView.getViewNode(
                 document,
                 "unified-extensions-view"
             );
+
+            eval("gUnifiedExtensions.onPinToToolbarChange = "  + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
+
             view.addEventListener('ViewShowing', this);
             view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
             view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
         },
         initButton: function (document) {
-            return $C(document, "toolbaritem", {
+            let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
+            let btn = $C(document, "toolbaritem", {
                 id: "movable-unified-extensions",
-                label: this.origBtn.getAttribute('label'),
+                label: origBtn.getAttribute('label'),
                 class: "chromeclass-toolbar-additional",
-                tooltiptext: this.origBtn.getAttribute('tooltiptext'),
+                tooltiptext: origBtn.getAttribute('tooltiptext'),
                 onclick: function (event) {
                     if ((event.target.id === "movable-unified-extensions" || event.target.id === "unified-extensions-button") && event.button === 2) {
                         event.preventDefault();
@@ -187,6 +195,38 @@
                     }
                 }
             });
+            origBtn.setAttribute('consumeanchor', 'movable-unified-extensions');
+            btn.appendChild(origBtn);
+            return btn;
+        },
+        onPinToolbarChange(menu, event) {
+            let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
+            let widgetId = gUnifiedExtensions._getWidgetId(menu);
+            if (!widgetId) return;
+            let node = CustomizableUI.getWidget(widgetId)?.forWindow(window)?.node;
+            if (!node) return;
+            if (shouldPinToToolbar) {
+                this.createAdditionalButtons(node);
+            } else {
+                this.removeAdditionalButtons(node);
+            }
+        },
+        createAdditionalButtons(node) {
+            let ins = $Q(".webextension-browser-action", node);
+            if (!$Q(".unified-extensions-item-disable", node)) {
+                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
+            }
+            if (!$Q(".unified-extensions-item-enable", node)) {
+                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.ENABLE_BUTTON));
+            }
+            if (!$Q(".unified-extensions-item-option", node)) {
+                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
+            }
+        },
+        removeAdditionalButtons(node) {
+            $R($Q(".unified-extensions-item-option", node));
+            $R($Q(".unified-extensions-item-enable", node));
+            $R($Q(".unified-extensions-item-disable", node));
         },
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
@@ -204,7 +244,7 @@
                         break;
                     case "enable":
                         item = button.closest("unified-extensions-item");
-                        await item.addon.enable();
+                        await (item.addon || item.extension).enable();
                         this.refreshAddonsList(panelview);
                         break;
                     case "disable":
@@ -235,15 +275,7 @@
                     if (!extension.optionsURL) {
                         parent.classList.add('addon-no-options');
                     }
-                    if (!$Q(".unified-extensions-item-disable", parent)) {
-                        elm.after($C(elm.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
-                    }
-                    if (!$Q(".unified-extensions-item-enable", parent)) {
-                        elm.after($C(elm.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.ENABLE_BUTTON));
-                    }
-                    if (!$Q(".unified-extensions-item-option", parent)) {
-                        elm.after($C(elm.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
-                    }
+                    this.createAdditionalButtons(parent);
                 }
             }
         },
