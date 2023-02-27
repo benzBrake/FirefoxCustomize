@@ -92,6 +92,11 @@
             display: none;
         }
 
+        .toggle-button,
+        [action="more-options"] {
+            flex-shrink: 0;
+        }
+
         panel-list>panel-item-separator {
             display: none;
         }
