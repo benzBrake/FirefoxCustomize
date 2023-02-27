@@ -78,6 +78,9 @@
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton {
                 -moz-box-pack: start;
             }
+            panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton.webextension-browser-action {
+                margin: var(--arrowpanel-menuitem-margin);
+            }
             panelview#unified-extensions-view :is(.unified-extensions-item-name, .unified-extensions-item-message) {
                 padding-inline-start: 0;
             }
