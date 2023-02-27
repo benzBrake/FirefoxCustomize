@@ -101,82 +101,60 @@
             display: none;
         }
 
-        :is(addon-page-options, addon-options, plugin-options)>panel-list[role="menu"]>panel-item::before {
-            content: "";
-            display: block;
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            box-sizing: border-box;
-            left: 8px;
-            background-image: no-repeat;
-            background-size: 16px;
-            z-index: 2;
-        }
-
-        [action="check-for-updates"]::before {
+        [action="check-for-updates"]::part(button) {
             background-image: url("./images/aboutaddons/update.svg");
         }
 
-        [action="view-recent-updates"]::before {
+        [action="view-recent-updates"]::part(button) {
             background-image: url("./images/aboutaddons/new.svg");
         }
 
-        [action="install-from-file"]::before {
+        [action="install-from-file"]::part(button) {
             background-image: url("./images/aboutaddons/browse.svg");
         }
 
-        [action="debug-addons"]::before {
+        [action="debug-addons"]::part(button) {
             background-image: url("./images/aboutaddons/bug.svg");
         }
 
-        [action="reset-update-states"]::before {
+        [action="reset-update-states"]::part(button) {
             background-image: url("./images/aboutaddons/reset.svg");
         }
 
-        [action="manage-shortcuts"]::before {
+        [action="manage-shortcuts"]::part(button) {
             background-image: url("./images/aboutaddons/keyboard.svg");
         }
 
-        [action="preferences"]::before,
-        [action="expand"]::before {
+        [action="preferences"]::part(button),
+        [action="expand"]::part(button) {
             background-image: url("chrome://global/skin/icons/settings.svg");
         }
 
-        [action="AM-browse-dir"]::before {
+        [action="AM-browse-dir"]::part(button) {
             background-image: url("./images/aboutaddons/browse.svg");
         }
 
-        [action="AM-copy-name"]::before {
+        [action="AM-copy-name"]::part(button) {
             background-image: url("./images/aboutaddons/copy.svg");
         }
 
-        [action="AM-open-url"]::before {
+        [action="AM-open-url"]::part(button) {
             background-image: url("./images/aboutaddons/open-in-new.svg");
         }
 
-        [action="AM-edit-script"]::before {
+        [action="AM-edit-script"]::part(button){
             background-image: url("./images/aboutaddons/editor.svg");
         }
 
         /* Checkbox */
-        [action="set-update-automatically"]::before,
-        [action="always-activate"],
-        [action="never-activate"] {
-            background-image: url("./images/skin/checkbox.svg");
-            --icon: unset;
-        }
-
+        [action="set-update-automatically"]::part(button),
+        [action="always-activate"]::part(button),
+        [action="never-activate"]::part(button),
         .addon-permissions-list>li {
             background-image: url("./images/skin/checkbox.svg");
         }
-
-        [action="set-update-automatically"][checked],
-        [action="always-activate"][checked],
-        [action="never-activate"][checked] {
-            background-image: url("./images/skin/checkbox-checked.svg");
-        }
-
+        
+        [checked]::part(button),
         .addon-permissions-list>li.permission-checked {
             background-image: url("./images/skin/checkbox-checked.svg");
         }
@@ -186,14 +164,12 @@
             background-size: 24px 24px;
         }
 
-        [data-l10n-id="remove-addon-button"] {
-            --icon: unset !important;
-            background-image: url("./images/extensions/custombuttons/remove.svg");
+        [data-l10n-id="remove-addon-button"]::part(button) {
+            background-image: url("chrome://global/skin/icons/delete.svg") !important;
         }
 
-        [data-l10n-id="custombuttons-edit-button"] {
-            --icon: unset !important;
-            background-image: url("./images/extensions/custombuttons/edit.svg");
+        [data-l10n-id="custombuttons-edit-button"]::part(button) {
+            background-image: url("./images/extensions/custombuttons/edit.svg") !important;
         }
     }
 }
