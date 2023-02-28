@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.1
+// @version         1.3.2
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.2 增加双击地址栏显示/隐藏书签工具栏的开关（userChromeJS.BookmarkOpt.doubleClickToShow）
 // @version         1.3.1 去除显示隐藏书签工具栏按钮
 // @version         1.3 尝试兼容 Firefox 57+
 // @version         1.2.2 修改界面语言读取方式
@@ -324,9 +325,11 @@
             let { target, button } = event;
             switch (event.type) {
                 case 'dblclick':
-                    if (target.id === "urlbar-input" && button == 0) {
-                        var bar = target.ownerGlobal.document.getElementById("PersonalToolbar");
-                        target.ownerGlobal.setToolbarVisibility(bar, bar.collapsed);
+                    if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.doubleClickToShow", true)) {
+                        if (target.id === "urlbar-input" && button == 0) {
+                            var bar = target.ownerGlobal.document.getElementById("PersonalToolbar");
+                            target.ownerGlobal.setToolbarVisibility(bar, bar.collapsed);
+                        }
                     }
                     break;
             }
