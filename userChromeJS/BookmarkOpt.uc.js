@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.3
+// @version         1.3.4
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.4 新增中建点击添加书签功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick，默认不启用）
 // @version         1.3.3 还原显示隐藏书签工具栏按钮
 // @version         1.3.2 增加双击地址栏显示/隐藏书签工具栏的开关（userChromeJS.BookmarkOpt.doubleClickToShow）
 // @version         1.3.1 去除显示隐藏书签工具栏按钮
@@ -173,7 +174,7 @@
                 target.setAttribute("bmopt", state.join(" "));
             }
         },
-        handlePlacesToolbarEvent: function (event) {
+        handlePlacesToolbarEvent: (event) => {
             let { target } = event;
             if (event.type === 'popuphidden') {
                 // 防止影响其他方式添加书签
@@ -199,6 +200,12 @@
                     }
                     last = item;
                 });
+            } else if (event.type === "click" && event.button === 1) {
+                if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    window.BookmarkOpt.operate(event, 'panelAdd', target);
+                }
             }
         },
         clearPanelItems: function (target, doNotRecursive = false) {
@@ -323,7 +330,7 @@
                     break;
             }
         },
-        handleUrlBarEvent: function (event) {
+        handleUrlBarEvent: (event) => {
             let { target, button } = event;
             switch (event.type) {
                 case 'dblclick':
@@ -353,6 +360,7 @@
             if (this.isMain) {
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbarItems').addEventListener('click', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
 
                 if (typeof BTN_CFG !== 'undefined' && 'id' in BTN_CFG) {
@@ -387,6 +395,7 @@
                 if (m) m.parentNode.removeChild(m);
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbarItems').removeEventListener('click', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
                 if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
                 delete window.BookmarkOpt;
