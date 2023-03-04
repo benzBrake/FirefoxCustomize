@@ -22,7 +22,7 @@
 // @note            - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制
 // @note            - 新增 uc脚本管理页面
 // @note            - uc脚本管理界面
-// @note            - 启用禁用需要 rebuild_userChrome.uc.js
+// @note            - 启用禁用需要 rebuild_userChrome.uc.js (已经不需要了)
 // @note            - 编辑命令需要首先设置 view_source.editor.path 的路径
 // @note            - 图标请自行添加样式，详细信息见主页
 // @note            其它信息见主页
@@ -32,6 +32,7 @@
 
     const iconURL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";  // uc 脚本列表的图标
     const AM_FILENAME = Components.stack.filename.split("/").pop().split("?")[0];
+    const APP_VERSION = parseFloat(Services.appinfo.version);
     const EXCLUED_SCRIPTS = [AM_FILENAME];
 
     if (window.AM_Helper) {  // 修改调试用，重新载入无需重启
@@ -42,8 +43,6 @@
         window.userChromeJSAddon.uninit();
         delete window.userChromeJSAddon;
     }
-
-
 
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/AddonManager.jsm");
@@ -215,6 +214,7 @@
                 const addon = card.addon;
                 if (addon.type === "userchromejs") {
                     // 有効・無効スイッチを追加
+
                     const input = $C(doc, "input", {
                         type: "checkbox",
                         action: "AM-switch",
@@ -541,6 +541,79 @@
             });
         },
         addStyle() {
+            let styleService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+            if (APP_VERSION > 110) {
+                let toggleCss = `
+                    input[type="checkbox"].toggle-button {
+                        --button-height: 16px;
+                        --button-half-height: 8px;
+                        --button-width: 26px;
+                        --button-border-width: 1px;
+                        /* dot-size = button-height - 2*dot-margin - 2*button-border-width */
+                        --dot-size: 10px;
+                        --dot-margin: 2px;
+                        /* --dot-transform-x = button-width - 2*dot-margin - dot-size - 2*button-border-width */
+                        --dot-transform-x: 10px;
+                        --border-color: hsla(210,4%,10%,.14);
+                    }
+                    
+                    input[type="checkbox"].toggle-button {
+                        appearance: none;
+                        padding: 0;
+                        margin: 0;
+                        border: var(--button-border-width) solid var(--border-color);
+                        height: var(--button-height);
+                        width: var(--button-width);
+                        border-radius: var(--button-half-height);
+                        background: var(--in-content-button-background);
+                        box-sizing: border-box;
+                    }
+                    input[type="checkbox"].toggle-button:enabled:hover {
+                        background: var(--in-content-button-background-hover);
+                        border-color: var(--border-color);
+                    }
+                    input[type="checkbox"].toggle-button:enabled:active {
+                        background: var(--in-content-button-background-active);
+                        border-color: var(--border-color);
+                    }
+                    input[type="checkbox"].toggle-button:checked {
+                        background: var(--in-content-primary-button-background);
+                        border-color: var(--in-content-primary-button-background-hover);
+                    }
+                    input[type="checkbox"].toggle-button:checked:hover {
+                        background: var(--in-content-primary-button-background-hover);
+                        border-color: var(--in-content-primary-button-background-active);
+                    }
+                    input[type="checkbox"].toggle-button:checked:active {
+                        background: var(--in-content-primary-button-background-active);
+                        border-color: var(--in-content-primary-button-background-active);
+                    }
+                    input[type="checkbox"].toggle-button::before {
+                        display: block;
+                        content: "";
+                        background: #fff;
+                        height: var(--dot-size);
+                        width: var(--dot-size);
+                        margin: var(--dot-margin);
+                        border-radius: 50%;
+                        outline: 1px solid var(--border-color);
+                        transition: transform 100ms;
+                        transform: translate(0, calc(50% - var(--dot-size) / 2));
+                    }
+                    input[type="checkbox"].toggle-button:checked::before {
+                        transform: translate(var(--dot-transform-x), calc(50% - var(--dot-size) / 2));
+                    }
+                    input[type="checkbox"].toggle-button:-moz-locale-dir(rtl)::before,
+                    input[type="checkbox"].toggle-button:dir(rtl)::before {
+                        scale: -1;
+                    }
+                `;
+                let toggleURI = Services.io.newURI("data:text/css," + encodeURIComponent(toggleCss));
+                styleService.loadAndRegisterSheet(toggleURI, Ci.nsIStyleSheetService.AUTHOR_SHEET);
+                this.unloads.push(function () {
+                    styleService.unregisterSheet(toggleURI, Ci.nsIStyleSheetService.AUTHOR_SHEET);
+                });
+            }
             let data = `@namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
                 @namespace html url(http://www.w3.org/1999/xhtml);
                 @-moz-document url("about:addons"), url("chrome://mozapps/content/extensions/extensions.xul") {
@@ -552,8 +625,9 @@
                     html|*.category[name="userchromejs"] {
                         background-image: url(chrome://mozapps/skin/extensions/category-extensions.svg);
                     }
+                    
                 }`;
-            let styleService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+
             let styleURI = Services.io.newURI("data:text/css," + encodeURIComponent(data), null, null);
             styleService.loadAndRegisterSheet(styleURI, Ci.nsIStyleSheetService.USER_SHEET);
 
@@ -715,6 +789,7 @@
 
     function $C(doc, tag, attrs, parent, reference) {
         let node;
+
         if (tag instanceof Node) {
             node = tag;
         } else if (tag === "#text") {
@@ -723,6 +798,7 @@
         } else {
             node = doc.createElement(tag);
         }
+
         if (attrs) {
             Object.entries(attrs).forEach(([name, val]) => {
                 if (name === "#text") {
