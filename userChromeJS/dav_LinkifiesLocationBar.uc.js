@@ -3,7 +3,7 @@
 // @version              1.1
 // @description          dav_LinkifiesLocationBar
 // @shutdown             dav_LinkifiesLocationBar.globalShutdown();
-// @reviewURL            https://www.camp-firefox.de/forum/thema/112673-userchrome-js-scripte-für-den-fuchs-diskussion/?postID=1207396#post1207396
+// @reviewURL            https://github.com/sdavidg/firefoxChromeScripts
 // ==/UserScript==
 
 /*
