@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name            BookmarkOpt.uc.js
-// @description     书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮
+// @description     书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮，中按点击书签工具栏文件夹收藏当前页面到该文件夹下
 // @author          Ryan
 // @include         main
 // @include         chrome://browser/content/places/places.xhtml
@@ -37,7 +37,8 @@
             "copy bookmark link": "复制链接",
             "show node type": "节点类型",
             "show node guid": "节点 ID",
-            "toggle personalToolbar": "显示/隐藏书签工具栏"
+            "toggle personalToolbar": "显示/隐藏书签工具栏",
+            "auto hide": "自动隐藏"
         },
         'en-US': {
             "add bookmark here": "Add Bookmark Here",
@@ -48,7 +49,8 @@
             "copy bookmark link": "Copy URL",
             "show node type": "Node type",
             "show node guid": "Node guid",
-            "toggle personalToolbar": "Toggle PersonalToolbar"
+            "toggle personalToolbar": "Toggle PersonalToolbar",
+            "auto hide": "Auto hide"
         }
     }
 
@@ -130,6 +132,8 @@
         }
     }
 
+    var itemMouseDown = false;
+
     window.BookmarkOpt = {
         items: [],
         get topWin() {
@@ -176,36 +180,57 @@
         },
         handlePlacesToolbarEvent: (event) => {
             let { target } = event;
-            if (event.type === 'popuphidden') {
-                // 防止影响其他方式添加书签
-                BookmarkOpt.clearPanelItems(target, true);
-            } else if (event.type === 'popupshowing') {
-                let firstItem = target.firstChild;
-                if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
-                let last;
-                PLACES_POPUP_ITEMS.forEach(c => {
-                    let item;
-                    if (c.label) {
-                        item = $C('menuitem', c, event.target.ownerDocument);
-                        item.classList.add('bmopt-panel');
-                    } else {
-                        item = $C('menuseparator', {
-                            'class': 'bmopt-separator'
-                        }, event.target.ownerDocument);
+            switch (event.type) {
+                case 'popuphidden':
+                    // 防止影响其他方式添加书签
+                    BookmarkOpt.clearPanelItems(target, true);
+                    break;
+                case 'popupshowing':
+                    let firstItem = target.firstChild;
+                    if (firstItem && firstItem.classList.contains('bmopt-panel')) return;
+                    let last;
+                    PLACES_POPUP_ITEMS.forEach(c => {
+                        let item;
+                        if (c.label) {
+                            item = $C('menuitem', c, event.target.ownerDocument);
+                            item.classList.add('bmopt-panel');
+                        } else {
+                            item = $C('menuseparator', {
+                                'class': 'bmopt-separator'
+                            }, event.target.ownerDocument);
+                        }
+                        if (last) {
+                            last.after(item);
+                        } else {
+                            firstItem.parentNode.insertBefore(item, firstItem);
+                        }
+                        last = item;
+                    });
+                    break;
+                case "mousedown":
+                    if (event.button === 1) {
+                        if (target.id === "PlacesToolbar" || target.id === "PlacesToolbarItems" || target.id === "PlacesChevron" || target.getAttribute("container") == "true") {
+                            itemMouseDown = true;
+                        }
+                        !Services.prefs.getBoolPref("browser.bookmarks.openInTabClosesMenu", true) && event.target.setAttribute("closemenu", "none");
+
                     }
-                    if (last) {
-                        last.after(item);
-                    } else {
-                        firstItem.parentNode.insertBefore(item, firstItem);
+                    break;
+                case "mouseup":
+                    setTimeout(() => {
+                        itemMouseDown = false;
+                    }, 50);
+                    break;
+                case "click":
+                    if (itemMouseDown) {
+                        if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            window.BookmarkOpt.operate(event, 'add', target);
+                        }
                     }
-                    last = item;
-                });
-            } else if (event.type === "click" && event.button === 1) {
-                if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    window.BookmarkOpt.operate(event, 'panelAdd', target);
-                }
+                    target.removeAttribute("closemenu");
+                    break;
             }
         },
         clearPanelItems: function (target, doNotRecursive = false) {
@@ -249,7 +274,7 @@
                     } catch (e) {
                         aWin.console.error(e);
                     }
-                    if (panelTriggered) {
+                    if (Services.prefs.getBoolPref("browser.bookmarks.openInTabClosesMenu") || panelTriggered) {
                         closeMenus(aTriggerNode);
                     }
                     break;
@@ -360,7 +385,9 @@
             if (this.isMain) {
                 $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbarItems').addEventListener('mousedown', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('click', this.handlePlacesToolbarEvent, false);
+                document.addEventListener('mouseup', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
 
                 if (typeof BTN_CFG !== 'undefined' && 'id' in BTN_CFG) {
@@ -395,7 +422,8 @@
                 if (m) m.parentNode.removeChild(m);
                 $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
-                $('PlacesToolbarItems').removeEventListener('click', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbarItems').removeEventListener('mousedown', this.handlePlacesToolbarEvent, false);
+                document.removeEventListener('mouseup', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
                 if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
                 delete window.BookmarkOpt;
