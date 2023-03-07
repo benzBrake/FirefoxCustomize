@@ -160,4 +160,8 @@
 :root[uidensity="compact"] #urlbar-input-container #location-bar toolbarbutton > .toolbarbutton-badge-stack > .toolbarbutton-badge {
     margin-inline-end: 0 !important;
 }
+
+#urlbar-input-container #location-bar #stop-reload-button[animate] > #reload-button > .toolbarbutton-icon, #urlbar-input-container #location-bar #stop-reload-button[animate] > #reload-button[displaystop] + #stop-button > .toolbarbutton-icon {
+    fill: var(--urlbar-box-hover-text-color);
+}
 `)
