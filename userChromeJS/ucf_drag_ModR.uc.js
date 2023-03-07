@@ -14,146 +14,200 @@
 
     window.UCFDrag = {
         debug: false,
-        link: {
-            U: {
-                name: "打开链接（新标签，前台）", cmd(val) {
-                    window.openUILinkIn(val, "tab", this.opts);
+        gestures: {
+            link: [
+                {
+                    dir: "U",
+                    name: "打开链接（新标签，前台）",
+                    cmd(val) {
+                        window.openUILinkIn(val, "tab", this.opts);
+                    }
+                },
+                {
+                    dir: "R",
+                    name: "打开链接（新标签，后台）",
+                    cmd(val) {
+                        window.openUILinkIn(val, "tabshifted", this.opts);
+                    }
+                },
+                {
+                    dir: "RD",
+                    name: "另存链接",
+                    cmd(val) {
+                        this.saveAs(val);
+                    }
+                },
+                {
+                    dir: "L",
+                    name: "复制链接",
+                    cmd(val) {
+                        this.copyString(val);
+                    }
+                },
+                {
+                    dir: "D",
+                    name: "打开链接（当前标签）",
+                    cmd(val) {
+                        window.openUILinkIn(val, "current", this.opts);
+                    }
+                },
+                {
+                    dir: "LD",
+                    name: "以站搜站（新标签，前台）",
+                    cmd(val) {
+                        if (!val) return;
+                        var TERM = "https://www.similarsites.com/site/" + new URL(val).hostname.replace(/^www./, '');
+                        if (val)
+                            window.openUILinkIn(TERM, "tab", this.opts);
+                    }
+                },
+                {
+                    dir: "LD",
+                    name: "网页历史（新标签，前台）",
+                    shift: true,
+                    cmd(val) {
+                        if (!val) return;
+                        var TERM = "https://web.archive.org/web/*/" + new URL(val).hostname.replace(/^www./, '');
+                        if (val)
+                            window.openUILinkIn(TERM, "tab", this.opts);
+                    }
+                },
+            ],
+            text: [
+                {
+                    dir: "U",
+                    name: "搜索文本（新标签，前台）",
+                    cmd(val) {
+                        this.searchWithEngine(val, "tab", "@default");
+                    }
+                },
+                {
+                    dir: "U",
+                    shift: true,
+                    name: "搜索文本（新标签，后台）",
+                    cmd(val) {
+                        this.searchWithEngine(val, "tabshifted", "@default");
+                    }
+                },
+                {
+                    dir: "R",
+                    name: "百度搜索（新标签，前台）",
+                    cmd(val) {
+                        this.searchWithEngine(val, 'tab', '百度');
+                    }
+                },
+                {
+                    dir: "U",
+                    shift: true,
+                    name: "百度搜索（新标签，后台）",
+                    cmd(val) {
+                        this.searchWithEngine(val, 'tabshifted', '百度');
+                    }
+                },
+                {
+                    dir: "RD",
+                    name: "另存文本",
+                    cmd(val) {
+                        this.saveText(val);
+                    }
+                },
+                {
+                    dir: "D",
+                    name: "站内搜索（当前标签）",
+                    cmd(val, event) {
+                        var currentPageUrl = event.originalTarget._urlMetaData['url'];
+                        var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
+                        if (val)
+                            this.searchWithEngine(TERM, 'current', '@default');
+                    }
+                },
+                {
+                    dir: "D",
+                    name: "站内搜索（新标签，前台）",
+                    ctrl: true,
+                    cmd(val, event) {
+                        var currentPageUrl = event.originalTarget._urlMetaData['url'];
+                        var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
+                        if (val)
+                            this.searchWithEngine(TERM, 'tab', '@default');
+                    }
+                },
+                {
+                    dir: "L",
+                    name: "复制文本",
+                    cmd(val) {
+                        this.copyString(val);
+                    }
+                },
+                {
+                    dir: "LD",
+                    name: "剑桥词典（新标签，前台）",
+                    cmd(val) {
+                        var TERM = "https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD/" + val;
+                        if (val)
+                            window.openUILinkIn(TERM, "tab", this.opts);
+                    }
+                },
+                {
+                    dir: "LD",
+                    shift: true,
+                    name: "剑桥词典（新标签，后台）",
+                    cmd(val) {
+                        var TERM = "https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD/" + val;
+                        if (val)
+                            window.openUILinkIn(TERM, "tabshifted", this.opts);
+                    }
                 }
-            },
-            R: {
-                name: "打开链接（新标签，后台）", cmd(val) {
-                    window.openUILinkIn(val, "tabshifted", this.opts);
-                }
-            },
-            RD: {
-                name: "另存链接", cmd(val) {
-                    this.saveAs(val);
-                }
-            },
-            L: {
-                name: "复制链接", cmd(val) {
-                    this.copyString(val);
-                }
-            },
-            D: {
-                name: "打开链接（当前标签）", cmd(val) {
-                    window.openUILinkIn(val, "current", this.opts);
-                }
-            },
-            LD: {
-                name: "以站搜站（新标签，前台）", cmd(val) {
-                    if (!val) return;
-                    var TERM = "https://www.similarsites.com/site/" + new URL(val).hostname.replace(/^www./, '');
-                    if (val)
-                        window.openUILinkIn(TERM, "tab", this.opts);
-                }
-            },
-            "LD-Shift": {
-                name: "网页历史（新标签，前台）", cmd(val) {
-                    if (!val) return;
-                    var TERM = "https://web.archive.org/web/*/" + new URL(val).hostname.replace(/^www./, '');
-                    if (val)
-                        window.openUILinkIn(TERM, "tab", this.opts);
-                }
-            },
-        },
-        text: {
-            U: {
-                name: "搜索文本（新标签，前台）", cmd(val) {
-                    this.searchWithEngine(val, "tab", "@default");
-                }
-            },
-            "U-Shift": {
-                name: "搜索文本（新标签，后台）", cmd(val) {
-                    this.searchWithEngine(val, "tabshifted", "@default");
-                }
-            },
-            R: {
-                name: "百度搜索（新标签，前台）", cmd(val) {
-                    this.searchWithEngine(val, 'tab', '百度');
-                }
-            },
-            "R-Shift": {
-                name: "百度搜索（新标签，后台）", cmd(val) {
-                    this.searchWithEngine(val, 'tabshifted', '百度');
-                }
-            },
-            RD: {
-                name: "另存文本", cmd(val) {
-                    this.saveText(val);
-                }
-            },
-            D: {
-                name: "站内搜索（当前标签）", cmd(val, event) {
-                    var currentPageUrl = event.originalTarget._urlMetaData['url'];
-                    var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
-                    if (val)
-                        this.searchWithEngine(TERM, 'current', '@default');
-                }
-            },
-            "D-Shift": {
-                name: "站内搜索（新标签，前台）", cmd(val, event) {
-                    var currentPageUrl = event.originalTarget._urlMetaData['url'];
-                    var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
-                    if (val)
-                        this.searchWithEngine(TERM, 'tab', '@default');
-                }
-            },
-            L: {
-                name: "复制文本", cmd(val) {
-                    this.copyString(val);
-                }
-            },
-            LD: {
-                name: "剑桥词典（新标签，前台）", cmd(val) {
-                    var TERM = "https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD/" + val;
-                    if (val)
-                        window.openUILinkIn(TERM, "tab", this.opts);
-                }
-            },
-            "LD-Shift": {
-                name: "剑桥词典（新标签，后台）", cmd(val) {
-                    var TERM = "https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD/" + val;
-                    if (val)
-                        window.openUILinkIn(TERM, "tabshifted", this.opts);
-                }
-            }
-        },
-        image: {
-            U: {
-                name: "打开图像（新标签，前台）", cmd() {
-                    window.openUILinkIn(this.val, "tab", this.opts);
-                }
-            },
-            R: {
-                name: "打开图像（新标签，后台）", cmd() {
-                    window.openUILinkIn(this.val, "tabshifted", this.opts);
-                }
-            },
-            RD: {
-                name: "另存图像", cmd(val) {
-                    this.saveAs(val);
-                }
-            },
-            L: {
-                name: "复制图片链接", cmd(val) {
-                    this.copyString(val);
-                }
-            },
-            LD: {
-                name: "谷歌搜图（新标签，前台）", cmd(val) {
-                    var TERM = "https://lens.google.com/uploadbyurl?url=" + val;
-                    if (val)
-                        window.openUILinkIn(TERM, "tab", this.opts);
-                }
-            },
-            "LD-Shift": {
-                name: "Yandex搜图（新标签，前台）", cmd(val) {
-                    var TERM = "https://yandex.com/images/search?source=collections&rpt=imageview&url=" + val;
-                    if (val)
-                        window.openUILinkIn(TERM, "tabshifted", this.opts);
-                }
-            },
+            ],
+            image: [
+                {
+                    dir: "U",
+                    name: "打开图像（新标签，前台）",
+                    cmd() {
+                        window.openUILinkIn(this.val, "tab", this.opts);
+                    }
+                },
+                {
+                    dir: "R",
+                    name: "打开图像（新标签，后台）",
+                    cmd() {
+                        window.openUILinkIn(this.val, "tabshifted", this.opts);
+                    }
+                },
+                {
+                    dir: "RD",
+                    name: "另存图像",
+                    cmd(val) {
+                        this.saveAs(val);
+                    }
+                },
+                {
+                    dir: "L",
+                    name: "复制图片链接",
+                    cmd(val) {
+                        this.copyString(val);
+                    }
+                },
+                {
+                    dir: "LD",
+                    name: "谷歌搜图（新标签，前台）",
+                    cmd(val) {
+                        var TERM = "https://lens.google.com/uploadbyurl?url=" + val;
+                        if (val)
+                            window.openUILinkIn(TERM, "tab", this.opts);
+                    }
+                },
+                {
+                    dir: "LD",
+                    shift: true,
+                    name: "Yandex搜图（新标签，前台）",
+                    cmd(val) {
+                        var TERM = "https://yandex.com/images/search?source=collections&rpt=imageview&url=" + val;
+                        if (val)
+                            window.openUILinkIn(TERM, "tabshifted", this.opts);
+                    }
+                },
+            ]
         },
         searchWithEngine(val, where, engine, addToHistory) {
             val || (val = this.val);
@@ -365,7 +419,7 @@
                 this.printDataTransferTypes(e);
 
             var dt = e.dataTransfer;
-            this.type = this.link;
+            this.gesture = this.gestures.link;
             this.dir = this.val = "";
 
             var url = dt.getData("text/x-moz-url-data");
@@ -373,7 +427,7 @@
             if (url) {
                 this.val = url;
                 if (this.imageLinkRe.test(url)) {
-                    this.type = this.image;
+                    this.gesture = this.gestures.image;
                 } else {
                     var promiseUrl = dt.getData("application/x-moz-file-promise-url");
                     var dragHTML = dt.getData("text/html");
@@ -382,7 +436,7 @@
                     var onImage = doc.getRootNode().body?.firstElementChild?.tagName == "IMG" || doc.getRootNode().body?.firstElementChild.querySelectorAll("img").length;
                     if (onImage && e.ctrlKey) {
                         // force to image type when ctrlKey is pressed
-                        this.type = this.image;
+                        this.gesture = this.gestures.image;
                         this.val = promiseUrl;
                     }
                 }
@@ -393,8 +447,8 @@
                     if (false) {
                         // 未来加入特殊文本处理 比如网盘链接
                     } else {
-                        if (!this.textLinkRe.test(txt)) this.type = this.text;
-                        if (this.imageLinkRe.test(txt)) this.type = this.image;
+                        if (!this.textLinkRe.test(txt)) this.gesture = this.gestures.text;
+                        if (this.imageLinkRe.test(txt)) this.gesture = this.gestures.image;
                     }
                 }
                 else return;
@@ -418,34 +472,33 @@
             if (this.dir.endsWith(dir)) return;
 
             dir = this.dir += dir;
-            var obj;
-            if (e.shiftKey) {
-                obj = this.type[dir + "-Shift"];
+            var obj = filterGestures(this.gesture, dir, e), txtArray = [];
+            if (!obj.length) {
+                txtArray.push("未知手势：" + dir);
             } else {
-                obj = this.type[dir];
+                obj.forEach(g => {
+                    txtArray.push("鼠标手势：" + dir + " " + g.name)
+                });
             }
+            
 
-            var txt = `${obj ? "鼠标" : "未知"
-                }手势: ${dir + (obj ? "  " + obj.name : "")}`;
-
-            window.StatusPanel._labelElement.value = txt;
+            window.StatusPanel._labelElement.value = txtArray.join(", ");
             window.StatusPanel.panel.removeAttribute("inactive");
         },
         dragend(e) {
             var dt = e.dataTransfer;
             this.drag();
-            var obj;
-            if (e.shiftKey) {
-                obj = this.type[this.dir + "-Shift"];
-            } else {
-                obj = this.type[this.dir];
-            }
-            if (!obj || dt.mozUserCancelled) return;
+            var obj = filterGestures(this.gesture, this.dir, e)
+            if (this.debug) console.info(this.dir, this.obj);
+            if (!obj.length || dt.mozUserCancelled) return;
 
             var x = e.screenX, y = e.screenY;
             var wx = window.mozInnerScreenX, wy = window.mozInnerScreenY;
-            x > wx && y > wy && x < wx + window.innerWidth && y < wy + window.innerHeight
-                && obj.cmd.call(this, this.val, e);
+            if(x > wx && y > wy && x < wx + window.innerWidth && y < wy + window.innerHeight) {
+                obj.forEach(g => {
+                    g.cmd.call(this, this.val, e)
+                })
+            }
         },
         textLinkRe: /^([a-z]+:\/\/)?([a-z]([a-z0-9\-]*\.)+([a-z]{2}|aero|arpa|biz|com|coop|edu|gov|info|int|jobs|mil|museum|name|nato|net|org|pro|travel)|(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:[0-9]{1,5})?(\/[a-z0-9_\-\.~]+)*(\/([a-z0-9_\-\.]*)(\?[a-z0-9+_\-\.%=&amp;]*)?)?(#[a-z][a-z0-9_]*)?$|^custombutton:\/\/\S+$/,
         imageLinkRe: /(http)?s?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg|avif|webp))/,
@@ -471,6 +524,21 @@
                 Services.obs.removeObserver(quit, t);
             }, "quit-application-granted");
         }
+    }
+
+    function filterGestures(gesture, dir, event) {
+        let obj = gesture.filter(g => g.dir === dir);
+        if (event.shiftKey) {
+            obj = obj.filter(g.shift);
+        } else {
+            obj = obj.filter(g => !g.shift);
+        }
+        if (event.ctrlKey) {
+            obj = obj.filter(g => g.ctrl);
+        } else {
+            obj = obj.filter(g => !g.ctrl);
+        }
+        return obj;
     }
 
     window.UCFDrag.init("browser-delayed-startup-finished");
