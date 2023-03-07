@@ -728,7 +728,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                     file.initWithPath(path);
                     if (!file.exists()) {
-                        Cu.reportError($L("file not found").replace("%s", path));
+                        Cu.reportError($L("file not found", path));
                         return;
                     }
 
@@ -1931,7 +1931,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     #toolbar-context-menu:not([addMenu=""]) .addMenu[condition~="normal"]
       { display: none !important; }
     .addMenu-insert-point,
-    toolbarseparator+toolbarseparator
+    toolbarseparator:not(.addMenu-insert-point)+toolbarseparator
       { display: none !important; }
     .addMenu[url] {
       list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
@@ -2008,9 +2008,6 @@ if (typeof window === "undefined" || globalThis !== window) {
     menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left {
         margin-inline-start: 8px;
         margin-inline-end: 8px;
-    }
-    #addMenu-app-insertpoint+toolbarseparator {
-        display: none;
     }
     `)
 }

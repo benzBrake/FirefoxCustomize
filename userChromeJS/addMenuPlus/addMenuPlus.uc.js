@@ -1954,7 +1954,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #toolbar-context-menu:not([addMenu=""]) .addMenu[condition~="normal"]
   { display: none !important; }
 .addMenu-insert-point,
-toolbarseparator+toolbarseparator
+toolbarseparator:not(.addMenu-insert-point)+toolbarseparator
   { display: none !important; }
 .addMenu[url] {
   list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
@@ -2031,8 +2031,5 @@ menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showTe
 menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left {
     margin-inline-start: 8px;
     margin-inline-end: 8px;
-}
-#addMenu-app-insertpoint+toolbarseparator {
-    display: none;
 }
 `);
