@@ -6,7 +6,7 @@
 // @included       chrome://browser/content/browser.xhtml
 // @shutdown       window.PersonalToolbarAutoHide.unload();
 // @homepage       https://github.com/benzBrake/FirefoxCustomize
-// @version        1.0
+// @version        1.1
 // @onlyonce
 // ==/UserScript==
 (function () {
