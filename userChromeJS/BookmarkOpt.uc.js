@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.4
+// @version         1.3.5
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.5 新增中建点击图标才添加书签的功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly，默认不启用）
 // @version         1.3.4 新增中建点击添加书签功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick，默认不启用）
 // @version         1.3.3 还原显示隐藏书签工具栏按钮
 // @version         1.3.2 增加双击地址栏显示/隐藏书签工具栏的开关（userChromeJS.BookmarkOpt.doubleClickToShow）
@@ -212,7 +213,7 @@
                         if (target.id === "PlacesToolbar" || target.id === "PlacesToolbarItems" || target.id === "PlacesChevron" || target.getAttribute("container") == "true") {
                             itemMouseDown = true;
                         }
-                        !Services.prefs.getBoolPref("browser.bookmarks.openInTabClosesMenu", true) && event.target.setAttribute("closemenu", "none");
+                        !Services.prefs.getBoolPref("browser.bookmarks.openInTabClosesMenu", true) && target.setAttribute("closemenu", "none");
 
                     }
                     break;
@@ -224,9 +225,25 @@
                 case "click":
                     if (itemMouseDown) {
                         if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            window.BookmarkOpt.operate(event, 'add', target);
+                            let addBookmark = true;
+                            if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false) 
+                            && target.getAttribute("container") == "true" /* 点击的是文件夹 */
+                            && !target.hasAttribute("query") /* 排除最近访问 */
+                            ) {
+                                let targetRect = target.getBoundingClientRect();
+                                let x = event.clientX - target.getBoundingClientRect().left; // 鼠标点击位置相对于当前书签
+                                let iconRect = (target.tagName.toUpperCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild).getBoundingClientRect();
+                                let paddingLeft = iconRect.left - targetRect.left;
+                                if (x > paddingLeft + iconRect.width) {
+                                    // 点击的是标签，不覆盖默认的功能：打开全部
+                                    addBookmark = false;
+                                }
+                            }
+                            if (addBookmark) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                window.BookmarkOpt.operate(event, 'add', target);
+                            }
                         }
                     }
                     target.removeAttribute("closemenu");
@@ -260,6 +277,7 @@
 
             switch (aMethod) {
                 case 'panelAdd':
+                    // 清除新增的添加到到此处菜单，有可能会影响添加顺序
                     BookmarkOpt.clearPanelItems(aTriggerNode);
                     panelTriggered = true;
                 case 'add':
