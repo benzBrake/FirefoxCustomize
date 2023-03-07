@@ -1,5 +1,13 @@
 // =====================addmenuplus 配置 感谢 runningcheese ======================
-app([{}, {
+app([{
+    'insertAfter': 'appMenu-settings-button',
+}, {
+    'id': 'appMenu-certificate-manager-button',
+    'label': locale.includes("zh-") ? '证书管理器' : 'Certificate Manager',
+    'insertAfter': 'appMenu-settings-button',
+    'oncommand': `window.open('chrome://pippki/content/certManager.xhtml', 'mozilla:certmanager', 'chrome,resizable=yes,all,width=830,height=400');`,
+    'image': 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI1IDJDMTIuMjk2ODc1IDIgMiAxMi4yOTY4NzUgMiAyNUMyIDM3LjcwMzEyNSAxMi4yOTY4NzUgNDggMjUgNDhDMzcuNzAzMTI1IDQ4IDQ4IDM3LjcwMzEyNSA0OCAyNUM0OCAxMi4yOTY4NzUgMzcuNzAzMTI1IDIgMjUgMiBaIE0gMjUgNEMzNi41NzgxMjUgNCA0NiAxMy40MjE4NzUgNDYgMjVDNDYgMzYuNTc4MTI1IDM2LjU3ODEyNSA0NiAyNSA0NkMxMy40MjE4NzUgNDYgNCAzNi41NzgxMjUgNCAyNUM0IDEzLjQyMTg3NSAxMy40MjE4NzUgNCAyNSA0IFogTSAyNSA4QzIwLjAzNTE1NiA4IDE2IDEyLjAzNTE1NiAxNiAxN0wxNiAyMUwyMiAyMUwyMiAxN0MyMiAxNS4zNDc2NTYgMjMuMzQ3NjU2IDE0IDI1IDE0QzI2LjY1MjM0NCAxNCAyOCAxNS4zNDc2NTYgMjggMTdMMjggMjFMMzQgMjFMMzQgMTdDMzQgMTIuMDM1MTU2IDI5Ljk2NDg0NCA4IDI1IDggWiBNIDI1IDEwQzI4Ljg2NzE4OCAxMCAzMiAxMy4xMzI4MTMgMzIgMTdMMzIgMTlMMzAgMTlMMzAgMTdDMzAgMTQuMjM4MjgxIDI3Ljc2MTcxOSAxMiAyNSAxMkMyMi4yMzgyODEgMTIgMjAgMTQuMjM4MjgxIDIwIDE3TDIwIDE5TDE4IDE5TDE4IDE3QzE4IDEzLjEzMjgxMyAyMS4xMzI4MTMgMTAgMjUgMTAgWiBNIDE2IDIyQzEzLjc5Mjk2OSAyMiAxMiAyMy43OTI5NjkgMTIgMjZMMTIgMzZDMTIgMzguMjA3MDMxIDEzLjc5Mjk2OSA0MCAxNiA0MEwzNCA0MEMzNi4yMDcwMzEgNDAgMzggMzguMjA3MDMxIDM4IDM2TDM4IDI2QzM4IDIzLjc5Mjk2OSAzNi4yMDcwMzEgMjIgMzQgMjIgWiBNIDE2IDI0TDM0IDI0QzM1LjEwNTQ2OSAyNCAzNiAyNC44OTQ1MzEgMzYgMjZMMzYgMzZDMzYgMzcuMTA1NDY5IDM1LjEwNTQ2OSAzOCAzNCAzOEwxNiAzOEMxNC44OTQ1MzEgMzggMTQgMzcuMTA1NDY5IDE0IDM2TDE0IDI2QzE0IDI0Ljg5NDUzMSAxNC44OTQ1MzEgMjQgMTYgMjQgWiBNIDE3IDI2QzE2LjQ0OTIxOSAyNiAxNiAyNi40NDkyMTkgMTYgMjdMMTYgMzVDMTYgMzUuNTUwNzgxIDE2LjQ0OTIxOSAzNiAxNyAzNkMxNy41NTA3ODEgMzYgMTggMzUuNTUwNzgxIDE4IDM1TDE4IDI3QzE4IDI2LjQ0OTIxOSAxNy41NTA3ODEgMjYgMTcgMjYgWiBNIDI1IDI2QzIzLjg5NDUzMSAyNiAyMyAyNi44OTQ1MzEgMjMgMjhDMjMgMjguNzE0ODQ0IDIzLjM4MjgxMyAyOS4zNzUgMjQgMjkuNzMwNDY5TDI0IDM1TDI2IDM1TDI2IDI5LjczMDQ2OUMyNi42MTcxODggMjkuMzcxMDk0IDI3IDI4LjcxNDg0NCAyNyAyOEMyNyAyNi44OTQ1MzEgMjYuMTA1NDY5IDI2IDI1IDI2WiIgLz4NCjwvc3ZnPg=='
+}, {
     'id': 'appMenu-advanced-settings-button',
     // 'label': locale.includes("zh-") ? '高级首选项' : 'about:config',
     'data-l10n-href': 'toolkit/about/config.ftl',
@@ -284,7 +292,7 @@ new function () {
                 );
             }
         },
-        image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDMyIDMyIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik0zMCA2aC00VjJoLTJ2NGgtNHYyaDR2NGgyVjhoNFY2em0tNiAyMi41ODZsLTUuOTc1LTUuOTc1YTkuMDIzIDkuMDIzIDAgMSAwLTEuNDE0IDEuNDE0TDIyLjU4NiAzMHpNNCAxN2E3IDcgMCAxIDEgNyA3YTcuMDA4IDcuMDA4IDAgMCAxLTctN3oiLz48L3N2Zz4=",
+        image: "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNDggNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0ibTIwLjUzNTY5LDMuMzYwNDRjLTkuNDkyOTQsMCAtMTcuMjM3NzcsNy43MjE0NiAtMTcuMjM3NzcsMTcuMTg1NzNjMCw5LjQ2NDI3IDcuNzQ0ODMsMTcuMTg1NzMgMTcuMjM3NzcsMTcuMTg1NzNjMy45MTg4MSwwIDcuNDk3NjQsLTEuMzY3MDEgMTAuMzk4NzgsLTMuNTc4MTNsOS44MTA3Miw5Ljc4MTFhMi4yOTg2LDIuMjkxNjYgMCAxIDAgMy4yNTAwMywtMy4yNDAyMmwtOS44MTA3MiwtOS43ODExYzIuMjE3ODEsLTIuODkyMzggMy41ODg5NiwtNi40NjA0IDMuNTg4OTYsLTEwLjM2NzM4YzAsLTkuNDY0MjcgLTcuNzQ0ODMsLTE3LjE4NTczIC0xNy4yMzc3NywtMTcuMTg1NzN6bTAsNC41ODI4NmM3LjAwODY4LDAgMTIuNjQxMDMsNS42MTUzNiAxMi42NDEwMywxMi42MDI4N2MwLDYuOTg3NTEgLTUuNjMyMzUsMTIuNjAyODcgLTEyLjY0MTAzLDEyLjYwMjg3Yy03LjAwODY4LDAgLTEyLjY0MTAzLC01LjYxNTM2IC0xMi42NDEwMywtMTIuNjAyODdjMCwtNi45ODc1MSA1LjYzMjM1LC0xMi42MDI4NyAxMi42NDEwMywtMTIuNjAyODd6bS02Ljg5NTExLDEwLjMxMTQ0YTIuMjk4MzcsMi4yOTE0MyAwIDAgMCAwLDQuNTgyODZhMi4yOTgzNywyLjI5MTQzIDAgMCAwIDAsLTQuNTgyODZ6bTYuODk1MTEsMGEyLjI5ODM3LDIuMjkxNDMgMCAwIDAgMCw0LjU4Mjg2YTIuMjk4MzcsMi4yOTE0MyAwIDAgMCAwLC00LjU4Mjg2em02Ljg5NTExLDBhMi4yOTgzNywyLjI5MTQzIDAgMCAwIDAsNC41ODI4NmEyLjI5ODM3LDIuMjkxNDMgMCAwIDAgMCwtNC41ODI4NnoiLz48L3N2Zz4=",
     }, {
         label: locale.includes("zh-") ? '百度站内搜索' : 'Baidu site search',
         onshowing: function (item) {
@@ -314,7 +322,7 @@ new function () {
     }];
     groupMenuNormal(items);
     groupMenuSelect(items);
-    css("#frame-sep {display: none}");
+    css("#contentAreaContextMenu[addMenu=\"select\"] > #inspect-separator, #frame-sep {display: none}");
 }
 new function () {
     var groupMenu = PageGroup({
