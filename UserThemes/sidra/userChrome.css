@@ -1409,15 +1409,6 @@ url("about:downloads") {
             background-color: var(--toolbarbutton-active-background);
         }
 
-        /* 修复停止按钮的偏移bug，如果没有问题，删掉 */
-        #stop-button .toolbarbutton-icon {
-            background-image: url("./images/skin/stop-button-fix.svg") !important;
-            background-repeat: no-repeat;
-            background-position: left 5px center;
-            list-style-image: none;
-        }
-
-
         #nav-bar[brighttext] #panic-button[open] {
             fill: var(--warning-color) !important;
         }
@@ -2006,12 +1997,14 @@ url("about:downloads") {
         }
 
         /* 地址栏内工具栏 */
-        #ucjs-Locationbar-toolbar {
-            padding: 0;
+        :root[uidensity="compact"] #urlbar #location-bar {
+            height: 22px !important;
+            background-clip: unset;
         }
 
-        #urlbar-container[breakout][locationbarcollapsed] {
-            top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2 - 1px) !important;
+        /* 地址栏显示下拉后隐藏地址栏内工具栏 */
+        #urlbar[breakout-extend="true"] #location-bar {
+            /* visibility: collapse; */
         }
 
         /* 地址栏左侧按钮边距 */
@@ -2454,11 +2447,21 @@ by underlining them (requires urlbarMods.uc.js) */
             bottom: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
         }
 
+        #urlbar[breakout][breakout-extend="true"] {
+            top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+        }
+
         #urlbar-input-container {
             padding: 2px 4px !important;
             height: 100% !important;
             -moz-box-align: center;
             z-index: 11;
+        }
+    }
+
+    @supports -moz-bool-pref("userChromeJS.sidra.urlbar.hideTrackingProtectionIcon") {
+        #tracking-protection-icon-container {
+            display: none !important;
         }
     }
 
@@ -5834,10 +5837,15 @@ by underlining them (requires urlbarMods.uc.js) */
             visibility: hidden;
         }
 
-        :not(#contentAreaContextMenu, #tabContextMenu)>[id^="_531906d3-e22f-4a6c-a102-8057b88a1a63_"][ext-type="top-level-menu"],
+        :not(#tabContextMenu)>[id^="_531906d3-e22f-4a6c-a102-8057b88a1a63_"][ext-type="top-level-menu"],
         :not(#tabContextMenu)>#_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_save-page {
             background-image: url("./images/extensions/singlefile/singlefile.svg");
         }
+
+        #contentAreaContextMenu>[id^="_531906d3-e22f-4a6c-a102-8057b88a1a63_"]>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
 
         #_531906d3-e22f-4a6c-a102-8057b88a1a63_-menuitem-_edit-and-save-page {
             background-image: url("./images/extensions/singlefile/hashtag.svg");
@@ -5890,6 +5898,14 @@ by underlining them (requires urlbarMods.uc.js) */
         #extension_one-tab_com-browser-action,
         #extension_one-tab_com-BAP {
             list-style-image: url("./images/extensions/onetab/onetab.svg") !important;
+        }
+
+        #contentAreaContextMenu>[id^="extension_one-tab_com"]>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu>[id^="extension_one-tab_com"] {
+            background-image: url("./images/extensions/onetab/onetab.svg");
         }
 
         menu[label="OneTab"]:not(.menu-iconic) {
@@ -6217,6 +6233,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #firefox_tampermonkey_net-menuitem-_root {
             background-image: url("./images/extensions/tampermonkey/javascript.svg");
+        }
+
+        #firefox_tampermonkey_net-menuitem-_root>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
         }
 
         #firefox_tampermonkey_net-menuitem-_root :is(menu, menuitem) {
@@ -6920,6 +6940,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/extensions/ublock/block.svg");
         }
 
+        #ublock0_raymondhill_net-menuitem-_uBlock0-blockElement .menu-iconic-icon {
+            visibility: hidden;
+        }
+
         /** Adblock Plus */
         #_d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d_-browser-action,
         #_d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d_-BAP {
@@ -6948,6 +6972,14 @@ by underlining them (requires urlbarMods.uc.js) */
         #image-picka_eight04_blogspot_com-browser-action,
         #image-picka_eight04_blogspot_com-BAP {
             list-style-image: url("./images/extensions/imagepicka/photos.svg");
+        }
+
+        #contentAreaContextMenu>[id^="image-picka_eight04_blogspot_com"] .menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu>[id^="image-picka_eight04_blogspot_com"] {
+            background-image: url("./images/extensions/imagepicka/photos.svg");
         }
 
         menuitem[id^="image-picka_eight04_blogspot"]:nth-child(1),
@@ -7024,6 +7056,14 @@ by underlining them (requires urlbarMods.uc.js) */
         [id^="_446900e4-71c2-419f-a6a7-df9c091e268b"] [id*="-menuitem-_copy-password"],
         #firefox-enpass_enpass_io-menuitem-_enpass_context_menu,
         [label^="粘贴密码"] {
+            background-image: url("chrome://browser/skin/login.svg");
+        }
+
+        #contentAreaContextMenu>#_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu>#_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_root {
             background-image: url("chrome://browser/skin/login.svg");
         }
 
@@ -7119,6 +7159,15 @@ by underlining them (requires urlbarMods.uc.js) */
         #content-farm-terminator_danny0838_addons_mozilla_org-BAP {
             list-style-image: url("./images/extensions/contentfarmterminator/unavailable.svg") !important;
         }
+
+        #contentAreaContextMenu>[id^="content-farm-terminator_danny0838_addons_mozilla_org"] .menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu>[id^="content-farm-terminator_danny0838_addons_mozilla_org"] {
+            background-image: url("./images/extensions/contentfarmterminator/unavailable.svg");
+        }
+
 
         /** uBlockList */
         #_ublacklist-browser-action,
@@ -7334,6 +7383,33 @@ by underlining them (requires urlbarMods.uc.js) */
         #_e58d3966-3d76-4cd9-8552-1582fbc800c1_-BAP {
             list-style-image: url("./images/extensions/buster/checked-user.svg");
         }
+
+        /** 沉浸式翻译 */
+        #_5efceaa7-f3a2-4e59-a54b-85319448e305_-browser-action,
+        #_5efceaa7-f3a2-4e59-a54b-85319448e305_-BAP {
+            list-style-image: url("./images/extensions/cjsfy/translation.svg");
+        }
+
+        #_5efceaa7-f3a2-4e59-a54b-85319448e305_-menuitem-_toggleTranslatePage .menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #_5efceaa7-f3a2-4e59-a54b-85319448e305_-menuitem-_toggleTranslatePage {
+            background-image: url("./images/extensions/cjsfy/translation.svg");
+        }
+
+        /** Snap Links */
+        .unified-extensions-item[extension-id="snaplinks@snaplinks.mozdev.org"] .unified-extensions-item-icon {
+            visibility: hidden;
+            position: relative;
+        }
+
+        .unified-extensions-item[extension-id="snaplinks@snaplinks.mozdev.org"] .unified-extensions-item-action-button {
+            background-image: url("./images/extensions/snaplinks/selection.svg");
+            background-repeat: no-repeat;
+            background-size: 24px;
+            background-position: var(--icon-gap, 8px) 50%;
+        }
     }
 }
 
@@ -7342,3 +7418,4 @@ by underlining them (requires urlbarMods.uc.js) */
         display: none;
     }
 }
+
