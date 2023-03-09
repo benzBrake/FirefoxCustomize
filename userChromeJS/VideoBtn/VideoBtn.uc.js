@@ -583,7 +583,8 @@
                 var a;
                 if (typeof arg == "undefined") arg = []; // fix slice error
                 if (typeof arg == 'string' || arg instanceof String) {
-                    a = arg.split(/\s+/)
+                    if(arg === "") arg = []
+                    else a = arg.split(/\s+/)
                 } else if (Array.isArray(arg)) {
                     a = arg;
                 } else {
@@ -629,7 +630,7 @@
                     }
                 })
                 if (!handled) {
-                    path = path.replace(/\//g, '\\').toLocaleLowerCase();
+                    path = path.replace(/\//g, '\\');
                     if (/^(\\)/.test(path)) {
                         if (!parentPath) {
                             parentPath = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
@@ -941,7 +942,7 @@
     }
     #VideoBtn-RefNode[VideoBtn] + .VideoBtn:not(menuseparator):not(menugroup),
     #contentAreaContextMenu #VideoBtn-Menu~menuseparator {
-        visibility: collapse;
+        display: none;
     }
     #VideoBtn-RefNode[VideoBtn~="link"] + .VideoBtn[condition~="link"],
     #VideoBtn-RefNode[VideoBtn~="image"] +.VideoBtn[condition~="image"],
@@ -950,7 +951,7 @@
     #VideoBtn-RefNode[VideoBtn~="input"] + .VideoBtn[condition~="input"],
     #VideoBtn-RefNode[VideoBtn~="mailto"] + .VideoBtn[condition~="mailto"],
     #VideoBtn-RefNode[VideoBtn=""] + .VideoBtn[condition~="normal"] {
-        visibility: visible;
+        display: none;
     }
     .VideoBtn-Group > .menuitem-iconic {
         padding-block: 0.5em;
