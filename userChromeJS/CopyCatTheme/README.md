@@ -1,6 +1,6 @@
 # CopyCatTheme
 
-这个脚本主要用来快速切换 CSS 主题，会自动读取对应主题的 userChrome.css 中 pref 变量显示成主题选项菜单，目前不支持 userContent.css。
+这个脚本主要用来快速切换 CSS 主题，会自动读取对应主题的 userChrome.css 中 pref 变量显示成主题选项菜单，~~目前不支持 userContent.css~~。
 
 ### 安装说明
 

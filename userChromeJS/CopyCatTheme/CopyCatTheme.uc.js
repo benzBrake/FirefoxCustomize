@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            CopyCatTheme.uc.js
 // @description     CopyCat 主题专用加载脚本
+// @version         0.1.6
 // @license         MIT License
 // @shutdown        window.CopyCatTheme.destroy(win);
 // @compatibility   Firefox 90
@@ -690,6 +691,8 @@
                         filename: "userChrome.ag.css"
                     }, {
                         filename: "userChrome.us.css"
+                    }, {
+                        filename: "userContent.css"
                     }];
                     if (themeConfigFile.exists()) {
                         themeConfig = JSON.parse(readFile(themeConfigFile, false));
@@ -706,11 +709,19 @@
                                     this[key] = value;
                                 });
                             }
-                            this.styles.push({
-                                url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
-                                type: file.hasOwnProperty("type") ? file.type : getStyleType(tFile.leafName),
-                                file: tFile
-                            });
+                            if (file.filename === "userContent.css") {
+                                this.styles.push({
+                                    url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
+                                    type: sss.USER_SHEET,
+                                    file: tFile
+                                });
+                            } else {
+                                this.styles.push({
+                                    url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
+                                    type: file.hasOwnProperty("type") ? file.type : getStyleType(tFile.leafName),
+                                    file: tFile
+                                });
+                            }
                         }
                     });
                 } else if (aFile.leafName.endsWith('.css')) {
