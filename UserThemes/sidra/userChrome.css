@@ -1369,7 +1369,8 @@ url("about:downloads") {
         }
 
         /* 去除按钮 Hover 重复背景色 */
-        .toolbaritem-combined-buttons[cui-areatype="toolbar"]>toolbarbutton:not([disabled]):hover {
+        .toolbaritem-combined-buttons[cui-areatype="toolbar"]>toolbarbutton:not([disabled]):hover,
+        .toolbaritem-combined-buttons[cui-areatype="toolbar"]>toolbarbutton:not([disabled]):hover:active {
             background-color: transparent;
         }
 
@@ -2730,6 +2731,7 @@ by underlining them (requires urlbarMods.uc.js) */
             --menu-background-color: var(--arrowpanel-background);
             --menuitem-hover-background-color: var(--panel-item-hover-bgcolor);
             --menu-separator-color: var(--menu-border-color);
+            --menuitem-margin-inline-end: 4px;
             background-color: transparent;
             padding: 0;
             border: var(--menu-border-width, 1px) solid transparent;
@@ -2765,6 +2767,10 @@ by underlining them (requires urlbarMods.uc.js) */
         menupopup:not(.in-menulist) menu:not(.menu-iconic),
         menupopup:not(.in-menulist) menuitem:not(.menuitem-iconic, [type="checkbox"], [type="radio"]) {
             padding-inline-start: var(--label-padding-start, 32px) !important;
+        }
+
+        menupopup menu:not(.menu-iconic)>.menubar-text {
+            margin-left: 0 !important;
         }
 
         :is(menu, menuitem)>.menu-iconic-left {
@@ -2843,7 +2849,7 @@ by underlining them (requires urlbarMods.uc.js) */
             -moz-context-properties: fill, fill-opacity;
             fill: currentColor;
             fill-opacity: var(--menu-icon-opacity);
-            margin-inline-end: 4px;
+            margin-inline-end: var(--menuitem-margin-inline-end, 4px);
             padding-top: 0;
         }
 
@@ -2875,9 +2881,19 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* 修正用户菜单边距 */
-        #appMenu-header-description {
+        #appMenu-fxa-status2:not([fxastatus])>#appMenu-fxa-label2 {
+            padding: var(--arrowpanel-menuitem-padding);
+            background-image: unset;
+        }
+
+        #appMenu-fxa-status2:not([fxastatus]) #appMenu-header-description {
             height: var(--icon-height, 16px);
             margin: 0;
+            position: relative;
+        }
+
+        #appMenu-fxa-status2:not([fxastatus]) #appMenu-header-description::before {
+            font-size: 12px !important;
         }
 
         /** Hide menuitem without label */
@@ -3648,6 +3664,7 @@ by underlining them (requires urlbarMods.uc.js) */
             margin: 0 !important;
             background: none !important;
             width: 16px !important;
+            height: 16px !important;
             opacity: 0.4 !important;
             appearance: none !important;
             display: -moz-inline-box !important;
@@ -3707,6 +3724,11 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #appMenu-fxa-label2 {
             background-image: var(--avatar-image-url);
+        }
+
+        #appMenu-fxa-status2:not([fxastatus])>#appMenu-fxa-label2 {
+            background-image: unset;
+            --label-padding-start: var(--icon-gap, 12px);
         }
 
         #PanelUI-fxa-menu-connect-device-button {
@@ -4691,6 +4713,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/skin/switch.svg");
         }
 
+        menupopup #history-menu {
+            background-image: url("chrome://browser/skin/history.svg");
+        }
+
         #menu_showAllHistory {
             background-image: url("chrome://browser/skin/history.svg");
         }
@@ -5169,6 +5195,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/skin/case-sensitive.svg");
         }
 
+        #findbar-menu-match-diacritics {
+            background-image: url("./images/skin/alpha.svg");
+        }
+
         /* Unified Extensions */
         #unified-extensions-disable-all {
             list-style-image: url("./images/navbar/stop.svg");
@@ -5207,6 +5237,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #TabPlus-menu {
             list-style-image: url("./images/copycat/box-settings.svg");
+        }
+
+        .CopyCat-View #CopyCatTheme-Menu {
+            list-style-image: url("./images/copycat/theme-menu.svg");
         }
 
         #CopyCat-ReloadTheme {
@@ -5303,6 +5337,10 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Tree Style Tab*/
+        #toolbar-context-menu menuitem[id^="treestyletab_piro_sakura_ne_jp"][disabled="true"] {
+            padding-inline-start: var(--icon-gap, 12px) !important;
+            font-size: 11px;
+        }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0 {
             background-image: url("./images/copycat/skin.svg");
@@ -5314,6 +5352,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0\:1 {
             background-image: url("chrome://mozapps/skin/extensions/category-themes.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0\:4 {
+            background-image: url("./images/tab/length.svg");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0\:14 {
@@ -5328,12 +5370,32 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/tab/new-window.svg");
         }
 
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:2\:12 {
+            background-image: url("./images/tab/group.svg");
+        }
+
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:3 {
             background-image: url("./images/tab/new-window.svg");
         }
 
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:3\:1 {
+            background-image: url("./images/tab/blank-tab.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:3\:2 {
+            background-image: url("./images/tab/open-in-container.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:3\:11 {
+            background-image: url("./images/tab/duplicate-tab.svg");
+        }
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:3\:12 {
+            background-image: url("./images/tab/location.svg");
+        }
+
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:4 {
-            background-image: url("./images/tab/drag.svg");
+            background-image: url("./images/tab/drag-vertical.svg");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:4\:14 {
@@ -5342,6 +5404,12 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:5 {
             background-image: url("./images/moretools/more.svg");
+        }
+
+
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:5\:2,
+        #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:5\:3 {
+            background-image: url("./images/tab/drag.svg");
         }
 
         #treestyletab_piro_sakura_ne_jp-menuitem-_context_newTab,
@@ -7256,8 +7324,15 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** 凌云网盘助手 */
+        #_9f41038f-f64e-4ef1-bd30-4f84c87ea2f7_browser-action,
         #_9f41038f-f64e-4ef1-bd30-4f84c87ea2f7_-BAP {
             list-style-image: url("./images/extensions/lywpzs/cloud.svg");
+        }
+
+        /** Buster */
+        #_e58d3966-3d76-4cd9-8552-1582fbc800c1_-browser-action,
+        #_e58d3966-3d76-4cd9-8552-1582fbc800c1_-BAP {
+            list-style-image: url("./images/extensions/buster/checked-user.svg");
         }
     }
 }

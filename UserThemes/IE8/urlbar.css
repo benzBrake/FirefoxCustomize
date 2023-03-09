@@ -9,6 +9,7 @@
     min-height: 25.6px !important;
     max-height: 25.6px !important;
     padding-block: 4px;
+    margin-inline-end: 0;
 }
 
 
@@ -77,6 +78,10 @@
 #urlbar[breakout][breakout-extend][breakout-extend-animate] {
     margin-top: 1px !important;
     padding-left: 3px !important;
+}
+
+#urlbar[breakout] {
+    top: unset;
 }
 
 #main-window[uidensity="compact"] #urlbar,

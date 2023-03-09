@@ -1,4 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" fill="context-fill" fill-opacity="context-fill-opacity">
   <path d="M5 4 A 1.0001 1.0001 0 0 0 4 5L4 45 A 1.0001 1.0001 0 0 0 5 46L45 46 A 1.0001 1.0001 0 0 0 46 45L46 5 A 1.0001 1.0001 0 0 0 45 4L5 4 z M 6 6L24 6L24 44L6 44L6 6 z M 26 6L44 6L44 44L26 44L26 6 z" />
 </svg>

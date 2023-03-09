@@ -30,11 +30,6 @@ toolbar .toolbarbutton-1[type="menu-button"] toolbarbutton[disabled] .toolbarbut
     opacity: 0.6 !important;
 }
 
-#nav-bar toolbarbutton[id="reload-button"],
-#nav-bar toolbarbutton[id="stop-button"] {
-    margin-left: -3px !important;
-}
-
 #nav-bar #downloads-button,
 #PanelUI-menu-button,
 #nav-bar .chromeclass-toolbar-additional,
@@ -45,7 +40,7 @@ toolbar .toolbarbutton-1[type="menu-button"] toolbarbutton[disabled] .toolbarbut
 
 #nav-bar :not(.toolbaritem-combined-buttons)>.chromeclass-toolbar-additional:not(#downloads-button) {
     --toolbarbutton-outer-padding: 0 !important;
-    --toolbarbutton-inner-padding: 4.8px;
+    --toolbarbutton-inner-padding: 4.8px !important;
 }
 
 #nav-bar #nav-bar-overflow-button>.toolbarbutton-icon {
@@ -148,13 +143,16 @@ toolbar .toolbarbutton-1[type="menu-button"] toolbarbutton[disabled] .toolbarbut
 
 #nav-bar toolbarbutton[id="reload-button"],
 #nav-bar toolbarbutton[id="stop-button"] {
-    margin-left: -7px !important;
-    margin-right: 4px !important;
+    /* margin-left: -7px !important;
+    margin-right: 4px !important; */
 }
 
 #nav-bar toolbarbutton#reload-button .toolbarbutton-icon,
 #nav-bar toolbarbutton#reload-button .toolbarbutton-1[disabled] .toolbarbutton-icon {
-    list-style-image: url("image/refresh.png") !important;
+    list-style-image: url("image/refresh.svg") !important;
+    color: #55DE04;
+    fill: currentColor !important;
+    -moz-context-properties: fill, fill-opacity;
     padding: 3px !important;
 }
 
