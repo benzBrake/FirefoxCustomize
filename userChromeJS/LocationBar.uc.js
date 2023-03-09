@@ -147,8 +147,8 @@
     color: var(--urlbar-box-hover-text-color);
 }
 #urlbar-input-container > #location-bar .toolbarbutton-1 > .toolbarbutton-icon {
-    width: 16px;
-    height: 16px;
+    width: 16px !important;
+    height: 16px !important;
     -moz-context-properties: fill, fill-opacity;
     fill: currentColor;
     fill-opacity: var(--urlbar-icon-fill-opacity);
