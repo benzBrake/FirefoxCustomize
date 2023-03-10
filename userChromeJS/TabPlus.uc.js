@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
+// @version         1.0
 // @license         MIT License
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
@@ -71,6 +72,7 @@
     const LANG = {
         'zh-CN': {
             "tabplus settings": "标签设置",
+            "middle click not close popup": "中键点击不关闭菜单",
             "open in newtab": "新标签页打开",
             "location bar": "地址栏",
             "search bar": "搜索栏",
@@ -94,12 +96,19 @@
             "switch tab on scroll": "滚轮切换标签页",
             "keep menupopup opened when middle click bookmark menu": "中键打开书签不关闭书签菜单",
             "select left tab after close current tab": "关闭标签页选中左侧标签页",
+            "show drag images": "拖拽标签时显示缩略图"
         }
     }
 
     let TabPlus = {
         listeners: {},
         modules: {},
+        get showOptionsInToolsMenu() {
+            return typeof CopyCat === "undefined" ? cPref.get("userChromeJS.TabPlus.showOptionsInToolsMenu", true) : !cPref.get("userChromeJS.CopyCat.buildPanel", true);
+        },
+        get menuitemTag() {
+            return this.showOptionsInToolsMenu ? "menuitem" : "toolbarbutton";
+        },
         get sss() {
             delete this.sss;
             return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
@@ -115,12 +124,27 @@
                 if (typeof module.init === "function")
                     module.init(win);
             });
-
-            this.createOptionsMenu(win.document, this.menus);
+            if (this.showOptionsInToolsMenu)
+                this.createOptionsMenu(win.document, this.menus);
+            else
+                this.createOptionsPanel(win.document, this.menus);
             if (!this.style)
                 this.style = addStyle(this.sss, css);
         },
         destroy() {
+            if (this.showOptionsInToolsMenu) {
+                let menu = $("TabPlus-menu");
+                if (menu)
+                    menu.parentNode.removeChild(menu);
+            } else {
+                let view = getViewCache(document);
+                let panel = view.querySelector("#TabPlus-Panel");
+                if (panel)
+                    panel.parentNode.removeChild(panel);
+                let btn = view.querySelector("#TabPlus-menu");
+                if (btn)
+                    btn.parentNode.removeChild(btn);
+            }
             Object.values(this.listeners).forEach(l => cPref.removeListener(l));
             Object.values(this.modules).forEach(module => {
                 if (typeof module.destroy === "function")
@@ -130,7 +154,27 @@
             if (this.style)
                 removeStyle(this.sss, this.style);
         },
-        createOptionsMenu(doc, obj, firstWin) {
+        createOptionsMenu(doc, obj) {
+            let ins = $("devToolsSeparator", doc);
+            let menu = ins.parentNode.insertBefore($C(doc, "menu", {
+                id: 'TabPlus-menu',
+                class: "menu-iconic",
+                label: $L("tabplus settings"),
+            }), ins);
+            let menupopup = menu.appendChild($C(document, "menupopup", {
+                id: 'TabPlus-menupopup',
+            }));
+            menupopup.addEventListener("popupshowing", (event) => {
+                if (event.target.id !== "TabPlus-menupopup");
+                event.target.querySelectorAll("menuitem").forEach(elm => elm.setAttribute("closemenu", "none"));
+            });
+            if (obj && obj instanceof Array) {
+                obj.forEach(itemObj => {
+                    menupopup.appendChild(this.newMenuitem(doc, itemObj));
+                })
+            }
+        },
+        createOptionsPanel(doc, obj) {
             let panelId = "TabPlus-Panel";
             let viewCache = getViewCache(doc);
             if ($(panelId, viewCache)) return;
@@ -157,7 +201,7 @@
             let vbox = view.querySelector(':scope>vbox');
             if (obj && obj instanceof Array) {
                 obj.forEach(itemObj => {
-                    vbox.appendChild(this.newBtn(doc, itemObj));
+                    vbox.appendChild(this.newMenuitem(doc, itemObj));
                 })
             }
 
@@ -174,23 +218,32 @@
                 ins = protonView.querySelector('#appMenu-more-button2');
             ins.before(btn);
         },
-        newBtn(doc, obj) {
+        newMenuitem(doc, obj) {
             if (!obj || !doc) return;
-            let item, classList = [], tagName = obj.type || 'toolbarbutton';
+            let item, classList = [], tagName = obj.type || this.menuitemTag;
             if (['separator', 'toolbarseparator'].includes(obj.type) || !obj.group && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
                 return $C(doc, 'toolbarseparator', obj, ['type', 'group', 'popup']);
             }
 
             // 选项菜单 hack
-            if (['checkbox', 'radio', 'prompt'].includes(obj.type)) tagName = 'toolbarbutton';
+            if (['checkbox', 'radio', 'prompt'].includes(obj.type)) tagName = this.menuitemTag;
 
             // 设置 class
             if (obj.class) obj.class.split(' ').forEach(c => classList.push(c));
             if (obj.type && obj.type.startsWith("html:")) {
-                tagName = obj.type;
+
+                if (this.showOptionsInToolsMenu) {
+                    obj.disabled = true;
+                } else {
+                    tagName = obj.type;
+                }
                 delete obj.type;
             } else {
-                classList.push("subviewbutton");
+                if (this.showOptionsInToolsMenu) {
+                    classList.push("menuitem-iconic");
+                } else {
+                    classList.push("subviewbutton");
+                }
             }
 
             item = $C(doc, tagName, obj, ['class', 'onBuild']);
@@ -267,6 +320,8 @@
             if (pref) this.handlePref(event, pref);
             if (postcommand)
                 eval(item.getAttribute(postcommand));
+            if (event.button == 0)
+                closeMenus(event.target.closest("menupopup"));
 
         },
         handlePref(event, pref) {
@@ -302,7 +357,13 @@
             }
         },
     }
-
+    TabPlus.modules.title = {
+        menus: [{
+            type: 'html:h2',
+            class: 'subview-subheader',
+            content: $L("middle click not close popup")
+        }]
+    }
     TabPlus.modules.loadHistoryInTabs = {
         PREF: 'browser.tabs.loadHistoryInTabs',
         menus: [{
@@ -647,6 +708,16 @@
         }
     }
 
+    TabPlus.modules.showDragImages = {
+        PREF: 'nglayout.enable_drag_images',
+        menus: {
+            label: $L("show drag images"),
+            type: 'checkbox',
+            defaultValue: true,
+            pref: 'nglayout.enable_drag_images'
+        },
+    }
+
     function $(id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
@@ -716,41 +787,22 @@
         return false;
     }
 
-    // 监听新建窗口，保证脚本在新窗口生效
-    function TabPlusInit() {
-        window.TabPlus = TabPlus;
-        window.TabPlus.init(window, true);
-        Services.obs.addObserver(this, 'domwindowopened', false);
-    }
-
-    TabPlusInit.prototype = {
-        observe: function (aSubject, aTopic, aData) {
-            aSubject.addEventListener('load', this, true);
-        },
-        handleEvent: function (aEvent) {
-            if (aEvent.type === "load") {
-                let document = aEvent.originalTarget,
-                    win = document.ownerGlobal;
-                if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
-                    win.TabPlus = TabPlus;
-                    win.TabPlus.init(win);
-                }
-            }
-        }
-    }
-
+    window.TabPlus = TabPlus;
     // 延时启动
-    if (gBrowserInit.delayedStartupFinished) new TabPlusInit();
+    if (gBrowserInit.delayedStartupFinished) window.TabPlus.init(window);
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                new TabPlusInit();
+                window.TabPlus.init(subject);
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 })(`
+menu#TabPlus-menu {
+    list-style-image: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTUuNzUgM0M1LjM5NSAzIDUuMDY1NzE4OCAzLjE4OTA5MzcgNC44ODY3MTg4IDMuNDk2MDkzOEwzLjEzNjcxODggNi40OTYwOTM4QzMuMDQ3NzE4OCA2LjY0OTA5MzcgMyA2LjgyMyAzIDdMMyAxOUMzIDIwLjEwMyAzLjg5NyAyMSA1IDIxTDEyLjI5NDkyMiAyMUMxMi4xMDU5MjIgMjAuMzY2IDEyIDE5LjY5NSAxMiAxOUw1IDE5TDUgOUwxOSA5TDE5IDEyQzE5LjY5NSAxMiAyMC4zNjYgMTIuMTA1OTIyIDIxIDEyLjI5NDkyMkwyMSA3QzIxIDYuODIzIDIwLjk1MjI4MSA2LjY0OTA5MzggMjAuODYzMjgxIDYuNDk2MDkzOEwxOS4xMTMyODEgMy40OTYwOTM4QzE4LjkzNDI4MSAzLjE4OTA5MzcgMTguNjA1IDMgMTguMjUgM0w1Ljc1IDMgeiBNIDYuMzI0MjE4OCA1TDE3LjY3NTc4MSA1TDE4Ljg0MTc5NyA3TDUuMTU4MjAzMSA3TDYuMzI0MjE4OCA1IHogTSA5IDExTDkgMTNMMTUgMTNMMTUgMTFMOSAxMSB6IE0gMTguMDQ4ODI4IDE0QzE3LjkxOTgyOCAxNCAxNy44MTE4NzUgMTQuMDk2NjA5IDE3Ljc5Njg3NSAxNC4yMjQ2MDlMMTcuNjc5Njg4IDE1LjIzNjMyOEMxNy4xOTU2ODcgMTUuNDA0MzI4IDE2Ljc1NzkwNiAxNS42NjAyODEgMTYuMzc4OTA2IDE1Ljk4ODI4MUwxNS40NDMzNTkgMTUuNTgyMDMxQzE1LjMyNTM1OSAxNS41MzEwMzEgMTUuMTg3MDQ3IDE1LjU3ODQ1MyAxNS4xMjMwNDcgMTUuNjg5NDUzTDE0LjE4NzUgMTcuMzEwNTQ3QzE0LjEyMzUgMTcuNDIxNTQ3IDE0LjE1Mjg1OSAxNy41NjM2MjUgMTQuMjU1ODU5IDE3LjY0MDYyNUwxNS4wNjI1IDE4LjI0MDIzNEMxNS4wMTQ1IDE4LjQ4NzIzNCAxNC45ODQzNzUgMTguNzQgMTQuOTg0Mzc1IDE5QzE0Ljk4NDM3NSAxOS4yNiAxNS4wMTQ1IDE5LjUxMjc2NiAxNS4wNjI1IDE5Ljc1OTc2NkwxNC4yNTU4NTkgMjAuMzU5Mzc1QzE0LjE1Mjg1OSAyMC40MzYzNzUgMTQuMTIyNSAyMC41Nzg0NTMgMTQuMTg3NSAyMC42ODk0NTNMMTUuMTIzMDQ3IDIyLjMxMDU0N0MxNS4xODcwNDcgMjIuNDIyNTQ3IDE1LjMyNTM1OSAyMi40NjcwMTYgMTUuNDQzMzU5IDIyLjQxNjAxNkwxNi4zNzg5MDYgMjIuMDExNzE5QzE2Ljc1NzkwNiAyMi4zNDA3MTkgMTcuMTk1Njg3IDIyLjU5NTY3MiAxNy42Nzk2ODggMjIuNzYzNjcyTDE3Ljc5Njg3NSAyMy43NzUzOTFDMTcuODExODc1IDIzLjkwMzM5MSAxNy45MTk4MjggMjQgMTguMDQ4ODI4IDI0TDE5LjkyMTg3NSAyNEMyMC4wNTA4NzUgMjQgMjAuMTU4ODI4IDIzLjkwMzM5MSAyMC4xNzM4MjggMjMuNzc1MzkxTDIwLjI4OTA2MiAyMi43NjM2NzJDMjAuNzczMDYzIDIyLjU5NTY3MiAyMS4yMTI3OTcgMjIuMzM5NzE5IDIxLjU5MTc5NyAyMi4wMTE3MTlMMjIuNTI3MzQ0IDIyLjQxNzk2OUMyMi42NDUzNDQgMjIuNDY4OTY5IDIyLjc4MzY1NiAyMi40MjE1NDcgMjIuODQ3NjU2IDIyLjMxMDU0N0wyMy43ODMyMDMgMjAuNjg5NDUzQzIzLjg0NzIwMyAyMC41Nzc0NTMgMjMuODE3ODQ0IDIwLjQzNTM3NSAyMy43MTQ4NDQgMjAuMzU5Mzc1TDIyLjkwODIwMyAxOS43NTk3NjZDMjIuOTU2MjAzIDE5LjUxMjc2NiAyMi45ODQzNzUgMTkuMjYgMjIuOTg0Mzc1IDE5QzIyLjk4NDM3NSAxOC43NCAyMi45NTYyMDMgMTguNDg3MjM0IDIyLjkwODIwMyAxOC4yNDAyMzRMMjMuNzE0ODQ0IDE3LjY0MDYyNUMyMy44MTc4NDQgMTcuNTYzNjI1IDIzLjg0ODIwMyAxNy40MjE1NDcgMjMuNzgzMjAzIDE3LjMxMDU0N0wyMi44NDc2NTYgMTUuNjg5NDUzQzIyLjc4MzY1NiAxNS41Nzg0NTMgMjIuNjQ1MzQ0IDE1LjUzMTAzMSAyMi41MjczNDQgMTUuNTgyMDMxTDIxLjU5MTc5NyAxNS45ODgyODFDMjEuMjEyNzk3IDE1LjY2MDI4MSAyMC43NzMwNjIgMTUuNDA0MzI4IDIwLjI4OTA2MiAxNS4yMzYzMjhMMjAuMTczODI4IDE0LjIyNDYwOUMyMC4xNTg4MjggMTQuMDk2NjA5IDIwLjA1MDg3NSAxNCAxOS45MjE4NzUgMTRMMTguMDQ4ODI4IDE0IHogTSAxOC45ODQzNzUgMTdDMjAuMDg4Mzc1IDE3IDIwLjk4NDM3NSAxNy44OTUgMjAuOTg0Mzc1IDE5QzIwLjk4NDM3NSAyMC4xMDQgMjAuMDg4Mzc1IDIxIDE4Ljk4NDM3NSAyMUMxNy44ODAzNzUgMjEgMTYuOTg0Mzc1IDIwLjEwNCAxNi45ODQzNzUgMTlDMTYuOTg0Mzc1IDE3Ljg5NSAxNy44ODAzNzUgMTcgMTguOTg0Mzc1IDE3IHoiLz4NCjwvc3ZnPg==") !important;
+}
 .TabPlus-View toolbaritem.toolbaritem-combined-buttons {
     padding: 0 !important;
 }
