@@ -232,9 +232,11 @@
                             ) {
                                 let targetRect = target.getBoundingClientRect();
                                 let x = event.clientX - target.getBoundingClientRect().left; // 鼠标点击位置相对于当前书签
-                                let iconRect = (target.tagName.toUpperCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild).getBoundingClientRect();
+                                let icon = target.tagName.toLowerCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild;
+                                let iconRect = icon.getBoundingClientRect();
                                 let paddingLeft = iconRect.left - targetRect.left;
                                 if (x > paddingLeft + iconRect.width) {
+                                    console.log('yes');
                                     // 点击的是标签，不覆盖默认的功能：打开全部
                                     addBookmark = false;
                                 }
@@ -246,7 +248,6 @@
                             }
                         }
                     }
-                    target.removeAttribute("closemenu");
                     break;
             }
         },
