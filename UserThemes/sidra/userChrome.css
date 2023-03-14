@@ -2839,6 +2839,12 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-inline-start: 0 !important;
         }
 
+        #contentAreaContextMenu > [ext-type]:is(menu, menuitem){
+            background-repeat: no-repeat;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+            background-position: var(--icon-gap, 12px) 50%;
+        }
+
         panelview :is(menu, menuitem)>.menu-iconic-text,
         menupopup :is(menu, menuitem)>.menu-iconic-text {
             padding-inline-start: var(--icon-gap, 12px) !important;
@@ -2881,6 +2887,11 @@ by underlining them (requires urlbarMods.uc.js) */
         :is(popup, menupopup) [checked="true"]>.menu-iconic-left,
         panel [checked="true"]>.toolbarbutton-icon {
             list-style-image: url("./images/skin/checkbox-checked.svg") !important;
+        }
+
+        .toolbarbutton-1 > .toolbarbutton-icon, .toolbarbutton-1 > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+            width: var(--icon-width, 16px);
+            height: var(--icon-height, 16px);
         }
 
         /* 修正用户菜单边距 */
@@ -2979,7 +2990,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** 隐藏无用分隔符 */
-        #context-copylink[hidden="true"]~#context-sep-copylink {
+        #context-copylink[hidden="true"]~#context-sep-copylink,
+        #contentAreaContextMenu:not([addMenu="select"]) > #context-media-eme-learnmore[hidden="true"] + menuseparator {
             display: none;
         }
 
@@ -5753,7 +5765,7 @@ by underlining them (requires urlbarMods.uc.js) */
         toolbarbutton#lockedClosedTabsList {
             -moz-context-properties: fill, fill-opacity !important;
             fill: currentColor !important;
-            background-size: var(--icon-width) !important;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px) !important;
             background-repeat: no-repeat !important;
             background-position: var(--icon-gap, 12px) 50% !important;
         }
@@ -5978,7 +5990,7 @@ by underlining them (requires urlbarMods.uc.js) */
             background-color: unset;
             -moz-context-properties: fill, fill-opacity !important;
             fill: currentColor !important;
-            background-size: var(--icon-width) !important;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px) !important;
             background-repeat: no-repeat !important;
             background-position: var(--icon-gap) 50% !important;
             cursor: pointer;
@@ -6669,7 +6681,7 @@ by underlining them (requires urlbarMods.uc.js) */
             cursor: pointer;
             -moz-context-properties: fill, fill-opacity !important;
             fill: currentColor !important;
-            background-size: var(--icon-width) !important;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px) !important;
             background-repeat: no-repeat !important;
             background-position: var(--icon-gap) 50% !important;
         }
@@ -7406,9 +7418,24 @@ by underlining them (requires urlbarMods.uc.js) */
 
         .unified-extensions-item[extension-id="snaplinks@snaplinks.mozdev.org"] .unified-extensions-item-action-button {
             background-image: url("./images/extensions/snaplinks/selection.svg");
-            background-repeat: no-repeat;
             background-size: 24px;
-            background-position: var(--icon-gap, 8px) 50%;
+        }
+
+        /*  */
+        #jid1-kdtticj6wxvafa_jetpack-menuitem-_sss {
+            /* 防止选中搜索把右键菜单撑得太宽 */
+            max-width: 300px;
+        }
+
+        /* Search By Image */
+        #contentAreaContextMenu > [id^="_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_"] > .menu-iconic-left > .menu-iconic-icon {
+            visibility: hidden;
+        }
+        #contentAreaContextMenu > [id^="_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_"] {
+            background-image: url("./images/extensions/searchbyimage/camera.svg");
+        }
+        #_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_-BAP > .toolbarbutton-badge-stack > .toolbarbutton-icon{
+            list-style-image: url("./images/extensions/searchbyimage/camera.svg") !important;
         }
     }
 }
