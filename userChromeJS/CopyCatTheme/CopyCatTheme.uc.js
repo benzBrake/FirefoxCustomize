@@ -495,7 +495,7 @@
                         }
                         break;
                     case 'OpenThemesOptions':
-                        openUILinkIn("chrome://userchrome/content/utils/ThemeOptions.html", "tab", {
+                        openTrustedLinkIn("chrome://userchrome/content/utils/ThemeOptions.html", "tab", {
                             postData: null,
                             triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                         });

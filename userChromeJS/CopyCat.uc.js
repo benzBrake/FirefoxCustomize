@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.2.0
+// @version         0.2.1
 // @compatibility   Firefox 78
 // @include         main
 // @include         chrome://userchrome/content/SubScript/CopyCat.html
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.2.1 修复 openUILinkIn 被移除
 // @version         0.2.0 修正点击按钮无法关闭菜单
 // @version         0.1.9 新增隐藏内置菜单选项 （userChromeJS.CopyCat.hideInternal）
 // @version         0.1.8 支持切换 panelview 到 menupopup （userChromeJS.CopyCat.buildPanel），修复运行参数问题
@@ -835,7 +836,7 @@
                     if (CopyCatUtils.appVersion < 78) {
                         openUILinkIn(uri.spec, where, false, postData || null);
                     } else {
-                        openUILinkIn(uri.spec, where, {
+                        openTrustedLinkIn(uri.spec, where, {
                             postData: postData || null,
                             triggeringPrincipal: where === 'current' ? gBrowser.selectedBrowser.contentPrincipal : (/^(f|ht)tps?:/.test(uri.spec) ? Services.scriptSecurityManager.createNullPrincipal({}) : Services.scriptSecurityManager.getSystemPrincipal())
                         });
@@ -844,7 +845,7 @@
                     if (typeof openNewTabWith !== "undefined") {
                         openNewTabWith(uri.spec);
                     } else {
-                        openUILinkIn(uri.spec, 'tab', {
+                        openTrustedLinkIn(uri.spec, 'tab', {
                             postData: postData || null,
                             triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ? Services.scriptSecurityManager.createNullPrincipal({}) : Services.scriptSecurityManager.getSystemPrincipal()
                         });

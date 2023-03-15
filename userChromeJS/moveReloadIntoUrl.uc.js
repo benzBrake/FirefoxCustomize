@@ -23,7 +23,6 @@
         delete window.moveReloadIntoURL;
     }
 
-
     window.moveReloadIntoURL = {
         handleEvent: function (aEvent) {
             if (aEvent.type === "MoveReloadIntoUrlUnload") {
@@ -81,7 +80,14 @@
                         if (e.button == 2) {
                             e.target.ownerGlobal.BrowserReloadSkipCache();
                         } else {
-                            e.target.ownerGlobal.BrowserReload();
+                            if (gBrowser.selectedBrowser._userTypedValue) {
+                                e.target.ownerGlobal.openTrustedLinkIn(gBrowser.selectedBrowser._userTypedValue, 'current', {
+                                    postData: null,
+                                    triggeringPrincipal: gBrowser.selectedBrowser.contentPrincipal
+                                });
+                            } else {
+                                e.target.ownerGlobal.BrowserReload();
+                            }
                         }
                 }
             })
@@ -148,5 +154,4 @@
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
-
 })();

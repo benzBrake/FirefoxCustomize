@@ -500,7 +500,7 @@
                 if (this.appVersion < 78) {
                     openUILinkIn(uri.spec, where, false, postData || null);
                 } else {
-                    openUILinkIn(uri.spec, where, {
+                    openTrustedLinkIn(uri.spec, where, {
                         postData: postData || null,
                         triggeringPrincipal: where === 'current' ?
                             gBrowser.selectedBrowser.contentPrincipal : (
