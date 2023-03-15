@@ -135,18 +135,6 @@
 		},
 		{
 			"enable": true,
-			"name": "RawGit",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https:\\/\\/raw\\.githubusercontent\\.com\\/(.*)",
-			"exclude": "",
-			"group": "加速",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://raw.fastgit.org/$1"
-		},
-		{
-			"enable": true,
 			"name": "哔哩哔哩显示评论",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -156,6 +144,42 @@
 			"isFunction": false,
 			"action": "redirect",
 			"to": "https://www.bilibili.com/video/$1"
+		},
+		{
+			"enable": true,
+			"name": "JQ2.0重定向",
+			"ruleType": "redirect",
+			"matchType": "url",
+			"pattern": "https://libs.baidu.com/jquery/2.0.0/jquery.min.js",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://gcore.jsdelivr.net/npm/jquery@2.2.4/dist/jquery.min.js"
+		},
+		{
+			"enable": true,
+			"name": "Winclassic 修改 Favicon",
+			"ruleType": "redirect",
+			"matchType": "url",
+			"pattern": "https://storage.proboards.com/6513581/images/CBwlnXzPDTCStFAecBkU.ico",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://kkp.disk.st/FireDoge.ico"
+		},
+		{
+			"enable": true,
+			"name": "bing-cn-to-www",
+			"ruleType": "redirect",
+			"matchType": "prefix",
+			"pattern": "https://cn.bing.com",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://www.bing.com"
 		}
 	],
 	"sendHeader": [
@@ -496,7 +520,7 @@
 			"group": "反盗链"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "sina图片盗链-2",
 			"ruleType": "modifySendHeader",
 			"matchType": "regexp",
@@ -798,6 +822,20 @@
 			"action": {
 				"name": "user-agent",
 				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+			}
+		},
+		{
+			"enable": true,
+			"name": "bing",
+			"ruleType": "modifySendHeader",
+			"matchType": "regexp",
+			"pattern": "^http(s?)://www\\.bing\\.com/(.*)",
+			"exclude": "",
+			"group": "未分组",
+			"isFunction": false,
+			"action": {
+				"name": "x-forwarded-for",
+				"value": "8.8.8.8"
 			}
 		}
 	],
