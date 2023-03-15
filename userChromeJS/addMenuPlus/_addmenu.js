@@ -312,7 +312,7 @@ new function () {
         label: locale.includes("zh-") ? '谷歌站内搜索' : 'Google site search',
         oncommand: function (e) {
             var sel = (gContextMenu || { textSelected: "" }).textSelected;
-            if (!e.shiftKey && sel.length == 0) sel = prompt(locale.includes("zh-") ? '谷歌站内搜索:' : 'Google site search:', '');
+            if (!e.shiftKey && sel.length == 0) sel = prompt(addMenu.locale.includes("zh-") ? '谷歌站内搜索:' : 'Google site search:', '');
             if (sel) {
                 let url = 'https://www.google.com/search?q=site:' + encodeURIComponent(gBrowser.currentURI.host) + ' ' + sel;
                 addMenu.openCommand({ 'target': this }, url, 'tab');
