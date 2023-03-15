@@ -7,9 +7,10 @@
 // @license        MIT License
 // @charset        UTF-8
 // @include        main
-// @version        2022.11.27
+// @version        2023.03.15
+// @note           2023.03.15 修复 openUILinkIn 被移除
 // @note           2023.01.01 JSActor 化
-// @note           2022.11.27 修复 gBrowser
+// @note           2022.11.27 修复 gBrowser is undefined
 // @note           2022.06.03 新增 getSelctionText()，修增 saveFile 不存在
 // @note           0.0.2 メニューを右クリックで設定ファイルを開けるようにした
 // @note           0.0.2 Meta キーを装飾キーに使えるようになったかもしれない（未テスト）
@@ -432,7 +433,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                                         Services.scriptSecurityManager.getSystemPrincipal()
                                 )
                         }
-                        openUILinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                        openTrustedLinkIn(uri.spec, where, aAllowThirdPartyFixup);
                     }
                 } else {
                     let aAllowThirdPartyFixup = {
@@ -440,7 +441,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         postData: postData || null,
                         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
                     }
-                    openUILinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
+                    openTrustedLinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
                 }
             },
             edit: function (aFile, aLineNumber) {
