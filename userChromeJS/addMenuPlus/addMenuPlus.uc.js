@@ -697,12 +697,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (this.appVersion < 78) {
                     openUILinkIn(uri.spec, where, false, postData || null);
                 } else {
-                    openUILinkIn(uri.spec, where, {
+                    openWebLinkIn(uri.spec, where, {
                         postData: postData || null,
                         triggeringPrincipal: where === 'current' ?
                             gBrowser.selectedBrowser.contentPrincipal : (
                                 /^(f|ht)tps?:/.test(uri.spec) ?
-                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.createNullPrincipal({
+                                        userContextId: gBrowser.selectedBrowser.getAttribute(
+                                            "userContextId"
+                                        )
+                                    }) :
                                     Services.scriptSecurityManager.getSystemPrincipal()
                             )
                     });
@@ -711,9 +715,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (this.appVersion < 78) {
                     openUILinkIn(uri.spec, 'tab');
                 } else {
-                    openUILinkIn(uri.spec, 'tab', {
+                    openWebLinkIn(uri.spec, 'tab', {
                         triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
-                            Services.scriptSecurityManager.createNullPrincipal({}) : Services.scriptSecurityManager.getSystemPrincipal()
+                            Services.scriptSecurityManager.createNullPrincipal({
+                                userContextId: gBrowser.selectedBrowser.getAttribute(
+                                    "userContextId"
+                                )
+                            }) : Services.scriptSecurityManager.getSystemPrincipal()
                     });
                 }
             } else {
