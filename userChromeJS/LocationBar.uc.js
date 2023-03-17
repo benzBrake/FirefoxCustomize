@@ -2,8 +2,8 @@
 // @name            LocationBar.uc.js
 // @description     地址栏内工具栏
 // @license         MIT License
-// @compatibility   Firefox 107
-// @version         0.0.1
+// @compatibility   Firefox 102
+// @version         0.0.2
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
@@ -157,6 +157,9 @@
 #urlbar-input-container #location-bar toolbarbutton {
     --toolbarbutton-hover-background: transparent;
 }
+#urlbar-input-container #location-bar toolbarbutton > .toolbarbutton-badge-stack {
+    padding: 0 !important;
+  }
 :root[uidensity="compact"] #urlbar-input-container #location-bar toolbarbutton > .toolbarbutton-badge-stack > .toolbarbutton-badge {
     margin-inline-end: 0 !important;
 }
