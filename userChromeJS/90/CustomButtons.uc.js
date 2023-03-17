@@ -3,7 +3,7 @@
 // @description     添加多个自定义按钮，截图、UndoCloseTab、证书管理器、放大缩小、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
 // @version         0.1.4
-// @compatibility   Firefox 108
+// @compatibility   Firefox90
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
@@ -12,6 +12,12 @@
 (function (css, debug) {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+
+
+    if (window.CustomButtons) {
+        window.CustomButtons.destroy(window);
+        delete window.CustomButtons;
+    }
 
     const LANG = {
         'zh-CN': {
@@ -50,20 +56,12 @@
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTEuOTkzIDE0LjQwN2wtMS41NTIgMS41NTJhNCA0IDAgMSAxLTEuNDE4LTEuNDFsMS41NTUtMS41NTYtMy4xMjQtMy4xMjVhMS41IDEuNSAwIDAgMSAwLTIuMTIxbC4zNTQtLjM1NCA0LjE4NSA0LjE4NSA0LjE4OS00LjE4OS4zNTMuMzU0YTEuNSAxLjUgMCAwIDEgMCAyLjEybC0zLjEyOCAzLjEzIDEuNTYxIDEuNTZhNCA0IDAgMSAxLTEuNDE0IDEuNDE0bC0xLjU2MS0xLjU2ek0xOSAxM1Y1SDV2OEgzVjRhMSAxIDAgMCAxIDEtMWgxNmExIDEgMCAwIDEgMSAxdjloLTJ6TTcgMjBhMiAyIDAgMSAwIDAtNCAyIDIgMCAwIDAgMCA0em0xMCAwYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiLz48L3N2Zz4=",
             popup: [{
                 label: $L("hide firefox to take snapshot"),
+                precommand: 'window.minimize();',
                 tool: "\\SnapShot.exe",
-                oncommand: function (event) {
-                    window.minimize();
-                    setTimeout(() => {
-                        CustomButtons.onCommand(event);
-                    }, 500);
-                },
                 image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2aWV3Qm94PSIwIDAgMjAgMjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy4zNjcgNC43OCBMIDMuODM3IDQuNzggTCAzLjgzNyA4LjI5NyBMIDUuNjAyIDguMjk3IEwgNS42MDIgNi41MzggTCA3LjM2NyA2LjUzOCBNIDE2LjE5MSA4LjI5NyBMIDE0LjQyNiA4LjI5NyBMIDE0LjQyNiAxMC4wNTUgTCAxMi42NiAxMC4wNTUgTCAxMi42NiAxMS44MTQgTCAxNi4xOTEgMTEuODE0IE0gMTcuOTU1IDEzLjU3MiBMIDIuMDczIDEzLjU3MiBMIDIuMDczIDMuMDIxIEwgMTcuOTU1IDMuMDIxIE0gMTcuOTU1IDEuMjYzIEwgMi4wNzMgMS4yNjMgQyAxLjA5MyAxLjI2MyAwLjMwOCAyLjA0NiAwLjMwOCAzLjAyMSBMIDAuMzA4IDEzLjU3MiBDIDAuMzA4IDE0LjU0MyAxLjA5NyAxNS4zMzIgMi4wNzMgMTUuMzMyIEwgOC4yNDkgMTUuMzMyIEwgOC4yNDkgMTcuMDkgTCA2LjQ4NCAxNy4wOSBMIDYuNDg0IDE4Ljg0OSBMIDEzLjU0NCAxOC44NDkgTCAxMy41NDQgMTcuMDkgTCAxMS43NzggMTcuMDkgTCAxMS43NzggMTUuMzMyIEwgMTcuOTU1IDE1LjMzMiBDIDE4LjkzIDE1LjMzMiAxOS43MiAxNC41NDMgMTkuNzIgMTMuNTcyIEwgMTkuNzIgMy4wMjEgQyAxOS43MiAyLjA1IDE4LjkzIDEuMjYzIDE3Ljk1NSAxLjI2MyIgc3R5bGU9IiIvPgo8L3N2Zz4='
             }, {
                 label: $L("scroll snapshot"),
-                oncommand: function () {
-                    const ScreenshotsUtils = globalThis.ScreenshotsUtils || Cu.import("resource:///modules/ScreenshotsUtils.jsm");
-                    ScreenshotsUtils.notify(window, "shortcut");
-                },
+                oncommand: 'ScreenshotsUtils.notify(window, "shortcut");',
                 image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik01IDZMNSAxNEw3IDE0TDcgMTFMOSAxMUw5IDlMNyA5TDcgOEwxMCA4TDEwIDYgWiBNIDExIDZMMTEgMTFDMTEgMTIuNjQ0NTMxIDEyLjM1NTQ2OSAxNCAxNCAxNEMxNS42NDQ1MzEgMTQgMTcgMTIuNjQ0NTMxIDE3IDExTDE3IDZMMTUgNkwxNSAxMUMxNSAxMS41NjY0MDYgMTQuNTY2NDA2IDEyIDE0IDEyQzEzLjQzMzU5NCAxMiAxMyAxMS41NjY0MDYgMTMgMTFMMTMgNiBaIE0gMTggNkwxOCAxNEwyMiAxNEwyMiAxMkwyMCAxMkwyMCA2IFogTSAyMyA2TDIzIDE0TDI3IDE0TDI3IDEyTDI1IDEyTDI1IDYgWiBNIDUgMTZMNSAyNkw3IDI2TDcgMThMMTUgMThMMTUgMjIuNTYyNUwxMy43MTg3NSAyMS4yODEyNUwxMi4yODEyNSAyMi43MTg3NUwxNS4yODEyNSAyNS43MTg3NUwxNiAyNi40MDYyNUwxNi43MTg3NSAyNS43MTg3NUwxOS43MTg3NSAyMi43MTg3NUwxOC4yODEyNSAyMS4yODEyNUwxNyAyMi41NjI1TDE3IDE4TDI1IDE4TDI1IDI2TDI3IDI2TDI3IDE2WiIvPjwvc3ZnPg=='
             }, {
                 label: $L("color picker"),
@@ -87,11 +85,10 @@
             label: $L("undo close tab"),
             tooltiptext: $L("undo close tab tooltip"),
             defaultArea: CustomizableUI.AREA_TABSTRIP,
-            oncommand: function (event) { if (event.explicitOriginalTarget.tagName === "toolbarbutton") undoCloseTab(); },
-            type: "contextmenu",
+            oncommand: "undoCloseTab();",
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgZmlsbD0iY29udGV4dC1maWxsIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNNS44MjggN2wyLjUzNiAyLjUzNkw2Ljk1IDEwLjk1IDIgNmw0Ljk1LTQuOTUgMS40MTQgMS40MTRMNS44MjggNUgxM2E4IDggMCAxIDEgMCAxNkg0di0yaDlhNiA2IDAgMSAwIDAtMTJINS44Mjh6Ii8+PC9zdmc+",
             onclick: function (event) {
-                if (event.explicitOriginalTarget.localName !== "toolbarbutton") return;
+                if (event.target.localName !== "toolbarbutton") return;
                 if (event.button === 1) {
                     try {
                         SessionStore.restoreLastSession();
@@ -100,7 +97,7 @@
                     return;
                 }
                 if (event.button !== 2) return;
-                const doc = (event.view && event.view.document) || event.target.ownerDocument;
+                const doc = (event.view && event.view.document) || document;
                 const menu = event.target.querySelector("menupopup");
                 menu.querySelectorAll('.undo-item').forEach(i => i.remove());
                 let data = SessionStore.getClosedTabData(window);
@@ -130,13 +127,7 @@
                 }
 
                 event.preventDefault();
-                let pos = "after_end", x, y;
-                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
-                    pos = "after_position";
-                    x = 0;
-                    y = 0 + event.target.clientHeight;
-                }
-                menu.openPopup(event.target, pos, x, y);
+                menu.openPopup(event.target, "after_end", 0, 0);
             },
             popup: [{
                 id: 'CB-undoCloseTab-menuseparator'
@@ -167,6 +158,13 @@
     } else { \
         FullZoom.reduce(); \
     };'
+        }, {
+            id: 'CB-ViewCert',
+            label: $L("certificate manager"),
+            tooltiptext: $L("certificate manager tooltip"),
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTAgNTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI1IDJDMTIuMjk2ODc1IDIgMiAxMi4yOTY4NzUgMiAyNUMyIDM3LjcwMzEyNSAxMi4yOTY4NzUgNDggMjUgNDhDMzcuNzAzMTI1IDQ4IDQ4IDM3LjcwMzEyNSA0OCAyNUM0OCAxMi4yOTY4NzUgMzcuNzAzMTI1IDIgMjUgMiBaIE0gMjUgNEMzNi41NzgxMjUgNCA0NiAxMy40MjE4NzUgNDYgMjVDNDYgMzYuNTc4MTI1IDM2LjU3ODEyNSA0NiAyNSA0NkMxMy40MjE4NzUgNDYgNCAzNi41NzgxMjUgNCAyNUM0IDEzLjQyMTg3NSAxMy40MjE4NzUgNCAyNSA0IFogTSAyNSA4QzIwLjAzNTE1NiA4IDE2IDEyLjAzNTE1NiAxNiAxN0wxNiAyMUwyMiAyMUwyMiAxN0MyMiAxNS4zNDc2NTYgMjMuMzQ3NjU2IDE0IDI1IDE0QzI2LjY1MjM0NCAxNCAyOCAxNS4zNDc2NTYgMjggMTdMMjggMjFMMzQgMjFMMzQgMTdDMzQgMTIuMDM1MTU2IDI5Ljk2NDg0NCA4IDI1IDggWiBNIDI1IDEwQzI4Ljg2NzE4OCAxMCAzMiAxMy4xMzI4MTMgMzIgMTdMMzIgMTlMMzAgMTlMMzAgMTdDMzAgMTQuMjM4MjgxIDI3Ljc2MTcxOSAxMiAyNSAxMkMyMi4yMzgyODEgMTIgMjAgMTQuMjM4MjgxIDIwIDE3TDIwIDE5TDE4IDE5TDE4IDE3QzE4IDEzLjEzMjgxMyAyMS4xMzI4MTMgMTAgMjUgMTAgWiBNIDE2IDIyQzEzLjc5Mjk2OSAyMiAxMiAyMy43OTI5NjkgMTIgMjZMMTIgMzZDMTIgMzguMjA3MDMxIDEzLjc5Mjk2OSA0MCAxNiA0MEwzNCA0MEMzNi4yMDcwMzEgNDAgMzggMzguMjA3MDMxIDM4IDM2TDM4IDI2QzM4IDIzLjc5Mjk2OSAzNi4yMDcwMzEgMjIgMzQgMjIgWiBNIDE2IDI0TDM0IDI0QzM1LjEwNTQ2OSAyNCAzNiAyNC44OTQ1MzEgMzYgMjZMMzYgMzZDMzYgMzcuMTA1NDY5IDM1LjEwNTQ2OSAzOCAzNCAzOEwxNiAzOEMxNC44OTQ1MzEgMzggMTQgMzcuMTA1NDY5IDE0IDM2TDE0IDI2QzE0IDI0Ljg5NDUzMSAxNC44OTQ1MzEgMjQgMTYgMjQgWiBNIDE3IDI2QzE2LjQ0OTIxOSAyNiAxNiAyNi40NDkyMTkgMTYgMjdMMTYgMzVDMTYgMzUuNTUwNzgxIDE2LjQ0OTIxOSAzNiAxNyAzNkMxNy41NTA3ODEgMzYgMTggMzUuNTUwNzgxIDE4IDM1TDE4IDI3QzE4IDI2LjQ0OTIxOSAxNy41NTA3ODEgMjYgMTcgMjYgWiBNIDI1IDI2QzIzLjg5NDUzMSAyNiAyMyAyNi44OTQ1MzEgMjMgMjhDMjMgMjguNzE0ODQ0IDIzLjM4MjgxMyAyOS4zNzUgMjQgMjkuNzMwNDY5TDI0IDM1TDI2IDM1TDI2IDI5LjczMDQ2OUMyNi42MTcxODggMjkuMzcxMDk0IDI3IDI4LjcxNDg0NCAyNyAyOEMyNyAyNi44OTQ1MzEgMjYuMTA1NDY5IDI2IDI1IDI2WiIgLz4NCjwvc3ZnPg==",
+            oncommand: "window.open('chrome://pippki/content/certManager.xhtml', 'mozilla:certmanager', 'chrome,resizable=yes,all,width=830,height=400');"
+
         }, {
             id: 'CB-CleanHistory',
             label: $L("clean history"),
@@ -263,14 +261,15 @@
             if (this.debug) this.log($L("CustomButtons: creating buttons"));
             let btnIds = [];
             Object.values(BTN_CONFIG).forEach(obj => {
-                obj.id = obj.id || "CB-" + this.btnId;
-                if (CustomizableUI.getWidget(obj.id) && CustomizableUI.getWidget(obj.id).forWindow(window)?.node) return;
-                this.createButton(obj);
+                if (obj.id && !CustomizableUI.getPlacementOfWidget(obj.id, true)) {
+                    this.createButton(obj);
+                }
                 btnIds.push(obj.id);
             });
             return btnIds;
         },
         createButton(obj) {
+            obj.id = obj.id || "CB-" + this.btnId;
             obj.label = obj.label || "Custom Button";
             obj.defaultArea = obj.defaultArea || CustomizableUI.AREA_NAVBAR;
             obj.class = obj.class ? obj.class + ' custom-button' : 'custom-button';
@@ -309,15 +308,14 @@
                             }
                         }
                         if (!obj.oncommand)
-                            $A(btn, {
-                                oncommand: `if (event.target !== event.explicitOriginalTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
-                            });
+                            btn.setAttribute("oncommand", "CustomButtons.onCommand(event);");
                     } catch (e) {
                         this.error(e);
                     }
                     return btn;
                 }
             });
+            return CustomizableUI.getWidget(obj.id).forWindow(window).node;
         },
         newMenuPopup(doc, obj) {
             if (!obj) return;
@@ -463,6 +461,8 @@
             return item;
         },
         onCommand: function (event) {
+            event.stopPropagation();
+            event.preventDefault();
             let item = event.target;
             let precommand = item.getAttribute('precommand') || "",
                 postcommand = item.getAttribute("postcommand") || "",
@@ -500,7 +500,7 @@
                 if (this.appVersion < 78) {
                     openUILinkIn(uri.spec, where, false, postData || null);
                 } else {
-                    openTrustedLinkIn(uri.spec, where, {
+                    openUILinkIn(uri.spec, where, {
                         postData: postData || null,
                         triggeringPrincipal: where === 'current' ?
                             gBrowser.selectedBrowser.contentPrincipal : (
