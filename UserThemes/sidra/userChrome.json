@@ -68,6 +68,7 @@
         "userChromeJS.sidra.tabbox.verticalOrient",
         "userChromeJS.sidra.titlebarHorizontal",
         "userChromeJS.sidra.navbar.compact",
+        "userChromeJS.sidra.navbar.unifiedExtensionsCompact",
         "userChromeJS.sidra.placesToolbar.alignCenter",
         "userChromeJS.sidra.placesToolbar.iconsOnly",
         "userChromeJS.sidra.urlbar.compact",
@@ -119,6 +120,12 @@
             "from": "#sidebar-box",
             "attr": "hidden",
             "targetAttr": "sidebarHidden"
+        },
+        {
+            "from": "#PlacesChevron",
+            "attr": "collapsed",
+            "target": "#PlacesToolbarItems",
+            "targetAttr": "chevronCollapsed"
         }
     ],
     "locales": {
@@ -137,6 +144,7 @@
             "userChromeJS.sidra.tabbox.verticalOrient": "显示垂直标签栏时隐藏标签栏",
             "userChromeJS.sidra.titlebarHorizontal": "主菜单栏显示在标签栏右侧",
             "userChromeJS.sidra.navbar.compact": "导航栏样式",
+            "userChromeJS.sidra.navbar.unifiedExtensionsCompact": "扩展统一管理菜单仿折叠菜单",
             "userChromeJS.sidra.placesToolbar.alignCenter": "书签工具栏居中显示",
             "userChromeJS.sidra.placesToolbar.iconsOnly": "书签工具栏仅显示图标",
             "userChromeJS.sidra.urlbar.compact": "地址栏样式",

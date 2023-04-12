@@ -1626,9 +1626,50 @@ url("about:downloads") {
         }
     }
 
+    @supports -moz-bool-pref("userChromeJS.sidra.navbar.unifiedExtensionsCompact") {
+        #unified-extensions-button {
+            list-style-image: url("chrome://global/skin/icons/chevron.svg") !important;
+        }
+
+        #unified-extensions-view>.panel-subview-body {
+            padding: var(--panel-subview-body-padding) !important;
+            margin-bottom: 0;
+        }
+
+        #unified-extensions-view>.panel-subview-body>.unified-extensions-list {
+            display: none !important;
+        }
+
+        #unified-extensions-view .toolbaritem-combined-buttons {
+            margin: var(--arrowpanel-menuitem-margin);
+            padding-block: 0;
+        }
+
+        #unified-extensions-view .toolbaritem-combined-buttons > :is(.unified-extensions-item-action-button.subviewbutton,.unified-extensions-item-menu-button.subviewbutton) {
+            padding-block: var(--arrowpanel-menuitem-padding-block);
+        }
+
+        .unified-extensions-item-icon,
+        #unified-extensions-panel .unified-extensions-item .webextension-browser-action>.toolbarbutton-badge-stack>.toolbarbutton-icon {
+            height: var(--icon-height, 16px) !important;
+            width: var(--icon-width, 16px) !important;
+        }
+
+        .unified-extensions-item-message-deck,
+        #unified-extensions-view>.panel-header,
+        #unified-extensions-view>toolbarseparator,
+        #unified-extensions-view>#unified-extensions-manage-extensions,
+        .unified-extensions-context-menu-report-extension {
+            display: none !important;
+        }
+    }
+
     /**======== 书签居中 ========*/
     @supports -moz-bool-pref("userChromeJS.sidra.placesToolbar.alignCenter") {
         #PlacesToolbarItems {
+            -moz-box-pack: start;
+        }
+        #PlacesToolbarItems[chevronCollapsed="true"] {
             -moz-box-pack: center;
         }
     }
@@ -2839,7 +2880,7 @@ by underlining them (requires urlbarMods.uc.js) */
             margin-inline-start: 0 !important;
         }
 
-        #contentAreaContextMenu > [ext-type]:is(menu, menuitem){
+        #contentAreaContextMenu>[ext-type]:is(menu, menuitem) {
             background-repeat: no-repeat;
             background-size: var(--icon-width, 16px) var(--icon-height, 16px);
             background-position: var(--icon-gap, 12px) 50%;
@@ -2889,7 +2930,8 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/skin/checkbox-checked.svg") !important;
         }
 
-        .toolbarbutton-1 > .toolbarbutton-icon, .toolbarbutton-1 > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+        .toolbarbutton-1>.toolbarbutton-icon,
+        .toolbarbutton-1>.toolbarbutton-badge-stack>.toolbarbutton-icon {
             width: var(--icon-width, 16px);
             height: var(--icon-height, 16px);
         }
@@ -2991,7 +3033,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         /** 隐藏无用分隔符 */
         #context-copylink[hidden="true"]~#context-sep-copylink,
-        #contentAreaContextMenu:not([addMenu="select"]) > #context-media-eme-learnmore[hidden="true"] + menuseparator {
+        #contentAreaContextMenu:not([addMenu="select"])>#context-media-eme-learnmore[hidden="true"]+menuseparator {
             display: none;
         }
 
@@ -4335,6 +4377,25 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #context-viewframeinfo {
             background-image: url("chrome://global/skin/icons/info.svg");
+        }
+
+        #context-take-screenshot {
+            background-image: url("./images/skin/screenshot.svg");
+        }
+
+        /** Floorp */
+        #context-sendlinktodevice[hidden="true"] ~ #context-sep-sendlinktodevice {
+            display: none;
+        }
+
+        #bsb-context-add,
+        #bsb-context-link-add {
+            background-image: url("./images/floorp/add.svg");
+        }
+
+        #context-openlinkinexternal,
+        #context_openLinkInExternal {
+            background-image: url("./images/floorp/edge.svg");
         }
 
         /** Tab Menu */
@@ -5820,6 +5881,15 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/traduzirpaginasweb/translate.svg") !important;
         }
 
+        :is(#_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_translate-web-page, #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_translate-selected-text)>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_translate-web-page,
+        #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_translate-selected-text {
+            background-image: url("./images/extensions/traduzirpaginasweb/translate.svg");
+        }
+
         #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_pageAction-showPopup,
         #_036a55b4-5e72-4d05-a06c-cba2dfcc134a_-menuitem-_browserAction-showPopup {
             background-image: url("./images/tab/new-window.svg");
@@ -6021,6 +6091,14 @@ by underlining them (requires urlbarMods.uc.js) */
         #mozilla_cc3_internetdownloadmanager_com-browser-action,
         #mozilla_cc3_internetdownloadmanager_com-BAP {
             list-style-image: url("./images/extensions/internetdownloadmanager/downloads.svg") !important;
+        }
+
+        #contentAreaContextMenu>[id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"]>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu>[id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"] {
+            background-image: url("./images/extensions/internetdownloadmanager/downloads.svg");
         }
 
         /** Violent Monkey */
@@ -6730,6 +6808,14 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/safeincloud/safeincloud.svg");
         }
 
+        #contentAreaContextMenu>[id^="info_safe-in-cloud_com"]>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu>[id^="info_safe-in-cloud_com"] {
+            background-image: url("./images/extensions/safeincloud/safeincloud.svg");
+        }
+
         [uc-extension-id="info@safe-in-cloud.com"] .layout {
             color: inherit !important;
             background-color: inherit !important;
@@ -7142,6 +7228,18 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/autofill/autofill.svg");
         }
 
+        #contentAreaContextMenu > [id^="_143f479b-4cb2-4d8c-8c31-ae8653bc6054_"] .menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #contentAreaContextMenu > [id^="_143f479b-4cb2-4d8c-8c31-ae8653bc6054_"] {
+            background-image: url("./images/extensions/autofill/autofill.svg");
+        }
+
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-menuitem-_cm_options {
+            background-image: url("chrome://global/skin/icons/settings.svg");
+        }
+
         /** 迅雷 */
         #xl_webbrowserstore_xunlei_com-browser-action,
         #xl_webbrowserstore_xunlei_com-BAP {
@@ -7330,6 +7428,14 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/clearurls/remove.svg");
         }
 
+        #_74145f27-f039-47ce-a470-a662b129930a_-menuitem-_copy-link-to-clipboard>.menu-iconic-left>.menu-iconic-icon {
+            visibility: hidden;
+        }
+
+        #_74145f27-f039-47ce-a470-a662b129930a_-menuitem-_copy-link-to-clipboard {
+            background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik00IDJDMi44OTUgMiAyIDIuODk1IDIgNEwyIDE3QzIgMTcuNTUyIDIuNDQ4IDE4IDMgMThDMy41NTIgMTggNCAxNy41NTIgNCAxN0w0IDRMMTcgNEMxNy41NTIgNCAxOCAzLjU1MiAxOCAzQzE4IDIuNDQ4IDE3LjU1MiAyIDE3IDJMNCAyIHogTSA4IDZDNi44OTUgNiA2IDYuODk1IDYgOEw2IDIwQzYgMjEuMTA1IDYuODk1IDIyIDggMjJMMjAgMjJDMjEuMTA1IDIyIDIyIDIxLjEwNSAyMiAyMEwyMiA4QzIyIDYuODk1IDIxLjEwNSA2IDIwIDZMOCA2IHogTSA4IDhMMjAgOEwyMCAyMEw4IDIwTDggOCB6Ii8+PC9zdmc+);
+        }
+
         /** Distill Web Monitor */
         #_7a73dc4b-1b38-40e7-ac56-7d356dd4af34_-browser-action,
         #_7a73dc4b-1b38-40e7-ac56-7d356dd4af34_-BAP {
@@ -7428,13 +7534,15 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /* Search By Image */
-        #contentAreaContextMenu > [id^="_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_"] > .menu-iconic-left > .menu-iconic-icon {
+        #contentAreaContextMenu>[id^="_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_"]>.menu-iconic-left>.menu-iconic-icon {
             visibility: hidden;
         }
-        #contentAreaContextMenu > [id^="_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_"] {
+
+        #contentAreaContextMenu>[id^="_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_"] {
             background-image: url("./images/extensions/searchbyimage/camera.svg");
         }
-        #_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_-BAP > .toolbarbutton-badge-stack > .toolbarbutton-icon{
+
+        #_2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c_-BAP>.toolbarbutton-badge-stack>.toolbarbutton-icon {
             list-style-image: url("./images/extensions/searchbyimage/camera.svg") !important;
         }
     }
@@ -7445,4 +7553,3 @@ by underlining them (requires urlbarMods.uc.js) */
         display: none;
     }
 }
-
