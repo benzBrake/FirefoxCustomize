@@ -127,6 +127,7 @@
 }
 #urlbar-input-container #location-bar {
     background-color: transparent;
+    -moz-box-ordinal-group: 10 !important;
 }
 #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-icon, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-text, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-badge-stack {
     background-color: transparent;
