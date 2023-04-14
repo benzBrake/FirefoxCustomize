@@ -702,7 +702,7 @@
                     Cu.evalInSandbox("function setLocale(locale) { this.locale = locale }; function css(code){ this._css.push(code+'') };\nfunction lang(obj) { Object.assign(this._lang, obj); }" + data, sandbox, "1.8");
                 } catch (e) {
                     let line = e.lineNumber - lineFinder.lineNumber - 1;
-                    this.alert(e + $L("check-config-file-with-line", line), null, function () {
+                    CopyCatUtils.alert(e + $L("check-config-file-with-line", line), null, function () {
                         this.edit(CopyCatUtils.FILE, line);
                     });
                     return console.error(e);
@@ -1265,6 +1265,7 @@
 }
 .CopyCat-View toolbaritem.toolbaritem-combined-buttons.showFirstText > .subviewbutton:first-child {
     -moz-box-flex: 1 !important;
+    flex: 1 !important;
 }
 .CopyCat-View .subviewbutton:not(.noIcon) > .toolbarbutton-icon {
     display: -moz-inline-box !important;
@@ -1304,7 +1305,7 @@
 }
 .CopyCat-Group .menuitem-iconic,
 .CopyCat-Popup menugroup .menuitem-iconic {
-    padding-block: 0.5em;
+    padding-block: 4px;
 }
 
 .CopyCat-Group > .menuitem-iconic:first-child,
@@ -1324,11 +1325,13 @@
 .CopyCat-Group.showFirstText > :is(menu, menuitem):first-child,
 .CopyCat-Group.showText > :is(menu, menuitem) {
     -moz-box-flex: 1;
+    flex: 1;
     padding-inline-end: .5em;
 }
 .CopyCat-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) {
     padding-left: 0;
     -moz-box-flex: 0;
+    flex: 0;
 }
 .CopyCat-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) > .menu-iconic-left {
     margin-inline-start: 8px;
@@ -1354,6 +1357,7 @@
 }
 .CopyCat-Popup menu > label {
     -moz-box-flex: 1 !important;
+    flex: 1 !important;
 }
 .CopyCat-Popup menu > label.menu-text ~ label {
     display: none;

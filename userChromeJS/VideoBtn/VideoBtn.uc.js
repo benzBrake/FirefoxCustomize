@@ -2,10 +2,11 @@
 // @name            VideoBtn.uc.js
 // @description     VideoBtn 视频一键下载
 // @author          Ryan
-// @version         0.1.3
+// @version         0.1.4
 // @compatibility   Firefox 78
 // @shutdown        window.VideoBtn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.1.4 Bug 1820534 - Move front-end to modern flexbox
 // @version         0.1.3 忘记修复了什么
 // @version         0.1.2 修复新窗口菜单样式异常
 // @version         0.1.1 修复新窗口报错，强制 Cookies 保存到临时路径
@@ -954,7 +955,7 @@
         display: none;
     }
     .VideoBtn-Group > .menuitem-iconic {
-        padding-block: 0.5em;
+        padding-block: 4px;
     }
     
     .VideoBtn-Group > .menuitem-iconic:first-child {
@@ -969,11 +970,13 @@
     .VideoBtn-Group.showFirstText > :is(menu, menuitem):first-child,
     .VideoBtn-Group.showText > :is(menu, menuitem) {
         -moz-box-flex: 1;
+        flex: 1;
         padding-inline-end: .5em;
     }
     .VideoBtn-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) {
         padding-left: 0;
         -moz-box-flex: 0;
+        flex: 0;
     }
     .VideoBtn-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) > .menu-iconic-left {
         margin-inline-start: 8px;
