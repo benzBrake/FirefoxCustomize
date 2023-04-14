@@ -101,6 +101,7 @@
     --arrowpanel-menuitem-padding-inline: 4px;
     --arrowpanel-menuitem-margin-block: 0;
     --arrowpanel-menuitem-margin-inline: 4px;
+    --panel-subview-body-padding: 4px 0;
 }
 
 /* 触控模式 */

@@ -122,6 +122,7 @@ url("about:downloads") {
         margin-bottom: 0px !important;
         background-color: transparent !important;
         list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KPC9zdmc+) !important;
+        order: 1 !important;
         -moz-box-ordinal-group: 1 !important;
     }
 
@@ -144,6 +145,7 @@ url("about:downloads") {
         margin-bottom: 0px !important;
         background-color: transparent !important;
         list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
+        order: 3 !important;
         -moz-box-ordinal-group: 3 !important;
     }
 
