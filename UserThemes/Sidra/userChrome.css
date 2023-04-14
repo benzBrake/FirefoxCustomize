@@ -28,6 +28,7 @@ url("about:downloads") {
 
     :root[sidra-controlstyle="osx"] .titlebar-buttonbox-container {
         -moz-box-align: center;
+        align-items: center;
     }
 
     :root[sidra-controlstyle="osx"] .titlebar-button {
@@ -90,7 +91,7 @@ url("about:downloads") {
         background-color: transparent !important;
         list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
         grid-column: 1 !important;
-        order: 1 !important;
+        order: 2 !important;
         -moz-box-ordinal-group: 2 !important;
     }
 
@@ -161,24 +162,29 @@ url("about:downloads") {
 
         .titlebar-buttonbox-container,
         #toolbar-menubar>.titlebar-buttonbox-container {
+            order: 0 !important;
             -moz-box-ordinal-group: 0 !important;
         }
 
         #toolbar-menubar>spacer,
         .titlebar-spacer[type="pre-tabs"] {
+            order: 1 !important;
             -moz-box-ordinal-group: 1 !important;
         }
 
         #toolbar-menubar>* {
+            order: 2 !important;
             -moz-box-ordinal-group: 2 !important;
         }
 
         #toolbar-menubar {
+            order: 0 !important;
             -moz-box-ordinal-group: 0 !important;
         }
 
         .titlebar-min,
         .uc-titlebar-min {
+            order: 2 !important;
             -moz-box-ordinal-group: 2 !important;
         }
 
@@ -186,11 +192,13 @@ url("about:downloads") {
         .uc-titlebar-max,
         .titlebar-restore,
         .uc-titlebar-restore {
+            order: 3 !important;
             -moz-box-ordinal-group: 3 !important;
         }
 
         .titlebar-close,
         .uc-titlebar-close {
+            order: 1 !important;
             -moz-box-ordinal-group: 1 !important;
         }
 
@@ -299,6 +307,7 @@ url("about:downloads") {
         /** 主菜单按钮横向居中 */
         #toolbar-menubar #menubar-items {
             -moz-box-pack: center !important;
+            align-items: center;
         }
 
         #TabsToolbar #tabbrowser-tabs {
@@ -871,14 +880,17 @@ url("about:downloads") {
 
             #navigator-toolbox>#titlebar {
                 -moz-box-orient: vertical !important;
+                flex-direction: column;
                 display: block;
             }
 
             #toolbar-menubar {
+                order: 1;
                 -moz-box-ordinal-group: 1;
             }
 
             #TabsToolbar {
+                order: 2;
                 -moz-box-ordinal-group: 2;
                 width: 100%;
                 max-height: unset;
@@ -1029,10 +1041,12 @@ url("about:downloads") {
                 color: var(--toolbar-color);
                 height: 100%;
                 -moz-box-align: center;
+                align-items: center;
             }
 
             #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #titlebar {
                 -moz-box-orient: horizontal !important;
+                flex-direction: row;
             }
 
             #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar:not([inactive="true"])+#TabsToolbar>.titlebar-buttonbox-container {
@@ -1066,6 +1080,7 @@ url("about:downloads") {
 
             #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #main-menubar {
                 -moz-box-flex: 1 !important;
+                flex: 1 !important;
             }
 
             #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar #main-menubar>menu {
@@ -1102,12 +1117,14 @@ url("about:downloads") {
             :root[tabsintitlebar][sizemode="normal"] #TabsToolbar>.titlebar-buttonbox-container {
                 margin-top: 7px;
                 -moz-box-align: center;
+                align-items: center;
             }
         }
 
         /** 主菜单占满高度 */
         #main-menubar {
             -moz-box-flex: 1 !important;
+            flex: 1 !important;
             min-height: var(--tab-min-height);
         }
 
@@ -1123,10 +1140,12 @@ url("about:downloads") {
         /** 标签栏和菜单栏同一行 */
         :root:not([tabposition="2"]) #titlebar {
             -moz-box-orient: horizontal !important;
+            flex-direction: row;
         }
 
         /* 菜单栏显示在标签栏右边 */
         #toolbar-menubar {
+            order: 2;
             -moz-box-ordinal-group: 2;
         }
 
@@ -1223,6 +1242,7 @@ url("about:downloads") {
             min-width: 10.5px !important;
             height: 10.5px !important;
             -moz-box-align: end !important;
+            align-items: end !important;
             font-size: 9px !important;
             font-weight: var(--font-weight-bold, 600) !important;
             line-height: 10px !important;
@@ -1316,6 +1336,7 @@ url("about:downloads") {
 
         :is(toolbar, .customization-palette) :not(toolbarpaletteitem)>.toolbaritem-combined-buttons.chromeclass-toolbar-additional {
             -moz-box-align: stretch !important;
+            align-items: stretch !important;
         }
 
         toolbar .toolbaritem-combined-buttons.chromeclass-toolbar-additional:not(:hover)>separator {
@@ -1538,6 +1559,7 @@ url("about:downloads") {
             min-height: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
             min-width: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
             -moz-box-align: center !important;
+            align-items: center;
         }
 
         #PersonalToolbar .toolbarbutton-1,
@@ -1624,6 +1646,7 @@ url("about:downloads") {
         /** 修正提示位置 */
         #tab-notification-deck,
         #PersonalToolbar~div {
+            order: 4;
             -moz-box-ordinal-group: 4;
         }
     }
@@ -1670,9 +1693,11 @@ url("about:downloads") {
     @supports -moz-bool-pref("userChromeJS.sidra.placesToolbar.alignCenter") {
         #PlacesToolbarItems {
             -moz-box-pack: start;
+            justify-content: start;
         }
         #PlacesToolbarItems[chevronCollapsed="true"] {
             -moz-box-pack: center;
+            justify-content: center;
         }
     }
 
@@ -1786,7 +1811,9 @@ url("about:downloads") {
 
         .widget-overflow-list #searchbar .search-go-container {
             -moz-box-pack: center !important;
+            justify-content: center;
             -moz-box-align: center !important;
+            align-items: center;
         }
 
         .widget-overflow-list #searchbar .search-go-button {
@@ -1820,6 +1847,7 @@ url("about:downloads") {
             position: relative !important;
             box-shadow: none !important;
             -moz-box-align: center;
+            align-items: center;
             border-radius: var(--toolbarbutton-border-radius) !important;
             border: none !important;
         }
@@ -1951,6 +1979,7 @@ url("about:downloads") {
 
         .urlbar-page-action {
             -moz-box-pack: center !important;
+            align-items: center;
         }
 
         :not(.urlbar-page-action)>.urlbar-icon:not([disabled]):is(:hover, :focus-visible, [open]),
@@ -2011,6 +2040,7 @@ url("about:downloads") {
 
         #urlbar[usertyping]:is([focused], [open])>#urlbar-input-container>#urlbar-go-button {
             display: -moz-inline-box !important;
+            order: 2 !important;
             -moz-box-ordinal-group: 2 !important;
             margin-inline-end: calc(var(--urlbar-container-padding) + 1px) !important;
         }
@@ -2064,6 +2094,7 @@ url("about:downloads") {
         /* iffy modification to center urlbar buttons not contained in page action button box */
         #urlbar-input-container {
             -moz-box-align: center;
+            align-items: center;
         }
 
         #plugins-notification-icon {
@@ -2498,6 +2529,7 @@ by underlining them (requires urlbarMods.uc.js) */
             padding: 2px 4px !important;
             height: 100% !important;
             -moz-box-align: center;
+            align-items: center;
             z-index: 11;
         }
     }
@@ -2967,6 +2999,7 @@ by underlining them (requires urlbarMods.uc.js) */
         /*IDM、NDM 排在最后面*/
         [id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"],
         [id*="_64d3e6d6-8a71-4443-b60b-a9b12ff1ec14_-menuitem-"] {
+            order: 99 !important;
             -moz-box-ordinal-group: 99 !important;
         }
 
@@ -3041,6 +3074,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         .syncNowBtn {
             visibility: visible;
+            order: 1;
             -moz-box-ordinal-group: 1;
         }
 
@@ -3389,6 +3423,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         .browserContainer>findbar {
             -moz-box-ordinal-group: 0;
+            order: 0;
             position: absolute !important;
             display: flex !important;
             visibility: visible !important;
@@ -3480,6 +3515,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         .findbar-container {
             -moz-box-orient: horizontal !important;
+            flex-direction: row;
             height: var(--findbar-height, 22px) !important;
             min-width: revert !important;
             width: 100% !important;
@@ -3506,6 +3542,7 @@ by underlining them (requires urlbarMods.uc.js) */
             height: var(--findbar-height, 22px) !important;
             width: var(--findbar-height, 22px) !important;
             border-radius: var(--toolbarbutton-border-radius) !important;
+            order: 2 !important;
             -moz-box-ordinal-group: 2 !important;
         }
 
@@ -3531,6 +3568,7 @@ by underlining them (requires urlbarMods.uc.js) */
             border-radius: var(--toolbarbutton-border-radius) !important;
             overflow: hidden !important;
             -moz-box-flex: 1 !important;
+            flex: 1 !important;
             background-color: var(--toolbar-field-background-color);
             color: var(--lwt-toolbar-field-color, var(--toolbar-color)) !important;
             margin-right: 8px;
@@ -3545,6 +3583,7 @@ by underlining them (requires urlbarMods.uc.js) */
             height: var(--findbar-height, 22px) !important;
             padding-inline: 6px !important;
             -moz-box-flex: 1 !important;
+            flex: 1 !important;
         }
 
         .findbar-textbox input>.anonymous-div {
