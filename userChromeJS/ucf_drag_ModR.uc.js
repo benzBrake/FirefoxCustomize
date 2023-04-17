@@ -20,14 +20,14 @@
                     dir: "U",
                     name: "打开链接（新标签，前台）",
                     cmd(val) {
-                        window.openUILinkIn(val, "tab", this.opts);
+                        window.openTrustedLinkIn(val, "tab", this.opts);
                     }
                 },
                 {
                     dir: "R",
                     name: "打开链接（新标签，后台）",
                     cmd(val) {
-                        window.openUILinkIn(val, "tabshifted", this.opts);
+                        window.openTrustedLinkIn(val, "tabshifted", this.opts);
                     }
                 },
                 {
@@ -48,7 +48,7 @@
                     dir: "D",
                     name: "打开链接（当前标签）",
                     cmd(val) {
-                        window.openUILinkIn(val, "current", this.opts);
+                        window.openTrustedLinkIn(val, "current", this.opts);
                     }
                 },
                 {
@@ -58,7 +58,7 @@
                         if (!val) return;
                         var TERM = "https://www.similarsites.com/site/" + new URL(val).hostname.replace(/^www./, '');
                         if (val)
-                            window.openUILinkIn(TERM, "tab", this.opts);
+                            window.openTrustedLinkIn(TERM, "tab", this.opts);
                     }
                 },
                 {
@@ -69,7 +69,7 @@
                         if (!val) return;
                         var TERM = "https://web.archive.org/web/*/" + new URL(val).hostname.replace(/^www./, '');
                         if (val)
-                            window.openUILinkIn(TERM, "tab", this.opts);
+                            window.openTrustedLinkIn(TERM, "tab", this.opts);
                     }
                 },
             ],
@@ -145,7 +145,7 @@
                     cmd(val) {
                         var TERM = "https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD/" + val;
                         if (val)
-                            window.openUILinkIn(TERM, "tab", this.opts);
+                            window.openTrustedLinkIn(TERM, "tab", this.opts);
                     }
                 },
                 {
@@ -155,7 +155,7 @@
                     cmd(val) {
                         var TERM = "https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD/" + val;
                         if (val)
-                            window.openUILinkIn(TERM, "tabshifted", this.opts);
+                            window.openTrustedLinkIn(TERM, "tabshifted", this.opts);
                     }
                 }
             ],
@@ -164,14 +164,14 @@
                     dir: "U",
                     name: "打开图像（新标签，前台）",
                     cmd() {
-                        window.openUILinkIn(this.val, "tab", this.opts);
+                        window.openTrustedLinkIn(this.val, "tab", this.opts);
                     }
                 },
                 {
                     dir: "R",
                     name: "打开图像（新标签，后台）",
                     cmd() {
-                        window.openUILinkIn(this.val, "tabshifted", this.opts);
+                        window.openTrustedLinkIn(this.val, "tabshifted", this.opts);
                     }
                 },
                 {
@@ -194,7 +194,7 @@
                     cmd(val) {
                         var TERM = "https://lens.google.com/uploadbyurl?url=" + val;
                         if (val)
-                            window.openUILinkIn(TERM, "tab", this.opts);
+                            window.openTrustedLinkIn(TERM, "tab", this.opts);
                     }
                 },
                 {
@@ -204,7 +204,7 @@
                     cmd(val) {
                         var TERM = "https://yandex.com/images/search?source=collections&rpt=imageview&url=" + val;
                         if (val)
-                            window.openUILinkIn(TERM, "tabshifted", this.opts);
+                            window.openTrustedLinkIn(TERM, "tabshifted", this.opts);
                     }
                 },
             ]
@@ -213,7 +213,7 @@
             val || (val = this.val);
             var engine = this.getEngineByName(engine);
             var submission = engine.getSubmission(val, null);
-            window.openUILinkIn(submission.uri.spec, where, { postData: submission.postData, ...this.opts });
+            window.openTrustedLinkIn(submission.uri.spec, where, { postData: submission.postData, ...this.opts });
             if (addToHistory) {
                 this.updateSearchbarHistory(val);
             }
