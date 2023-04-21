@@ -1226,6 +1226,7 @@ url("about:downloads") {
             margin-inline: 2px !important;
         }
 
+        /** 按钮 Hover 动画速度 */
         toolbarbutton,
         .subviewbutton,
         stack,
@@ -1237,17 +1238,16 @@ url("about:downloads") {
         /* toolbar button badges */
         :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):is(:not([attention]), [attention="false"])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
             background-color: var(--toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
-            color: var(--badge-color, white) !important;
+            color: var(--toolbar-color, white) !important;
             box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026, 0 1px 3px #1e1e2033 !important;
             min-width: 10.5px !important;
             height: 10.5px !important;
-            -moz-box-align: end !important;
             align-items: end !important;
             font-size: 9px !important;
             font-weight: var(--font-weight-bold, 600) !important;
             line-height: 10px !important;
             filter: none !important;
-            margin: -4px -4px 0 -4px !important;
+            margin: -6px -6px 0 -6px !important;
         }
 
         :is(.customization-target, .widget-overflow-list) #downloads-button[attention]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
@@ -1276,8 +1276,8 @@ url("about:downloads") {
         }
 
         :is(.customization-target, .widget-overflow-list) #downloads-button[attention="severe"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--warning-icon-detail) !important;
-            fill: var(--warning-icon-background) !important;
+            background-color: var(--warning-icon-detail, hsl(354, 69%, 30%)) !important;
+            fill: var(--warning-icon-background, hsl(358, 86%, 63%)) !important;
             border-radius: 50% !important;
         }
 
@@ -1308,6 +1308,11 @@ url("about:downloads") {
 
         .widget-overflow-list .toolbarbutton-1>.toolbarbutton-text {
             padding-inline-start: var(--icon-gap, 8px) !important;
+        }
+
+        .widget-overflow-list .toolbaritem-combined-buttons .toolbarbutton-1:not([hidden]) {
+            justify-items: center !important;
+            display: flex !important;
         }
 
         .widget-overflow-list .toolbaritem-combined-buttons .toolbarbutton-1>.toolbarbutton-text {
@@ -1652,10 +1657,6 @@ url("about:downloads") {
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.navbar.unifiedExtensionsCompact") {
-        #unified-extensions-button {
-            list-style-image: url("chrome://global/skin/icons/chevron.svg") !important;
-        }
-
         #unified-extensions-view>.panel-subview-body {
             padding: var(--panel-subview-body-padding) !important;
             margin-bottom: 0;
@@ -1670,7 +1671,7 @@ url("about:downloads") {
             padding-block: 0;
         }
 
-        #unified-extensions-view .toolbaritem-combined-buttons > :is(.unified-extensions-item-action-button.subviewbutton,.unified-extensions-item-menu-button.subviewbutton) {
+        #unified-extensions-view .toolbaritem-combined-buttons> :is(.unified-extensions-item-action-button.subviewbutton, .unified-extensions-item-menu-button.subviewbutton) {
             padding-block: var(--arrowpanel-menuitem-padding-block);
         }
 
@@ -1695,6 +1696,7 @@ url("about:downloads") {
             -moz-box-pack: start;
             justify-content: start;
         }
+
         #PlacesToolbarItems[chevronCollapsed="true"] {
             -moz-box-pack: center;
             justify-content: center;
@@ -2816,6 +2818,7 @@ by underlining them (requires urlbarMods.uc.js) */
             appearance: none;
             --windows-panel-box-shadow: unset;
             --menuitem-padding: var(--arrowpanel-menuitem-padding-block);
+            --panel-shadow-margin: 0; /* Fx 113 */
         }
 
         :is(#history-menu, #bookmarksMenu) menupopup::part(content),
@@ -3042,16 +3045,6 @@ by underlining them (requires urlbarMods.uc.js) */
             height: var(--icon-width, 16px);
         }
 
-        .subviewbutton,
-        .toolbaritem-combined-buttons,
-        :is(menu, menuitem) {
-            -moz-context-properties: fill, fill-opacity;
-            fill: currentColor;
-            background-repeat: no-repeat;
-            background-position: var(--icon-gap, 8px) 50%;
-            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
-        }
-
         #PlacesToolbar menuitem,
         #PlacesToolbar menu,
         .subview-subheader,
@@ -3179,7 +3172,7 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #sidebar-switcher-target {
             min-height: 28px !important;
-            min-width: 28px !important;
+            /* min-width: 28px !important; */
             padding-inline: 6px !important;
         }
 
@@ -3813,8 +3806,15 @@ by underlining them (requires urlbarMods.uc.js) */
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.icon.complementary") {
-
-
+        .subviewbutton,
+        .toolbaritem-combined-buttons,
+        :is(menu, menuitem) {
+            -moz-context-properties: fill, fill-opacity;
+            fill: currentColor;
+            background-repeat: no-repeat;
+            background-position: var(--icon-gap, 8px) 50%;
+            background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+        }
 
         #appMenu-fxa-status2.toolbaritem-combined-buttons {
             background-image: url("./images/skin/profile.svg");
@@ -4425,7 +4425,7 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         /** Floorp */
-        #context-sendlinktodevice[hidden="true"] ~ #context-sep-sendlinktodevice {
+        #context-sendlinktodevice[hidden="true"]~#context-sep-sendlinktodevice {
             display: none;
         }
 
@@ -7269,11 +7269,11 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/autofill/autofill.svg");
         }
 
-        #contentAreaContextMenu > [id^="_143f479b-4cb2-4d8c-8c31-ae8653bc6054_"] .menu-iconic-icon {
+        #contentAreaContextMenu>[id^="_143f479b-4cb2-4d8c-8c31-ae8653bc6054_"] .menu-iconic-icon {
             visibility: hidden;
         }
 
-        #contentAreaContextMenu > [id^="_143f479b-4cb2-4d8c-8c31-ae8653bc6054_"] {
+        #contentAreaContextMenu>[id^="_143f479b-4cb2-4d8c-8c31-ae8653bc6054_"] {
             background-image: url("./images/extensions/autofill/autofill.svg");
         }
 
