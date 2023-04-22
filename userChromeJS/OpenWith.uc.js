@@ -13,12 +13,12 @@
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function () {
 
-    const MENU_GROUP = false; // 横排菜单
+    const MENU_GROUP = true; // 横排菜单
 
-    //是否使用二级菜单
+    //是否使用二级菜单，横排菜单优先级最高，如果关闭横排菜单则根据 && 后面的 true 来确定是否使用二级菜单
     const USE_MENU_AREA = !MENU_GROUP && true; //页面
-    const USE_MENU_TAB = !MENU_GROUP && true; //标签
-    const USE_MENU_PLACE = !MENU_GROUP && true; //书签
+    const USE_MENU_TAB = !MENU_GROUP && false; //标签
+    const USE_MENU_PLACE = !MENU_GROUP && false; //书签
 
     function getFirefoxPath() { //firefox.exe所在路径
         return OS.Constants.Path.libDir;
