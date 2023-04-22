@@ -11,15 +11,14 @@
 // @note           适配Firefox57+
 // @note           2022.05.18 Fix and Test on Firefox 100，增加横排菜单
 // ==/UserScript==
-location.href.startsWith("chrome://browser/content/browser.x") && (function() {
+location.href.startsWith("chrome://browser/content/browser.x") && (function () {
 
-    const MENU_NAME = "用其它浏览器打开";
-    const MENU_GROUP = true; // 横排菜单
+    const MENU_GROUP = false; // 横排菜单
 
     //是否使用二级菜单
     const USE_MENU_AREA = !MENU_GROUP && true; //页面
-    const USE_MENU_TAB = !MENU_GROUP && false; //标签
-    const USE_MENU_PLACE = !MENU_GROUP && false; //书签
+    const USE_MENU_TAB = !MENU_GROUP && true; //标签
+    const USE_MENU_PLACE = !MENU_GROUP && true; //书签
 
     function getFirefoxPath() { //firefox.exe所在路径
         return OS.Constants.Path.libDir;
@@ -30,6 +29,33 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
         var index = path.indexOf(":");
         return path.substring(0, index + 1);
     }
+
+    function getMenuName(...args) {
+        const menuObj = {
+            'open-with-other-browser': '使用其他浏览器打开',
+            'open-url-with-browser': '使用[%s]浏览打开%s',
+            'all-browsers': '所有浏览器',
+            'tab': '标签',
+            'bookmark': '书签',
+            'link': '链接',
+            'page': '网页'
+        }
+        if (!args.length) {
+            return "";
+        }
+        let id = args.shift(), text;
+        if (Object.keys(menuObj).includes(id)) {
+            text = menuObj[id];
+        } else {
+            text = capitalizeFirstLetter(camelize(id));
+        }
+
+        while(args.length && text.indexOf("%s") !== -1) {
+            text = text.replace("%s", args.shift());
+        }
+        return text;
+    }
+
     //修改内容后请将脚本改名来保证加载的是最新，或使用无缓存的userChrome.js
     var browsers = {
         IE: {
@@ -72,7 +98,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
 
         all: {
             enable: true,
-            name: "所有浏览器",
+            name: getMenuName("all-browsers"),
             image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAACTklEQVRIiaVVLVDcUBBeQYfL7rsZRMUJZMWJCgSiAoGsqEAgEBUVFQjECUQFYid5++2cQlRWICqQCGQFogKBQCAqEAgEAoGoQCBS0SQNudxdju7Mm4l4+b5937c/RAtEHxgG1U0iIjFb4zTdpfF4dRGMyRiPV9nsMrh/C+7nfWAo7u8FOBMgZ7Mndj8S1cGLCfrAkIgomJ0IcMbAbfGdC5CL2RWphpcRqAYxWwsxZgzcVqDFYbMnBu6SGEek2uuMG1Q3GThls8cmaP0kMTpnmQqQv1J91wq2orpCRNQDDsT9PolxxMDdLOCaPA9sdslpujs92xgzIqIK1OyqE3gpE3AjqgMxO+Ys077q67rGS2L2IMAhq66XPzBwKu73HV9xFdz3GNiSGPfZ7CK47xERUT/GjcKsxyTG0SKZC5AHs5PnGf+VXMw+VfJUhrn/DDFmxUsO5xksQM6q6zOrhc0u6oY1KumtmP2aRTC3/hm4qZ5b6lYLUR1MqygGbmeCTxAUc6YZIU132uRis6cE2J4n0WX5Qw84mHZPVAfl/GmSFGPjSwJslz1VRQJ8bbT9ViuD6tIzv6aciW7upenHRk0ft+H3zD53KdsJ00V1kJj9rl06a5On7tWcplub9KEYVgLk7H7UzLxLPwiQJ8B1e9mq9spRXCfoA8PG62Z3dZrutPpHRLScZR/K7URExMDWIuBzCUrQ4H5efHcb1/8q8LHT2uzHuJHEOEqA60UIBPgxF7wMUR2I+/eOmf/H0h+PV4vtdlqXrFr6Me4vu7+ZBfEHTjSaAJMnzh4AAAAASUVORK5CYII="
         }
     };
@@ -88,30 +114,16 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
 
     window.OpenWithManager = {
         useMenu: false,
-        getTypeDesc: function(type) {
-            switch (type) {
-                case "page":
-                    return "本页";
-                case "link":
-                    return "链接";
-                    //case "tab": return "标签";
-                    //case "bm": return "书签";
-            }
-            return "";
-        },
-        buildMenuName: function(label, type) {
-            return "用 " + label + " 打开" + this.getTypeDesc(type);
-        },
-        attachNode: function(anchorNode, node) {
+        attachNode: function (anchorNode, node) {
             if (this.useMenu) {
                 anchorNode.appendChild(node);
             } else {
                 anchorNode.parentNode.insertBefore(node, anchorNode);
             }
         },
-        createMenuPopup: function(anchorNode, type) {
+        createMenuPopup: function (anchorNode, type) {
             let menu = document.createXULElement("menu");
-            menu.setAttribute("label", MENU_NAME);
+            menu.setAttribute("label", getMenuName("open-with-other-browser"));
             menu.setAttribute("id", "openwith-menu-" + type);
             menu.setAttribute("class", "menu-iconic openwith-menu open-" + type);
             menu.setAttribute("image", browsers.all.image);
@@ -122,10 +134,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             menu.appendChild(popup);
             return popup;
         },
-        createMenuItem: function(anchorNode, id, browser, type) {
+        createMenuItem: function (anchorNode, id, browser, type) {
             let menuitem = document.createXULElement("menuitem");
             menuitem.id = "openwith-m-" + type + "-" + id;
-            menuitem.setAttribute("label", this.buildMenuName(browser.name, type));
+            menuitem.setAttribute("label", getMenuName("open-url-with-browser", browser.name, getMenuName(type)));
             menuitem.setAttribute("oncommand", "OpenWithManager.openWithOtherBrowser(this,'" + id + "','" + type + "')");
             menuitem.setAttribute("class", "menuitem-iconic openwith-menuitem open-" + type);
             if (browser.image) {
@@ -138,7 +150,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             }
 
         },
-        createBrowserMenu: function(anchorNode, type) {
+        createBrowserMenu: function (anchorNode, type) {
             if (MENU_GROUP) {
                 let newAnchorNode = document.createXULElement('menugroup');
                 newAnchorNode.setAttribute('id', 'OpenWithManager-Group')
@@ -157,7 +169,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             }
         },
         //contentAreaContextMenu
-        initContentAreaMenu: function() {
+        initContentAreaMenu: function () {
             var inspos = $("inspect-separator");
             let sep = document.createXULElement("menuseparator");
             sep.setAttribute("class", "openwith-menuitem");
@@ -166,7 +178,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
 
             var anchorNode;
             if (this.useMenu) {
-                anchorNode = this.createMenuPopup(inspos, "area");
+                anchorNode = this.createMenuPopup(inspos, "bm");
             } else {
                 anchorNode = inspos;
             }
@@ -184,7 +196,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             this.createBrowserMenu(anchorNode, "page");
         },
         //tabContextMenu
-        initTabContextMenu: function() {
+        initTabContextMenu: function () {
 
             var inspos = $("context_closeTabOptions");
             let sep = document.createXULElement("menuseparator");
@@ -203,31 +215,30 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
 
         },
         //placesContext
-        initPlacesContextMenu: function() {
+        initPlacesContextMenu: function () {
 
             var inspos = $("placesContext_openSeparator");
             //let sep = document.createXULElement("menuseparator");
             //inspos.parentNode.insertBefore(sep, inspos);
 
-            this.useMenu = USE_MENU_PLACE;
             var anchorNode;
-            if (this.useMenu) {
-                anchorNode = this.createMenuPopup(inspos, "place");
+            if (USE_MENU_PLACE) {
+                anchorNode = this.createMenuPopup(inspos, "bookmark");
             } else {
                 anchorNode = inspos;
             }
-            this.createBrowserMenu(anchorNode, "place");
+            this.createBrowserMenu(anchorNode, "bookmark");
 
             //文件夹显示
             inspos.parentNode.addEventListener("popupshowing", this, false);
         },
-        handleEvent: function(event) {
+        handleEvent: function (event) {
             if (event.target.id == "placesContext") {
                 var isFloder = false;
                 try {
                     let selectedNode = PlacesUIUtils.getViewForNode(event.target.triggerNode).selectedNode;
                     isFloder = !selectedNode || selectedNode.hasChildren;
-                } catch (e) {}
+                } catch (e) { }
                 let menus = $("placesContext").querySelectorAll(".open-place");
                 for (let menu of menus) {
                     if (isFloder) {
@@ -258,7 +269,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             }
 
         },
-        init: function() {
+        init: function () {
 
             //contentAreaContextMenu
             this.initContentAreaMenu();
@@ -272,7 +283,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             this.setStyle();
 
         },
-        destroy: function() {
+        destroy: function () {
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             $("placesContext_openSeparator").removeEventListener("popupshowing", this, false);
 
@@ -290,21 +301,45 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
             this.STYLE = {
                 url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
                 @-moz-document url('chrome://browser/content/browser.xhtml') {
+                    #OpenWithManager-Group > menuitem {
+                        -moz-box-flex: 1;
+                        -moz-box-pack: center;
+                        -moz-box-align: center;
+                        flex-grow: 1;
+                        justify-content: center;
+                        align-items: center;
+                        padding-block: 4px;
+                        padding-inline-start: 1em;
+                    }
                     #OpenWithManager-Group > menuitem:not(:first-child) > .menu-iconic-text,
                     #OpenWithManager-Group > menuitem:not(:first-child) > .menu-accel-container {
                         display: none;
                     }
                     #OpenWithManager-Group > menuitem:first-child {
-                        -moz-box-flex: 1
+                        -moz-box-flex: 1;
+                        flex-grow: 1;
+                    }
+                    #OpenWithManager-Group > menuitem:not(:first-child) {
+                        padding-left: 8px;
+                        padding-right: 8px;
+                        -moz-box-flex: 0;
+                        flex-grow: 0;
+                        flex-shrink: 0;
+                        margin-inline-start: 0px;
+                        margin-inline-end: 0px;
+                    }
+                    #OpenWithManager-Group > menuitem:not(:first-child) > .menu-iconic-left {
+                        margin-inline-start: 0 !important;
+                        margin-inline-end: 0 !important;
                     }
                 }
               `)),
-                type: 1
+                type: 0
             }
             this.sss = Components.classes["@mozilla.org/content/style-sheet-service;1"].getService(Components.interfaces.nsIStyleSheetService);
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
         },
-        openWithBrowser: function(url, path) {
+        openWithBrowser: function (url, path) {
             if (!path) {
                 alert("浏览器路径未设置 ");
                 return;
@@ -327,7 +362,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
                 p.run(false, [url], 1);
             }
         },
-        openWithOtherBrowser: function(obj, id, type) {
+        openWithOtherBrowser: function (obj, id, type) {
             var url;
             switch (type) {
                 case "page":
@@ -364,5 +399,16 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function() {
         }
 
     };
+
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    function camelize(str) {
+        return str.replace(/[-_](.)/g, function (match, group) {
+            return group.toUpperCase();
+        });
+    }
+
     OpenWithManager.init();
 })();
