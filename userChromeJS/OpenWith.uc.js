@@ -50,7 +50,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             text = capitalizeFirstLetter(camelize(id));
         }
 
-        while(args.length && text.indexOf("%s") !== -1) {
+        while (args.length && text.indexOf("%s") !== -1) {
             text = text.replace("%s", args.shift());
         }
         return text;
@@ -138,6 +138,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             let menuitem = document.createXULElement("menuitem");
             menuitem.id = "openwith-m-" + type + "-" + id;
             menuitem.setAttribute("label", getMenuName("open-url-with-browser", browser.name, getMenuName(type)));
+            if (MENU_GROUP)
+                menuitem.setAttribute("tooltiptext", getMenuName("open-url-with-browser", browser.name, getMenuName(type)));
             menuitem.setAttribute("oncommand", "OpenWithManager.openWithOtherBrowser(this,'" + id + "','" + type + "')");
             menuitem.setAttribute("class", "menuitem-iconic openwith-menuitem open-" + type);
             if (browser.image) {
