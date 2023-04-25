@@ -59,7 +59,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 matches: ["*://*/*", "file:///*", "about:*", "view-source:*"],
             };
             ChromeUtils.registerWindowActor("AddMenu", actorParams);
-            this.add
         } catch (e) { console.error(e); }
 
         this.AddMenuParent = class extends JSWindowActorParent {
