@@ -77,7 +77,6 @@
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton {
                 -moz-box-pack: start;
-                justify-content: flex-start;
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton.webextension-browser-action {
                 margin: var(--arrowpanel-menuitem-margin);
@@ -88,7 +87,7 @@
             
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action  {
                 margin: var(--arrowpanel-menuitem-margin);
-                flex-grow: 1;
+                flex: 1;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action:hover {
                 background-color: var(--panel-item-hover-bgcolor) !important;
@@ -115,17 +114,14 @@
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
             #unified-extensions-view .unified-extensions-item-option {
-                flex: 0;
                 border: 1px solid transparent;
                 list-style-image: url("chrome://global/skin/icons/settings.svg");
             }
             #unified-extensions-view .unified-extensions-item-enable {
-                flex: 0;
                 border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTMuNDU1IDFBMS41MDIgMS41MDIgMCAwMDIgMi41djExYTEuNSAxLjUgMCAwMDIuMjIzIDEuMzEzbDkuOTk4LTUuNWExLjQ5NyAxLjQ5NyAwIDAwMC0yLjYyNmwtOS45OTgtNS41QTEuNDgzIDEuNDgzIDAgMDAzLjQ1NSAxem0uMDMgMWEuNDk0LjQ5NCAwIDAxLjI1NS4wNjNsOS45OTggNS41YS41LjUgMCAwMTAgLjg3NWwtOS45OTggNS41QS41LjUgMCAwMTMgMTMuNXYtMTFhLjUuNSAwIDAxLjQ4NC0uNXoiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIvPjwvc3ZnPg==")
             }
             #unified-extensions-view .unified-extensions-item-disable {
-                flex: 0;
                 border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNMCAwaDI0djI0SDBWMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTIgMjMuNjU2QzUuNTYyIDIzLjY1Ni4zNDQgMTguNDM4LjM0NCAxMlM1LjU2Mi4zNDQgMTIgLjM0NCAyMy42NTYgNS41NjIgMjMuNjU2IDEyIDE4LjQzOCAyMy42NTYgMTIgMjMuNjU2em0wLTIuMzMxYTkuMzI1IDkuMzI1IDAgMTAwLTE4LjY1IDkuMzI1IDkuMzI1IDAgMDAwIDE4LjY1ek04LjUwMyA4LjUwM2g2Ljk5NHY2Ljk5NEg4LjUwM1Y4LjUwM3oiLz48L3N2Zz4=")
             }
@@ -161,6 +157,20 @@
             }
 
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
+            if (!CustomizableUI.getWidget('unified-extensions-button')?.forWindow(window)?.node) {
+                console.error("没有找到扩展按钮");
+                return;
+            }
+
+            if (!CustomizableUI.getWidget('movable-unified-extensions')?.forWindow(window)?.node) {
+                CustomizableUI.createWidget({
+                    id: 'movable-unified-extensions',
+                    type: "custom",
+                    defaultArea: CustomizableUI.AREA_NAVBAR,
+                    localized: false,
+                    onBuild: document => this.initButton(document)
+                });
+            }
 
             gUnifiedExtensions.panel;
             let view = PanelMultiView.getViewNode(
