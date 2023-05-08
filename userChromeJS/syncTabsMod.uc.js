@@ -1,15 +1,13 @@
 // ==UserScript==
 // @name            syncTabsMod.uc.js
-// @description     增强受同步的标签页按钮
+// @description     增强受同步的标签页
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
-// @include         chrome://browser/content/browser.xul
-// @id              [KFSRX773]
+// @include         chrome://browser/content/syncedtabs/sidebar.xhtml
 // @shutdown        window.syncTabsMod.onDestroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/
-// @onlyonce
 // ==/UserScript==
-(function (window, document) {
+(function () {
     window.syncTabsMod = {
         OPEN_ALL_BTN: {
             id: "PanelUI-remotetabs-openAll",
@@ -47,6 +45,11 @@
 
             this.observer.observe(self.view.querySelector("#PanelUI-remotetabs-tabslist"), { childList: true });
         },
+        initSidebar: function () {
+            // 这里的 event.button === 0 只能改 0 左键 1 中键
+            this.onOpenSelected = syncedTabsDeckComponent.tabListComponent._view.onOpenSelected;
+            eval('syncedTabsDeckComponent.tabListComponent._view.onOpenSelected = function ' + syncedTabsDeckComponent.tabListComponent._view.onOpenSelected.toString().replace("where = getChromeWindow(this._window).whereToOpenLink(event);", "where = event.button === 0 ? 'tabshifted' : 'getChromeWindow(syncedTabsDeckComponent.tabListComponent._view._window).whereToOpenLink(event);'"));
+        },
         openAll: function (event) {
             this.view.querySelectorAll('.subviewbutton[itemtype="tab"]').forEach(el => {
                 let url = el.getAttribute('targetURI');
@@ -58,13 +61,24 @@
         handleEvent: function (event) {
             if (event.type === "click") {
                 const { target: node } = event;
-                switch (event.button) {
-                    case 2:
-                        event.preventDefault();
-                        event.stopPropagation();
-                        this.openWebLink(node.getAttribute("targetURI"), "tabshifted");
-                        break;
+                let url;
+                if (node.hasAttribute("targetURI")) {
+                    url = node.getAttribute("targetURI");
+                } else {
+                    let tab = node.parentNode.parentNode;
+                    if (tab.classList.contains("tab") && tab.hasAttribute("data-url")) {
+                        url = tab.getAttribute("data-url");
+                    }
                 }
+                if (url)
+                    switch (event.button) {
+                        case 0:
+                            // 0 左键 1 中键 2 右键
+                            event.preventDefault();
+                            event.stopPropagation();
+                            this.openWebLink(url, "tabshifted");
+                            break;
+                    }
             } else if (event.type === "aftercustomization") {
                 setTimeout(function (self) { self.delayedStartup(self); }, 0, this);
             }
@@ -81,9 +95,13 @@
             });
         },
         onDestroy: function (win) {
-            $R(this.view.querySelector("#" + this.OPEN_ALL_BTN.id));
-            win.removeEventListener("aftercustomization", this, false);
-            this.observer.disconnect();
+            if (this.view) {
+                $R(this.view.querySelector("#" + this.OPEN_ALL_BTN.id));
+                win.removeEventListener("aftercustomization", this, false);
+                this.observer.disconnect();
+            } else if (this.onOpenSelected) {
+                syncedTabsDeckComponent.tabListComponent._view.onOpenSelected = this.onOpenSelected;
+            }
             delete win.syncTabsMod;
         }
     }
@@ -113,22 +131,25 @@
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
     }
-
-    if (typeof _ucUtils !== 'undefined') {
-        _ucUtils.startupFinished()
-            .then(() => {
-                window.syncTabsMod.init();
-            });
-    } else {
-        if (gBrowserInit.delayedStartupFinished) window.BMMultiColumn.init();
-        else {
-            let delayedListener = (subject, topic) => {
-                if (topic == "browser-delayed-startup-finished" && subject == window) {
-                    Services.obs.removeObserver(delayedListener, topic);
+    if (location.href.startsWith("chrome://browser/content/browser.x")) {
+        if (typeof _ucUtils !== 'undefined') {
+            _ucUtils.startupFinished()
+                .then(() => {
                     window.syncTabsMod.init();
-                }
-            };
-            Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+                });
+        } else {
+            if (gBrowserInit.delayedStartupFinished) window.BMMultiColumn.init();
+            else {
+                let delayedListener = (subject, topic) => {
+                    if (topic == "browser-delayed-startup-finished" && subject == window) {
+                        Services.obs.removeObserver(delayedListener, topic);
+                        window.syncTabsMod.init();
+                    }
+                };
+                Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+            }
         }
+    } else if (location.href.startsWith("chrome://browser/content/syncedtabs/sidebar.xhtml")) {
+        window.syncTabsMod.initSidebar();
     }
-})(window, window.document)
+})()
