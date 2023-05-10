@@ -7271,9 +7271,29 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/extensions/headereditor/editor.svg");
         }
 
-        /** AutoFill / Aria2 */
+        /** AutoFill / */
         #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-browser-action,
-        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-BAP,
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-BAP {
+            list-style-image: url("./images/extensions/autofill/autofill.svg");
+        }
+
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-menuitem-_cm_add_all {
+            background-image: url("./images/extensions/autofill/add.svg");
+        }
+
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-menuitem-_cm_execute {
+            background-image: url("./images/extensions/autofill/sandbox.svg");
+        }
+
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-menuitem-_cm_execute_1 {
+            background-image: url("./images/extensions/autofill/checkbox-checked.svg");
+        }
+
+        #_143f479b-4cb2-4d8c-8c31-ae8653bc6054_-menuitem-_cm_execute_2 {
+            background-image: url("./images/extensions/autofill/checkbox.svg");
+        }
+
+        /** Aria2 */
         #_e2488817-3d73-4013-850d-b66c5e42d505_-browser-action,
         #_e2488817-3d73-4013-850d-b66c5e42d505_-BAP {
             list-style-image: url("./images/extensions/autofill/autofill.svg");
