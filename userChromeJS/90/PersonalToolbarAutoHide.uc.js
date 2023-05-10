@@ -3,7 +3,7 @@
 // @description    书签工具栏自动隐藏
 // @compatibility  Firefox 68
 // @author         Ryan
-// @included       chrome://browser/content/browser.xhtml
+// @include        chrome://browser/content/browser.xhtml
 // @shutdown       window.PersonalToolbarAutoHide.unload();
 // @homepage       https://github.com/benzBrake/FirefoxCustomize
 // @version        1.1
