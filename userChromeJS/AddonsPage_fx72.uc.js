@@ -160,16 +160,11 @@
             }
         },
         launchEditor(path) {
-            var editor = Services.prefs.getCharPref("view_source.editor.path");
+            var editor = Services.prefs.getStringPref("view_source.editor.path");
             if (!editor) {
                 alert($L("set editor path"));
                 return;
             }
-
-            var UI = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
-            var platform = window.navigator.platform.toLowerCase();
-            UI.charset = platform.indexOf('win') > -1 ? 'Shift_JIS' : 'UTF-8';
-            path = UI.ConvertFromUnicode(path);
 
             var appfile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             appfile.initWithPath(editor);
