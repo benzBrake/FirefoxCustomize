@@ -1058,6 +1058,7 @@ url("about:downloads") {
             }
 
             #main-window[sidebarCommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]:not([sidebarHidden="true"]) #toolbar-menubar {
+                order: 3;
                 -moz-box-ordinal-group: 3;
             }
 
@@ -1235,21 +1236,6 @@ url("about:downloads") {
             transition: background-color var(--animation-speed, .13s) !important;
         }
 
-        /* toolbar button badges */
-        :is(.customization-target, .widget-overflow-list) :is(toolbarbutton, toolbaritem):is(:not([attention]), [attention="false"])>.toolbarbutton-badge-stack>.toolbarbutton-badge {
-            background-color: var(--toolbarbutton-badge-bgcolor, hsl(0, 100%, 42.5%)) !important;
-            color: var(--toolbar-color, white) !important;
-            box-shadow: 0 1px 1px -1px #ffffff4d inset, 0 -1px 1px -1px #00000080 inset, 0 1px 1px #1e1e2026, 0 1px 3px #1e1e2033 !important;
-            min-width: 10.5px !important;
-            height: 10.5px !important;
-            align-items: end !important;
-            font-size: 9px !important;
-            font-weight: var(--font-weight-bold, 600) !important;
-            line-height: 10px !important;
-            filter: none !important;
-            margin: -6px -6px 0 -6px !important;
-        }
-
         :is(.customization-target, .widget-overflow-list) #downloads-button[attention]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
             margin-right: -5.5px !important;
             margin-top: -5.5px !important;
@@ -1260,6 +1246,10 @@ url("about:downloads") {
             background-size: contain !important;
             background-position: center !important;
             background-repeat: no-repeat !important;
+        }
+
+        :root[uidensity="compact"] #urlbar-input-container #location-bar toolbarbutton>.toolbarbutton-badge-stack>.toolbarbutton-badge {
+            margin-top: -4px !important;
         }
 
         :is(.customization-target, .widget-overflow-list) #downloads-button[attention="info"]>.toolbarbutton-badge-stack>.toolbarbutton-badge {
@@ -1533,7 +1523,6 @@ url("about:downloads") {
             transition: opacity 200ms ease-in-out, transform 150ms ease-in-out, border-width var(--drag-drop-transition-duration) ease-in-out !important;
         }
 
-
         #PersonalToolbar[customizing][draggingover] {
             z-index: 4 !important;
         }
@@ -1553,18 +1542,18 @@ url("about:downloads") {
         #PersonalToolbar[collapsed="true"]>* {
             overflow-y: clip !important;
             opacity: 0 !important;
-            transform: translateY(-16px);
+            transform: translateY(-12px);
+            transform-origin: top;
+            transition: opacity 150ms ease-in-out, transform 150ms ease-in-out !important;
         }
 
         #personal-toolbar-empty,
         #PersonalToolbar .toolbarbutton-1,
         toolbarbutton.bookmark-item:not(.subviewbutton) {
-            margin-block: 0 !important;
             padding: var(--bookmark-block-padding) 4px;
             min-height: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
             min-width: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
-            -moz-box-align: center !important;
-            align-items: center;
+            align-items: center !important;
         }
 
         #PersonalToolbar .toolbarbutton-1,
@@ -1594,8 +1583,12 @@ url("about:downloads") {
             padding-right: 0 !important;
         }
 
-        #PersonalToolbar #profiler-button>#profiler-button-dropmarker {
-            margin-inline-start: 0 !important;
+        #PlacesToolbarItems > toolbarbutton {
+            flex-shrink: 0;
+        }
+
+        #PersonalToolbar .toolbaritem-combined-buttons {
+            min-height: 31.5px !important;
         }
 
         #PersonalToolbar[mode="icons"] #import-button>.toolbarbutton-icon {
@@ -1662,9 +1655,9 @@ url("about:downloads") {
             margin-bottom: 0;
         }
 
-        #unified-extensions-view>.panel-subview-body>.unified-extensions-list {
+        /* #unified-extensions-view>.panel-subview-body>.unified-extensions-list {
             display: none !important;
-        }
+        } */
 
         #unified-extensions-view .toolbaritem-combined-buttons {
             margin: var(--arrowpanel-menuitem-margin);
@@ -1696,11 +1689,16 @@ url("about:downloads") {
             -moz-box-pack: start;
             justify-content: start;
         }
-
         #PlacesToolbarItems[chevronCollapsed="true"] {
             -moz-box-pack: center;
             justify-content: center;
         }
+        /* 实验性，使用 has 伪类 需要设置 layout.css.has-selector.enabled 为 true */
+        /* #PlacesToolbarItems:not(:has(~#PlacesChevron[collapsed="true"])) {
+            -moz-box-pack: center;
+            justify-content: center;
+        } 
+        */
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.placesToolbar.iconsOnly") {
@@ -2818,7 +2816,8 @@ by underlining them (requires urlbarMods.uc.js) */
             appearance: none;
             --windows-panel-box-shadow: unset;
             --menuitem-padding: var(--arrowpanel-menuitem-padding-block);
-            --panel-shadow-margin: 0; /* Fx 113 */
+            --panel-shadow-margin: 0px;
+            /* Fx 113 */
         }
 
         :is(#history-menu, #bookmarksMenu) menupopup::part(content),
@@ -2848,6 +2847,11 @@ by underlining them (requires urlbarMods.uc.js) */
         menupopup:not(.in-menulist) menu:not(.menu-iconic),
         menupopup:not(.in-menulist) menuitem:not(.menuitem-iconic, [type="checkbox"], [type="radio"]) {
             padding-inline-start: var(--label-padding-start, 32px) !important;
+        }
+
+        #ContentSelectDropdown>menupopup>menucaption>.menu-iconic-text,
+        #ContentSelectDropdown>menupopup>menuitem>.menu-iconic-text {
+            padding-block: 1px;
         }
 
         menupopup menu:not(.menu-iconic)>.menubar-text {
@@ -3063,6 +3067,11 @@ by underlining them (requires urlbarMods.uc.js) */
         #context-copylink[hidden="true"]~#context-sep-copylink,
         #contentAreaContextMenu:not([addMenu="select"])>#context-media-eme-learnmore[hidden="true"]+menuseparator {
             display: none;
+        }
+
+        .syncnow-label {
+            order: 2;
+            -moz-box-ordinal-group: 2;
         }
 
         .syncNowBtn {
@@ -3415,8 +3424,8 @@ by underlining them (requires urlbarMods.uc.js) */
         }
 
         .browserContainer>findbar {
-            -moz-box-ordinal-group: 0;
             order: 0;
+            -moz-box-ordinal-group: 0;
             position: absolute !important;
             display: flex !important;
             visibility: visible !important;
@@ -3806,6 +3815,7 @@ by underlining them (requires urlbarMods.uc.js) */
     }
 
     @supports -moz-bool-pref("userChromeJS.sidra.icon.complementary") {
+
         .subviewbutton,
         .toolbaritem-combined-buttons,
         :is(menu, menuitem) {
