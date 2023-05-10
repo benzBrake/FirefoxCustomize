@@ -3,11 +3,12 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.6
+// @version         0.1.7
 // @compatibility   Firefox 109
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @note            0.1.6 Firefox 109 不全快速启用禁用和快速选项功能
+// @note            0.1.7 修复禁用所有扩展，修复 destroy 报错，增加右键图标快速打开扩展管理页面
+// @note            0.1.6 Firefox 109 补全快速启用禁用和快速选项功能
 // @note            0.1.5 仅支持 Firefox 109 + 半成品
 // @note            0.1.4 Fx 107 Tempoarily compat for legacy addons & disabled addons
 // @note            参考了 https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/extensionOptionsMenu.uc.js
@@ -168,29 +169,15 @@
                 "unified-extensions-view"
             );
 
+            let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
+            if (origBtn) origBtn.addEventListener('click', this.openAddonsMgr);
+                
+            this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
             eval("gUnifiedExtensions.onPinToToolbarChange = "  + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
 
             view.addEventListener('ViewShowing', this);
             view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
             view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
-        },
-        initButton: function (document) {
-            let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
-            let btn = $C(document, "toolbaritem", {
-                id: "movable-unified-extensions",
-                label: origBtn.getAttribute('label'),
-                class: "chromeclass-toolbar-additional",
-                tooltiptext: origBtn.getAttribute('tooltiptext'),
-                onclick: function (event) {
-                    if ((event.target.id === "movable-unified-extensions" || event.target.id === "unified-extensions-button") && event.button === 2) {
-                        event.preventDefault();
-                        event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/extension");
-                    }
-                }
-            });
-            origBtn.setAttribute('consumeanchor', 'movable-unified-extensions');
-            btn.appendChild(origBtn);
-            return btn;
         },
         onPinToolbarChange(menu, event) {
             let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
@@ -202,6 +189,12 @@
                 this.createAdditionalButtons(node);
             } else {
                 this.removeAdditionalButtons(node);
+            }
+        },
+        openAddonsMgr(event) {
+            if (event.button == 2 && event.target.localName == 'toolbarbutton') {
+                event.preventDefault();
+                event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
             }
         },
         createAdditionalButtons(node) {
@@ -231,9 +224,9 @@
                 let item;
                 switch (button.getAttribute("uni-action")) {
                     case "disable-all":
-                        let extensions = await gUnifiedExtensions.getActiveExtensions();
+                        let extensions = await AddonManager.getAddonsByTypes(['extension']);
                         for (let extension of extensions)
-                            extension.disable();
+                            if (extension.isActive && !extensions.isBuiltin) extension.disable();
                         break;
                     case "enable":
                         item = button.closest("unified-extensions-item");
@@ -337,12 +330,16 @@
         },
         destroy: function () {
             this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
-            let navBar = $("nav-bar");
-            if (navBar.lastChild.id === "PanelUI-button")
-                navBar.insertBefore(this.origBtn, navBar.lastChild);
-            else
-                navBar.appendChild(this.origBtn);
-            CustomizableUI.destroyWidget('movable-unified-extensions');
+            let view = PanelMultiView.getViewNode(
+                document,
+                "unified-extensions-view"
+            );
+            view.querySelectorAll("[uni-action]").forEach(el => {
+                $R(el);
+            })
+            gUnifiedExtensions.onPinToToolbarChange = this.onPinToToolbarChange;
+            let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
+            if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
             delete window.unifiedExtensionsEnhance;
         }
     }
