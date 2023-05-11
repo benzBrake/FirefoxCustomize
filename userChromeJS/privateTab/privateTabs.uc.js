@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name           Private Tabs
 // @version        1.2.3
-// @author         aminomancer
+// @author         aminomancer,Ryan
 // @homepage       https://github.com/aminomancer
-// @description    An fx-autoconfig port of [Private Tab][] by xiaoxiaoflood. Adds buttons and menu items allowing you to open a "private tab" in nearly any circumstance in which you'd be able to open a normal tab. Instead of opening a link in a private window, you can open it in a private tab instead. This will use a special container and prevent history storage, depending on user configuration. You can also toggle tabs back and forth between private and normal mode. This script adds two hotkeys: Ctrl+Alt+P to open a new private tab, and Ctrl+Alt+T to toggle private mode for the active tab. These hotkeys can be configured along with several other options at the top of the script file.
+// @description    Private Tabs 移植版，用于 Alice0775 的 userChrome.js Loader
 //
 // [Private Tab]: https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js
 // @downloadURL    https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/privateTabs.uc.js
@@ -344,7 +344,7 @@
         }
 
         init() {
-            const { CustomizableUI } = window;
+            const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
             this.ContextualIdentityService.ensureDataReady();
             this.container = this.ContextualIdentityService._identities.find(
                 container => container.name == this.config.profileName
