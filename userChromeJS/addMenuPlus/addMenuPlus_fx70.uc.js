@@ -103,6 +103,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case "AM:GetFaviconLink":
                         if (doc.location.href.startsWith("about")) return;
+                        if (!"head" in doc) return;
                         let link = doc.head.querySelector('[rel~="shortcut"]');
                         let href = "";
                         if (link) {
