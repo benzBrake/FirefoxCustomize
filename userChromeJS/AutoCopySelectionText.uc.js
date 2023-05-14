@@ -2,13 +2,14 @@
 // @name            AutoCopySelectionText.uc.js
 // @description     自动复制选中文本（ScrLk 亮起时不复制）
 // @author          Ryan
-// @version         2023.02.02
+// @version         2023.05.14
 // @compatibility   Firefox 70
 // @charset         UTF-8
 // @system          windows
 // @license         MIT License
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         2023.05.14 修复内置页面无法复制，增加长按时间达到后不释放按键就复制
 // @version         2023.02.02 修复部分复制失败的情况
 // @version         2023.02.01 framescript 更换为 JSActor，增加复制成功通知
 // @version         2022.11.13 修复移动鼠标即复制
@@ -23,6 +24,7 @@ const ACST_COPY_SUCCESS_NOTICE = "Auto Copied!";
 const ACST_WAIT_TIME = 0; // Change it to any number as you want
 const ACST_BLACK_LIST = ["input", "textarea"]; // disable auto copy when focus on textboxes
 const ACST_SHOW_SUCCESS_NOTICE = true; // show notice on webpace when copyed successful
+const ACST_COPY_WITHOUT_RELEASE_KEY = false; // when the popup appears you can release the mouse button (work is not perfect, need to set ACST_WAIT_TIME as a reasonable number)
 // =================================================================
 if (typeof window === "undefined" || globalThis !== window) {
     let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
@@ -144,6 +146,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             },
             handleEvent: function (event) {
                 if (getKeyState(0x91)) return;
+                let that = this;
                 const { clearTimeout, setTimeout } = event.target.ownerGlobal;
                 switch (event.type) {
                     case 'mousedown':
@@ -161,6 +164,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                         TIMEOUT_ID = setTimeout(function () {
                             // 长按判定
                             LONG_PRESS = true;
+                            if (ACST_COPY_WITHOUT_RELEASE_KEY) {
+                                // 无需释放左键就复制
+                                copyText(content);
+                            }
                         }, ACST_WAIT_TIME);
                         break;
                     case 'dblclick':
@@ -169,24 +176,8 @@ if (typeof window === "undefined" || globalThis !== window) {
                         // 不响应左键事件
                         if (event.button !== 0) return;
                         // copy text on mouse button up
-                        if (LONG_PRESS) {
-                            // get selected text
-                            if (content) {
-                                // 内置页面
-                                let info = content.getSelection();
-                                // 黑名单不获取选中文本
-                                if (info && info.anchorNode && info.anchorNode.activeElement && ACST_ifItemTagInBackList(info.anchorNode.activeElement)) return;
-                                let text = BrowserOrSelectionUtils.getSelectionDetails(content).fullText;
-                                if (text && text.length) {
-                                    this.setSelectedText();
-                                    if (ACST_SHOW_SUCCESS_NOTICE)
-                                        ACST_showSuccessInfo(content);
-                                }
-                            } else {
-                                // 网页
-                                let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("ACST");
-                                actor.sendAsyncMessage("ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE: ACST_SHOW_SUCCESS_NOTICE });
-                            }
+                        if (LONG_PRESS && !ACST_COPY_WITHOUT_RELEASE_KEY) {
+                            copyText(content);
                         }
                         START_COPY = false;
                         DBL_CLICK = false;
@@ -198,6 +189,25 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                 }
                 LONG_PRESS = false;
+
+                function copyText(content) {
+                    if (content) {
+                        // 内置页面
+                        let info = content.getSelection();
+                        // 黑名单不获取选中文本
+                        if (info && info.anchorNode && info.anchorNode.activeElement && ACST_ifItemTagInBackList(info.anchorNode.activeElement)) return;
+                        let text = BrowserOrSelectionUtils.getSelectionDetails(content).fullText;
+                        if (text && text.length) {
+                            that.setSelectedText(text);
+                            if (ACST_SHOW_SUCCESS_NOTICE)
+                                ACST_showSuccessInfo(content);
+                        }
+                    } else {
+                        // 网页
+                        let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("ACST");
+                        actor.sendAsyncMessage("ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE: ACST_SHOW_SUCCESS_NOTICE });
+                    }
+                }
             },
             setSelectedText: function (text, tag) {
                 if (tag && ACST_BLACK_LIST.includes(tag)) return;
@@ -219,7 +229,6 @@ if (typeof window === "undefined" || globalThis !== window) {
  * @returns 
  */
 function ACST_ifItemTagInBackList(item) {
-    console.log(item);
     if (ACST_BLACK_LIST.includes(item.tagName.toLowerCase())) return true;
     ACST_BLACK_LIST.forEach(tag => {
         if (item.closest(tag)) return true;
