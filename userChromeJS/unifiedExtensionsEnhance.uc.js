@@ -4,7 +4,7 @@
 // @author          Ryan
 // @include         main
 // @version         0.1.7
-// @compatibility   Firefox 114
+// @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            0.1.7 修复禁用所有扩展，修复 destroy 报错，增加右键图标快速打开扩展管理页面
