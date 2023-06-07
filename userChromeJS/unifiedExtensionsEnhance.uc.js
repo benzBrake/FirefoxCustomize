@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.7
+// @version         0.1.8
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.8 fx115
 // @note            0.1.7 修复禁用所有扩展，修复 destroy 报错，增加右键图标快速打开扩展管理页面
 // @note            0.1.6 Firefox 109 补全快速启用禁用和快速选项功能
 // @note            0.1.5 仅支持 Firefox 109 + 半成品
@@ -150,6 +151,9 @@
                 border: 1px solid transparent;
                 border-radius: var(--arrowpanel-menuitem-border-radius);
             }
+            .unified-extensions-list unified-extensions-item > .unified-extensions-item-action-button {
+                margin: var(--arrowpanel-menuitem-margin-inline);
+            }
             `)),
             type: 2
         },
@@ -277,7 +281,7 @@
             const extensions = await this.getAllExtensions();
 
             for (const extension of extensions) {
-                if (!area.querySelector(`[data-extensionid="${extension.id}"]`)) {
+                if (!aView.querySelector(`[data-extensionid="${extension.id}"]`)) {
                     let item = aDoc.createElement("unified-extensions-item");
                     if (typeof item.setExtension === "function") {
                         item.setExtension(extension);
