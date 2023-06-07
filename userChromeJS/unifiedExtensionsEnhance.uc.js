@@ -4,7 +4,7 @@
 // @author          Ryan
 // @include         main
 // @version         0.1.7
-// @compatibility   Firefox 109
+// @compatibility   Firefox 114
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            0.1.7 修复禁用所有扩展，修复 destroy 报错，增加右键图标快速打开扩展管理页面
@@ -140,12 +140,15 @@
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable {
                 display: none;
             }
-            #unified-extensions-view .subviewbutton-iconic:not([disabled]) {
-                margin: var(--arrowpanel-menuitem-margin);
-                padding: var(--arrowpanel-menuitem-padding-inline) !important;
+            .toolbaritem-combined-buttons.unified-extensions-item > :is(.unified-extensions-item-option, .unified-extensions-item-enable, .unified-extensions-item-disable, .unified-extensions-item-menu-button) {
+                padding: 0;
+                padding-inline-end: 0;
             }
-            #unified-extensions-view .subviewbutton-iconic:not([disabled]):hover {
-                background-color: var(--panel-item-hover-bgcolor) !important;
+            .toolbaritem-combined-buttons.unified-extensions-item > :is(.unified-extensions-item-option, .unified-extensions-item-enable, .unified-extensions-item-disable, .unified-extensions-item-menu-button) > .toolbarbutton-icon {
+                box-sizing: content-box;
+                padding: var(--arrowpanel-menuitem-padding-inline);
+                border: 1px solid transparent;
+                border-radius: var(--arrowpanel-menuitem-border-radius);
             }
             `)),
             type: 2
