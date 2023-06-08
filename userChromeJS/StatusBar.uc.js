@@ -52,6 +52,7 @@
                 id: "toggle_status-bar",
                 label: MENU_LABEL,
                 type: "checkbox",
+                accesskey: "S",
                 checked: String(Services.prefs.getBoolPref("browser.display.statusbar", false)),
                 oncommand: "StatusBar.togglePref();",
             });
