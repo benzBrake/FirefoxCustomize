@@ -485,7 +485,11 @@
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
                 if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                    if (key.startsWith('on')) {
+                        el.addEventListener(key.slice(2), obj[key]);
+                    } else {
+                        el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                    }
                 } else {
                     el.setAttribute(key, obj[key]);
                 }
