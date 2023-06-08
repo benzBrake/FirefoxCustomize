@@ -164,6 +164,12 @@
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             gBrowser.tabpanels.addEventListener("mouseup", this, false);
 
+            let path = Services.prefs.getStringPref(VideoBtn.PREF_SAVE_PATH, VideoBtn._DEFAULT_SAVE_PATH);
+            if (!path) {
+                this.setDownloadsFolder();
+                return "";
+            }
+
             this.style = addStyle(css);
             this.makeMenu();
         },
@@ -173,7 +179,7 @@
                 this.ENV_PATHS[key] = path.path;
             });
 
-            this._DEFAULT_SAVE_PATH = await Downloads.getSystemDownloadsDirectory();
+            this._DEFAULT_SAVE_PATH = this.ENV_PATHS['Desk'];
         },
         makeRegExp() {
             // 初始化正则
