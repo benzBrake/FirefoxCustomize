@@ -567,7 +567,7 @@
                             cssArr.push(`${name}: ${val};`);
                         }
                     });
-                    let css = ':root{\n' + cssArr.join("\n") + "}\n";
+                    let css = '@-moz-document url-prefix("chrome://"), url-prefix("moz-extension://"), url-prefix("about:") {:root{\n' + cssArr.join("\n") + "}\n}";
                     window.CopyCatTheme.SYNCED_STYLE = {
                         url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
                         type: window.CopyCatTheme.sss.AUTHOR_SHEET,
