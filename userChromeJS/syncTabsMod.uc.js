@@ -48,7 +48,9 @@
         initSidebar: function () {
             // 这里的 event.button === 0 只能改 0 左键 1 中键
             this.onOpenSelected = syncedTabsDeckComponent.tabListComponent._view.onOpenSelected;
-            eval('syncedTabsDeckComponent.tabListComponent._view.onOpenSelected = function ' + syncedTabsDeckComponent.tabListComponent._view.onOpenSelected.toString().replace("where = getChromeWindow(this._window).whereToOpenLink(event);", "where = event.button === 0 ? 'tabshifted' : 'getChromeWindow(syncedTabsDeckComponent.tabListComponent._view._window).whereToOpenLink(event);'"));
+            const regex = /\s*let\s+where.*/gm;
+            const subst = `\n    let { getChromeWindow } = ChromeUtils.import('resource:///modules/syncedtabs/util.js');\n    let where = event.button === 0 ? 'tabshifted' : getChromeWindow(syncedTabsDeckComponent.tabListComponent._view._window).whereToOpenLink(event);`;
+            eval('syncedTabsDeckComponent.tabListComponent._view.onOpenSelected = function ' + syncedTabsDeckComponent.tabListComponent._view.onOpenSelected.toString().replace(regex, subst));
         },
         openAll: function (event) {
             this.view.querySelectorAll('.subviewbutton[itemtype="tab"]').forEach(el => {
