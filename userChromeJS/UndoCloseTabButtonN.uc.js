@@ -4,6 +4,7 @@
 // @version         1.2.6
 // @include         main
 // @charset         UTF-8
+// @note            2023/06/08 Fx115 SessionStore.getClosedTabData → SessionStore.getClosedTabDataForWindow
 // @note            2022/11/12 修改左中右按键行为
 // @note            2021/12/12 Fx95 SessionStore.getClosedTabData / getClosedWindowData の戻り値がJSONからArrayに変更
 // @note            2019/01/23 Fx66でタブバー中クリックが効かないのを修正
@@ -26,7 +27,7 @@
             this.removeChilds(menu);
 
             // 閉じたタブ
-            let data = SessionStore.getClosedTabData(window);
+            let data = (SessionStore.getClosedTabData || SessionStore.getClosedTabDataForWindow)(window);
             if (typeof (data) === "string") {
                 data = JSON.parse(data);
             }
