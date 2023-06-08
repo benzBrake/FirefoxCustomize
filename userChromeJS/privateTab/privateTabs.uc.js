@@ -509,7 +509,7 @@
         }
 
         contentContext(_e) {
-            let tab = gBrowser.getTabForBrowser(gContextMenu.browser);
+            let tab = gBrowser.getTabForBrowser(gContextMenu.browser) || gBrowser.selectedTab;
             gContextMenu.showItem(
                 "openLinkInPrivateTab",
                 gContextMenu.onSaveableLink || gContextMenu.onPlainTextLink
