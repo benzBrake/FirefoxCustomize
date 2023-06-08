@@ -2,11 +2,12 @@
 // @name            CustomButtons.uc.js
 // @description     添加多个自定义按钮，截图、UndoCloseTab、证书管理器、放大缩小、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
-// @version         0.1.4
-// @compatibility   Firefox 108
+// @version         0.1.5
+// @compatibility   Firefox 70 +
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.5 修复 firefox 115 无法读取已关闭标签列表
 // @note            从 CopyCat.uc.js 修改而来
 // ==/UserScript==
 (function (css, debug) {
@@ -103,7 +104,8 @@
                 const doc = (event.view && event.view.document) || event.target.ownerDocument;
                 const menu = event.target.querySelector("menupopup");
                 menu.querySelectorAll('.undo-item').forEach(i => i.remove());
-                let data = SessionStore.getClosedTabData(window);
+                const getClosedTabData = "getClosedTabDataForWindow" in SessionStore ? SessionStore.getClosedTabDataForWindow : SessionStore.getClosedTabData;
+                let data = getClosedTabData(window);
                 if (typeof (data) === "string") {
                     data = JSON.parse(data);
                 }
