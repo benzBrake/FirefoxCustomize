@@ -4,11 +4,11 @@
 
 ## 使用说明
 
-需要 userChromeJS script 环境，参考《[2202年了还在使用 userChrome JS 脚本之 Firefox userChrome JS 环境安装 - Ryan 快快跑](https://kkp.disk.st/in-2202-it-is-still-installed-in-firefox-userchromejs-environment-using-userchromejs-script.html)》
+需要 userChromeJS script 环境，参考《[2202年了还在使用 userChrome JS 脚本之 Firefox userChrome JS 环境安装 - Ryan 快快跑](https://blog.iplayloli.com/in-2202-it-is-still-installed-in-firefox-userchromejs-environment-using-userchromejs-script.html)》
 
 点击【[这里](VideoBtn.uc.js)】下载脚本，~~或者点击【[这里](VideoBtn.zip)】下载打包好的（打包好的我不一定记得更新）~~。
 
-https://www.123pan.com/s/i3PRVv-gMRP3提取码:39Vw
+https://www.123pan.com/s/i3PRVv-gMRP3 提取码:39Vw
 
 解压到 【配置文件夹\chrome】 下即可
 
@@ -16,7 +16,7 @@ https://www.123pan.com/s/i3PRVv-gMRP3提取码:39Vw
 
 `userChromeJS.VideoBtn.binPath`:视频下载工具存放路径，不填写自动读取`profieDir\chrome\UserTools`
 
-`userChromeJS.VideoBtn.savePath`:视频保存路径，不填写自动读取当前Windows账户的下载文件夹
+`userChromeJS.VideoBtn.savePath`:视频保存路径，~~不填写自动读取当前Windows账户的下载文件夹~~，因为有可能读取失败导致脚本报错，最新版改为桌面
 
 ~~`userChromeJS.VideoBtn.cookiesPath` Netscape 格式 Cookies 保存路径，不填写自动读取`profieDir\chrome\resources\cookies`~~
 
