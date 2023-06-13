@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.8
+// @version         0.1.9
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.9 新增固定到工具栏，上移，下移按钮，调整面板宽度
 // @note            0.1.8 fx115
 // @note            0.1.7 修复禁用所有扩展，修复 destroy 报错，增加右键图标快速打开扩展管理页面
 // @note            0.1.6 Firefox 109 补全快速启用禁用和快速选项功能
@@ -23,6 +24,29 @@
     }
 
     window.unifiedExtensionsEnhance = {
+        UP_BUTTON: {
+            label: "上移",
+            tooltiptext: "上移",
+            "uni-action": "up",
+            closemenu: "none",
+            class: "unified-extensions-item-up subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
+        },
+        DOWN_BUTTON: {
+            label: "下移",
+            tooltiptext: "下移",
+            "uni-action": "down",
+            closemenu: "none",
+            class: "unified-extensions-item-down subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
+        },
+        PIN_BUTTON: {
+            label: "在工具栏中显示",
+            tooltiptext: "在工具栏中显示",
+            "uni-action": "pin",
+            class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
+        },
         OPTION_BUTTON: {
             label: "选项",
             tooltiptext: "扩展选项",
@@ -72,6 +96,9 @@
             #unified-extensions-panel toolbaritem.unified-extensions-item {
                 max-width: unset;
             }
+            panelview#unified-extensions-view {
+                width: 35em;
+            }
             panelview#unified-extensions-view .toolbaritem-combined-buttons {
                 display: flex;
                 align-items: center;
@@ -116,6 +143,21 @@
                 margin-inline-end: var(--arrowpanel-menuitem-margin-inline);
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
+            #unified-extensions-view .unified-extensions-item-up {
+                flex: 0;
+                border: 1px solid transparent;
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTAuODI4bC00Ljk1IDQuOTUtMS40MTQtMS40MTRMMTIgOGw2LjM2NCA2LjM2NC0xLjQxNCAxLjQxNHoiLz48L3N2Zz4=")
+            }
+            #unified-extensions-view .unified-extensions-item-down {
+                flex: 0;
+                border: 1px solid transparent;
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTMuMTcybDQuOTUtNC45NSAxLjQxNCAxLjQxNEwxMiAxNiA1LjYzNiA5LjYzNiA3LjA1IDguMjIyeiIvPjwvc3ZnPg==")
+            }
+            #unified-extensions-view .unified-extensions-item-pin {
+                flex: 0;
+                border: 1px solid transparent;
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMTIuMDAwMyAzQzE3LjM5MjQgMyAyMS44Nzg0IDYuODc5NzYgMjIuODE4OSAxMkMyMS44Nzg0IDE3LjEyMDIgMTcuMzkyNCAyMSAxMi4wMDAzIDIxQzYuNjA4MTIgMjEgMi4xMjIxNSAxNy4xMjAyIDEuMTgxNjQgMTJDMi4xMjIxNSA2Ljg3OTc2IDYuNjA4MTIgMyAxMi4wMDAzIDNaTTEyLjAwMDMgMTlDMTYuMjM1OSAxOSAxOS44NjAzIDE2LjA1MiAyMC43Nzc3IDEyQzE5Ljg2MDMgNy45NDgwMyAxNi4yMzU5IDUgMTIuMDAwMyA1QzcuNzY0NiA1IDQuMTQwMjIgNy45NDgwMyAzLjIyMjc4IDEyQzQuMTQwMjIgMTYuMDUyIDcuNzY0NiAxOSAxMi4wMDAzIDE5Wk0xMi4wMDAzIDE2LjVDOS41MTQ5OCAxNi41IDcuNTAwMjYgMTQuNDg1MyA3LjUwMDI2IDEyQzcuNTAwMjYgOS41MTQ3MiA5LjUxNDk4IDcuNSAxMi4wMDAzIDcuNUMxNC40ODU1IDcuNSAxNi41MDAzIDkuNTE0NzIgMTYuNTAwMyAxMkMxNi41MDAzIDE0LjQ4NTMgMTQuNDg1NSAxNi41IDEyLjAwMDMgMTYuNVpNMTIuMDAwMyAxNC41QzEzLjM4MSAxNC41IDE0LjUwMDMgMTMuMzgwNyAxNC41MDAzIDEyQzE0LjUwMDMgMTAuNjE5MyAxMy4zODEgOS41IDEyLjAwMDMgOS41QzEwLjYxOTYgOS41IDkuNTAwMjYgMTAuNjE5MyA5LjUwMDI2IDEyQzkuNTAwMjYgMTMuMzgwNyAxMC42MTk2IDE0LjUgMTIuMDAwMyAxNC41WiI+PC9wYXRoPjwvc3ZnPg==")
+            }
             #unified-extensions-view .unified-extensions-item-option {
                 flex: 0;
                 border: 1px solid transparent;
@@ -136,6 +178,7 @@
             .unified-extensions-item-option > .toolbarbutton-text,
             .unified-extensions-item-enable > .toolbarbutton-text,
             .unified-extensions-item-disable > .toolbarbutton-text,
+            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-pin,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-option,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-enable,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable {
@@ -178,10 +221,11 @@
 
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             if (origBtn) origBtn.addEventListener('click', this.openAddonsMgr);
-                
-            this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
-            eval("gUnifiedExtensions.onPinToToolbarChange = "  + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
 
+            this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
+            eval("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
+
+            window.addEventListener("toolbarvisibilitychange", this);
             view.addEventListener('ViewShowing', this);
             view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
             view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
@@ -206,6 +250,15 @@
         },
         createAdditionalButtons(node) {
             let ins = $Q(".webextension-browser-action", node);
+            if (!$Q(".unified-extensions-item-down", node)) {
+                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DOWN_BUTTON));
+            }
+            if (!$Q(".unified-extensions-item-up", node)) {
+                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.UP_BUTTON));
+            }
+            if (!$Q(".unified-extensions-item-pin", node)) {
+                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.PIN_BUTTON));
+            }
             if (!$Q(".unified-extensions-item-disable", node)) {
                 ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
             }
@@ -217,6 +270,9 @@
             }
         },
         removeAdditionalButtons(node) {
+            $R($Q(".unified-extensions-item-up", node));
+            $R($Q(".unified-extensions-item-down", node));
+            $R($Q(".unified-extensions-item-pin", node));
             $R($Q(".unified-extensions-item-option", node));
             $R($Q(".unified-extensions-item-enable", node));
             $R($Q(".unified-extensions-item-disable", node));
@@ -229,7 +285,8 @@
                 const panelview = button.closest("panelview");
                 if (!button.hasAttribute("uni-action")) return;
                 let item;
-                switch (button.getAttribute("uni-action")) {
+                const uniAction = button.getAttribute("uni-action");
+                switch (uniAction) {
                     case "disable-all":
                         let extensions = await AddonManager.getAddonsByTypes(['extension']);
                         for (let extension of extensions)
@@ -256,10 +313,24 @@
                         }
                         this.openAddonOptions(addon, button.ownerGlobal);
                         break;
+                    case "pin":
+                        uniItem = event.target.closest(".unified-extensions-item");
+                        if (uniItem) {
+                            this.removeAdditionalButtons(uniItem);
+                            gUnifiedExtensions.pinToToolbar(uniItem.id, true);
+                            this.refreshAddonsList(panelview);
+                        }
+                        break;
+                    case "up":
+                    case "down":
+                        let moveWidget;
+                        eval('moveWidget = ' + gUnifiedExtensions.moveWidget.toString("").replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "async function moveWidget"));
+                        moveWidget(event.target, uniAction);
+                        break;
                 }
 
                 if (!button.hasAttribute("closemenu") && event.button !== 1)
-                    event.target.closest("panel").hidePopup();
+                    event.target.closest("panel")?.hidePopup();
             } else if (event.type === "DOMSubtreeModified") {
                 let elm = event.target;
                 if (elm.tagName === "toolbarbutton" && elm.classList.contains("webextension-browser-action")) {
@@ -270,6 +341,8 @@
                     }
                     this.createAdditionalButtons(parent);
                 }
+            } else if (event.type === "toolbarvisibilitychange") {
+                console.log(event.target);
             }
         },
         refreshAddonsList: async function (aView) {
@@ -337,6 +410,7 @@
         },
         destroy: function () {
             this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
+            window.removeEventListener("toolbarvisibilitychange", this);
             let view = PanelMultiView.getViewNode(
                 document,
                 "unified-extensions-view"
