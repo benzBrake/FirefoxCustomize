@@ -1441,13 +1441,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%TITLES%":
                         return bw.contentTitle.replace(/\s-\s.*/i, "").replace(/_[^\[\]【】]+$/, "");
                     case "%U":
-                        return "_urlMetaData" in bw ? bw._urlMetaData.url : bw.documentURI.spec;
+                        return bw.documentURI.spec;
                     case "%URL%":
-                        return "_urlMetaData" in bw ? bw._urlMetaData.url : bw.documentURI.spec;
+                        return bw.documentURI.spec;
                     case "%H":
-                        return "_urlMetaData" in bw ? new URL(bw._urlMetaData.url).host : bw.documentURI.host;
+                        return bw.documentURI.host;
                     case "%HOST%":
-                        return "_urlMetaData" in bw ? new URL(bw._urlMetaData.url).host : bw.documentURI.host;
+                        return bw.documentURI.host;
                     case "%S":
                         return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
                     case "%SEL%":
@@ -1460,8 +1460,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         return context.link.host || "";
                     case "%RLINK_TEXT%":
                         return context.linkText() || "";
-                    case "%RLINK_OR_URL%":
-                        return context.linkURL || `"_urlMetaData"` in bw ? bw._urlMetaData.url : bw.documentURI.spec;
+                        case "%RLINK_OR_URL%":
+                            if ("linkURL" in context) {
+                                return context.linkURL;
+                            } else {
+                                return bw.documentURI.spec;
+                            }
                     case "%RLT_OR_UT%":
                         return context.onLink && context.linkText() || bw.contentTitle; // 链接文本或网页标题
                     case "%IMAGE_ALT%":
@@ -1849,7 +1853,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         data = suConverter.ConvertFromUnicode(data);
 
         var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
-        foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+        foStream.init(file, 0x02 | 0x08 | 0x20, 0o664, 0);
         foStream.write(data, data.length);
         foStream.close();
     }
