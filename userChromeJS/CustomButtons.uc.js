@@ -494,9 +494,9 @@
             }
             if (uri.scheme === "javascript") {
                 try {
-                    loadURI(url);
-                } catch (e) {
                     gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                } catch (e) {
+                    gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
                 }
             } else if (where) {
                 if (this.appVersion < 78) {
@@ -516,10 +516,9 @@
                 if (this.appVersion < 78) {
                     openNewTabWith(uri.spec);
                 } else {
-                    openNewTabWith(uri.spec, 'tab', {
-                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
-                            Services.scriptSecurityManager.createNullPrincipal({}) :
-                            Services.scriptSecurityManager.getSystemPrincipal()
+                    openTrustedLinkIn(uri.spec, 'tab', {
+                        postData: postData || null,
+                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ? Services.scriptSecurityManager.createNullPrincipal({}) : Services.scriptSecurityManager.getSystemPrincipal()
                     });
                 }
             } else {

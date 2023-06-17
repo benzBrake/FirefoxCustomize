@@ -7,7 +7,8 @@
 // @license        MIT License
 // @charset        UTF-8
 // @include        main
-// @version        2023.03.15
+// @version        2023.06.17
+// @note           2023.06.17 修复 gBrowser.loadURI 第一个参数类型修改为 URI, Bug 1815439 - Remove useless loadURI wrapper from browser.js
 // @note           2023.03.15 修复 openUILinkIn 被移除
 // @note           2023.01.01 JSActor 化
 // @note           2022.11.27 修复 gBrowser is undefined
@@ -416,9 +417,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 }
                 if (uri.scheme === "javascript") {
                     try {
-                        loadURI(url);
-                    } catch (e) {
                         gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                    } catch (e) {
+                        gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
                     }
                 } else if (where) {
                     try {

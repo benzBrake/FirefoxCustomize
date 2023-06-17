@@ -2,10 +2,11 @@
 // @name            VideoBtn.uc.js
 // @description     VideoBtn 视频一键下载
 // @author          Ryan
-// @version         0.1.4
+// @version         0.1.5
 // @compatibility   Firefox 78
 // @shutdown        window.VideoBtn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.1.5 Bug 1815439 - Remove useless loadURI wrapper from browser.js
 // @version         0.1.4 Bug 1820534 - Move front-end to modern flexbox
 // @version         0.1.3 忘记修复了什么
 // @version         0.1.2 修复新窗口菜单样式异常
@@ -537,9 +538,9 @@
             }
             if (uri.scheme === "javascript") {
                 try {
-                    loadURI(url);
-                } catch (e) {
                     gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                } catch (e) {
+                    gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
                 }
             } else if (where) {
                 if (this.appVersion < 78) {
@@ -557,12 +558,16 @@
                 }
             } else if (event.button == 1) {
                 if (this.appVersion < 78) {
-                    openNewTabWith(uri.spec);
+                    openUILinkIn(uri.spec, where, false, postData || null);
                 } else {
-                    openNewTabWith(uri.spec, 'tab', {
-                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
-                            Services.scriptSecurityManager.createNullPrincipal({}) :
-                            Services.scriptSecurityManager.getSystemPrincipal()
+                    openTrustedLinkIn(uri.spec, where, {
+                        postData: postData || null,
+                        triggeringPrincipal: where === 'current' ?
+                            gBrowser.selectedBrowser.contentPrincipal : (
+                                /^(f|ht)tps?:/.test(uri.spec) ?
+                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.getSystemPrincipal()
+                            )
                     });
                 }
             } else {

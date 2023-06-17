@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.2.1
+// @version         0.2.2
 // @compatibility   Firefox 78
 // @include         main
 // @include         chrome://userchrome/content/SubScript/CopyCat.html
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.2.2 Bug 1815439 - Remove useless loadURI wrapper from browser.js
 // @version         0.2.1 修复 openUILinkIn 被移除
 // @version         0.2.0 修正点击按钮无法关闭菜单
 // @version         0.1.9 新增隐藏内置菜单选项 （userChromeJS.CopyCat.hideInternal）
@@ -826,11 +827,9 @@
                 }
                 if (uri.scheme === "javascript") {
                     try {
-                        loadURI(url);
+                        gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
                     } catch (e) {
-                        gBrowser.loadURI(url, {
-                            triggeringPrincipal: gBrowser.contentPrincipal
-                        });
+                        gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
                     }
                 } else if (where) {
                     if (CopyCatUtils.appVersion < 78) {
