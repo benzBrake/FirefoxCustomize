@@ -104,11 +104,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         handleEvent: function (event) {
             switch (event.type) {
                 case 'mouseup':
-                    try {
-                        gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
-                            this.setSelectedText(r.selectedText);
-                        })
-                    } catch (e) { }
+                    if (content) {
+                        this.setSelectedText(content.getSelection().toString());
+                    } else {
+                        try {
+                            gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
+                                this.setSelectedText(r.selectedText);
+                            })
+                        } catch (e) { }
+                    }
                     break;
             }
         },
