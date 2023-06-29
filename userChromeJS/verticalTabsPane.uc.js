@@ -2537,19 +2537,18 @@
                 modifiers: config.hotkey.modifiers,
                 key: config.hotkey.key,
             },
-            (win, key) =>
+            (win, key) => {
                 Services.obs.notifyObservers(win, "vertical-tabs-pane-toggle")
+            }
         );
         function registerHotkey(desc, func) {
             const validMods = ["accel", "alt", "ctrl", "meta", "shift"];
             const validKey = (k) => ((/^[\w-]$/).test(k) ? 1 : (/^F(?:1[0,2]|[1-9])$/).test(k) ? 2 : 0);
             const NOK = (a) => (typeof a != "string");
-            const eToO = (e) => ({ "metaKey": e.metaKey, "ctrlKey": e.ctrlKey, "altKey": e.altKey, "shiftKey": e.shiftKey, "key": e.srcElement.getAttribute("key"), "id": e.srcElement.getAttribute("id") });
 
             if (NOK(desc.id) || NOK(desc.key) || NOK(desc.modifiers)) {
                 return false
             }
-
             try {
                 let mods = desc.modifiers.toLowerCase().split(" ").filter((a) => (validMods.includes(a)));
                 let key = validKey(desc.key);
@@ -2557,46 +2556,36 @@
                     return false
                 }
 
-                ucWindows((doc, win) => {
-                    if (doc.getElementById(desc.id)) {
-                        return
+                window.addEventListener('keypress', (e) => {
+                    if (e.key !== desc.key.toLowerCase()) return;
+                    if (mods.includes("accel")) {
+                        if (!(e.ctrlKey || e.metaKey))
+                            return;
                     }
-                    let details = { "id": desc.id, "modifiers": mods.join(",").replace("ctrl", "accel"), "oncommand": "//" };
-                    if (key === 1) {
-                        details.key = desc.key.toUpperCase();
-                    } else {
-                        details.keycode = `VK_${desc.key}`;
+                    if (mods.includes("ctrl")) {
+                        if (!e.ctrlKey)
+                            return;
                     }
+                    if (mods.includes("meta")) {
+                        if (e.metaKey)
+                            return;
+                    }
+                    if (mods.includes("alt")) {
+                        if (!e.altKey)
+                            return;
+                    }
+                    if (mods.includes("shift")) {
+                        if (!e.shiftKey)
+                            return;
+                    }
+                    func(e.target.ownerGlobal);
+                })
 
-                    let el = utils.createElement(doc, "key", details);
-
-                    el.addEventListener("command", (ev) => { func(ev.target.ownerGlobal, eToO(ev)) });
-                    let keyset = doc.getElementById("mainKeyset") || doc.body.appendChild(utils.createElement(doc, "keyset", { id: "ucKeys" }));
-                    keyset.insertBefore(el, keyset.firstChild);
-                });
             } catch (e) {
                 console.error(e);
                 return false;
             }
             return true;
-        }
-
-        function ucWindows() {
-            return {
-                get: function (onlyBrowsers = true) {
-                    let windowType = "navigator:browser";
-                    let windows = Services.wm.getEnumerator(onlyBrowsers ? windowType : null);
-                    let wins = [];
-                    while (windows.hasMoreElements()) {
-                        wins.push(windows.getNext());
-                    }
-                    return wins
-                },
-                forEach: function (fun, onlyBrowsers = true) {
-                    let wins = this.get(onlyBrowsers);
-                    wins.forEach((w) => (fun(w.document, w)))
-                }
-            }
         }
     }
 
