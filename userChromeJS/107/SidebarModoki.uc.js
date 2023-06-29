@@ -3,11 +3,10 @@
 // @namespace      http://space.geocities.yahoo.co.jp/gl/alice0775
 // @description    TST
 // @include        main
-// @compatibility  Firefox 113
+// @compatibility  Firefox 107
 // @author         Alice0775
 // @note           Tree Style Tab がある場合にブックマークと履歴等を別途"サイドバーもどき"で表示
 // @note           SidebarModoki.uc.js.css をuserChrome.cssに読み込ませる必要あり
-// @version        2023/06/29 Bug 1820534 - Move front-end to modern flexbox.
 // @version        2022/10/12 Bug 1794630
 // @version        2022/09/29 fix Bug 1689816 
 // @version        2022/09/28 ordinal position
@@ -58,7 +57,7 @@ var SidebarModoki = {
     get SM_RIGHT() {
         return this.getPref("sidebar.position_start", "bool", false);
     },
-    SM_WIDTH: 230,
+    SM_WIDTH: 130,
     SM_AUTOHIDE: false,  //F11 Fullscreen
     TABS: [{
         src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
@@ -236,15 +235,14 @@ var SidebarModoki = {
       }
       #SM_tabbox {
         display: flex;
-        flex-direction: row;
       }
-      #SM_toolbox[style*="order: 10;"] #SM_tabbox{
+      #SM_toolbox[style*="-moz-box-ordinal-group: 10;"] #SM_tabbox{
         flex-direction: row-reverse;
       }
       #SM_tabs {
         overflow-x: hidden;
         display: flex;
-        flex-direction: column !important;
+        flex-direction: column;
         width: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
         height: auto;
         justify-content: flex-start;
@@ -399,7 +397,7 @@ var SidebarModoki = {
         sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
 
         template =
-            ["splitter", { id: "SM_splitter", style: this.SM_RIGHT ? "order:9" : "order:0", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" },
+            ["splitter", { id: "SM_splitter", style: this.SM_RIGHT ? "-moz-box-ordinal-group:9" : "-moz-box-ordinal-group:0", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" },
                 ["grippy", {}]
             ];
         sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
@@ -500,8 +498,8 @@ var SidebarModoki = {
     observe: function () {
         this.ToolBox = document.getElementById("SM_toolbox");
         this.Splitter = document.getElementById("SM_splitter");
-        this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "0", "");
-        this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "0", "");
+        this.ToolBox.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "10" : "0", "");
+        this.Splitter.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "9" : "0", "");
 
         if (this.getPref(this.kSM_Open, "bool", true)) {
             this.toggle(true);
@@ -511,12 +509,24 @@ var SidebarModoki = {
         document.getElementById("SM_tabs").addEventListener("focus", this, true);
         window.addEventListener("aftercustomization", this, false);
 
-        Services.prefs.addObserver("sidebar.position_start", () => {
-            this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "0", "");
-            this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "0", "");
-        })
         // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
-
+        this.SM_Observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                switch (mutation.attributeName) {
+                    case "collapsed":
+                    case "hidden":
+                    case "positionend":
+                        setTimeout(() => {
+                            this.ToolBox.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "10" : "0", "");
+                            this.Splitter.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "9" : "0", "");
+                        }, 0);
+                        break;
+                }
+            }.bind(this));
+        }.bind(this));
+        // pass in the target node, as well as the observer options
+        this.SM_Observer.observe(document.getElementById("sidebar-box"),
+            { attribute: true, attributeFilter: ["collapsed", "hidden", "positionend"] });
     },
 
     onSelect: function (event) {
