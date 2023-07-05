@@ -1267,7 +1267,7 @@
     flex: 1 !important;
 }
 .CopyCat-View .subviewbutton:not(.noIcon) > .toolbarbutton-icon {
-    display: -moz-inline-box !important;
+    display: inherit !important;
     width: 16px;
     height: 16px;
 }
@@ -1276,14 +1276,14 @@
     padding-inline-start: 8px !important;
 }
 .CopyCat-View .toolbaritem-combined-buttons:is(.showFirstText,.showText) > .subviewbutton:first-child > .toolbarbutton-text {
-    display: -moz-inline-box !important;
+    display: inherit !important;
     padding-inline-start: 8px !important;
 }
 .CopyCat-View .toolbaritem-combined-buttons.showFirstText > .subviewbutton:not(:first-child) > .toolbarbutton-text {
     display: none !important;
 }
 .CopyCat-View .toolbaritem-combined-buttons > .subviewbutton-iconic > .toolbarbutton-text, .TabPlus-View .toolbaritem-combined-buttons > .subviewbutton:not(.subviewbutton-iconic) > .toolbarbutton-icon {
-    display: -moz-inline-box !important;
+    display: inherit !important;
 }
 .CopyCat-View > vbox > :is(menu, menuitem) {
     margin: var(--arrowpanel-menuitem-margin);
