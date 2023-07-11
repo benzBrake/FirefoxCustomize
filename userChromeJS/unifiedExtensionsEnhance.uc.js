@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.1.9
+// @version         0.2.0
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.0 增加复制 ID 功能
 // @note            0.1.9 新增固定到工具栏，上移，下移按钮，调整面板宽度
 // @note            0.1.8 fx115
 // @note            0.1.7 修复禁用所有扩展，修复 destroy 报错，增加右键图标快速打开扩展管理页面
@@ -75,6 +76,12 @@
             class: "subviewbutton",
             "uni-action": "disable-all",
             label: "禁用所有扩展",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
+        },
+        COPY_ID: {
+            class: "unified-extensions-context-menu-copy-id",
+            "uni-action": "copy-id",
+            label: "复制 ID",
             onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
         get appVersion() {
@@ -156,7 +163,7 @@
             #unified-extensions-view .unified-extensions-item-pin {
                 flex: 0;
                 border: 1px solid transparent;
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMTIuMDAwMyAzQzE3LjM5MjQgMyAyMS44Nzg0IDYuODc5NzYgMjIuODE4OSAxMkMyMS44Nzg0IDE3LjEyMDIgMTcuMzkyNCAyMSAxMi4wMDAzIDIxQzYuNjA4MTIgMjEgMi4xMjIxNSAxNy4xMjAyIDEuMTgxNjQgMTJDMi4xMjIxNSA2Ljg3OTc2IDYuNjA4MTIgMyAxMi4wMDAzIDNaTTEyLjAwMDMgMTlDMTYuMjM1OSAxOSAxOS44NjAzIDE2LjA1MiAyMC43Nzc3IDEyQzE5Ljg2MDMgNy45NDgwMyAxNi4yMzU5IDUgMTIuMDAwMyA1QzcuNzY0NiA1IDQuMTQwMjIgNy45NDgwMyAzLjIyMjc4IDEyQzQuMTQwMjIgMTYuMDUyIDcuNzY0NiAxOSAxMi4wMDAzIDE5Wk0xMi4wMDAzIDE2LjVDOS41MTQ5OCAxNi41IDcuNTAwMjYgMTQuNDg1MyA3LjUwMDI2IDEyQzcuNTAwMjYgOS41MTQ3MiA5LjUxNDk4IDcuNSAxMi4wMDAzIDcuNUMxNC40ODU1IDcuNSAxNi41MDAzIDkuNTE0NzIgMTYuNTAwMyAxMkMxNi41MDAzIDE0LjQ4NTMgMTQuNDg1NSAxNi41IDEyLjAwMDMgMTYuNVpNMTIuMDAwMyAxNC41QzEzLjM4MSAxNC41IDE0LjUwMDMgMTMuMzgwNyAxNC41MDAzIDEyQzE0LjUwMDMgMTAuNjE5MyAxMy4zODEgOS41IDEyLjAwMDMgOS41QzEwLjYxOTYgOS41IDkuNTAwMjYgMTAuNjE5MyA5LjUwMDI2IDEyQzkuNTAwMjYgMTMuMzgwNyAxMC42MTk2IDE0LjUgMTIuMDAwMyAxNC41WiI+PC9wYXRoPjwvc3ZnPg==")
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiBmaWxsPSJjb250ZXh0LWZpbGwiPjxwYXRoIGQ9Ik0xMi4wMDAzIDNDMTcuMzkyNCAzIDIxLjg3ODQgNi44Nzk3NiAyMi44MTg5IDEyQzIxLjg3ODQgMTcuMTIwMiAxNy4zOTI0IDIxIDEyLjAwMDMgMjFDNi42MDgxMiAyMSAyLjEyMjE1IDE3LjEyMDIgMS4xODE2NCAxMkMyLjEyMjE1IDYuODc5NzYgNi42MDgxMiAzIDEyLjAwMDMgM1pNMTIuMDAwMyAxOUMxNi4yMzU5IDE5IDE5Ljg2MDMgMTYuMDUyIDIwLjc3NzcgMTJDMTkuODYwMyA3Ljk0ODAzIDE2LjIzNTkgNSAxMi4wMDAzIDVDNy43NjQ2IDUgNC4xNDAyMiA3Ljk0ODAzIDMuMjIyNzggMTJDNC4xNDAyMiAxNi4wNTIgNy43NjQ2IDE5IDEyLjAwMDMgMTlaTTEyLjAwMDMgMTYuNUM5LjUxNDk4IDE2LjUgNy41MDAyNiAxNC40ODUzIDcuNTAwMjYgMTJDNy41MDAyNiA5LjUxNDcyIDkuNTE0OTggNy41IDEyLjAwMDMgNy41QzE0LjQ4NTUgNy41IDE2LjUwMDMgOS41MTQ3MiAxNi41MDAzIDEyQzE2LjUwMDMgMTQuNDg1MyAxNC40ODU1IDE2LjUgMTIuMDAwMyAxNi41Wk0xMi4wMDAzIDE0LjVDMTMuMzgxIDE0LjUgMTQuNTAwMyAxMy4zODA3IDE0LjUwMDMgMTJDMTQuNTAwMyAxMC42MTkzIDEzLjM4MSA5LjUgMTIuMDAwMyA5LjVDMTAuNjE5NiA5LjUgOS41MDAyNiAxMC42MTkzIDkuNTAwMjYgMTJDOS41MDAyNiAxMy4zODA3IDEwLjYxOTYgMTQuNSAxMi4wMDAzIDE0LjVaIi8+PC9zdmc+")
             }
             #unified-extensions-view .unified-extensions-item-option {
                 flex: 0;
@@ -229,6 +236,10 @@
             view.addEventListener('ViewShowing', this);
             view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
             view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
+
+            if (!$Q("." + this.COPY_ID.class.replace(" ", "."))) {
+                $('unified-extensions-context-menu').insertBefore($C(document, 'menuitem', this.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension')); 
+            }
         },
         onPinToolbarChange(menu, event) {
             let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
@@ -327,6 +338,10 @@
                         eval('moveWidget = ' + gUnifiedExtensions.moveWidget.toString("").replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "async function moveWidget"));
                         moveWidget(event.target, uniAction);
                         break;
+                    case "copy-id":
+                        const _addonId = gUnifiedExtensions._getExtensionId(event.target.parentElement);
+                        Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(_addonId);
+                        break;
                 }
 
                 if (!button.hasAttribute("closemenu") && event.button !== 1)
@@ -420,6 +435,7 @@
             })
             gUnifiedExtensions.onPinToToolbarChange = this.onPinToToolbarChange;
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
+            $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')))
             if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
             delete window.unifiedExtensionsEnhance;
         }
