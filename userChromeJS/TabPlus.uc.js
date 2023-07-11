@@ -9,8 +9,14 @@
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
-(function (css) {
+(async function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+
+    let addon = await AddonManager.getAddonByID("{dc572301-7619-498c-a57d-39143191b318}");
+    if (addon && addon.isActive) {
+        console.log("检测到 TabMixPlus，为避免冲突，扩展已停止运行！");
+        return;
+    }
 
     if (!window.cPref) {
         window.cPref = {
@@ -94,7 +100,7 @@
             "close window with last tab": "关闭最后一个标签页后关闭窗口",
             "right click new tab button open url in clipboard": "右键新标签按钮打开剪贴板内容",
             "switch tab on scroll": "滚轮切换标签页",
-            "keep menupopup opened when middle click bookmark menu": "中键打开书签不关闭书签菜单",
+            "keep menupopup opened when middle click bookmark menu": "中键打开书签后关闭书签菜单",
             "select left tab after close current tab": "关闭标签页选中左侧标签页",
             "show drag images": "拖拽标签时显示缩略图"
         }
