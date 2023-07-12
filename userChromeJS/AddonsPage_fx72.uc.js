@@ -5,6 +5,7 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
+// @version         2023.07.12 Removed Services.jsm, per Bug 1780695
 // @version         2022.11.18 支持 fx-autoconfig
 // @version         2022.10.01 支持隐藏自身
 // @version         2022.09.27 Fx106
@@ -44,7 +45,7 @@
         delete window.userChromeJSAddon;
     }
 
-    Cu.import("resource://gre/modules/Services.jsm");
+    // Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/AddonManager.jsm");
 
     const LANG = {
