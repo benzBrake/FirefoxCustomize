@@ -2,8 +2,8 @@
 // @name            LocationBar.uc.js
 // @description     地址栏内工具栏
 // @license         MIT License
-// @compatibility   Firefox 102
-// @version         0.0.2
+// @compatibility   Firefox 107
+// @version         0.0.1
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
@@ -15,6 +15,15 @@
     const MENU_LABEL = "地址栏快捷工具";
 
     window.LocationBar = {
+        delayedInit: function () {
+            if (typeof Tabmix !== "undefined") {
+                Tabmix._deferredInitialized.promise.then(() => {
+                    this.init();
+                })
+            } else {
+                this.init();
+            }
+        },
         init: function () {
             const toolbarElem = window.MozXULElement.parseXULToFragment(
                 `
@@ -111,12 +120,12 @@
         return el;
     }
 
-    if (gBrowserInit.delayedStartupFinished) window.LocationBar.init();
+    if (gBrowserInit.delayedStartupFinished) window.LocationBar.delayedInit();
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                window.LocationBar.init();
+                window.LocationBar.delayedInit();
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
@@ -127,7 +136,6 @@
 }
 #urlbar-input-container #location-bar {
     background-color: transparent;
-    -moz-box-ordinal-group: 10 !important;
 }
 #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-icon, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-text, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-badge-stack {
     background-color: transparent;
@@ -158,9 +166,6 @@
 #urlbar-input-container #location-bar toolbarbutton {
     --toolbarbutton-hover-background: transparent;
 }
-#urlbar-input-container #location-bar toolbarbutton > .toolbarbutton-badge-stack {
-    padding: 0 !important;
-  }
 :root[uidensity="compact"] #urlbar-input-container #location-bar toolbarbutton > .toolbarbutton-badge-stack > .toolbarbutton-badge {
     margin-inline-end: 0 !important;
 }
