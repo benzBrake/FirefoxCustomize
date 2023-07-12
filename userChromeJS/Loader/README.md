@@ -13,3 +13,7 @@
 解压后有两个目录，`program`目录里的东西要解压到 Firefox.exe 所在目录，`profile`目录里的文件要解压到配置文件夹。
 
 ![](support.jpg)
+
+## 兼容的传统扩展
+
+https://github.com/xiaoxiaoflood/firefox-scripts/tree/master/extensions
