@@ -7,7 +7,8 @@
 // @license        MIT License
 // @charset        UTF-8
 // @include        main
-// @version        2023.06.17
+// @version        2023.07.16
+// @note           2023.07.16 优化 openCommand 函数
 // @note           2023.06.17 修复 gBrowser.loadURI 第一个参数类型修改为 URI, Bug 1815439 - Remove useless loadURI wrapper from browser.js
 // @note           2023.03.15 修复 openUILinkIn 被移除
 // @note           2023.01.01 JSActor 化
@@ -416,34 +417,47 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return this.log("URL 有问题: %s".replace("%s", url));
                 }
                 if (uri.scheme === "javascript") {
-                    try {
-                        gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                    } catch (e) {
-                        gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
-                    }
-                } else if (where) {
-                    try {
-                        openUILinkIn(uri.spec, where, false, postData || null);
-                    } catch (e) {
-                        let aAllowThirdPartyFixup = {
-                            postData: postData || null,
-                            triggeringPrincipal: where === 'current' ?
-                                gBrowser.selectedBrowser.contentPrincipal : (
-                                    /^(f|ht)tps?:/.test(uri.spec) ?
-                                        Services.scriptSecurityManager.createNullPrincipal({}) :
-                                        Services.scriptSecurityManager.getSystemPrincipal()
-                                )
-                        }
-                        openTrustedLinkIn(uri.spec, where, aAllowThirdPartyFixup);
+                    this.loadURI(uri);
+                } else {
+                    this.openUILinkIn(uri.spec, where || 'tab', null, postData);
+                }
+            },
+            loadURI: function (url) {
+                if ("loadURI" in window) {
+                    var loadURI = (url) => {
+                        gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
                     }
                 } else {
-                    let aAllowThirdPartyFixup = {
-                        inBackground: false,
-                        postData: postData || null,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                    var loadURI = (url) => {
+                        try {
+                            gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
+                        } catch (ex) {
+                            console.error(ex);
+                        }
                     }
-                    openTrustedLinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
                 }
+                (this.loadURI = loadURI)(url);
+            },
+            openUILinkIn: function (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
+                const createFixUp = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
+                    aAllowThirdPartyFixup = aAllowThirdPartyFixup instanceof Object ? aAllowThirdPartyFixup : {};
+                    aAllowThirdPartyFixup.triggeringPrincipal = aAllowThirdPartyFixup.triggeringPrincipal || (where === 'current' ? gBrowser.selectedBrowser.contentPrincipal : (
+                        /^(f|ht)tps?:/.test(url) ?
+                            Services.scriptSecurityManager.createNullPrincipal({}) :
+                            Services.scriptSecurityManager.getSystemPrincipal()
+                    ));
+                    aAllowThirdPartyFixup.postData = aPostData || null;
+                    aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
+                }
+                if ("openTrustedLinkIn" in window) {
+                    var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
+                        openTrustedLinkIn(url, where, createFixUp(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo));
+                    }
+                } else {
+                    var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) =>
+                        openUILinkIn(url, where, false, aPostData || null, aReferrerInfo);
+                }
+                (this.openUILinkIn = _openURL)(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo);
             },
             edit: function (aFile, aLineNumber) {
                 if (KeyChanger.isBuilding) return;
