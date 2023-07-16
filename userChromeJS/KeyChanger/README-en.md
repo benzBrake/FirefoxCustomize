@@ -14,8 +14,7 @@ The default configuration file is `profiledir\chrome\_keychanger.js`, and you ca
 
 ### General Configuration Format
 
-```
-js
+```js
 keys['CTRL+ALT+P'] = function() {
 	// Your function
 }
@@ -27,8 +26,7 @@ keys['CTRL+ALT+P'] = function() {
 
 In `KeyChanger_fx70.uc.js`, in addition to the original configuration format, you can also use the built-in command format.
 
-```
-csharp
+```json
 keys['F4'] = {
     oncommand: "internal",
     params: [
