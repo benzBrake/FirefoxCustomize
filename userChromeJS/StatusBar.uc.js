@@ -3,11 +3,12 @@
 // @description     状态栏
 // @license         MIT License
 // @compatibility   Firefox 107
-// @version         0.0.1
+// @version         0.0.2
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.0.2 修正启用 TabMixPlus 扩展后看不见状态栏
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
 (function (css) {
@@ -15,6 +16,15 @@
     const MENU_LABEL = "状态栏";
 
     window.StatusBar = {
+        delayedInit: function () {
+            if (typeof Tabmix !== "undefined") {
+                Tabmix._deferredInitialized.promise.then(() => {
+                    this.init();
+                })
+            } else {
+                this.init();
+            }
+        },
         init: function () {
             const toolbarElem = window.MozXULElement.parseXULToFragment(
                 `
@@ -141,12 +151,12 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
-    if (gBrowserInit.delayedStartupFinished) window.StatusBar.init();
+    if (gBrowserInit.delayedStartupFinished) window.StatusBar.delayedInit();
     else {
         let delayedListener = (subject, topic) => {
             if (topic == "browser-delayed-startup-finished" && subject == window) {
                 Services.obs.removeObserver(delayedListener, topic);
-                window.StatusBar.init();
+                window.StatusBar.delayedInit();
             }
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
