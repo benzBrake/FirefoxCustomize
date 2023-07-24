@@ -532,11 +532,13 @@
                         }
 
                         return dest;
-                    } else {
+                    } else if (!'placehoder' in obj || obj.placeholder) {
                         return $C(doc, 'menuseparator', {
                             class: "CopyCat-Replacement",
                             hidden: true
                         });
+                    } else {
+                        return;
                     }
                 } else {
                     item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
