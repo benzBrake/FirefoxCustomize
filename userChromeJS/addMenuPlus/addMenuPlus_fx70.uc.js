@@ -673,11 +673,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return this.log(U($L('url is invalid')).replace("%s", url));
                 }
                 if (uri.scheme === "javascript") {
-                    try {
-                        gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                    } catch (e) {
-                        gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
-                    }
+                    this.loadURI(url);
                 } else if (where) {
                     if (this.appVersion < 78) {
                         openUILinkIn(uri.spec, where, false, postData || null);
@@ -718,6 +714,22 @@ if (typeof window === "undefined" || globalThis !== window) {
                         });
                     }
                 }
+            },
+            loadURI: function (url) {
+                if ("loadURI" in window) {
+                    var loadURI = (url) => {
+                        gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
+                    }
+                } else {
+                    var loadURI = (url) => {
+                        try {
+                            gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
+                        } catch (ex) {
+                            console.error(ex);
+                        }
+                    }
+                }
+                (this.loadURI = loadURI)(url);
             },
             exec: function (path, arg) {
                 var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
