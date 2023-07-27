@@ -7,7 +7,8 @@
 // @license        MIT License
 // @charset        UTF-8
 // @include        main
-// @version        2023.07.16
+// @version        2023.07.27
+// @note           2023.07.27 修复 openCommand 不遵循容器设定
 // @note           2023.07.16 优化 openCommand 函数
 // @note           2023.06.17 修复 gBrowser.loadURI 第一个参数类型修改为 URI, Bug 1815439 - Remove useless loadURI wrapper from browser.js
 // @note           2023.03.15 修复 openUILinkIn 被移除
@@ -419,7 +420,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 if (uri.scheme === "javascript") {
                     this.loadURI(uri);
                 } else {
-                    this.openUILinkIn(uri.spec, where || 'tab', null, postData);
+                    this.openUILinkIn(uri.spec, where || 'tab', gBrowser.contentPrincipal.originAttributes.userContextId ? {
+                        userContextId: gBrowser.contentPrincipal.originAttributes.userContextId
+                    } : null, postData);
                 }
             },
             loadURI: function (url) {
@@ -448,6 +451,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     ));
                     aAllowThirdPartyFixup.postData = aPostData || null;
                     aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
+                    return aAllowThirdPartyFixup;
                 }
                 if ("openTrustedLinkIn" in window) {
                     var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
