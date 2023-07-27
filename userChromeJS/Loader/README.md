@@ -8,9 +8,13 @@
 
 实际上可以向下兼容，具体版本没有测试
 
+### Firefox 57+
+
+下载 [fx57.zip](fx57.zip)
+
 ## 使用说明
 
-解压后有两个目录，`program`目录里的东西要解压到 Firefox.exe 所在目录，`profile`目录里的文件要解压到配置文件夹。
+解压后最多有两个目录，`program`目录里的东西要解压到 Firefox.exe 所在目录，`profile`目录里的文件要解压到配置文件夹。
 
 ![](support.jpg)
 
