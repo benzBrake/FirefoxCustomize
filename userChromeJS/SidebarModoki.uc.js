@@ -7,7 +7,7 @@
 // @author         Alice0775
 // @note           Tree Style Tab がある場合にブックマークと履歴等を別途"サイドバーもどき"で表示
 // @note           SidebarModoki.uc.js.css をuserChrome.cssに読み込ませる必要あり
-// @version        2023/06/29 Bug 1820534 - Move front-end to modern flexbox.
+// @version        2023/03/09 Bug 1820534 - Move front-end to modern flexbox.
 // @version        2022/10/12 Bug 1794630
 // @version        2022/09/29 fix Bug 1689816 
 // @version        2022/09/28 ordinal position
@@ -53,125 +53,127 @@
 
 
 var SidebarModoki = {
-    // -- config --
-    // SM_RIGHT: false,  // SidebarModoki position
-    get SM_RIGHT() {
-        return this.getPref("sidebar.position_start", "bool", false);
-    },
-    SM_WIDTH: 230,
-    SM_AUTOHIDE: false,  //F11 Fullscreen
-    TABS: [{
-        src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
-        "data-l10n-id": "library-bookmarks-menu",
-        image: "chrome://browser/skin/bookmark-star-on-tray.svg",
-        // shortcut: { key: "Q", modifiers: "accel,alt" } // uncomment to enable shortcut
-    }, {
-        src: "chrome://browser/content/places/historySidebar.xhtml",
-        "data-l10n-id": "appmenuitem-history",
-        image: "chrome://browser/skin/history.svg",
-    }, {
-        src: "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
-        "data-l10n-id": "appmenuitem-downloads",
-        image: "chrome://browser/skin/downloads/downloads.svg",
-    }, {
-        "addon-id": "treestyletab@piro.sakura.ne.jp",
-        src: "sidebar/sidebar.html",
-        label: "TST"
-    }, {
-        "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
-        src: "popup/index.html",
-        label: "Bitwarden"
-    }, {
-        "addon-id": "{bd97f89b-17ba-4539-9fec-06852d07f917}",
-        src: "sidebar/checkmarks-sidebar.html",
-        label: "Checkmarks"
-    }],
-    // -- config --
-    kSM_Open: "userChrome.SidebarModoki.Open",
-    kSM_lastSelectedTabIndex: "userChrome.SidebarModoki.lastSelectedTabIndex",
-    kSM_lastSelectedTabWidth: "userChrome.SidebarModoki.lastSelectedTabWidth",
-    ToolBox: null,
-    Button: null,
+  // -- config --
+  get SM_RIGHT() {
+    return this.getPref("sidebar.position_start", "bool", false);
+  },
+  SM_WIDTH: 230,
+  SM_AUTOHIDE: false,  //F11 Fullscreen
+  TABS: [{
+    src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
+    "data-l10n-id": "library-bookmarks-menu",
+    image: "chrome://browser/skin/bookmark-star-on-tray.svg",
+    // shortcut: { key: "Q", modifiers: "accel,alt" } // uncomment to enable shortcut
+  }, {
+    src: "chrome://browser/content/places/historySidebar.xhtml",
+    "data-l10n-id": "appmenuitem-history",
+    image: "chrome://browser/skin/history.svg",
+  }, {
+    src: "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
+    "data-l10n-id": "appmenuitem-downloads",
+    image: "chrome://browser/skin/downloads/downloads.svg",
+  }, {
+    "addon-id": "treestyletab@piro.sakura.ne.jp",
+    src: "sidebar/sidebar.html",
+    label: "TST"
+  }, {
+    "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
+    src: "popup/index.html",
+    label: "Bitwarden"
+  }, {
+    "addon-id": "{bd97f89b-17ba-4539-9fec-06852d07f917}",
+    src: "sidebar/checkmarks-sidebar.html",
+    label: "Checkmarks"
+  }, {
+    src: "https://papago.naver.com/",
+    label: "papago"
+  }],
+  // -- config --
 
-    get prefs() {
-        delete this.prefs;
-        return this.prefs = Services.prefs;
-    },
+  kSM_Open: "userChrome.SidebarModoki.Open",
+  kSM_lastSelectedTabIndex: "userChrome.SidebarModoki.lastSelectedTabIndex",
+  kSM_lastSelectedTabWidth: "userChrome.SidebarModoki.lastSelectedTabWidth",
+  ToolBox: null,
+  Button: null,
 
-    jsonToDOM: function (jsonTemplate, doc, nodes) {
-        jsonToDOM.namespaces = {
-            html: "http://www.w3.org/1999/xhtml",
-            xul: "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        };
-        jsonToDOM.defaultNamespace = jsonToDOM.namespaces.xul;
-        function jsonToDOM(jsonTemplate, doc, nodes) {
-            function namespace(name) {
-                var reElemNameParts = /^(?:(.*):)?(.*)$/.exec(name);
-                return { namespace: jsonToDOM.namespaces[reElemNameParts[1]], shortName: reElemNameParts[2] };
-            }
+  get prefs() {
+    delete this.prefs;
+    return this.prefs = Services.prefs;
+  },
 
-            // Note that 'elemNameOrArray' is: either the full element name (eg. [html:]div) or an array of elements in JSON notation
-            function tag(elemNameOrArray, elemAttr) {
-                // Array of elements?  Parse each one...
-                if (Array.isArray(elemNameOrArray)) {
-                    var frag = doc.createDocumentFragment();
-                    Array.prototype.forEach.call(arguments, function (thisElem) {
-                        frag.appendChild(tag.apply(null, thisElem));
-                    });
-                    return frag;
-                }
+  jsonToDOM: function (jsonTemplate, doc, nodes) {
+    jsonToDOM.namespaces = {
+      html: "http://www.w3.org/1999/xhtml",
+      xul: "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    };
+    jsonToDOM.defaultNamespace = jsonToDOM.namespaces.xul;
+    function jsonToDOM(jsonTemplate, doc, nodes) {
+      function namespace(name) {
+        var reElemNameParts = /^(?:(.*):)?(.*)$/.exec(name);
+        return { namespace: jsonToDOM.namespaces[reElemNameParts[1]], shortName: reElemNameParts[2] };
+      }
 
-                // Single element? Parse element namespace prefix (if none exists, default to defaultNamespace), and create element
-                var elemNs = namespace(elemNameOrArray);
-                var elem = doc.createElementNS(elemNs.namespace || jsonToDOM.defaultNamespace, elemNs.shortName);
+      // Note that 'elemNameOrArray' is: either the full element name (eg. [html:]div) or an array of elements in JSON notation
+      function tag(elemNameOrArray, elemAttr) {
+        // Array of elements?  Parse each one...
+        if (Array.isArray(elemNameOrArray)) {
+          var frag = doc.createDocumentFragment();
+          Array.prototype.forEach.call(arguments, function (thisElem) {
+            frag.appendChild(tag.apply(null, thisElem));
+          });
+          return frag;
+        }
 
-                // Set element's attributes and/or callback functions (eg. onclick)
-                for (var key in elemAttr) {
-                    var val = elemAttr[key];
-                    if (nodes && key == "keyvalue") {  //for later convenient JavaScript access) by giving them a 'keyvalue' attribute; |nodes|.|keyvalue|
-                        nodes[val] = elem;
-                        continue;
-                    }
+        // Single element? Parse element namespace prefix (if none exists, default to defaultNamespace), and create element
+        var elemNs = namespace(elemNameOrArray);
+        var elem = doc.createElementNS(elemNs.namespace || jsonToDOM.defaultNamespace, elemNs.shortName);
 
-                    var attrNs = namespace(key);
-                    if (typeof val == "function") {
-                        // Special case for function attributes; don't just add them as 'on...' attributes, but as events, using addEventListener
-                        elem.addEventListener(key.replace(/^on/, ""), val, false);
-                    } else {
-                        // Note that the default namespace for XML attributes is, and should be, blank (ie. they're not in any namespace)
-                        elem.setAttributeNS(attrNs.namespace || "", attrNs.shortName, val);
-                    }
-                }
+        // Set element's attributes and/or callback functions (eg. onclick)
+        for (var key in elemAttr) {
+          var val = elemAttr[key];
+          if (nodes && key == "keyvalue") {  //for later convenient JavaScript access) by giving them a 'keyvalue' attribute; |nodes|.|keyvalue|
+            nodes[val] = elem;
+            continue;
+          }
 
-                // Create and append this element's children
-                var childElems = Array.prototype.slice.call(arguments, 2);
-                childElems.forEach(function (childElem) {
-                    if (childElem != null) {
-                        elem.appendChild(
-                            doc.defaultView.Node.isInstance(childElem)
+          var attrNs = namespace(key);
+          if (typeof val == "function") {
+            // Special case for function attributes; don't just add them as 'on...' attributes, but as events, using addEventListener
+            elem.addEventListener(key.replace(/^on/, ""), val, false);
+          } else {
+            // Note that the default namespace for XML attributes is, and should be, blank (ie. they're not in any namespace)
+            elem.setAttributeNS(attrNs.namespace || "", attrNs.shortName, val);
+          }
+        }
+
+        // Create and append this element's children
+        var childElems = Array.prototype.slice.call(arguments, 2);
+        childElems.forEach(function (childElem) {
+          if (childElem != null) {
+            elem.appendChild(
+              doc.defaultView.Node.isInstance(childElem)
                 /*childElem instanceof doc.defaultView.Node*/ ? childElem :
-                                Array.isArray(childElem) ? tag.apply(null, childElem) :
-                                    doc.createTextNode(childElem));
-                    }
-                });
-                return elem;
-            }
-            return tag.apply(null, jsonTemplate);
-        }
+                Array.isArray(childElem) ? tag.apply(null, childElem) :
+                  doc.createTextNode(childElem));
+          }
+        });
+        return elem;
+      }
+      return tag.apply(null, jsonTemplate);
+    }
 
-        return jsonToDOM(jsonTemplate, doc, nodes);
-    },
+    return jsonToDOM(jsonTemplate, doc, nodes);
+  },
 
-    init: async function () {
-        let chromehidden = document.getElementById("main-window").hasAttribute("chromehidden");
-        if (chromehidden &&
-            document.getElementById("main-window").getAttribute("chromehidden").includes("extrachrome")) {
-            return; // do nothing
-        }
+  init: async function () {
+    let chromehidden = document.getElementById("main-window").hasAttribute("chromehidden");
+    if (chromehidden &&
+      document.getElementById("main-window").getAttribute("chromehidden").includes("extrachrome")) {
+      return; // do nothing
+    }
 
-        // let MARGINHACK = this.SM_RIGHT ? "0 0 0 0" : "0 -2px 0 0";
-        let MARGINHACK = "0 0 0 0";
-        let style = `
+    let MARGINHACK = this.SM_RIGHT ? "0 0 0 0" : "0 -2px 0 0";
+    let style = `
       @namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
       
       #SM_toolbox
@@ -291,338 +293,350 @@ var SidebarModoki = {
         list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVQ4jWP4TyFg+P///38GBgayMHUNwEdjdTrVDcDnTKJdgEsRSV5ACaBRF9DZBQObFygBAMeIxVdCQIJTAAAAAElFTkSuQmCC');
       }
      `;
-        var sss = Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService);
-        var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK)));
-        if (!sss.sheetRegistered(uri, sss.AGENT_SHEET))
-            sss.loadAndRegisterSheet(uri, sss.AGENT_SHEET);
-        /*
-            style = style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK);
-            let sspi = document.createProcessingInstruction(
-              'xml-stylesheet',
-              'type="text/css" href="data:text/css,' + encodeURIComponent(style) + '"'
-            );
-            document.insertBefore(sspi, document.documentElement);
-            sspi.getAttribute = function(name) {
-              return document.documentElement.getAttribute(name);
-            };
-        */
-        ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
-        // xxxx try-catch may need for 2nd window
-        try {
-            CustomizableUI.createWidget({ //must run createWidget before windowListener.register because the register function needs the button added first
-                id: 'SM_Button',
-                type: 'custom',
-                defaultArea: CustomizableUI.AREA_NAVBAR,
-                onBuild: function (aDocument) {
-                    var toolbaritem = aDocument.createElementNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'toolbarbutton');
-                    var props = {
-                        id: "SM_Button",
-                        class: "toolbarbutton-1 chromeclass-toolbar-additional",
-                        tooltiptext: "Sidebar Modoki",
-                        oncommand: "SidebarModoki.toggle();",
-                        type: "button",
-                        label: "Sidebar Modoki",
-                        removable: "true"
-                    };
-                    for (var p in props) {
-                        toolbaritem.setAttribute(p, props[p]);
-                    }
-
-                    return toolbaritem;
-                }
-            });
-        } catch (e) { }
-
-        // to do, replace with MozXULElement.parseXULToFragment();
-        let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
-        document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
-
-        template = ["key", { id: "key_SidebarModoki", key: "B", modifiers: "accel,alt", command: "cmd_SidebarModoki", }];
-        document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
-        //to do xxx ordinal=xx shoud be replaced with style="-moz-box-ordinal-group: xx;"
-        template =
-            ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "left" : "right" },
-                ["hbox", { id: "SM_header", align: "center" },
-                    ["label", {}, "SidebarModoki"],
-                    ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
-                    ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
-                ],
-                ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
-                    ["tabs", { id: "SM_tabs" },
-                    ],
-                    ["tabpanels", { id: "SM_tabpanels", flex: "1", style: "border: none;" },
-                    ]
-                ]
-            ];
-        for (let i = 0; i < this.TABS.length; i++) {
-            let tab = Object.assign(this.TABS[i], { id: "SM_tab" + i });
-            if (tab.hasOwnProperty("addon-id")) {
-                let policy = WebExtensionPolicy.getByID(tab["addon-id"]);
-                if (policy && policy.active) {
-                    tab.src = "moz-extension://" + policy.mozExtensionHostname + "/" + tab.src.replace(/^\//g, "");
-                    this.TABS[i].src = tab.src;
-                } else {
-                    tab.hidden = true;
-                }
-                if (!tab.hasOwnProperty("image")) {
-                    let addon = await AddonManager.getAddonByID(tab["addon-id"]);
-                    if (addon) {
-                        tab.image = addon.iconURL || addon.iconURL64 || this.iconURL || '';
-                        if (tab.image == "") delete tab.image;
-                    }
-                }
-            }
-            if (tab.hasOwnProperty("image")) {
-                tab.iconized = true;
-            }
-            if (tab.hasOwnProperty("shortcut")) {
-                let shortcut = tab["shortcut"];
-                shortcut.oncommand = `SidebarModoki.switchToTab(${i})`
-                let template = ["key", shortcut];
-                document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
-                delete tab["shortcut"];
-            }
-            template[3][2].push(["tab", tab]);
-            let browser = { id: "SM_tab" + i + "-browser", flex: "1", autoscroll: "false", src: "" };
-            if (tab.src.startsWith("moz")) {
-                browser.messagemanagergroup = "webext-browsers";
-                browser.disableglobalhistory = true;
-                browser["webextension-view-type"] = "sidebar";
-                browser.type = "content";
-                browser.remote = true;
-                browser.maychangeremoteness = "true";
-                browser.disablefullscreen = "true"
-            }
-            template[3][3].push(["tabpanel", { id: "SM_tab" + i + "-container", orient: "vertical", flex: "1" }, ["browser", browser]]);
-        }
-        let sidebar = document.getElementById("sidebar-box");
-        sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
-
-        template =
-            ["splitter", { id: "SM_splitter", style: this.SM_RIGHT ? "order:9" : "order:0", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" },
-                ["grippy", {}]
-            ];
-        sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
-
-        //xxx 69 hack
-        let tabbox = document.getElementById("SM_tabbox");
-        tabbox.handleEvent = function handleEvent(event) {
-            if (!event.isTrusted) {
-                // Don't let untrusted events mess with tabs.
-                return;
-            }
-
-            // Skip this only if something has explicitly cancelled it.
-            if (event.defaultCancelled) {
-                return;
-            }
-
-            // Don't check if the event was already consumed because tab
-            // navigation should always work for better user experience.
-            let imports = {};
-            ChromeUtils.defineModuleGetter(
-                imports,
-                "ShortcutUtils",
-                "resource://gre/modules/ShortcutUtils.jsm"
-            );
-            const { ShortcutUtils } = imports;
-
-            switch (ShortcutUtils.getSystemActionForEvent(event)) {
-                case ShortcutUtils.CYCLE_TABS:
-                    if (this.tabs && this.handleCtrlTab) {
-                        this.tabs.advanceSelectedTab(event.shiftKey ? -1 : 1, true);
-                        event.preventDefault();
-                    }
-                    break;
-                case ShortcutUtils.PREVIOUS_TAB:
-                    if (this.tabs && this.handleCtrlPageUpDown) {
-                        this.tabs.advanceSelectedTab(-1, true);
-                        event.preventDefault();
-                    }
-                    break;
-                case ShortcutUtils.NEXT_TAB:
-                    if (this.tabs && this.handleCtrlPageUpDown) {
-                        this.tabs.advanceSelectedTab(1, true);
-                        event.preventDefault();
-                    }
-                    break;
-            }
+    var sss = Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService);
+    var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK)));
+    if (!sss.sheetRegistered(uri, sss.AGENT_SHEET))
+      sss.loadAndRegisterSheet(uri, sss.AGENT_SHEET);
+    /*
+        style = style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK);
+        let sspi = document.createProcessingInstruction(
+          'xml-stylesheet',
+          'type="text/css" href="data:text/css,' + encodeURIComponent(style) + '"'
+        );
+        document.insertBefore(sspi, document.documentElement);
+        sspi.getAttribute = function(name) {
+          return document.documentElement.getAttribute(name);
         };
+    */
+    ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
+    // xxxx try-catch may need for 2nd window
+    try {
+      CustomizableUI.createWidget({ //must run createWidget before windowListener.register because the register function needs the button added first
+        id: 'SM_Button',
+        type: 'custom',
+        defaultArea: CustomizableUI.AREA_NAVBAR,
+        onBuild: function (aDocument) {
+          var toolbaritem = aDocument.createElementNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'toolbarbutton');
+          var props = {
+            id: "SM_Button",
+            class: "toolbarbutton-1 chromeclass-toolbar-additional",
+            tooltiptext: "Sidebar Modoki",
+            oncommand: "SidebarModoki.toggle();",
+            type: "button",
+            label: "Sidebar Modoki",
+            removable: "true"
+          };
+          for (var p in props) {
+            toolbaritem.setAttribute(p, props[p]);
+          }
 
-        let index = document.getElementById("SM_tabpanels").selectedIndex;
-        let tb0 = document.getElementById("SM_tab0");
-        let tb1 = document.getElementById("SM_tab1");
-        let tb2 = document.getElementById("SM_tab2");
-        tb0.parentNode.insertBefore(tb0, tb1);
-        tb0.parentNode.insertBefore(tb1, tb2);
-        document.getElementById("SM_tabs").selectedIndex = index;
-
-        setTimeout(function () { this.observe(); }.bind(this), 0);
-
-        //F11 fullscreen
-        FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
-        FullScreen.showNavToolbox = function (trackMouse = true) {
-            FullScreen.showNavToolbox_org(trackMouse);
-            if (!!SidebarModoki.ToolBox) {
-                SidebarModoki.ToolBox.removeAttribute("moz-collapsed");
-                SidebarModoki.Splitter.removeAttribute("moz-collapsed");
-            }
+          return toolbaritem;
         }
-        FullScreen.hideNavToolbox_org = FullScreen.hideNavToolbox;
-        FullScreen.hideNavToolbox = function (aAnimate = false) {
-            FullScreen.hideNavToolbox_org(aAnimate);
-            if (SidebarModoki.SM_AUTOHIDE && !!SidebarModoki.ToolBox) {
-                SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
-                SidebarModoki.Splitter.setAttribute("moz-collapsed", "true");
-            }
-        }
+      });
+    } catch (e) { }
 
-        //DOM fullscreen
-        window.addEventListener("MozDOMFullscreen:Entered", this,
-                            /* useCapture */ true,
-                            /* wantsUntrusted */ false);
-        window.addEventListener("MozDOMFullscreen:Exited", this,
-                            /* useCapture */ true,
-                            /* wantsUntrusted */ false);
-        /*
-            SidebarUI.setPosition_org = SidebarUI.setPosition;
-            SidebarUI.setPosition = function() {
-              SidebarUI.setPosition_org();
-              if (SidebarModoki && SidebarModoki.ToolBox) 
-              SidebarModoki.ToolBox.style.setProperty("-moz-box-ordinal-group", SidebarModoki.SM_RIGHT ? "10" : "0", "");
-              if (SidebarModoki && SidebarModoki.Splitter) 
-              SidebarModoki.Splitter.style.setProperty("-moz-box-ordinal-group", SidebarModoki.SM_RIGHT ? "9" : "0", "");
-            };
-        */
-    },
+    // to do, replace with MozXULElement.parseXULToFragment();
+    let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
+    document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
 
-
-    observe: function () {
-        this.ToolBox = document.getElementById("SM_toolbox");
-        this.Splitter = document.getElementById("SM_splitter");
-        this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "0", "");
-        this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "0", "");
-
-        if (this.getPref(this.kSM_Open, "bool", true)) {
-            this.toggle(true);
+    template = ["key", { id: "key_SidebarModoki", key: "B", modifiers: "accel,alt", command: "cmd_SidebarModoki", }];
+    document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
+    //to do xxx ordinal=xx shoud be replaced with style="-moz-box-ordinal-group: xx;"
+    template =
+      ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "/*-moz-box-ordinal-group:10;*/ order: 10;" : "/*-moz-box-ordinal-group:0;*/ order: -1;" },
+        ["hbox", { id: "SM_header", align: "center" },
+          ["label", {}, "SidebarModoki"],
+          ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
+          ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
+        ],
+        ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
+          ["tabs", { id: "SM_tabs" },
+          ],
+          ["tabpanels", { id: "SM_tabpanels", flex: "1", style: "border: none;" },
+          ]
+        ]
+      ];
+    for (let i = 0; i < this.TABS.length; i++) {
+      let tab = Object.assign(this.TABS[i], { id: "SM_tab" + i });
+      if (tab.hasOwnProperty("addon-id")) {
+        let policy = WebExtensionPolicy.getByID(tab["addon-id"]);
+        if (policy && policy.active) {
+          tab.src = "moz-extension://" + policy.mozExtensionHostname + "/" + tab.src.replace(/^\//g, "");
+          this.TABS[i].src = tab.src;
         } else {
-            this.close();
+          tab.hidden = true;
         }
-        document.getElementById("SM_tabs").addEventListener("focus", this, true);
-        window.addEventListener("aftercustomization", this, false);
-
-        Services.prefs.addObserver("sidebar.position_start", () => {
-            this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "0", "");
-            this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "0", "");
-        })
-        // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
-
-    },
-
-    onSelect: function (event) {
-        let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
-        this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
-        width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
-        if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
-            document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
+        if (!tab.hasOwnProperty("image")) {
+          let addon = await AddonManager.getAddonByID(tab["addon-id"]);
+          if (addon) {
+            tab.image = addon.iconURL || addon.iconURL64 || this.iconURL || '';
+            if (tab.image == "") delete tab.image;
+          }
         }
-        document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-    },
-
-    toggle: function (forceopen) {
-        this.Button = document.getElementById("SM_Button");
-        if (!this.Button.hasAttribute("checked") || forceopen) {
-            this.Button.setAttribute("checked", true);
-            this.ToolBox.collapsed = false;
-            this.Splitter.collapsed = false;
-            let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
-            document.getElementById("SM_tabs").selectedIndex = index;
-            width = this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH);
-            document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-            this.prefs.setBoolPref(this.kSM_Open, true)
-            this.onSelect({});
-            addEventListener("resize", this, false);
-        } else {
-            this.close();
-        }
-    },
-
-    switchToTab: function (tabNo) {
-        this.toggle(true);
-        let tab = document.getElementById("SM_tab" + tabNo);
-        if (tab) {
-            document.getElementById("SM_tabs").selectedIndex = tabNo;
-            this.onSelect();
-        }
-    },
-
-    advanceSelectedTab: function (dir) {
-        if (typeof dir == "undefined") return;
-        document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
-        this.onSelect();
-    },
-
-    close: function () {
-        removeEventListener("resize", this, false);
-        this.Button = document.getElementById("SM_Button");
-        this.Button.removeAttribute("checked");
-        this.ToolBox.collapsed = true;
-        this.Splitter.collapsed = true;
-        this.prefs.setBoolPref(this.kSM_Open, false)
-    },
-
-
-    //ここからは, 大きさの調整
-    onResize: function (event) {
-        let width = this.ToolBox.getBoundingClientRect().width;
-        let aIndex = document.getElementById("SM_tabs").selectedIndex;
-        this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
-    },
-
-    handleEvent: function (event) {
-        switch (event.type) {
-            case 'focus':
-                this.onSelect(event);
-                break;
-            case 'resize':
-                this.onResize(event);
-                break;
-            case 'MozDOMFullscreen:Entered':
-                if (!!this.ToolBox) {
-                    this.ToolBox.setAttribute("moz-collapsed", "true");
-                    this.Splitter.setAttribute("moz-collapsed", "true");
-                }
-                break;
-            case 'MozDOMFullscreen:Exited':
-                if (!!this.ToolBox) {
-                    this.ToolBox.removeAttribute("moz-collapsed");
-                    this.Splitter.removeAttribute("moz-collapsed");
-                }
-                break;
-            case 'aftercustomization':
-                if (this.getPref(this.kSM_Open, "bool", true)) {
-                    this.Button.setAttribute("checked", true);
-                }
-                break;
-        }
-    },
-
-    //pref読み込み
-    getPref: function (aPrefString, aPrefType, aDefault) {
-        try {
-            switch (aPrefType) {
-                case "str":
-                    return this.prefs.getCharPref(aPrefString).toString(); break;
-                case "int":
-                    return this.prefs.getIntPref(aPrefString); break;
-                case "bool":
-                default:
-                    return this.prefs.getBoolPref(aPrefString); break;
-            }
-        } catch (e) {
-        }
-        return aDefault;
+      }
+      if (tab.src.startsWith("http")) {
+        tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32"
+      }
+      if (tab.hasOwnProperty("image")) {
+        tab.iconized = true;
+      }
+      if (tab.hasOwnProperty("shortcut")) {
+        let shortcut = tab["shortcut"];
+        shortcut.oncommand = `SidebarModoki.switchToTab(${i})`
+        let template = ["key", shortcut];
+        document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
+        delete tab["shortcut"];
+      }
+      template[3][2].push(["tab", tab]);
+      let browser = { id: "SM_tab" + i + "-browser", flex: "1", autoscroll: "false", src: "" };
+      if (tab.src.startsWith("moz")) {
+        browser.messagemanagergroup = "webext-browsers";
+        browser.disableglobalhistory = true;
+        browser["webextension-view-type"] = "sidebar";
+        browser.type = "content";
+        browser.remote = true;
+        browser.maychangeremoteness = "true";
+        browser.disablefullscreen = "true"
+      } else if (tab.src.startsWith("http")) {
+        browser.messagemanagergroup = "browsers";
+        browser.disableglobalhistory = true;
+        browser["webextension-view-type"] = "popup";
+        browser.type = "content";
+        browser.remote = true;
+        browser.maychangeremoteness = "true";
+        browser.disablefullscreen = "true"
+      }
+      template[3][3].push(["tabpanel", { id: "SM_tab" + i + "-container", orient: "vertical", flex: "1" }, ["browser", browser]]);
     }
+    let sidebar = document.getElementById("sidebar-box");
+    sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
+
+    template =
+      ["splitter", { id: "SM_splitter", style: this.SM_RIGHT ? "/*-moz-box-ordinal-group:9;*/ order: 9;" : "/*-moz-box-ordinal-group:0;*/ order: -1;", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" }, /*Bug 1820534*/
+        ["grippy", {}]
+      ];
+    sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
+
+    //xxx 69 hack
+    let tabbox = document.getElementById("SM_tabbox");
+    tabbox.handleEvent = function handleEvent(event) {
+      if (!event.isTrusted) {
+        // Don't let untrusted events mess with tabs.
+        return;
+      }
+
+      // Skip this only if something has explicitly cancelled it.
+      if (event.defaultCancelled) {
+        return;
+      }
+
+      // Don't check if the event was already consumed because tab
+      // navigation should always work for better user experience.
+      let imports = {};
+      ChromeUtils.defineModuleGetter(
+        imports,
+        "ShortcutUtils",
+        "resource://gre/modules/ShortcutUtils.jsm"
+      );
+      const { ShortcutUtils } = imports;
+
+      switch (ShortcutUtils.getSystemActionForEvent(event)) {
+        case ShortcutUtils.CYCLE_TABS:
+          if (this.tabs && this.handleCtrlTab) {
+            this.tabs.advanceSelectedTab(event.shiftKey ? -1 : 1, true);
+            event.preventDefault();
+          }
+          break;
+        case ShortcutUtils.PREVIOUS_TAB:
+          if (this.tabs && this.handleCtrlPageUpDown) {
+            this.tabs.advanceSelectedTab(-1, true);
+            event.preventDefault();
+          }
+          break;
+        case ShortcutUtils.NEXT_TAB:
+          if (this.tabs && this.handleCtrlPageUpDown) {
+            this.tabs.advanceSelectedTab(1, true);
+            event.preventDefault();
+          }
+          break;
+      }
+    };
+
+    let index = document.getElementById("SM_tabpanels").selectedIndex;
+    let tb0 = document.getElementById("SM_tab0");
+    let tb1 = document.getElementById("SM_tab1");
+    let tb2 = document.getElementById("SM_tab2");
+    tb0.parentNode.insertBefore(tb0, tb1);
+    tb0.parentNode.insertBefore(tb1, tb2);
+    document.getElementById("SM_tabs").selectedIndex = index;
+
+    setTimeout(function () { this.observe(); }.bind(this), 0);
+
+    //F11 fullscreen
+    FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
+    FullScreen.showNavToolbox = function (trackMouse = true) {
+      FullScreen.showNavToolbox_org(trackMouse);
+      if (!!SidebarModoki.ToolBox) {
+        SidebarModoki.ToolBox.removeAttribute("moz-collapsed");
+        SidebarModoki.Splitter.removeAttribute("moz-collapsed");
+      }
+    }
+    FullScreen.hideNavToolbox_org = FullScreen.hideNavToolbox;
+    FullScreen.hideNavToolbox = function (aAnimate = false) {
+      FullScreen.hideNavToolbox_org(aAnimate);
+      if (SidebarModoki.SM_AUTOHIDE && !!SidebarModoki.ToolBox) {
+        SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
+        SidebarModoki.Splitter.setAttribute("moz-collapsed", "true");
+      }
+    }
+
+    //DOM fullscreen
+    window.addEventListener("MozDOMFullscreen:Entered", this,
+                            /* useCapture */ true,
+                            /* wantsUntrusted */ false);
+    window.addEventListener("MozDOMFullscreen:Exited", this,
+                            /* useCapture */ true,
+                            /* wantsUntrusted */ false);
+    /*
+        SidebarUI.setPosition_org = SidebarUI.setPosition;
+        SidebarUI.setPosition = function() {
+          SidebarUI.setPosition_org();
+          if (SidebarModoki && SidebarModoki.ToolBox) 
+          SidebarModoki.ToolBox.style.setProperty("-moz-box-ordinal-group", SidebarModoki.SM_RIGHT ? "10" : "0", "");
+          if (SidebarModoki && SidebarModoki.Splitter) 
+          SidebarModoki.Splitter.style.setProperty("-moz-box-ordinal-group", SidebarModoki.SM_RIGHT ? "9" : "0", "");
+        };
+    */
+  },
+
+
+  observe: function () {
+    this.ToolBox = document.getElementById("SM_toolbox");
+    this.Splitter = document.getElementById("SM_splitter");
+    /*this.ToolBox.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "10" : "0", "");*/ /*Bug 1820534*/
+    this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "-1", "");
+    /*this.Splitter.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "9" : "0", "");*/ /*Bug 1820534*/
+    this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "-1", "");
+
+    if (this.getPref(this.kSM_Open, "bool", true)) {
+      this.toggle(true);
+    } else {
+      this.close();
+    }
+    document.getElementById("SM_tabs").addEventListener("focus", this, true);
+    window.addEventListener("aftercustomization", this, false);
+
+    // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
+    this.SM_Observer = Services.prefs.addObserver("sidebar.position_start", () => {
+      this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "-1", "");
+      this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "0", "");
+    })
+    // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
+  },
+
+  onSelect: function (event) {
+    let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
+    this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
+    width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
+    if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
+      document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
+    }
+    document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+  },
+
+  toggle: function (forceopen) {
+    this.Button = document.getElementById("SM_Button");
+    if (!this.Button.hasAttribute("checked") || forceopen) {
+      this.Button.setAttribute("checked", true);
+      this.ToolBox.collapsed = false;
+      this.Splitter.collapsed = false;
+      let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
+      document.getElementById("SM_tabs").selectedIndex = index;
+      width = this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH);
+      document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+      this.prefs.setBoolPref(this.kSM_Open, true)
+      this.onSelect({});
+      addEventListener("resize", this, false);
+    } else {
+      this.close();
+    }
+  },
+
+  switchToTab: function (tabNo) {
+    this.toggle(true);
+    let tab = document.getElementById("SM_tab" + tabNo);
+    if (tab) {
+      document.getElementById("SM_tabs").selectedIndex = tabNo;
+      this.onSelect();
+    }
+  },
+
+  advanceSelectedTab: function (dir) {
+    if (typeof dir == "undefined") return;
+    document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
+    this.onSelect();
+  },
+  close: function () {
+    removeEventListener("resize", this, false);
+    this.Button = document.getElementById("SM_Button");
+    this.Button.removeAttribute("checked");
+    this.ToolBox.collapsed = true;
+    this.Splitter.collapsed = true;
+    this.prefs.setBoolPref(this.kSM_Open, false)
+  },
+
+
+  //ここからは, 大きさの調整
+  onResize: function (event) {
+    let width = this.ToolBox.getBoundingClientRect().width;
+    let aIndex = document.getElementById("SM_tabs").selectedIndex;
+    this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
+  },
+
+  handleEvent: function (event) {
+    switch (event.type) {
+      case 'focus':
+        this.onSelect(event);
+        break;
+      case 'resize':
+        this.onResize(event);
+        break;
+      case 'MozDOMFullscreen:Entered':
+        if (!!this.ToolBox) {
+          this.ToolBox.setAttribute("moz-collapsed", "true");
+          this.Splitter.setAttribute("moz-collapsed", "true");
+        }
+        break;
+      case 'MozDOMFullscreen:Exited':
+        if (!!this.ToolBox) {
+          this.ToolBox.removeAttribute("moz-collapsed");
+          this.Splitter.removeAttribute("moz-collapsed");
+        }
+        break;
+      case 'aftercustomization':
+        if (this.getPref(this.kSM_Open, "bool", true)) {
+          this.Button.setAttribute("checked", true);
+        }
+        break;
+    }
+  },
+
+  //pref読み込み
+  getPref: function (aPrefString, aPrefType, aDefault) {
+    try {
+      switch (aPrefType) {
+        case "str":
+          return this.prefs.getCharPref(aPrefString).toString(); break;
+        case "int":
+          return this.prefs.getIntPref(aPrefString); break;
+        case "bool":
+        default:
+          return this.prefs.getBoolPref(aPrefString); break;
+      }
+    } catch (e) {
+    }
+    return aDefault;
+  }
 
 }
 
