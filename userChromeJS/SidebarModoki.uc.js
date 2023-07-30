@@ -188,6 +188,12 @@ var SidebarModoki = {
         background-color: var(--toolbar-bgcolor);
         color: var(--lwt-text-color);
       }
+      #SM_toolbox[position="left"] {
+        order: -1 !important;
+      }
+      #SM_toolbox[position="right"] {
+        order: 10 !important;
+      }
       .SM_toolbarspring {
           max-width: unset !important;
       }
@@ -205,6 +211,12 @@ var SidebarModoki = {
         background-color: var(--toolbar-bgcolor) !important;
         border-inline-start-color: var(--toolbar-bgcolor) !important;
         border-inline-end-color: var(--toolbar-bgcolor) !important;
+      }
+      #SM_splitter[position="left"] {
+        order: 0 !important;
+      }
+      #SM_splitter[position="right"] {
+        order: 9 !important;
       }
 
       /*ポップアップの時*/
@@ -240,9 +252,10 @@ var SidebarModoki = {
         display: flex;
         flex-direction: row;
       }
-      #SM_toolbox[style*="order: 10;"] #SM_tabbox{
+      #SM_toolbox[position="right"] #SM_tabbox{
         flex-direction: row-reverse;
       }
+
       #SM_tabs {
         overflow-x: hidden;
         display: flex;
@@ -343,7 +356,7 @@ var SidebarModoki = {
     document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
     //to do xxx ordinal=xx shoud be replaced with style="-moz-box-ordinal-group: xx;"
     template =
-      ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "/*-moz-box-ordinal-group:10;*/ order: 10;" : "/*-moz-box-ordinal-group:0;*/ order: -1;" },
+      ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "right" : "left" },
         ["hbox", { id: "SM_header", align: "center" },
           ["label", {}, "SidebarModoki"],
           ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
@@ -412,7 +425,7 @@ var SidebarModoki = {
     sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
 
     template =
-      ["splitter", { id: "SM_splitter", style: this.SM_RIGHT ? "/*-moz-box-ordinal-group:9;*/ order: 9;" : "/*-moz-box-ordinal-group:0;*/ order: -1;", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" }, /*Bug 1820534*/
+      ["splitter", { id: "SM_splitter", position: this.SM_RIGHT ? "right" : "left", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" },
         ["grippy", {}]
       ];
     sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
@@ -513,10 +526,8 @@ var SidebarModoki = {
   observe: function () {
     this.ToolBox = document.getElementById("SM_toolbox");
     this.Splitter = document.getElementById("SM_splitter");
-    /*this.ToolBox.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "10" : "0", "");*/ /*Bug 1820534*/
-    this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "-1", "");
-    /*this.Splitter.style.setProperty("-moz-box-ordinal-group", this.SM_RIGHT ? "9" : "0", "");*/ /*Bug 1820534*/
-    this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "-1", "");
+    this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left")
+    this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left")
 
     if (this.getPref(this.kSM_Open, "bool", true)) {
       this.toggle(true);
@@ -527,11 +538,10 @@ var SidebarModoki = {
     window.addEventListener("aftercustomization", this, false);
 
     // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
-    this.SM_Observer = Services.prefs.addObserver("sidebar.position_start", () => {
-      this.ToolBox.style.setProperty("order", this.SM_RIGHT ? "10" : "-1", "");
-      this.Splitter.style.setProperty("order", this.SM_RIGHT ? "9" : "0", "");
-    })
-    // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
+    Services.prefs.addObserver("sidebar.position_start", () => {
+      this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left")
+      this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left")
+    });
   },
 
   onSelect: function (event) {
