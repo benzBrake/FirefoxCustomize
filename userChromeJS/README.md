@@ -117,6 +117,20 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 
 ## 脚本使用
 
+### CopyCat.uc.js
+
+重载菜单命令
+
+```javascript
+CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+
+function getViewCache(aDoc) {
+    return (document.getElementById('appMenu-viewCache', aDoc) && document.getElementById('appMenu-viewCache', aDoc).content) || document.getElementById('appMenu-multiView', aDoc);
+}
+```
+
+
+
 ### sidebarAttrubesDetector
 
 （别吐槽英文了，瞌睡打的英文）
