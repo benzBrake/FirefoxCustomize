@@ -11,13 +11,15 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
-    var win = document.ownerGlobal;
-    const { Services } = globalThis || ChromeUtils.import('resource://gre/modules/Services.jsm');
-    const { Management } = globalThis || ChromeUtils.import('resource://gre/modules/Extension.jsm');
-    const { AppConstants } = globalThis || ChromeUtils.import('resource://gre/modules/AppConstants.jsm');
+    const win = window;
+    const Services = globalThis.Services || ChromeUtils.import('resource://gre/modules/Services.jsm');
+    const Management = globalThis || ChromeUtils.import('resource://gre/modules/Extension.jsm');
+    setTimeout(() => {
+        var AppConstants = globalThis.AppConstants || ChromeUtils.import('resource://gre/modules/AppConstants.jsm');
+    }, 10);
 
-    if (!win.xPref)
-        win.xPref = {
+    if (!win.xPref) {
+        const xPref = {
             // Retorna o valor da preferência, seja qual for o tipo, mas não
             // testei com tipos complexos como nsIFile, não sei como detectar
             // uma preferência assim, na verdade nunca vi uma
@@ -90,8 +92,9 @@
             // return[1]: nome da preferência alterada
             // Guardar chamada numa var se quiser interrompê-la depois
             addListener: function (prefPath, trat) {
+                var that = this;
                 this.observer = function (aSubject, aTopic, prefPath) {
-                    return trat(xPref.get(prefPath), prefPath);
+                    return trat(that.get(prefPath), prefPath);
                 }
 
                 Services.prefs.addObserver(prefPath, this.observer);
@@ -106,7 +109,9 @@
             removeListener: function (obs) {
                 Services.prefs.removeObserver(obs.prefPath, obs.observer);
             }
-        }
+        };
+        win.xPref = xPref;
+    }
 
     if (!win.UC)
         win.UC = {
