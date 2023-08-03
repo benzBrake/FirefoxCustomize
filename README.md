@@ -1,6 +1,10 @@
 # FirefoxCustomize
 Ryan 的 Firefox 自定义资源收藏夹
 
+## Want to support this project?
+
+**[[ Paypal Me \]](https://www.paypal.me/brakepay)** [ **[Buy me a coffee](https://www.buymeacoffee.com/buyryanacoffie)** ]
+
 ## 成品预览
 
 ![截图](images/screenshot.jpg)

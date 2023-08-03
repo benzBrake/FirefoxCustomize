@@ -2,6 +2,10 @@
 
 收集并涂改大佬的userChromeJS脚本。
 
+## Want to support this project?
+
+**[[ Paypal Me \]](https://www.paypal.me/brakepay)** [ **[Buy me a coffee](https://www.buymeacoffee.com/buyryanacoffie)** ]
+
 ## 说明
 
 ~~自从2020年11月开始就基于 xiaoxiaoflood 的 [userChromeJS](https://github.com/xiaoxiaoflood/firefox-scripts/) 来修改脚本。~~
@@ -10,7 +14,7 @@
 
 或者你可以安装我打包好的 [UC 环境](Loader)
 
-我的当前 Firefox 版本 Firefox 108beta7
+我的当前 Firefox 版本 Firefox 115 ESR
 
 最低支持 101 版本就会放 101 目录里
 
