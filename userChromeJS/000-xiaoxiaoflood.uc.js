@@ -7,14 +7,14 @@
 // @license        MIT License
 // @compatibility  Firefox 68
 // @charset        UTF-8
-// @version        0.0.1
+// @version        0.0.2
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
     var win = document.ownerGlobal;
-    const { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
-    const { Management } = ChromeUtils.import('resource://gre/modules/Extension.jsm');
-    const { AppConstants } = ChromeUtils.import('resource://gre/modules/AppConstants.jsm');
+    const { Services } = globalThis || ChromeUtils.import('resource://gre/modules/Services.jsm');
+    const { Management } = globalThis || ChromeUtils.import('resource://gre/modules/Extension.jsm');
+    const { AppConstants } = globalThis || ChromeUtils.import('resource://gre/modules/AppConstants.jsm');
 
     if (!win.xPref)
         win.xPref = {

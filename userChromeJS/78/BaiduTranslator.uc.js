@@ -2,7 +2,7 @@
 // @name           Baidu Translator
 // @author         Ryan, BSTweaker
 // @include        main
-// @compatibility  Firefox 117
+// @compatibility  Firefox 78+
 // @homepageURL	   https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @description    在上下文菜单中添加使用百度翻译所选文本的功能
 // @note           从 DLTranslator (https://bitbucket.org/BSTweaker/userchromejs/src/master/DeepLTranslator.uc.js)修改而来
@@ -52,9 +52,9 @@ const BDT_OPTIONS = {
 }
 
 if (typeof window === "undefined" || globalThis !== window) {
-    const { Services } = globalThis;
-    ChromeUtils.defineModuleGetter(this, "ContentDOMReference", "resource://gre/modules/ContentDOMReference.sys.mjs");
-    ChromeUtils.defineModuleGetter(this, "NetUtil", "resource://gre/modules/NetUtil.sys.mjs");
+    const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+    ChromeUtils.defineModuleGetter(this, "ContentDOMReference", "resource://gre/modules/ContentDOMReference.jsm");
+    ChromeUtils.defineModuleGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 
     if (!Services.appinfo.remoteType) {
         this.EXPORTED_SYMBOLS = ["BDTranslator", "BDTranslatorParent"];
