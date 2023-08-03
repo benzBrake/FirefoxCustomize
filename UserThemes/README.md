@@ -8,6 +8,18 @@ Ver 代表最后测试版本
 | 104  | sidra       | benzbrake 主用的 CSS 主题                             |
 | 90   | IE8         | 仿IE8主题，来自 matthewmx86/Redmond-Firefox，简单修复 |
 
+## 使用
+
+### 方法1
+
+`about:config` → `toolkit.legacyUserProfileCustomizations.stylesheets`→ `true`
+
+单独的 css 复制内容到**配置文件夹**下的`userChrome.css`文件中
+
+单独目录的 CSS 文件下载文件夹内容存放到**配置文件夹**下
+
+### 方法2
+
 这里的主题支持主题选项，使用[CopyCatTheme.uc.js](https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/CopyCatTheme.uc.js)读取。
 
 选项示例：
@@ -16,4 +28,4 @@ Ver 代表最后测试版本
 
 ## IE8 主题预览
 
-![IE8](D:\Work\FirefoxCustomize\UserThemes\images\IE8.png)
+![IE8](images\IE8.png)
