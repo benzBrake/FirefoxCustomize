@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.0
+// @version         0.2.1
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.1 增加从工具栏隐藏按钮
 // @note            0.2.0 增加复制 ID 功能
 // @note            0.1.9 新增固定到工具栏，上移，下移按钮，调整面板宽度
 // @note            0.1.8 fx115
@@ -24,66 +25,79 @@
         window.unifiedExtensionsEnhance.destroy();
     }
 
-    window.unifiedExtensionsEnhance = {
-        UP_BUTTON: {
+    const BUTTONS = {
+        MOVE_UP: {
             label: "上移",
             tooltiptext: "上移",
             "uni-action": "up",
             closemenu: "none",
             class: "unified-extensions-item-up subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
-        DOWN_BUTTON: {
+        MOVE_DOWN: {
             label: "下移",
             tooltiptext: "下移",
             "uni-action": "down",
             closemenu: "none",
             class: "unified-extensions-item-down subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
-        PIN_BUTTON: {
+        PIN_TO_TOOLBAR: {
             label: "在工具栏中显示",
             tooltiptext: "在工具栏中显示",
             "uni-action": "pin",
             class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic",
             onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
-        OPTION_BUTTON: {
+        UNPIN_FROM_TOOLBAR: {
+            label: "从工具栏移除",
+            tooltiptext: "从工具栏移除",
+            "uni-action": "unpin",
+            class: "unified-extensions-item-unpin subviewbutton subviewbutton-iconic",
+            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
+        },
+        PLUGIN_OPTION: {
             label: "选项",
             tooltiptext: "扩展选项",
             "uni-action": "option",
             class: "unified-extensions-item-option subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
-        ENABLE_BUTTON: {
+        ENABLE_ADDON: {
             label: "启用",
             tooltiptext: "启用扩展",
             "uni-action": "enable",
             closemenu: "none",
             class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
-        DISABLE_BUTTON: {
+        DISABLE_ADDON: {
             label: "禁用",
             tooltiptext: "禁用扩展",
             closemenu: "none",
             "uni-action": "disable",
             class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
-        DISABLE_ALL_BUTTON: {
+        DISABLE_ALL_ADDONS: {
             id: 'unified-extensions-disable-all',
             class: "subviewbutton",
             "uni-action": "disable-all",
             label: "禁用所有扩展",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
         },
+    }
+
+    const MENUS = {
         COPY_ID: {
             class: "unified-extensions-context-menu-copy-id",
             "uni-action": "copy-id",
             label: "复制 ID",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
-        },
+        }
+    }
+
+    const createElWithClickEvent = (document, tag, attrs, skipAttrs) => {
+        let el = $C(document, tag, attrs, skipAttrs);
+        el.classList.add("ue-btn");
+        el.setAttribute("onclick", "unifiedExtensionsEnhance.handleEvent(event);");
+        return el;
+    }
+
+    window.unifiedExtensionsEnhance = {
         get appVersion() {
             delete this.appVersion;
             return this.appVersion = Services.appinfo.version.split(".")[0];
@@ -151,35 +165,27 @@
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
             #unified-extensions-view .unified-extensions-item-up {
-                flex: 0;
-                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTAuODI4bC00Ljk1IDQuOTUtMS40MTQtMS40MTRMMTIgOGw2LjM2NCA2LjM2NC0xLjQxNCAxLjQxNHoiLz48L3N2Zz4=")
             }
             #unified-extensions-view .unified-extensions-item-down {
-                flex: 0;
-                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTMuMTcybDQuOTUtNC45NSAxLjQxNCAxLjQxNEwxMiAxNiA1LjYzNiA5LjYzNiA3LjA1IDguMjIyeiIvPjwvc3ZnPg==")
             }
             #unified-extensions-view .unified-extensions-item-pin {
-                flex: 0;
-                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiBmaWxsPSJjb250ZXh0LWZpbGwiPjxwYXRoIGQ9Ik0xMi4wMDAzIDNDMTcuMzkyNCAzIDIxLjg3ODQgNi44Nzk3NiAyMi44MTg5IDEyQzIxLjg3ODQgMTcuMTIwMiAxNy4zOTI0IDIxIDEyLjAwMDMgMjFDNi42MDgxMiAyMSAyLjEyMjE1IDE3LjEyMDIgMS4xODE2NCAxMkMyLjEyMjE1IDYuODc5NzYgNi42MDgxMiAzIDEyLjAwMDMgM1pNMTIuMDAwMyAxOUMxNi4yMzU5IDE5IDE5Ljg2MDMgMTYuMDUyIDIwLjc3NzcgMTJDMTkuODYwMyA3Ljk0ODAzIDE2LjIzNTkgNSAxMi4wMDAzIDVDNy43NjQ2IDUgNC4xNDAyMiA3Ljk0ODAzIDMuMjIyNzggMTJDNC4xNDAyMiAxNi4wNTIgNy43NjQ2IDE5IDEyLjAwMDMgMTlaTTEyLjAwMDMgMTYuNUM5LjUxNDk4IDE2LjUgNy41MDAyNiAxNC40ODUzIDcuNTAwMjYgMTJDNy41MDAyNiA5LjUxNDcyIDkuNTE0OTggNy41IDEyLjAwMDMgNy41QzE0LjQ4NTUgNy41IDE2LjUwMDMgOS41MTQ3MiAxNi41MDAzIDEyQzE2LjUwMDMgMTQuNDg1MyAxNC40ODU1IDE2LjUgMTIuMDAwMyAxNi41Wk0xMi4wMDAzIDE0LjVDMTMuMzgxIDE0LjUgMTQuNTAwMyAxMy4zODA3IDE0LjUwMDMgMTJDMTQuNTAwMyAxMC42MTkzIDEzLjM4MSA5LjUgMTIuMDAwMyA5LjVDMTAuNjE5NiA5LjUgOS41MDAyNiAxMC42MTkzIDkuNTAwMjYgMTJDOS41MDAyNiAxMy4zODA3IDEwLjYxOTYgMTQuNSAxMi4wMDAzIDE0LjVaIi8+PC9zdmc+")
             }
+            #unified-extensions-view .unified-extensions-item-unpin > .toolbarbutton-icon {
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJtMTIuMDAwMywzYzUuMzkyMSwwIDkuODc4MSwzLjg3OTc2IDEwLjgxODYsOWMtMC45NDA1LDUuMTIwMiAtNS40MjY1LDkgLTEwLjgxODYsOWMtNS4zOTIxOCwwIC05Ljg3ODE1LC0zLjg3OTggLTEwLjgxODY2LC05YzAuOTQwNTEsLTUuMTIwMjQgNS40MjY0OCwtOSAxMC44MTg2NiwtOXptMCwxNmM0LjIzNTYsMCA3Ljg2LC0yLjk0OCA4Ljc3NzQsLTdjLTAuOTE3NCwtNC4wNTE5NyAtNC41NDE4LC03IC04Ljc3NzQsLTdjLTQuMjM1NywwIC03Ljg2MDA4LDIuOTQ4MDMgLTguNzc3NTIsN2MwLjkxNzQ0LDQuMDUyIDQuNTQxODIsNyA4Ljc3NzUyLDd6bTAsLTIuNWMtMi40ODUzMiwwIC00LjUwMDA0LC0yLjAxNDcgLTQuNTAwMDQsLTQuNWMwLC0yLjQ4NTI4IDIuMDE0NzIsLTQuNSA0LjUwMDA0LC00LjVjMi40ODUyLDAgNC41LDIuMDE0NzIgNC41LDQuNWMwLDIuNDg1MyAtMi4wMTQ4LDQuNSAtNC41LDQuNXptMCwtMmMxLjM4MDcsMCAyLjUsLTEuMTE5MyAyLjUsLTIuNWMwLC0xLjM4MDcgLTEuMTE5MywtMi41IC0yLjUsLTIuNWMtMS4zODA3LDAgLTIuNTAwMDQsMS4xMTkzIC0yLjUwMDA0LDIuNWMwLDEuMzgwNyAxLjExOTM0LDIuNSAyLjUwMDA0LDIuNXoiLz4KICA8bGluZSBzdHJva2Utd2lkdGg9IjIiIHkyPSIyMy4xMzc4NSIgeDI9IjIzLjIwMDM1IiB5MT0iMC42Mzc1IiB4MT0iMC43IiBzdHJva2U9ImN1cnJlbnRDb2xvciIvPgo8L3N2Zz4=") !important;
+            }
             #unified-extensions-view .unified-extensions-item-option {
-                flex: 0;
-                border: 1px solid transparent;
                 list-style-image: url("chrome://global/skin/icons/settings.svg");
             }
             #unified-extensions-view .unified-extensions-item-enable {
-                flex: 0;
-                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZD0iTTMuNDU1IDFBMS41MDIgMS41MDIgMCAwMDIgMi41djExYTEuNSAxLjUgMCAwMDIuMjIzIDEuMzEzbDkuOTk4LTUuNWExLjQ5NyAxLjQ5NyAwIDAwMC0yLjYyNmwtOS45OTgtNS41QTEuNDgzIDEuNDgzIDAgMDAzLjQ1NSAxem0uMDMgMWEuNDk0LjQ5NCAwIDAxLjI1NS4wNjNsOS45OTggNS41YS41LjUgMCAwMTAgLjg3NWwtOS45OTggNS41QS41LjUgMCAwMTMgMTMuNXYtMTFhLjUuNSAwIDAxLjQ4NC0uNXoiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIvPjwvc3ZnPg==")
             }
             #unified-extensions-view .unified-extensions-item-disable {
-                flex: 0;
-                border: 1px solid transparent;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij48cGF0aCBkPSJNMCAwaDI0djI0SDBWMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTIgMjMuNjU2QzUuNTYyIDIzLjY1Ni4zNDQgMTguNDM4LjM0NCAxMlM1LjU2Mi4zNDQgMTIgLjM0NCAyMy42NTYgNS41NjIgMjMuNjU2IDEyIDE4LjQzOCAyMy42NTYgMTIgMjMuNjU2em0wLTIuMzMxYTkuMzI1IDkuMzI1IDAgMTAwLTE4LjY1IDkuMzI1IDkuMzI1IDAgMDAwIDE4LjY1ek04LjUwMyA4LjUwM2g2Ljk5NHY2Ljk5NEg4LjUwM1Y4LjUwM3oiLz48L3N2Zz4=")
             }
+            #unified-extensions-area .unified-extensions-item-unpin,
             #unified-extensions-view .unified-extensions-item:not(.addon-disabled) .unified-extensions-item-enable,
             #unified-extensions-view .unified-extensions-item.addon-disabled .unified-extensions-item-disable,
             .unified-extensions-item-option > .toolbarbutton-text,
@@ -188,14 +194,23 @@
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-pin,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-option,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-enable,
-            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable {
+            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable,
+            unified-extensions-item.addon-disabled .unified-extensions-item-option,
+            unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
+            unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
+            unified-extensions-item .unified-extensions-item-pin,
+            unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin,
+            unified-extensions-item .unified-extensions-item-up,
+            unified-extensions-item .unified-extensions-item-down {
                 display: none;
             }
-            .toolbaritem-combined-buttons.unified-extensions-item > :is(.unified-extensions-item-option, .unified-extensions-item-enable, .unified-extensions-item-disable, .unified-extensions-item-menu-button) {
+            .toolbaritem-combined-buttons.unified-extensions-item > *:not(.unified-extensions-item-action-button) {
                 padding: 0;
                 padding-inline-end: 0;
+                flex: 0;
+                border: 1px solid transparent;
             }
-            .toolbaritem-combined-buttons.unified-extensions-item > :is(.unified-extensions-item-option, .unified-extensions-item-enable, .unified-extensions-item-disable, .unified-extensions-item-menu-button) > .toolbarbutton-icon {
+            .toolbaritem-combined-buttons.unified-extensions-item > *:not(.unified-extensions-item-action-button) > .toolbarbutton-icon {
                 box-sizing: content-box;
                 padding: var(--arrowpanel-menuitem-padding-inline);
                 border: 1px solid transparent;
@@ -208,13 +223,8 @@
             type: 2
         },
         init: function () {
-            if (this.appVersion < 111 && !Services.prefs.getBoolPref('extensions.unifiedExtensions.enabled', false) || !gUnifiedExtensions) {
-                // 没启用按钮脚本不工作
-                return;
-            }
-
-            if (this.appVersion < 109) {
-                console.error("仅支持 Firefox 109(包括)+");
+            if (this.appVersion < 111) {
+                // 限定版本号
                 return;
             }
 
@@ -232,14 +242,15 @@
             this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
             eval("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
 
-            window.addEventListener("toolbarvisibilitychange", this);
-            view.addEventListener('ViewShowing', this);
-            view.querySelector("#unified-extensions-area").addEventListener("DOMSubtreeModified", this);
-            view.querySelector("#unified-extensions-manage-extensions").before($C(document, 'toolbarbutton', this.DISABLE_ALL_BUTTON));
+            // 增加禁用所有
+            view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.DISABLE_ALL_ADDONS));
 
-            if (!$Q("." + this.COPY_ID.class.replace(" ", "."))) {
-                $('unified-extensions-context-menu').insertBefore($C(document, 'menuitem', this.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension')); 
+            // 复制 ID
+            if (!$Q("." + MENUS.COPY_ID.class.replace(" ", "."))) {
+                $('unified-extensions-context-menu').insertBefore(createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension'));
             }
+
+            view.addEventListener('ViewShowing', this);
         },
         onPinToolbarChange(menu, event) {
             let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
@@ -260,33 +271,19 @@
             }
         },
         createAdditionalButtons(node) {
-            let ins = $Q(".webextension-browser-action", node);
-            if (!$Q(".unified-extensions-item-down", node)) {
-                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DOWN_BUTTON));
-            }
-            if (!$Q(".unified-extensions-item-up", node)) {
-                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.UP_BUTTON));
-            }
-            if (!$Q(".unified-extensions-item-pin", node)) {
-                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.PIN_BUTTON));
-            }
-            if (!$Q(".unified-extensions-item-disable", node)) {
-                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
-            }
-            if (!$Q(".unified-extensions-item-enable", node)) {
-                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.ENABLE_BUTTON));
-            }
-            if (!$Q(".unified-extensions-item-option", node)) {
-                ins.after($C(node.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
+            let ins = $Q(".webextension-browser-action,.unified-extensions-item-action-button", node);
+            if (ins) {
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.MOVE_DOWN));
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.MOVE_UP));
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.UNPIN_FROM_TOOLBAR));
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.PIN_TO_TOOLBAR));
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.DISABLE_ADDON));
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.ENABLE_ADDON));
+                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.PLUGIN_OPTION));
             }
         },
         removeAdditionalButtons(node) {
-            $R($Q(".unified-extensions-item-up", node));
-            $R($Q(".unified-extensions-item-down", node));
-            $R($Q(".unified-extensions-item-pin", node));
-            $R($Q(".unified-extensions-item-option", node));
-            $R($Q(".unified-extensions-item-enable", node));
-            $R($Q(".unified-extensions-item-disable", node));
+            $QA(".ue-btn", node).forEach(el => $R(el));
         },
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
@@ -332,6 +329,15 @@
                             this.refreshAddonsList(panelview);
                         }
                         break;
+                    case "unpin":
+                        uniItem = event.target.closest("unified-extensions-item");
+                        if (uniItem) {
+                            let extensionId = uniItem.getAttribute("extension-id");
+                            let actionId = extensionId.replace("@", "_").replace(".", "_").replace("{", "_").replace("}", "_") + "-browser-action";
+                            gUnifiedExtensions.pinToToolbar(actionId, false);
+                            this.refreshAddonsList(panelview);
+                        }
+                        break;
                     case "up":
                     case "down":
                         let moveWidget;
@@ -361,13 +367,16 @@
             }
         },
         refreshAddonsList: async function (aView) {
+            const area = $Q("#unified-extensions-area", aView);
+            area.querySelectorAll('.unified-extensions-item').forEach(el => {
+                this.removeAdditionalButtons(el);
+                this.createAdditionalButtons(el);
+            });
             // 删掉多余扩展项目
             const list = $Q(".unified-extensions-list", aView);
             [...list.childNodes].forEach(node => $R(node));
             const aDoc = aView.ownerDocument;
-            const area = aDoc.getElementById("unified-extensions-area");
             const extensions = await this.getAllExtensions();
-
             for (const extension of extensions) {
                 if (!aView.querySelector(`[data-extensionid="${extension.id}"]`)) {
                     let item = aDoc.createElement("unified-extensions-item");
@@ -377,17 +386,24 @@
                         item.setAddon(extension);
                     }
                     item = list.appendChild(item);
-                    if (extension.optionsURL) {
-                        item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.OPTION_BUTTON));
-                    }
-                    if (!extension.isActive) {
-                        item.classList.add("addon-disabled");
-                        item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.ENABLE_BUTTON));
-                    } else {
-                        item.querySelector(".unified-extensions-item-menu-button").before($C(aView.ownerDocument, "toolbarbutton", unifiedExtensionsEnhance.DISABLE_BUTTON));
-                    }
                 }
             }
+            for (const el of list.querySelectorAll("unified-extensions-item")) {
+                this.removeAdditionalButtons(el);
+                this.createAdditionalButtons(el);
+                const extensionId = el.getAttribute('extension-id');
+                const extension = await AddonManager.getAddonByID(extensionId);
+                if (!extension.optionsURL) {
+                    el.classList.add("addon-no-option-page");
+                }
+                if (!extension.isActive) {
+                    el.classList.add("addon-disabled");
+                }
+                const actionId = extensionId.replace("@", "_").replace(".", "_").replace("{", "_").replace("}", "_") + "-browser-action";
+                if (!document.getElementById(actionId)) {
+                    el.classList.add("addon-no-unpin");
+                }
+            };
         },
         getAllExtensions: async function () {
             let addons = await AddonManager.getAddonsByTypes(["extension"]);
@@ -433,6 +449,7 @@
             view.querySelectorAll("[uni-action]").forEach(el => {
                 $R(el);
             })
+            view.removeEventListener('ViewShowing', this);
             gUnifiedExtensions.onPinToToolbarChange = this.onPinToToolbarChange;
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')))
