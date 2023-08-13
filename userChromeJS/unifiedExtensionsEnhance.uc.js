@@ -188,6 +188,7 @@
             #unified-extensions-area .unified-extensions-item-unpin,
             #unified-extensions-view .unified-extensions-item:not(.addon-disabled) .unified-extensions-item-enable,
             #unified-extensions-view .unified-extensions-item.addon-disabled .unified-extensions-item-disable,
+            #unified-extensions-view .unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
             .unified-extensions-item-option > .toolbarbutton-text,
             .unified-extensions-item-enable > .toolbarbutton-text,
             .unified-extensions-item-disable > .toolbarbutton-text,
@@ -199,9 +200,7 @@
             unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
             unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
             unified-extensions-item .unified-extensions-item-pin,
-            unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin,
-            unified-extensions-item .unified-extensions-item-up,
-            unified-extensions-item .unified-extensions-item-down {
+            unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin {
                 display: none;
             }
             .toolbaritem-combined-buttons.unified-extensions-item > *:not(.unified-extensions-item-action-button) {
@@ -362,16 +361,19 @@
                     }
                     this.createAdditionalButtons(parent);
                 }
-            } else if (event.type === "toolbarvisibilitychange") {
-                console.log(event.target);
             }
         },
         refreshAddonsList: async function (aView) {
             const area = $Q("#unified-extensions-area", aView);
-            area.querySelectorAll('.unified-extensions-item').forEach(el => {
+            for (const el of area.querySelectorAll('.unified-extensions-item')) {
                 this.removeAdditionalButtons(el);
                 this.createAdditionalButtons(el);
-            });
+                const extensionId = el.getAttribute('data-extensionid');
+                const extension = await AddonManager.getAddonByID(extensionId);
+                if (!extension.optionsURL) {
+                    el.classList.add("addon-no-option-page");
+                }
+            };
             // 删掉多余扩展项目
             const list = $Q(".unified-extensions-list", aView);
             [...list.childNodes].forEach(node => $R(node));
