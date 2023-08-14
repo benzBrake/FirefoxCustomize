@@ -22,7 +22,7 @@
                 let imageSrc = tab.getAttribute('image');
                 if (BLACK_LIST.includes(imageSrc)) {
                     if (tab.hasAttribute('colorful')) tab.removeAttribute('colorful');
-                    tab.style.removeProperty("-colorful-tab-background");
+                    tab.style.removeProperty("--colorful-tab-background");
                     return;
                 }
                 let imgEl = document.createElement("img");
