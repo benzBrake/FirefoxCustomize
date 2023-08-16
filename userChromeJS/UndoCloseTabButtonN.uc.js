@@ -4,6 +4,7 @@
 // @version         1.2.6
 // @include         main
 // @charset         UTF-8
+// @note            2023/08/16 Fx117 fix this is undefined
 // @note            2023/06/08 Fx115 SessionStore.getClosedTabData → SessionStore.getClosedTabDataForWindow
 // @note            2022/11/12 修改左中右按键行为
 // @note            2021/12/12 Fx95 SessionStore.getClosedTabData / getClosedWindowData の戻り値がJSONからArrayに変更
@@ -27,7 +28,7 @@
             this.removeChilds(menu);
 
             // 閉じたタブ
-            let data = (SessionStore.getClosedTabData || SessionStore.getClosedTabDataForWindow)(window);
+            let data = "getClosedTabDataForWindow" in SessionStore ? SessionStore.getClosedTabDataForWindow(window) : SessionStore.getClosedTabData(window);
             if (typeof (data) === "string") {
                 data = JSON.parse(data);
             }
@@ -48,7 +49,7 @@
             }
 
             // 閉じたウィンドウ
-            data = SessionStore.getClosedWindowData();
+            data = SessionStore.getClosedWindowData(window);
             if (typeof (data) === "string") {
                 data = JSON.parse(data);
             }
