@@ -560,8 +560,23 @@
             if (win.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
             const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
             if (!tab) return;
-            var timeout = setTimeout(() => tab.id === "firefox-view-button" ? tab.click() : gBrowser.selectedTab = tab, cPref.get('browser.tabs.switchOnHoverDelay', cPref.get('browser.tabs.switchOnHoverDelay', 150)));
 
+            let delay = cPref.get('browser.tabs.switchOnHoverDelay', 150);
+            let timeout;
+
+            tab.addEventListener("mouseout", () => {
+                clearTimeout(timeout);
+            });
+
+            tab.addEventListener("mouseover", () => {
+                timeout = setTimeout(() => {
+                    if (tab.id === "firefox-view-button") {
+                        tab.click();
+                    } else {
+                        gBrowser.selectedTab = tab;
+                    }
+                }, delay);
+            });
         },
         destroy(win) {
             let { gBrowser } = win || window;
