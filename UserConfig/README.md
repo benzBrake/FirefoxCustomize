@@ -4,6 +4,7 @@
 * TMPpref.txt TabMixPlus 配置备份
 * headereditor.json  HeaderEditor 规则
 * SSS settings backup.json Swift Selection Search 配置备份
+* kiss-translator.json 简约翻译规则
 
 
 

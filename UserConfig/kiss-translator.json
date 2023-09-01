@@ -1,0 +1,32 @@
+[
+	{
+		"pattern": "*",
+		"selector": ":is(li, p, h1, h2, h3, h4, h5, h6, dd)",
+		"translator": "Google",
+		"fromLang": "auto",
+		"toLang": "zh-CN",
+		"textStyle": "dash_line",
+		"transOpen": "false",
+		"bgColor": ""
+	},
+	{
+		"pattern": "forum.mozilla-russia.org",
+		"selector": "#announce,.tclcon > :is(p,h3),.tcr > a.last,.postright :is(h1,h2,h3,h4,h5,h6,p),.inbox>dl>*",
+		"translator": "*",
+		"fromLang": "*",
+		"toLang": "*",
+		"textStyle": "style_none",
+		"transOpen": "true",
+		"bgColor": ""
+	},
+	{
+		"pattern": "www.camp-firefox.de",
+		"selector": ".button>span,header>h2>a,.containerHeadline a,.wbbBoardDescription,.wbbTopicLink,.datetime,.sidebar .box>h2,.breadcrumbs span,.messageText :is(p,.embeddedContentTitle,.embeddedContentDescription),.contentItemTitleLink,.contentItemDescription",
+		"translator": "*",
+		"fromLang": "*",
+		"toLang": "*",
+		"textStyle": "style_none",
+		"transOpen": "true",
+		"bgColor": ""
+	}
+]
