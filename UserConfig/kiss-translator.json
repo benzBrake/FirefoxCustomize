@@ -5,9 +5,10 @@
 		"translator": "Google",
 		"fromLang": "auto",
 		"toLang": "zh-CN",
-		"textStyle": "dash_line",
+		"textStyle": "diy_style",
 		"transOpen": "false",
-		"bgColor": ""
+		"bgColor": "",
+		"textDiyStyle": "text-decoration-line: underline;text-decoration-style: dashed;text-decoration-thickness: 2px;text-underline-offset: 0.3em;"
 	},
 	{
 		"pattern": "forum.mozilla-russia.org",
@@ -15,7 +16,7 @@
 		"translator": "*",
 		"fromLang": "*",
 		"toLang": "*",
-		"textStyle": "style_none",
+		"textStyle": "*",
 		"transOpen": "true",
 		"bgColor": ""
 	},
@@ -25,8 +26,18 @@
 		"translator": "*",
 		"fromLang": "*",
 		"toLang": "*",
-		"textStyle": "style_none",
+		"textStyle": "*",
 		"transOpen": "true",
+		"bgColor": ""
+	},
+	{
+		"pattern": "https://github.com/",
+		"selector": "",
+		"translator": "*",
+		"fromLang": "*",
+		"toLang": "*",
+		"textStyle": "*",
+		"transOpen": "false",
 		"bgColor": ""
 	}
 ]
