@@ -5,7 +5,7 @@
 		"translator": "Google",
 		"fromLang": "auto",
 		"toLang": "zh-CN",
-		"textStyle": "diy_style",
+		"textStyle": "style_none",
 		"transOpen": "false",
 		"bgColor": "",
 		"textDiyStyle": "text-decoration-line: underline;text-decoration-style: dashed;text-decoration-thickness: 2px;text-underline-offset: 0.3em;"
@@ -31,7 +31,7 @@
 		"bgColor": ""
 	},
 	{
-		"pattern": "https://github.com/",
+		"pattern": "github.com",
 		"selector": "",
 		"translator": "*",
 		"fromLang": "*",
@@ -39,5 +39,27 @@
 		"textStyle": "*",
 		"transOpen": "false",
 		"bgColor": ""
+	},
+	{
+		"pattern": "thetvdb.com",
+		"selector": ".table a,.media-heading a, .vt-content > p,.tvdb-tabs a,.list-group-item strong",
+		"translator": "*",
+		"fromLang": "*",
+		"toLang": "*",
+		"textStyle": "*",
+		"transOpen": "true",
+		"bgColor": "",
+		"textDiyStyle": ""
+	},
+	{
+		"pattern": "egg.5ch.net",
+		"selector": ".post-content",
+		"translator": "*",
+		"fromLang": "*",
+		"toLang": "*",
+		"textStyle": "*",
+		"transOpen": "true",
+		"bgColor": "",
+		"textDiyStyle": ""
 	}
 ]
