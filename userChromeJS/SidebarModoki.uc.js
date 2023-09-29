@@ -249,6 +249,7 @@ var SidebarModoki = {
         appearance: unset;
         color-scheme: unset !important;
         flex: 1 1 100%;
+        marin-top: 34px;
       }
 
       #SM_toolbox:not([open="true"]) #SM_tabpanels {
@@ -265,7 +266,7 @@ var SidebarModoki = {
         position: absolute;
         z-index: 1;
         left: 0;
-        right: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
+        right: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding) - 1px);
         z-index: 1;
       }
 
@@ -274,7 +275,7 @@ var SidebarModoki = {
       }
 
       #SM_toolbox[position="left"] > #SM_header {
-        right: 0;
+        right: -2px;
         left: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
       }
 
@@ -544,8 +545,6 @@ var SidebarModoki = {
         el.removeAttribute("visuallyselected");
       });
     }
-
-    this.ToolBox.querySelector("#SM_tabpanels").style.marginTop = this.ToolBox.querySelector("#SM_header").getBoundingClientRect().height + "px";
 
     document.getElementById("SM_tabs").addEventListener("focus", this, true);
     window.addEventListener("aftercustomization", this, false);
