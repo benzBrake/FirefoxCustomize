@@ -15,9 +15,9 @@
     const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
     
     try {
-        const { AppConstants } = ChromeUtils.import('resource://gre/modules/AppConstants.jsm');
+        let { AppConstants } = ChromeUtils.import('resource://gre/modules/AppConstants.jsm');
     } catch(e) {
-        const { AppConstants } = ChromeUtils.import('resource://gre/modules/AppConstants.sys.mjs');
+        let { AppConstants } = ChromeUtils.importESModule('resource://gre/modules/AppConstants.sys.mjs');
     }
     
 
