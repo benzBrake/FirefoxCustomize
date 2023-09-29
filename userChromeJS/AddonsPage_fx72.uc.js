@@ -30,7 +30,15 @@
 // ==/UserScript==
 (function () {
     "use strict";
-
+    
+    const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
+    
+    try {
+        Cu.import("resource://gre/modules/AddonManager.jsm");
+    } catch(e) {
+        Cu.import("resource://gre/modules/AddonManager.sys.mjs");
+    }
+    
     const iconURL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";  // uc 脚本列表的图标
     const AM_FILENAME = Components.stack.filename.split("/").pop().split("?")[0];
     const APP_VERSION = parseFloat(Services.appinfo.version);
@@ -44,9 +52,6 @@
         window.userChromeJSAddon.uninit();
         delete window.userChromeJSAddon;
     }
-
-    // Cu.import("resource://gre/modules/Services.jsm");
-    Cu.import("resource://gre/modules/AddonManager.jsm");
 
     const LANG = {
         'zh-CN': {
