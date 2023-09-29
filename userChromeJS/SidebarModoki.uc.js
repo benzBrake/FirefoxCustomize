@@ -81,12 +81,11 @@ var SidebarModoki = {
     src: "popup/index.html",
     label: "Bitwarden"
   }, {
-    "addon-id": "{bd97f89b-17ba-4539-9fec-06852d07f917}",
-    src: "sidebar/checkmarks-sidebar.html",
-    label: "Checkmarks"
-  }, {
     src: "https://papago.naver.com/",
     label: "papago"
+  }, {
+    src: "https://1password.com/zh-cn/password-generator/",
+    label: "密码生成"
   }],
   // -- config --
 
@@ -249,7 +248,7 @@ var SidebarModoki = {
         appearance: unset;
         color-scheme: unset !important;
         flex: 1 1 100%;
-        marin-top: 34px;
+        margin-top: 34px;
       }
 
       #SM_toolbox:not([open="true"]) #SM_tabpanels {
@@ -559,7 +558,7 @@ var SidebarModoki = {
       this.ToolBox.setAttribute("open", status);
       if (status) {
         addEventListener("resize", this, false);
-        document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+        // document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
       } else {
         removeEventListener("resize", this, false);
         this.ToolBox.style.width = null;
