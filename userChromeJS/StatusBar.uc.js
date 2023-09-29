@@ -45,6 +45,7 @@
             CustomizableUI.registerArea("status-bar", {
                 type: CustomizableUI.TYPE_TOOLBAR,
                 defaultPlacements: [
+                    "status-text",
                     "screenshot-button",
                     "zoom-controls",
                     "fullscreen-button",
