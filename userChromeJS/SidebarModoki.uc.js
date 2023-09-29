@@ -178,10 +178,17 @@ var SidebarModoki = {
       
       #SM_toolbox
       {
-        width: {SM_WIDTH}px;
         background-color: var(--toolbar-bgcolor);
         color: -moz-dialogtext;
         text-shadow: none;
+        position: relative;
+      }
+      #SM_toolbox[open="false"] {
+        width: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
+        overflow: hidden;
+      }
+      #SM_toolbox[open="false"] + #SM_splitter {
+        display: none;
       }
       #SM_toolbox:-moz-lwtheme {
         /*background-color: var(--lwt-accent-color);*/
@@ -190,9 +197,17 @@ var SidebarModoki = {
       }
       #SM_toolbox[position="left"] {
         order: -1 !important;
+        border-right: 1px solid var(--chrome-content-separator-color);
       }
       #SM_toolbox[position="right"] {
         order: 10 !important;
+        border-left: 1px solid var(--chrome-content-separator-color);
+      }
+      #SM_toolbox[open="true"][position="left"] + #SM_splitter {
+        border-right: 1px solid var(--chrome-content-separator-color) !important;
+      }
+      #SM_toolbox[open="true"][position="right"] + #SM_splitter {
+        border-left: 1px solid var(--chrome-content-separator-color) !important;
       }
       .SM_toolbarspring {
           max-width: unset !important;
@@ -236,6 +251,10 @@ var SidebarModoki = {
         flex: 1 1 100%;
       }
 
+      #SM_toolbox:not([open="true"]) #SM_tabpanels {
+        display: none;
+      }
+
       #SM_header {
         background-color: var(--toolbar-field-background-color, var(--toolbar-bgcolor));
         padding: 6px !important;
@@ -243,6 +262,20 @@ var SidebarModoki = {
         color: inherit !important;
         font-size: 1.2em !important;
         color: var(--toolbar-color);
+        position: absolute;
+        z-index: 1;
+        left: 0;
+        right: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
+        z-index: 1;
+      }
+
+      #SM_toolbox:not([open="true"]) > #SM_header {
+        display: none;
+      }
+
+      #SM_toolbox[position="left"] > #SM_header {
+        right: 0;
+        left: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
       }
 
       toolbar[brighttext]:-moz-lwtheme #SM_tabbox {
@@ -266,6 +299,12 @@ var SidebarModoki = {
         align-items: center;
         flex-shrink: 0;
         padding: 0 2px;
+      }
+      #SM_toolbox[open="true"][position="left"] #SM_tabs {
+        border-right: 1px solid var(--chrome-content-separator-color);
+      }
+      #SM_toolbox[open="true"][position="right"] #SM_tabs {
+        border-left: 1px solid var(--chrome-content-separator-color);
       }
       #SM_tabs tab {
         appearance: none !important;
@@ -297,14 +336,6 @@ var SidebarModoki = {
       #SM_tabs tab[iconized="true"] .tab-text {
         visibility: collapse;
       }
-      #SM_Button
-      {
-        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQ0lEQVQ4jWNgoAL4z8DA8N/AwAArTQRGFSBBI4YBDHhonC6n3AA1NTUMZ6F5gyQXYFNEsheweWnUBfRyAbmYcgMoAgBFX4a/wlDliwAAAABJRU5ErkJggg==');
-      }
-      toolbar[brighttext]:-moz-lwtheme #SM_Button
-      {
-        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVQ4jWP4TyFg+P///38GBgayMHUNwEdjdTrVDcDnTKJdgEsRSV5ACaBRF9DZBQObFygBAMeIxVdCQIJTAAAAAElFTkSuQmCC');
-      }
      `;
     var sss = Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService);
     var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK)));
@@ -321,36 +352,12 @@ var SidebarModoki = {
           return document.documentElement.getAttribute(name);
         };
     */
-    ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
+    // ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
     // xxxx try-catch may need for 2nd window
-    try {
-      CustomizableUI.createWidget({ //must run createWidget before windowListener.register because the register function needs the button added first
-        id: 'SM_Button',
-        type: 'custom',
-        defaultArea: CustomizableUI.AREA_NAVBAR,
-        onBuild: function (aDocument) {
-          var toolbaritem = aDocument.createElementNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'toolbarbutton');
-          var props = {
-            id: "SM_Button",
-            class: "toolbarbutton-1 chromeclass-toolbar-additional",
-            tooltiptext: "Sidebar Modoki",
-            oncommand: "SidebarModoki.toggle();",
-            type: "button",
-            label: "Sidebar Modoki",
-            removable: "true"
-          };
-          for (var p in props) {
-            toolbaritem.setAttribute(p, props[p]);
-          }
-
-          return toolbaritem;
-        }
-      });
-    } catch (e) { }
 
     // to do, replace with MozXULElement.parseXULToFragment();
-    let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
-    document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
+    // let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
+    // document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
 
     template = ["key", { id: "key_SidebarModoki", key: "B", modifiers: "accel,alt", command: "cmd_SidebarModoki", }];
     document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
@@ -526,16 +533,44 @@ var SidebarModoki = {
   observe: function () {
     this.ToolBox = document.getElementById("SM_toolbox");
     this.Splitter = document.getElementById("SM_splitter");
-    this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left")
-    this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left")
+    this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left");
+    this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left");
 
-    if (this.getPref(this.kSM_Open, "bool", true)) {
-      this.toggle(true);
-    } else {
-      this.close();
+    let status = this.getPref(this.kSM_Open, "bool", true);
+    this.ToolBox.setAttribute("open", status);
+    if (!status) {
+      Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
+        el.removeAttribute("selected");
+        el.removeAttribute("visuallyselected");
+      });
     }
+
+    this.ToolBox.querySelector("#SM_tabpanels").style.marginTop = this.ToolBox.querySelector("#SM_header").getBoundingClientRect().height + "px";
+
     document.getElementById("SM_tabs").addEventListener("focus", this, true);
     window.addEventListener("aftercustomization", this, false);
+
+    let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
+    if (index > - 1) {
+      this.switchToTab(index);
+    }
+
+    Services.prefs.addObserver(this.kSM_Open, (p, v) => {
+      let status = this.getPref(this.kSM_Open, "bool", true);
+      this.ToolBox.setAttribute("open", status);
+      if (status) {
+        addEventListener("resize", this, false);
+        document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+      } else {
+        removeEventListener("resize", this, false);
+        this.ToolBox.style.width = null;
+        this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, -1);
+        Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
+          el.removeAttribute("selected");
+          el.removeAttribute("visuallyselected");
+        });
+      }
+    });
 
     // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
     Services.prefs.addObserver("sidebar.position_start", () => {
@@ -545,35 +580,20 @@ var SidebarModoki = {
   },
 
   onSelect: function (event) {
+    this.prefs.setBoolPref(this.kSM_Open, true);
     let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
-    this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
-    width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
-    if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
-      document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
-    }
-    document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-  },
-
-  toggle: function (forceopen) {
-    this.Button = document.getElementById("SM_Button");
-    if (!this.Button.hasAttribute("checked") || forceopen) {
-      this.Button.setAttribute("checked", true);
-      this.ToolBox.collapsed = false;
-      this.Splitter.collapsed = false;
-      let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
-      document.getElementById("SM_tabs").selectedIndex = index;
-      width = this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH);
+    if (aIndex != -1) {
+      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
+      width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
+      if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
+        document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
+      }
       document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-      this.prefs.setBoolPref(this.kSM_Open, true)
-      this.onSelect({});
-      addEventListener("resize", this, false);
-    } else {
-      this.close();
     }
   },
 
   switchToTab: function (tabNo) {
-    this.toggle(true);
+    this.prefs.setBoolPref(this.kSM_Open, true);
     let tab = document.getElementById("SM_tab" + tabNo);
     if (tab) {
       document.getElementById("SM_tabs").selectedIndex = tabNo;
@@ -587,12 +607,8 @@ var SidebarModoki = {
     this.onSelect();
   },
   close: function () {
-    removeEventListener("resize", this, false);
-    this.Button = document.getElementById("SM_Button");
-    this.Button.removeAttribute("checked");
-    this.ToolBox.collapsed = true;
-    this.Splitter.collapsed = true;
-    this.prefs.setBoolPref(this.kSM_Open, false)
+    this.prefs.setBoolPref(this.kSM_Open, false);
+    this.ToolBox.style.width = null;
   },
 
 
