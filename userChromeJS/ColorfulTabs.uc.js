@@ -7,6 +7,7 @@
 // @include         chrome://browser/content/browser.xhtml
 // @shutdown        window. ColorfulTabs.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20230930 Bug 1849904 - Convert a bunch of psuedo-boolean tab strip attributes to be standard boolean attributes
 // ==/UserScript==
 (function (css) {
     const BLACK_LIST = [
@@ -106,7 +107,7 @@
     }
 
 })(`
-#TabsToolbar:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[visuallyselected=true][colorful] .tab-background {
+#TabsToolbar:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[visuallyselected][colorful] .tab-background {
     background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 50%, white), color-mix(in srgb, var(--colorful-tab-background) 70%, white)) !important;
 }
 `);
