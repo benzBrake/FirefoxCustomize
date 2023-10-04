@@ -9,6 +9,16 @@ Ryan 的 Firefox 自定义资源收藏夹
 
 ![截图](images/screenshot.jpg)
 
+## 制作 Firefox 便携版本 / Create your own portable Firefox.
+
+1. 使用 RunFirefox  https://github.com/benzBrake/RunFirefox
+
+2. 使用 libportable https://sourceforge.net/projects/libportable/files/Tools/portable_bin.7z
+
+### RunFirefox 与 libportable的区别
+
+RunFirefox 是引导器，原理是利用 Firefox 的 -profile 参数，不是真的便携，但是支持 Firefox 自动更新，无需操心，libportabe是补丁，完美便携，但是 Firefox 自动更新后又要重新打补丁。
+
 ## 分类说明
 
 > extensions: 存放收集的插件
