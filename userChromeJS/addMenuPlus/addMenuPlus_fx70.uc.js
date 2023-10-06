@@ -56,7 +56,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 },
                 allFrames: true,
                 messageManagerGroups: ["browsers"],
-                matches: ["*://*/*", "file:///*", "about:*", "view-source:*"],
+                matches: ["*://*/*", "file:///*", "about:*", "view-source:*", "moz-extension://*/*"],
             };
             ChromeUtils.registerWindowActor("AddMenu", actorParams);
         } catch (e) { console.error(e); }
@@ -706,13 +706,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                         });
                     }
                 } else {
-                    if (addMenu.appVersion < 78)
-                        openUILink(uri.spec, event);
-                    else {
-                        openUILink(uri.spec, event, {
-                            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
-                        });
-                    }
+                    // 参数 3 aIgnoreButton 允许 bool 和 Object，如果是 Object，则会用作 params 参数
+                    openUILink(uri.spec, event, {
+                        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                    });
                 }
             },
             loadURI: function (url) {
@@ -730,6 +727,27 @@ if (typeof window === "undefined" || globalThis !== window) {
                     }
                 }
                 (this.loadURI = loadURI)(url);
+            },
+            openUILinkIn: function (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
+                const createFixUp = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
+                    aAllowThirdPartyFixup = aAllowThirdPartyFixup instanceof Object ? aAllowThirdPartyFixup : {};
+                    aAllowThirdPartyFixup.triggeringPrincipal = aAllowThirdPartyFixup.triggeringPrincipal || (where === 'current' ? gBrowser.selectedBrowser.contentPrincipal : (
+                        /^(f|ht)tps?:/.test(url) ?
+                            Services.scriptSecurityManager.createNullPrincipal({}) :
+                            Services.scriptSecurityManager.getSystemPrincipal()
+                    ));
+                    aAllowThirdPartyFixup.postData = aPostData || null;
+                    aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
+                }
+                if ("openTrustedLinkIn" in window) {
+                    var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
+                        openTrustedLinkIn(url, where, createFixUp(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo));
+                    }
+                } else {
+                    var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) =>
+                        openUILinkIn(url, where, false, aPostData || null, aReferrerInfo);
+                }
+                (this.openUILinkIn = _openURL)(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo);
             },
             exec: function (path, arg) {
                 var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
@@ -1448,7 +1466,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         return ""
                     },
                 };
-                let tab = document.popupNode || TabContextMenu.contextTab || gBrowser.selectedTab  || gBrowser.mCurrentTab;
+                let tab = document.popupNode || TabContextMenu.contextTab || gBrowser.selectedTab || gBrowser.mCurrentTab;
                 var bw = gContextMenu ? context.browser : tab.linkedBrowser;
 
                 return text.replace(this.regexp, function (str) {
