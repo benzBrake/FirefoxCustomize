@@ -11,7 +11,7 @@
   },
   {
     "pattern": "forum.mozilla-russia.org",
-    "selector": "#announce;.tclcon > :is(p,h3),.tcr > a.last;.inbox>dl>*; .postmsg > p:first-child",
+    "selector": "#announce;.tclcon > :is(p,h3),.tcr > a.last;.inbox>dl>*;.postmsg > p;.postmsg blockquote p",
     "bgColor": "",
     "translator": "*",
     "fromLang": "*",
