@@ -1466,7 +1466,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         return ""
                     },
                 };
-                let tab = document.popupNode || TabContextMenu.contextTab || gBrowser.selectedTab || gBrowser.mCurrentTab;
+                let tab = TabContextMenu.contextTab || gBrowser.selectedTab || document.popupNode;
                 var bw = gContextMenu ? context.browser : tab.linkedBrowser;
 
                 return text.replace(this.regexp, function (str) {

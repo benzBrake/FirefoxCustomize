@@ -1429,7 +1429,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 },
             };
 
-            let tab = document.popupNode || TabContextMenu.contextTab || gBrowser.selectedTab || gBrowser.mCurrentTab;
+            let tab = TabContextMenu.contextTab || gBrowser.selectedTab || document.popupNode;
             var bw = gContextMenu ? context.browser : tab.linkedBrowser;
 
             return text.replace(this.regexp, function (str) {
