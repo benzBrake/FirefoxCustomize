@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
-// @version         1.0
+// @version         1.0.1
 // @license         MIT License
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
@@ -13,9 +13,10 @@
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
     let addon = await AddonManager.getAddonByID("{dc572301-7619-498c-a57d-39143191b318}");
-    if (addon && addon.isActive) {
-        console.log("检测到 TabMixPlus，为避免冲突，扩展已停止运行！");
-        return;
+
+    const isTMPActive = addon && addon.isActive;
+    if (isTMPActive) {
+        console.log("检测到 TabMixPlus，为避免冲突，脚本只有部分功能生效！");
     }
 
     if (!window.cPref) {
@@ -122,13 +123,15 @@
         init(win) {
             this.menus = [];
             Object.values(this.modules).forEach(module => {
-                if (module.menus && module.menus instanceof Array) {
-                    this.menus = this.menus.concat(module.menus);
-                } else if (typeof module.menus === "object") {
-                    this.menus.push(module.menus);
+                if (!isTMPActive || module.compactWithTMP) {
+                    if (module.menus && module.menus instanceof Array) {
+                        this.menus = this.menus.concat(module.menus);
+                    } else if (typeof module.menus === "object") {
+                        this.menus.push(module.menus);
+                    }
+                    if (typeof module.init === "function")
+                        module.init(win);
                 }
-                if (typeof module.init === "function")
-                    module.init(win);
             });
             if (this.showOptionsInToolsMenu)
                 this.createOptionsMenu(win.document, this.menus);
@@ -530,7 +533,7 @@
         }
     }
 
-    TabPlus.modules.switchOnHover = {
+    TabPlus.modules.baseMenu = {
         PREF: 'browser.tabs.switchOnHover',
         menus: [{
             type: 'html:h2',
@@ -543,7 +546,12 @@
             valueType: 'int',
             defaultValue: 150,
             style: 'list-style-image: url("chrome://browser/skin/history.svg");'
-        }, {
+        }],
+        compactWithTMP: true,
+    }
+
+    TabPlus.modules.switchOnHover = {
+        menus: [{
             label: $L("horizontal tabs panel"),
             pref: 'browser.tabs.switchOnHover',
             type: 'checkbox'
@@ -560,23 +568,26 @@
             if (win.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
             const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
             if (!tab) return;
-
-            let delay = cPref.get('browser.tabs.switchOnHoverDelay', 150);
-            let timeout;
-
-            tab.addEventListener("mouseout", () => {
-                clearTimeout(timeout);
+            if (
+                !tab.getAttribute("selected") &&
+                !event.shiftKey &&
+                !event.ctrlKey
+            ) {
+                this._onTabHover(tab);
+            }
+        },
+        _onTabHover(tab, wait) {
+            tab.addEventListener("mouseleave", function () {
+                clearTimeout(wait);
+                tab.removeEventListener("mouseleave", tab);
             });
-
-            tab.addEventListener("mouseover", () => {
-                timeout = setTimeout(() => {
-                    if (tab.id === "firefox-view-button") {
-                        tab.click();
-                    } else {
-                        gBrowser.selectedTab = tab;
-                    }
-                }, delay);
-            });
+            wait = setTimeout(function () {
+                if (tab.id === "firefox-view-button") {
+                    tab.click();
+                } else {
+                    gBrowser.selectedTab = tab;
+                }
+            }, cPref.get('browser.tabs.switchOnHoverDelay', 150));
         },
         destroy(win) {
             let { gBrowser } = win || window;
@@ -591,6 +602,7 @@
             pref: 'userChrome.tabs.verticalTabsPane.switchOnHover',
             type: 'checkbox'
         }, {}],
+        compactWithTMP: true,
         init(win) {
             win || (win = window);
             let list = win.document.getElementById("vertical-tabs-list");
@@ -638,7 +650,8 @@
             defaultValue: true,
             type: 'checkbox',
             pref: 'browser.bookmarks.openInTabClosesMenu',
-        }]
+        }],
+        compactWithTMP: true,
     }
 
     TabPlus.modules.rightClickLoadFromClipboard = {
@@ -648,6 +661,7 @@
             type: 'checkbox',
             pref: 'browser.tabs.newTabBtn.rightClickLoadFromClipboard'
         },
+        compactWithTMP: true,
         init(win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.addEventListener('click', this, false);
@@ -701,7 +715,8 @@
             label: $L("switch tab on scroll"),
             type: 'checkbox',
             pref: 'toolkit.tabbox.switchByScrolling'
-        }
+        },
+        compactWithTMP: true
     }
 
     TabPlus.modules.selectLeftTabOnClose = {
