@@ -567,10 +567,12 @@
                 { ownerGlobal: win } = target,
                 { gBrowser } = win;
             if (!cPref.get(this.PREF, true)) return;
+            const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
+            let dblckick = false;
             switch (event.type) {
                 case 'mouseover':
                     if (win.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
-                    const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
+                    
                     if (!tab) return;
                     if (
                         !tab.getAttribute("selected") &&
@@ -580,10 +582,12 @@
                         this._onTabHover(tab);
                     }
                     break;
+                case 'dblckick':
+                    dblckick = true;
                 case 'click':
                     // 点击新增标签/隐私标签后暂停自动切换功能
                     if (this.triggered) return;
-                    if (['tabs-newtab-button', 'new-tab-button', 'newPrivateTab-button'].includes(target.id)) {
+                    if (['tabs-newtab-button', 'new-tab-button', 'newPrivateTab-button'].includes(target.id) || (tab && cPref.get("browser.tabs.closeTabByDblclick", false) && dblckick) || (tab && event.button === 1) || (tab && cPref.get('browser.tabs.closeTabByRightClick', false) && event.button === 2)) {
                         this.triggered = true;
                         let that = this;
                         let lastValue = cPref.get(that.PREF, true);
