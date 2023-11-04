@@ -534,7 +534,6 @@
     }
 
     TabPlus.modules.baseMenu = {
-        PREF: 'browser.tabs.switchOnHover',
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
@@ -551,6 +550,8 @@
     }
 
     TabPlus.modules.switchOnHover = {
+        PREF: 'browser.tabs.switchOnHover',
+        triggered: false,
         menus: [{
             label: $L("horizontal tabs panel"),
             pref: 'browser.tabs.switchOnHover',
@@ -559,22 +560,44 @@
         init(win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.parentNode.addEventListener('mouseover', this, false);
+            gBrowser.tabContainer.addEventListener('click', this, false);
         },
         handleEvent(event) {
             let { target } = event,
                 { ownerGlobal: win } = target,
                 { gBrowser } = win;
             if (!cPref.get(this.PREF, true)) return;
-            if (win.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
-            const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
-            if (!tab) return;
-            if (
-                !tab.getAttribute("selected") &&
-                !event.shiftKey &&
-                !event.ctrlKey
-            ) {
-                this._onTabHover(tab);
+            switch (event.type) {
+                case 'mouseover':
+                    if (win.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
+                    const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
+                    if (!tab) return;
+                    if (
+                        !tab.getAttribute("selected") &&
+                        !event.shiftKey &&
+                        !event.ctrlKey
+                    ) {
+                        this._onTabHover(tab);
+                    }
+                    break;
+                case 'click':
+                    // 点击新增标签/隐私标签后暂停自动切换功能
+                    if (this.triggered) return;
+                    if (['tabs-newtab-button', 'new-tab-button', 'newPrivateTab-button'].includes(target.id)) {
+                        this.triggered = true;
+                        let that = this;
+                        let lastValue = cPref.get(that.PREF, true);
+                        gBrowser.tabContainer.addEventListener('mouseleave', restorePref, false);
+                        cPref.set(that.PREF, false);
+                        function restorePref() {
+                            that.triggered = false;
+                            cPref.set(that.PREF, lastValue);
+                            gBrowser.tabContainer.removeEventListener('mouseleave', restorePref, false);
+                        }
+                    }
+                    break;
             }
+
         },
         _onTabHover(tab, wait) {
             tab.addEventListener("mouseleave", function () {
@@ -592,6 +615,7 @@
         destroy(win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.parentNode.removeEventListener('mouseover', this, false);
+            gBrowser.tabContainer.removeEventListener('click', this, false);
         }
     }
 
@@ -699,7 +723,6 @@
                                 });
                             });
                         }
-
                     }
                 }
             }
