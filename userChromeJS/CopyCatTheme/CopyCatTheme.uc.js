@@ -54,6 +54,11 @@
     const TopWindow = Services.wm.getMostRecentWindow("navigator:browser");
     const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
+    const FF_VERSION = Services.appinfo.version.split('.')[0];
+    const AUTHOR_SHEET = FF_VERSION >= 119 ? sss.USER_SHEET : sss.AUTHOR_SHEET;
+    const { USER_SHEET, AGENT_SHEET } = sss;
+
+
     const resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
     if (!resourceHandler.hasSubstitution("copycat-uchrm")) {
         resourceHandler.setSubstitution("copycat-uchrm", Services.io.newFileURI(Services.dirsvc.get('UChrm', Ci.nsIFile)));
@@ -287,7 +292,7 @@
                 delete this.STYLE;
                 this.STYLE = {
                     url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)),
-                    type: this.sss.USER_SHEET,
+                    type: USER_SHEET,
                 }
                 this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
             },
@@ -567,10 +572,10 @@
                             cssArr.push(`${name}: ${val};`);
                         }
                     });
-                    let css = '@-moz-document url-prefix("chrome://"), url-prefix("moz-extension://"), url-prefix("about:") {:root{\n' + cssArr.join("\n") + "}\n}";
+                    let css = ':root{\n' + cssArr.join("\n") + "\n}";
                     window.CopyCatTheme.SYNCED_STYLE = {
                         url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
-                        type: window.CopyCatTheme.sss.AUTHOR_SHEET,
+                        type: AUTHOR_SHEET,
                     }
                     window.CopyCatTheme.sss.loadAndRegisterSheet(window.CopyCatTheme.SYNCED_STYLE.url, window.CopyCatTheme.SYNCED_STYLE.type);
                 }
@@ -594,7 +599,7 @@
                     }
 
                     if (!aFile.exists()) {
-                        this.error($L("file not found", path));
+                        this.error($L("file not found", aFile.path));
                         return;
                     }
 
@@ -712,7 +717,7 @@
                             if (file.filename === "userContent.css") {
                                 this.styles.push({
                                     url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
-                                    type: sss.USER_SHEET,
+                                    type: USER_SHEET,
                                     file: tFile
                                 });
                             } else {
@@ -978,17 +983,17 @@
                 var typePrefix = name.substring(name.length - 6, name.length - 4);
                 switch (typePrefix) {
                     case "au":
-                        type = sss.AUTHOR_SHEET;
+                        type = AUTHOR_SHEET;
                         break;
                     case "ag":
-                        type = sss.AGENT_SHEET;
+                        type = AGENT_SHEET;
                         break;
                     case "us":
-                        type = sss.USER_SHEET;
+                        type = USER_SHEET;
                         break;
                 }
             } else {
-                type = sss.AUTHOR_SHEET;
+                type = AUTHOR_SHEET;
             }
             return type;
         }
