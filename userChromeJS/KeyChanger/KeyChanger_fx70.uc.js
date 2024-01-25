@@ -187,6 +187,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             },
             get FILE() {
                 delete this.FILE;
+                let path;
                 try {
                     path = this.prefs.getStringPref("FILE_PATH")
                 } catch (e) {
