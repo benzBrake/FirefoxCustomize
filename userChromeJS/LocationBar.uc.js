@@ -3,7 +3,7 @@
 // @description     地址栏内工具栏
 // @license         MIT License
 // @compatibility   Firefox 107
-// @version         0.0.1
+// @version         0.0.2
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
@@ -155,7 +155,7 @@
     background-color: var(--urlbar-box-active-bgcolor);
     color: var(--urlbar-box-hover-text-color);
 }
-#urlbar-input-container > #location-bar .toolbarbutton-1 > .toolbarbutton-icon {
+#urlbar-input-container > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
     width: 16px !important;
     height: 16px !important;
     -moz-context-properties: fill, fill-opacity;
