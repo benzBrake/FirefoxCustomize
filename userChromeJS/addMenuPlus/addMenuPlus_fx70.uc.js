@@ -289,6 +289,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 return this.platform = AppConstants.platform;
             },
             get FILE() {
+                let path;
                 try {
                     // addMenu.FILE_PATH があればそれを使う
                     path = this.prefs.getStringPref("FILE_PATH")

@@ -81,6 +81,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         },
         get FILE() {
             delete this.FILE;
+            let path;
             try {
                 path = this.prefs.getStringPref("FILE_PATH")
             } catch (e) {
@@ -320,20 +321,22 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             }
         },
         loadURI: function (url) {
+            var loadURI;
             if ("loadURI" in window) {
-                var loadURI = (url) => {
+                loadURI = (url) => {
                     gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                }
+                };
             } else {
-                var loadURI = (url) => {
+                loadURI = (url) => {
                     try {
                         gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
                     } catch (ex) {
                         console.error(ex);
                     }
-                }
+                };
             }
-            (this.loadURI = loadURI)(url);
+            this.loadURI = loadURI; // 将 loadURI 赋值给 this.loadURI
+            loadURI(url); // 调用一次
         },
         openUILinkIn: function (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
             const createFixUp = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
