@@ -81,11 +81,17 @@ var SidebarModoki = {
     src: "popup/index.html",
     label: "Bitwarden"
   }, {
+    src: "https://music.youtube.com",
+    label: "YouTube Music"
+  }, {
     src: "https://papago.naver.com/",
     label: "papago"
   }, {
     src: "https://1password.com/zh-cn/password-generator/",
     label: "密码生成"
+  }, {
+    src: 'https://snapdrop.net',
+    label: '文件传输'
   }],
   // -- config --
 
@@ -278,13 +284,38 @@ var SidebarModoki = {
         left: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
       }
 
+      #SM_toolbox .sm-icon {
+        appearance: none !important;
+        -moz-context-properties: fill, fill-opacity;
+        border-radius: 4px;
+        color: inherit;
+        fill: currentColor;
+        padding: 2px !important;
+        width: 20px;
+        height: auto;
+      }
+
+      #SM_toolbox .sm-icon > .toolbarbutton-icon {
+        margin: 0 !important;
+      }
+
+      #SM_toolbox .sm-icon:hover {
+        background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
+      }
+
+      #SM_openInTabButton {
+        list-style-image: url("chrome://devtools/skin/images/dock-undock.svg");
+      }
+
       toolbar[brighttext]:-moz-lwtheme #SM_tabbox {
         background-color: var(--toolbar-bgcolor);
       }
+
       #SM_tabbox {
         display: flex;
         flex-direction: row;
       }
+
       #SM_toolbox[position="right"] #SM_tabbox{
         flex-direction: row-reverse;
       }
@@ -367,6 +398,7 @@ var SidebarModoki = {
         ["hbox", { id: "SM_header", align: "center" },
           ["label", {}, "SidebarModoki"],
           ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
+          ["toolbarbutton", { id: "SM_openInTabButton", class: "sm-icon tabbable", tooltiptext: "Open In New Tab", oncommand: "SidebarModoki.openInTab();" }],
           ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
         ],
         ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
@@ -587,6 +619,11 @@ var SidebarModoki = {
         document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
       }
       document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+      if (this.TABS[aIndex].src.startsWith("http")) {
+        document.getElementById("SM_openInTabButton").style.visibility = "visible";
+      } else {
+        document.getElementById("SM_openInTabButton").style.visibility = "collapse";
+      }
     }
   },
 
@@ -604,6 +641,26 @@ var SidebarModoki = {
     document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
     this.onSelect();
   },
+
+  openInTab: function () {
+    let tabNo = document.getElementById("SM_tabs").selectedIndex;
+    let url = this.TABS[tabNo].src;
+    let uri;
+    try {
+      uri = Services.io.newURI(url, null, null);
+    } catch (e) {
+      return;
+    }
+    openWebLinkIn(uri.spec, 'tab', {
+      postData: null,
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
+        userContextId: gBrowser.selectedBrowser.getAttribute(
+          "userContextId"
+        )
+      })
+    });
+  },
+
   close: function () {
     this.prefs.setBoolPref(this.kSM_Open, false);
     this.ToolBox.style.width = null;
