@@ -75,7 +75,7 @@ var SidebarModoki = {
   }, {
     "addon-id": "treestyletab@piro.sakura.ne.jp",
     src: "sidebar/sidebar.html",
-    label: "TST"
+    label: "Tree Style Tab",
   }, {
     "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
     src: "popup/index.html",
@@ -237,6 +237,13 @@ var SidebarModoki = {
       }
       #SM_splitter[position="right"] {
         order: 9 !important;
+      }
+
+      #SM_toolbox,
+      #SM_splitter {
+        /* Make room for the bookmarks toolbar so that it won't actually overlap the
+           new tab page and sidebar contents. */
+        padding-top: var(--bookmarks-toolbar-height);
       }
 
       /*ポップアップの時*/
@@ -484,28 +491,26 @@ var SidebarModoki = {
 
       // Don't check if the event was already consumed because tab
       // navigation should always work for better user experience.
-      let imports = {};
-      ChromeUtils.defineModuleGetter(
-        imports,
-        "ShortcutUtils",
-        "resource://gre/modules/ShortcutUtils.jsm"
-      );
-      const { ShortcutUtils } = imports;
+      const lazy = {};
 
-      switch (ShortcutUtils.getSystemActionForEvent(event)) {
-        case ShortcutUtils.CYCLE_TABS:
+      ChromeUtils.defineESModuleGetters(lazy, {
+        ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
+      });
+
+      switch (lazy.ShortcutUtils.getSystemActionForEvent(event)) {
+        case lazy.ShortcutUtils.CYCLE_TABS:
           if (this.tabs && this.handleCtrlTab) {
             this.tabs.advanceSelectedTab(event.shiftKey ? -1 : 1, true);
             event.preventDefault();
           }
           break;
-        case ShortcutUtils.PREVIOUS_TAB:
+        case lazy.ShortcutUtils.PREVIOUS_TAB:
           if (this.tabs && this.handleCtrlPageUpDown) {
             this.tabs.advanceSelectedTab(-1, true);
             event.preventDefault();
           }
           break;
-        case ShortcutUtils.NEXT_TAB:
+        case lazy.ShortcutUtils.NEXT_TAB:
           if (this.tabs && this.handleCtrlPageUpDown) {
             this.tabs.advanceSelectedTab(1, true);
             event.preventDefault();
@@ -522,7 +527,7 @@ var SidebarModoki = {
     tb0.parentNode.insertBefore(tb1, tb2);
     document.getElementById("SM_tabs").selectedIndex = index;
 
-    setTimeout(function () { this.observe(); }.bind(this), 0);
+    setTimeout(function () { this.observe(); this.onKSMOpen({}); }.bind(this), 0);
 
     //F11 fullscreen
     FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
@@ -586,20 +591,7 @@ var SidebarModoki = {
     }
 
     Services.prefs.addObserver(this.kSM_Open, (p, v) => {
-      let status = this.getPref(this.kSM_Open, "bool", true);
-      this.ToolBox.setAttribute("open", status);
-      if (status) {
-        addEventListener("resize", this, false);
-        // document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-      } else {
-        removeEventListener("resize", this, false);
-        this.ToolBox.style.width = null;
-        this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, -1);
-        Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
-          el.removeAttribute("selected");
-          el.removeAttribute("visuallyselected");
-        });
-      }
+      this.onKSMOpen({});
     });
 
     // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
@@ -607,6 +599,23 @@ var SidebarModoki = {
       this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left")
       this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left")
     });
+  },
+
+  onKSMOpen: function(event) {
+    let status = this.getPref(this.kSM_Open, "bool", true);
+    this.ToolBox.setAttribute("open", status);
+    if (status) {
+      addEventListener("resize", this, false);
+      // document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+    } else {
+      removeEventListener("resize", this, false);
+      this.ToolBox.style.width = null;
+      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, -1);
+      Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
+        el.removeAttribute("selected");
+        el.removeAttribute("visuallyselected");
+      });
+    }
   },
 
   onSelect: function (event) {
@@ -617,6 +626,10 @@ var SidebarModoki = {
       width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
       if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
         document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
+      }
+      let selectedTab = document.getElementById("SM_tab" + aIndex);
+      if (selectedTab.hasAttribute("label")) {
+        document.querySelector("#SM_header label").innerHTML = selectedTab.getAttribute("label");
       }
       document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
       if (this.TABS[aIndex].src.startsWith("http")) {
