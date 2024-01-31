@@ -132,7 +132,7 @@ function getViewCache(aDoc) {
 
 
 
-### sidebarAttrubesDetector
+### sidebarAttrubesDetector.uc.js
 
 （别吐槽英文了，瞌睡打的英文）
 
@@ -214,3 +214,54 @@ function getViewCache(aDoc) {
 效果如图所示：
 
 ![TST](Screenshots/TST.gif)
+
+### SidebarModoki.uc.js
+
+脚本前边这一段是定义侧边栏网页的配置项，支持 Firefox 内置页面，扩展页面和网页。
+
+| 字段         | 说明                                                         |
+| ------------ | ------------------------------------------------------------ |
+| addon-id     | 扩展 ID，指明这个Tab要链接到扩展的页面（Firefox 的扩展地址是随机生成的，填写脚本会自动读取对应的地址） |
+| src          | 网页地址，支持 Firefox 内置页面，扩展页面和网页。如果填写addon-id，必须填写扩展页面相对地址 |
+| image        | 图标地址，支持 Firefox 内置图标，网页图标和base64编码的图标  |
+| label        | Tab 名称                                                     |
+| data-l10n-id | firefox 多语言属性，自动从对应 ID 读取相应的文本             |
+| shortcut     | 快捷键，不知道还管用不，好久没用过了                         |
+
+```
+  TABS: [{
+    src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
+    "data-l10n-id": "library-bookmarks-menu",
+    image: "chrome://browser/skin/bookmark-star-on-tray.svg",
+    // shortcut: { key: "Q", modifiers: "accel,alt" } // uncomment to enable shortcut
+  }, {
+    src: "chrome://browser/content/places/historySidebar.xhtml",
+    "data-l10n-id": "appmenuitem-history",
+    image: "chrome://browser/skin/history.svg",
+  }, {
+    src: "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
+    "data-l10n-id": "appmenuitem-downloads",
+    image: "chrome://browser/skin/downloads/downloads.svg",
+  }, {
+    "addon-id": "treestyletab@piro.sakura.ne.jp",
+    src: "sidebar/sidebar.html",
+    label: "Tree Style Tab",
+  }, {
+    "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
+    src: "popup/index.html",
+    label: "Bitwarden"
+  }, {
+    src: "https://music.youtube.com",
+    label: "YouTube Music"
+  }, {
+    src: "https://papago.naver.com/",
+    label: "papago"
+  }, {
+    src: "https://1password.com/zh-cn/password-generator/",
+    label: "密码生成"
+  }, {
+    src: 'https://snapdrop.net',
+    label: '文件传输'
+  }],
+```
+
