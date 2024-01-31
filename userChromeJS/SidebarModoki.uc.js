@@ -433,7 +433,7 @@ var SidebarModoki = {
           }
         }
       }
-      if (tab.src.startsWith("http")) {
+      if (tab.src.startsWith("http") && !("image" in tab)) {
         tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32"
       }
       if (tab.hasOwnProperty("image")) {
@@ -601,7 +601,7 @@ var SidebarModoki = {
     });
   },
 
-  onKSMOpen: function(event) {
+  onKSMOpen: function (event) {
     let status = this.getPref(this.kSM_Open, "bool", true);
     this.ToolBox.setAttribute("open", status);
     if (status) {
