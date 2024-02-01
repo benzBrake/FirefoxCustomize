@@ -101,6 +101,8 @@ var SidebarModoki = {
   ToolBox: null,
   Button: null,
 
+  _selectedTab: null,
+
   get prefs() {
     delete this.prefs;
     return this.prefs = Services.prefs;
@@ -519,13 +521,22 @@ var SidebarModoki = {
       }
     };
 
-    let index = document.getElementById("SM_tabpanels").selectedIndex;
+    let tabpannels = document.getElementById("SM_tabpanels");
+    let index = tabpannels.selectedIndex;
     let tb0 = document.getElementById("SM_tab0");
     let tb1 = document.getElementById("SM_tab1");
     let tb2 = document.getElementById("SM_tab2");
     tb0.parentNode.insertBefore(tb0, tb1);
     tb0.parentNode.insertBefore(tb1, tb2);
-    document.getElementById("SM_tabs").selectedIndex = index;
+
+    tabbox.selectedIndex = index;
+
+    tabbox.querySelectorAll('tab').forEach(function (tab) {
+      let aIndex = tab.id.slice(-1);
+      let browser = document.getElementById("SM_tab" + aIndex + "-browser");
+      tab.linkedBrowser = browser;
+      browser.linkTab = tab;
+    }.bind(this));
 
     setTimeout(function () { this.observe(); this.onKSMOpen({}); }.bind(this), 0);
 
@@ -606,9 +617,11 @@ var SidebarModoki = {
     this.ToolBox.setAttribute("open", status);
     if (status) {
       addEventListener("resize", this, false);
+      this.Splitter.addEventListener("mouseup", this, false);
       // document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
     } else {
       removeEventListener("resize", this, false);
+      this.Splitter.removeEventListener("mouseup", this, false);
       this.ToolBox.style.width = null;
       this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, -1);
       Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
@@ -618,21 +631,32 @@ var SidebarModoki = {
     }
   },
 
+  set selectedTab(tab) {
+    if (!tab) return;
+    this._selectedTab = tab;
+    document.getElementById("SM_tabs").selectedIndex = tab.id.slice(-1);
+    this.onSelect();
+  },
+
+  get selectedTab() {
+    return this._selectedTab;
+  },
+
   onSelect: function (event) {
     this.prefs.setBoolPref(this.kSM_Open, true);
     let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
     if (aIndex != -1) {
       this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
       width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
-      if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
-        document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
+      let { selectedTab } = this;
+      if (selectedTab.linkedBrowser.src == "") {
+        selectedTab.linkedBrowser.src = this.TABS[aIndex].src;
       }
-      let selectedTab = document.getElementById("SM_tab" + aIndex);
       if (selectedTab.hasAttribute("label")) {
         document.querySelector("#SM_header label").innerHTML = selectedTab.getAttribute("label");
       }
       document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-      if (this.TABS[aIndex].src.startsWith("http")) {
+      if (selectedTab.linkedBrowser.src.startsWith("http")) {
         document.getElementById("SM_openInTabButton").style.visibility = "visible";
       } else {
         document.getElementById("SM_openInTabButton").style.visibility = "collapse";
@@ -644,23 +668,21 @@ var SidebarModoki = {
     this.prefs.setBoolPref(this.kSM_Open, true);
     let tab = document.getElementById("SM_tab" + tabNo);
     if (tab) {
-      document.getElementById("SM_tabs").selectedIndex = tabNo;
-      this.onSelect();
+      this.selectedTab = tab;
     }
   },
 
   advanceSelectedTab: function (dir) {
     if (typeof dir == "undefined") return;
     document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
+    this._selectedTab = tab;
     this.onSelect();
   },
 
   openInTab: function () {
-    let tabNo = document.getElementById("SM_tabs").selectedIndex;
-    let url = this.TABS[tabNo].src;
     let uri;
     try {
-      uri = Services.io.newURI(url, null, null);
+      uri = Services.io.newURI(this.selectedTab.src, null, null);
     } catch (e) {
       return;
     }
@@ -679,19 +701,19 @@ var SidebarModoki = {
     this.ToolBox.style.width = null;
   },
 
-
   //ここからは, 大きさの調整
   onResize: function (event) {
     let width = this.ToolBox.getBoundingClientRect().width;
-    let aIndex = document.getElementById("SM_tabs").selectedIndex;
+    let aIndex = this.selectedTab.id.slice(-1);
     this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
   },
 
   handleEvent: function (event) {
     switch (event.type) {
       case 'focus':
-        this.onSelect(event);
+        this.selectedTab = event.target;
         break;
+      case 'mouseup':
       case 'resize':
         this.onResize(event);
         break;
