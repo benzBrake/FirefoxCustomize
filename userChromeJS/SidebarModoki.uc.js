@@ -190,6 +190,10 @@ var SidebarModoki = {
         text-shadow: none;
         position: relative;
       }
+      #SM_toolbox[open="true"] {
+        min-width: 14em;
+        max-width: 42em;
+      }
       #SM_toolbox[open="false"] {
         width: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
         overflow: hidden;
@@ -219,12 +223,14 @@ var SidebarModoki = {
       .SM_toolbarspring {
           max-width: unset !important;
       }
-      
-      /*visibility*/
       #SM_toolbox[collapsed],
+      #SM_toolbox[moz-collapsed="true"] {
+        visibility:visible;
+      }
+      /*visibility*/
       #SM_splitter[collapsed],
       /*フルスクリーン*/
-      #SM_toolbox[moz-collapsed="true"],
+      
       #SM_splitter[moz-collapsed="true"]
       {
         visibility:collapse;
@@ -522,6 +528,8 @@ var SidebarModoki = {
     };
 
     let tabpannels = document.getElementById("SM_tabpanels");
+    this.Tabpanels = tabpannels;
+    this.Tabbox = tabbox;
     let index = tabpannels.selectedIndex;
     let tb0 = document.getElementById("SM_tab0");
     let tb1 = document.getElementById("SM_tab1");
@@ -593,7 +601,8 @@ var SidebarModoki = {
       });
     }
 
-    document.getElementById("SM_tabs").addEventListener("focus", this, true);
+    let tabs = document.getElementById("SM_tabs");
+    tabs.addEventListener("focus", this, true);
     window.addEventListener("aftercustomization", this, false);
 
     let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
@@ -647,7 +656,7 @@ var SidebarModoki = {
     let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
     if (aIndex != -1) {
       this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
-      width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
+      width = this.getPanelWidth(aIndex);
       let { selectedTab } = this;
       if (selectedTab.linkedBrowser.src == "") {
         selectedTab.linkedBrowser.src = this.TABS[aIndex].src;
@@ -705,7 +714,7 @@ var SidebarModoki = {
   onResize: function (event) {
     let width = this.ToolBox.getBoundingClientRect().width;
     let aIndex = this.selectedTab.id.slice(-1);
-    this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
+    this.setPanelWidth(aIndex, width);
   },
 
   handleEvent: function (event) {
@@ -735,6 +744,20 @@ var SidebarModoki = {
         }
         break;
     }
+  },
+
+  setPanelWidth: function(tabNo, width) {
+    if (typeof width !== "number") {
+      return false;
+    }
+    let aIndex = tabNo.toString();
+    return this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
+  },
+
+  getPanelWidth: function(tabNo) {
+    let aIndex = tabNo.toString();
+    let width = this.prefs.getIntPref(this.kSM_lastSelectedTabWidth + aIndex, this.SM_WIDTH);
+    return width;
   },
 
   //pref読み込み
