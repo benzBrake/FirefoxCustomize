@@ -378,6 +378,8 @@ var SidebarModoki = {
       #SM_tabs tab > hbox > .tab-icon {
         width: 16px;
         height: 16px;
+        -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
+        fill: var(--lwt-toolbarbutton-icon-fill, currentColor) !important;
       }
       #SM_tabs tab[iconized="true"] .tab-text {
         visibility: collapse;
