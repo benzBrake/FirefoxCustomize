@@ -124,7 +124,7 @@
                 this.refreshThemeOptions();
             },
             refreshThemeList: function () {
-                const themeList = $("themeList");
+                const themeList = $("themes-list");
                 [...themeList.childNodes].forEach(elm => $R(elm));
                 let closeTheme = $C(document, "li");
                 closeTheme.appendChild($C(document, "html:input", {
@@ -181,7 +181,7 @@
                 }
             },
             refreshThemeOptions: function () {
-                const themeOptions = $("themeOptions");
+                const themeOptions = $("theme-opitons-list");
                 [...themeOptions.childNodes].forEach(elm => $R(elm));
                 if (typeof TopWindow.CopyCatTheme.theme === "undefined") return;
                 Object.values(TopWindow.CopyCatTheme.theme.options).forEach(option => {
@@ -683,6 +683,8 @@
                 this.styles = [];
                 this.PrefObservers = {};
                 this.MutationObservers = [];
+                this.OnRegisterFns = [];
+                this.OnUnRegisterFns = [];
                 this.id = aFile.leafName.replace(/\.css$/, '');
                 let themeConfig;
                 if (aFile.isDirectory()) {
@@ -809,7 +811,28 @@
                     }
                     if (themeConfig.monitors) {
                         themeConfig.monitors.forEach(item => {
-                            if (item.pref) {
+                            if ("isAvailable" in item) {
+                                // 不满足条件则不启动 Monitor
+                                if (!evil(item.isAvailable)) return;
+                            }
+                            if ("eval" in item && "targetAttr" in item) {
+                                let target = window.document.querySelector(item.target) || window.document.querySelector("#main-window");
+                                if (target) {
+                                    this.OnRegisterFns.push(() => {
+                                        target.setAttribute(item.targetAttr, evil(item.eval));
+                                    });
+                                    if (target.hasAttribute(item.targetAttr)) {
+                                        let originalValue = target.getAttribute(item.targetAttr);
+                                        this.OnUnRegisterFns.push(() => {
+                                            target.setAttribute(item.targetAttr, originalValue);
+                                        });
+                                    } else {
+                                        this.OnUnRegisterFns.push(() => {
+                                            target.removeAttribute(item.targetAttr);
+                                        });
+                                    }
+                                }
+                            } else if (item.pref) {
                                 this.PrefObservers[item.pref] = {
                                     target: window.document.querySelector(item.target) || window.document.querySelector("#main-window"),
                                     targetAttr: item.targetAttr || item.pref
@@ -847,6 +870,9 @@
             }
 
             register() {
+                for (let fn in this.OnRegisterFns) {
+                    this.OnRegisterFns[fn]();
+                }
                 for (let pref in this.PrefObservers) {
                     if (this.PrefObservers[pref].target) this.PrefObservers[pref].target.setAttribute(this.PrefObservers[pref].targetAttr, cPref.get(pref, this.PrefObservers[pref].defaultValue));
                     if (this.PrefObservers[pref].target && !this.PrefObservers[pref].listener) {
@@ -868,6 +894,9 @@
             }
 
             unregister() {
+                for (let fn in this.OnUnRegisterFns) {
+                    this.OnUnRegisterFns[fn]();
+                }
                 for (let pref in this.PrefObservers) {
                     if (this.PrefObservers[pref].hasOwnProperty("listener")) {
                         try {
@@ -1021,7 +1050,10 @@
         }
 
         function matchPrefs(content) {
-            const regexPref = /-moz-bool-pref\("([^"]+)"\)/gm;
+            /**
+             * @update 2024.02.04 兼容 @media / @support (not) -moz-bool-pref
+             */
+            const regexPref = /-moz-bool-pref[:\s\(]*"([\w\d\.])+"\)/gm;
             let matches = content.match(regexPref);
             let options = [];
             if (matches) {
@@ -1086,7 +1118,7 @@
                 el.parentNode.removeChild(el);
                 return true;
             } catch (e) {
-                this.error(e);
+                console.error(e);
             }
         }
         return false;
@@ -1099,9 +1131,25 @@
             if (!arguments.length) return "";
             str = LANG[LOCALE][str] || str;
             for (let i = 1; i < arguments.length; i++) {
-                str = str.replace("%s", arguments[i]);
+                str = str.replace(/%(s|d)/, arguments[i]);
             }
             return str;
         } else return "";
+    }
+
+    /**
+     * 执行字符串表达式并获得返回值
+     * 
+     * @param {*} fn 
+     * @returns 
+     */
+    function evil(fn) {
+        let Fn = Function;
+        try {
+            let status = new Fn('return ' + fn)();
+            return status;
+        } catch (e) {
+            return false;
+        }
     }
 })(``);
