@@ -550,59 +550,72 @@
     }
 
     TabPlus.modules.switchOnHover = {
+        // 首选项键名
         PREF: 'browser.tabs.switchOnHover',
-        triggered: false,
+        // 是否触发标志
+        isTriggered: false,
+        // 菜单配置
         menus: [{
-            label: $L("horizontal tabs panel"),
+            label: $L("水平标签面板"),
             pref: 'browser.tabs.switchOnHover',
             type: 'checkbox'
         }],
+        // 初始化方法
         init(win) {
             let { gBrowser } = win || window;
+            // 监听鼠标移入事件
             gBrowser.tabContainer.parentNode.addEventListener('mouseover', this, false);
+            // 监听标签点击事件
             gBrowser.tabContainer.addEventListener('click', this, false);
         },
+        // 事件处理方法
         handleEvent(event) {
             let { target } = event,
                 { ownerGlobal: win } = target,
                 { gBrowser } = win;
+            // 如果首选项被禁用，则返回
             if (!cPref.get(this.PREF, true)) return;
             const tab = target.closest('#firefox-view-button,.tabbrowser-tab');
-            let dblckick = false;
+            let dblclick = false;
             switch (event.type) {
+                // 处理鼠标移入事件
                 case 'mouseover':
                     if (win.document.getElementById('TabsToolbar').getAttribute('customizing') === "true") return;
-                    
                     if (!tab) return;
-                    if (
-                        !tab.getAttribute("selected") &&
+                    if (!tab.getAttribute("selected") &&
                         !event.shiftKey &&
                         !event.ctrlKey
                     ) {
                         this._onTabHover(tab);
                     }
                     break;
-                case 'dblckick':
-                    dblckick = true;
+                // 处理双击事件
+                case 'dblclick':
+                    dblclick = true;
+                // 处理点击事件
                 case 'click':
-                    // 点击新增标签/隐私标签后暂停自动切换功能
-                    if (this.triggered) return;
-                    if (['tabs-newtab-button', 'new-tab-button', 'newPrivateTab-button'].includes(target.id) || (tab && cPref.get("browser.tabs.closeTabByDblclick", false) && dblckick) || (tab && event.button === 1) || (tab && cPref.get('browser.tabs.closeTabByRightClick', false) && event.button === 2)) {
-                        this.triggered = true;
+                    // 如果已经触发，则返回
+                    if (this.isTriggered) return;
+                    if (['tabs-newtab-button', 'new-tab-button', 'newPrivateTab-button'].includes(target.id) || (tab && cPref.get("browser.tabs.closeTabByDblclick", false) && dblclick) || (tab && event.button === 1) || (tab && cPref.get('browser.tabs.closeTabByRightClick', false) && event.button === 2)) {
+                        // 暂时禁用自动切换功能
+                        this.isTriggered = true;
                         let that = this;
                         let lastValue = cPref.get(that.PREF, true);
                         gBrowser.tabContainer.addEventListener('mouseleave', restorePref, false);
                         cPref.set(that.PREF, false);
+                        setTimeout(() => {
+                            restorePref();
+                        }, 3000);
                         function restorePref() {
-                            that.triggered = false;
+                            that.isTriggered = false;
                             cPref.set(that.PREF, lastValue);
                             gBrowser.tabContainer.removeEventListener('mouseleave', restorePref, false);
                         }
                     }
                     break;
             }
-
         },
+        // 处理标签悬停方法
         _onTabHover(tab, wait) {
             tab.addEventListener("mouseleave", function () {
                 clearTimeout(wait);
@@ -616,12 +629,15 @@
                 }
             }, cPref.get('browser.tabs.switchOnHoverDelay', 150));
         },
+        // 销毁方法
         destroy(win) {
             let { gBrowser } = win || window;
+            // 移除事件监听器
             gBrowser.tabContainer.parentNode.removeEventListener('mouseover', this, false);
             gBrowser.tabContainer.removeEventListener('click', this, false);
         }
     }
+
 
     TabPlus.modules.verticalTabPaneSwitchOnHover = {
         PREF: 'userChrome.tabs.verticalTabsPane.switchOnHover',
