@@ -396,7 +396,9 @@ if (typeof window === "undefined" || globalThis !== window) {
             addContextMenuitem() {
                 const menuitem = $C("menuitem", {
                     id: 'menu-translate-selected',
-                    label: "翻译选中文本"
+                    class: "menuitem-iconic",
+                    label: "翻译选中文本",
+                    image: "data:image/png;base64,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",
                 });
                 menuitem.addEventListener('command', this, false);
                 this.menuitem = $('contentAreaContextMenu').appendChild(menuitem);
@@ -542,7 +544,14 @@ if (typeof window === "undefined" || globalThis !== window) {
              */
             popupshowing(win) {
                 let selectionText = win.gContextMenu?.contentData?.selectionInfo?.text;
-                this.menuitem.hidden = !selectionText;
+                if (!selectionText) {
+                    this.menuitem.hidden = true;
+                    return;
+                }
+                if (gBrowser.selectedBrowser.currentURI.spec.startsWith("about:")) {
+                    this.menuitem.hidden = true;
+                }
+                this.menuitem.nextElementSibling.hidden = true;
             },
             uninit: async function () {
                 window.removeEventListener('unload', this, false);
