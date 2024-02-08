@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name            syncTabsMod.uc.js
-// @description     增强受同步的标签页
+// @description     增强受同步的标签页，强制新标签页面打开，增加打开全部
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/syncedtabs/sidebar.xhtml
@@ -11,7 +11,7 @@
     window.syncTabsMod = {
         OPEN_ALL_BTN: {
             id: "PanelUI-remotetabs-openAll",
-            label: "打开所有",
+            label: gNavigatorBundle.getString("menuOpenAllInTabs.label"),
             onclick: "window.syncTabsMod.openAll(event);",
             class: "subviewbutton",
         },
@@ -26,7 +26,7 @@
             );
             if (!self.view) return;
             if (!self.view.querySelector('#PanelUI-remotetabs-openAll')) {
-                self.view.querySelector('#PanelUI-remotetabs-separator').before($C(document, "toolbarbutton", self.OPEN_ALL_BTN));
+                self.view.querySelector('#PanelUI-remotetabs-separator').before(createXULElement(document, "toolbarbutton", self.OPEN_ALL_BTN));
             }
 
             this.view.querySelectorAll('.subviewbutton[itemtype="tab"]').forEach((node) => {
@@ -46,7 +46,6 @@
             this.observer.observe(self.view.querySelector("#PanelUI-remotetabs-tabslist"), { childList: true });
         },
         initSidebar: function () {
-            // 这里的 event.button === 0 只能改 0 左键 1 中键
             this.onOpenSelected = syncedTabsDeckComponent.tabListComponent._view.onOpenSelected;
             const regex = /\s*let\s+where.*/gm;
             const subst = `\n    let { getChromeWindow } = ChromeUtils.import('resource:///modules/syncedtabs/util.js');\n    let where = event.button === 0 ? 'tabshifted' : getChromeWindow(syncedTabsDeckComponent.tabListComponent._view._window).whereToOpenLink(event);`;
@@ -75,7 +74,6 @@
                 if (url)
                     switch (event.button) {
                         case 0:
-                            // 0 左键 1 中键 2 右键
                             event.preventDefault();
                             event.stopPropagation();
                             this.openWebLink(url, "tabshifted");
@@ -98,7 +96,7 @@
         },
         onDestroy: function (win) {
             if (this.view) {
-                $R(this.view.querySelector("#" + this.OPEN_ALL_BTN.id));
+                removeElement(this.view.querySelector("#" + this.OPEN_ALL_BTN.id));
                 win.removeEventListener("aftercustomization", this, false);
                 this.observer.disconnect();
             } else if (this.onOpenSelected) {
@@ -108,14 +106,14 @@
         }
     }
 
-    function $C(aDoc, tag, attrs, skipAttrs) {
+    function createXULElement(aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
         var el = (aDoc || document).createXULElement(tag);
-        return $A(el, attrs, skipAttrs);
+        return setAttributes(el, attrs, skipAttrs);
     }
 
-    function $A(el, obj, skipAttrs) {
+    function setAttributes(el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
@@ -129,7 +127,7 @@
         return el;
     }
 
-    function $R(el) {
+    function removeElement(el) {
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
     }
