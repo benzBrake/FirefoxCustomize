@@ -548,7 +548,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     this.menuitem.hidden = true;
                     return;
                 }
-                if (gBrowser.selectedBrowser.currentURI.spec.startsWith("about:")) {
+                if (win.gContextMenu?.browser?.currentURI?.spec?.startsWith("about:")) {
                     this.menuitem.hidden = true;
                 }
                 this.menuitem.nextElementSibling.hidden = true;
