@@ -963,6 +963,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 // 表示 / 非表示の設定
                 if (menuObj.condition) {
                     this.setCondition(group, menuObj.condition);
+                    // Sync condition attribute to child menus
                     menuObj._items.forEach(function (obj) {
                         if (!Object.keys(obj).includes("contidion")) {
                             obj.condition = menuObj.condition;
@@ -1952,122 +1953,111 @@ if (typeof window === "undefined" || globalThis !== window) {
 
         window.addMenu.init();
     })(`
-    .addMenuHide
-      { display: none !important; }
-    #contentAreaContextMenu[addMenu~="select"] .addMenu:not([condition~="select"]),
-    #contentAreaContextMenu[addMenu~="link"]   .addMenu:not([condition~="link"]),
-    #contentAreaContextMenu[addMenu~="mailto"] .addMenu:not([condition~="mailto"]),
-    #contentAreaContextMenu[addMenu~="image"]  .addMenu:not([condition~="image"]),
-    #contentAreaContextMenu[addMenu~="canvas"] .addMenu:not([condition~="canvas"]),
-    #contentAreaContextMenu[addMenu~="media"]  .addMenu:not([condition~="media"]),
-    #contentAreaContextMenu[addMenu~="input"]  .addMenu:not([condition~="input"]),
-    #contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],
-    #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],
-    #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],
-    #contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="noimage"],
-    #contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],
-    #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],
-    #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],
-    #contentAreaContextMenu[addMenu=""] .addMenu:not([condition~="normal"])
-      { display: none; }
-    #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
-    #toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
-    #toolbar-context-menu:not([addMenu~="navbar"]) .addMenu[condition~="navbar"],
-    #toolbar-context-menu:not([addMenu~="personal"]) .addMenu[condition~="personal"],
-    #toolbar-context-menu:not([addMenu~="button"]) .addMenu[condition~="button"],
-    #toolbar-context-menu[addMenu~="menubar"] .addMenu[condition~="nomenubar"],
-    #toolbar-context-menu[addMenu~="tabs"] .addMenu[condition~="notabs"],
-    #toolbar-context-menu[addMenu~="navbar"] .addMenu[condition~="nonavbar"],
-    #toolbar-context-menu[addMenu~="personal"] .addMenu[condition~="nopersonal"],
-    #toolbar-context-menu[addMenu~="button"] .addMenu[condition~="nobutton"],
-    #toolbar-context-menu:not([addMenu=""]) .addMenu[condition~="normal"]
-      { display: none !important; }
-    .addMenu-insert-point,
-    toolbarseparator:not(.addMenu-insert-point)+toolbarseparator
-      { display: none !important; }
-    .addMenu[url] {
-      list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
-    }
-    .addMenu.exec,
-    .addMenu[exec] {
-      list-style-image: url("chrome://devtools/content/debugger/images/window.svg");
-    }
-    .addMenu.copy,
-    menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
-    {
-      list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik00IDJDMi44OTUgMiAyIDIuODk1IDIgNEwyIDE3QzIgMTcuNTUyIDIuNDQ4IDE4IDMgMThDMy41NTIgMTggNCAxNy41NTIgNCAxN0w0IDRMMTcgNEMxNy41NTIgNCAxOCAzLjU1MiAxOCAzQzE4IDIuNDQ4IDE3LjU1MiAyIDE3IDJMNCAyIHogTSA4IDZDNi44OTUgNiA2IDYuODk1IDYgOEw2IDIwQzYgMjEuMTA1IDYuODk1IDIyIDggMjJMMjAgMjJDMjEuMTA1IDIyIDIyIDIxLjEwNSAyMiAyMEwyMiA4QzIyIDYuODk1IDIxLjEwNSA2IDIwIDZMOCA2IHogTSA4IDhMMjAgOEwyMCAyMEw4IDIwTDggOCB6Ii8+PC9zdmc+);
-      -moz-image-region: rect(0pt, 16px, 16px, 0px);
-    }
-    .addMenu.checkbox .menu-iconic-icon {
-      -moz-appearance: checkbox;
-    }
-    .addMenu > .menu-iconic-left {
-      -moz-appearance: menuimage;
-    }
-    .addMenu > .menu-iconic-left > .menu-iconic-icon {
-        -moz-context-properties: fill, fill-opacity !important;
-        fill: currentColor !important;
-    }
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu:first-child > .menu-iconic-left,
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left {
-        visibility: collapse;
-    }
-    /* menugroup.addMenu {
-      padding-bottom: 2px;
-    } */
-    menugroup.addMenu > .menuitem-iconic.fixedSize {
-        -moz-box-flex: 0;
-        flex-grow: 0;
-        flex-shrink: 0;
-        padding-inline-end: 8px;
-    }
-    menugroup.addMenu > .menuitem-iconic:nth-child(2).noIcon {
-        padding-inline-start: 0;
-    }
-    menugroup.addMenu > .menuitem-iconic:nth-child(2).noIcon > .menu-iconic-text {
-        padding-inline-start: 0 !important;
-    }
-    menugroup.addMenu > .menuitem-iconic.noIcon > .menu-iconic-left {
-        display: none !important;
-        padding-inline-end: 0px !important;
-    }
-    menugroup.addMenu > .menuitem-iconic {
-        -moz-box-flex: 1;
-        -moz-box-pack: center;
-        -moz-box-align: center;
-        flex-grow: 1;
-        justify-content: center;
-        align-items: center;
-        padding-block: 6px;
-        padding-inline-start: 1em;
-    }
-    menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
-        -moz-appearance: none;
-        /* padding-top: 2px; */
-    }
-    menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
-        width: 16px;
-        height: 16px;
-    }
-    menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,
-    menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,
-    menugroup.addMenu > .menuitem-iconic > .menu-accel-container {
-        display: none;
-    }
-    menugroup.addMenu > .menuitem-iconic {
-        padding-inline-end: 1em;
-    }
-    menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) {
-        padding-left: 0;
-        -moz-box-flex: 0;
-        flex-grow: 0;
-        flex-shrink: 0;
-        padding-inline-end: 0;
-    }
-    menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left {
-        margin-inline-start: 8px;
-        margin-inline-end: 8px;
-    }
-    `)
+.addMenuHide
+  { display: none !important; }
+#contentAreaContextMenu[addMenu~="select"] .addMenu:not([condition~="select"]),
+#contentAreaContextMenu[addMenu~="link"]   .addMenu:not([condition~="link"]),
+#contentAreaContextMenu[addMenu~="mailto"] .addMenu:not([condition~="mailto"]),
+#contentAreaContextMenu[addMenu~="image"]  .addMenu:not([condition~="image"]),
+#contentAreaContextMenu[addMenu~="canvas"] .addMenu:not([condition~="canvas"]),
+#contentAreaContextMenu[addMenu~="media"]  .addMenu:not([condition~="media"]),
+#contentAreaContextMenu[addMenu~="input"]  .addMenu:not([condition~="input"]),
+#contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],
+#contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],
+#contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],
+#contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="noimage"],
+#contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],
+#contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],
+#contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],
+#contentAreaContextMenu[addMenu=""] .addMenu:not([condition~="normal"])
+  { display: none; }
+#toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
+#toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
+#toolbar-context-menu:not([addMenu~="navbar"]) .addMenu[condition~="navbar"],
+#toolbar-context-menu:not([addMenu~="personal"]) .addMenu[condition~="personal"],
+#toolbar-context-menu:not([addMenu~="button"]) .addMenu[condition~="button"],
+#toolbar-context-menu[addMenu~="menubar"] .addMenu[condition~="nomenubar"],
+#toolbar-context-menu[addMenu~="tabs"] .addMenu[condition~="notabs"],
+#toolbar-context-menu[addMenu~="navbar"] .addMenu[condition~="nonavbar"],
+#toolbar-context-menu[addMenu~="personal"] .addMenu[condition~="nopersonal"],
+#toolbar-context-menu[addMenu~="button"] .addMenu[condition~="nobutton"],
+#toolbar-context-menu:not([addMenu=""]) .addMenu[condition~="normal"]
+  { display: none !important; }
+.addMenu-insert-point,
+toolbarseparator:not(.addMenu-insert-point)+toolbarseparator
+  { display: none !important; }
+.addMenu[url] {
+  list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
+}
+.addMenu.exec,
+.addMenu[exec] {
+  list-style-image: url("chrome://devtools/content/debugger/images/window.svg");
+}
+.addMenu.copy,
+menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])
+{
+  list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik00IDJDMi44OTUgMiAyIDIuODk1IDIgNEwyIDE3QzIgMTcuNTUyIDIuNDQ4IDE4IDMgMThDMy41NTIgMTggNCAxNy41NTIgNCAxN0w0IDRMMTcgNEMxNy41NTIgNCAxOCAzLjU1MiAxOCAzQzE4IDIuNDQ4IDE3LjU1MiAyIDE3IDJMNCAyIHogTSA4IDZDNi44OTUgNiA2IDYuODk1IDYgOEw2IDIwQzYgMjEuMTA1IDYuODk1IDIyIDggMjJMMjAgMjJDMjEuMTA1IDIyIDIyIDIxLjEwNSAyMiAyMEwyMiA4QzIyIDYuODk1IDIxLjEwNSA2IDIwIDZMOCA2IHogTSA4IDhMMjAgOEwyMCAyMEw4IDIwTDggOCB6Ii8+PC9zdmc+);
+  -moz-image-region: rect(0pt, 16px, 16px, 0px);
+}
+.addMenu.checkbox .menu-iconic-icon {
+  -moz-appearance: checkbox;
+}
+.addMenu > .menu-iconic-left {
+  -moz-appearance: menuimage;
+}
+.addMenu > .menu-iconic-left > .menu-iconic-icon {
+    -moz-context-properties: fill, fill-opacity !important;
+    fill: currentColor !important;
+}
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left {
+    visibility: collapse;
+}
+menugroup.addMenu > .menuitem-iconic.fixedSize {
+    -moz-box-flex: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding-inline-end: 8px;
+}
+menugroup.addMenu > .menuitem-iconic {
+    -moz-box-flex: 1;
+    -moz-box-pack: center;
+    -moz-box-align: center;
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    padding-block: 6px;
+    padding-inline-start: 1em;
+}
+menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
+    -moz-appearance: none;
+    padding-top: 0;
+}
+menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
+    width: 16px;
+    height: 16px;
+}
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,
+menugroup.addMenu > .menuitem-iconic > .menu-accel-container {
+    display: none;
+}
+menugroup.addMenu > .menuitem-iconic {
+    padding-inline-end: 1em;
+}
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText),
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) {
+    padding-left: 0;
+    -moz-box-flex: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding-inline-end: 0;
+}
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left,
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-left {
+    margin-inline-start: 8px;
+    margin-inline-end: 8px;
+}
+`)
 }
