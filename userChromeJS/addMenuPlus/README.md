@@ -85,11 +85,31 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     "data-l10n-href" （我新增的，因JS语法问题配置里请用双引号括起来，本地化语言文件 ftl 后缀）
     "data-l10n-id"  （我新增的，因JS语法问题配置里请用双引号括起来，本地化关联 id）
 
+`condition`额外说明：
+
+2024.2.10 （不包括）以前的版本仅仅支持单个 condition
+
+```json
+{
+	'contidion': 'normal', // 正常
+	'condition': 'normal link' // 不正常，仅 normal 生效
+}
+```
+
+2024.2.10 （包括）以后的版本支持多个 condition
+
+```json
+{
+	'contidion': 'normal', // 正常
+	'condition': 'normal link' // normal 和 link 都生效
+}
+```
+
 参考链接：
 
- - [oncommand - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/oncommand)
- - [command - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/command)
- - [Attribute (XUL) - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute)
+ - [oncommand - Mozilla | MDN](https://web.archive.org/web/20190426200343/https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/command)
+ - [command - Mozilla | MDN](https://web.archive.org/web/20150921134030/https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/oncommand)
+ - [Attribute (XUL) - Mozilla | MDN](https://web.archive.org/web/20190425035223/https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute)
 
 
 ### 可利用的变量(用于 url/text 属性)

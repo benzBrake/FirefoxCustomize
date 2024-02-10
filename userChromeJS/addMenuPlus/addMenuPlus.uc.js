@@ -15,7 +15,7 @@
 // @oohomepageURL  https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围
+// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
@@ -947,8 +947,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             cls.add('addMenu');
 
             // 表示 / 非表示の設定
-            if (menuObj.condition)
+            if (menuObj.condition) {
                 this.setCondition(group, menuObj.condition);
+                // Sync condition attribute to child menus
+                menuObj._items.forEach(function (obj) {
+                    if (!Object.keys(obj).includes("contidion")) {
+                        obj.condition = menuObj.condition;
+                    }
+                });
+            }
 
             menuObj._items.forEach(function (obj) {
                 group.appendChild(this.newMenuitem(obj, {
@@ -1403,16 +1410,20 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }).catch(e => { });
         },
         setCondition: function (menu, condition) {
-            if (/\bnormal\b/i.test(condition)) {
-                menu.setAttribute("condition", "normal");
-            } else {
-                let match = condition.toLowerCase().match(/\b(?:no)?(?:select|link|mailto|image|canvas|media|input)\b/ig);
-                if (!match || !match[0])
-                    return;
-                match = match.filter(function (c, i, a) {
-                    return a.indexOf(c) === i
-                });
-                menu.setAttribute("condition", match.join(" "));
+            if (condition) {
+                let beforeProcessConditons = condition.split(' ');
+                let conditions = [];
+                for (let i = 0; i < beforeProcessConditons.length; i++) {
+                    let c = conditions[i] || "";
+                    if (c === "normal") {
+                        conditions.push("normal");
+                    } else if (["select", "link", "mailto", "image", "canvas", "media", "input"].includes(c.replace(/^no/, ""))) {
+                        conditions.push(c);
+                    }
+                }
+                if (conditions.length) {
+                    menu.setAttribute("condition", conditions.join(" "));
+                }
             }
         },
         convertText: function (text) {
@@ -1472,12 +1483,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         return context.link.host || "";
                     case "%RLINK_TEXT%":
                         return context.linkText() || "";
-                        case "%RLINK_OR_URL%":
-                            if ("linkURL" in context) {
-                                return context.linkURL;
-                            } else {
-                                return bw.documentURI.spec;
-                            }
+                    case "%RLINK_OR_URL%":
+                        if ("linkURL" in context) {
+                            return context.linkURL;
+                        } else {
+                            return bw.documentURI.spec;
+                        }
                     case "%RLT_OR_UT%":
                         return context.onLink && context.linkText() || bw.contentTitle; // 链接文本或网页标题
                     case "%IMAGE_ALT%":
@@ -1949,23 +1960,23 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     }, 5000);
 })(`
 .addMenuHide
-  { display: none !important; }
-#contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="select"],
-#contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="link"],
-#contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="mailto"],
-#contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="image"],
-#contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="canvas"],
-#contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="media"],
-#contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="input"],
-#contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],
-#contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],
-#contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],
-#contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="noimage"],
-#contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],
-#contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],
-#contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],
-#contentAreaContextMenu:not([addMenu=""])  .addMenu[condition~="normal"]
-  { display: none; }
+{ display: none !important; }
+#contentAreaContextMenu[addMenu~="select"] .addMenu:no([condition~="select"]),
+#contentAreaContextMenu[addMenu~="link"]   .addMenu:no([condition~="link"]),
+#contentAreaContextMenu[addMenu~="mailto"] .addMenu:no([condition~="mailto"]),
+#contentAreaContextMenu[addMenu~="image"]  .addMenu:no([condition~="image"]),
+#contentAreaContextMenu[addMenu~="canvas"] .addMenu:no([condition~="canvas"]),
+#contentAreaContextMenu[addMenu~="media"]  .addMenu:no([condition~="media"]),
+#contentAreaContextMenu[addMenu~="input"]  .addMenu:no([condition~="input"]),
+#contentAreaContextMenu[addMenu~="select"] .addMen[condition~="noselect"],
+#contentAreaContextMenu[addMenu~="link"]   .addMen[condition~="nolink"],
+#contentAreaContextMenu[addMenu~="mailto"] .addMen[condition~="nomailto"],
+#contentAreaContextMenu[addMenu~="image"]  .addMen[condition~="noimage"],
+#contentAreaContextMenu[addMenu~="canvas"]  .addMen[condition~="nocanvas"],
+#contentAreaContextMenu[addMenu~="media"]  .addMen[condition~="nomedia"],
+#contentAreaContextMenu[addMenu~="input"]  .addMen[condition~="noinput"],
+#contentAreaContextMenu[addMenu=""] .addMenu:no([condition~="normal"])
+{ display: none; }
 #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
 #toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
 #toolbar-context-menu:not([addMenu~="navbar"]) .addMenu[condition~="navbar"],
