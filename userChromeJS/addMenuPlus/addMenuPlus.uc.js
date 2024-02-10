@@ -2034,7 +2034,7 @@ menugroup.addMenu > .menuitem-iconic {
     flex-grow: 1;
     justify-content: center;
     align-items: center;
-    padding-block: 4px;
+    padding-block: 6px;
     padding-inline-start: 1em;
 }
 menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
