@@ -223,7 +223,7 @@
                 border-radius: var(--arrowpanel-menuitem-border-radius);
             }
             .unified-extensions-list unified-extensions-item > .unified-extensions-item-action-button {
-                margin: var(--arrowpanel-menuitem-margin-inline);
+                margin: var(--arrowpanel-menuitem-margin);
             }
             `)),
             type: 2
@@ -245,6 +245,9 @@
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             if (origBtn) origBtn.addEventListener('click', this.openAddonsMgr);
 
+            this.togglePanel = gUnifiedExtensions.togglePanel.toString();
+            eval("gUnifiedExtensions.togglePanel = " + this.togglePanel.toString().replace("async togglePanel", "async function").replace("!this.hasExtensionsInPanel()", "false"));
+
             this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
             eval("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
 
@@ -253,7 +256,7 @@
 
             // 增加禁用所有
             view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.DISABLE_ALL_ADDONS));
- 
+
             // 复制 ID
             if (!$Q("." + MENUS.COPY_ID.class.replace(" ", "."))) {
                 $('unified-extensions-context-menu').insertBefore(createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension'));
@@ -468,6 +471,7 @@
             })
             view.removeEventListener('ViewShowing', this);
             gUnifiedExtensions.onPinToToolbarChange = this.onPinToToolbarChange;
+            gUnifiedExtensions.togglePanel = this.togglePanel;
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')))
             if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
