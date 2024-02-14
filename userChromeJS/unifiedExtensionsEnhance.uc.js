@@ -74,6 +74,12 @@
             "uni-action": "disable",
             class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic",
         },
+        ENABLE_ALL_ADDONS: {
+            id: 'unified-extensions-enable-all',
+            class: "subviewbutton",
+            "uni-action": "enable-all",
+            label: "启用所有扩展",
+        },
         DISABLE_ALL_ADDONS: {
             id: 'unified-extensions-disable-all',
             class: "subviewbutton",
@@ -242,9 +248,12 @@
             this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
             eval("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
 
+            // 增加启用所有
+            view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.ENABLE_ALL_ADDONS));
+
             // 增加禁用所有
             view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.DISABLE_ALL_ADDONS));
-
+ 
             // 复制 ID
             if (!$Q("." + MENUS.COPY_ID.class.replace(" ", "."))) {
                 $('unified-extensions-context-menu').insertBefore(createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension'));
@@ -295,10 +304,15 @@
                 let item;
                 const uniAction = button.getAttribute("uni-action");
                 switch (uniAction) {
+                    case "enable-all":
+                        let extensionsToBeEnable = await AddonManager.getAddonsByTypes(['extension']);
+                        for (let extension of extensionsToBeEnable)
+                            if (!extension.isActive && !extension.isBuiltin) extension.enable();
+                        break;
                     case "disable-all":
-                        let extensions = await AddonManager.getAddonsByTypes(['extension']);
-                        for (let extension of extensions)
-                            if (extension.isActive && !extensions.isBuiltin) extension.disable();
+                        let extensionsToBeDisable = await AddonManager.getAddonsByTypes(['extension']);
+                        for (let extension of extensionsToBeDisable)
+                            if (extension.isActive && !extension.isBuiltin) extension.disable();
                         break;
                     case "enable":
                         item = button.closest("unified-extensions-item");
