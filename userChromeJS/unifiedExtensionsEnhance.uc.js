@@ -211,7 +211,8 @@
             }
             .toolbaritem-combined-buttons.unified-extensions-item > *:not(.unified-extensions-item-action-button) > .toolbarbutton-icon {
                 box-sizing: content-box;
-                padding: var(--arrowpanel-menuitem-padding-inline);
+                padding-inline: var(--arrowpanel-menuitem-padding-inline) !important;
+                padding-block: var(--arrowpanel-menuitem-padding-block) !important;
                 border: 1px solid transparent;
                 border-radius: var(--arrowpanel-menuitem-border-radius);
             }
