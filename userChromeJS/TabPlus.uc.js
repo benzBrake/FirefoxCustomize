@@ -717,33 +717,33 @@
                 e.preventDefault();
                 e.stopPropagation();
                 let win = e.target.ownerGlobal;
-                let url = win.readFromClipboard();
-                if (!url) {
-                    win.BrowserOpenTab();
-                } else {
-                    url = url.trim();
+                let url = (win.readFromClipboard() || "").trim();
+                let where = !(e.ctrlKey || Services.prefs.getBoolPref("browser.urlbar.openintab", false)) ? 'current' : (e.shiftKey ? 'tabshifted' : 'tab');
+                if (/^((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
                     try {
                         switchToTabHavingURI(url, true);
-                    } catch (ex) {
-                        if (/^((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
-                            win.gBrowser.loadOneTab(encodeURIComponent(url), {
-                                inBackground: false,
-                                relatedToCurrent: false,
-                                triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
-                            });
-                        } else {
-                            Services.search.getDefault().then(engine => {
-                                let submission = engine.getSubmission(url, null, 'search');
-                                win.openLinkIn(submission.uri.spec, 'tab', {
-                                    private: false,
-                                    postData: submission.postData,
-                                    inBackground: false,
-                                    relatedToCurrent: true,
-                                    triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
-                                });
-                            });
-                        }
+                    } catch (e) {
+                        openUILinkIn(url, where, {
+                            triggeringPrincipal: (where === 'current' ? gBrowser.selectedBrowser.contentPrincipal : (
+                                /^(f|ht)tps?:/.test(url) ?
+                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.getSystemPrincipal()
+                            ))
+                        });
                     }
+                } else {
+                    Services.search.getDefault().then(engine => {
+                        let submission = engine.getSubmission(url, null, 'search');
+                        let aAllowThirdPartyFixup = {
+                            private: false,
+                            referrerInfo: submission.referrerInfo,
+                            postData: submission.postData,
+                            inBackground: e.shiftKey,
+                            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                        }
+                        openTrustedLinkIn(submission.uri.spec, 'tab', aAllowThirdPartyFixup);
+                    });
+
                 }
             }
         },
