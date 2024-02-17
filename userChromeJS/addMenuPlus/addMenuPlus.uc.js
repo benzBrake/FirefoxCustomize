@@ -15,7 +15,7 @@
 // @oohomepageURL  https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件
+// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
@@ -334,6 +334,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             let rFAVICON_BASE64 = "%FAVICON_BASE64" + he + "%";
             let rRLT_OR_UT = "%RLT_OR_UT" + he + "%"; // 链接文本或网页标题
+            let rSEL_OR_LT = "%(?:SEL_OR_LINK_TEXT|SEL_OR_LT)" + he + "%|%sl\\b"; // 选中文本或者链接文本
 
             this.rTITLE = new RegExp(rTITLE, "i");
             this.rTITLES = new RegExp(rTITLES, "i");
@@ -351,9 +352,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.rIMAGE_BASE64 = new RegExp(rIMAGE_BASE64, "i");
             this.rSVG_BASE64 = new RegExp(rSVG_BASE64, "i");
             this.rRLT_OR_UT = new RegExp(rRLT_OR_UT, "i");
+            this.rSEL_OR_LT = new RegExp(rSEL_OR_LT, "i");
 
             this.regexp = new RegExp(
-                [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
+                [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT, rSEL_OR_LT].join("|"), "ig");
 
 
             // add menuitem insertpoint
@@ -680,7 +682,34 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             else if (text)
                 this.copy(this.convertText(text));
         },
-        openCommand: function (event, url, where, postData) {
+        openCommand: function (event, url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
+            /** aAllowThirdPartyFixup 参数在 ywzhaiqi 版本是 postData */
+            if (aAllowThirdPartyFixup instanceof Object) {
+                aAllowThirdPartyFixup = Object.assign({
+                    postData: null,
+                    userContextId: gBrowser.selectedBrowser.getAttribute(
+                        "userContextId"
+                    )
+                }, aAllowThirdPartyFixup)
+            } else {
+                aAllowThirdPartyFixup = {
+                    postData: aAllowThirdPartyFixup || aPostData || null,
+                    userContextId: gBrowser.selectedBrowser.getAttribute(
+                        "userContextId"
+                    )
+                }
+            }
+            aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
+            if (this.appVersion >= 78) {
+                aAllowThirdPartyFixup.triggeringPrincipal = where === 'current' ?
+                    gBrowser.selectedBrowser.contentPrincipal : (
+                        /^(f|ht)tps?:/.test(url) ?
+                            Services.scriptSecurityManager.createNullPrincipal({
+                                userContextId: aAllowThirdPartyFixup.userContextId
+                            }) :
+                            Services.scriptSecurityManager.getSystemPrincipal()
+                    );
+            }
             var uri;
             try {
                 uri = Services.io.newURI(url, null, null);
@@ -691,43 +720,21 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 this.loadURI(url);
             } else if (where) {
                 if (this.appVersion < 78) {
-                    openUILinkIn(uri.spec, where, false, postData || null);
+                    openUILinkIn(uri.spec, where, false, aAllowThirdPartyFixup.postData);
                 } else {
-                    openWebLinkIn(uri.spec, where, {
-                        postData: postData || null,
-                        triggeringPrincipal: where === 'current' ?
-                            gBrowser.selectedBrowser.contentPrincipal : (
-                                /^(f|ht)tps?:/.test(uri.spec) ?
-                                    Services.scriptSecurityManager.createNullPrincipal({
-                                        userContextId: gBrowser.selectedBrowser.getAttribute(
-                                            "userContextId"
-                                        )
-                                    }) :
-                                    Services.scriptSecurityManager.getSystemPrincipal()
-                            )
-                    });
+                    openWebLinkIn(uri.spec, where, aAllowThirdPartyFixup);
                 }
             } else if (event.button == 1) {
                 if (this.appVersion < 78) {
                     openUILinkIn(uri.spec, 'tab');
                 } else {
-                    openWebLinkIn(uri.spec, 'tab', {
-                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
-                            Services.scriptSecurityManager.createNullPrincipal({
-                                userContextId: gBrowser.selectedBrowser.getAttribute(
-                                    "userContextId"
-                                )
-                            }) : Services.scriptSecurityManager.getSystemPrincipal()
-                    });
+                    openWebLinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
                 }
             } else {
-                if (addMenu.appVersion < 78)
-                    openUILink(uri.spec, event);
-                else {
-                    openUILink(uri.spec, event, {
-                        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
-                    });
-                }
+                // 参数 3 aIgnoreButton 允许 bool 和 Object，如果是 Object，则会用作 params 参数
+                openUILink(uri.spec, event, {
+                    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                });
             }
         },
         loadURI: function (url) {
@@ -1475,6 +1482,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
                     case "%SEL%":
                         return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
+                    case "%SL":
+                    case "%SEL_OR_LT%":
+                    case "%SEL_OR_LINK_TEXT%":
+                        return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || context.linkText();
                     case "%L":
                         return context.linkURL || "";
                     case "%RLINK%":
@@ -1973,6 +1984,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"],
 #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"],
 #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="input"],
+#contentAreaContextMenu[addMenu~="select"]  .addMenu[condition~="select"],
 #contentAreaContextMenu[addMenu=""] .addMenu[condition~="normal"],
 #contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="noselect"],
 #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"],
@@ -1980,7 +1992,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"],
 #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"],
 #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"],
-#contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"] {
+#contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
+#contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"] {
     display: flex; display: -moz-box;
 }
 #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
@@ -2009,7 +2022,7 @@ toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
 }
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik00IDJDMi44OTUgMiAyIDIuODk1IDIgNEwyIDE3QzIgMTcuNTUyIDIuNDQ4IDE4IDMgMThDMy41NTIgMTggNCAxNy41NTIgNCAxN0w0IDRMMTcgNEMxNy41NTIgNCAxOCAzLjU1MiAxOCAzQzE4IDIuNDQ4IDE3LjU1MiAyIDE3IDJMNCAyIHogTSA4IDZDNi44OTUgNiA2IDYuODk1IDYgOEw2IDIwQzYgMjEuMTA1IDYuODk1IDIyIDggMjJMMjAgMjJDMjEuMTA1IDIyIDIyIDIxLjEwNSAyMiAyMEwyMiA4QzIyIDYuODk1IDIxLjEwNSA2IDIwIDZMOCA2IHogTSA4IDhMMjAgOEwyMCAyMEw4IDIwTDggOCB6Ii8+PC9zdmc+);
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
   -moz-image-region: rect(0pt, 16px, 16px, 0px);
 }
 .addMenu.checkbox .menu-iconic-icon {
@@ -2024,7 +2037,8 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
 }
 #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
 #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
-#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left {
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left,
+#contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > .menu-iconic-left {
     visibility: collapse;
 }
 menugroup.addMenu > .menuitem-iconic.fixedSize {

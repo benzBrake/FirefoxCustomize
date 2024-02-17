@@ -75,7 +75,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     image       添加图标 （对应图标 url 或 base64）
     style       添加样式
     ...         Firefox 菜单的其它属性
-
+    
     id          标签的ID（ywzhaiqi新增的，修改原菜单用）
     parent/position/insertBefore/insertAfter 位置的设置（4选1），parent: "id", position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口（2022.07.01以后的版本禁用脚本即可还原）
@@ -112,34 +112,36 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 ### 可利用的变量(用于 url/text 属性)
 
-    %EOL%            换行(\r\n)
-    %TITLE%          标题
-    %TITLES%         简化标题（ywzhaiqi 新增的，来自 faviconContextMenu.uc.xul.css）
-    %URL%            地址
-    %SEL%            选取范围内的文字
-    %RLINK%          链接的地址
-    %IMAGE_URL%      图片的 URL
-    %IMAGE_BASE64%   图片的 Base64（ywzhaiqi 新增的，不支持 gif 动态图片）
-    %IMAGE_ALT%      图片的 alt 属性
-    %IMAGE_TITLE%    图片的 title 属性
-    %SVG_BASE64%     SVG 的 Base64（我新增的，支持 SVG 链接和打开的 SVG 展示页面）
-    %LINK%           链接的地址
-    %LINK_TEXT%      链接的文本
-    %RLINK_TEXT%     链接的文本（上面那个的别名）
-    %MEDIA_URL%      媒体 URL
-    %CLIPBOARD%      剪贴板的内容
-    %FAVICON%        Favicon（站点图标） 的 URL
-    %FAVICON_BASE64% Favicon 的 Base64（ywzhaiqi 新增的）
-    %EMAIL%          E-mail 链接
-    %HOST%           当前网页的域名
-    %LINK_HOST%      链接的域名
-    %RLINK_HOST%     链接的域名（同上）
-    %LINK_OR_URL%    优先获取链接URL，不行就获取页面URL
-    %RLINK_OR_URL%   优先获取页面URL，不行就获取链接URL
-
-    %XXX_HTMLIFIED%  转义后的变量 （XXX 为 上面的 TITLE 等）
-    %XXX_HTML%       转义后的变量
-    %XXX_ENCODE%     encodeURIComponent 后的变量
+    %EOL%                换行(\r\n)
+    %TITLE%              标题
+    %TITLES%             简化标题（ywzhaiqi 新增的，来自 faviconContextMenu.uc.xul.css）
+    %URL%                地址
+    %SEL%                选取范围内的文字
+    %SEL_OR_LT%          优选获取选中文本，不行就获取链接文本（我新增的，2024.02.18以后的版本可用）
+    %SEL_OR_LINK_TEXT%   优选获取选中文本，不行就获取链接文本
+    %RLINK%              链接的地址
+    %IMAGE_URL%          图片的 URL
+    %IMAGE_BASE64%       图片的 Base64（ywzhaiqi 新增的，不支持 gif 动态图片）
+    %IMAGE_ALT%          图片的 alt 属性
+    %IMAGE_TITLE%        图片的 title 属性
+    %SVG_BASE64%         SVG 的 Base64（我新增的，支持 SVG 链接和打开的 SVG 展示页面）
+    %LINK%               链接的地址
+    %LINK_TEXT%          链接的文本
+    %RLINK_TEXT%         链接的文本（上面那个的别名）
+    %MEDIA_URL%          媒体 URL
+    %CLIPBOARD%          剪贴板的内容
+    %FAVICON%            Favicon（站点图标） 的 URL
+    %FAVICON_BASE64%     Favicon 的 Base64（ywzhaiqi 新增的）
+    %EMAIL%              E-mail 链接
+    %HOST%               当前网页的域名
+    %LINK_HOST%          链接的域名
+    %RLINK_HOST%         链接的域名（同上）
+    %LINK_OR_URL%        优先获取链接URL，不行就获取页面URL
+    %RLINK_OR_URL%       优先获取页面URL，不行就获取链接URL
+        
+    %XXX_HTMLIFIED%      转义后的变量 （XXX 为 上面的 TITLE 等）
+    %XXX_HTML%           转义后的变量
+    %XXX_ENCODE%         encodeURIComponent 后的变量
 
 简短的变量
 
@@ -149,6 +151,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %m               媒体的 URL
     %p               剪贴板的内容
     %s               选取的文字列
+    %sl              优选获取选中文本，不行就获取链接文本（我新增的，2024.02.18以后的版本可用）
     %t               标题
     %u               URL
 
