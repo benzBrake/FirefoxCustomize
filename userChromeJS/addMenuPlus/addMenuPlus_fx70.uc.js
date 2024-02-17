@@ -56,7 +56,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 },
                 allFrames: true,
                 messageManagerGroups: ["browsers"],
-                matches: ["*://*/*", "file:///*", "about:*", "view-source:*", "moz-extension://*/*"],
+                matches: ["*://*/*", "file:///*", "about:*", "view-source:*", "moz-extension://*/*", "resource://*/*"],
             };
             ChromeUtils.registerWindowActor("AddMenu", actorParams);
         } catch (e) { console.error(e); }
@@ -173,7 +173,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
         var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
         var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-        var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关，有需要再开
+        var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关，有需要再开
 
         if (window && window.addMenu) {
             window.addMenu.destroy();
@@ -348,6 +348,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 let rFAVICON_BASE64 = "%FAVICON_BASE64" + he + "%";
                 let rRLT_OR_UT = "%RLT_OR_UT" + he + "%"; // 链接文本或网页标题
+                let rSEL_OR_LT = "%(?:SEL_OR_LINK_TEXT|SEL_OR_LT)" + he + "%|%sl\\b"; // 选中文本或者链接文本
 
                 this.rTITLE = new RegExp(rTITLE, "i");
                 this.rTITLES = new RegExp(rTITLES, "i");
@@ -365,9 +366,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                 this.rIMAGE_BASE64 = new RegExp(rIMAGE_BASE64, "i");
                 this.rSVG_BASE64 = new RegExp(rSVG_BASE64, "i");
                 this.rRLT_OR_UT = new RegExp(rRLT_OR_UT, "i");
+                this.rSEL_OR_LT = new RegExp(rSEL_OR_LT, "i");
 
                 this.regexp = new RegExp(
-                    [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
+                    [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT, rSEL_OR_LT].join("|"), "ig");
 
                 // add menuitem insertpoint
                 for (let type in MENU_ATTRS) {
@@ -666,7 +668,34 @@ if (typeof window === "undefined" || globalThis !== window) {
                 else if (text)
                     this.copy(this.convertText(text));
             },
-            openCommand: function (event, url, where, postData) {
+            openCommand: function (event, url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
+                /** aAllowThirdPartyFixup 参数在 ywzhaiqi 版本是 postData */
+                if (aAllowThirdPartyFixup instanceof Object) {
+                    aAllowThirdPartyFixup = Object.assign({
+                        postData: null,
+                        userContextId: gBrowser.selectedBrowser.getAttribute(
+                            "userContextId"
+                        )
+                    }, aAllowThirdPartyFixup)
+                } else {
+                    aAllowThirdPartyFixup = {
+                        postData: aAllowThirdPartyFixup || aPostData || null,
+                        userContextId: gBrowser.selectedBrowser.getAttribute(
+                            "userContextId"
+                        )
+                    }
+                }
+                aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
+                if (this.appVersion >= 78) {
+                    aAllowThirdPartyFixup.triggeringPrincipal = where === 'current' ?
+                        gBrowser.selectedBrowser.contentPrincipal : (
+                            /^(f|ht)tps?:/.test(url) ?
+                                Services.scriptSecurityManager.createNullPrincipal({
+                                    userContextId: aAllowThirdPartyFixup.userContextId
+                                }) :
+                                Services.scriptSecurityManager.getSystemPrincipal()
+                        );
+                }
                 var uri;
                 try {
                     uri = Services.io.newURI(url, null, null);
@@ -677,34 +706,15 @@ if (typeof window === "undefined" || globalThis !== window) {
                     this.loadURI(url);
                 } else if (where) {
                     if (this.appVersion < 78) {
-                        openUILinkIn(uri.spec, where, false, postData || null);
+                        openUILinkIn(uri.spec, where, false, aAllowThirdPartyFixup.postData);
                     } else {
-                        openWebLinkIn(uri.spec, where, {
-                            postData: postData || null,
-                            triggeringPrincipal: where === 'current' ?
-                                gBrowser.selectedBrowser.contentPrincipal : (
-                                    /^(f|ht)tps?:/.test(uri.spec) ?
-                                        Services.scriptSecurityManager.createNullPrincipal({
-                                            userContextId: gBrowser.selectedBrowser.getAttribute(
-                                                "userContextId"
-                                            )
-                                        }) :
-                                        Services.scriptSecurityManager.getSystemPrincipal()
-                                )
-                        });
+                        openWebLinkIn(uri.spec, where, aAllowThirdPartyFixup);
                     }
                 } else if (event.button == 1) {
                     if (this.appVersion < 78) {
                         openUILinkIn(uri.spec, 'tab');
                     } else {
-                        openWebLinkIn(uri.spec, 'tab', {
-                            triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ?
-                                Services.scriptSecurityManager.createNullPrincipal({
-                                    userContextId: gBrowser.selectedBrowser.getAttribute(
-                                        "userContextId"
-                                    )
-                                }) : Services.scriptSecurityManager.getSystemPrincipal()
-                        });
+                        openWebLinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
                     }
                 } else {
                     // 参数 3 aIgnoreButton 允许 bool 和 Object，如果是 Object，则会用作 params 参数
@@ -1049,7 +1059,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                     cls.add("menu-iconic");
                 }
 
-
                 // 表示 / 非表示の設定
                 if (menuObj.condition)
                     this.setCondition(menu, menuObj.condition);
@@ -1098,7 +1107,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 // label == separator か必要なプロパティが足りない場合は区切りとみなす
                 if (obj.label === "separator" ||
-                    (!obj.label && !obj.image && !obj.text && !obj.keyword && !obj.url && !obj.oncommand && !obj.command)) {
+                    (!obj.label && !obj.image && !obj.text && !obj.keyword && !obj.url && !obj.oncommand && !obj.command && !obj['data-l10n-id'])) {
                     menuitem = $C(separatorType);
                 } else if (obj.oncommand || obj.command) {
                     let org = obj.command ? document.getElementById(obj.command) : null;
@@ -1512,6 +1521,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                             return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
                         case "%SEL%":
                             return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
+                        case "%SL":
+                        case "%SEL_OR_LT%":
+                        case "%SEL_OR_LINK_TEXT%":
+                            return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || context.linkText();
                         case "%L":
                             return context.linkURL || "";
                         case "%RLINK%":
@@ -1967,6 +1980,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"],
     #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"],
     #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="input"],
+    #contentAreaContextMenu[addMenu~="select"]  .addMenu[condition~="select"],
     #contentAreaContextMenu[addMenu=""] .addMenu[condition~="normal"],
     #contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="noselect"],
     #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"],
@@ -1974,7 +1988,8 @@ if (typeof window === "undefined" || globalThis !== window) {
     #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"],
     #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"],
     #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"],
-    #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"] {
+    #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
+    #contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"] {
         display: flex; display: -moz-box;
     }
     #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
@@ -2003,7 +2018,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     }
     .addMenu.copy,
     menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
-        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik00IDJDMi44OTUgMiAyIDIuODk1IDIgNEwyIDE3QzIgMTcuNTUyIDIuNDQ4IDE4IDMgMThDMy41NTIgMTggNCAxNy41NTIgNCAxN0w0IDRMMTcgNEMxNy41NTIgNCAxOCAzLjU1MiAxOCAzQzE4IDIuNDQ4IDE3LjU1MiAyIDE3IDJMNCAyIHogTSA4IDZDNi44OTUgNiA2IDYuODk1IDYgOEw2IDIwQzYgMjEuMTA1IDYuODk1IDIyIDggMjJMMjAgMjJDMjEuMTA1IDIyIDIyIDIxLjEwNSAyMiAyMEwyMiA4QzIyIDYuODk1IDIxLjEwNSA2IDIwIDZMOCA2IHogTSA4IDhMMjAgOEwyMCAyMEw4IDIwTDggOCB6Ii8+PC9zdmc+);
+        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
       -moz-image-region: rect(0pt, 16px, 16px, 0px);
     }
     .addMenu.checkbox .menu-iconic-icon {
@@ -2018,7 +2033,8 @@ if (typeof window === "undefined" || globalThis !== window) {
     }
     #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
     #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left {
+    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left,
+    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > .menu-iconic-left {
         visibility: collapse;
     }
     menugroup.addMenu > .menuitem-iconic.fixedSize {
