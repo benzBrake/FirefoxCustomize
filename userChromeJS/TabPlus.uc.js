@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
-// @version         1.0.1
+// @version         1.0.2
 // @license         MIT License
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
@@ -495,7 +495,7 @@
             e.preventDefault();
             let where = whereToOpenLink(e, false, false);
             if (where == "current") {
-                where = cPref.get(this.PREF, false) ? "tab" : "tabshifted";
+                where = cPref.get(this.PREF, false) ? "tabshifted" : "tab";
             }
             let referrerInfo = gContextMenu.contentData.referrerInfo;
             let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
