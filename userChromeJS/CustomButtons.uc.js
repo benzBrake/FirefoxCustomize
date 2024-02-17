@@ -1,16 +1,17 @@
 // ==UserScript==
 // @name            CustomButtons.uc.js
-// @description     添加多个自定义按钮，截图、UndoCloseTab、证书管理器、放大缩小、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
+// @description     添加多个自定义按钮，截图、UndoCloseTab、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
-// @version         0.1.5
+// @version         0.1.6
 // @compatibility   Firefox 70 +
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.6 默认截图工具改为搜狗截图，支持联网 OCR，移除证书管理按钮和缩放控制按钮，修改部分图标，移除无用函数
 // @note            0.1.5 修复 firefox 115 无法读取已关闭标签列表
 // @note            从 CopyCat.uc.js 修改而来
 // ==/UserScript==
-(function (css, debug) {
+(function (css, isDebugMode) {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
@@ -26,29 +27,24 @@
             "microsoft paint": "打开系统画板",
             "undo close tab": "撤销关闭标签页",
             "undo close tab tooltip": "左键：撤销关闭标签页\n右键：已关闭标签页列表",
-            "reopen all tabs": "重新打开所有标签页",
-            "zoom control": "缩放控制",
-            "zoom control tooltip": "'左或滚轮↑：放大 | 按下滚轮：复位 | 右或滚轮↓：缩小'",
-            "certificate manager": "证书管理器",
-            "certificate manager tooltip": "证书管理器",
             "clean history": "清除历史记录",
             "clean history toolip": "清除最近的历史记录",
             "about config": "高级首选项",
-            "synced tabs": "受同步的标签页",
+            "synced tabs": "侧边栏：受同步的标签页",
             "downloads history": "我的足迹：下载",
             "bookmarks manager": "我的足迹：书签",
             "toggle bookmarks toolbar": "显示/隐藏书签工具栏"
         }
     }
 
-    const BTN_CONFIG = [
+    const BUTTONS_CONFIG = [
         {
             id: 'CB-SnapShot',
             label: $L("take snapshot"),
             tooltiptext: $L("take snapshot tooltip"),
             type: "contextmenu",
             tool: "\\SnapShot.exe",
-            image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTEuOTkzIDE0LjQwN2wtMS41NTIgMS41NTJhNCA0IDAgMSAxLTEuNDE4LTEuNDFsMS41NTUtMS41NTYtMy4xMjQtMy4xMjVhMS41IDEuNSAwIDAgMSAwLTIuMTIxbC4zNTQtLjM1NCA0LjE4NSA0LjE4NSA0LjE4OS00LjE4OS4zNTMuMzU0YTEuNSAxLjUgMCAwIDEgMCAyLjEybC0zLjEyOCAzLjEzIDEuNTYxIDEuNTZhNCA0IDAgMSAxLTEuNDE0IDEuNDE0bC0xLjU2MS0xLjU2ek0xOSAxM1Y1SDV2OEgzVjRhMSAxIDAgMCAxIDEtMWgxNmExIDEgMCAwIDEgMSAxdjloLTJ6TTcgMjBhMiAyIDAgMSAwIDAtNCAyIDIgMCAwIDAgMCA0em0xMCAwYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiLz48L3N2Zz4=",
+            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMiAyYTIgMiAwIDAgMC0yIDJ2LjVhLjUuNSAwIDAgMCAxIDBWNGExIDEgMCAwIDEgMS0xaC41YS41LjUgMCAwIDAgMC0xSDJ6bTIuNSAwYS41LjUgMCAxIDAgMCAxSDdhLjUuNSAwIDAgMCAwLTFINC41ek05IDJhLjUuNSAwIDEgMCAwIDFoMi41YS41LjUgMCAwIDAgMC0xSDl6bTQuNSAwYS41LjUgMCAxIDAgMCAxaC41YTEgMSAwIDAgMSAxIDF2LjVhLjUuNSAwIDAgMCAxIDBWNGEyIDIgMCAwIDAtMi0yaC0uNXpNLjUgNi4wMDRhLjUuNSAwIDAgMC0uNS41djJhLjUuNSAwIDAgMCAxIDB2LTJhLjUuNSAwIDAgMC0uNS0uNXptMTUgMGEuNS41IDAgMCAwLS41LjV2MmEuNS41IDAgMCAwIDEgMHYtMmEuNS41IDAgMCAwLS41LS41em0tMTAgLjAwNGEuNDk3LjQ5NyAwIDAgMC0uNDIuNzc1bDIuMzE4IDMuNDgtMS4yMzggMS44NTRhMiAyIDAgMSAwIC44MzUuNTUyTDggMTEuMTYzbDEuMDA4IDEuNTE0YTIgMiAwIDEgMCAuODMyLS41NTRsLTEuMjM4LTEuODYuMDAyLS4wMDQtLjYwMi0uOS0uMDAyLjAwMi0yLjA4Ni0zLjEyN2EuNTAzLjUwMyAwIDAgMC0uNDE0LS4yMjV6bTUgMGEuNTAzLjUwMyAwIDAgMC0uNDE0LjIyNUw4LjYwNCA4LjQ1NmwuNi45MDIgMS43MTctMi41NzRhLjQ5Ny40OTcgMCAwIDAtLjQyLS43NzZ6bS05Ljk5NiA0YS41LjUgMCAwIDAtLjUuNXYuNWEyIDIgMCAwIDAgMiAyaC4yNWEuNS41IDAgMCAwIDAtMWgtLjI1YTEgMSAwIDAgMS0xLTF2LS41YS41LjUgMCAwIDAtLjUtLjV6bTE1IDBhLjUuNSAwIDAgMC0uNS41di41YTEgMSAwIDAgMS0xIDFoLS4yNTJhLjUuNSAwIDEgMCAwIDFoLjI1MmEyIDIgMCAwIDAgMi0ydi0uNWEuNS41IDAgMCAwLS41LS41em0tMTAgMi45OTZhMSAxIDAgMSAxIDAgMiAxIDEgMCAwIDEgMC0yem01IDBhMSAxIDAgMSAxIDAgMiAxIDEgMCAwIDEgMC0yeiIvPgo8L3N2Zz4K",
             popup: [{
                 label: $L("hide firefox to take snapshot"),
                 tool: "\\SnapShot.exe",
@@ -143,32 +139,12 @@
             popup: [{
                 id: 'CB-undoCloseTab-menuseparator'
             }, {
-                label: $L("reopen all tabs"),
-                image: "data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDQ4IDQ4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0IDZDMTQuNzcxOTQ4IDYgNy4xNTEyOTY5IDEyLjk4NjUwOSA2LjEyNjk1MzEgMjEuOTQ1MzEyTDQuMTIxMDkzOCAxOS45Mzk0NTMgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMy4wNDQ5MjE5IDE5LjQ4NDM3NSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyIDIyLjA2MDU0N0w2LjUgMjYuNTYwNTQ3IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDguNjIxMDkzOCAyNi41NjA1NDdMMTMuMTIxMDk0IDIyLjA2MDU0NyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCAxMSAxOS45Mzk0NTNMOS4xODU1NDY5IDIxLjc1MzkwNkMxMC4yNjc3MzkgMTQuNTI1MzA5IDE2LjQ2MzM1IDkgMjQgOUMzMi4zMDI0IDkgMzkgMTUuNjk3NiAzOSAyNEMzOSAzMi4zMDI0IDMyLjMwMjQgMzkgMjQgMzlDMTguMTU4MzM3IDM5IDEzLjExNjYzNSAzNS42NzIwMDEgMTAuNjM0NzY2IDMwLjgxNjQwNiBBIDEuNTAwNjc2NiAxLjUwMDY3NjYgMCAwIDAgNy45NjI4OTA2IDMyLjE4MzU5NEMxMC45NDMwMjEgMzguMDEzOTk5IDE3LjAxNzY2MyA0MiAyNCA0MkMzMy45MjM2IDQyIDQyIDMzLjkyMzYgNDIgMjRDNDIgMTQuMDc2NCAzMy45MjM2IDYgMjQgNiB6IE0gMjQgMTlDMjIuNDU4MzM0IDE5IDIxLjExMjE0OCAxOS42MzIxMzMgMjAuMjUzOTA2IDIwLjU5NzY1NkMxOS4zOTU2NjQgMjEuNTYzMTc5IDE5IDIyLjc5MTY2NyAxOSAyNEMxOSAyNS4yMDgzMzMgMTkuMzk1NjY0IDI2LjQzNjgyMSAyMC4yNTM5MDYgMjcuNDAyMzQ0QzIxLjExMjE0OCAyOC4zNjc4NjcgMjIuNDU4MzM0IDI5IDI0IDI5QzI1LjU0MTY2NiAyOSAyNi44ODc4NTIgMjguMzY3ODY3IDI3Ljc0NjA5NCAyNy40MDIzNDRDMjguNjA0MzM2IDI2LjQzNjgyMSAyOSAyNS4yMDgzMzMgMjkgMjRDMjkgMjIuNzkxNjY3IDI4LjYwNDMzNiAyMS41NjMxNzkgMjcuNzQ2MDk0IDIwLjU5NzY1NkMyNi44ODc4NTIgMTkuNjMyMTMzIDI1LjU0MTY2NiAxOSAyNCAxOSB6IE0gMjQgMjJDMjQuNzkxNjY2IDIyIDI1LjE5NTQ4MiAyMi4yNDI4NjcgMjUuNTAzOTA2IDIyLjU4OTg0NEMyNS44MTIzMyAyMi45MzY4MjEgMjYgMjMuNDU4MzMzIDI2IDI0QzI2IDI0LjU0MTY2NyAyNS44MTIzMyAyNS4wNjMxNzkgMjUuNTAzOTA2IDI1LjQxMDE1NkMyNS4xOTU0ODIgMjUuNzU3MTMzIDI0Ljc5MTY2NiAyNiAyNCAyNkMyMy4yMDgzMzQgMjYgMjIuODA0NTE4IDI1Ljc1NzEzMyAyMi40OTYwOTQgMjUuNDEwMTU2QzIyLjE4NzY3IDI1LjA2MzE3OSAyMiAyNC41NDE2NjcgMjIgMjRDMjIgMjMuNDU4MzMzIDIyLjE4NzY3IDIyLjkzNjgyMSAyMi40OTYwOTQgMjIuNTg5ODQ0QzIyLjgwNDUxOCAyMi4yNDI4NjcgMjMuMjA4MzM0IDIyIDI0IDIyIHoiIC8+PC9zdmc+",
+                label: gNavigatorBundle.getString("menuOpenAllInTabs.label"),
+                image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNOC4wMiAwYTcuOTcgNy45NyAwIDAgMSAzLjM2NS43NTIgOC4wMDggOC4wMDggMCAwIDEgNC4yMjcgOS43MTUgOC4wMDYgOC4wMDYgMCAwIDEtOS4xMiA1LjM4OUE4LjAwNSA4LjAwNSAwIDAgMSAuMDE3IDcuNDdhLjUuNSAwIDAgMSAuNTMxLS40NjcuNS41IDAgMCAxIC40NjcuNTMzIDYuOTk0IDYuOTk0IDAgMCAwIDUuNjY0IDcuMzM4IDYuOTk0IDYuOTk0IDAgMCAwIDcuOTgtNC43MTcgNi45OTMgNi45OTMgMCAwIDAtMy42OTYtOC41QTYuOTk2IDYuOTk2IDAgMCAwIDIuMjU1IDRoMy4yNDZhLjUuNSAwIDAgMSAuNS41LjUuNSAwIDAgMS0uNS41aC00YS41LjUgMCAwIDEtLjUtLjV2LTRhLjUuNSAwIDAgMSAuNS0uNS41LjUgMCAwIDEgLjUuNXYyLjIxNUE4LjAxNCA4LjAxNCAwIDAgMSA4LjAyMSAweiIvPgogIDxwYXRoIGQ9Ik03LjUgNGEuNS41IDAgMCAwLS41LjVWOWEuNS41IDAgMCAwIC41LjVoM0EuNS41IDAgMCAwIDExIDlhLjUuNSAwIDAgMC0uNS0uNUg4di00YS41LjUgMCAwIDAtLjUtLjV6Ii8+Cjwvc3ZnPgo=",
                 onclick: function (event) {
                     this.parentNode.querySelectorAll('.undo-item').forEach(m => m.doCommand());
                 }
             }]
-        }, {
-            id: 'CB-ZoomControl',
-            label: $L("zoom control"),
-            tooltiptext: $L("zoom control tooltip"),
-            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTY0MS40MDggMTYwYTMzNC40OTYgMzM0LjQ5NiAwIDAgMC0xOTcuMjgtNjRjLTE4NS42IDAtMzM2IDE1MC40MzItMzM2IDMzNnMxNTAuNCAzMzYgMzM2IDMzNmMxNjkuMjggMCAzMDkuMzEyLTEyNS4xODQgMzMyLjU3Ni0yODhoLTMyLjM1MmEzMDQgMzA0IDAgMSAxLTMwMC4yMjQtMzUyYzUyLjA5NiAwIDk2IDguODk2IDEzOC44OCAzMmg1OC40eiBtMzguNDk2IDUxMy45MmE0OCA0OCAwIDAgMCAwIDY3LjkwNGwxNTguNCAxNTguNGE0OCA0OCAwIDAgMCA2Ny44NzItNjcuOTA0bC0xNTguNC0xNTguNGE0OCA0OCAwIDAgMC02Ny44NzIgMHpNNzY0LjEyOCAyMDhoLTExMnYzMmgxMTJWMzUyaDMyVjI0MGgxMTJ2LTMyaC0xMTJWOTZoLTMydjExMnogbS0xMTIgMTkydjMyaDI1NnYtMzJoLTI1NnogbS0xNzMuNTM2LTE3My4xNTJsMjIuNzUyLTI3Ljk2OGEyNDAgMjQwIDAgMCAwLTI3My43OTIgMzM2LjY3MmwyMi43Mi0yNy45NjhhMjA4IDIwOCAwIDAgMSAyMjguMzItMjgwLjczNnoiPjwvcGF0aD48L3N2Zz4=",
-            oncontextmenu: 'return(false);',
-            onclick: 'if (event.button == 0) { \
-        FullZoom.enlarge(); \
-    }; \
-    if (event.button == 1) { \
-        FullZoom.reset(); \
-    }; \
-    if (event.button == 2) { \
-        FullZoom.reduce(); \
-    };',
-            onwheel: 'if (event.deltaY < 0) { \
-        FullZoom.enlarge(); \
-    } else { \
-        FullZoom.reduce(); \
-    };'
         }, {
             id: 'CB-CleanHistory',
             label: $L("clean history"),
@@ -184,36 +160,36 @@
             id: 'CB-SyncedTabs',
             label: $L("synced tabs"),
             tooltiptext: $L("synced tabs"),
-            image: "chrome://browser/skin/tab.svg",
+            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMi41IDFBMS41IDEuNSAwIDAgMCAxIDIuNVY0aDFWMi41YS41LjUgMCAwIDEgLjUtLjVoMTFhLjUuNSAwIDAgMSAuNS41djdhLjUuNSAwIDAgMS0uNS41SDh2MWg1LjVBMS41IDEuNSAwIDAgMCAxNSA5LjV2LTdBMS41IDEuNSAwIDAgMCAxMy41IDFoLTExem0tMSA0QTEuNSAxLjUgMCAwIDAgMCA2LjV2OEExLjUgMS41IDAgMCAwIDEuNSAxNmg0QTEuNSAxLjUgMCAwIDAgNyAxNC41di04QTEuNSAxLjUgMCAwIDAgNS41IDVoLTR6bTAgMWg0YS41LjUgMCAwIDEgLjUuNXY4YS41LjUgMCAwIDEtLjUuNWgtNGEuNS41IDAgMCAxLS41LS41di04YS41LjUgMCAwIDEgLjUtLjV6TTggMTJ2MWg3LjVhLjUuNSAwIDAgMCAwLTFIOHptLTUgMWEuNS41IDAgMCAwIDAgMWgxYS41LjUgMCAwIDAgMC0xSDN6Ii8+Cjwvc3ZnPgo=",
             oncommand: "SidebarUI.toggle('viewTabsSidebar');",
         }, {
             id: 'CB-DownloadHistory',
             label: $L("downloads history"),
             tooltiptext: $L("downloads history"),
-            image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIuNDE0IDVIMjFhMSAxIDAgMCAxIDEgMXYxNGExIDEgMCAwIDEtMSAxSDNhMSAxIDAgMCAxLTEtMVY0YTEgMSAwIDAgMSAxLTFoNy40MTRsMiAyek00IDV2MTRoMTZWN2gtOC40MTRsLTItMkg0em05IDhoM2wtNCA0LTQtNGgzVjloMnY0eiIvPjwvc3ZnPg==",
+            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNOCAwYS41LjUgMCAwIDAtLjUuNXYxMC43OUwzLjg1NCA3LjY0NGEuNS41IDAgMSAwLS43MDcuNzA3bDQuNSA0LjVhLjUuNSAwIDAgMCAuNzA3IDBsNC41LTQuNWEuNS41IDAgMCAwLS43MDctLjcwN0w4LjUwMSAxMS4yOVYuNWEuNS41IDAgMCAwLS41LS41eiIvPgogIDxwYXRoIGQ9Ik0xLjUgMTJhLjUuNSAwIDAgMC0uNS41djFDMSAxNC44NzUgMi4xMjUgMTYgMy41IDE2aDljMS4zNzUgMCAyLjUtMS4xMjUgMi41LTIuNXYtMWEuNS41IDAgMCAwLTEgMHYxYzAgLjgzNC0uNjY2IDEuNS0xLjUgMS41aC05Yy0uODM0IDAtMS41LS42NjYtMS41LTEuNXYtMWEuNS41IDAgMCAwLS41LS41eiIvPgo8L3N2Zz4K",
             oncommand: "DownloadsPanel.showDownloadsHistory();"
         }, {
             id: 'CB-BookmarksManager',
             label: $L("bookmarks manager"),
             tooltiptext: $L("bookmarks manager"),
-            image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTMgMjF2MmgtMnYtMkgzYTEgMSAwIDAgMS0xLTFWNGExIDEgMCAwIDEgMS0xaDZhMy45OSAzLjk5IDAgMCAxIDMgMS4zNTRBMy45OSAzLjk5IDAgMCAxIDE1IDNoNmExIDEgMCAwIDEgMSAxdjE2YTEgMSAwIDAgMS0xIDFoLTh6bTctMlY1aC01YTIgMiAwIDAgMC0yIDJ2MTJoN3ptLTkgMFY3YTIgMiAwIDAgMC0yLTJINHYxNGg3eiIvPjwvc3ZnPg==",
+            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjb250ZXh0LWZpbGwiIHN0cm9rZS1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuMDAxIj4KICA8cGF0aCBkPSJtOCAxMi45NS00LjA5IDIuMTUxYS41MDEuNTAxIDAgMCAxLS43MjctLjUyOGwuNzMxLTQuMjY2YS41NjEuNTYyIDAgMCAwLS4xNjEtLjQ5OEwuNjU1IDYuNzlhLjUwMS41MDEgMCAwIDEgLjI3OC0uODU1bDQuMjgtLjYyM2EuNTYxLjU2MiAwIDAgMCAuNDIzLS4zMDdMNy41NSAxLjEyM2EuNTAxLjUwMSAwIDAgMSAuOSAwbDIuMDMxIDQuMTE1YS40NzUuNDc1IDAgMCAwIC40MjYuMjY0SDE1LjUiLz4KICA8cGF0aCBkPSJNMTUuNSA4LjVoLTVNMTAuNSAxMS41aDUiLz4KPC9zdmc+Cg==",
             oncommand: "PlacesCommandHook.showPlacesOrganizer('AllBookmarks');"
         }];
 
     window.CustomButtons = {
-        _btnId: 1,
+        _buttonId: 1,
         $C: $C,
         $L: $L,
         get appVersion() {
             return Services.appinfo.version.split(".")[0];
         },
-        get browserWin() {
+        get browserWindow() {
             return Services.wm.getMostRecentWindow("navigator:browser");
         },
         get btnId() {
-            return this._btnId++;
+            return this._buttonId++;
         },
-        get debug() {
+        get isDebugMode() {
             return Services.prefs.getBoolPref("userChromeJS.CopyCat.debug", false);
         },
         get toolsPath() {
@@ -225,52 +201,52 @@
             }
             return this.toolsPath = path;
         },
-        get sss() {
-            delete this.sss;
-            return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+        get styleSheetService() {
+            delete this.styleSheetService;
+            return this.styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
         },
         init: function () {
-            if (this.debug) this.log("CustomButtons: init started!");
-            this.style = addStyle(this.sss, css);
-            if (!BTN_CONFIG) {
-                if (this.debug) this.log($L("buttons config has some mistake"));
+            if (this.isDebugMode) this.log("Init process started!");
+            this.style = addStyle(this.styleSheetService, css);
+            if (!BUTTONS_CONFIG) {
+                if (this.isDebugMode) this.log($L("Buttons config has some mistake"));
                 return;
             }
             this.rebuild();
-            if (this.debug) this.log("CustomButtons: init complete!");
+            if (this.isDebugMode) this.log("Init complete!");
         },
         uninit: function (win) {
-            if (this.btnIds instanceof Array) {
-                this.btnIds.forEach(id => {
-                    if (this.debug) this.log($L("CustomButtons: destroying button [%s]"), id);
+            if (this.buttonIds instanceof Array) {
+                this.buttonIds.forEach(id => {
+                    if (this.isDebugMode) this.log($L("Destroying button [%s]"), id);
                     win.CustomizableUI.destroyWidget(id);
                 });
             }
-            this.btnIds = null;
+            this.buttonIds = null;
         },
         rebuild() {
             this.uninit();
-            this.btnIds = this.createButtons();
+            this.buttonIds = this.createButtons();
         },
         destroy(win) {
             this.uninit(win);
-            if (this.style) removeStyle(this.sss, this.style);
+            if (this.style) removeStyle(this.styleSheetService, this.style);
             delete win.CustomButtons;
         },
         createButtons() {
-            if (!BTN_CONFIG) {
-                if (this.debug) this.log($L("CustomButtons: no buttons configuration"));
+            if (!BUTTONS_CONFIG) {
+                if (this.isDebugMode) this.log("No buttons created!");
                 return;
             }
-            if (this.debug) this.log($L("CustomButtons: creating buttons"));
-            let btnIds = [];
-            Object.values(BTN_CONFIG).forEach(obj => {
+            if (this.isDebugMode) this.log("Creating buttons");
+            let buttonIds = [];
+            Object.values(BUTTONS_CONFIG).forEach(obj => {
                 obj.id = obj.id || "CB-" + this.btnId;
                 if (CustomizableUI.getWidget(obj.id) && CustomizableUI.getWidget(obj.id).forWindow(window)?.node) return;
                 this.createButton(obj);
-                btnIds.push(obj.id);
+                buttonIds.push(obj.id);
             });
-            return btnIds;
+            return buttonIds;
         },
         createButton(obj) {
             obj.label = obj.label || "Custom Button";
@@ -291,8 +267,12 @@
                 onBuild: aDoc => {
                     let btn;
                     try {
-                        btn = this.$C(aDoc, 'toolbarbutton', obj, ['type', 'popup', 'onBuild']);
+                        btn = this.$C(aDoc, 'toolbarbutton', obj, ['image', 'type', 'popup', 'onBuild']);
+                        if (this.isDebugMode) this.log('Creating button', btn);
                         'toolbarbutton-1 chromeclass-toolbar-additional'.split(' ').forEach(c => btn.classList.add(c));
+                        if (obj.image) {
+                            btn.style.listStyleImage = 'url(' + obj.image + ')';
+                        }
                         if (obj.popup) {
                             let popup = this.newMenuPopup(aDoc, obj.popup);
                             if (popup) {
@@ -329,6 +309,7 @@
                 if (el) popup.appendChild(el);
             });
             popup.classList.add("CustomButtons-Popup");
+            if (this.isDebugMode) this.log('Creating ' + popup.tagName, popup);
             return popup;
         },
         newMenuGroup(doc, obj) {
@@ -339,6 +320,7 @@
                 if (el) group.appendChild(el);
             })
             group.classList.add("CustomButtons-Group");
+            if (this.isDebugMode) this.log('Creating ' + group.tagName, group);
             return group;
         },
         newMenuitem(doc, obj) {
@@ -348,7 +330,7 @@
             }
             let item
             if (obj.popup) {
-                item = $C(doc, "menu", obj, ["popup"]);
+                item = $C(doc, "menu", obj, ["popup", "image"]);
                 item.classList.add("menu-iconic");
                 if (obj.onBuild) {
                     if (typeof obj.onBuild === "function") {
@@ -359,11 +341,10 @@
                 }
                 item.appendChild(this.newMenuPopup(doc, obj.popup));
             } else {
-
                 let classList = [],
                     tagName = obj.type || 'menuitem';
                 if (['separator', 'menuseparator'].includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.image && !obj.command && !obj.pref) {
-                    return $C(doc, 'menuseparator', obj, ['type', 'group', 'popup']);
+                    return $C(doc, 'menuseparator', obj, ['type', 'group', 'popup', 'image']);
                 }
 
                 if (['checkbox', 'radio'].includes(obj.type)) tagName = 'menuitem';
@@ -394,7 +375,7 @@
                         return $C(doc, 'menuseparator', { hidden: true });
                     }
                 } else {
-                    item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
+                    item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild', 'image']);
                     if (classList.length) item.setAttribute('class', classList.join(' '));
                     $A(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type']);
                     item.setAttribute('label', obj.label || obj.command || obj.oncommand);
@@ -443,7 +424,7 @@
                     }
                 }
 
-                if (this.debug) this.log('createMenuItem', tagName, item);
+
             }
 
             if (obj.onBuild) {
@@ -461,7 +442,7 @@
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
-
+            if (this.isDebugMode) this.log('Creating ' + item.tagName, item);
             return item;
         },
         onCommand: function (event) {
@@ -532,14 +513,14 @@
             }
         },
         edit: function (edit) {
-            if (this.debug) this.log('edit', edit);
+            if (this.isDebugMode) this.log('edit', edit);
             if (cPref.get("view_source.editor.path"))
                 this.exec(cPref.get("view_source.editor.path"), this.handleRelativePath(edit));
             else
                 this.exec(this.handleRelativePath(edit));
         },
         exec: function (path, arg) {
-            if (debug) this.log('exec', path, arg);
+            if (isDebugMode) this.log('exec', path, arg);
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             try {
@@ -555,7 +536,7 @@
 
                 file.initWithPath(path);
                 if (!file.exists()) {
-                    this.error($L("file not found").replace("%s", path))
+                    this.error($L("file not found %s").replace("%s", path))
                     return;
                 }
 
@@ -613,15 +594,20 @@
             return replaceString;
         },
         setIcon: function (menu, obj) {
-            if (menu.hasAttribute("src") || menu.hasAttribute("image") || menu.hasAttribute("icon"))
+            if (menu.hasAttribute("src") || menu.hasAttribute("icon"))
                 return;
+
+            if (obj.image) {
+                menu.style.listStyleImage = "url(" + obj.image + ")";
+                return;
+            }
 
             if (obj.edit || obj.exec) {
                 var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
                 try {
                     aFile.initWithPath(this.handleRelativePath(obj.edit) || obj.exec);
                 } catch (e) {
-                    if (this.debug) this.error(e);
+                    if (this.isDebugMode) this.error(e);
                     return;
                 }
                 // if (!aFile.exists() || !aFile.isExecutable()) {
@@ -630,9 +616,11 @@
                 } else {
                     if (aFile.isFile()) {
                         let fileURL = this.getURLSpecFromFile(aFile);
-                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                        // menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                        menu.style.listStyleImage = "url(moz-icon://" + fileURL + "?size=16)";
                     } else {
-                        menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
+                        // menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
+                        menu.style.listStyleImage = "url(chrome://global/skin/icons/folder.svg)";
                     }
                 }
                 return;
@@ -643,10 +631,14 @@
                 if (engine) {
                     if (isPromise(engine)) {
                         engine.then(function (engine) {
-                            if (engine.iconURI) menu.setAttribute("image", engine.iconURI.spec);
+                            if (engine.iconURI) {
+                                // menu.setAttribute("image", engine.iconURI.spec);
+                                menu.style.listStyleImage = "url(" + engine.iconURI.spec + ")";
+                            }
                         });
                     } else if (engine.iconURI) {
-                        menu.setAttribute("image", engine.iconURI.spec);
+                        // menu.setAttribute("image", engine.iconURI.spec);
+                        menu.style.listStyleImage = "url(" + engine.iconURI.spec + ")";
                     }
                     return;
                 }
@@ -699,11 +691,11 @@
                 this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "DownloadPlus",
                 aMsg + "", !!callback, "", callback);
         },
-        error: function () {
-            this.browserWin.console.error(Array.prototype.slice.call(arguments));
+        error: function (...args) {
+            this.browserWindow.console.error("[CB]", ...args);
         },
-        log: function () {
-            this.browserWin.console.log(Array.prototype.slice.call(arguments));
+        log: function (...args) {
+            this.browserWindow.console.log("[CB]", ...args);
         },
     }
 
@@ -781,124 +773,35 @@
         return str || "";
     }
 
-    function addStyle(sss, css, type = 0) {
-        if (sss instanceof Ci.nsIStyleSheetService && typeof css === "string") {
+    function addStyle(styleSheetService, css, type = 0) {
+        if (styleSheetService instanceof Ci.nsIStyleSheetService && typeof css === "string") {
             let STYLE = {
                 url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)), type: type
             }
-            sss.loadAndRegisterSheet(STYLE.url, STYLE.type);
+            styleSheetService.loadAndRegisterSheet(STYLE.url, STYLE.type);
             return STYLE;
         }
     }
 
-    function removeStyle(sss, style) {
-        if (sss instanceof Ci.nsIStyleSheetService && style && style.url && style.type) {
-            sss.unregisterSheet(style.url, style.type);
+    function removeStyle(styleSheetService, style) {
+        if (styleSheetService instanceof Ci.nsIStyleSheetService && style && style.url && style.type) {
+            styleSheetService.unregisterSheet(style.url, style.type);
             return true;
         }
         return false;
     }
 
-    /**
-     * 克隆对象
-     * @param {object} o
-     * @returns
-     */
-    function cloneObj(o) {
-        if (typeof (o) === typeof (1) || typeof ('') === typeof (o) || typeof (o) === typeof (true) ||
-            typeof (o) === typeof (undefined)) {
-            return o
-        }
-        if (Array.isArray(o)) {
-            let arr = []
-            for (let key in o) {
-                arr.push(cloneObj(o[key]))
-            }
-            return arr
-        }
-        if (typeof (o) === typeof ({})) {
-            if (o === null) {
-                return o
-            }
-            let obj = {}
-            for (let key in o) {
-                obj[key] = cloneObj(o[key])
-            }
-            return obj
-        }
-        return o;
+    function isDef(v) {
+        return v !== undefined && v !== null
     }
 
-    function getURLSpecFromFile(aFile) {
-        var aURL;
-        if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
-            aURL = userChrome.getURLSpecFromFile(aFile);
-        } else if (this.appVersion < 92) {
-            aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
-        } else {
-            aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
-        }
-        return aURL;
-    }
-
-    function replaceArray(replaceString, find, replace) {
-        var regex;
-        for (var i = 0; i < find.length; i++) {
-            regex = new RegExp(find[i], "g");
-            replaceString = replaceString.replace(regex, replace[i]);
-        }
-        return replaceString;
+    function isPromise(val) {
+        return (
+            isDef(val) &&
+            typeof val.then === 'function' &&
+            typeof val.catch === 'function'
+        )
     }
 
     window.CustomButtons.init(window);
-})(`
-    #context-take-screenshot, #context-sep-screenshots {
-        display: none;
-    }
-    .CB-Group > .menuitem-iconic {
-        padding-block: 0.5em;
-    }
-    
-    .CB-Group > .menuitem-iconic:first-child {
-        padding-inline-start: 1em;
-    }
-    .CB-Group:not(.showText):not(.showFirstText) > :is(menu, menuitem):not(.showText) > label,
-    .CB-Group.showFirstText > :is(menu, menuitem):not(:first-child) > label,
-    .CB-Group > :is(menu, menuitem) > .menu-accel-container {
-        display: none;
-    }
-
-    .CB-Group.showFirstText > :is(menu, menuitem):first-child,
-    .CB-Group.showText > :is(menu, menuitem) {
-        -moz-box-flex: 1;
-        padding-inline-end: .5em;
-    }
-    .CB-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) {
-        padding-left: 0;
-        -moz-box-flex: 0;
-    }
-    .CB-Group.showFirstText > :is(menu, menuitem):not(:first-child):not(.showText) > .menu-iconic-left {
-        margin-inline-start: 8px;
-        margin-inline-end: 8px;
-    }
-    .CB-Popup menuseparator+menuseparator {
-        visibility: collapse;
-    }
-    .CB-Popup menuseparator:last-child {
-        /* 懒得研究为什么多了一个分隔符 */
-        visibility: collapse;
-    }
-
-    .CB-Popup .menuitem-iconic.reload {
-        list-style-image: url(chrome://devtools/content/debugger/images/reload.svg) !important;
-    }
-
-    .CB-Popup .menuitem-iconic.option {
-        list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
-    }
-
-    .CB-Popup .menu-iconic.skin,
-    .CB-Popup .menuitem-iconic.skin {
-        list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik03MDYuNTQ1IDEyOC4wMTlhNjMuOTg1IDYzLjk4NSAwIDAgMSA0OC41OTkgMjIuMzYzbDE3Mi44MzUgMjAxLjc2My02My45OTYgMTI3Ljg1Ny00MS4zNzQtNDEuMzcxYy02LjI1LTYuMjQ4LTE0LjQzNy05LjM3Mi0yMi42MjQtOS4zNzItOC4xODggMC0xNi4zNzQgMy4xMjQtMjIuNjI0IDkuMzcyYTMyLjAwNiAzMi4wMDYgMCAwIDAtOS4zNzUgMjIuNjI2djQwMi43MjdjMCAxNy42NzItMTQuMzI3IDMxLjk5OC0zMS45OTkgMzEuOTk4SDMyMC4wMWMtMTcuNjcxIDAtMzEuOTk4LTE0LjMyNi0zMS45OTgtMzEuOTk4VjQ2MS4yNTZjMC0xNy42NzItMTQuMzI4LTMxLjk5OC0zMi0zMS45OThhMzEuOTk3IDMxLjk5NyAwIDAgMC0yMi42MjQgOS4zNzJsLTQxLjM3MyA0MS4zNzFMOTYuMDIgMzUyLjAwN2wxNzIuODM1LTIwMS42NGE2My45ODcgNjMuOTg3IDAgMCAxIDQ4LjU5Mi0yMi4zNDhoNi41MDdhOTUuOTcgOTUuOTcgMCAwIDEgNTAuMTMgMTQuMTMyQzQyOC4zNyAxNzUuMzk0IDQ3NC4zMzggMTkyLjAxNSA1MTIgMTkyLjAxNXM4My42MjktMTYuNjIxIDEzNy45MTUtNDkuODY0YTk1Ljk2OCA5NS45NjggMCAwIDEgNTAuMTMtMTQuMTMyaDYuNW0wLTYzLjk5OGgtNi41YTE1OS44OSAxNTkuODkgMCAwIDAtODMuNTU3IDIzLjU1OEM1NjEuOTA0IDEyMSA1MjkuNTM3IDEyOC4wMTggNTEyIDEyOC4wMThjLTE3LjUzOCAwLTQ5LjkwNC03LjAxNy0xMDQuNDk1LTQwLjQ0NmExNTkuODgxIDE1OS44ODEgMCAwIDAtODMuNTUtMjMuNTVoLTYuNTA4YTEyNy44MjMgMTI3LjgyMyAwIDAgMC05Ny4xODIgNDQuNzAxTDQ3LjQyOCAzMTAuMzZjLTE5LjUyMiAyMi43NzQtMjAuNiA1Ni4wNS0yLjYxIDgwLjA0N0wxNDAuODE1IDUxOC40YTYzLjk5OCA2My45OTggMCAwIDAgODMuMTk5IDE3LjAyNXYzMjguNTU4YzAgNTIuOTMyIDQzLjA2IDk1Ljk5NSA5NS45OTUgOTUuOTk1aDQxNS45OGM1Mi45MzUgMCA5NS45OTYtNDMuMDYzIDk1Ljk5Ni05NS45OTVWNTM1LjQyNWE2NC4wMjggNjQuMDI4IDAgMCAwIDQyLjI0IDcuNzQ5IDY0LjAxNCA2NC4wMTQgMCAwIDAgNDYuOTktMzQuNTI4bDYzLjk5Ny0xMjcuODU3YzExLjUyMi0yMy4wMjggOC4xMjUtNTAuNzIyLTguNjMzLTcwLjI3OUw4MDMuNzQ0IDEwOC43NDdjLTI0LjMzNi0yOC40MjItNTkuNzctNDQuNzI2LTk3LjItNDQuNzI2eiIgcC1pZD0iMTI4MiI+PC9wYXRoPjwvc3ZnPg==) !important;
-    }
-`, false);
+})(``, false);
