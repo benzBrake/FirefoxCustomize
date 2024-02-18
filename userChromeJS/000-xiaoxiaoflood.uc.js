@@ -11,7 +11,6 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
-    var win = document.ownerGlobal;
     const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
     const AppConstants = globalThis.AppConstants || ChromeUtils.import('resource://gre/modules/AppConstants.jsm').AppConstants;
 
@@ -174,7 +173,5 @@
         }
     }
 
-    // Services.obs.addObserver(win, 'domwindowopened', initFakeUC);
-
-    initFakeUC.init(win);
+    initFakeUC.init(window);
 })()
