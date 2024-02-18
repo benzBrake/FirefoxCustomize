@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.2.2
+// @version         0.2.3
 // @compatibility   Firefox 78
 // @include         main
 // @include         chrome://userchrome/content/SubScript/CopyCat.html
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @version         0.2.3 完善 Debug 日志
 // @version         0.2.2 Bug 1815439 - Remove useless loadURI wrapper from browser.js
 // @version         0.2.1 修复 openUILinkIn 被移除
 // @version         0.2.0 修正点击按钮无法关闭菜单
@@ -121,10 +122,16 @@
             alertsService.showAlertNotification(this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
         },
         config: {
+            /**
+             * 是否构建 Panel，false 则构建弹出菜单
+             */
             get buildPanel() {
                 delete this.buildPanel;
                 return this.buildPanel = CopyCatUtils.prefs.get("userChromeJS.CopyCat.buildPanel", true);
             },
+            /**
+             * 获取配置文件对象
+             */
             get FILE() {
                 var path = CopyCatUtils.prefs.get("userChromeJS.CopyCat.FILE_PATH", "_copycat.js")
                 var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
@@ -136,13 +143,32 @@
                 delete this.FILE;
                 return this.FILE = aFile;
             },
+            /**
+             * 工具相对目录
+             */
             get TOOLS_RELATIVE_PATH() {
                 delete this.TOOLS_RELATIVE_PATH;
                 return this.TOOLS_RELATIVE_PATH = "\\chrome\\UserTools";
             },
+            /**
+             * 工具绝对目录
+             */
             get TOOLS_PATH() {
                 delete this.TOOLS_PATH;
                 return this.TOOLS_PATH = handleRelativePath(this.TOOLS_RELATIVE_PATH);
+            }
+        },
+        get debug() {
+            return this.prefs.get("userChromeJS.CopyCat.debug", false);
+        },
+        log: function (...args) {
+            if (this.debug) {
+                console.log('[CopyCatButton]', ...args);
+            }
+        },
+        error: function (...args) {
+            if (this.debug) {
+                console.error('[CopyCatButton]', ...args);
             }
         }
     }
@@ -150,11 +176,11 @@
     const PRE_MENUS = [{
         class: 'showFirstText',
         group: [{
-            label: $L("chrome-folder"),
+            label: formatStr("chrome-folder"),
             exec: '\\chrome',
         }, {
-            label: $L("restart-firefox"),
-            tooltiptext: $L("restart-firefox"),
+            label: formatStr("restart-firefox"),
+            tooltiptext: formatStr("restart-firefox"),
             class: 'reload',
             oncommand: 'Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);',
         }]
@@ -165,11 +191,11 @@
     }, {
         class: 'showFirstText',
         group: [{
-            label: $L("modify-copycat-js"),
+            label: formatStr("modify-copycat-js"),
             edit: CopyCatUtils.config.FILE.path,
         }, {
-            label: $L("reload-copycat-js"),
-            tooltiptext: $L("reload-copycat-js"),
+            label: formatStr("reload-copycat-js"),
+            tooltiptext: formatStr("reload-copycat-js"),
             style: "list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);",
             oncommand: function (event) {
                 CopyCat.SHOW_NOTICE = true;
@@ -177,7 +203,7 @@
             }
         }]
     }, {
-        label: $L("about-copycat"),
+        label: formatStr("about-copycat"),
         where: 'tab',
         image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=',
         url: 'https://kkp.disk.st/firefox-ryan-personal-customization.html'
@@ -189,17 +215,14 @@
     if (location.href.startsWith("chrome://browser/content/browser.x")) {
         window.CopyCat = {
             CACHED_VIEWS: [],
-            get debug() {
-                return CopyCatUtils.prefs.get("userChromeJS.CopyCat.debug", false);
-            },
             get hideInternalItems() {
                 return CopyCatUtils.prefs.get("userChromeJS.CopyCat.hideInternal", false);
             },
-            $C: $C,
-            $L: $L,
-            initializing: false,
+            createEl: createEl,
+            formatStr: formatStr,
+            initializing: false, // 是否正在初始化
             NEED_INIT: false,
-            NEED_BUILD: false,
+            NEED_BUILD: false, // 是否需要重新构建菜单
             get itemTag() {
                 return CopyCatUtils.config.buildPanel ? "toolbarbutton" : "menuitem";
             },
@@ -216,7 +239,7 @@
                 return CopyCatUtils.config.buildPanel ? "toolbaritem" : "menugroup";
             },
             get groupClass() {
-                return CopyCatUtils.config.buildPanel ? "subviewbutton toolbaritem-combined-buttons" : "zhanweifu";
+                return CopyCatUtils.config.buildPanel ? "subviewbutton toolbaritem-combined-buttons" : "copycat-placeholder";
             },
             get separatorTag() {
                 return CopyCatUtils.config.buildPanel ? "toolbarseparator" : "menuseparator";
@@ -228,6 +251,7 @@
 
                 // create CopyCat button
                 if (!(CustomizableUI.getWidget('CopyCat-Btn') && CustomizableUI.getWidget('CopyCat-Btn').forWindow(window)?.node)) {
+                    CopyCatUtils.log("Creating CopyCat button");
                     if (CopyCatUtils.config.buildPanel) {
                         CustomizableUI.createWidget({
                             id: 'CopyCat-Btn',
@@ -237,11 +261,11 @@
                             defaultArea: CustomizableUI.AREA_NAVBAR,
                             localized: false,
                             onBeforeCreated: document => {
-                                let view = $C(document, "panelview", {
+                                let view = createEl(document, "panelview", {
                                     id: 'CopyCat-View',
                                     flex: 1, class:
                                         'CopyCat-View',
-                                }), box = $C(document, "vbox", {
+                                }), box = createEl(document, "vbox", {
                                     class: "panel-subview-body"
                                 });
                                 view = $("appMenu-viewCache", document).appendChild(view);
@@ -261,8 +285,8 @@
                             },
                             onCreated: node => {
                                 $A(node, {
-                                    label: $L("copycat-brand"),
-                                    tooltiptext: $L("ccopycat-btn-tooltip"),
+                                    label: formatStr("copycat-brand"),
+                                    tooltiptext: formatStr("ccopycat-btn-tooltip"),
                                     contextmenu: false,
                                     onclick: function (event) {
                                         if (event.target.id !== "CopyCat-Btn") return;
@@ -287,61 +311,63 @@
                             }
                         });
                     } else {
-                        CustomizableUI.createWidget({
-                            id: 'CopyCat-Btn',
-                            removable: true,
-                            defaultArea: CustomizableUI.AREA_NAVBAR,
-                            localized: false,
-                            onCreated: node => {
-                                const { ownerDocument: document } = node;
-                                $A(node, {
-                                    label: $L("copycat-brand"),
-                                    tooltiptext: $L("ccopycat-btn-tooltip"),
-                                    contextmenu: false,
-                                    type: "menu",
-                                    onclick: (event) => {
-                                        if (event.target.id !== "CopyCat-Btn") return;
-                                        if (event.button === 2) {
-                                            if (window.AM_Helper) {
-                                                event.preventDefault();
-                                                event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/userchromejs");
+                        try {
+                            CustomizableUI.createWidget({
+                                id: 'CopyCat-Btn',
+                                removable: true,
+                                defaultArea: CustomizableUI.AREA_NAVBAR,
+                                localized: false,
+                                onCreated: node => {
+                                    const { ownerDocument: document } = node;
+                                    $A(node, {
+                                        label: formatStr("copycat-brand"),
+                                        tooltiptext: formatStr("ccopycat-btn-tooltip"),
+                                        contextmenu: false,
+                                        type: "menu",
+                                        onclick: (event) => {
+                                            if (event.target.id !== "CopyCat-Btn") return;
+                                            if (event.button === 2) {
+                                                if (window.AM_Helper) {
+                                                    event.preventDefault();
+                                                    event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/userchromejs");
+                                                }
                                             }
                                         }
-                                    }
-                                });
-                                let mp = $("mainPopupSet", document);
-                                if (!mp.querySelector("#CopyCat-Popup")) {
-                                    let menupopup = mp.appendChild($C(document, "menupopup", {
-                                        id: "CopyCat-Popup",
-                                        class: "CopyCat-Popup",
-                                    }));
-                                    PRE_MENUS.forEach(obj => {
-                                        let menuitem = this.newMenuitem(document, obj);
-                                        if (this.hideInternalItems) {
-                                            menuitem.classList.add("hidden");
-                                        }
-                                        menupopup.appendChild(menuitem);
                                     });
-                                    this.rebuild(menupopup);
-                                }
-                                node.addEventListener("mouseover", (event) => {
-                                    let menupopup = node.ownerDocument.querySelector("#CopyCat-Popup");
-                                    if (menupopup.parentNode.id !== "CopyCat-Btn") {
+                                    let mp = $("mainPopupSet", document);
+                                    if (!mp.querySelector("#CopyCat-Popup")) {
+                                        let menupopup = mp.appendChild(createEl(document, "menupopup", {
+                                            id: "CopyCat-Popup",
+                                            class: "CopyCat-Popup",
+                                        }));
+                                        PRE_MENUS.forEach(obj => {
+                                            let menuitem = this.newMenuitem(document, obj);
+                                            if (this.hideInternalItems) {
+                                                menuitem.classList.add("hidden");
+                                            }
+                                            menupopup.appendChild(menuitem);
+                                        });
                                         this.rebuild(menupopup);
-                                        event.target.appendChild(menupopup);;
                                     }
-                                    if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY < (event.target.ownerGlobal.innerHeight / 2)) {
-                                        menupopup.setAttribute("position", "after_end");
-                                    } else if (event.clientX < (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
-                                        menupopup.setAttribute("position", "before_start");
-                                    } else if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
-                                        menupopup.setAttribute("position", "before_start");
-                                    } else {
-                                        menupopup.removeAttribute("position", "after_end");
-                                    }
-                                });
-                            },
-                        });
+                                    node.addEventListener("mouseover", (event) => {
+                                        let menupopup = node.ownerDocument.querySelector("#CopyCat-Popup");
+                                        if (menupopup.parentNode.id !== "CopyCat-Btn") {
+                                            this.rebuild(menupopup);
+                                            event.target.appendChild(menupopup);;
+                                        }
+                                        if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY < (event.target.ownerGlobal.innerHeight / 2)) {
+                                            menupopup.setAttribute("position", "after_end");
+                                        } else if (event.clientX < (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
+                                            menupopup.setAttribute("position", "before_start");
+                                        } else if (event.clientX > (event.target.ownerGlobal.innerWidth / 2) && event.clientY > (event.target.ownerGlobal.innerHeight / 2)) {
+                                            menupopup.setAttribute("position", "before_start");
+                                        } else {
+                                            menupopup.removeAttribute("position", "after_end");
+                                        }
+                                    });
+                                },
+                            });
+                        } catch (e) { }
                     }
                     this.NEED_BUILD = true;
                 }
@@ -349,6 +375,7 @@
             handleEvent: function (event) {
                 switch (event.type) {
                     case "popupshowing":
+                        CopyCatUtils.log("CopyCat Panel showing!");
                         if (this.NEED_INIT) {
                             this.NEED_INIT = false;
                             PRE_MENUS.forEach(obj => {
@@ -364,12 +391,13 @@
             },
             newMenugroup: function (doc, obj) {
                 if (!doc || !obj) return;
-                let group = $C(doc, this.groupTag, obj, ["group"]);
+                let group = createEl(doc, this.groupTag, obj, ["group"]);
                 this.groupClass.split(' ').forEach(c => group.classList.add(c));
                 group.classList.add("CopyCat-Group");
                 obj.group.forEach(o => {
                     group.appendChild(this.newMenuitem(doc, o));
                 })
+                CopyCatUtils.log("Creating Menugroup: " + (obj.label || "<empty label>"), group);
                 return group;
             },
             newMenupopup: function (doc, obj) {
@@ -390,6 +418,7 @@
                         </vbox>
                     </panelview>
                     `);
+                    CopyCatUtils.log("Creating panelId: " + panelId, view);
                     $A(view.querySelector('.subviewbutton-back'), {
                         oncommand: function () {
                             var mView = this.closest('panelmultiview');
@@ -403,7 +432,7 @@
                     });
                     this.CACHED_VIEWS.push(view);
                     viewCache.appendChild(view);
-                    aItem = $C(doc, "toolbarbutton", obj, ["popup", "onBuild"]);
+                    aItem = createEl(doc, "toolbarbutton", obj, ["popup", "onBuild"]);
                     aItem.classList.add("subviewbutton");
                     aItem.classList.add("subviewbutton-nav");
                     $A(aItem, {
@@ -412,9 +441,10 @@
                         oncommand: `PanelUI.showSubView('${panelId}', this)`
                     });
                 } else {
-                    aItem = $C(doc, "menu", obj, ["popup", "onBuild"]);
+                    aItem = createEl(doc, "menu", obj, ["popup", "onBuild"]);
+                    CopyCatUtils.log("Creating Menu " + (obj.label || "<empty label>"), aItem);
                     aItem.classList.add("menu-iconic");
-                    let menupopup = aItem.appendChild($C(doc, "menupopup"));
+                    let menupopup = aItem.appendChild(createEl(doc, "menupopup"));
                     obj.popup.forEach(mObj => menupopup.appendChild(this.newMenuitem(doc, mObj)));
                 }
 
@@ -438,7 +468,7 @@
                 let classList = [], tagName = obj.type || this.itemTag;
                 // 分隔符
                 if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.labelRef && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
-                    return $C(doc, this.separatorTag, obj, ['type', 'group', 'popup']);
+                    return createEl(doc, this.separatorTag, obj, ['type', 'group', 'popup']);
                 }
                 if (['checkbox', 'radio'].includes(obj.type)) tagName = this.itemTag;
                 if (obj.class) obj.class.split(' ').forEach(c => {
@@ -484,13 +514,13 @@
                             if (obj.class.split(' ').includes("menu-iconic")) {
                                 // fix menu left icon
                                 if (!dest.firstChild?.classList.contains('menu-iconic-left')) {
-                                    let left = dest.insertBefore($C(doc, 'hbox', {
+                                    let left = dest.insertBefore(createEl(doc, 'hbox', {
                                         class: 'menu-iconic-left',
                                         align: 'center',
                                         pack: 'center',
                                         'aria-hidden': true
                                     }), dest.firstChild);
-                                    left.appendChild($C(doc, 'image', {
+                                    left.appendChild(createEl(doc, 'image', {
                                         class: 'menu-iconic-icon'
                                     }));
                                     dest.setAttribute('removeMenuLeft', 'true');
@@ -508,12 +538,12 @@
                         // fix menu-right
                         if (!obj.clone && obj["menu-right"]) {
                             dest.setAttribute("removeMenuRight", "true");
-                            let right = dest.appendChild($C(doc, 'hbox', {
+                            let right = dest.appendChild(createEl(doc, 'hbox', {
                                 class: 'menu-right',
                                 align: 'center',
                                 'aria-hidden': true
                             }));
-                            right.appendChild($C(doc, 'image'));
+                            right.appendChild(createEl(doc, 'image'));
                         }
                         if ('onBuild' in obj && typeof dest !== 'undefined') {
                             if (typeof obj.onBuild === "function") {
@@ -522,18 +552,21 @@
                                 eval("(" + obj.onBuild + ").call(org, doc, dest)")
                             }
                         }
-                        let replacement = $C(doc, 'menuseparator', {
+                        let replacement = createEl(doc, 'menuseparator', {
                             hidden: true, class: 'CopyCat-Replacement', 'original-id': obj.command
                         });
                         if (!obj.clone) {
                             dest.setAttribute('restoreBeforeUnload', 'true');
                             dest.restoreHolder = replacement;
                             dest.parentNode.insertBefore(replacement, dest);
+                            CopyCatUtils.log('Moving Item: ' + obj.command, dest);
+                        } else {
+                            CopyCatUtils.log('Cloning Item: ' + obj.command, dest);
                         }
 
                         return dest;
                     } else if (!'placehoder' in obj || obj.placeholder) {
-                        return $C(doc, 'menuseparator', {
+                        return createEl(doc, 'menuseparator', {
                             class: "CopyCat-Replacement",
                             hidden: true
                         });
@@ -541,7 +574,7 @@
                         return;
                     }
                 } else {
-                    item = $C(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
+                    item = createEl(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
                     if (classList.length) item.setAttribute('class', classList.join(' '));
                     $A(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type', 'value']);
                     let label = obj.label || obj.command || obj.oncommand || "";
@@ -586,6 +619,8 @@
                 // 可能ならばアイコンを付ける
                 this.setIcon(item, obj);
 
+                CopyCatUtils.log("Creating Item: ", (item.label || "<empty label>"), item);
+
                 return item;
             },
             setIcon: function (menu, obj) {
@@ -595,7 +630,7 @@
                     try {
                         aFile.initWithPath(handleRelativePath(obj.edit) || obj.exec);
                     } catch (e) {
-                        if (this.debug) console.error(e);
+                        CopyCatUtils.error(e);
                         return;
                     }
                     // if (!aFile.exists() || !aFile.isExecutable()) {
@@ -665,12 +700,12 @@
                 this.makeMenus(aViewOrPopup);
                 this.initializing = false;
                 if (this.SHOW_NOTICE) {
-                    CopyCatUtils.alert($L("reload-copycat-js-complete"));
+                    CopyCatUtils.alert(formatStr("reload-copycat-js-complete"));
                 }
                 this.SHOW_NOTICE = false;
             },
             makeMenus(aViewOrPopup) {
-                if (!aViewOrPopup) return;
+                if (typeof aViewOrPopup === "undefined") return;
                 let data = readFile(CopyCatUtils.config.FILE);
                 if (!data) return null;
 
@@ -683,7 +718,7 @@
                 sandbox.Services = Services;
                 sandbox.CopyCatUtils = CopyCatUtils;
                 sandbox.CopyCat = this;
-                sandbox.$L = $L;
+                sandbox.formatStr = formatStr;
                 sandbox.locale = LOCALE;
                 sandbox['_menus'] = [];
                 sandbox['_css'] = [];
@@ -705,7 +740,7 @@
                     Cu.evalInSandbox("function setLocale(locale) { this.locale = locale }; function css(code){ this._css.push(code+'') };\nfunction lang(obj) { Object.assign(this._lang, obj); }" + data, sandbox, "1.8");
                 } catch (e) {
                     let line = e.lineNumber - lineFinder.lineNumber - 1;
-                    CopyCatUtils.alert(e + $L("check-config-file-with-line", line), null, function () {
+                    CopyCatUtils.alert(e + formatStr("check-config-file-with-line", line), null, function () {
                         this.edit(CopyCatUtils.FILE, line);
                     });
                     return console.error(e);
@@ -862,7 +897,7 @@
             edit: function (pathOrFile, aLineNumber) {
                 let aFile = getFile(pathOrFile), editor;
                 if (!aFile) {
-                    console.error($L("param is invalid", "this.edit", "pathOrFile"));
+                    console.error(formatStr("param is invalid", "this.edit", "pathOrFile"));
                     return;
                 }
 
@@ -871,11 +906,11 @@
                 } catch (e) { }
 
                 if (!editor || !editor.exists()) {
-                    alert($L('please set editor path'));
+                    alert(formatStr('please set editor path'));
                     let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, $L('set global editor'), fp.modeOpen);
+                    fp.init(window, formatStr('set global editor'), fp.modeOpen);
                     if (this.platform === "win")
-                        fp.appendFilter($L('executable files'), "*.exe");
+                        fp.appendFilter(formatStr('executable files'), "*.exe");
 
                     if (typeof fp.show !== 'undefined') {
                         if (fp.show() == fp.returnCancel || !fp.file)
@@ -906,7 +941,7 @@
             exec: function (pathOrFile, arg) {
                 let aFile = getFile(pathOrFile);
                 if (!aFile) {
-                    console.error($L("param is invalid", "this.exec", "pathOrFile"));
+                    this.error(formatStr("param is invalid", "this.exec", "pathOrFile"));
                     return;
                 }
                 var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
@@ -923,7 +958,7 @@
                     }
 
                     if (!aFile.exists()) {
-                        console.error($L("file not found", path));
+                        console.error(formatStr("file not found", path));
                         return;
                     }
 
@@ -943,8 +978,10 @@
             },
             insertMenuitem(doc, obj, item) {
                 if (!item) {
-                    console.log("Insert item is null!");
+                    CopyCatUtils.log("Item to be inserted is null!");
                     return;
+                } else {
+                    CopyCatUtils.log("Inserting item: " + item.getAttribute('label'), item);
                 }
                 if (item.getAttribute('restoreBeforeUnload') !== 'true') {
                     item.classList.add('CopyCat-Dynamic');
@@ -1056,6 +1093,18 @@
         }
 
         window.CopyCat.init(window);
+
+        setTimeout(() => {
+            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        }, 1000);
+
+        setTimeout(() => {
+            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        }, 3000);
+
+        setTimeout(() => {
+            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        }, 5000);
     }
 
     /**
@@ -1080,7 +1129,7 @@
         return ($('appMenu-viewCache', aDoc) && $('appMenu-viewCache', aDoc).content) || $('appMenu-multiView', aDoc);
     }
 
-    function $C(doc, tag, attrs, skipAttrs) {
+    function createEl(doc, tag, attrs, skipAttrs) {
         var el;
         if (!doc || !tag) return el;
         attrs = attrs || {};
@@ -1118,7 +1167,7 @@
         return false;
     }
 
-    function $L() {
+    function formatStr() {
         let str = arguments[0];
         if (str) {
             if (!arguments.length) return "";
@@ -1160,7 +1209,7 @@
             aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             aFile.initWithPath(pathOrFile);
         } else {
-            console.error($L("param is invalid", "CopyCat.getFile", "pathOrFile: %s", pathOrFile));
+            console.error(formatStr("param is invalid", "CopyCat.getFile", "pathOrFile: %s", pathOrFile));
         }
         return aFile;
     }
@@ -1173,7 +1222,7 @@
     function saveFile(pathOrFile, data, charset = "UTF-8") {
         let aFile = getFile(pathOrFile);
         if (!aFile) {
-            console.error($L("param is invalid", "CopyCat.saveFile", "pathOrFile"));
+            console.error(formatStr("param is invalid", "CopyCat.saveFile", "pathOrFile"));
             return;
         }
 
@@ -1190,7 +1239,7 @@
     function readFile(pathOrFile, metaOnly) {
         let aFile = getFile(pathOrFile);
         if (!aFile) {
-            console.error($L("param is invalid", "CopyCat.readFile", "pathOrFile"));
+            console.error(formatStr("param is invalid", "CopyCat.readFile", "pathOrFile"));
             return;
         }
         let stream = Cc['@mozilla.org/network/file-input-stream;1'].createInstance(Ci.nsIFileInputStream);
@@ -1253,6 +1302,10 @@
 })(`
 #CopyCat-Btn {
     list-style-image:url(data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTI2LjQ2MDkzOCA0LjQ2Njc5NjlDMjQuNjY4OCA0LjUyNTY1MDMgMjMgNS45ODM0NzYyIDIzIDcuOTQ1MzEyNUwyMyAxNC43MDcwMzFDMjMgMTUuMTU4MDY1IDIzLjE4NTUyNyAxNS41NjA1NzIgMjMuMjQyMTg4IDE2TDIxLjUgMTZDMTUuOTMzNDY5IDE2IDEwLjk5Mjc3MyAxOC44MDgwNTMgOCAyMy4wNjgzNTlMOCAxOS41QzggMTYuNTE2NDM4IDkuMDAxODM4MSAxMy41NzM5OTIgMTAuNjg5NDUzIDExLjQ0NzI2NkMxMi4zNzcwNjggOS4zMjA1Mzg2IDE0LjY2NzMzNiA4IDE3LjUgOCBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCAxNy41IDVDMTMuNzA1NjY0IDUgMTAuNDk1NDc5IDYuODY1NTA3OSA4LjMzOTg0MzggOS41ODIwMzEyQzYuMTg0MjA4OCAxMi4yOTg1NTUgNSAxNS44NTY1NjIgNSAxOS41TDUgMzIuNSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCA1LjAwNzgxMjUgMzIuNjY5OTIyQzUuMDkxOTgxMiAzOC4zNzQxMyA5LjM2MzA0MTQgNDMuMDgzNzMxIDE0Ljg3NSA0My44NzEwOTQgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMTUuNSA0NEwzOS41IDQ0QzQxLjQxNDk1NSA0NCA0MyA0Mi40MTQ5NTUgNDMgNDAuNUM0MyAzOC4zNTc3NCA0MS43NjM2NDIgMzYuNDgyNDg4IDM5Ljk1NzAzMSAzNS41ODAwNzhMMzkuOTU1MDc4IDM1LjU3ODEyNUMzOS4zMTczNDggMzUuMjU4NTM1IDM0LjIwMzU1OSAzMi44OTAwMjEgMzQuMDE3NTc4IDI0LjkzMzU5NEMzOS4wMzkzNzEgMjQuNDE2MDM2IDQzIDIwLjE1ODE4OCA0MyAxNC45OTgwNDdMNDMgNy45NDUzMTI1QzQzIDUuMzI5MjM0NCA0MC4wMzQ0MjQgMy42MTAxNDQgMzcuNzYzNjcyIDQuOTA4MjAzMSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAzNy40MDAzOTEgNS4xOTcyNjU2TDM0LjgzNzg5MSA4TDMxLjE2MDE1NiA4TDI4LjU5OTYwOSA1LjE5NzI2NTYgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjguMjM2MzI4IDQuOTA4MjAzMUMyNy42Njg1MTcgNC41ODM2MTgyIDI3LjA1ODMxNiA0LjQ0NzE3OTEgMjYuNDYwOTM4IDQuNDY2Nzk2OSB6IE0gMzkuNTgyMDMxIDcuNDQzMzU5NEMzOS42NTM2NjIgNy40MzQ2Mzc1IDM5LjcyMDQ5NyA3LjQ0MDgzODcgMzkuNzc1MzkxIDcuNDcyNjU2MkMzOS45MTI4OCA3LjU1MjM0NzUgNDAgNy43MTczNTE2IDQwIDcuOTQ1MzEyNUw0MCAxNC45OTgwNDdDNDAgMTkuMDM3MTU1IDM2LjY0MTcwNyAyMi4yNTA4NzggMzIuNTMxMjUgMjEuOTg0Mzc1QzI4LjgzMzk3OCAyMS43NDQ2MDEgMjYgMTguNDc5NDQ4IDI2IDE0LjcwNzAzMUwyNiA3Ljk0NTMxMjVDMjYgNy41MzcwMzU5IDI2LjI5ODIzMiA3LjM3Nzc0MDUgMjYuNjQyNTc4IDcuNTAzOTA2MkwyOS4zOTI1NzggMTAuNTExNzE5IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDMwLjUgMTFMMzUuNSAxMSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAzNi42MDc0MjIgMTAuNTExNzE5TDM5LjM1NzQyMiA3LjUwMzkwNjJDMzkuNDMzOTcyIDcuNDc1NzI2MyAzOS41MTA0IDcuNDUyMDgxMiAzOS41ODIwMzEgNy40NDMzNTk0IHogTSAyOS41IDEzIEEgMS41IDEuNSAwIDAgMCAyOS41IDE2IEEgMS41IDEuNSAwIDAgMCAyOS41IDEzIHogTSAzNi41IDEzIEEgMS41IDEuNSAwIDAgMCAzNi41IDE2IEEgMS41IDEuNSAwIDAgMCAzNi41IDEzIHogTSAyMy45NzY1NjIgMTguOTI3NzM0QzI1LjI3NDgzNyAyMS44NDU2NjUgMjcuODEyMzM4IDI0LjEyNzIgMzEuMDEzNjcyIDI0Ljc5Njg3NUMzMS4xNTc5MzkgMzQuMjQ5NDc1IDM3LjkzNzk0NiAzNy45MjMwMzQgMzguNjEzMjgxIDM4LjI2MTcxOSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAzOC42MTUyMzQgMzguMjYxNzE5QzM5LjQzMzIwOCAzOC42Njk3OTUgNDAgMzkuNTA3MjU1IDQwIDQwLjVDNDAgNDAuNzk1MDQ1IDM5Ljc5NTA0NSA0MSAzOS41IDQxTDI4Ljk0NzI2NiA0MUMyOC45NzI2NSA0MC44MzE1OTUgMjkgNDAuNjYzMTMzIDI5IDQwLjQ4ODI4MUMyOSAzNy45NTM4NzMgMjcuMjQ3NDYgMzUuODA2MzEgMjQuODk4NDM4IDM1LjE4NTU0N0MyNC4yNTMwMDIgMzAuNTc1MzQ1IDIwLjI4MTk4NiAyNyAxNS41IDI3TDE0LjUgMjcgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgMTQuNSAzMEwxNS41IDMwQzE5LjA3MzU5MSAzMCAyMS45NDA4ODUgMzIuODQwMTg3IDIxLjk5NDE0MSAzNi40MDAzOTEgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjIuMTAzNTE2IDM3LjA3MDMxMiBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyMi4xMTEzMjggMzcuMDkxNzk3IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIyLjEzMjgxMiAzNy4xMzg2NzIgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjMuNjQ2NDg0IDM4LjAxMzY3MkMyNC45NzI0NjYgMzguMDgzMzg2IDI2IDM5LjE0MjM2NCAyNiA0MC40ODgyODFDMjYgNDAuNzg4MyAyNS43ODc0NyA0MSAyNS40ODgyODEgNDFMMTYuNSA0MUMxMS43ODc2MSA0MSA4IDM3LjIxMjM5IDggMzIuNUM4IDI1LjA2ODE4MiAxNC4wNjgxODIgMTkgMjEuNSAxOUwyMy41IDE5IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIzLjk3NjU2MiAxOC45Mjc3MzQgeiIgLz4NCjwvc3ZnPg==);
+}
+#CopyCat-Btn > .toolbarbutton {
+    -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
+    fill: var(--lwt-toolbarbutton-icon-fill, currentColor) !important;
 }
 .CopyCat-View .hidden {
     display: none !important;
