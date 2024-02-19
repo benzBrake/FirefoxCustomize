@@ -25,6 +25,7 @@ const ACST_WAIT_TIME = 0; // Change it to any number as you want
 const ACST_BLACK_LIST = ["input", "textarea"]; // disable auto copy when focus on textboxes
 const ACST_SHOW_SUCCESS_NOTICE = true; // show notice on webpace when copyed successful
 const ACST_COPY_WITHOUT_RELEASE_KEY = false; // when the popup appears you can release the mouse button (work is not perfect, need to set ACST_WAIT_TIME as a reasonable number)
+const ACST_COPY_AS_PLAIN_TEXT = false; // copy as plain text
 // =================================================================
 if (typeof window === "undefined" || globalThis !== window) {
     let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
@@ -212,7 +213,10 @@ if (typeof window === "undefined" || globalThis !== window) {
             setSelectedText: function (text, tag) {
                 if (tag && ACST_BLACK_LIST.includes(tag)) return;
                 if (typeof text !== undefined) {
-                    this.copyText(text);
+                    if (ACST_COPY_AS_PLAIN_TEXT)
+                        this.copyText(text);
+                    else
+                        goDoCommand('cmd_copy');
                 }
             },
             copyText: function (text) {
