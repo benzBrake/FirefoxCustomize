@@ -3,8 +3,10 @@
 // @description     鼠标拖拽 Drag & Go，来自于 Mozilla-Russia 论坛，Ryan 修改自用
 // @author          Ryan, Dumby
 // @include         main
+// @version         2024.02.29
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @referenceURL    https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234
+// @note            2024.02.29 修复站内搜索失效
 // @onlyonce
 // ==/UserScript==
 (function () {
@@ -115,7 +117,7 @@
                     dir: "D",
                     name: "站内搜索（当前标签）",
                     cmd(val, event) {
-                        var currentPageUrl = event.originalTarget._urlMetaData['url'];
+                        var currentPageUrl = event.originalTarget.currentURI.spec;
                         var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
                         if (val)
                             this.searchWithEngine(TERM, 'current', '@default');
@@ -126,7 +128,7 @@
                     name: "站内搜索（新标签，前台）",
                     ctrl: true,
                     cmd(val, event) {
-                        var currentPageUrl = event.originalTarget._urlMetaData['url'];
+                        var currentPageUrl = event.originalTarget.currentURI.spec;
                         var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
                         if (val)
                             this.searchWithEngine(TERM, 'tab', '@default');
@@ -423,7 +425,7 @@
             this.dir = this.val = "";
 
             var url = dt.getData("text/x-moz-url-data");
-
+            
             if (url) {
                 this.val = url;
                 if (this.imageLinkRe.test(url)) {
