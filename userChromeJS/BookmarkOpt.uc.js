@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name            BookmarkOpt.uc.js
-// @description     书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮，中按点击书签工具栏文件夹收藏当前页面到该文件夹下
+// @description     书签操作增强，添加书签到此处/更新书签，复制标题，复制Markdown格式链接，增加显示/隐藏书签工具栏按钮，中按点击书签工具栏文件夹收藏当前页面到该文件夹下,书签工具栏更多菜单自动适应弹出位置
 // @author          Ryan
 // @include         main
 // @include         chrome://browser/content/places/places.xhtml
@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.5
+// @version         1.3.6
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.6 书签工具栏更多菜单自动适应弹出位置
 // @version         1.3.5 新增中建点击图标才添加书签的功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly，默认不启用）
 // @version         1.3.4 新增中建点击添加书签功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick，默认不启用）
 // @version         1.3.3 还原显示隐藏书签工具栏按钮
@@ -226,9 +227,9 @@
                     if (itemMouseDown) {
                         if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) {
                             let addBookmark = true;
-                            if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false) 
-                            && target.getAttribute("container") == "true" /* 点击的是文件夹 */
-                            && !target.hasAttribute("query") /* 排除最近访问 */
+                            if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false)
+                                && target.getAttribute("container") == "true" /* 点击的是文件夹 */
+                                && !target.hasAttribute("query") /* 排除最近访问 */
                             ) {
                                 let targetRect = target.getBoundingClientRect();
                                 let x = event.clientX - target.getBoundingClientRect().left; // 鼠标点击位置相对于当前书签
@@ -387,6 +388,21 @@
                     break;
             }
         },
+        handlePlacesChevronEvent: (event) => {
+            const { target: aNode } = event;
+            if (aNode.id !== "PlacesChevron") return;
+            if (aNode.getAttribute("open") == "true") return;
+            const menupopup = aNode.querySelector(":scope>menupopup");
+            if (event.clientX > (aNode.ownerGlobal.innerWidth / 2) && event.clientY < (aNode.ownerGlobal.innerHeight / 2)) {
+                menupopup.setAttribute("position", "after_end");
+            } else if (event.clientX < (aNode.ownerGlobal.innerWidth / 2) && event.clientY > (aNode.ownerGlobal.innerHeight / 2)) {
+                menupopup.setAttribute("position", "before_start");
+            } else if (event.clientX > (aNode.ownerGlobal.innerWidth / 2) && event.clientY > (aNode.ownerGlobal.innerHeight / 2)) {
+                menupopup.setAttribute("position", "before_start");
+            } else {
+                menupopup.removeAttribute("position", "after_end");
+            }
+        },
         init: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
@@ -422,6 +438,22 @@
                         });
                     }
                 }
+
+                this.PlacesChevronObserver = new MutationObserver(mutations => {
+                    mutations.forEach(mutation => {
+                        // when attributes change
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'collapsed') {
+                            if (mutation.target.getAttribute("collapsed") === "true") {
+                                this.isObservingPlacesChevron = false;
+                                mutation.target.removeEventListener('mouseover', BookmarkOpt.handlePlacesChevronEvent, false);
+                            } else {
+                                this.isObservingPlacesChevron = true;
+                                mutation.target.addEventListener('mouseover', BookmarkOpt.handlePlacesChevronEvent, false);
+                            }
+                        }
+                    })
+                });
+                this.PlacesChevronObserver.observe(document.getElementById("PlacesChevron"), { attributes: true });
             }
             this.style = addStyle(css);
         },
@@ -444,6 +476,12 @@
                 $('PlacesToolbarItems').removeEventListener('mousedown', this.handlePlacesToolbarEvent, false);
                 document.removeEventListener('mouseup', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
+                if (this.PlacesChevronObserver) {
+                    this.PlacesChevronObserver.disconnect();
+                }
+                if (this.isObservingPlacesChevron) {
+                    document.getElementById("PlacesChevron").removeEventListener("mouseover", BookmarkOpt.handlePlacesChevronEvent, false);
+                }
                 if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
                 delete window.BookmarkOpt;
             }
