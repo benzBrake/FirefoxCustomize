@@ -84,6 +84,9 @@ var SidebarModoki = {
     src: "https://music.youtube.com",
     label: "YouTube Music"
   }, {
+    src: "https://translate.google.com",
+    label: "谷歌翻译"
+  }, {
     src: "https://papago.naver.com/",
     label: "papago"
   }, {
@@ -102,6 +105,7 @@ var SidebarModoki = {
   Button: null,
 
   _selectedTab: null,
+  _lastSelectedIndex: null,
 
   get prefs() {
     delete this.prefs;
@@ -236,6 +240,7 @@ var SidebarModoki = {
         visibility:collapse;
       }
       #SM_splitter {
+        min-width: 1px !important;
         background-color: var(--toolbar-bgcolor) !important;
         border-inline-start-color: var(--toolbar-bgcolor) !important;
         border-inline-end-color: var(--toolbar-bgcolor) !important;
@@ -265,7 +270,6 @@ var SidebarModoki = {
       { 
         appearance: none !important;
         padding: 0 !important;
-        margin: {MARGINHACK}; /*hack*/
         appearance: unset;
         color-scheme: unset !important;
         flex: 1 1 100%;
@@ -277,7 +281,7 @@ var SidebarModoki = {
       }
 
       #SM_header {
-        background-color: var(--toolbar-field-background-color, var(--toolbar-bgcolor));
+        background-color: var(var(--toolbar-bgcolor));
         padding: 6px !important;
         border-bottom: 0px solid transparent !important;
         color: inherit !important;
@@ -288,6 +292,7 @@ var SidebarModoki = {
         left: 0;
         right: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding) - 1px);
         z-index: 1;
+        overflow: hidden;
       }
 
       #SM_toolbox:not([open="true"]) > #SM_header {
@@ -299,7 +304,16 @@ var SidebarModoki = {
         left: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
       }
 
-      #SM_toolbox .sm-icon {
+      #SM_controls {
+        position: absolute;
+        right: 0;
+        height: 100%;
+        background-color: var(--toolbar-bgcolor);
+        padding-block: 4px;
+        gap: 2px;
+      }
+
+      #SM_controls > toolbarbutton {
         appearance: none !important;
         -moz-context-properties: fill, fill-opacity;
         border-radius: 4px;
@@ -310,16 +324,11 @@ var SidebarModoki = {
         height: auto;
       }
 
-      #SM_toolbox .sm-icon > .toolbarbutton-icon {
-        margin: 0 !important;
-      }
-
-      #SM_toolbox .sm-icon:hover {
-        background-color: color-mix(in srgb, currentColor 10%, transparent) !important;
-      }
-
       #SM_openInTabButton {
-        list-style-image: url("chrome://devtools/skin/images/dock-undock.svg");
+        list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNNCAxYTMgMyAwIDAgMC0zIDN2OGEzIDMgMCAwIDAgMyAzaDQuNWEuNS41IDAgMCAwIDAtMUg0YTIgMiAwIDAgMS0yLTJWNGEyIDIgMCAwIDEgMi0yaDhhMiAyIDAgMCAxIDIgMnYyLjVhLjUuNSAwIDAgMCAxIDBWNGEzIDMgMCAwIDAtMy0zSDR6bTIuNTA4IDVBLjUuNSAwIDAgMCA2IDYuNDk0VjExLjVhLjUuNSAwIDEgMCAxIDBWNy43MDdsNi4xNDYgNi4xNDZhLjUuNSAwIDAgMCAuNzA3LS43MDdMNy43MDcgN0gxMS41YS41LjUgMCAwIDAgMC0xSDYuNTA4eiIvPgo8L3N2Zz4K");
+        > image {
+          transform: rotateY(180deg)
+        }
       }
 
       toolbar[brighttext]:-moz-lwtheme #SM_tabbox {
@@ -414,9 +423,10 @@ var SidebarModoki = {
       ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "right" : "left" },
         ["hbox", { id: "SM_header", align: "center" },
           ["label", {}, "SidebarModoki"],
-          ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
-          ["toolbarbutton", { id: "SM_openInTabButton", class: "sm-icon tabbable", tooltiptext: "Open In New Tab", oncommand: "SidebarModoki.openInTab();" }],
-          ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
+          ["toolbaritem", { id: "SM_controls", class: "chromeclass-toolbar-additional toolbaritem-combined-buttons" },
+            ["toolbarbutton", { id: "SM_openInTabButton", class: "sm-icon tabbable", tooltiptext: "Open In New Tab", oncommand: "SidebarModoki.openInTab();" }],
+            ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
+          ],
         ],
         ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
           ["tabs", { id: "SM_tabs" },
@@ -666,12 +676,14 @@ var SidebarModoki = {
       if (selectedTab.hasAttribute("label")) {
         document.querySelector("#SM_header label").innerHTML = selectedTab.getAttribute("label");
       }
-      document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+      this.ToolBox.style.setProperty("width", width + "px", "");
+      this.ToolBox.style.setProperty("--sm-width", width + "px", "");
       if (selectedTab.linkedBrowser.src.startsWith("http")) {
         document.getElementById("SM_openInTabButton").style.visibility = "visible";
       } else {
         document.getElementById("SM_openInTabButton").style.visibility = "collapse";
       }
+      this._lastSelectedIndex = aIndex;
     }
   },
 
@@ -710,6 +722,7 @@ var SidebarModoki = {
   close: function () {
     this.prefs.setBoolPref(this.kSM_Open, false);
     this.ToolBox.style.width = null;
+    this.ToolBox.style.removeProperty("--sm-width");
   },
 
   //ここからは, 大きさの調整
@@ -748,15 +761,16 @@ var SidebarModoki = {
     }
   },
 
-  setPanelWidth: function(tabNo, width) {
+  setPanelWidth: function (tabNo, width) {
     if (typeof width !== "number") {
       return false;
     }
+    this.ToolBox.style.setProperty("--sm-width", width + "px", "");
     let aIndex = tabNo.toString();
     return this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
   },
 
-  getPanelWidth: function(tabNo) {
+  getPanelWidth: function (tabNo) {
     let aIndex = tabNo.toString();
     let width = this.prefs.getIntPref(this.kSM_lastSelectedTabWidth + aIndex, this.SM_WIDTH);
     return width;
