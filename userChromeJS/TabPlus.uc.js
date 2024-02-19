@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
-// @version         1.0.2
+// @version         1.0.3
 // @license         MIT License
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.0.3 兼容 TST 扩展 Switch Tab On Hover，依赖扩展 TST Hoverswitch
 // ==/UserScript==
 (async function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
@@ -651,6 +652,27 @@
             win || (win = window);
             let list = win.document.getElementById("vertical-tabs-list");
             if (list) list.addEventListener('mouseover', this, false);
+            AddonManager.getAddonByID('tst-hoverswitch@klemens.io').then(addon => {
+                if (addon) {
+                    if (cPref.get("userChrome.tabs.verticalTabsPane.switchOnHover", true)) {
+                        addon.isActive || addon.enable();
+                    } else {
+                        addon.isActive && addon.disable();
+                    }
+                }
+            })
+            cPref.addListener(this.PREF, this.listener);
+        },
+        listener(value, pref) {
+            AddonManager.getAddonByID('tst-hoverswitch@klemens.io').then(addon => {
+                if (addon) {
+                    if (value) {
+                        addon.isActive || addon.enable();
+                    } else {
+                        addon.isActive && addon.disable();
+                    }
+                }
+            })
         },
         handleEvent(event) {
             if (!cPref.get(this.PREF, false)) return;
