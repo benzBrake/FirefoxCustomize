@@ -99,6 +99,7 @@ var SidebarModoki = {
   // -- config --
 
   kSM_Open: "userChrome.SidebarModoki.Open",
+  kSM_Visible: "userChrome.SidebarModoki.Visible",
   kSM_lastSelectedTabIndex: "userChrome.SidebarModoki.lastSelectedTabIndex",
   kSM_lastSelectedTabWidth: "userChrome.SidebarModoki.lastSelectedTabWidth",
   ToolBox: null,
@@ -212,11 +213,11 @@ var SidebarModoki = {
       }
       #SM_toolbox[position="left"] {
         order: -1 !important;
-        border-right: 1px solid var(--chrome-content-separator-color);
+        border-right: 1px solid var(--chrome-content-separator-color) !important;
       }
       #SM_toolbox[position="right"] {
         order: 10 !important;
-        border-left: 1px solid var(--chrome-content-separator-color);
+        border-left: 1px solid var(--chrome-content-separator-color) !important;
       }
       #SM_toolbox[open="true"][position="left"] + #SM_splitter {
         border-right: 1px solid var(--chrome-content-separator-color) !important;
@@ -230,6 +231,9 @@ var SidebarModoki = {
       #SM_toolbox[collapsed],
       #SM_toolbox[moz-collapsed="true"] {
         visibility:visible;
+      }
+      #SM_toolbox[aria-hidden="true"] {
+        display: none !important;
       }
       /*visibility*/
       #SM_splitter[collapsed],
@@ -420,7 +424,7 @@ var SidebarModoki = {
     document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
     //to do xxx ordinal=xx shoud be replaced with style="-moz-box-ordinal-group: xx;"
     template =
-      ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "right" : "left" },
+      ["vbox", { id: "SM_toolbox", class: "browser-toolbar", position: this.SM_RIGHT ? "right" : "left" },
         ["hbox", { id: "SM_header", align: "center" },
           ["label", {}, "SidebarModoki"],
           ["toolbaritem", { id: "SM_controls", class: "chromeclass-toolbar-additional toolbaritem-combined-buttons" },
@@ -558,6 +562,8 @@ var SidebarModoki = {
       browser.linkTab = tab;
     }.bind(this));
 
+    this.addMenu();
+
     setTimeout(function () { this.observe(); this.onKSMOpen({}); }.bind(this), 0);
 
     //F11 fullscreen
@@ -597,6 +603,16 @@ var SidebarModoki = {
     */
   },
 
+  addMenu: function () {
+    document.getElementById("toolbarItemsMenuSeparator").after(this.jsonToDOM([
+      'menuitem', { id: 'toggle_sidebar-modoki', label: 'SidebarModoki', type: 'checkbox', label: 'Sidebar Modoki', oncommand: 'SidebarModoki.toggleVisible(event);', checked: this.getPref(this.kSM_Visible, "bool", true) }
+    ], document, {}))
+  },
+
+  toggleVisible: function (e) {
+    this.isMenuTriggered = true;
+    this.prefs.setBoolPref(this.kSM_Visible, e.target.getAttribute("checked") == "true");
+  },
 
   observe: function () {
     this.ToolBox = document.getElementById("SM_toolbox");
@@ -624,6 +640,20 @@ var SidebarModoki = {
 
     Services.prefs.addObserver(this.kSM_Open, (p, v) => {
       this.onKSMOpen({});
+    });
+
+    this.ToolBox.setAttribute("aria-hidden", !this.prefs.getBoolPref(this.kSM_Visible, true));
+
+    Services.prefs.addObserver(this.kSM_Visible, (p, msg) => {
+      let status = Services.prefs.getBoolPref(this.kSM_Visible, true)
+      if (!this.isMenuTriggered) {
+        if (status)
+          document.getElementById('toggle_sidebar-modoki').setAttribute("checked", status);
+        else
+          document.getElementById('toggle_sidebar-modoki').removeAttribute("checked");
+      }
+      this.ToolBox.setAttribute("aria-hidden", !status);
+      this.isMenuTriggered = false;
     });
 
     // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
