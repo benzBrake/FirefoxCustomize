@@ -73,14 +73,6 @@ var SidebarModoki = {
     "data-l10n-id": "appmenuitem-downloads",
     image: "chrome://browser/skin/downloads/downloads.svg",
   }, {
-    "addon-id": "treestyletab@piro.sakura.ne.jp",
-    src: "sidebar/sidebar.html",
-    label: "Tree Style Tab",
-  }, {
-    "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
-    src: "popup/index.html",
-    label: "Bitwarden"
-  }, {
     src: "https://music.youtube.com",
     label: "YouTube Music"
   }, {
@@ -228,11 +220,11 @@ var SidebarModoki = {
       .SM_toolbarspring {
           max-width: unset !important;
       }
-      #SM_toolbox[collapsed],
-      #SM_toolbox[moz-collapsed="true"] {
+      #SM_toolbox[collapsed] {
         visibility:visible;
       }
-      #SM_toolbox[aria-hidden="true"] {
+      #SM_toolbox[aria-hidden="true"],
+      #SM_toolbox[moz-collapsed="true"]{
         display: none !important;
       }
       /*visibility*/
