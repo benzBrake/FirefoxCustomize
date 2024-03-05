@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.6
+// @version         1.3.7
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.7 中键单击地址栏复制当前地址，修改切换书签栏按钮图标
 // @version         1.3.6 书签工具栏更多菜单自动适应弹出位置
 // @version         1.3.5 新增中建点击图标才添加书签的功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly，默认不启用）
 // @version         1.3.4 新增中建点击添加书签功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick，默认不启用）
@@ -131,6 +132,20 @@
                 event.target.ownerGlobal.setToolbarVisibility(toolbar, toolbar.collapsed);
                 event.target.disabled = false;
             }, 50);
+        },
+        oncreated(btn) {
+            function setImage(el) {
+                let visibility = Services.prefs.getStringPref("browser.toolbars.bookmarks.visibility", "always");
+                if (visibility === "always") {
+                    el.style.listStyleImage = "url('chrome://browser/skin/bookmarks-toolbar.svg')";
+                } else {
+                    el.style.listStyleImage = "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDE2IDE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTE0IDMuMjVIMmEuNzUuNzUgMCAwIDAtLjc1Ljc1djhjMCAuNDE0LjMzNi43NS43NS43NWgxMmEuNzUuNzUgMCAwIDAgLjc1LS43NVY0YS43NS43NSAwIDAgMC0uNzUtLjc1Wk0yIDJhMiAyIDAgMCAwLTIgMnY4YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY0YTIgMiAwIDAgMC0yLTJIMloiIGNsaXAtcnVsZT0iZXZlbm9kZCIvPjxwYXRoIGQ9Ik03LjU4MyA0LjI5NGEuNDQyLjQ0MiAwIDAgMSAuODM0IDBsLjc1NSAxLjk2N2EuNDUxLjQ1MSAwIDAgMCAuMzg2LjI5M2wyLjAyMy4xNDRjLjQwNC4wMjguNTY4LjU1Ny4yNTcuODI4bC0xLjU1NSAxLjM1OWEuNDgyLjQ4MiAwIDAgMC0uMTQ4LjQ3NGwuNDk1IDIuMDU2Yy4wOTguNDEtLjMzMi43MzctLjY3NC41MTJMOC4yMzkgMTAuOGEuNDMyLjQzMiAwIDAgMC0uNDc4IDBsLTEuNzE3IDEuMTI3Yy0uMzQyLjIyNS0uNzcyLS4xMDItLjY3NC0uNTEybC40OTUtMi4wNTZhLjQ4Mi40ODIgMCAwIDAtLjE0OC0uNDc0TDQuMTYyIDcuNTI2Yy0uMzEtLjI3MS0uMTQ3LS44LjI1Ny0uODI4bDIuMDIzLS4xNDRhLjQ1MS40NTEgMCAwIDAgLjM4Ni0uMjkzbC43NTUtMS45NjdaIi8+PC9zdmc+')";
+                }
+            }
+            setImage(btn);
+            Services.prefs.addObserver("browser.toolbars.bookmarks.visibility", function () {
+                setImage(btn);
+            });
         }
     }
 
@@ -386,6 +401,12 @@
                         }
                     }
                     break;
+                case 'click':
+                    if (event.button == 1) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        copyText(gBrowser.selectedTab.linkedBrowser.currentURI.spec);
+                    }
             }
         },
         handlePlacesChevronEvent: (event) => {
@@ -423,6 +444,7 @@
                 $('PlacesToolbarItems').addEventListener('mousedown', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('click', this.handlePlacesToolbarEvent, false);
                 document.addEventListener('mouseup', this.handlePlacesToolbarEvent, false);
+                document.getElementById('urlbar').addEventListener('click', BookmarkOpt.handleUrlBarEvent, false);
                 document.getElementById('urlbar').addEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
 
                 if (typeof BTN_CFG !== 'undefined' && 'id' in BTN_CFG) {
@@ -476,6 +498,7 @@
                 $('PlacesToolbarItems').removeEventListener('mousedown', this.handlePlacesToolbarEvent, false);
                 document.removeEventListener('mouseup', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
+                document.getElementById('urlbar').removeEventListener('click', BookmarkOpt.handleUrlBarEvent, false);
                 if (this.PlacesChevronObserver) {
                     this.PlacesChevronObserver.disconnect();
                 }
@@ -524,7 +547,11 @@
             if (!skipAttrs.includes(key)) {
                 if (typeof obj[key] === 'function') {
                     if (key.startsWith('on')) {
-                        el.addEventListener(key.slice(2), obj[key]);
+                        if (key.toLocaleLowerCase() === "oncreated") {
+                            obj[key](el);
+                        } else {
+                            el.addEventListener(key.slice(2), obj[key]);
+                        }
                     } else {
                         el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
                     }
