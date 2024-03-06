@@ -3,9 +3,10 @@
 // @description     鼠标拖拽 Drag & Go，来自于 Mozilla-Russia 论坛，Ryan 修改自用
 // @author          Ryan, Dumby
 // @include         main
-// @version         2024.02.29
+// @version         2024.03.06
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @referenceURL    https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234
+// @note            2024.03.06 增加复制链接文本
 // @note            2024.02.29 修复站内搜索失效
 // @onlyonce
 // ==/UserScript==
@@ -41,6 +42,14 @@
                 },
                 {
                     dir: "L",
+                    name: "复制链接文本",
+                    cmd(val) {
+                        this.copyString(this.linkText);
+                    }
+                },
+                {
+                    dir: "L",
+                    shift: true,
                     name: "复制链接",
                     cmd(val) {
                         this.copyString(val);
@@ -422,10 +431,10 @@
 
             var dt = e.dataTransfer;
             this.gesture = this.gestures.link;
-            this.dir = this.val = "";
+            this.dir = this.val = this.linkText = "";
+
 
             var url = dt.getData("text/x-moz-url-data");
-            
             if (url) {
                 this.val = url;
                 if (this.imageLinkRe.test(url)) {
@@ -440,6 +449,8 @@
                         // force to image type when ctrlKey is pressed
                         this.gesture = this.gestures.image;
                         this.val = promiseUrl;
+                    } else {
+                        this.linkText = doc.querySelector('a').innerText || doc.querySelector('a').href;
                     }
                 }
             } else {
@@ -482,7 +493,7 @@
                     txtArray.push("鼠标手势：" + dir + " " + g.name)
                 });
             }
-            
+
 
             window.StatusPanel._labelElement.value = txtArray.join(", ");
             window.StatusPanel.panel.removeAttribute("inactive");
@@ -496,7 +507,7 @@
 
             var x = e.screenX, y = e.screenY;
             var wx = window.mozInnerScreenX, wy = window.mozInnerScreenY;
-            if(x > wx && y > wy && x < wx + window.innerWidth && y < wy + window.innerHeight) {
+            if (x > wx && y > wy && x < wx + window.innerWidth && y < wy + window.innerHeight) {
                 obj.forEach(g => {
                     g.cmd.call(this, this.val, e)
                 })
@@ -531,7 +542,7 @@
     function filterGestures(gesture, dir, event) {
         let obj = gesture.filter(g => g.dir === dir);
         if (event.shiftKey) {
-            obj = obj.filter(g.shift);
+            obj = obj.filter(g => g.shift);
         } else {
             obj = obj.filter(g => !g.shift);
         }
