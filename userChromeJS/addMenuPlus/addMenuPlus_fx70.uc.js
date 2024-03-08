@@ -12,7 +12,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           0.2.1 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox, 修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件
+// @note           0.2.1 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox, 修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 resource url 获取选中文本，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数, Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
 // @note           0.2.0 采用 JSWindowActor 与内容进程通信（替代 e10s 时代的 loadFrameScript，虽然目前还能用），修复 onshowing 仅在页面右键生效的 bug，修复合并窗口后 CSS 失效的问题
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
@@ -1415,12 +1415,22 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (engine) {
                         if (isPromise(engine)) {
                             engine.then(function (engine) {
-                                if (engine.iconURI) menu.setAttribute("image", engine.iconURI.spec);
+                                let iconURL = getIconURL(engine)
+                                if (iconURL) menu.setAttribute("image", iconURL);
                             });
                         } else if (engine.iconURI) {
+                            // 非异步只能从 iconURI 获取
                             menu.setAttribute("image", engine.iconURI.spec);
                         }
                         return;
+                    }
+                    function getIconURL(engine) {
+                        if (typeof engine.getIconURL === "function") {
+                            // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
+                            return engine.getIconURL();
+                        } else if ("iconURI" in engine) {
+                            return engine.iconURI.spec;
+                        }
                     }
                 }
                 var setIconCallback = function (url) {
