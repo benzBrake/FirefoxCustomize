@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.1
+// @version         0.2.2
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.2 转换 unified-extensions-item 的图标为 CSS，方便使用 userChrome.css 覆盖图标，修复向上/向下按钮一处无影响报错以及显示问题，修复部分扩展无法打开设置页面的问题
 // @note            0.2.1 增加从工具栏隐藏按钮
 // @note            0.2.0 增加复制 ID 功能
 // @note            0.1.9 新增固定到工具栏，上移，下移按钮，调整面板宽度
@@ -225,6 +226,12 @@
             .unified-extensions-list unified-extensions-item > .unified-extensions-item-action-button {
                 margin: var(--arrowpanel-menuitem-margin);
             }
+            #unified-extensions-area > toolbaritem:first-child > .unified-extensions-item-up,
+            #unified-extensions-area > toolbaritem:last-child > .unified-extensions-item-down,
+            unified-extensions-item > :is(.unified-extensions-item-up,.unified-extensions-item-down) {
+                opacity: .2;
+                cursor: not-allowed;
+            }
             `)),
             type: 2
         },
@@ -297,6 +304,15 @@
         removeAdditionalButtons(node) {
             $QA(".ue-btn", node).forEach(el => $R(el));
         },
+        convertSrcToStyle(node) {
+            if (node.tagName.toLowerCase() !== "unified-extensions-item") return;
+            let btn = node.firstElementChild;
+            let image = btn.querySelector(":scope>image");
+            if (image && image.hasAttribute("src")) {
+                btn.style.listStyleImage = `url("${image.getAttribute("src")}")`;
+                image.removeAttribute("src");
+            }
+        },
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
                 await this.refreshAddonsList(event.target);
@@ -332,7 +348,7 @@
                     case "option":
                         let { parentNode } = button, addon;
                         if (parentNode.localName === "unified-extensions-item") {
-                            addon = parentNode.addon;
+                            addon = "addon" in parentNode ? parentNode.addon : parentNode.extension;
                         } else {
                             addon = await AddonManager.getAddonByID(parentNode.getAttribute("data-extensionid"));
                         }
@@ -356,7 +372,18 @@
                         }
                         break;
                     case "up":
+                        // if event.target's parent element (addon button) is first child then return
+                        if (event.target.parentElement.previousElementSibling === null) {
+                            return;
+                        }
                     case "down":
+                        // if event.target's parent element (addon button) is last child then return
+                        if (uniAction === "down" && event.target.parentElement.nextElementSibling === null) {
+                            return;
+                        }
+                        if (event.target.parentElement.tagName.toLowerCase() === "unified-extensions-item") {
+                            return;
+                        }
                         let moveWidget;
                         eval('moveWidget = ' + gUnifiedExtensions.moveWidget.toString("").replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "async function moveWidget"));
                         moveWidget(event.target, uniAction);
@@ -386,6 +413,7 @@
             for (const el of area.querySelectorAll('.unified-extensions-item')) {
                 this.removeAdditionalButtons(el);
                 this.createAdditionalButtons(el);
+                this.convertSrcToStyle(el);
                 const extensionId = el.getAttribute('data-extensionid');
                 const extension = await AddonManager.getAddonByID(extensionId);
                 if (!extension.optionsURL) {
@@ -411,6 +439,7 @@
             for (const el of list.querySelectorAll("unified-extensions-item")) {
                 this.removeAdditionalButtons(el);
                 this.createAdditionalButtons(el);
+                this.convertSrcToStyle(el);
                 const extensionId = el.getAttribute('extension-id');
                 const extension = await AddonManager.getAddonByID(extensionId);
                 if (!extension.optionsURL) {
