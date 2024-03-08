@@ -7,7 +7,7 @@
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @note            0.2.2 转换 unified-extensions-item 的图标为 CSS，方便使用 userChrome.css 覆盖图标，修复向上/向下按钮一处无影响报错以及显示问题，修复部分扩展无法打开设置页面的问题
+// @note            0.2.2 转换 unified-extensions-item 的图标为 CSS，方便使用 userChrome.css 覆盖图标，修复向上/向下按钮一处无影响报错以及显示问题，修复部分扩展无法打开设置页面的问题，调整几个图标的尺寸
 // @note            0.2.1 增加从工具栏隐藏按钮
 // @note            0.2.0 增加复制 ID 功能
 // @note            0.1.9 新增固定到工具栏，上移，下移按钮，调整面板宽度
@@ -172,16 +172,16 @@
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
             #unified-extensions-view .unified-extensions-item-up {
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTAuODI4bC00Ljk1IDQuOTUtMS40MTQtMS40MTRMMTIgOGw2LjM2NCA2LjM2NC0xLjQxNCAxLjQxNHoiLz48L3N2Zz4=")
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMikiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTAuODI4bC00Ljk1IDQuOTUtMS40MTQtMS40MTRMMTIgOGw2LjM2NCA2LjM2NC0xLjQxNCAxLjQxNHoiLz48L3N2Zz4=")
             }
             #unified-extensions-view .unified-extensions-item-down {
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTMuMTcybDQuOTUtNC45NSAxLjQxNCAxLjQxNEwxMiAxNiA1LjYzNiA5LjYzNiA3LjA1IDguMjIyeiIvPjwvc3ZnPg==")
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMikiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTMuMTcybDQuOTUtNC45NSAxLjQxNCAxLjQxNEwxMiAxNiA1LjYzNiA5LjYzNiA3LjA1IDguMjIyeiIvPjwvc3ZnPg==")
             }
             #unified-extensions-view .unified-extensions-item-pin {
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiBmaWxsPSJjb250ZXh0LWZpbGwiPjxwYXRoIGQ9Ik0xMi4wMDAzIDNDMTcuMzkyNCAzIDIxLjg3ODQgNi44Nzk3NiAyMi44MTg5IDEyQzIxLjg3ODQgMTcuMTIwMiAxNy4zOTI0IDIxIDEyLjAwMDMgMjFDNi42MDgxMiAyMSAyLjEyMjE1IDE3LjEyMDIgMS4xODE2NCAxMkMyLjEyMjE1IDYuODc5NzYgNi42MDgxMiAzIDEyLjAwMDMgM1pNMTIuMDAwMyAxOUMxNi4yMzU5IDE5IDE5Ljg2MDMgMTYuMDUyIDIwLjc3NzcgMTJDMTkuODYwMyA3Ljk0ODAzIDE2LjIzNTkgNSAxMi4wMDAzIDVDNy43NjQ2IDUgNC4xNDAyMiA3Ljk0ODAzIDMuMjIyNzggMTJDNC4xNDAyMiAxNi4wNTIgNy43NjQ2IDE5IDEyLjAwMDMgMTlaTTEyLjAwMDMgMTYuNUM5LjUxNDk4IDE2LjUgNy41MDAyNiAxNC40ODUzIDcuNTAwMjYgMTJDNy41MDAyNiA5LjUxNDcyIDkuNTE0OTggNy41IDEyLjAwMDMgNy41QzE0LjQ4NTUgNy41IDE2LjUwMDMgOS41MTQ3MiAxNi41MDAzIDEyQzE2LjUwMDMgMTQuNDg1MyAxNC40ODU1IDE2LjUgMTIuMDAwMyAxNi41Wk0xMi4wMDAzIDE0LjVDMTMuMzgxIDE0LjUgMTQuNTAwMyAxMy4zODA3IDE0LjUwMDMgMTJDMTQuNTAwMyAxMC42MTkzIDEzLjM4MSA5LjUgMTIuMDAwMyA5LjVDMTAuNjE5NiA5LjUgOS41MDAyNiAxMC42MTkzIDkuNTAwMjYgMTJDOS41MDAyNiAxMy4zODA3IDEwLjYxOTYgMTQuNSAxMi4wMDAzIDE0LjVaIi8+PC9zdmc+")
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiBmaWxsPSJjb250ZXh0LWZpbGwiIHRyYW5zZm9ybT0ic2NhbGUoMS4xLCAxLjIpIj48cGF0aCBkPSJNMTIuMDAwMyAzQzE3LjM5MjQgMyAyMS44Nzg0IDYuODc5NzYgMjIuODE4OSAxMkMyMS44Nzg0IDE3LjEyMDIgMTcuMzkyNCAyMSAxMi4wMDAzIDIxQzYuNjA4MTIgMjEgMi4xMjIxNSAxNy4xMjAyIDEuMTgxNjQgMTJDMi4xMjIxNSA2Ljg3OTc2IDYuNjA4MTIgMyAxMi4wMDAzIDNaTTEyLjAwMDMgMTlDMTYuMjM1OSAxOSAxOS44NjAzIDE2LjA1MiAyMC43Nzc3IDEyQzE5Ljg2MDMgNy45NDgwMyAxNi4yMzU5IDUgMTIuMDAwMyA1QzcuNzY0NiA1IDQuMTQwMjIgNy45NDgwMyAzLjIyMjc4IDEyQzQuMTQwMjIgMTYuMDUyIDcuNzY0NiAxOSAxMi4wMDAzIDE5Wk0xMi4wMDAzIDE2LjVDOS41MTQ5OCAxNi41IDcuNTAwMjYgMTQuNDg1MyA3LjUwMDI2IDEyQzcuNTAwMjYgOS41MTQ3MiA5LjUxNDk4IDcuNSAxMi4wMDAzIDcuNUMxNC40ODU1IDcuNSAxNi41MDAzIDkuNTE0NzIgMTYuNTAwMyAxMkMxNi41MDAzIDE0LjQ4NTMgMTQuNDg1NSAxNi41IDEyLjAwMDMgMTYuNVpNMTIuMDAwMyAxNC41QzEzLjM4MSAxNC41IDE0LjUwMDMgMTMuMzgwNyAxNC41MDAzIDEyQzE0LjUwMDMgMTAuNjE5MyAxMy4zODEgOS41IDEyLjAwMDMgOS41QzEwLjYxOTYgOS41IDkuNTAwMjYgMTAuNjE5MyA5LjUwMDI2IDEyQzkuNTAwMjYgMTMuMzgwNyAxMC42MTk2IDE0LjUgMTIuMDAwMyAxNC41WiIvPjwvc3ZnPg==")
             }
             #unified-extensions-view .unified-extensions-item-unpin > .toolbarbutton-icon {
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJtMTIuMDAwMywzYzUuMzkyMSwwIDkuODc4MSwzLjg3OTc2IDEwLjgxODYsOWMtMC45NDA1LDUuMTIwMiAtNS40MjY1LDkgLTEwLjgxODYsOWMtNS4zOTIxOCwwIC05Ljg3ODE1LC0zLjg3OTggLTEwLjgxODY2LC05YzAuOTQwNTEsLTUuMTIwMjQgNS40MjY0OCwtOSAxMC44MTg2NiwtOXptMCwxNmM0LjIzNTYsMCA3Ljg2LC0yLjk0OCA4Ljc3NzQsLTdjLTAuOTE3NCwtNC4wNTE5NyAtNC41NDE4LC03IC04Ljc3NzQsLTdjLTQuMjM1NywwIC03Ljg2MDA4LDIuOTQ4MDMgLTguNzc3NTIsN2MwLjkxNzQ0LDQuMDUyIDQuNTQxODIsNyA4Ljc3NzUyLDd6bTAsLTIuNWMtMi40ODUzMiwwIC00LjUwMDA0LC0yLjAxNDcgLTQuNTAwMDQsLTQuNWMwLC0yLjQ4NTI4IDIuMDE0NzIsLTQuNSA0LjUwMDA0LC00LjVjMi40ODUyLDAgNC41LDIuMDE0NzIgNC41LDQuNWMwLDIuNDg1MyAtMi4wMTQ4LDQuNSAtNC41LDQuNXptMCwtMmMxLjM4MDcsMCAyLjUsLTEuMTE5MyAyLjUsLTIuNWMwLC0xLjM4MDcgLTEuMTE5MywtMi41IC0yLjUsLTIuNWMtMS4zODA3LDAgLTIuNTAwMDQsMS4xMTkzIC0yLjUwMDA0LDIuNWMwLDEuMzgwNyAxLjExOTM0LDIuNSAyLjUwMDA0LDIuNXoiLz4KICA8bGluZSBzdHJva2Utd2lkdGg9IjIiIHkyPSIyMy4xMzc4NSIgeDI9IjIzLjIwMDM1IiB5MT0iMC42Mzc1IiB4MT0iMC43IiBzdHJva2U9ImN1cnJlbnRDb2xvciIvPgo8L3N2Zz4=") !important;
+                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMSwgMS4yKSI+DQogIDxwYXRoIGQ9Im0xMi4wMDAzLDNjNS4zOTIxLDAgOS44NzgxLDMuODc5NzYgMTAuODE4Niw5Yy0wLjk0MDUsNS4xMjAyIC01LjQyNjUsOSAtMTAuODE4Niw5Yy01LjM5MjE4LDAgLTkuODc4MTUsLTMuODc5OCAtMTAuODE4NjYsLTljMC45NDA1MSwtNS4xMjAyNCA1LjQyNjQ4LC05IDEwLjgxODY2LC05em0wLDE2YzQuMjM1NiwwIDcuODYsLTIuOTQ4IDguNzc3NCwtN2MtMC45MTc0LC00LjA1MTk3IC00LjU0MTgsLTcgLTguNzc3NCwtN2MtNC4yMzU3LDAgLTcuODYwMDgsMi45NDgwMyAtOC43Nzc1Miw3YzAuOTE3NDQsNC4wNTIgNC41NDE4Miw3IDguNzc3NTIsN3ptMCwtMi41Yy0yLjQ4NTMyLDAgLTQuNTAwMDQsLTIuMDE0NyAtNC41MDAwNCwtNC41YzAsLTIuNDg1MjggMi4wMTQ3MiwtNC41IDQuNTAwMDQsLTQuNWMyLjQ4NTIsMCA0LjUsMi4wMTQ3MiA0LjUsNC41YzAsMi40ODUzIC0yLjAxNDgsNC41IC00LjUsNC41em0wLC0yYzEuMzgwNywwIDIuNSwtMS4xMTkzIDIuNSwtMi41YzAsLTEuMzgwNyAtMS4xMTkzLC0yLjUgLTIuNSwtMi41Yy0xLjM4MDcsMCAtMi41MDAwNCwxLjExOTMgLTIuNTAwMDQsMi41YzAsMS4zODA3IDEuMTE5MzQsMi41IDIuNTAwMDQsMi41eiIvPg0KICA8bGluZSBzdHJva2Utd2lkdGg9IjIiIHkyPSIyMy4xMzc4NSIgeDI9IjIzLjIwMDM1IiB5MT0iMC42Mzc1IiB4MT0iMC43IiBzdHJva2U9ImN1cnJlbnRDb2xvciIvPg0KPC9zdmc+") !important;
             }
             #unified-extensions-view .unified-extensions-item-option {
                 list-style-image: url("chrome://global/skin/icons/settings.svg");
@@ -305,12 +305,21 @@
             $QA(".ue-btn", node).forEach(el => $R(el));
         },
         convertSrcToStyle(node) {
-            if (node.tagName.toLowerCase() !== "unified-extensions-item") return;
-            let btn = node.firstElementChild;
-            let image = btn.querySelector(":scope>image");
-            if (image && image.hasAttribute("src")) {
-                btn.style.listStyleImage = `url("${image.getAttribute("src")}")`;
-                image.removeAttribute("src");
+            if (node.tagName.toLowerCase() === "unified-extensions-item") {
+                ;
+                let btn = node.firstElementChild;
+                let image = btn.querySelector(":scope>image");
+                if (image && image.hasAttribute("src")) {
+                    btn.style.listStyleImage = `url("${image.getAttribute("src")}")`;
+                    image.removeAttribute("src");
+                }
+            } else if (node.classList.contains("unified-extensions-item-action-button")) {
+                let btn = node.firstElementChild;
+                let image = btn.querySelector(".toolbarbutton-icon");
+                if (image && image.hasAttribute("src")) {
+                    btn.style.listStyleImage = `url("${image.getAttribute("src")}")`;
+                    image.removeAttribute("src");
+                }
             }
         },
         handleEvent: async function (event) {
@@ -439,7 +448,6 @@
             for (const el of list.querySelectorAll("unified-extensions-item")) {
                 this.removeAdditionalButtons(el);
                 this.createAdditionalButtons(el);
-                this.convertSrcToStyle(el);
                 const extensionId = el.getAttribute('extension-id');
                 const extension = await AddonManager.getAddonByID(extensionId);
                 if (!extension.optionsURL) {
@@ -452,6 +460,7 @@
                 if (!document.getElementById(actionId)) {
                     el.classList.add("addon-no-unpin");
                 }
+                this.convertSrcToStyle(el);
             };
         },
         getAllExtensions: async function () {
