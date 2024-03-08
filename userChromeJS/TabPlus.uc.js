@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
-// @version         1.0.3
+// @version         1.0.4
 // @license         MIT License
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.0.4 修复右键新标签页按钮不能兼容data:image 链接的bug
 // @note            1.0.3 兼容 TST 扩展 Switch Tab On Hover，依赖扩展 TST Hoverswitch
 // ==/UserScript==
 (async function (css) {
@@ -374,8 +375,7 @@
             content: $L("middle click not close popup")
         }]
     }
-    TabPlus.modules.loadHistoryInTabs = {
-        PREF: 'browser.tabs.loadHistoryInTabs',
+    TabPlus.modules.loadInTabs = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
@@ -386,7 +386,11 @@
             label: $L("search bar"), type: 'checkbox', pref: 'browser.search.openintab'
         }, {
             label: $L('bookmarks'), type: 'checkbox', pref: 'browser.tabs.loadBookmarksInTabs'
-        }, {
+        }],
+    }
+    TabPlus.modules.loadHistoryInTabs = {
+        PREF: 'browser.tabs.loadHistoryInTabs',
+        menus: [{
             label: $L('history'), type: 'checkbox', pref: 'browser.tabs.loadHistoryInTabs'
         }],
         replace(win) {
@@ -475,17 +479,19 @@
             gBrowser.tabContainer.removeEventListener('click', this, false);
         }
     }
-
-    TabPlus.modules.loadImageInBackground = {
-        PREF: 'browser.tabs.loadImageInBackground',
+    TabPlus.modules.loadInBackground = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
             content: $L("load in background")
         }, {
-            label: $L("image link"), type: 'checkbox', pref: 'browser.tabs.loadImageInBackground'
-        }, {
             label: $L("middle click link"), type: 'checkbox', pref: 'browser.tabs.loadInBackground',
+        }]
+    }
+    TabPlus.modules.loadImageInBackground = {
+        PREF: 'browser.tabs.loadImageInBackground',
+        menus: [{
+            label: $L("image link"), type: 'checkbox', pref: 'browser.tabs.loadImageInBackground'
         }, {}],
         replace(win) {
             win || (win = window);
@@ -741,7 +747,7 @@
                 let win = e.target.ownerGlobal;
                 let url = (win.readFromClipboard() || "").trim();
                 let where = !(e.ctrlKey || Services.prefs.getBoolPref("browser.urlbar.openintab", false)) ? 'current' : (e.shiftKey ? 'tabshifted' : 'tab');
-                if (/^((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
+                if (isDataURLBase64(url) || /^((https?|ftp|gopher|telnet|file|notes|ms-help|chrome|resource):((\/\/)|(\\\\))+[\w\d:#@%\/;$()~_\+-=\\\.&]*)/.test(url)) {
                     try {
                         switchToTabHavingURI(url, true);
                     } catch (e) {
@@ -766,6 +772,39 @@
                         openTrustedLinkIn(submission.uri.spec, 'tab', aAllowThirdPartyFixup);
                     });
 
+                }
+            }
+
+            function isDataURLBase64(url) {
+                if (typeof url !== 'string') {
+                    return false;
+                }
+
+                // 判断是否为 data URI scheme
+                if (!url.startsWith('data:')) {
+                    return false;
+                }
+
+                // 去除 data: 部分
+                const dataPart = url.slice(5);
+
+                // 检查是否包含 base64 编码
+                if (!dataPart.includes('base64,')) {
+                    return false;
+                }
+
+                // 检查 base64 编码是否有效
+                const base64Data = dataPart.split('base64,')[1];
+                return isValidBase64(base64Data);
+            }
+
+            function isValidBase64(base64String) {
+                try {
+                    // 使用 atob 解码 base64
+                    atob(base64String);
+                    return true;
+                } catch (e) {
+                    return false;
                 }
             }
         },
