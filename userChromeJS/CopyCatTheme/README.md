@@ -4,9 +4,7 @@
 
 ### 安装说明
 
-建议使用我组装的 userChrome.js 环境（ https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/Loader
-
-），不然可能无法使用主题选项。
+建议使用我组装的 userChrome.js 环境（[https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/Loader](https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/Loader)），不然可能无法使用主题选项。
 
 把`CopyCatTheme.zip`解压到`chrome`目录下即可
 
@@ -16,10 +14,39 @@
 
 ![UserThemesFolder](images/UserThemesFolder.jpg)
 
-比如 WaveFox 主题，来自于 https://github.com/QNetITQ/WaveFox，下载后吧 userChrome.css 以及附带的文件放入 chrome/UserStyles/WaveFox 下
+比如 WaveFox 主题，来自于 [https://github.com/QNetITQ/WaveFox](https://github.com/QNetITQ/WaveFox)，下载把吧 userChrome.css 以及附带的文件放入 chrome/UserStyles/WaveFox 下
+
+![Install WaveFox](images/WaveFox-Demo.png)
 
 然后热重载就可以在主题列表看到 WaveFox 了。
 
 ![HotReload](images/HotReload.jpg)
 
 ![ThemeOptions](images/ThemeOptions.png)
+
+### 其他问题
+
+1.如果想把菜单移动到三道杠菜单(AppMenu)
+
+在`about:config`里修改参数
+
+``userChromeJS.CopyCat.buildPanel` →`true`
+
+![](images/HotReload-In-AppMenu.png)
+
+2.如果你想把菜单移动到工具菜单里，在`about:config`里修改参数
+
+`userChromeJS.CopyCat.buildPanel`→`false`
+
+``userChromeJS.CopyCat.showInToolsMenu` →`true`
+
+![](images/HotReload-In-ToolsMenu.png)
+
+3.如何增加一个快速重新载入主题的按钮
+
+`userChromeJS.CopyCat.debug`→`true`
+
+![](images/HotReload-Button.png)
+
+
+
