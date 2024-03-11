@@ -30,7 +30,7 @@
 
 在`about:config`里修改参数
 
-``userChromeJS.CopyCat.buildPanel` →`true`
+`userChromeJS.CopyCat.buildPanel` →`true`
 
 ![](images/HotReload-In-AppMenu.png)
 
@@ -38,7 +38,7 @@
 
 `userChromeJS.CopyCat.buildPanel`→`false`
 
-``userChromeJS.CopyCat.showInToolsMenu` →`true`
+`userChromeJS.CopyCat.showInToolsMenu` →`true`
 
 ![](images/HotReload-In-ToolsMenu.png)
 
