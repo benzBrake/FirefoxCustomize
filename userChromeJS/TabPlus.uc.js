@@ -115,6 +115,9 @@
         get showOptionsInToolsMenu() {
             return typeof CopyCat === "undefined" ? cPref.get("userChromeJS.TabPlus.showOptionsInToolsMenu", true) : !cPref.get("userChromeJS.CopyCat.buildPanel", true);
         },
+        get showMenuIcon() {
+            return parseInt(Services.appinfo.version) < 90
+        },
         get menuitemTag() {
             return this.showOptionsInToolsMenu ? "menuitem" : "toolbarbutton";
         },
@@ -169,7 +172,7 @@
             let ins = $("devToolsSeparator", doc);
             let menu = ins.parentNode.insertBefore($C(doc, "menu", {
                 id: 'TabPlus-menu',
-                class: "menu-iconic",
+                class: this.showMenuIcon ? "menu-iconic" : "",
                 label: $L("tabplus settings"),
             }), ins);
             let menupopup = menu.appendChild($C(document, "menupopup", {
