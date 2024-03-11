@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name            miscMods.uc.js
-// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能）
+// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
 // @license         MIT License
 // @compatibility   Firefox 90
 // @version         0.1.2
@@ -16,23 +16,23 @@
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
     let config = {
-        "urlbar paste and go add accesskey": {
-            enabled: true,
+        "urlbar paste and go add accesskey": { // 地址栏右键粘贴并前往增加 AccessKey
+            enabled: true, // true 是启用， false 是禁用
             key: 'S'
         },
         "urlbar middle click copy url": true,
-        "searchbar paste and go add accesskey": {
-            enabled: true,
+        "searchbar paste and go add accesskey": { // 搜索框右键粘贴并搜索增加 AccessKey
+            enabled: true, // true 是启用， false 是禁用
             key: 'S'
         },
-        "star button box add middle and right click": true,
+        "star button box add middle and right click": true, // 书签按钮点击功能
         "reload button right click to force reload": true, // 右键点击刷新按钮强制刷新
-        "right click extensions options menu button to open addons management": true, // https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/extensionOptionsMenu.uc.js
+        "right click panel ui button to open sidebar": true, // 右键点击三道杠按钮打开侧边栏
+        "right click extensions options menu button to open addons management": false, // https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/extensionOptionsMenu.uc.js
         "right click styloaix button to open themes management": true, // https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/styloaix.uc.js
         "downloads button add middle and right click": true, // 中键点击保存剪贴板链接，右键打开下载管理
-        "modify sidebar button behavior": true, // 左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏
-        "ctrl f to toggle findbar": true, // Ctrl + F 开关查抄栏
-        "warn on quit when one tab left": true // 只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能）
+        "modify sidebar button behavior": true, // 左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏, 双击侧边栏标题按钮切换侧边栏方向
+        "ctrl f to toggle findbar": true, // Ctrl + F 开关查找栏,
     }
 
     function MiscUtils() {
@@ -116,6 +116,23 @@
                     };
                     reload.addEventListener('mouseover', callback);
                 }
+            }
+            if (config["right click panel ui button to open sidebar"]) {
+                var OpenAllTabs = document.getElementById('PanelUI-menu-button');
+                if (!OpenAllTabs) return;
+                OpenAllTabs.addEventListener("click", function (e) {
+                    if (e.button == 2) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (document.getElementById("sidebar-button")) {
+                            document.getElementById("sidebar-button").click();
+                        } else {
+                            SidebarUI.toggle("viewBookmarksSidebar");
+                        }
+                        Services.prefs.setBoolPref("sidebar.position_start", false);
+                    }
+                }, false);
+
             }
             if (config["right click extensions options menu button to open addons management"] && CustomizableUI.getPlacementOfWidget('eom-button', true)) {
                 let eom = CustomizableUI.getWidget('eom-button').forWindow(window).node;
@@ -217,17 +234,45 @@
                     }
                     btn.addEventListener('click', clickFn);
                 }
+
+                if (document.getElementById("sidebar-header")) {
+                    let header = document.getElementById("sidebar-header");
+                    header.addEventListener('dblclick', ({ target }) => {
+                        if (target !== header) return;
+                        Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+                    });
+                }
+
+                if (window.SidebarModoki) {
+                    let header = document.getElementById("SM_header");
+                    if (!header) {
+                        // 使用 MutationObserver 等待 SM_header
+                        let observer = new MutationObserver(function (mutations) {
+                            mutations.forEach(function (mutation) {
+                                if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+                                    // mutation 的 ID 是 SM_header
+                                    header = document.getElementById("SM_header");
+                                    if (header) {
+                                        addEvent(header);
+                                        observer.disconnect();
+                                    }
+                                }
+                            });
+                        });
+                    } else {
+                        addEvent(header);
+                    }
+
+                    function addEvent(header) {
+                        header.addEventListener('dblclick', ({ target }) => {
+                            if (target !== header) return;
+                            Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+                        });
+                    }
+                }
             }
             if (config["ctrl f to toggle findbar"]) {
                 document.getElementById('cmd_find').setAttribute('oncommand', 'if (!gFindBar || gFindBar.hidden) { gLazyFindCommand("onFindCommand") } else { gFindBar.close() }');
-            }
-            if (config["warn on quit when one tab left"]) {
-                const { BrowserGlue } = ChromeUtils.import('resource:///modules/BrowserGlue.jsm');
-                const gTabbrowserBundle = Services.strings.createBundle('chrome://browser/locale/tabbrowser.properties');
-                eval('BrowserGlue.prototype._onQuitRequest = ' +
-                    BrowserGlue.prototype._onQuitRequest.toString()
-                        .replace('pagecount >= 2', 'pagecount >= 1')
-                );
             }
         }
     }
