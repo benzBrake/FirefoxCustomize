@@ -4,7 +4,9 @@
 
 ### 安装说明
 
-必须使用我组装的 userChrome.js 环境（https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/Loader），不然无法使用主题选项。
+建议使用我组装的 userChrome.js 环境（ https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/Loader
+
+），不然可能无法使用主题选项。
 
 把`CopyCatTheme.zip`解压到`chrome`目录下即可
 
