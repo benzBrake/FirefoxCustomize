@@ -5,7 +5,6 @@
 // @version         0.2.3
 // @compatibility   Firefox 78
 // @include         main
-// @include         chrome://userchrome/content/SubScript/CopyCat.html
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @version         0.2.3 完善 Debug 日志
@@ -535,6 +534,13 @@
                                 }
                             }
                         }
+                        // Support attribute insert for clone node
+                        ["style", "label", "tooltiptext", "type"].forEach(attr => {
+                            if (attr in obj) {
+                                dest.setAttribute('org' + attr.slice(0, 1).toUpperCase() + attr.slice(1), org.getAttribute(attr));
+                                org.setAttribute(attr, obj[attr]);
+                            }
+                        });
                         // fix menu-right
                         if (!obj.clone && obj["menu-right"]) {
                             dest.setAttribute("removeMenuRight", "true");
@@ -1094,17 +1100,17 @@
 
         window.CopyCat.init(window);
 
-        setTimeout(() => {
-            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-        }, 1000);
+        // setTimeout(() => {
+        //     CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        // }, 1000);
 
-        setTimeout(() => {
-            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-        }, 3000);
+        // setTimeout(() => {
+        //     CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        // }, 3000);
 
-        setTimeout(() => {
-            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-        }, 5000);
+        // setTimeout(() => {
+        //     CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        // }, 5000);
     }
 
     /**
