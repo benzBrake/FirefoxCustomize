@@ -534,6 +534,16 @@
                                 }
                             }
                         }
+
+                        // Add icon strut for none iconic menu
+                        if (("image" in obj || ("style" in obj && (obj.style.indexOf('list-style-image:') !== -1))) && dest.tagName.toLowerCase().startsWith("menu")) {
+                            if (dest.hasAttribute("class") && !dest.hasAttribute("orgClass")) {
+                                dest.setAttribute('orgClass', dest.getAttribute("class"));
+                            }
+                            dest.classList.add(dest.tagName.toLowerCase() + "-iconic");
+                            dest.setAttribute('removeMenuLeft', true);
+                        }
+
                         // Support attribute insert for clone node
                         ["style", "label", "tooltiptext", "type"].forEach(attr => {
                             if (attr in obj) {
@@ -1100,17 +1110,17 @@
 
         window.CopyCat.init(window);
 
-        // setTimeout(() => {
-        //     CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-        // }, 1000);
+        setTimeout(() => {
+            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        }, 1000);
 
-        // setTimeout(() => {
-        //     CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-        // }, 3000);
+        setTimeout(() => {
+            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        }, 3000);
 
-        // setTimeout(() => {
-        //     CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-        // }, 5000);
+        setTimeout(() => {
+            CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
+        }, 5000);
     }
 
     /**
