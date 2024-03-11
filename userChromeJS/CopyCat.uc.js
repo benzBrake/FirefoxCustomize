@@ -512,7 +512,7 @@
                             dest.setAttribute('class', obj.class);
                             if (obj.class.split(' ').includes("menu-iconic")) {
                                 // fix menu left icon
-                                if (!dest.firstChild?.classList.contains('menu-iconic-left')) {
+                                if (!dest.querySelector(':scope>.menu-iconic-left')) {
                                     let left = dest.insertBefore(createEl(doc, 'hbox', {
                                         class: 'menu-iconic-left',
                                         align: 'center',
@@ -524,8 +524,9 @@
                                     }));
                                     dest.setAttribute('removeMenuLeft', 'true');
                                 }
+
                                 // fix menu-text
-                                let nextEl = dest.firstChild?.nextSibling;
+                                let nextEl = dest.querySelector(":scope>.menu-text")
                                 if (nextEl && nextEl.localName.toLowerCase() === "label") {
                                     if (!nextEl.classList.contains("menu-iconic-text")) {
                                         nextEl.setAttribute('orgClass', nextEl.getAttribute("class"));
@@ -535,22 +536,14 @@
                             }
                         }
 
-                        // Add icon strut for none iconic menu
-                        if (("image" in obj || ("style" in obj && (obj.style.indexOf('list-style-image:') !== -1))) && dest.tagName.toLowerCase().startsWith("menu")) {
-                            if (dest.hasAttribute("class") && !dest.hasAttribute("orgClass")) {
-                                dest.setAttribute('orgClass', dest.getAttribute("class"));
-                            }
-                            dest.classList.add(dest.tagName.toLowerCase() + "-iconic");
-                            dest.setAttribute('removeMenuLeft', true);
-                        }
-
                         // Support attribute insert for clone node
-                        ["style", "label", "tooltiptext", "type"].forEach(attr => {
+                        ["image", "style", "label", "tooltiptext", "type"].forEach(attr => {
                             if (attr in obj) {
                                 dest.setAttribute('org' + attr.slice(0, 1).toUpperCase() + attr.slice(1), org.getAttribute(attr));
                                 org.setAttribute(attr, obj[attr]);
                             }
                         });
+
                         // fix menu-right
                         if (!obj.clone && obj["menu-right"]) {
                             dest.setAttribute("removeMenuRight", "true");
@@ -1052,7 +1045,10 @@
                         }
                         if (item.getAttribute("removeMenuLeft") == "true") {
                             $R(item.querySelector(":scope > .menu-iconic-left"));
-                            item.removeAttribute("removeMenuLeft")
+                            item.removeAttribute("removeMenuLeft");
+                            item.classList.remove("menu-iconic");
+                            let label = item.querySelector(':scope>.menu-iconic-text');
+                            if (label) label.className = 'menu-text';
                         }
                         if (item.getAttribute("removeMenuRight") == "true") {
                             $R(item.querySelector(":scope > .menu-right"));
@@ -1378,11 +1374,18 @@
     padding-block: 4px;
 }
 
+.CopyCat-Popup .menu-iconic > .menu-iconic-left {
+    order: -1;
+    -moz-box-ordinal-group: 0;
+}
+
 .CopyCat-Group > .menuitem-iconic:first-child,
 .CopyCat-Popup menugroup > .menuitem-iconic:first-child,
 .CopyCat-Popup menugroup:not(.showFirstText) > .menuitem-iconic {
     padding-inline-start: 1em;
 }
+
+.CopyCat-Popup .menu-iconic > .menu-iconic-left ~ .menu-iconic-left /** 不想研究为什么会多了一个结构 */,
 .CopyCat-Group:not(.showText):not(.showFirstText) > :is(menu, menuitem):not(.showText) > label,
 .CopyCat-Group.showFirstText > :is(menu, menuitem):not(:first-child) > label,
 .CopyCat-Group > :is(menu, menuitem) > .menu-accel-container,
