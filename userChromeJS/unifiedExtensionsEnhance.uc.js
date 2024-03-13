@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.2
+// @version         0.2.3
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.3 给工具栏扩展图标右键菜单增加复制 ID 功能
 // @note            0.2.2 转换 unified-extensions-item 的图标为 CSS，方便使用 userChrome.css 覆盖图标，修复向上/向下按钮一处无影响报错以及显示问题，修复部分扩展无法打开设置页面的问题，调整几个图标的尺寸
 // @note            0.2.1 增加从工具栏隐藏按钮
 // @note            0.2.0 增加复制 ID 功能
@@ -91,7 +92,6 @@
 
     const MENUS = {
         COPY_ID: {
-            class: "unified-extensions-context-menu-copy-id",
             "uni-action": "copy-id",
             label: "复制 ID",
         }
@@ -264,12 +264,23 @@
             // 增加禁用所有
             view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.DISABLE_ALL_ADDONS));
 
-            // 复制 ID
-            if (!$Q("." + MENUS.COPY_ID.class.replace(" ", "."))) {
-                $('unified-extensions-context-menu').insertBefore(createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension'));
+            view.addEventListener('ViewShowing', this);
+
+            if ("COPY_ID" in MENUS) {
+                // 复制 ID
+                if (!$Q("#unified-extensions-context-menu .unified-extensions-context-menu-copy-id")) {
+                    let menuitem = $('unified-extensions-context-menu').insertBefore(createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension'));
+                    menuitem.classList.add('unified-extensions-context-menu-copy-id');
+                }
+
+                if (!$Q("#toolbar-context-menu .customize-context-CopyExtensionId")) {
+                    let menuitem = createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID);
+                    menuitem.classList.add('customize-context-copyExtensionId');
+                    $Q('#toolbar-context-menu .customize-context-manageExtension').before(menuitem);
+                }
             }
 
-            view.addEventListener('ViewShowing', this);
+            $('toolbar-context-menu').addEventListener('popupshowing', this);
         },
         onPinToolbarChange(menu, event) {
             let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
@@ -311,14 +322,14 @@
                 let image = btn.querySelector(":scope>image");
                 if (image && image.hasAttribute("src")) {
                     btn.style.listStyleImage = `url("${image.getAttribute("src")}")`;
-                    image.removeAttribute("src");
+                    image.setAttribute("src", "");
                 }
             } else if (node.classList.contains("unified-extensions-item-action-button")) {
                 let btn = node.firstElementChild;
                 let image = btn.querySelector(".toolbarbutton-icon");
                 if (image && image.hasAttribute("src")) {
                     btn.style.listStyleImage = `url("${image.getAttribute("src")}")`;
-                    image.removeAttribute("src");
+                    image.setAttribute("src", "");
                 }
             }
         },
@@ -348,7 +359,7 @@
                         this.refreshAddonsList(panelview);
                         break;
                     case "disable":
-                        item = button.closest(".unified-extensions-item");
+                        item = item || button.closest(".unified-extensions-item");
                         let addonId = item.getAttribute("data-extensionid") || item.getAttribute("extension-id");
                         let extension = await AddonManager.getAddonByID(addonId);
                         await extension.disable();
@@ -414,6 +425,11 @@
                         parent.classList.add('addon-no-options');
                     }
                     this.createAdditionalButtons(parent);
+                }
+            } else if (event.type === "popupshowing") {
+                let elm = event.target;
+                if (elm.querySelector('.customize-context-copyExtensionId') && elm.querySelector('.customize-context-manageExtension')) {
+                    elm.querySelector('.customize-context-copyExtensionId').hidden = elm.querySelector('.customize-context-manageExtension').hidden;
                 }
             }
         },
@@ -511,7 +527,9 @@
             gUnifiedExtensions.onPinToToolbarChange = this.onPinToToolbarChange;
             gUnifiedExtensions.togglePanel = this.togglePanel;
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
-            $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')))
+            $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')));
+            $R($Q(".customize-context-copyExtensionId", $('toolbar-context-menu')));
+            $('toolbar-context-menu').addEventListener('popupshowing', this);
             if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
             delete window.unifiedExtensionsEnhance;
         }
