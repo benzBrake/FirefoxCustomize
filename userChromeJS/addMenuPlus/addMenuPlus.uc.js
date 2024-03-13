@@ -15,7 +15,7 @@
 // @oohomepageURL  https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image
+// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，condition 新增 bgImage
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
@@ -154,7 +154,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关，有需要再开
+    var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（非纯图标菜单的图标，Firefox 版本号小于90无效）
 
     let {
         classes: Cc,
@@ -491,7 +491,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             window.messageManager.addMessageListener("addMenu_selectionData", this);
 
             // Photon Compact
-            if (enableContentAreaContextMenuCompact)
+            if (enableContentAreaContextMenuCompact && this.appVersion >= 90)
                 $("contentAreaContextMenu").setAttribute("photoncompact", "true");
 
             // 响应鼠标键释放事件（eg：获取选中文本）
@@ -565,6 +565,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             state.push("canvas image");
                         if (gContextMenu.onImage)
                             state.push("image");
+                        if (gContextMenu.hasBGImage)
+                            state.push("bgImage");
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
