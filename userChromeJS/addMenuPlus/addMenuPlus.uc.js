@@ -999,6 +999,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } else {
                 popup = menu.appendChild($C("menupopup"));
             }
+
             for (let key in menuObj) {
                 let val = menuObj[key];
                 if (key === "_items") continue;
@@ -1052,10 +1053,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     let command = firstItem.getAttribute('command');
                     if (command)
                         firstItem = document.getElementById(command) || firstItem;
-                    ['label', 'accesskey', 'image', 'icon'].forEach(function (n) {
+                    ['label', 'accesskey', 'icon', 'tooltiptext'].forEach(function (n) {
                         if (!menu.hasAttribute(n) && firstItem.hasAttribute(n))
                             menu.setAttribute(n, firstItem.getAttribute(n));
                     }, this);
+                    if (menuObj.image || (firstItem.hasAttribute("image") ?? "").length || firstItem.style.listStyleImage) {
+                        menu.style.listStyleImage = menuObj.icon || firstItem.getAttribute("image") || firstItem.style.listStyleImage;
+                    }
                     menu.setAttribute('onclick', "\
                     if (event.target != event.currentTarget) return;\
                     var firstItem = event.currentTarget.querySelector('menuitem');\
@@ -1069,6 +1073,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 ");
                 }
             }
+
+            // 改用 listStyleImage 后 image 属性没用了
+            menu.removeAttribute("image");
+
             return menu;
         },
         newMenuitem: function (obj, opt) {
@@ -1348,8 +1356,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (menu.hasAttribute("src") || menu.hasAttribute("icon"))
                 return;
 
-            if (menu.hasAttribute("image") && /-iconic/.test(menu.className)) {
-                menu.style.listStyleImage = "url(" + menu.getAttribute("image") + ")";
+            if (obj.image && /-iconic/.test(menu.className)) {
+                menu.style.listStyleImage = "url(" + obj.image + ")";
                 menu.removeAttribute("image");
                 return;
             }
