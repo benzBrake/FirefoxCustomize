@@ -1409,7 +1409,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     } else {
                         if (aFile.isFile()) {
                             let fileURL = this.getURLSpecFromFile(aFile);
-                            menu.style.listStyleImage = "url(moz-icon://" + fileURL + "?size=16)";
+                            menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
                         } else {
                             menu.style.listStyleImage = "url(chrome://global/skin/icons/folder.svg)";
                         }
@@ -1457,7 +1457,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 let iconURL = aURI && aURI.spec ?
                                     "moz-anno:favicon:" + aURI.spec :
                                     "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico";
-                                menu.style.listStyleImage = `url(${iconURL})`;
+                                menu.setAttribute("image", iconURL);
                             } catch (e) { }
                         }
                     });

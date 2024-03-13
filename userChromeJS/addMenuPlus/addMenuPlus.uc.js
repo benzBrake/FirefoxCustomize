@@ -1368,7 +1368,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 } else {
                     if (aFile.isFile()) {
                         let fileURL = this.getURLSpecFromFile(aFile);
-                        menu.style.listStyleImage = "url(moz-icon://" + fileURL + "?size=16)";
+                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
                     } else {
                         menu.style.listStyleImage = "url(chrome://global/skin/icons/folder.svg)";
                     }
@@ -1416,7 +1416,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             let iconURL = aURI && aURI.spec ?
                                 "moz-anno:favicon:" + aURI.spec :
                                 "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico";
-                            menu.style.listStyleImage = `url(${iconURL})`;
+                            menu.setAttribute("image", iconURL);
                         } catch (e) { }
                     }
                 });
