@@ -7,6 +7,7 @@
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.4 给工具栏扩展图标右键菜单增加禁用扩展功能
 // @note            0.2.3 给工具栏扩展图标右键菜单增加复制 ID 功能
 // @note            0.2.2 转换 unified-extensions-item 的图标为 CSS，方便使用 userChrome.css 覆盖图标，修复向上/向下按钮一处无影响报错以及显示问题，修复部分扩展无法打开设置页面的问题，调整几个图标的尺寸
 // @note            0.2.1 增加从工具栏隐藏按钮
@@ -94,6 +95,10 @@
         COPY_ID: {
             "uni-action": "copy-id",
             label: "复制 ID",
+        },
+        DISABLE_ADDON: {
+            "uni-action": "disable",
+            label: "禁用扩展",
         }
     }
 
@@ -273,10 +278,18 @@
                     menuitem.classList.add('unified-extensions-context-menu-copy-id');
                 }
 
-                if (!$Q("#toolbar-context-menu .customize-context-CopyExtensionId")) {
+                if (!$Q("#toolbar-context-menu .customize-context-copyExtensionId")) {
                     let menuitem = createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID);
                     menuitem.classList.add('customize-context-copyExtensionId');
                     $Q('#toolbar-context-menu .customize-context-manageExtension').before(menuitem);
+                }
+            }
+
+            if ("DISABLE_ADDON" in MENUS) {
+                if (!$Q("#toolbar-context-menu .customize-context-disableExtension")) {
+                    let menuitem = createElWithClickEvent(document, 'menuitem', MENUS.DISABLE_ADDON);
+                    menuitem.classList.add('customize-context-disableExtension');
+                    $Q('#toolbar-context-menu .customize-context-removeExtension').before(menuitem);
                 }
             }
 
@@ -337,11 +350,11 @@
             if (event.type === "ViewShowing") {
                 await this.refreshAddonsList(event.target);
             } else if (event.type === "click") {
-                const { target: button } = event;
-                const panelview = button.closest("panelview");
-                if (!button.hasAttribute("uni-action")) return;
-                let item;
-                const uniAction = button.getAttribute("uni-action");
+                const { target: triggerItem } = event;
+                const panelview = triggerItem.closest("panelview");
+                if (!triggerItem.hasAttribute("uni-action")) return;
+                let item, extension;
+                const uniAction = triggerItem.getAttribute("uni-action");
                 switch (uniAction) {
                     case "enable-all":
                         let extensionsToBeEnable = await AddonManager.getAddonsByTypes(['extension']);
@@ -354,28 +367,37 @@
                             if (extension.isActive && !extension.isBuiltin) extension.disable();
                         break;
                     case "enable":
-                        item = button.closest("unified-extensions-item");
+                        item = triggerItem.closest("unified-extensions-item");
                         await (item.addon || item.extension).enable();
                         this.refreshAddonsList(panelview);
                         break;
                     case "disable":
-                        item = item || button.closest(".unified-extensions-item");
+                        if (triggerItem.closest("menupopup#toolbar-context-menu")) {
+                            let popup = triggerItem.closest("menupopup#toolbar-context-menu");
+                            if (popup) {
+                                // 从工具栏右键菜单触发
+                                item = popup.triggerNode;
+                            }
+                        } else {
+                            // 从按钮触发
+                            item = triggerItem.closest(".unified-extensions-item");
+                        }
                         let addonId = item.getAttribute("data-extensionid") || item.getAttribute("extension-id");
-                        let extension = await AddonManager.getAddonByID(addonId);
+                        extension = await AddonManager.getAddonByID(addonId);
                         await extension.disable();
                         this.refreshAddonsList(panelview);
                         break;
                     case "option":
-                        let { parentNode } = button, addon;
+                        let { parentNode } = triggerItem, addon;
                         if (parentNode.localName === "unified-extensions-item") {
                             addon = "addon" in parentNode ? parentNode.addon : parentNode.extension;
                         } else {
                             addon = await AddonManager.getAddonByID(parentNode.getAttribute("data-extensionid"));
                         }
-                        this.openAddonOptions(addon, button.ownerGlobal);
+                        this.openAddonOptions(addon, triggerItem.ownerGlobal);
                         break;
                     case "pin":
-                        uniItem = event.target.closest(".unified-extensions-item");
+                        uniItem = triggerItem.closest(".unified-extensions-item");
                         if (uniItem) {
                             this.removeAdditionalButtons(uniItem);
                             gUnifiedExtensions.pinToToolbar(uniItem.id, true);
@@ -383,7 +405,7 @@
                         }
                         break;
                     case "unpin":
-                        uniItem = event.target.closest("unified-extensions-item");
+                        uniItem = triggerItem.closest("unified-extensions-item");
                         if (uniItem) {
                             let extensionId = uniItem.getAttribute("extension-id");
                             let actionId = extensionId.replace("@", "_").replace(".", "_").replace("{", "_").replace("}", "_") + "-browser-action";
@@ -392,16 +414,16 @@
                         }
                         break;
                     case "up":
-                        // if event.target's parent element (addon button) is first child then return
-                        if (event.target.parentElement.previousElementSibling === null) {
+                        // if triggerItem's parent element (addon button) is first child then return
+                        if (triggerItem.parentElement.previousElementSibling === null) {
                             return;
                         }
                     case "down":
-                        // if event.target's parent element (addon button) is last child then return
-                        if (uniAction === "down" && event.target.parentElement.nextElementSibling === null) {
+                        // if triggerItem's parent element (addon button) is last child then return
+                        if (uniAction === "down" && triggerItem.parentElement.nextElementSibling === null) {
                             return;
                         }
-                        if (event.target.parentElement.tagName.toLowerCase() === "unified-extensions-item") {
+                        if (triggerItem.parentElement.tagName.toLowerCase() === "unified-extensions-item") {
                             return;
                         }
                         let moveWidget;
@@ -414,7 +436,7 @@
                         break;
                 }
 
-                if (!button.hasAttribute("closemenu") && event.button !== 1)
+                if (!triggerItem.hasAttribute("closemenu") && event.button !== 1)
                     event.target.closest("panel")?.hidePopup();
             } else if (event.type === "DOMSubtreeModified") {
                 let elm = event.target;
@@ -428,8 +450,12 @@
                 }
             } else if (event.type === "popupshowing") {
                 let elm = event.target;
-                if (elm.querySelector('.customize-context-copyExtensionId') && elm.querySelector('.customize-context-manageExtension')) {
+                if (!elm.querySelector('.customize-context-manageExtension')) return;
+                if (elm.querySelector('.customize-context-copyExtensionId')) {
                     elm.querySelector('.customize-context-copyExtensionId').hidden = elm.querySelector('.customize-context-manageExtension').hidden;
+                }
+                if (elm.querySelector('.customize-context-disableExtension')) {
+                    elm.querySelector('.customize-context-disableExtension').hidden = elm.querySelector('.customize-context-manageExtension').hidden;
                 }
             }
         },
@@ -529,6 +555,7 @@
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')));
             $R($Q(".customize-context-copyExtensionId", $('toolbar-context-menu')));
+            $R($Q(".customize-context-disableExtension", $('toolbar-context-menu')));
             $('toolbar-context-menu').addEventListener('popupshowing', this);
             if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
             delete window.unifiedExtensionsEnhance;
