@@ -15,7 +15,7 @@
 // @oohomepageURL  https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，condition 新增 bgImage
+// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
@@ -565,8 +565,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             state.push("canvas image");
                         if (gContextMenu.onImage)
                             state.push("image");
-                        if (gContextMenu.hasBGImage)
-                            state.push("bgImage");
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
@@ -1217,17 +1215,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 menuitem.setAttribute('tooltiptext', obj.label);
             }
 
-            // 转换 image 属性为 style 属性
-            if (menuitem.hasAttribute("image") && /-iconic/.test(menuitem.className)) {
-                menuitem.style.listStyleImage = "url(" + menuitem.getAttribute("image") + ")";
-                menuitem.removeAttribute("image");
+            // 如果没有 command 和 oncommand 则增加 oncommand
+            if (!(obj.oncommand || obj.command)) {
+                menuitem.setAttribute("oncommand", "addMenu.onCommand(event);");
             }
-
-            // oncommand, command はここで終了
-            if (obj.oncommand || obj.command)
-                return menuitem;
-
-            menuitem.setAttribute("oncommand", "addMenu.onCommand(event);");
 
             // 可能ならばアイコンを付ける
             this.setIcon(menuitem, obj);
@@ -1354,8 +1345,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         setIcon: function (menu, obj) {
 
-            if (menu.hasAttribute("src") || menu.hasAttribute("image") || menu.hasAttribute("icon"))
+            if (menu.hasAttribute("src") || menu.hasAttribute("icon"))
                 return;
+
+            if (menu.hasAttribute("image") && /-iconic/.test(menu.className)) {
+                menu.style.listStyleImage = "url(" + menu.getAttribute("image") + ")";
+                menu.removeAttribute("image");
+                return;
+            }
 
             if (obj.exec) {
                 var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
