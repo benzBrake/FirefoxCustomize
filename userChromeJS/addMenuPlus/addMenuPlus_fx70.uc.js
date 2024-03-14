@@ -173,7 +173,8 @@ if (typeof window === "undefined" || globalThis !== window) {
         var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
         var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
         var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-        var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（非纯图标菜单的图标，Firefox 版本号小于90无效）
+        var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+        var enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
         if (window && window.addMenu) {
             window.addMenu.destroy();
@@ -1081,9 +1082,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                             if (!menu.hasAttribute(n) && firstItem.hasAttribute(n))
                                 menu.setAttribute(n, firstItem.getAttribute(n));
                         }, this);
-                        if (menuObj.image || (firstItem.hasAttribute("image") ?? "").length || firstItem.style.listStyleImage) {
-                            menu.style.listStyleImage = menuObj.icon || firstItem.getAttribute("image") || firstItem.style.listStyleImage;
-                        }
+                        setImage(menu, menuObj.image || firstItem.getAttribute("image") || firstItem.style.listStyleImage.slice(4, -1));
                         menu.setAttribute('onclick', "\
                         if (event.target != event.currentTarget) return;\
                         var firstItem = event.currentTarget.querySelector('menuitem');\
@@ -1097,9 +1096,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                     ");
                     }
                 }
-
-                // 改用 listStyleImage 后 image 属性没用了
-                menu.removeAttribute("image");
 
                 return menu;
             },
@@ -1397,8 +1393,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return;
 
                 if (obj.image && /-iconic/.test(menu.className)) {
-                    menu.style.listStyleImage = "url(" + obj.image + ")";
-                    menu.removeAttribute("image");
+                    setImage(menu, obj.image);
                     return;
                 }
 
@@ -1412,13 +1407,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                     // if (!aFile.exists() || !aFile.isExecutable()) {
                     if (!aFile.exists()) {
                         menu.setAttribute("disabled", "true");
+                    } else if (aFile.isFile()) {
+                        let fileURL = this.getURLSpecFromFile(aFile);
+                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
                     } else {
-                        if (aFile.isFile()) {
-                            let fileURL = this.getURLSpecFromFile(aFile);
-                            menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
-                        } else {
-                            menu.style.listStyleImage = "url(chrome://global/skin/icons/folder.svg)";
-                        }
+                        setImage(menu, "chrome://global/skin/icons/folder.svg");
                     }
                     return;
                 }
@@ -1428,22 +1421,17 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (engine) {
                         if (isPromise(engine)) {
                             engine.then(function (engine) {
-                                let iconURL = getIconURL(engine)
-                                if (iconURL) menu.style.listStyleImage = `url("${iconURL}")`;
+                                setImage(menu, getIconURL(engine));
                             });
                         } else if (engine.iconURI) {
                             // 非异步只能从 iconURI 获取
-                            menu.style.listStyleImage = `url("${engine.iconURI.spec})"`;
+                            setImage(menu, engine.iconURI.spec);
                         }
                         return;
                     }
                     function getIconURL(engine) {
-                        if (typeof engine.getIconURL === "function") {
-                            // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
-                            return engine.getIconURL();
-                        } else if ("iconURI" in engine) {
-                            return engine.iconURI.spec;
-                        }
+                        // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
+                        return (engine._iconURI || engine.iconURI)?.spec || "chrome://browser/skin/search-engine-placeholder.png";
                     }
                 }
                 var setIconCallback = function (url) {
@@ -1987,6 +1975,17 @@ if (typeof window === "undefined" || globalThis !== window) {
                 typeof val.then === 'function' &&
                 typeof val.catch === 'function'
             )
+        }
+
+        function setImage(menu, imageUrl) {
+            if (imageUrl) {
+                if (enableConvertImageAttrToListStyleImage) {
+                    menu.style.listStyleImage = `url(${imageUrl})`;
+                    menu.removeAttribute("image");
+                } else {
+                    menu.setAttribute("image", imageUrl);
+                }
+            }
         }
 
         window.addMenu.init();
