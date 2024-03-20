@@ -30,6 +30,18 @@
             "param is invalid": "函数 [%s], 调用参数[%s]有误",
             "reload theme success": "主题重载完成",
             "Operation failed, please try again later": "操作失败，请稍后重试"
+        },
+        "en-US": {
+            "copycat themes management": "CopyCat Themes Management",
+            "copycat themes management tooltip": "CopyCat Themes Management\nLeft click: menu\nMiddle click: reload",
+            "theme settings": "Theme Settings",
+            "reload themes": "Reload Themes",
+            "open themes directory": "Open Themes Directory",
+            "theme options": "Theme Options",
+            "file not found": "File not found: %s",
+            "param is invalid": "Function [%s], parameter [%s] is invalid",
+            "reload theme success": "Reload theme success",
+            "Operation failed, please try again later": "Operation failed, please try again later"
         }
     }
 
@@ -1222,7 +1234,7 @@
     }
 
     function formatStr() {
-        const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
+        const LOCALE = LANG[Services.locale.appLocaleAsBCP47] ? Services.locale.appLocaleAsBCP47 : 'zh-CN';
         let str = arguments[0];
         if (str) {
             if (!arguments.length) return "";
