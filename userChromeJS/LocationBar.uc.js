@@ -140,12 +140,19 @@
 #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-icon, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-text, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-badge-stack {
     background-color: transparent;
 }
+#urlbar-input-container > #location-bar .chromeclass-toolbar-additional {
+    height: unset;
+    width: unset;
+}
 #urlbar-input-container > #location-bar .toolbarbutton-1 {
     width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
     height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
     border-radius: var(--urlbar-icon-border-radius);
-    padding: var(--urlbar-icon-padding) !important;
+    padding: 0 var(--urlbar-icon-padding) !important;
     color: inherit;
+}
+#urlbar-input-container > #location-bar :where(#reload-button, #stop-button) > .toolbarbutton-icon {
+    padding: var(--toolbarbutton-inner-padding) !important;
 }
 #urlbar-input-container > #location-bar .toolbarbutton-1:hover {
     background-color: var(--urlbar-box-hover-bgcolor);
