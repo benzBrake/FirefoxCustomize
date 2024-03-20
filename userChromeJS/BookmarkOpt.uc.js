@@ -9,9 +9,10 @@
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xul
-// @version         1.3.7
+// @version         1.3.8
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @version         1.3.8 添加书签到此处支持 PlacesChevron
 // @version         1.3.7 中键单击地址栏复制当前地址，修改切换书签栏按钮图标
 // @version         1.3.6 书签工具栏更多菜单自动适应弹出位置
 // @version         1.3.5 新增中建点击图标才添加书签的功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly，默认不启用）
@@ -439,8 +440,8 @@
             $('placesContext').addEventListener('popupshowing', this.handlePlacesContextEvent, false);
             $('placesContext').addEventListener('popuphidden', this.handlePlacesContextEvent, false);
             if (this.isMain) {
-                $('PlacesToolbarItems').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
-                $('PlacesToolbarItems').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbar').addEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbar').addEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('mousedown', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').addEventListener('click', this.handlePlacesToolbarEvent, false);
                 document.addEventListener('mouseup', this.handlePlacesToolbarEvent, false);
@@ -493,9 +494,10 @@
                 this.clearPanelItems(this.topWin.document);
                 let m = $("BookmarOpt-menu-options");
                 if (m) m.parentNode.removeChild(m);
-                $('PlacesToolbarItems').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
-                $('PlacesToolbarItems').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbar').removeEventListener('popupshowing', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbar').removeEventListener('popuphidden', this.handlePlacesToolbarEvent, false);
                 $('PlacesToolbarItems').removeEventListener('mousedown', this.handlePlacesToolbarEvent, false);
+                $('PlacesToolbarItems').removeEventListener('click', this.handlePlacesToolbarEvent, false);
                 document.removeEventListener('mouseup', this.handlePlacesToolbarEvent, false);
                 document.getElementById('urlbar').removeEventListener('dblclick', BookmarkOpt.handleUrlBarEvent, false);
                 document.getElementById('urlbar').removeEventListener('click', BookmarkOpt.handleUrlBarEvent, false);
