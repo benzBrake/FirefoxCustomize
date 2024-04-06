@@ -13,7 +13,7 @@
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Google字体库 >> 极客族",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -25,7 +25,7 @@
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Google前端库 >> 极客族",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -37,7 +37,7 @@
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Google字体文件-1 >> 极客族",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -49,7 +49,7 @@
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Google字体文件-2 >> 极客族",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -61,7 +61,7 @@
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Gravatar全球头像 >>极客族",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -73,7 +73,7 @@
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "jsdelivr cdn >> 渺软公益",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -95,32 +95,9 @@
 			"isFunction": false,
 			"action": "redirect",
 			"to": "https://weibo.com/"
-		},
-		{
-			"enable": true,
-			"name": "reCaptcha",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^http(s?)://(?:www\\.|recaptcha\\.|)google\\.com/recaptcha/(.*)",
-			"exclude": "",
-			"group": "重定向",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://recaptcha.net/recaptcha/$2"
 		}
 	],
 	"sendHeader": [
-		{
-			"enable": true,
-			"name": "Content Security Policy Header Modification",
-			"ruleType": "modifySendHeader",
-			"matchType": "all",
-			"pattern": "",
-			"exclude": "",
-			"group": "修改响应",
-			"isFunction": true,
-			"code": "let rt = detail.type;\nif (rt === 'script' || rt === 'stylesheet' || rt === 'main_frame' || rt === 'sub_frame') {\n  for (let i in val) {\n    if (val[i].name.toLowerCase() === 'content-security-policy') {\n      let s = val[i].value;\n      s = s.replace(/googleapis\\\\.com/g, '$& https://gapis.geekzu.org');\n      s = s.replace(/recaptcha\\\\.google\\\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/google\\\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/gstatic\\\\.com/g, '$& https://*.gstatic.cn');\n      val[i].value = s;\n    }\n  }\n}"
-		},
 		{
 			"name": "网站语言默认英文",
 			"ruleType": "modifySendHeader",
@@ -781,20 +758,6 @@
 		},
 		{
 			"enable": true,
-			"name": "西瓜视频 UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "prefix",
-			"pattern": "www.ixigua.com",
-			"exclude": "",
-			"group": "用户代理",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-			}
-		},
-		{
-			"enable": true,
 			"name": "CCAV UA",
 			"ruleType": "modifySendHeader",
 			"matchType": "domain",
@@ -820,6 +783,20 @@
 				"name": "user-agent",
 				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
 			}
+		},
+		{
+			"enable": true,
+			"name": "西瓜视频 UA",
+			"ruleType": "modifySendHeader",
+			"matchType": "domain",
+			"pattern": "www.ixigua.com",
+			"exclude": "",
+			"group": "用户代理",
+			"isFunction": false,
+			"action": {
+				"name": "user-agent",
+				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.40 Safari/537.36"
+			}
 		}
 	],
 	"receiveHeader": [
@@ -836,17 +813,6 @@
 				"name": "access-control-allow-origin",
 				"value": "*"
 			}
-		},
-		{
-			"enable": true,
-			"name": "Content Security Policy Header Modification",
-			"ruleType": "modifyReceiveHeader",
-			"matchType": "all",
-			"pattern": "",
-			"exclude": "",
-			"group": "重定向",
-			"isFunction": true,
-			"code": "let rt = detail.type;\nif (rt === 'script' || rt === 'stylesheet' || rt === 'main_frame' || rt === 'sub_frame') {\n  for (let i in val) {\n    if (val[i].name.toLowerCase() === 'content-security-policy') {\n      let s = val[i].value;\n      s = s.replace(/googleapis\\\\.com/g, '$& https://gapis.geekzu.org');\n      s = s.replace(/recaptcha\\\\.google\\\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/google\\\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/gstatic\\\\.com/g, '$& https://*.gstatic.cn');\n      val[i].value = s;\n    }\n  }\n}"
 		}
 	],
 	"receiveBody": []
