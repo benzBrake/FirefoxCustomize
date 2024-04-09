@@ -89,7 +89,6 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 |      | 100  | [unreadTabMods](unreadTabMods.uc.js)                         | 未读标签页修改                                               | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js) |
 |      | 70   | [verticalAddOnBar](verticalAddOnBar.uc.js)                   | 增加一个类似 vivaldi 的侧边工具栏                            |                                                              |
 |      | 100  | [verticalTabsPane](verticalTabsPane.uc.js)                   | 垂直标签栏，原版只能在 MrOtherGuy 的 UC 环境使用，修改版应该通用了，并且把默认快捷键修改为 Ctrl+F1 了 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/verticalTabsPane.uc.js) |
-|      | 78   | [VideoBtn](VideoBtn)                                         | 调用 you-get.exe/yt-dlp.exe/bbdown.exe 下载视频              |                                                              |
 
 下面的不能用了的话，请一定不要找我，因为我不用了，你们可以顺着源链接过去找原作者修复
 
