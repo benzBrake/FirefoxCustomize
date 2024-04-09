@@ -174,7 +174,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
         var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
         var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
-        var enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
+        var enableConvertImageAttrToListStyleImage = true; // 将图片属性转换为 css 属性 list-style-image 
 
         if (window && window.addMenu) {
             window.addMenu.destroy();
@@ -1083,6 +1083,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 menu.setAttribute(n, firstItem.getAttribute(n));
                         }, this);
                         setImage(menu, menuObj.image || firstItem.getAttribute("image") || firstItem.style.listStyleImage.slice(4, -1));
+                        if (firstItem.classList.contains('copy')) {
+                            menu.classList.add('copy');
+                        }
                         menu.setAttribute('onclick', "\
                         if (event.target != event.currentTarget) return;\
                         var firstItem = event.currentTarget.querySelector('menuitem');\
@@ -1474,7 +1477,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     let beforeProcessConditons = condition.split(' ');
                     let conditions = [];
                     for (let i = 0; i < beforeProcessConditons.length; i++) {
-                        let c = conditions[i] || "";
+                        let c = beforeProcessConditons[i] || "";
                         if (c === "normal") {
                             conditions.push("normal");
                         } else if (["select", "link", "mailto", "image", "canvas", "media", "input"].includes(c.replace(/^no/, ""))) {

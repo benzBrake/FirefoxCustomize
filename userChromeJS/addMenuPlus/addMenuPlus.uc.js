@@ -1059,6 +1059,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             menu.setAttribute(n, firstItem.getAttribute(n));
                     }, this);
                     setImage(menu, menuObj.image || firstItem.getAttribute("image") || firstItem.style.listStyleImage.slice(4, -1));
+                    if (firstItem.classList.contains('copy')) {
+                        menu.classList.add('copy');
+                    }
                     menu.setAttribute('onclick', "\
                     if (event.target != event.currentTarget) return;\
                     var firstItem = event.currentTarget.querySelector('menuitem');\
@@ -1434,7 +1437,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let beforeProcessConditons = condition.split(' ');
                 let conditions = [];
                 for (let i = 0; i < beforeProcessConditons.length; i++) {
-                    let c = conditions[i] || "";
+                    let c = beforeProcessConditons[i] || "";
                     if (c === "normal") {
                         conditions.push("normal");
                     } else if (["select", "link", "mailto", "image", "canvas", "media", "input"].includes(c.replace(/^no/, ""))) {
