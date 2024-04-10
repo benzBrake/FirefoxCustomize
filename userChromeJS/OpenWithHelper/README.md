@@ -20,4 +20,4 @@
 
 ## 更多
 
-我的自用配置在这里发布：
+我的自用配置在这里发布：https://xmp.lanzouj.com/iuQFE1uko10h
