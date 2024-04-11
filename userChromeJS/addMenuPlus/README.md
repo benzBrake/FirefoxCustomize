@@ -95,7 +95,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 }
 ```
 
-2024.2.10 （包括）以后的版本页面右键菜单支持多个 condition，并且**不提供 condtion 菜单无法显示**
+2024.2.10 （包括）以后的版本内容区域右键菜单支持多个 condition，如果不提供自动设置为`normal`
 
 ```json
 {
@@ -804,15 +804,9 @@ page([
 page([
   {
     label: "生成二维码",
-    condition: "normal",
+    condition: "normal link", // 2024.2.10 （包括）以后的版本可用
     where: "tab",
-    url: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=%URL%",
-  },
-  {
-    label: "生成二维码",
-    condition: "link",
-    where: "tab",
-    url: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=%LINK%",
+    url: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=%LINK_OR_URL%",
   },
 ]);
 ```
