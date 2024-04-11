@@ -37,12 +37,6 @@
 // @note           修复支持57+
 // ==/UserScript==
 if (typeof window === "undefined" || globalThis !== window) {
-    let BrowserOrSelectionUtils = Cu.import("resource://gre/modules/BrowserUtils.jsm").BrowserUtils
-    try {
-        if (!BrowserOrSelectionUtils.hasOwnProperty("getSelectionDetails")) {
-            BrowserOrSelectionUtils = Cu.import("resource://gre/modules/SelectionUtils.jsm").SelectionUtils;
-        }
-    } catch (e) { }
     if (!Services.appinfo.remoteType) {
         this.EXPORTED_SYMBOLS = ["AddMenuParent"];
         try {
@@ -87,6 +81,34 @@ if (typeof window === "undefined" || globalThis !== window) {
 
         this.AddMenuChild = class extends JSWindowActorChild {
             actorCreated() {
+                const window = this.contentWindow;
+                const { console, document } = window;
+                const actor = window.windowGlobalChild.getActor("AddMenu");;
+                document.addEventListener("mouseup", function (event) {
+                    if (event.button === 0) { // Check if left mouse button is clicked
+                        var selectedText = getSelectedText();
+                        if (selectedText && !isEditableElement()) {
+                            actor.sendAsyncMessage("AM:SetSeletedText", {
+                                text: selectedText
+                            });
+                        }
+                    }
+                });
+
+                function getSelectedText() {
+                    var text = "";
+                    if (window.getSelection) {
+                        text = window.getSelection().toString();
+                    } else if (document.selection && document.selection.type != "Control") {
+                        text = document.selection.createRange().text;
+                    }
+                    return text;
+                }
+
+                function isEditableElement() {
+                    var element = window.getSelection().focusNode.parentNode;
+                    return element.nodeName === "INPUT" || element.nodeName === "TEXTAREA" || element.isContentEditable;
+                }
 
             }
             receiveMessage({ name, data }) {
@@ -95,12 +117,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 const doc = win.document;
                 const actor = win.windowGlobalChild.getActor("AddMenu");
                 switch (name) {
-                    case "AM:GetSelectedText":
-                        let obj = {
-                            text: BrowserOrSelectionUtils.getSelectionDetails(win).fullText
-                        }
-                        actor.sendAsyncMessage("AM:SetSeletedText", obj);
-                        break;
                     case "AM:GetFaviconLink":
                         if (doc.location.href.startsWith("about")) return;
                         if (!"head" in doc) return;
@@ -173,7 +189,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
         var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
         var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
-        var enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
+        var enableConvertImageAttrToListStyleImage = true; // 将图片属性转换为 css 属性 list-style-image 
 
         if (window && window.addMenu) {
             window.addMenu.destroy();
@@ -567,13 +583,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case 'mouseup':
                         // get selected text
-                        if (content) {
+                        if (event.button === 0 && content) {
                             // 内置页面
                             this.setSelectedText(BrowserOrSelectionUtils.getSelectionDetails(content).fullText);
-                        } else {
-                            // 网页
-                            let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
-                            actor.sendAsyncMessage("AM:GetSelectedText", {});
                         }
                         break;
                     case 'click':
