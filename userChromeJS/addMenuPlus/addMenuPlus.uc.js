@@ -718,7 +718,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } else if (where || event.button === 1) {
                 _openTrustedLinkIn(url, where, allowThirdPartyFixup);
             } else {
-                openUILink(uri.spec, event, {
+                openUILink(url, event, {
                     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                 });
             }
@@ -1535,7 +1535,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             if (content) iconURL = content.slice(5, -2);
                             else iconURL = image.src;
                         }
-                        return iconURL ? (noBase64 ? iconURL : img2base64(iconURL)) : "";
+                        return iconURL ? (noBase64 && !iconURL.startsWith("data:image") ? iconURL : img2base64(iconURL)) : "";
                     case "%EMAIL%":
                         return getEmailAddress() || "";
                     case "%EOL%":
