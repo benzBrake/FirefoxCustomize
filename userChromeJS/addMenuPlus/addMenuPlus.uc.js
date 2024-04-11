@@ -432,63 +432,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
             }), ins);
 
-            // 内容进程运行 JS
-            function frameScript() {
-                const {
-                    Services
-                } = Components.utils.import(
-                    "resource://gre/modules/Services.jsm"
-                );
-                content.addMenu_Content = {
-                    init: function () {
-                        addMessageListener("addMenu_getSelectedText", this);
-                        addMessageListener("addMenu_destroy", this);
-                    },
-                    getSelection: function (win, focusedElement) {
-                        win || (win = content);
-                        var selection = win.getSelection().toString();
-                        if (!selection) {
-                            let element = focusedElement;
-                            let isOnTextInput = function (elem) {
-                                return elem instanceof HTMLTextAreaElement ||
-                                    (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
-                            };
-
-                            if (isOnTextInput(element)) {
-                                selection = element.value.substring(element.selectionStart,
-                                    element.selectionEnd);
-                            }
-                        }
-
-                        return selection;
-                    },
-                    receiveMessage: function (message) {
-                        switch (message.name) {
-                            case 'addMenu_getSelectedText':
-                                const focusedElement = Services.focus.focusedElement;
-                                let data = {
-                                    text: this.getSelection(content, focusedElement)
-                                }
-                                sendSyncMessage("addMenu_selectionData", data);
-                                break;
-                            case 'addMenu_destroy':
-                                this.destroy();
-                                break;
-                        }
-                    },
-                    destroy() {
-                        removeMessageListener("addMenu_getSelectedText", this);
-                        removeMessageListener("addMenu_destroy", this);
-                        delete content.addMenu_Content;
-                    }
-                }
-                content.addMenu_Content.init();
-            }
-            let frameScriptURI = 'data:application/javascript,' +
-                encodeURIComponent('(' + frameScript.toString() + ')()');
-            window.messageManager.loadFrameScript(frameScriptURI, true);
-            window.messageManager.addMessageListener("addMenu_selectionData", this);
-
             // Photon Compact
             if (enableContentAreaContextMenuCompact && this.appVersion >= 90)
                 $("contentAreaContextMenu").setAttribute("photoncompact", "true");
@@ -508,8 +451,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $("contentAreaContextMenu").removeAttribute("photoncompact");
             if (typeof this.APP_LITENER_REMOVER === "function")
                 this.APP_LITENER_REMOVER();
-            window.messageManager.broadcastAsyncMessage("addMenu_destroy");
-            window.messageManager.removeMessageListener("addMenu_selectionData", this);
             (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
             this.removeMenuitem();
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
@@ -615,22 +556,24 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     });
                     break;
                 case 'mouseup':
+                    if (event.button) return;
                     // 鼠标按键释放时读取选中文本
-                    try {
-                        gBrowser.selectedTab.linkedBrowser.messageManager.sendAsyncMessage("addMenu_getSelectedText");
-                    } catch (e) { }
+                    if (content) {
+                        this._selectedText = content.getSelection().toString();
+                    } else {
+                        try {
+                            // 这个 API 有问题
+                            gBrowser.selectedBrowser.finder.getInitialSelection().then((r) => {
+                                this._selectedText = r.selectedText;
+                            })
+                        } catch (e) { }
+                    }
+
                     break;
                 case 'click':
                     if (event.button == 2 && event.target.id === this.identityBox.id)
                         $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
 
-                    break;
-            }
-        },
-        receiveMessage(message) {
-            switch (message.name) {
-                case 'addMenu_selectionData':
-                    this._selectedText = message.data.text;
                     break;
             }
         },
