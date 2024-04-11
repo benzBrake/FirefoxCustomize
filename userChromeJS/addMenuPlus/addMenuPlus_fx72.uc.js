@@ -926,15 +926,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                 cls.add('addMenu');
 
                 // 表示 / 非表示の設定
-                if (menuObj.condition) {
-                    this.setCondition(group, menuObj.condition);
-                    // Sync condition attribute to child menus
-                    menuObj._items.forEach(function (obj) {
-                        if (!Object.keys(obj).includes("contidion")) {
-                            obj.condition = menuObj.condition;
-                        }
-                    });
-                }
+                this.setCondition(group, menuObj, opt);
+                // Sync condition attribute to child menus
+                menuObj._items.forEach(function (obj) {
+                    if (!Object.keys(obj).includes("contidion")) {
+                        obj.condition = group.getAttribute("condition");
+                    }
+                });
 
                 menuObj._items.forEach(function (obj) {
                     group.appendChild(this.newMenuitem(obj, {
@@ -1015,8 +1013,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 }
 
                 // 表示 / 非表示の設定
-                if (menuObj.condition)
-                    this.setCondition(menu, menuObj.condition);
+                this.setCondition(menu, menuObj, opt);
 
                 menuObj._items.forEach(function (obj) {
                     popup.appendChild(this.newMenuitem(obj, opt));
@@ -1192,9 +1189,8 @@ if (typeof window === "undefined" || globalThis !== window) {
                 } else {
                     cls.add("menuitem-iconic");
                 }
-                // 表示 / 非表示の設定
-                if (obj.condition)
-                    this.setCondition(menuitem, obj.condition);
+                // 表示 / 非表示の設定 
+                this.setCondition(menuitem, obj, opt);
 
                 // separator はここで終了
                 if (menuitem.localName == "menuseparator")
@@ -1425,9 +1421,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                     this.log(e)
                 }).catch(e => { });
             },
-            setCondition: function (menu, condition) {
-                if (condition) {
-                    let beforeProcessConditons = condition.split(' ');
+            setCondition: function (menu, obj, opt) {
+                opt || (opt = {});
+                if (obj.condition) {
+                    let beforeProcessConditons = obj.condition.split(' ');
                     let conditions = [];
                     for (let i = 0; i < beforeProcessConditons.length; i++) {
                         let c = beforeProcessConditons[i] || "";
@@ -1440,6 +1437,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (conditions.length) {
                         menu.setAttribute("condition", conditions.join(" "));
                     }
+                } else {
+                    if ("insertPoint" in opt && "id" in opt.insertPoint && opt.insertPoint.id === "addMenu-page-insertpoint")
+                        menu.setAttribute("condition", "normal");
                 }
             },
             convertText: function (text) {
