@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title data-l10n-id="applications-list"></title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="chrome://devtools/skin/images/browsers/firefox.svg"
+    />
+  </head>
+  <body>
+    <div id="wrapper">
+      <table id="applications-list">
+        <thead>
+          <tr class="table-title">
+            <th class="application-icon title" style="width: 40px">
+              <label
+                class="whitespace-nowrap"
+                data-l10n-id="application-icon"
+              ></label>
+            </th>
+            <th class="application-title title" style="width: 120px">
+              <label
+                class="whitespace-nowrap"
+                data-l10n-id="application-title"
+              ></label>
+            </th>
+            <th class="application-condition title" style="width: 120px">
+              <label
+                class="whitespace-nowrap"
+                data-l10n-id="application-condition"
+              ></label>
+            </th>
+            <th class="application-path title">
+              <label
+                class="application-path-label whitespace-nowrap"
+                data-l10n-id="application-path"
+              ></label>
+            </th>
+            <th class="application-params title flex-grow">
+              <label
+                class="whitespace-nowrap"
+                data-l10n-id="application-params"
+              ></label>
+            </th>
+            <th class="application-operate title">
+              <label
+                class="whitespace-nowrap"
+                data-l10n-id="application-operate"
+              ></label>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="table">
+          <tr id="demo-row" class="table-row">
+            <td class="application-icon item" style="width: 40px">
+              <div class="application-icon-wrapper">
+                <img
+                  class="application-icon-image"
+                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII="
+                />
+                <span class="close-icon"></span>
+              </div>
+            </td>
+            <td class="application-title item" style="width: 120px">
+              <input
+                class="application-input"
+                name="application-name"
+                placeholder=""
+              />
+            </td>
+            <td class="application-condition item" style="width: 100px">
+              <input
+                class="application-input"
+                name="application-condition"
+                placeholder=""
+              />
+            </td>
+            <td class="application-path item">
+              <div>
+                <label
+                  class="application-path-label flex-grow text-truncate"
+                ></label>
+                <button
+                  class="application-path-change btn-flat"
+                  data-l10n-id="change-path"
+                  onclick="gApplicationList.changePath(event)"
+                ></button>
+              </div>
+            </td>
+            <td class="application-params item flex-grow">
+              <input
+                class="application-input"
+                name="application-params"
+                value="%LINK_OR_URL%"
+                placeholder=""
+              />
+            </td>
+            <td class="application-operate item text-center">
+              <button
+                class="btn-flat"
+                data-l10n-id="move-up"
+                onclick="gApplicationList.moveUp(event);"
+              ></button>
+              <button
+                class="btn-flat"
+                data-l10n-id="move-down"
+                onclick="gApplicationList.moveDown(event);"
+              ></button>
+              <button
+                class="btn-flat"
+                data-l10n-id="delete-application"
+                onclick="gApplicationList.removeBrowser(event);"
+              ></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div id="params-description" class="flex flex-col">
+        <label data-l10n-id="call-params-description-label"></label>
+        <div data-l10n-id="call-params-description-content"></div>
+      </div>
+      <div id="operate-toolbar" class="flex flex-center gap-2">
+        <button
+          class="btn-flat btn-margin"
+          data-l10n-id="add-application"
+          onclick="gApplicationList.addApplication(event)"
+        ></button>
+        <button
+          class="btn-flat btn-margin"
+          data-l10n-id="add-separator"
+          onclick="gApplicationList.addSeparator(event)"
+        ></button>
+        <button
+          class="btn-flat btn-margin"
+          data-l10n-id="save"
+          onclick="gApplicationList.save(event)"
+        ></button>
+      </div>
+    </div>
+    <style>
+      #wrapper {
+        width: 100%;
+        margin: 2em auto;
+      }
+      @media (min-width: 1310px) {
+        #wrapper {
+          max-width: 1250px;
+        }
+      }
+      @media (min-width: 1536px) {
+        #wrapper {
+          max-width: 1420px;
+        }
+      }
+
+      .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .flex {
+        display: flex;
+      }
+      .flex-center {
+        justify-content: center;
+        align-items: center;
+      }
+      .flex-col {
+        flex-direction: column;
+      }
+      .flex-grow {
+        flex-grow: 1;
+      }
+      .flex-shrink {
+        flex-shrink: 1;
+      }
+      .flex-noshrink {
+        flex-shrink: 0;
+      }
+      .flex-wrap {
+        flex-wrap: wrap;
+      }
+      .gap-1 {
+        gap: 5px;
+      }
+      .gap-2 {
+        gap: 10px;
+      }
+      .gap-3 {
+        gap: 15px;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .cursor-pointer {
+        cursor: pointer;
+      }
+      .whitespace-nowrap {
+        white-space: nowrap;
+      }
+      .text-center {
+        text-align: center;
+      }
+      button {
+        white-space: nowrap;
+      }
+      .list-none {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+      }
+      #applications-list {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      #applications-list .title {
+        background-color: #f1f1f1;
+        border: 1px solid #ccc;
+        border-right-width: 0px;
+        text-align: center;
+        padding: 0.5em 0;
+        box-sizing: border-box;
+      }
+      #applications-list .title:last-child {
+        border-right-width: 1px;
+      }
+      #applications-list .item {
+        border: 1px solid #ddd;
+        border-right-width: 0px;
+        border-right-width: 0px;
+        padding: 0.5em 0;
+        box-sizing: border-box;
+      }
+      #applications-list .item:last-child {
+        border-right-width: 1px;
+      }
+      #applications-list .item label,
+      #applications-list .item input {
+        font-size: 14px;
+      }
+      #applications-list .table-title {
+        border-bottom: 2px solid #ddd;
+      }
+      #applications-list .table {
+        padding: 0;
+        margin: 0;
+      }
+      #applications-list .application-icon {
+        cursor: pointer;
+        overflow: hidden;
+      }
+      #applications-list .application-icon-wrapper {
+        width: 16px;
+        height: 16px;
+        position: relative;
+        display: block;
+        margin: 0 auto;
+      }
+      #applications-list .application-icon-wrapper .close-icon {
+        position: absolute;
+        display: block;
+        top: -24px;
+        right: -8px;
+        width: 12px;
+        height: 12px;
+        background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCA0OCA0OCIgdHJhbnNmb3JtPSJzY2FsZSgxLjMpIj4NCiAgPHBhdGggZmlsbD0iI0Y0NDMzNiIgZD0iTTQyLDM3YzAsMi43NjItMi4yMzgsNS01LDVIMTFjLTIuNzYyLDAtNS0yLjIzOC01LTVWMTFjMC0yLjc2MiwyLjIzOC01LDUtNWgyNmMyLjc2MiwwLDUsMi4yMzgsNSw1VjM3eiIgLz4NCiAgPHBhdGggZmlsbD0iI0ZGRUJFRSIgZD0iTTIxLjkxNCAxMi4wNjVIMjUuOTE0VjM2LjEwN0gyMS45MTR6IiB0cmFuc2Zvcm09InJvdGF0ZSgtMTM0Ljk5OSAyMy45MTQgMjQuMDg2KSIgLz4NCiAgPHBhdGggZmlsbD0iI0ZGRUJFRSIgZD0iTTIyLjA2NCAxMS43MjZIMjYuMDY0VjM1Ljg5N0gyMi4wNjR6IiB0cmFuc2Zvcm09InJvdGF0ZSgxMzQuOTk5IDI0LjA2NCAyMy44MTIpIiAvPg0KPC9zdmc+);
+        transition: opacity 0.2s;
+        opacity: 0;
+      }
+      #applications-list .application-icon-image {
+        position: absolute;
+        inset: 0;
+        object-fit: cover;
+        width: 16px;
+        height: 16px;
+      }
+      #applications-list
+        .application-icon:hover
+        .application-icon-image:not([src=""]):not(
+          [src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII="]
+        )
+        + .close-icon {
+        top: -8px;
+        opacity: 1;
+      }
+      #applications-list .application-input {
+        all: unset;
+        width: calc(100% - 16px);
+        font-size: 14px;
+        margin-inline: 8px;
+      }
+      #applications-list .application-path {
+        width: 200px;
+      }
+      @media (min-width: 960px) {
+        #applications-list .application-path {
+          width: 380px;
+        }
+      }
+      #applications-list .application-path.item {
+        transition: background 0.2s;
+      }
+      #applications-list .application-path .application-path-label {
+        margin-left: 5px;
+      }
+
+      #applications-list .application-path .application-path-change {
+        margin-right: 8px;
+      }
+      #applications-list .application-path.requird-animate {
+        background-color: #faafaa88;
+        animation: shake 800ms ease-in-out;
+      }
+      #applications-list .application-operate {
+        width: 100px;
+      }
+      @media (min-width: 960px) {
+        #applications-list .application-operate {
+          width: 130px;
+        }
+      }
+      #applications-list #demo-row {
+        display: none;
+      }
+      #applications-list .table-row:first-child button[data-l10n-id="move-up"] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      #applications-list
+        .table-row:nth-last-child(2)
+        button[data-l10n-id="move-down"] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .separator[class~="table-row"] .application-path-change {
+        display: none !important;
+      }
+
+      #params-description,
+      #operate-toolbar {
+        margin-top: 1em;
+      }
+
+      #params-description {
+        border: 1px solid #ddd;
+      }
+      #params-description > label {
+        font-weight: bold;
+        padding: 0.25em 0.5em;
+        border-bottom: 1px solid #ddd;
+        background-color: #f1f1f1;
+      }
+      #params-description > div > ul {
+        border-bottom: 1px solid #ddd;
+      }
+      #params-description > div > ul > li {
+        display: flex;
+        gap: 10px;
+        padding: 5px;
+        border: 1px solid #ddd;
+        box-sizing: border-box;
+      }
+      #params-description > div > ul:last-child {
+        border-bottom: unset;
+      }
+
+      @media (min-width: 768px) {
+        ul.cols-3 {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+      }
+
+      .btn-flat {
+        background-color: #4a90e2; /* Light blue color */
+        color: #fff; /* White text color */
+        border: none; /* Remove border */
+        cursor: pointer; /* Add pointer cursor */
+        transition: background-color 0.3s; /* Add transition for smooth hover effect */
+        border-radius: 2px; /* Add rounded corners */
+      }
+
+      .btn-margin {
+        padding: 0.5em 1em; /* Adjust padding as needed */
+      }
+
+      .btn-flat:hover {
+        background-color: #357ae8; /* Darker blue color on hover */
+      }
+
+      @keyframes shake {
+        10%,
+        90% {
+          transform: translate3d(-1px, 0, 0);
+        }
+        20%,
+        80% {
+          transform: translate3d(+2px, 0, 0);
+        }
+        30%,
+        70% {
+          transform: translate3d(-4px, 0, 0);
+        }
+        40%,
+        60% {
+          transform: translate3d(+4px, 0, 0);
+        }
+        50% {
+          transform: translate3d(-4px, 0, 0);
+        }
+      }
+    </style>
+    <script>
+      (function () {
+        const LANG = {
+          "zh-CN": {
+            "applications-list": "应用列表",
+            "application-icon": "图标",
+            "application-title": "标题",
+            "application-condition": "显示条件",
+            "application-path": "路径",
+            "application-params": "参数",
+            "application-operate": "操作",
+            "change-path": "修改路径",
+            "click-to-change": "点击修改",
+            "move-up": "上移",
+            "move-down": "下移",
+            "delete-application": "删除",
+            "call-params-description-label":
+              "参数说明（%号参数会被替换为实际内容）",
+            "call-params-description-content": `<ul class="flex flex-wrap list-none cols-3"><li><label>%EOL%</label><span>换行(\\r\\n)</span></li><li><label>%TITLE%</label><span>标题</span><li><label>%TITLES%</label><span>简化标题</span></li><li><label>%SEL%</label><span>选取范围内的文字</span></li><li><label>%URL%</label><span>当前页面网址</span></li><li><label>%LINK_OR_URL%</label><span>优先链接地址，否则获取当前网址</span></li><li><label>%LINK%</label><span>链接地址</span></li><li><label>%IMAGE_URL%</label><span>图片地址</span></li><li><label>%MEDIA_URL%</label><span>媒体地址</span></li><li><label>%PROFILE_DIR%</label><span>Firefox配置文件夹路径</span></li><li><label>%SAVE_DIR%</label><span>保存路径（默认桌面）</span></li><li><label>%COOKIE%</label><span>key1=value1; key2=value2</span></li><li><label>%COOKIE_TXT%</label><span>COOKIE 存到临时路径</span></li><li><label>%COOKIES_SQLITE%</label><span>cookies.sqlite 路径</span></li><li><label>更多的自己翻源码</label><span></span></li></ul>`,
+            "add-application": "添加应用",
+            "add-separator": "添加分隔符",
+            separator: "分隔符",
+            save: "保存",
+            "dont do that": "不要酱紫嘛！",
+            "set applicaton path": "设置应用路径",
+          },
+          "en-US": {
+            "applications-list": "App List",
+            "application-icon": "Icon",
+            "application-title": "Title",
+            "application-condition": "Condition",
+            "application-path": "Path",
+            "application-params": "Call Params",
+            "application-operate": "Operate",
+            "click-to-change": "Click to Change",
+            "move-up": "Up",
+            "move-down": "Down",
+            "call-params-description-label":
+              "The params will be passed to the application when it is called",
+            "delete-application": "Remove",
+            "add-application": "Add application",
+            "add-separator": "Add separator",
+            separator: "Separator",
+            save: "Save",
+            "dont do that": "Don't do that!",
+            "set applicaton path": "Set application path",
+          },
+        };
+
+        const EMPTY_IMGSRC =
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII=";
+
+        const { alert: $ALERT } =
+          Services.wm.getMostRecentWindow("navigator:browser").OpenWithHelper;
+
+        window.gApplicationList = {
+          async getFile() {
+            let path;
+            try {
+              path = Services.prefs.getStringPref(
+                "userChromeJS.OpenWithHelper.FILE_PATH",
+                "_openwith.json"
+              );
+            } catch (e) {
+              path = "_openwith.json";
+            }
+            aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
+            aFile.appendRelativePath(path);
+
+            if (!aFile.exists()) {
+              await IOUtils.writeUTF8(aFile.path, JSON.stringify([]));
+            }
+
+            return aFile;
+          },
+          addApplication(event) {
+            let demoRow = document.getElementById("demo-row");
+            let row = demoRow.cloneNode(true);
+            row.id = "";
+            row.querySelectorAll("input").forEach((el) => (el.value = ""));
+            let parentNode = document.getElementById("demo-row").parentNode;
+            event?.ctrlKey
+              ? parentNode.insertBefore(row, parentNode.firstElementChild)
+              : demoRow.before(row);
+          },
+          addSeparator(event) {
+            let demoRow = document.getElementById("demo-row");
+            let row = demoRow.cloneNode(true);
+            row
+              .querySelector(".application-icon")
+              .addEventListener("click", this.changeImage);
+            row.id = "";
+            row.querySelectorAll("input").forEach((i) => {
+              i.value = "";
+              i.setAttribute("placeholder", formatStr("separator"));
+              i.setAttribute("disabled", "true");
+            });
+            row.querySelector("label").textContent = formatStr("separator");
+            row.classList.add("separator");
+            event?.ctrlKey
+              ? demoRow.parentNode.insertBefore(
+                  row,
+                  demoRow.parentNode.firstElementChild
+                )
+              : demoRow.before(row);
+          },
+          changeImage: async function (event) {
+            const { target } = event;
+            const row = target.closest(".table-row");
+            const img =
+              target.tagName.toLowerCase() === "img"
+                ? target
+                : target.querySelector("img");
+            if (target.classList.contains("close-icon")) {
+              target.previousElementSibling.src = EMPTY_IMGSRC;
+              return;
+            }
+            if (!img || !row || row.classList.contains("separator")) {
+              $ALERT(formatStr("dont do that"));
+              return;
+            }
+            if (event.ctrlKey) {
+              img.src = EMPTY_IMGSRC;
+              return;
+            }
+            const mode = Ci.nsIFilePicker.modeOpen,
+              title = null;
+            async function openFilePickerDialog() {
+              return new Promise((resolve) => {
+                const fp = Cc["@mozilla.org/filepicker;1"].createInstance(
+                  Ci.nsIFilePicker
+                );
+                fp.init(window, title, mode);
+                fp.appendFilters(Ci.nsIFilePicker.filterImages);
+                fp.open(async (result) => {
+                  if (result === Ci.nsIFilePicker.returnOK) {
+                    resolve({
+                      result,
+                      path: fp.file.path,
+                    });
+                  } else {
+                    resolve({ result, path: null });
+                  }
+                });
+              });
+            }
+            let status = await openFilePickerDialog();
+            if (status.result === Ci.nsIFilePicker.returnOK) {
+              let extension = status.path.split(".").pop();
+              let path = "file:///" + status.path.replace(/\\/g, "/");
+              let resp = await fetch(path);
+              let base64;
+              if (extension === "svg") {
+                let svgString = await resp.text();
+                base64 = "data:image/svg+xml;base64," + btoa(svgString);
+              } else {
+                base64 = await blobToDataURL(await resp.blob());
+              }
+              img.src = base64;
+            }
+
+            async function blobToDataURL(blob) {
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.addEventListener("loadend", () =>
+                  resolve(reader.result)
+                );
+                reader.addEventListener("error", reject);
+                reader.readAsDataURL(blob);
+              });
+            }
+          },
+          changePath(event) {
+            if (
+              event.target.previousElementSibling &&
+              event.target.previousElementSibling.classList.contains(
+                "application-path-label"
+              )
+            ) {
+              const label = event.target.previousElementSibling;
+              const locale = Services.locale.appLocaleAsBCP47;
+              let fp = Cc["@mozilla.org/filepicker;1"].createInstance(
+                Ci.nsIFilePicker
+              );
+              fp.init(
+                window,
+                formatStr("set applicaton path"),
+                Ci.nsIFilePicker.modeOpen
+              );
+
+              fp.appendFilters(Ci.nsIFilePicker.filterApps); // 只显示应用程序（可执行文件）
+
+              fp.open((res) => {
+                if (res != Ci.nsIFilePicker.returnOK) return;
+                let { path } = fp.file;
+                label.textContent = path.replace(PathUtils.profileDir, "");
+              });
+            }
+          },
+          moveUp(event) {
+            const row = event.target.closest(".table-row");
+            if (!row.previousElementSibling) return;
+            event.ctrlKey
+              ? row.parentNode.insertBefore(
+                  row,
+                  row.parentNode.firstElementChild
+                )
+              : row.previousElementSibling.before(row);
+          },
+          moveDown(event) {
+            const row = event.target.closest(".table-row");
+            if (
+              !row.nextElementSibling ||
+              row.nextElementSibling.id == "demo-row"
+            )
+              return;
+            event.ctrlKey
+              ? row.parentNode.insertBefore(
+                  row,
+                  row.parentNode.querySelector("#demo-row")
+                )
+              : row.nextElementSibling.after(row);
+          },
+          removeBrowser(event) {
+            removeEl(event.target.closest(".table-row"));
+          },
+          async save(event) {
+            let rows = [...document.querySelectorAll(".table-row")].filter(
+              (el) => el.id !== "demo-row"
+            );
+            let browsers = [];
+            let flag = true;
+            for (let i = 0; i < rows.length; i++) {
+              let obj = {};
+              if (!rows[i].classList.contains("separator")) {
+                let src = rows[i].querySelector("img").src;
+                if (src !== "" && src !== EMPTY_IMGSRC) {
+                  obj.image = src;
+                }
+                if (
+                  rows[i].querySelector(".application-path-label")
+                    .textContent === ""
+                ) {
+                  rows[i]
+                    .querySelector(".application-path")
+                    .classList.add("requird-animate");
+                  setTimeout(() => {
+                    rows[i]
+                      .querySelector(".application-path")
+                      .classList.remove("requird-animate");
+                  }, 800);
+                  flag = false;
+                  continue;
+                }
+                let condition = rows[i].querySelector(
+                  "[name=application-condition]"
+                ).value;
+                if (condition) obj.condition = condition;
+                obj.exec = rows[i].querySelector(
+                  ".application-path-label"
+                ).textContent;
+                if (rows[i].querySelector("[name=application-name]").value) {
+                  obj.label = rows[i].querySelector(
+                    "[name=application-name]"
+                  ).value;
+                }
+                obj.text =
+                  rows[i].querySelector("[name=application-params]").value ||
+                  "";
+              }
+              browsers.push(obj);
+            }
+            if (flag) {
+              let file = await gApplicationList.getFile();
+              await IOUtils.writeUTF8(file.path, JSON.stringify(browsers));
+              const enumerator = Services.wm.getEnumerator(null);
+              while (enumerator.hasMoreElements()) {
+                const win = enumerator.getNext();
+                win?.OpenWithHelper.insertMenu(true);
+              }
+            }
+          },
+          async init() {
+            document.querySelectorAll("[data-l10n-id]").forEach((el) => {
+              el.innerHTML = formatStr(el.getAttribute("data-l10n-id"));
+            });
+            document.querySelectorAll(".application-input").forEach((el) => {
+              el.setAttribute("placeholder", formatStr("click-to-change"));
+            });
+            // 使用 Mutration 监控新增元素，如果函数 data-l10n-id 属性则设置 innerHTML
+            const observer = new MutationObserver((mutations) => {
+              mutations.forEach((mutation) => {
+                [...mutation.addedNodes].forEach((el) => {
+                  gApplicationList.setLabel(el);
+                });
+              });
+            });
+
+            const file = await this.getFile();
+            const browserList = JSON.parse(await IOUtils.readUTF8(file.path));
+            const demoRow = document.getElementById("demo-row");
+            browserList.forEach((obj) => {
+              if (Object.keys(obj).length) {
+                let row = demoRow.cloneNode(true);
+                row
+                  .querySelector(".application-icon")
+                  .addEventListener("click", this.changeImage);
+                if ("image" in obj && obj.image.length) {
+                  row.querySelector(".application-icon-image").src = obj.image;
+                }
+                let labelInput = row.querySelector("[name=application-name]");
+                labelInput.value = obj.label || "";
+                row.querySelector(".application-path-label").textContent =
+                  obj.exec;
+                let conditionInput = row.querySelector(
+                  "[name=application-condition]"
+                );
+                conditionInput.value = obj.condition || "";
+                row.id = "";
+                row.querySelector("[name=application-params]").value =
+                  obj.text || "";
+                demoRow.before(row);
+              } else {
+                gApplicationList.addSeparator();
+              }
+            });
+          },
+
+          setLabel(el) {
+            if (
+              el.nodeType === Node.ELEMENT_NODE &&
+              el.hasAttribute("data-l10n-id")
+            ) {
+              el.innerHTML = formatStr(el.getAttribute("data-l10n-id"));
+            }
+          },
+        };
+
+        gApplicationList.init();
+
+        function $(id, aDoc) {
+          return (aDoc || document).getElementById(id);
+        }
+
+        function createEl(doc, tag, attrs, skipAttrs) {
+          var el;
+          if (!doc || !tag) return el;
+          attrs = attrs || {};
+          skipAttrs = skipAttrs || [];
+          if (tag.startsWith("html:")) el = doc.createElement(tag.substr(5));
+          else el = doc.createXULElement(tag);
+          return applyAttrs(el, attrs, skipAttrs);
+        }
+
+        function applyAttrs(el, attrs, skipAttrs) {
+          skipAttrs = skipAttrs || [];
+          if (attrs)
+            Object.keys(attrs).forEach(function (key) {
+              if (!skipAttrs.includes(key)) {
+                if (typeof attrs[key] === "function")
+                  el.setAttribute(
+                    key,
+                    "(" + attrs[key].toString() + ").call(this, event);"
+                  );
+                else el.setAttribute(key, attrs[key]);
+              }
+            });
+          return el;
+        }
+
+        function removeEl(el) {
+          if (el && el.parentNode) {
+            try {
+              el.parentNode.removeChild(el);
+              return true;
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          return false;
+        }
+
+        function formatStr() {
+          const LOCALE = LANG[Services.locale.appLocaleAsBCP47]
+            ? Services.locale.appLocaleAsBCP47
+            : "zh-CN";
+          let str = arguments[0];
+          if (str) {
+            if (!arguments.length) return "";
+            str = LANG[LOCALE][str] || str;
+            for (let i = 1; i < arguments.length; i++) {
+              str = str.replace(/%(s|d)/, arguments[i]);
+            }
+            return str;
+          } else return "";
+        }
+
+        function firstLetterUpperCase(str) {
+          return str
+            .replace("-", " ")
+            .split(" ")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+        }
+
+        function getValue(el) {
+          if (el.value && el.value.trim() && el.value.trim() !== "undefined")
+            return el.value.trim();
+          return "";
+        }
+      })();
+    </script>
+  </body>
+</html>

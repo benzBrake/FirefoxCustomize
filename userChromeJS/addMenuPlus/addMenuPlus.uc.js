@@ -15,7 +15,7 @@
 // @oohomepageURL  https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
-// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效
+// @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行），修复获取 Favicon 链接无效，Favicon 协议改用 page-icon
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
 // @note           0.1.2 增加多语言；修复 %I %IMAGE_URL% %IMAGE_BASE64% 转换为空白字符串；GroupMenu 增加 onshowing 事件
@@ -148,7 +148,7 @@
 
  */
 
-location.href.startsWith('chrome://browser/content/browser.x') && (function (css) {
+location.href.startsWith('chrome://browser/content/browser.x') && (function (css, getURLSpecFromFile, loadText, _openTrustedLinkIn, getFavicon) {
 
     var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
@@ -187,7 +187,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             'config has reload': '配置已经重新载入',
             'please set editor path': '请先设置编辑器的路径!!!',
             'set global editor': '设置全局脚本编辑器',
-            'executable files': '执行文件',
             'could not load': '无法载入：%s'
         },
         'en-US': {
@@ -207,7 +206,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             'config has reload': 'The configuration has been reloaded',
             'please set editor path': 'Please set the path to the editor first!!!',
             'set global editor': 'Setting up the global script editor',
-            'executable files': 'Executable files',
             'could not load': 'Could not load：%s'
         },
     }
@@ -683,57 +681,44 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             else if (text)
                 this.copy(this.convertText(text));
         },
-        openCommand: function (event, url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
-            /** aAllowThirdPartyFixup 参数在 ywzhaiqi 版本是 postData */
-            if (aAllowThirdPartyFixup instanceof Object) {
-                aAllowThirdPartyFixup = Object.assign({
-                    postData: null,
-                    userContextId: gBrowser.selectedBrowser.getAttribute(
-                        "userContextId"
-                    )
-                }, aAllowThirdPartyFixup)
+        openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = { userContextId: 0 }, aPostData, aReferrerInfo) {
+            const isJavaScriptURL = url.startsWith("javascript:");
+            const where = event.button === 1 ? 'tab' : aWhere;
+
+            // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
+            const allowThirdPartyFixup = { ...aAllowThirdPartyFixup };
+            if (aPostData) {
+                allowThirdPartyFixup.postData = aPostData;
+            }
+            if (aReferrerInfo) {
+                allowThirdPartyFixup.referrerInfo = aReferrerInfo;
+            }
+
+            // Set triggeringPrincipal based on 'where' and URL scheme
+            allowThirdPartyFixup.triggeringPrincipal = (() => {
+                if (where === 'current' && !isJavaScriptURL) {
+                    return gBrowser.selectedBrowser.contentPrincipal;
+                }
+
+                const isWebURL = /^(f|ht)tps?:/.test(url);
+                const userContextId = isWebURL ? allowThirdPartyFixup.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") : null;
+                return isWebURL ?
+                    Services.scriptSecurityManager.createNullPrincipal({ userContextId }) :
+                    Services.scriptSecurityManager.getSystemPrincipal();
+            })();
+
+            if (isJavaScriptURL) {
+                _openTrustedLinkIn(url, 'current', {
+                    allowPopups: true,
+                    inBackground: allowThirdPartyFixup.inBackground || false,
+                    allowInheritPrincipal: true,
+                    private: PrivateBrowsingUtils.isWindowPrivate(window),
+                    userContextId: allowThirdPartyFixup.userContextId,
+                });
+            } else if (where || event.button === 1) {
+                _openTrustedLinkIn(url, where, allowThirdPartyFixup);
             } else {
-                aAllowThirdPartyFixup = {
-                    postData: aAllowThirdPartyFixup || aPostData || null,
-                    userContextId: gBrowser.selectedBrowser.getAttribute(
-                        "userContextId"
-                    )
-                }
-            }
-            aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
-            if (this.appVersion >= 78) {
-                aAllowThirdPartyFixup.triggeringPrincipal = where === 'current' ?
-                    gBrowser.selectedBrowser.contentPrincipal : (
-                        /^(f|ht)tps?:/.test(url) ?
-                            Services.scriptSecurityManager.createNullPrincipal({
-                                userContextId: aAllowThirdPartyFixup.userContextId
-                            }) :
-                            Services.scriptSecurityManager.getSystemPrincipal()
-                    );
-            }
-            var uri;
-            try {
-                uri = Services.io.newURI(url, null, null);
-            } catch (e) {
-                return this.log(U($L('url is invalid')).replace("%s", url));
-            }
-            if (uri.scheme === "javascript") {
-                this.loadURI(url);
-            } else if (where) {
-                if (this.appVersion < 78) {
-                    openUILinkIn(uri.spec, where, false, aAllowThirdPartyFixup.postData);
-                } else {
-                    openWebLinkIn(uri.spec, where, aAllowThirdPartyFixup);
-                }
-            } else if (event.button == 1) {
-                if (this.appVersion < 78) {
-                    openUILinkIn(uri.spec, 'tab');
-                } else {
-                    openWebLinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
-                }
-            } else {
-                // 参数 3 aIgnoreButton 允许 bool 和 Object，如果是 Object，则会用作 params 参数
-                openUILink(uri.spec, event, {
+                openUILink(url, event, {
                     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                 });
             }
@@ -828,7 +813,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
-            var data = loadText(aFile);
+            var data = loadText(aFile.path);
 
             var sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
 
@@ -844,7 +829,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             var includeSrc = "";
             sandbox.include = function (aLeafName) {
-                var data = loadFile(aLeafName);
+                var file = addMenu.FILE.parent.clone();
+                file.appendRelativePath(aLeafName);
+                var data = loadText(file.path);
                 if (data)
                     includeSrc += data + "\n";
             };
@@ -1371,8 +1358,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (!aFile.exists()) {
                     menu.setAttribute("disabled", "true");
                 } else if (aFile.isFile()) {
-                    let fileURL = this.getURLSpecFromFile(aFile);
-                    menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                    setImage(menu, "moz-icon://" + this.getURLSpecFromFile(aFile) + "?size=16");
                 } else {
                     setImage(menu, "chrome://global/skin/icons/folder.svg");
                 }
@@ -1398,23 +1384,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             }
             var setIconCallback = function (url) {
-                let uri, iconURI;
+                let uri;
                 try {
                     uri = Services.io.newURI(url, null, null);
                 } catch (e) {
-                    this.log(e)
+                    this.error(e)
                 }
                 if (!uri) return;
-
                 menu.setAttribute("scheme", uri.scheme);
                 PlacesUtils.favicons.getFaviconDataForPage(uri, {
                     onComplete: function (aURI, aDataLen, aData, aMimeType) {
                         try {
                             // javascript: URI の host にアクセスするとエラー
                             let iconURL = aURI && aURI.spec ?
-                                "moz-anno:favicon:" + aURI.spec :
-                                "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico";
-                            menu.setAttribute("image", iconURL);
+                                "page-icon:" + aURI.spec :
+                                "page-icon:" + uri.spec;
+                            setImage(menu, iconURL);
                         } catch (e) { }
                     }
                 });
@@ -1540,9 +1525,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%CLIPBOARD%":
                         return readFromClipboard() || "";
                     case "%FAVICON%":
-                        return gBrowser.getIcon(tab ? tab : null) || "";
+                        var noBase64 = true;
                     case "%FAVICON_BASE64%":
-                        return img2base64(gBrowser.getIcon(tab ? tab : null));
+                        let uri = tab.linkedBrowser.currentURI;
+                        let iconURL = getFavicon(uri);
+                        if (!iconURL && (uri.schemeIs("about") || uri.schemeIs("chrome"))) {
+                            let image = tab.querySelector(".tab-icon-image");
+                            let content = getComputedStyle(image).getPropertyValue("content");
+                            if (content) iconURL = content.slice(5, -2);
+                            else iconURL = image.src;
+                        }
+                        return iconURL ? (noBase64 && !iconURL.startsWith("data:image") ? iconURL : img2base64(iconURL)) : "";
                     case "%EMAIL%":
                         return getEmailAddress() || "";
                     case "%EOL%":
@@ -1669,17 +1662,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return elem.value.substring(elem.selectionStart, elem.selectionEnd);
             return "";
         },
-        getURLSpecFromFile(aFile) {
-            var aURL;
-            if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
-                aURL = userChrome.getURLSpecFromFile(aFile);
-            } else if (this.appVersion < 92) {
-                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
-            } else {
-                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
-            }
-            return aURL;
-        },
+        getURLSpecFromFile: getURLSpecFromFile,
         edit: function (aFile, aLineNumber) {
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
 
@@ -1696,7 +1679,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     alert($L('please set editor path'));
                     var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
                     fp.init(window, $L('set global editor'), fp.modeOpen);
-                    fp.appendFilter($L('executable files'), "*.exe");
+                    fp.appendFilter(Ci.nsIFilePicker.filterApps);
 
                     if (typeof fp.show !== 'undefined') {
                         if (fp.show() == fp.returnCancel || !fp.file)
@@ -1809,6 +1792,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             });
         },
         log: log,
+        error: error
     };
 
     function $(id) {
@@ -1825,6 +1809,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     function log() {
         console.log(Array.prototype.slice.call(arguments));
+    }
+
+    function error() {
+        console.error(Array.prototype.slice.call(arguments));
     }
 
     function U(text) {
@@ -1844,41 +1832,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             el.setAttribute(n, attr[n])
         });
         return el;
-    }
-
-    function loadText(aFile) {
-        var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-        var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-        fstream.init(aFile, -1, 0, 0);
-        sstream.init(fstream);
-
-        var data = sstream.read(sstream.available());
-        try {
-            data = decodeURIComponent(escape(data));
-        } catch (e) { }
-        sstream.close();
-        fstream.close();
-        return data;
-    }
-
-    function loadFile(aLeafName) {
-        var aFile = Cc["@mozilla.org/file/directory_service;1"]
-            .getService(Ci.nsIDirectoryService)
-            .QueryInterface(Ci.nsIProperties)
-            .get('UChrm', Ci.nsIFile);
-        aFile.appendRelativePath(aLeafName);
-        if (!aFile.exists() || !aFile.isFile()) return null;
-        var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-        var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-        fstream.init(aFile, -1, 0, 0);
-        sstream.init(fstream);
-        var data = sstream.read(sstream.available());
-        try {
-            data = decodeURIComponent(escape(data));
-        } catch (e) { }
-        sstream.close();
-        fstream.close();
-        return data;
     }
 
     function addStyle(css) {
@@ -2040,12 +1993,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
     display: none !important;
 }
-.addMenu[url] {
-    list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
-}
 .addMenu.exec,
 .addMenu[exec] {
-    list-style-image: url("chrome://devtools/content/debugger/images/window.svg");
+    list-style-image: url("data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiB2aWV3Qm94PSIwIDAgMTYgMTYiIGZpbGw9ImNvbnRleHQtZmlsbCI+CiAgPHBhdGggZD0iTTEgM2ExIDEgMCAwMTEtMWgxMmExIDEgMCAwMTEgMXYxMGExIDEgMCAwMS0xIDFIMmExIDEgMCAwMS0xLTFWM3ptMTMgMEgydjJoMTJWM3ptMCAzSDJ2N2gxMlY2eiIvPgo8L3N2Zz4K");
 }
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
@@ -2113,4 +2063,66 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
-`);
+`, (function () {
+    //  fix for 92+ port Bug 1723723 - Switch JS consumers from getURLSpecFromFile to either getURLSpecFromActualFile or getURLSpecFromDir
+    const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
+
+    const getFileURLSpec = "getURLSpecFromFile" in fph ?
+        f => fph.getURLSpecFromFile(f) :
+        f => fph.getURLSpecFromActualFile(f);
+
+    return getFileURLSpec;
+})(), function (path) {
+    var aFile = Cc["@mozilla.org/file/directory_service;1"]
+        .getService(Ci.nsIDirectoryService)
+        .QueryInterface(Ci.nsIProperties)
+        .get('UChrm', Ci.nsIFile);
+    aFile.initWithPath(path);
+    var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+    var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+    fstream.init(aFile, -1, 0, 0);
+    sstream.init(fstream);
+    var data = sstream.read(sstream.available());
+    try {
+        data = decodeURIComponent(escape(data));
+    } catch (e) { }
+    sstream.close();
+    fstream.close();
+    return data;
+}, (() => {
+    // Bug 1817443 - remove openUILinkIn entirely
+    return "openTrustedLinkIn" in window ? function (url, where, params) {
+        return openTrustedLinkIn(url, where, params);
+    } : function (url, where, params) {
+        return openUILinkIn(url, where, params);
+    }
+})(), function (url, callback) {
+    var uri;
+    try {
+        uri = url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null);
+    } catch (e) { console.error(e); }
+    if (!uri) return "";
+    var isCompleted = false, iconURL;
+    PlacesUtils.favicons.getFaviconDataForPage(uri, {
+        onComplete: function (aURI, aDataLen, aData, aMimeType) {
+            try {
+                iconURL = aURI && aURI.spec ?
+                    aURI.spec :
+                    uri.scheme + "://" + uri.host + "/favicon.ico";
+                if (typeof callback == "function") {
+                    callback(iconURL);
+                }
+            } catch (e) {
+            } finally {
+                isCompleted = true
+            }
+        }
+    });
+    if (typeof callback !== "function") {
+        var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+        while (!isCompleted) {
+            thread.processNextEvent(true);
+        }
+    }
+    return iconURL;
+});
