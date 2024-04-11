@@ -1421,11 +1421,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%RLINK_TEXT%":
                         return context.linkText() || "";
                     case "%RLINK_OR_URL%":
-                        if ("linkURL" in context) {
-                            return context.linkURL;
-                        } else {
-                            return bw.documentURI.spec;
-                        }
+                        return context?.linkURL || bw?.documentURI?.spec || "";
                     case "%RLT_OR_UT%":
                         return context.onLink && context.linkText() || bw.contentTitle; // 链接文本或网页标题
                     case "%IMAGE_ALT%":
