@@ -306,9 +306,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 delete this.FILE;
                 return this.FILE = aFile;
             },
-            get focusedWindow() {
-                return (gContextMenu && gContextMenu.target) ? gContextMenu.target.ownerDocument.defaultView : document.commandDispatcher.focusedWindow || content;
-            },
             get supportLocalization() {
                 delete this.supportLocalization;
                 return this.supportLocalization = typeof Localization === "function";
