@@ -187,7 +187,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             'config has reload': '配置已经重新载入',
             'please set editor path': '请先设置编辑器的路径!!!',
             'set global editor': '设置全局脚本编辑器',
-            'executable files': '执行文件',
             'could not load': '无法载入：%s'
         },
         'en-US': {
@@ -207,7 +206,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             'config has reload': 'The configuration has been reloaded',
             'please set editor path': 'Please set the path to the editor first!!!',
             'set global editor': 'Setting up the global script editor',
-            'executable files': 'Executable files',
             'could not load': 'Could not load：%s'
         },
     }
@@ -1681,7 +1679,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     alert($L('please set editor path'));
                     var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
                     fp.init(window, $L('set global editor'), fp.modeOpen);
-                    fp.appendFilter($L('executable files'), "*.exe");
+                    fp.appendFilter(Ci.nsIFilePicker.filterApps);
 
                     if (typeof fp.show !== 'undefined') {
                         if (fp.show() == fp.returnCancel || !fp.file)
