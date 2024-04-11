@@ -1908,6 +1908,5 @@ tool({
 ```js
 addMenu.copy(); // 复制
 addMenu.exec(path, arg); // 启动程序
-addMenu.$$("a:not(:empty)", null, true); // 获取所有被选中的链接
 addMenu.convertText("%s"); // 得到选取的文字
 ```
