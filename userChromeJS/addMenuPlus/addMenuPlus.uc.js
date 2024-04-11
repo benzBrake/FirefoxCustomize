@@ -148,7 +148,7 @@
 
  */
 
-location.href.startsWith('chrome://browser/content/browser.x') && (function (css, getURLSpecFromFile, loadText, _openTrustedLinkIn, getFavicon) {
+location.href.startsWith('chrome://browser/content/browser.x') && (function (css, getURLSpecFromFile, loadText, _openTrustedLinkIn, getFavicon, versionGE) {
 
     var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
@@ -265,10 +265,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         get prefs() {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("addMenu.")
-        },
-        get appVersion() {
-            delete this.appVersion;
-            return this.appVersion = parseFloat(Services.appinfo.version);
         },
         get platform() {
             delete this.platform;
@@ -433,7 +429,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }), ins);
 
             // Photon Compact
-            if (enableContentAreaContextMenuCompact && this.appVersion >= 90)
+            if (enableContentAreaContextMenuCompact && versionGE("90a1"))
                 $("contentAreaContextMenu").setAttribute("photoncompact", "true");
 
             // 响应鼠标键释放事件（eg：获取选中文本）
@@ -665,22 +661,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                 });
             }
-        },
-        loadURI: function (url) {
-            if ("loadURI" in window) {
-                var loadURI = (url) => {
-                    gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                }
-            } else {
-                var loadURI = (url) => {
-                    try {
-                        gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
-                    } catch (ex) {
-                        console.error(ex);
-                    }
-                }
-            }
-            (this.loadURI = loadURI)(url);
         },
         exec: function (path, arg) {
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
@@ -1508,17 +1488,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 imgType = imgType || "image/png";
                 const NSURI = "http://www.w3.org/1999/xhtml";
                 var img = new Image();
-                var that = this;
                 var canvas,
                     isCompleted = false;
                 img.onload = function () {
                     var width = this.naturalWidth,
                         height = this.naturalHeight;
-                    if (that.appVersion <= 72) {
-                        canvas = document.createXULElementNS(NSURI, "canvas");
-                    } else {
-                        canvas = document.createElementNS(NSURI, "canvas")
-                    }
+                    canvas = versionGE("72a1") ? document.createElementNS(NSURI, "canvas") : document.createXULElementNS(NSURI, "canvas");
                     canvas.width = width;
                     canvas.height = height;
                     var ctx = canvas.getContext("2d");
@@ -1555,56 +1530,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         getSelectedText() {
             return this._selectedText;
         },
-        /**
-         * 获取选区
-         * @param {*} win
-         * @returns
-         * @deprecated use getSelectedText instead
-         */
-        getSelection: function (win) {
-            // from getBrowserSelection Fx19
-            win || (win = this.focusedWindow);
-            var selection = this.getRangeAll(win).join(" ");
-            if (!selection) {
-                let element = document.commandDispatcher.focusedElement;
-                let isOnTextInput = function (elem) {
-                    return elem instanceof HTMLTextAreaElement ||
-                        (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
-                };
-
-                if (isOnTextInput(element)) {
-                    selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
-                        .editor.selection.toString();
-                }
-            }
-
-            if (selection) {
-                selection = selection.replace(/^\s+/, "")
-                    .replace(/\s+$/, "")
-                    .replace(/\s+/g, " ");
-            }
-            return selection;
-        },
-        /**
-         *
-         * @param {*} win
-         * @returns
-         * @deprecated
-         */
-        getRangeAll: function (win) {
-            win || (win = this.focusedWindow);
-            var sel = win.getSelection();
-            var res = [];
-            for (var i = 0; i < sel.rangeCount; i++) {
-                res.push(sel.getRangeAt(i));
-            };
-            return res;
-        },
-        getInputSelection: function (elem) {
-            if (elem instanceof HTMLTextAreaElement || elem instanceof HTMLInputElement && elem.mozIsTextField(false))
-                return elem.value.substring(elem.selectionStart, elem.selectionEnd);
-            return "";
-        },
         getURLSpecFromFile: getURLSpecFromFile,
         edit: function (aFile, aLineNumber) {
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
@@ -1615,10 +1540,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } catch (e) { }
 
             if (!editor || !editor.exists()) {
-                if (useScraptchpad && this.appVersion <= 72) {
-                    this.openScriptInScratchpad(window, aFile);
-                    return;
-                } else {
+                if (!useScraptchpad && versionGE("72a1")) {
                     alert($L('please set editor path'));
                     var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
                     fp.init(window, $L('set global editor'), fp.modeOpen);
@@ -1638,6 +1560,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             Services.prefs.setCharPref("view_source.editor.path", editor.path);
                         });
                     }
+                } else {
+                    this.openScriptInScratchpad(window, aFile);
+                    return;
                 }
             }
 
@@ -1720,7 +1645,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } : null;
             var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
             alertsService.showAlertNotification(
-                this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "addMenuPlus",
+                "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
                 aMsg + "", !!callback, "", callback);
         },
         $$: function (exp, context, aPartly) {
@@ -1763,10 +1688,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     };
 
     function $C(name, attr) {
-        const appVersion = Services.appinfo.version.split(".")[0];
         attr || (attr = {});
         var el;
-        if (appVersion >= 69) {
+        if (versionGE("69a1")) {
             el = document.createXULElement(name);
         } else {
             el = document.createElement(name);
@@ -2068,4 +1992,6 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
         }
     }
     return iconURL;
+}, function (v) {
+    return Services.vc.compare(Services.appinfo.version, v) >= 0;
 });
