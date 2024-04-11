@@ -5,14 +5,14 @@
 // @author         Ryan, ywzhaiqi, Griever
 // @include        main
 // @license        MIT License
-// @compatibility  Firefox 70
+// @compatibility  Firefox 72
 // @charset        UTF-8
 // @version        0.2.1
 // @shutdown       window.addMenu.destroy();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           0.2.1 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox, 修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 resource url 获取选中文本，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数, Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效
+// @note           0.2.1 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox, 修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 resource url 获取选中文本，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数, Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，移除 openScriptInScratchpad，移除 getSelection、getRangeAll、getInputSelection、focusedWindow、$$，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行）
 // @note           0.2.0 采用 JSWindowActor 与内容进程通信（替代 e10s 时代的 loadFrameScript，虽然目前还能用），修复 onshowing 仅在页面右键生效的 bug，修复合并窗口后 CSS 失效的问题
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
@@ -154,7 +154,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             ChromeUtils.import(`resource://addmenu-ucjs/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`);
         }
     } catch (e) { console.error(e); }
-    (function (css) {
+    (function (css, getURLSpecFromFile, loadText, versionGE) {
         let {
             classes: Cc,
             interfaces: Ci,
@@ -169,12 +169,11 @@ if (typeof window === "undefined" || globalThis !== window) {
             }
         } catch (e) { }
 
-        var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
         var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
         var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
         var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
         var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
-        var enableConvertImageAttrToListStyleImage = true; // 将图片属性转换为 css 属性 list-style-image 
+        var enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
         if (window && window.addMenu) {
             window.addMenu.destroy();
@@ -199,7 +198,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 'config has reload': '配置已经重新载入',
                 'please set editor path': '请先设置编辑器的路径!!!',
                 'set global editor': '设置全局脚本编辑器',
-                'executable files': '执行文件',
                 'could not load': '无法载入：%s'
             },
             'en-US': {
@@ -219,7 +217,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                 'config has reload': 'The configuration has been reloaded',
                 'please set editor path': 'Please set the path to the editor first!!!',
                 'set global editor': 'Setting up the global script editor',
-                'executable files': 'Executable files',
                 'could not load': 'Could not load：%s'
             },
         }
@@ -280,10 +277,6 @@ if (typeof window === "undefined" || globalThis !== window) {
             get prefs() {
                 delete this.prefs;
                 return this.prefs = Services.prefs.getBranch("addMenu.")
-            },
-            get appVersion() {
-                delete this.appVersion;
-                return this.appVersion = parseFloat(Services.appinfo.version);
             },
             get platform() {
                 delete this.platform;
@@ -448,7 +441,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 }), ins);
 
                 // Photon Compact
-                if (enableContentAreaContextMenuCompact && this.appVersion >= 90)
+                if (enableContentAreaContextMenuCompact && versionGE("90a1"))
                     $("contentAreaContextMenu").setAttribute("photoncompact", "true");
 
                 // 响应鼠标键释放事件（eg：获取选中文本）
@@ -669,97 +662,47 @@ if (typeof window === "undefined" || globalThis !== window) {
                 else if (text)
                     this.copy(this.convertText(text));
             },
-            openCommand: function (event, url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
-                /** aAllowThirdPartyFixup 参数在 ywzhaiqi 版本是 postData */
-                if (aAllowThirdPartyFixup instanceof Object) {
-                    aAllowThirdPartyFixup = Object.assign({
-                        postData: null,
-                        userContextId: gBrowser.selectedBrowser.getAttribute(
-                            "userContextId"
-                        )
-                    }, aAllowThirdPartyFixup)
+            openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = { userContextId: 0 }, aPostData, aReferrerInfo) {
+                const isJavaScriptURL = url.startsWith("javascript:");
+                const where = event.button === 1 ? 'tab' : aWhere;
+
+                // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
+                const allowThirdPartyFixup = { ...aAllowThirdPartyFixup };
+                if (aPostData) {
+                    allowThirdPartyFixup.postData = aPostData;
+                }
+                if (aReferrerInfo) {
+                    allowThirdPartyFixup.referrerInfo = aReferrerInfo;
+                }
+
+                // Set triggeringPrincipal based on 'where' and URL scheme
+                allowThirdPartyFixup.triggeringPrincipal = (() => {
+                    if (where === 'current' && !isJavaScriptURL) {
+                        return gBrowser.selectedBrowser.contentPrincipal;
+                    }
+
+                    const isWebURL = /^(f|ht)tps?:/.test(url);
+                    const userContextId = isWebURL ? allowThirdPartyFixup.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") : null;
+                    return isWebURL ?
+                        Services.scriptSecurityManager.createNullPrincipal({ userContextId }) :
+                        Services.scriptSecurityManager.getSystemPrincipal();
+                })();
+
+                if (isJavaScriptURL) {
+                    openTrustedLinkIn(url, 'current', {
+                        allowPopups: true,
+                        inBackground: allowThirdPartyFixup.inBackground || false,
+                        allowInheritPrincipal: true,
+                        private: PrivateBrowsingUtils.isWindowPrivate(window),
+                        userContextId: allowThirdPartyFixup.userContextId,
+                    });
+                } else if (where || event.button === 1) {
+                    openTrustedLinkIn(url, where, allowThirdPartyFixup);
                 } else {
-                    aAllowThirdPartyFixup = {
-                        postData: aAllowThirdPartyFixup || aPostData || null,
-                        userContextId: gBrowser.selectedBrowser.getAttribute(
-                            "userContextId"
-                        )
-                    }
-                }
-                aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
-                if (this.appVersion >= 78) {
-                    aAllowThirdPartyFixup.triggeringPrincipal = where === 'current' ?
-                        gBrowser.selectedBrowser.contentPrincipal : (
-                            /^(f|ht)tps?:/.test(url) ?
-                                Services.scriptSecurityManager.createNullPrincipal({
-                                    userContextId: aAllowThirdPartyFixup.userContextId
-                                }) :
-                                Services.scriptSecurityManager.getSystemPrincipal()
-                        );
-                }
-                var uri;
-                try {
-                    uri = Services.io.newURI(url, null, null);
-                } catch (e) {
-                    return this.log(U($L('url is invalid')).replace("%s", url));
-                }
-                if (uri.scheme === "javascript") {
-                    this.loadURI(url);
-                } else if (where) {
-                    if (this.appVersion < 78) {
-                        openUILinkIn(uri.spec, where, false, aAllowThirdPartyFixup.postData);
-                    } else {
-                        openWebLinkIn(uri.spec, where, aAllowThirdPartyFixup);
-                    }
-                } else if (event.button == 1) {
-                    if (this.appVersion < 78) {
-                        openUILinkIn(uri.spec, 'tab');
-                    } else {
-                        openWebLinkIn(uri.spec, 'tab', aAllowThirdPartyFixup);
-                    }
-                } else {
-                    // 参数 3 aIgnoreButton 允许 bool 和 Object，如果是 Object，则会用作 params 参数
-                    openUILink(uri.spec, event, {
+                    openUILink(url, event, {
                         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
                     });
                 }
-            },
-            loadURI: function (url) {
-                if ("loadURI" in window) {
-                    var loadURI = (url) => {
-                        gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                    }
-                } else {
-                    var loadURI = (url) => {
-                        try {
-                            gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
-                        } catch (ex) {
-                            console.error(ex);
-                        }
-                    }
-                }
-                (this.loadURI = loadURI)(url);
-            },
-            openUILinkIn: function (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
-                const createFixUp = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
-                    aAllowThirdPartyFixup = aAllowThirdPartyFixup instanceof Object ? aAllowThirdPartyFixup : {};
-                    aAllowThirdPartyFixup.triggeringPrincipal = aAllowThirdPartyFixup.triggeringPrincipal || (where === 'current' ? gBrowser.selectedBrowser.contentPrincipal : (
-                        /^(f|ht)tps?:/.test(url) ?
-                            Services.scriptSecurityManager.createNullPrincipal({}) :
-                            Services.scriptSecurityManager.getSystemPrincipal()
-                    ));
-                    aAllowThirdPartyFixup.postData = aPostData || null;
-                    aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
-                }
-                if ("openTrustedLinkIn" in window) {
-                    var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
-                        openTrustedLinkIn(url, where, createFixUp(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo));
-                    }
-                } else {
-                    var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) =>
-                        openUILinkIn(url, where, false, aPostData || null, aReferrerInfo);
-                }
-                (this.openUILinkIn = _openURL)(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo);
             },
             exec: function (path, arg) {
                 var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
@@ -777,7 +720,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                     file.initWithPath(path);
                     if (!file.exists()) {
-                        Cu.reportError($L("file not found", path));
+                        this.error($L("file not found", path));
                         return;
                     }
 
@@ -835,7 +778,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return;
                 }
 
-                var data = loadText(aFile);
+                var data = loadText(aFile.path);
 
                 var sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
 
@@ -851,7 +794,9 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 var includeSrc = "";
                 sandbox.include = function (aLeafName) {
-                    var data = loadFile(aLeafName);
+                    var file = addMenu.FILE.parent.clone();
+                    file.appendRelativePath(aLeafName);
+                    var data = loadText(file.path);
                     if (data)
                         includeSrc += data + "\n";
                 };
@@ -1411,8 +1356,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (!aFile.exists()) {
                         menu.setAttribute("disabled", "true");
                     } else if (aFile.isFile()) {
-                        let fileURL = this.getURLSpecFromFile(aFile);
-                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                        setImage(menu, "moz-icon://" + this.getURLSpecFromFile(aFile) + "?size=16");
                     } else {
                         setImage(menu, "chrome://global/skin/icons/folder.svg");
                     }
@@ -1438,11 +1382,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                     }
                 }
                 var setIconCallback = function (url) {
-                    let uri, iconURI;
+                    let uri;
                     try {
                         uri = Services.io.newURI(url, null, null);
                     } catch (e) {
-                        this.log(e)
+                        this.error(e)
                     }
                     if (!uri) return;
 
@@ -1452,9 +1396,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                             try {
                                 // javascript: URI の host にアクセスするとエラー
                                 let iconURL = aURI && aURI.spec ?
-                                    "moz-anno:favicon:" + aURI.spec :
-                                    "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico";
-                                menu.setAttribute("image", iconURL);
+                                    "page-icon:" + aURI.spec :
+                                    "page-icon:" + uri.spec;
+                                setImage(menu, iconURL);
                             } catch (e) { }
                         }
                     });
@@ -1613,17 +1557,12 @@ if (typeof window === "undefined" || globalThis !== window) {
                     imgType = imgType || "image/png";
                     const NSURI = "http://www.w3.org/1999/xhtml";
                     var img = new Image();
-                    var that = this;
                     var canvas,
                         isCompleted = false;
                     img.onload = function () {
                         var width = this.naturalWidth,
                             height = this.naturalHeight;
-                        if (that.appVersion <= 72) {
-                            canvas = document.createXULElementNS(NSURI, "canvas");
-                        } else {
-                            canvas = document.createElementNS(NSURI, "canvas")
-                        }
+                        canvas = document.createElementNS(NSURI, "canvas")
                         canvas.width = width;
                         canvas.height = height;
                         var ctx = canvas.getContext("2d");
@@ -1631,7 +1570,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         isCompleted = true;
                     };
                     img.onerror = function () {
-                        Cu.reportError($L('could not load', imgSrc));
+                        addMenu.error($L('could not load', imgSrc));
                         isCompleted = true;
                     };
                     img.src = imgSrc;
@@ -1663,67 +1602,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             getSelectedText: function () {
                 return this._selectedText;
             },
-            /**
-             * 获取选区
-             * @param {*} win
-             * @returns
-             * @deprecated use getSelectedText instead
-             */
-            getSelection: function (win) {
-                // from getBrowserSelection Fx19
-                win || (win = this.focusedWindow);
-                var selection = this.getRangeAll(win).join(" ");
-                if (!selection) {
-                    let element = document.commandDispatcher.focusedElement;
-                    let isOnTextInput = function (elem) {
-                        return elem instanceof HTMLTextAreaElement ||
-                            (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
-                    };
-
-                    if (isOnTextInput(element)) {
-                        selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
-                            .editor.selection.toString();
-                    }
-                }
-
-                if (selection) {
-                    selection = selection.replace(/^\s+/, "")
-                        .replace(/\s+$/, "")
-                        .replace(/\s+/g, " ");
-                }
-                return selection;
-            },
-            /**
-             *
-             * @param {*} win
-             * @returns
-             * @deprecated
-             */
-            getRangeAll: function (win) {
-                win || (win = this.focusedWindow);
-                var sel = win.getSelection();
-                var res = [];
-                for (var i = 0; i < sel.rangeCount; i++) {
-                    res.push(sel.getRangeAt(i));
-                };
-                return res;
-            },
-            getInputSelection: function (elem) {
-                if (elem instanceof HTMLTextAreaElement || elem instanceof HTMLInputElement && elem.mozIsTextField(false))
-                    return elem.value.substring(elem.selectionStart, elem.selectionEnd);
-                return "";
-            },
-            getURLSpecFromFile(aFile) {
-                var aURL;
-                if (typeof userChrome !== "undefined" && typeof userChrome.getURLSpecFromFile !== "undefined") {
-                    aURL = userChrome.getURLSpecFromFile(aFile);
-                } else if (this.appVersion < 92) {
-                    aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
-                } else {
-                    aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
-                }
-                return aURL;
-            },
+            getURLSpecFromFile: getURLSpecFromFile,
             edit: function (aFile, aLineNumber) {
                 if (!aFile || !aFile.exists() || !aFile.isFile()) return;
 
@@ -1733,29 +1612,24 @@ if (typeof window === "undefined" || globalThis !== window) {
                 } catch (e) { }
 
                 if (!editor || !editor.exists()) {
-                    if (useScraptchpad && this.appVersion <= 72) {
-                        this.openScriptInScratchpad(window, aFile);
-                        return;
-                    } else {
-                        alert($L('please set editor path'));
-                        var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                        fp.init(window, $L('set global editor'), fp.modeOpen);
-                        fp.appendFilter($L('executable files'), "*.exe");
+                    alert($L('please set editor path'));
+                    var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                    fp.init(window, $L('set global editor'), fp.modeOpen);
+                    fp.appendFilter(Ci.nsIFilePicker.filterApps);
 
-                        if (typeof fp.show !== 'undefined') {
-                            if (fp.show() == fp.returnCancel || !fp.file)
-                                return;
-                            else {
-                                editor = fp.file;
-                                Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                            }
-                        } else {
-                            fp.open(res => {
-                                if (res != Ci.nsIFilePicker.returnOK) return;
-                                editor = fp.file;
-                                Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                            });
+                    if (typeof fp.show !== 'undefined') {
+                        if (fp.show() == fp.returnCancel || !fp.file)
+                            return;
+                        else {
+                            editor = fp.file;
+                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
                         }
+                    } else {
+                        fp.open(res => {
+                            if (res != Ci.nsIFilePicker.returnOK) return;
+                            editor = fp.file;
+                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                        });
                     }
                 }
 
@@ -1767,30 +1641,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                     URL: aURL,
                     lineNumber: aLineNumber
                 }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
-            },
-            /**
-             * 使用 Scratchpad 编辑
-             * @param {*} parentWindow
-             * @param {*} file
-             * @deprecated
-             */
-            openScriptInScratchpad: function (parentWindow, file) {
-                let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,dialog,centerscreen,dependent");
-                spWin.top.moveTo(0, 0);
-                spWin.top.resizeTo(screen.availWidth, screen.availHeight);
-
-                spWin.addEventListener("load", function spWinLoaded() {
-                    spWin.removeEventListener("load", spWinLoaded, false);
-
-                    let Scratchpad = spWin.Scratchpad;
-                    Scratchpad.setFilename(file.path);
-                    Scratchpad.addObserver({
-                        onReady: function () {
-                            Scratchpad.removeObserver(this);
-                            Scratchpad.importFromFile.call(Scratchpad, file);
-                        }
-                    });
-                }, false);
             },
             copy: function (aText) {
                 Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
@@ -1838,21 +1688,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                 } : null;
                 var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
                 alertsService.showAlertNotification(
-                    this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "addMenuPlus",
+                    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
                     aMsg + "", !!callback, "", callback);
             },
-            $$: function (exp, context, aPartly) {
-                context || (context = this.focusedWindow.document);
-                var doc = context.ownerDocument || context;
-                var elements = $$(exp, doc);
-                if (arguments.length <= 2)
-                    return elements;
-                var sel = doc.defaultView.getSelection();
-                return elements.filter(function (q) {
-                    return sel.containsNode(q, aPartly)
-                });
-            },
             log: log,
+            error: error
         }
 
         function $(id) {
@@ -1867,8 +1707,12 @@ if (typeof window === "undefined" || globalThis !== window) {
             return Array.prototype.slice.call(args);
         }
 
-        function log() {
-            console.log(Array.prototype.slice.call(arguments));
+        function log(...args) {
+            console.log(...args);
+        }
+
+        function error(...args) {
+            console.error(...args);
         }
 
         function U(text) {
@@ -1876,53 +1720,12 @@ if (typeof window === "undefined" || globalThis !== window) {
         };
 
         function $C(name, attr) {
-            const appVersion = Services.appinfo.version.split(".")[0];
             attr || (attr = {});
-            var el;
-            if (appVersion >= 69) {
-                el = document.createXULElement(name);
-            } else {
-                el = document.createElement(name);
-            }
+            var el = document.createXULElement(name);
             if (attr) Object.keys(attr).forEach(function (n) {
                 el.setAttribute(n, attr[n])
             });
             return el;
-        }
-
-        function loadText(aFile) {
-            var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-            var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-            fstream.init(aFile, -1, 0, 0);
-            sstream.init(fstream);
-
-            var data = sstream.read(sstream.available());
-            try {
-                data = decodeURIComponent(escape(data));
-            } catch (e) { }
-            sstream.close();
-            fstream.close();
-            return data;
-        }
-
-        function loadFile(aLeafName) {
-            var aFile = Cc["@mozilla.org/file/directory_service;1"]
-                .getService(Ci.nsIDirectoryService)
-                .QueryInterface(Ci.nsIProperties)
-                .get('UChrm', Ci.nsIFile);
-            aFile.appendRelativePath(aLeafName);
-            if (!aFile.exists() || !aFile.isFile()) return null;
-            var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-            var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-            fstream.init(aFile, -1, 0, 0);
-            sstream.init(fstream);
-            var data = sstream.read(sstream.available());
-            try {
-                data = decodeURIComponent(escape(data));
-            } catch (e) { }
-            sstream.close();
-            fstream.close();
-            return data;
         }
 
         function addStyle(css) {
@@ -2036,12 +1839,9 @@ if (typeof window === "undefined" || globalThis !== window) {
     toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
         display: none !important;
     }
-    .addMenu[url] {
-        list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.png");
-    }
     .addMenu.exec,
     .addMenu[exec] {
-        list-style-image: url("chrome://devtools/content/debugger/images/window.svg");
+        list-style-image: url("data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiB2aWV3Qm94PSIwIDAgMTYgMTYiIGZpbGw9ImNvbnRleHQtZmlsbCI+CiAgPHBhdGggZD0iTTEgM2ExIDEgMCAwMTEtMWgxMmExIDEgMCAwMTEgMXYxMGExIDEgMCAwMS0xIDFIMmExIDEgMCAwMS0xLTFWM3ptMTMgMEgydjJoMTJWM3ptMCAzSDJ2N2gxMlY2eiIvPgo8L3N2Zz4K");
     }
     .addMenu.copy,
     menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
@@ -2109,5 +1909,52 @@ if (typeof window === "undefined" || globalThis !== window) {
         margin-inline-start: 8px;
         margin-inline-end: 8px;
     }
-`)
+`, (function () {
+        //  fix for 92+ port Bug 1723723 - Switch JS consumers from getURLSpecFromFile to either getURLSpecFromActualFile or getURLSpecFromDir
+        const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
+
+        const getFileURLSpec = "getURLSpecFromFile" in fph ?
+            f => fph.getURLSpecFromFile(f) :
+            f => fph.getURLSpecFromActualFile(f);
+
+        return getFileURLSpec;
+    })(), (function () {
+        return "IOUtils" in window ? function (path) {
+            let isCompleted = false, data = "";
+            IOUtils.readUTF8(path).then((d) => {
+                data = d;
+            }).catch((e) => {
+                console.error(e);
+            }).finally(() => {
+                isCompleted = true;
+            })
+            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+            while (!isCompleted) {
+                thread.processNextEvent(true);
+            }
+            try {
+                data = decodeURIComponent(escape(data));
+            } catch (e) { }
+            return data;
+        } : function (path) {
+            var aFile = Cc["@mozilla.org/file/directory_service;1"]
+                .getService(Ci.nsIDirectoryService)
+                .QueryInterface(Ci.nsIProperties)
+                .get('UChrm', Ci.nsIFile);
+            aFile.initWithPath(path);
+            var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+            var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+            fstream.init(aFile, -1, 0, 0);
+            sstream.init(fstream);
+            var data = sstream.read(sstream.available());
+            try {
+                data = decodeURIComponent(escape(data));
+            } catch (e) { }
+            sstream.close();
+            fstream.close();
+            return data;
+        }
+    })(), function (v) {
+        return Services.vc.compare(Services.appinfo.version, v) >= 0;
+    })
 }
