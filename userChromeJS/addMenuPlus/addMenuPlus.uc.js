@@ -869,7 +869,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.setCondition(group, menuObj, opt);
             // Sync condition attribute to child menus
             menuObj._items.forEach(function (obj) {
-                if (!Object.keys(obj).includes("contidion")) {
+                if (!Object.keys(obj).includes("condition")) {
                     obj.condition = group.getAttribute("condition");
                 }
             });

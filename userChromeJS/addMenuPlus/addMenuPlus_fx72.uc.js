@@ -929,7 +929,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 this.setCondition(group, menuObj, opt);
                 // Sync condition attribute to child menus
                 menuObj._items.forEach(function (obj) {
-                    if (!Object.keys(obj).includes("contidion")) {
+                    if (!Object.keys(obj).includes("condition")) {
                         obj.condition = group.getAttribute("condition");
                     }
                 });
@@ -1437,9 +1437,8 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (conditions.length) {
                         menu.setAttribute("condition", conditions.join(" "));
                     }
-                } else {
-                    if ("insertPoint" in opt && "id" in opt.insertPoint && opt.insertPoint.id === "addMenu-page-insertpoint")
-                        menu.setAttribute("condition", "normal");
+                } else if ("insertPoint" in opt && "id" in opt.insertPoint && opt.insertPoint.id === "addMenu-page-insertpoint") {
+                    menu.setAttribute("condition", "normal");
                 }
             },
             convertText: function (text) {
@@ -1803,6 +1802,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     })(`
     .addMenuHide {
         display: none !important;
+        visibility: collsapse !important;
     }
     #contentAreaContextMenu > .addMenu:not(menugroup),
     #contentAreaContextMenu > menugroup > .addMenu[condition],
