@@ -552,7 +552,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     });
                     break;
                 case 'mouseup':
-                    if (event.button) return;
                     // 鼠标按键释放时读取选中文本
                     if (content) {
                         this._selectedText = content.getSelection().toString();
@@ -1405,13 +1404,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%HOST%":
                         return bw.documentURI.host;
                     case "%S":
-                        return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
+                        return (gContextMenu ? context.selectionInfo.fullText : addMenu.getSelectedText()) || "";
                     case "%SEL%":
-                        return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
+                        return (gContextMenu ? context.selectionInfo.fullText : addMenu.getSelectedText()) || "";
                     case "%SL":
                     case "%SEL_OR_LT%":
                     case "%SEL_OR_LINK_TEXT%":
-                        return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || context.linkText();
+                        return (gContextMenu ? context.selectionInfo.fullText : addMenu.getSelectedText()) || context.linkText();
                     case "%L":
                         return context.linkURL || "";
                     case "%RLINK%":

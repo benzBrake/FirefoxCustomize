@@ -85,13 +85,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                 const { console, document } = window;
                 const actor = window.windowGlobalChild.getActor("AddMenu");;
                 document.addEventListener("mouseup", function (event) {
-                    if (event.button === 0) { // Check if left mouse button is clicked
-                        var selectedText = getSelectedText();
-                        if (selectedText && !isEditableElement()) {
-                            actor.sendAsyncMessage("AM:SetSeletedText", {
-                                text: selectedText
-                            });
-                        }
+                    var selectedText = getSelectedText();
+                    if (selectedText && !isEditableElement()) {
+                        actor.sendAsyncMessage("AM:SetSeletedText", {
+                            text: selectedText
+                        });
                     }
                 });
 
@@ -1486,13 +1484,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                         case "%HOST%":
                             return bw.documentURI.host;
                         case "%S":
-                            return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
+                            return (gContextMenu ? context.selectionInfo.fullText : addMenu.getSelectedText()) || "";
                         case "%SEL%":
-                            return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
+                            return (gContextMenu ? context.selectionInfo.fullText : addMenu.getSelectedText()) || "";
                         case "%SL":
                         case "%SEL_OR_LT%":
                         case "%SEL_OR_LINK_TEXT%":
-                            return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || context.linkText();
+                            return (gContextMenu ? context.selectionInfo.fullText : addMenu.getSelectedText()) || context.linkText();
                         case "%L":
                             return context.linkURL || "";
                         case "%RLINK%":
