@@ -669,12 +669,19 @@ if (typeof window === "undefined" || globalThis !== window) {
                 else if (text)
                     this.copy(this.convertText(text));
             },
-            openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = { userContextId: 0 }, aPostData, aReferrerInfo) {
+            openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
                 const isJavaScriptURL = url.startsWith("javascript:");
+                const isWebURL = /^(f|ht)tps?:/.test(url);
                 const where = event.button === 1 ? 'tab' : aWhere;
 
                 // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
                 const allowThirdPartyFixup = { ...aAllowThirdPartyFixup };
+
+                // 遵循容器设定
+                if (!allowThirdPartyFixup.userContextId && isWebURL) {
+                    allowThirdPartyFixup.userContextId = gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") || null;
+                }
+
                 if (aPostData) {
                     allowThirdPartyFixup.postData = aPostData;
                 }
@@ -688,8 +695,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         return gBrowser.selectedBrowser.contentPrincipal;
                     }
 
-                    const isWebURL = /^(f|ht)tps?:/.test(url);
-                    const userContextId = isWebURL ? allowThirdPartyFixup.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") : null;
+                    const userContextId = isWebURL ? allowThirdPartyFixup.userContextId : null;
                     return isWebURL ?
                         Services.scriptSecurityManager.createNullPrincipal({ userContextId }) :
                         Services.scriptSecurityManager.getSystemPrincipal();
