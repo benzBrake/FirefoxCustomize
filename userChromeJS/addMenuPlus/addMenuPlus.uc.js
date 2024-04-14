@@ -1017,6 +1017,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     noDefaultLabel = !obj.label;
                     if (noDefaultLabel)
                         obj.label = obj.command || obj.oncommand;
+                    
+                    if (obj.class) {
+                        obj.class.split(" ").forEach(c => menuitem.classList.add(c));
+                    }
                 }
             } else {
                 menuitem = $C(menuitemType);
