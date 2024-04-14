@@ -793,24 +793,17 @@ if (typeof window === "undefined" || globalThis !== window) {
                 if (keyword) {
                     let param = (text ? (text = this.convertText(text)) : "");
                     let engine = keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(keyword);
-                    if (engine) {
-                        if (isPromise(engine)) {
-                            engine.then(function (engine) {
-                                let submission = engine.getSubmission(param);
-                                addMenu.openCommand(event, submission.uri.spec, where);
-                            });
-                        } else {
-                            let submission = engine.getSubmission(param);
-                            this.openCommand(event, submission.uri.spec, where);
-                        }
-                    } else {
+                    engine.then(function (engine) {
+                        let submission = engine.getSubmission(param);
+                        addMenu.openCommand(event, submission.uri.spec, where);
+                    }).catch(() => {
                         PlacesUtils.keywords.fetch(keyword || '').then(entry => {
                             if (!entry) return;
                             // 文字化けの心配が…
                             let newurl = entry.url.href.replace('%s', encodeURIComponent(param));
                             this.openCommand(event, newurl, where);
                         });
-                    }
+                    })
                 } else if (url)
                     this.openCommand(event, this.convertText(url), where);
                 else if (exec)
@@ -1311,18 +1304,14 @@ if (typeof window === "undefined" || globalThis !== window) {
                 if (noDefaultLabel && menuitem.localName !== separatorType) {
                     if (this.supportLocalization && obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
                         // Localization 支持
-                        let strings = new Localization([obj["data-l10n-href"]], true);
+                        let strings = new Localization([obj["data-l10n-href"]], true); // 第二个参数为 true 则是同步返回
                         menuitem.setAttribute('label', strings.formatValueSync([obj['data-l10n-id']]) || menuitem.getAttribute("label"));
                     } else if (obj.keyword) {
                         // 调用搜索引擎 Label hack
                         let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                        if (isPromise(engine)) {
-                            engine.then(s => {
-                                if (s && s._name) menuitem.setAttribute('label', s._name);
-                            });
-                        } else {
-                            if (engine && engine._name) menuitem.setAttribute('label', engine._name);
-                        }
+                        engine.then(s => {
+                            if (s && s._name) menuitem.setAttribute('label', s._name);
+                        });
                     }
                 }
 
@@ -1523,17 +1512,10 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 if (obj.keyword) {
                     let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                    if (engine) {
-                        if (isPromise(engine)) {
-                            engine.then(function (engine) {
-                                setImage(menu, getIconURL(engine));
-                            });
-                        } else if (engine.iconURI) {
-                            // 非异步只能从 iconURI 获取
-                            setImage(menu, engine.iconURI.spec);
-                        }
-                        return;
-                    }
+                    engine.then(function (engine) {
+                        setImage(menu, getIconURL(engine));
+                    });
+                    return;
                     function getIconURL(engine) {
                         // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
                         return (engine._iconURI || engine.iconURI)?.spec || "chrome://browser/skin/search-engine-placeholder.png";
@@ -1982,14 +1964,6 @@ if (typeof window === "undefined" || globalThis !== window) {
 
         function isDef(v) {
             return v !== undefined && v !== null
-        }
-
-        function isPromise(val) {
-            return (
-                isDef(val) &&
-                typeof val.then === 'function' &&
-                typeof val.catch === 'function'
-            )
         }
 
         function setImage(menu, imageUrl) {
