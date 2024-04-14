@@ -36,6 +36,126 @@
 // @note           ツールの再読み込みメニューの右クリックで設定ファイルを開くようにした
 // @note           修复支持57+
 // ==/UserScript==
+/***** 説明 *****
+ *
+ * _addMenu.js Demo: https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/addMenuPlus/_addmenu.js
+
+ ◆ 脚本说明 ◆
+ 通过配置文件自定义菜单
+ 在编写的时候，参考了 Copy URL Lite+，得到了作者允许。
+ ・http://www.code-404.net/articles/browsers/copy-url-lite
+
+
+ ◆ 如何使用？ ◆
+ 配置（_addmenu.js） 文件，请放在Chrome目录下。
+ 后缀名 .uc.js 可选。
+
+ 启动后，在浏览器中加载配置文件，并添加菜单。
+ 可以从“工具”菜单重新读取配置文件。
+
+
+ ◆ 格式 ◆
+ page, tab, tool, app, nav, ident 関数にメニューの素となるオブジェクトを渡す。
+ オブジェクトのプロパティがそのまま menuitem の属性になります。
+
+ ○exec
+ 启动外部应用程序。
+ パラメータは text プロパティを利用します。
+ 自动显示该应用程序的图标。
+
+ ○keyword
+ 指定了关键字的书签和搜索引擎。
+ text プロパティがあればそれを利用して検索などをします。
+ 自动显示搜索引擎的图标。
+
+ ○text（変数が利用可能）
+ 复制你想要的字符串到剪贴板。（Copy URL Lite+ 互換）
+ keyword, exec があればそれらの補助に使われます。
+
+ ○url（可用的变量）
+ 打开你想要的网址。
+ 内容によっては自動的にアイコンが付きます。
+
+ ○where
+ keyword, url でのページの開き方を指定できます（current, tab, tabshifted, window）
+ 省略するとブックマークのように左クリックと中クリックを使い分けられます。
+
+ ○condition
+ メニューを表示する条件を指定します。（Copy URL Lite+ 互換）
+ 省略すると url や text プロパティから自動的に表示/非表示が決まります。
+
+ ○onshowing
+ 菜单显示时执行的函数
+
+ ○onshowinglabel
+ 菜单显示时更新标签
+
+ page/PageMenu: select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput から組み合わせて使います。
+ nav/NavMenu: menubar, tabs, navbar, personal, nomenubar, notabs, nonavbar, nopersonal 配合使用
+
+ ○oncommand, command
+ これらがある時は condition 以外の特殊なプロパティは無視されます。
+
+
+ ◆ サブメニュー ◆
+ PageMenu, TabMenu, ToolMenu, AppMenu, NavMenu, IdentMenu 関数を使って自由に追加できます。
+
+ ◆ 横排菜单 ◆
+ PageGroup, TabGroup, ToolGroup, AppGroup, NavGroup, IdentGroup GroupMenu (deprecated)
+
+ ◆ 利用可能な変数 ◆
+ %EOL%              改行(\r\n)
+ %TITLE%            ページタイトル
+ %URL%              RI
+ %SEL%              選択範囲の文字列
+ %SEL_OR_LT%        获取选中文字，不行则获取链接文本
+ %SEL_OR_LINK_TEXT% 同上
+ %RLINK%            リンクアンカー先の URL
+ %IMAGE_URL%        画像の URL (支持在 SVG 和 图片上右键，或者直接打开图片的内容区域上右键获取)
+ %IMAGE_ALT%        画像の alt 属性
+ %IMAGE_TITLE%      画像の title 属性
+ %IMAGE_BASE64%     画像の DataURL
+ %SVG_BASE64%       SVG の DataURL
+ %LINK%             リンクアンカー先の URL
+ %LINK_TEXT%        リンクのテキスト
+ %RLINK_TEXT%       リンクのテキスト
+ %MEDIA_URL%        メディアの URL
+ %CLIPBOARD%        クリップボードの内容
+ %FAVICON%          Favicon の URL
+ %FAVICON_BASE64%   Favicon の DataURL
+ %EMAIL%            リンク先の E-mail アドレス
+ %HOST%             ページのホスト(ドメイン)
+ %LINK_HOST%        リンクのホスト(ドメイン)
+ %RLINK_HOST%       リンクのホスト(ドメイン)
+ %LINK_OR_URL%      リンクの URL が取れなければページの URL
+ %RLINK_OR_URL%     リンクの URL が取れなければページの URL
+  
+ %XXX_HTMLIFIED%    HTML エンコードされた上記変数（XXX → TITLE などに読み替える）
+ %XXX_HTML%         HTML エンコードされた上記変数
+ %XXX_ENCODE%       URI  エンコードされた上記変数
+
+ ◇ 簡易的な変数 ◇
+ %h                 ページのホスト(ドメイン)
+ %i                 画像の URL
+ %l                 リンクの URL
+ %m                 メディアの URL
+ %p                 クリップボードの内容
+ %s                 選択文字列
+ %t                 ページのタイトル
+ %u                 ページの URL
+ %sl                获取选中文字，不行则获取链接文本
+
+ 基本的に Copy URL Lite+ の変数はそのまま使えます。
+ 大文字・小文字は区別しません。
+
+ 参考 Firefox 源码编写了 copyImage 函数
+
+ 参考 BSTweaker 的 DeepLTranslator.uc.js 重构为 Actor 三合一，重写了获取选中文本的方法
+
+ 使用 ChatGPT/通义千问 编写了部分函数
+
+ 参考 Dummy 的代码修复了 Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
+ */
 if (typeof window === "undefined" || globalThis !== window) {
     if (!Services.appinfo.remoteType) {
         this.EXPORTED_SYMBOLS = ["AddMenuParent"];
