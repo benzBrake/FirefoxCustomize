@@ -486,6 +486,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             destroy: function () {
                 ChromeUtils.unregisterWindowActor('AddMenu');
                 $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
+                $("contentAreaContextMenu").removeEventListener("popuphiding", this, false);
                 $("tabContextMenu").removeEventListener("popupshowing", this, false);
                 $("toolbar-context-menu").removeEventListener("popupshowing", this, false);
                 $("menu_FilePopup").removeEventListener("popupshowing", this, false);
