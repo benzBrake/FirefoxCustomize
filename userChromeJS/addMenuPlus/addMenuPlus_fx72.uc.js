@@ -1549,8 +1549,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                         case "%IMAGE_BASE64%":
                             return img2base64(context.mediaURL);
                         case "%SVG_BASE64%":
-                            let url = context.linkURL || bw.documentURI.spec || "";
-                            return url.endsWith("svg") ? svg2base64(url) : "";
+                            if (addMenu.ContextMenu.onSvg && addMenu.ContextMenu.svg) {
+                                return svg2base64(addMenu.ContextMenu.svg);
+                            } else {
+                                let url = addMenu.convertText("%RLINK_OR_URL%");
+                                if (url.startsWith("data:image/svg+xml")) return url;
+                                return url.endsWith("svg") ? svg2base64(url) : "";
+                            }
                         case "%M":
                             return context.mediaURL || "";
                         case "%MEDIA_URL%":
@@ -1624,13 +1629,21 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 function svg2base64(svgSrc) {
                     if (typeof svgSrc == 'undefined') return "";
-                    var xmlhttp = new XMLHttpRequest();
-                    xmlhttp.open("GET", svgSrc, false);
-                    xmlhttp.send();
-                    var svg = xmlhttp.responseText;
+                    if (/^(f|ht)tps?:/i.test(svgSrc)) {
+                        var xmlhttp = new XMLHttpRequest();
+                        xmlhttp.open("GET", svgSrc, false);
+                        xmlhttp.send();
+                        svgSrc = xmlhttp.responseText;
+                    }
+                    if (!isSVGSource(svgSrc)) return "";
                     // svg string to data url
-                    var svg64 = "data:image/svg+xml;base64," + btoa(svg);
+                    var svg64 = "data:image/svg+xml;base64," + btoa(svgSrc);
                     return svg64;
+                }
+
+                function isSVGSource(str) {
+                    str = str.trim();
+                    return str.startsWith('<svg') && str.endsWith('</svg>');
                 }
             },
             setSelectedText: function (text) {
