@@ -619,7 +619,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             else if (text)
                 this.copy(this.convertText(text));
         },
-        openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = { }, aPostData, aReferrerInfo) {
+        openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
             const isJavaScriptURL = url.startsWith("javascript:");
             const isWebURL = /^(f|ht)tps?:/.test(url);
             const where = event.button === 1 ? 'tab' : aWhere;
@@ -971,7 +971,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     let command = firstItem.getAttribute('command');
                     if (command)
                         firstItem = document.getElementById(command) || firstItem;
-                    ['label', 'accesskey', 'image', 'icon', 'tooltiptext'].forEach(function (n) {
+                    ['label', 'data-l10n-href', 'data-l10n-id', 'accesskey', 'icon', 'tooltiptext'].forEach(function (n) {
                         if (!menu.hasAttribute(n) && firstItem.hasAttribute(n))
                             menu.setAttribute(n, firstItem.getAttribute(n));
                     }, this);
@@ -1086,11 +1086,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (this.supportLocalization && obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
                     // Localization 支持
                     let strings = new Localization([obj["data-l10n-href"]]);
-                    strings.formatValue([obj['data-l10n-id']]).then(
-                        text => {
-                            menuitem.setAttribute('label', text || menuitem.getAttribute("label"));
-                        }
-                    )
+                    menuitem.setAttribute('label', strings.formatValueSync([obj['data-l10n-id']]) || menuitem.getAttribute("label"));
                 } else if (obj.keyword) {
                     // 调用搜索引擎 Label hack
                     let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
