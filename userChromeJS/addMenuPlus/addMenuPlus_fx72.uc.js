@@ -1547,7 +1547,16 @@ if (typeof window === "undefined" || globalThis !== window) {
                         case "%IMAGE_URL%":
                             return context.imageURL || context.imageInfo.currentSrc || "";
                         case "%IMAGE_BASE64%":
-                            return img2base64(context.mediaURL);
+                            let imageURL;
+                            if (gContextMenu?.onImage) {
+                                imageURL = context.mediaURL;
+                            } else {
+                                let url = addMenu.convertText("%RLINK_OR_URL%");
+                                if (/\.(?:jpe?g|png|gif|bmp|webp|ico|jxl)$/i.test(url)) {
+                                    imageURL = url;
+                                }
+                            }
+                            return imageURL ? img2base64(imageURL) : "";
                         case "%SVG_BASE64%":
                             if (addMenu.ContextMenu.onSvg && addMenu.ContextMenu.svg) {
                                 return svg2base64(addMenu.ContextMenu.svg);
@@ -1855,22 +1864,22 @@ if (typeof window === "undefined" || globalThis !== window) {
     #contentAreaContextMenu menugroup.addMenu[condition] {
         display: none;
     }
-    #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"],
-    #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"],
-    #contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="image"],
-    #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"],
-    #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"],
-    #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="input"],
-    #contentAreaContextMenu[addMenu~="select"]  .addMenu[condition~="select"],
-    #contentAreaContextMenu[addMenu=""] .addMenu[condition~="normal"],
-    #contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="noselect"],
-    #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"],
-    #contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="nomailto"],
-    #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"],
-    #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"],
-    #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"],
-    #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
-    #contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"] {
+    #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="image"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="input"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu~="select"]  .addMenu[condition~="select"]:not([hidden="true"]),
+    #contentAreaContextMenu[addMenu=""] .addMenu[condition~="normal"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="noselect"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="nomailto"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"]:not([hidden="true"]),
+    #contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"]:not([hidden="true"]) {
         display: flex; display: -moz-box;
     }
     #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
