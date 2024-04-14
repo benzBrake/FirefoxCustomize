@@ -97,9 +97,14 @@ if (typeof window === "undefined" || globalThis !== window) {
                 });
 
                 document.addEventListener("contextmenu", function (event) {
-                    actor.sendAsyncMessage("AM:OnElement", {
+                    let data = {
                         onSvg: event.target.namespaceURI === "http://www.w3.org/2000/svg"
-                    });
+                    }
+
+                    if (event.target.namespaceURI === "http://www.w3.org/2000/svg") {
+                        data.svg = event.target.closest('svg')?.outerHTML;
+                    }
+                    actor.sendAsyncMessage("AM:OnElement", data);
                 });
 
                 function getSelectedText() {
@@ -342,6 +347,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 return this.panelId = Math.floor(Math.random() * 900000 + 99999);
             },
             ContextMenu: {
+                svg: null,
                 onSvg: false
             },
             init: function () {
@@ -596,6 +602,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         if (event.target != event.currentTarget) return;
                         if (event.target.id === "contentAreaContextMenu") {
                             Object.assign(this.ContextMenu, {
+                                svg: null,
                                 onSvg: false
                             });
                         }
