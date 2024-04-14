@@ -73,6 +73,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case "AM:ExectueScriptEnd":
                         break;
+                    case "AM:OnElement":
+                        Object.assign(win.addMenu.ContextMenu, data);
+                        break;
                 }
             }
         }
@@ -91,6 +94,12 @@ if (typeof window === "undefined" || globalThis !== window) {
                             text: selectedText
                         });
                     }
+                });
+
+                document.addEventListener("contextmenu", function (event) {
+                    actor.sendAsyncMessage("AM:OnElement", {
+                        onSvg: event.target.namespaceURI === "http://www.w3.org/2000/svg"
+                    });
                 });
 
                 function getSelectedText() {
@@ -332,6 +341,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 delete this.panelId;
                 return this.panelId = Math.floor(Math.random() * 900000 + 99999);
             },
+            ContextMenu: {
+                onSvg: false
+            },
             init: function () {
                 this.win = window;
                 // prepare regex
@@ -402,6 +414,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 };
 
                 $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
+                $("contentAreaContextMenu").addEventListener("popuphiding", this, false);
                 $("tabContextMenu").addEventListener("popupshowing", this, false);
                 $("toolbar-context-menu").addEventListener("popupshowing", this, false);
                 $("menu_FilePopup").addEventListener("popupshowing", this, false);
@@ -578,6 +591,14 @@ if (typeof window === "undefined" || globalThis !== window) {
                             }
                         });
 
+                        break;
+                    case "popuphiding":
+                        if (event.target != event.currentTarget) return;
+                        if (event.target.id === "contentAreaContextMenu") {
+                            Object.assign(this.ContextMenu, {
+                                onSvg: false
+                            });
+                        }
                         break;
                     case 'mouseup':
                         // get selected text
@@ -1518,7 +1539,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         case "%IMAGE_URL%":
                             return context.imageURL || context.imageInfo.currentSrc || "";
                         case "%IMAGE_BASE64%":
-                            return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
+                            return img2base64(context.mediaURL);
                         case "%SVG_BASE64%":
                             let url = context.linkURL || bw.documentURI.spec || "";
                             return url.endsWith("svg") ? svg2base64(url) : "";
