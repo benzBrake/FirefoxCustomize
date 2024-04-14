@@ -1110,7 +1110,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                         noDefaultLabel = !obj.label;
                         if (noDefaultLabel)
-                            obj.label = obj.command || obj.oncommand;
+                            obj.label = (org ? org.getAttribute("label") : obj.command || obj.oncommand);
 
                         if (obj.class) {
                             obj.class.split(" ").forEach(c => menuitem.classList.add(c));
