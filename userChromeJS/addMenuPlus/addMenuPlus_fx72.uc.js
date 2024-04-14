@@ -182,7 +182,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             ChromeUtils.import(`resource://addmenu-ucjs/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`);
         }
     } catch (e) { console.error(e); }
-    (function (css, getURLSpecFromFile, loadText, versionGE) {
+    (function (css, getURLSpecFromFile, loadText, versionGE, isFirefoxSupportedImageMime) {
         let {
             classes: Cc,
             interfaces: Ci,
@@ -1737,6 +1737,36 @@ if (typeof window === "undefined" || globalThis !== window) {
                 clipboard.setData(trans, null, Components.interfaces.nsIClipboard.kGlobalClipboard);
                 return true;
             },
+            copyImage: function (base64URI, imageMime) {
+                // https://searchfox.org/mozilla-central/rev/d5ed9df049e40f12d058a5b7c2f3451ed778163b/devtools/client/shared/screenshot.js#293-325
+                if (!(/^data:(?:image\/(jpeg|png|gif|bmp|webp|svg|ico|x-jxl|x-jxlp))|(x-icon);base64,/i.test(base64URI))) return;
+                if (!isFirefoxSupportedImageMime(imageMime)) return;
+                try {
+                    const imageTools = Cc["@mozilla.org/image/tools;1"].getService(
+                        Ci.imgITools
+                    );
+                    const base64Data = base64URI.split(";base64,")[1];
+                    const image = atob(base64Data);
+                    const img = imageTools.decodeImageFromBuffer(
+                        image,
+                        image.length,
+                        imageMime
+                    );
+                    const transferable = Cc[
+                        "@mozilla.org/widget/transferable;1"
+                    ].createInstance(Ci.nsITransferable);
+                    transferable.init(null);
+                    transferable.addDataFlavor(imageMime);
+                    transferable.setTransferData(imageMime, img);
+                    Services.clipboard.setData(
+                        transferable,
+                        null,
+                        Services.clipboard.kGlobalClipboard
+                    );
+                } catch (e) {
+                    this.error(e);
+                }
+            },
             alert: function (aMsg, aTitle, aCallback) {
                 var callback = aCallback ? {
                     observe: function (subject, topic, data) {
@@ -2016,5 +2046,17 @@ if (typeof window === "undefined" || globalThis !== window) {
         }
     })(), function (v) {
         return Services.vc.compare(Services.appinfo.version, v) >= 0;
+    }, function (mime) {
+        const firefoxSupportedImageMimes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/bmp',
+            'image/webp',
+            'image/svg+xml',
+            'image/vnd.microsoft.icon', // .ico
+            'image/jxl', // JPEG XL
+        ];
+        return firefoxSupportedImageMimes.includes(mime.toLowerCase());
     })
 }
