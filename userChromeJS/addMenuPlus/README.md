@@ -1,6 +1,6 @@
 # addMenuPlus.uc.js
 
-ℹaddMenuPlus_fx70.uc.js 是采用 JSActor 架构的新版本
+ℹ`addMenuPlus_fx70.uc.js` 是采用 JSActor 架构的新版本，**从2024.04.14开始传统版本`addMenuPlus.uc.js`会降低维护频率，请尽量使用`addMenuPlus_fx70.uc.js` 。**
 
 addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文件可添加、修改、隐藏菜单，修改后无需重启生效。
 
