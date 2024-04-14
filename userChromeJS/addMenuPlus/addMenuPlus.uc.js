@@ -965,6 +965,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } else if (!menu.hasAttribute('label')) {
                 let firstItem = menu.querySelector('menuitem');
                 if (firstItem) {
+                    if (firstItem.classList.contains('copy')) {
+                        menu.classList.add('copy');
+                    }
                     let command = firstItem.getAttribute('command');
                     if (command)
                         firstItem = document.getElementById(command) || firstItem;
@@ -973,9 +976,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             menu.setAttribute(n, firstItem.getAttribute(n));
                     }, this);
                     setImage(menu, menuObj.image || firstItem.getAttribute("image") || firstItem.style.listStyleImage.slice(4, -1));
-                    if (firstItem.classList.contains('copy')) {
-                        menu.classList.add('copy');
-                    }
                     menu.setAttribute('onclick', "\
                     if (event.target != event.currentTarget) return;\
                     var firstItem = event.currentTarget.querySelector('menuitem');\

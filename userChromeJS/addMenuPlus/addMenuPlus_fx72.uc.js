@@ -1031,6 +1031,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                     let firstItem = menu.querySelector('menuitem');
                     if (firstItem) {
                         let command = firstItem.getAttribute('command');
+                        if (firstItem.classList.contains('copy')) {
+                            menu.classList.add('copy');
+                        }
                         if (command)
                             firstItem = document.getElementById(command) || firstItem;
                         ['label', 'accesskey', 'icon', 'tooltiptext'].forEach(function (n) {
@@ -1038,9 +1041,6 @@ if (typeof window === "undefined" || globalThis !== window) {
                                 menu.setAttribute(n, firstItem.getAttribute(n));
                         }, this);
                         setImage(menu, menuObj.image || firstItem.getAttribute("image") || firstItem.style.listStyleImage.slice(4, -1));
-                        if (firstItem.classList.contains('copy')) {
-                            menu.classList.add('copy');
-                        }
                         menu.setAttribute('onclick', "\
                         if (event.target != event.currentTarget) return;\
                         var firstItem = event.currentTarget.querySelector('menuitem');\
