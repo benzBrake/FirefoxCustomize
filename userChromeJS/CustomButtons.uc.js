@@ -2,11 +2,13 @@
 // @name            CustomButtons.uc.js
 // @description     添加多个自定义按钮，截图、UndoCloseTab、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
-// @version         0.1.6
+// @version         0.1.8
 // @compatibility   Firefox 70 +
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.8 画板改为调用系统自带
+// @note            0.1.7 修改【我的足迹：下载】，【我的足迹：书签】图标
 // @note            0.1.6 默认截图工具改为搜狗截图，支持联网 OCR，移除证书管理按钮和缩放控制按钮，修改部分图标，移除无用函数
 // @note            0.1.5 修复 firefox 115 无法读取已关闭标签列表
 // @note            从 CopyCat.uc.js 修改而来
@@ -43,11 +45,11 @@
             label: $L("take snapshot"),
             tooltiptext: $L("take snapshot tooltip"),
             type: "contextmenu",
-            tool: "\\SnapShot.exe",
-            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMiAyYTIgMiAwIDAgMC0yIDJ2LjVhLjUuNSAwIDAgMCAxIDBWNGExIDEgMCAwIDEgMS0xaC41YS41LjUgMCAwIDAgMC0xSDJ6bTIuNSAwYS41LjUgMCAxIDAgMCAxSDdhLjUuNSAwIDAgMCAwLTFINC41ek05IDJhLjUuNSAwIDEgMCAwIDFoMi41YS41LjUgMCAwIDAgMC0xSDl6bTQuNSAwYS41LjUgMCAxIDAgMCAxaC41YTEgMSAwIDAgMSAxIDF2LjVhLjUuNSAwIDAgMCAxIDBWNGEyIDIgMCAwIDAtMi0yaC0uNXpNLjUgNi4wMDRhLjUuNSAwIDAgMC0uNS41djJhLjUuNSAwIDAgMCAxIDB2LTJhLjUuNSAwIDAgMC0uNS0uNXptMTUgMGEuNS41IDAgMCAwLS41LjV2MmEuNS41IDAgMCAwIDEgMHYtMmEuNS41IDAgMCAwLS41LS41em0tMTAgLjAwNGEuNDk3LjQ5NyAwIDAgMC0uNDIuNzc1bDIuMzE4IDMuNDgtMS4yMzggMS44NTRhMiAyIDAgMSAwIC44MzUuNTUyTDggMTEuMTYzbDEuMDA4IDEuNTE0YTIgMiAwIDEgMCAuODMyLS41NTRsLTEuMjM4LTEuODYuMDAyLS4wMDQtLjYwMi0uOS0uMDAyLjAwMi0yLjA4Ni0zLjEyN2EuNTAzLjUwMyAwIDAgMC0uNDE0LS4yMjV6bTUgMGEuNTAzLjUwMyAwIDAgMC0uNDE0LjIyNUw4LjYwNCA4LjQ1NmwuNi45MDIgMS43MTctMi41NzRhLjQ5Ny40OTcgMCAwIDAtLjQyLS43NzZ6bS05Ljk5NiA0YS41LjUgMCAwIDAtLjUuNXYuNWEyIDIgMCAwIDAgMiAyaC4yNWEuNS41IDAgMCAwIDAtMWgtLjI1YTEgMSAwIDAgMS0xLTF2LS41YS41LjUgMCAwIDAtLjUtLjV6bTE1IDBhLjUuNSAwIDAgMC0uNS41di41YTEgMSAwIDAgMS0xIDFoLS4yNTJhLjUuNSAwIDEgMCAwIDFoLjI1MmEyIDIgMCAwIDAgMi0ydi0uNWEuNS41IDAgMCAwLS41LS41em0tMTAgMi45OTZhMSAxIDAgMSAxIDAgMiAxIDEgMCAwIDEgMC0yem01IDBhMSAxIDAgMSAxIDAgMiAxIDEgMCAwIDEgMC0yeiIvPgo8L3N2Zz4K",
+            tool: "\\SGScreencapture\\screencapture.exe",
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzAgMzAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMykiPg0KICA8cGF0aCBkPSJNNiA0QzQuODk1IDQgNCA0Ljg5NSA0IDZMNCA3QzQgNy41NTIgNC40NDggOCA1IDhDNS41NTIgOCA2IDcuNTUyIDYgN0w2IDZMNyA2QzcuNTUyIDYgOCA1LjU1MiA4IDVDOCA0LjQ0OCA3LjU1MiA0IDcgNEw2IDQgeiBNIDExIDRDMTAuNDQ4IDQgMTAgNC40NDggMTAgNUMxMCA1LjU1MyAxMC40NDggNiAxMSA2TDEzIDZDMTMuNTUyIDYgMTQgNS41NTIgMTQgNUMxNCA0LjQ0OCAxMy41NTIgNCAxMyA0TDExIDQgeiBNIDE3IDRDMTYuNDQ4IDQgMTYgNC40NDggMTYgNUMxNiA1LjU1MiAxNi40NDggNiAxNyA2TDE5IDZDMTkuNTUyIDYgMjAgNS41NTIgMjAgNUMyMCA0LjQ0OCAxOS41NTIgNCAxOSA0TDE3IDQgeiBNIDIzIDRDMjIuNDQ4IDQgMjIgNC40NDggMjIgNUMyMiA1LjU1MiAyMi40NDggNiAyMyA2TDI0IDZMMjQgN0MyNCA3LjU1MiAyNC40NDggOCAyNSA4QzI1LjU1MiA4IDI2IDcuNTUyIDI2IDdMMjYgNkMyNiA0Ljg5NSAyNS4xMDUgNCAyNCA0TDIzIDQgeiBNIDUgMTBDNC40NDggMTAgNCAxMC40NDggNCAxMUw0IDEzQzQgMTMuNTUyIDQuNDQ4IDE0IDUgMTRDNS41NTMgMTQgNiAxMy41NTIgNiAxM0w2IDExQzYgMTAuNDQ4IDUuNTUyIDEwIDUgMTAgeiBNIDI1IDEwQzI0LjQ0OCAxMCAyNCAxMC40NDggMjQgMTFMMjQgMTMuMDAxOTUzQzI0IDEzLjU1Mzk1MyAyNC40NDggMTQuMDAxOTUzIDI1IDE0LjAwMTk1M0MyNS41NTIgMTQuMDAxOTUzIDI2IDEzLjU1Mzk1MyAyNiAxMy4wMDE5NTNMMjYgMTFDMjYgMTAuNDQ4IDI1LjU1MiAxMCAyNSAxMCB6IE0gMTUuNjE3MTg4IDE0QzE1LjIzODE4OCAxNCAxNC44OTM2MDkgMTQuMjEzNzM0IDE0LjcyNDYwOSAxNC41NTI3MzRMMTQuNTUyNzM0IDE0Ljg5NDUzMUMxNC4yMTM3MzQgMTUuNTcxNTMxIDEzLjUyMDY3MiAxNiAxMi43NjM2NzIgMTZMMTEgMTZDMTAuNDQ4IDE2IDEwIDE2LjQ0OCAxMCAxN0wxMCAyNUMxMCAyNS41NTIgMTAuNDQ4IDI2IDExIDI2TDI1IDI2QzI1LjU1MiAyNiAyNiAyNS41NTIgMjYgMjVMMjYgMTdDMjYgMTYuNDQ4IDI1LjU1MiAxNiAyNSAxNkwyMy4yMzYzMjggMTZDMjIuNDc4MzI4IDE2IDIxLjc4NjI2NiAxNS41NzI1MzEgMjEuNDQ3MjY2IDE0Ljg5NDUzMUwyMS4yNzUzOTEgMTQuNTUyNzM0QzIxLjEwNjM5MSAxNC4yMTQ3MzQgMjAuNzYxODEzIDE0IDIwLjM4MjgxMiAxNEwxNS42MTcxODggMTQgeiBNIDUgMTZDNC40NDggMTYgNCAxNi40NDggNCAxN0w0IDE5QzQgMTkuNTUyIDQuNDQ4IDIwIDUgMjBDNS41NTIgMjAgNiAxOS41NTIgNiAxOUw2IDE3QzYgMTYuNDQ4IDUuNTUyIDE2IDUgMTYgeiBNIDE4IDE3QzIwLjIwOSAxNyAyMiAxOC43OTEgMjIgMjFDMjIgMjMuMjA5IDIwLjIwOSAyNSAxOCAyNUMxNS43OTEgMjUgMTQgMjMuMjA5IDE0IDIxQzE0IDE4Ljc5MSAxNS43OTEgMTcgMTggMTcgeiBNIDE4IDE5IEEgMiAyIDAgMCAwIDE2IDIxIEEgMiAyIDAgMCAwIDE4IDIzIEEgMiAyIDAgMCAwIDIwIDIxIEEgMiAyIDAgMCAwIDE4IDE5IHogTSA1IDIyQzQuNDQ4IDIyIDQgMjIuNDQ4IDQgMjNMNCAyNEM0IDI1LjEwNSA0Ljg5NSAyNiA2IDI2TDcgMjZDNy41NTIgMjYgOCAyNS41NTIgOCAyNUM4IDI0LjQ0OCA3LjU1MiAyNCA3IDI0TDYgMjRMNiAyM0M2IDIyLjQ0OCA1LjU1MiAyMiA1IDIyIHoiIC8+DQo8L3N2Zz4=",
             popup: [{
                 label: $L("hide firefox to take snapshot"),
-                tool: "\\SnapShot.exe",
+                tool: "\\SGScreencapture\\screencapture.exe",
                 oncommand: function (event) {
                     window.minimize();
                     setTimeout(() => {
@@ -76,8 +78,14 @@
                 image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMyAzaDJ2MkgzVjN6bTQgMGgydjJIN1Yzem00IDBoMnYyaC0yVjN6bTQgMGgydjJoLTJWM3ptNCAwaDJ2MmgtMlYzem0wIDRoMnYyaC0yVjd6TTMgMTloMnYySDN2LTJ6bTAtNGgydjJIM3YtMnptMC00aDJ2Mkgzdi0yem0wLTRoMnYySDNWN3ptNy42NjcgNGwxLjAzNi0xLjU1NUExIDEgMCAwIDEgMTIuNTM1IDloMi45M2ExIDEgMCAwIDEgLjgzMi40NDVMMTcuMzMzIDExSDIwYTEgMSAwIDAgMSAxIDF2OGExIDEgMCAwIDEtMSAxSDhhMSAxIDAgMCAxLTEtMXYtOGExIDEgMCAwIDEgMS0xaDIuNjY3ek05IDE5aDEwdi02aC0yLjczN2wtMS4zMzMtMmgtMS44NmwtMS4zMzMgMkg5djZ6bTUtMWEyIDIgMCAxIDEgMC00IDIgMiAwIDAgMSAwIDR6Ii8+PC9zdmc+'
             }, {
                 label: $L("microsoft paint"),
-                tool: "\\mspaint.exe",
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTkuMjI4IDE4LjczMmwxLjc2OC0xLjc2OCAxLjc2NyAxLjc2OGEyLjUgMi41IDAgMSAxLTMuNTM1IDB6TTguODc4IDEuMDhsMTEuMzE0IDExLjMxM2ExIDEgMCAwIDEgMCAxLjQxNWwtOC40ODUgOC40ODVhMSAxIDAgMCAxLTEuNDE0IDBsLTguNDg1LTguNDg1YTEgMSAwIDAgMSAwLTEuNDE1bDcuNzc4LTcuNzc4LTIuMTIyLTIuMTIxTDguODggMS4wOHpNMTEgNi4wM0wzLjkyOSAxMy4xIDExIDIwLjE3M2w3LjA3MS03LjA3MUwxMSA2LjAyOXoiLz48L3N2Zz4='
+                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTkuMjI4IDE4LjczMmwxLjc2OC0xLjc2OCAxLjc2NyAxLjc2OGEyLjUgMi41IDAgMSAxLTMuNTM1IDB6TTguODc4IDEuMDhsMTEuMzE0IDExLjMxM2ExIDEgMCAwIDEgMCAxLjQxNWwtOC40ODUgOC40ODVhMSAxIDAgMCAxLTEuNDE0IDBsLTguNDg1LTguNDg1YTEgMSAwIDAgMSAwLTEuNDE1bDcuNzc4LTcuNzc4LTIuMTIyLTIuMTIxTDguODggMS4wOHpNMTEgNi4wM0wzLjkyOSAxMy4xIDExIDIwLjE3M2w3LjA3MS03LjA3MUwxMSA2LjAyOXoiLz48L3N2Zz4=',
+                oncommand: function () {
+                    var environment = Components.classes["@mozilla.org/process/environment;1"].
+                        getService(Components.interfaces.nsIEnvironment);
+
+                    var cmd = PathUtils.join(environment.get("SystemRoot"), "System32", "cmd.exe");
+                    CustomButtons.exec(cmd, "/c start /b mspaint.exe", { startHidden: true });
+                }
             }]
         }, {
             id: 'CB-undoCloseTab',
@@ -166,13 +174,13 @@
             id: 'CB-DownloadHistory',
             label: $L("downloads history"),
             tooltiptext: $L("downloads history"),
-            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNOCAwYS41LjUgMCAwIDAtLjUuNXYxMC43OUwzLjg1NCA3LjY0NGEuNS41IDAgMSAwLS43MDcuNzA3bDQuNSA0LjVhLjUuNSAwIDAgMCAuNzA3IDBsNC41LTQuNWEuNS41IDAgMCAwLS43MDctLjcwN0w4LjUwMSAxMS4yOVYuNWEuNS41IDAgMCAwLS41LS41eiIvPgogIDxwYXRoIGQ9Ik0xLjUgMTJhLjUuNSAwIDAgMC0uNS41djFDMSAxNC44NzUgMi4xMjUgMTYgMy41IDE2aDljMS4zNzUgMCAyLjUtMS4xMjUgMi41LTIuNXYtMWEuNS41IDAgMCAwLTEgMHYxYzAgLjgzNC0uNjY2IDEuNS0xLjUgMS41aC05Yy0uODM0IDAtMS41LS42NjYtMS41LTEuNXYtMWEuNS41IDAgMCAwLS41LS41eiIvPgo8L3N2Zz4K",
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMykiPg0KICA8cGF0aCBkPSJNNS43NSAzIEEgMS4wMDAxIDEuMDAwMSAwIDAgMCA0Ljg4NjcxODggMy40OTYwOTM4TDMuMTM2NzE4OCA2LjQ5NjA5MzggQSAxLjAwMDEgMS4wMDAxIDAgMCAwIDMgN0wzIDE5QzMgMjAuMDkzMDYzIDMuOTA2OTM3MiAyMSA1IDIxTDE5IDIxQzIwLjA5MzA2MyAyMSAyMSAyMC4wOTMwNjMgMjEgMTlMMjEgNyBBIDEuMDAwMSAxLjAwMDEgMCAwIDAgMjAuODYzMjgxIDYuNDk2MDkzOEwxOS4xMTMyODEgMy40OTYwOTM4IEEgMS4wMDAxIDEuMDAwMSAwIDAgMCAxOC4yNSAzTDUuNzUgMyB6IE0gNi4zMjQyMTg4IDVMMTcuNjc1NzgxIDVMMTguODQxNzk3IDdMNS4xNTgyMDMxIDdMNi4zMjQyMTg4IDUgeiBNIDUgOUwxOSA5TDE5IDE5TDUgMTlMNSA5IHogTSAxMSAxMUwxMSAxNEw4IDE0TDEyIDE4TDE2IDE0TDEzIDE0TDEzIDExTDExIDExIHoiLz4NCjwvc3ZnPg==",
             oncommand: "DownloadsPanel.showDownloadsHistory();"
         }, {
             id: 'CB-BookmarksManager',
             label: $L("bookmarks manager"),
             tooltiptext: $L("bookmarks manager"),
-            image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjb250ZXh0LWZpbGwiIHN0cm9rZS1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjEuMDAxIj4KICA8cGF0aCBkPSJtOCAxMi45NS00LjA5IDIuMTUxYS41MDEuNTAxIDAgMCAxLS43MjctLjUyOGwuNzMxLTQuMjY2YS41NjEuNTYyIDAgMCAwLS4xNjEtLjQ5OEwuNjU1IDYuNzlhLjUwMS41MDEgMCAwIDEgLjI3OC0uODU1bDQuMjgtLjYyM2EuNTYxLjU2MiAwIDAgMCAuNDIzLS4zMDdMNy41NSAxLjEyM2EuNTAxLjUwMSAwIDAgMSAuOSAwbDIuMDMxIDQuMTE1YS40NzUuNDc1IDAgMCAwIC40MjYuMjY0SDE1LjUiLz4KICA8cGF0aCBkPSJNMTUuNSA4LjVoLTVNMTAuNSAxMS41aDUiLz4KPC9zdmc+Cg==",
+            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMikiPg0KICA8cGF0aCBkPSJNMTAuNSA2QzguMDM2NSA2IDUuOTQ1NjI4OSA3LjYyNzY3NiA1LjI0ODA0NjkgOS44NjUyMzQ0QzUuMjQ3ODY0MSA5Ljg2NTgyIDUuMjQ4MjI5NSA5Ljg2NjYwMTggNS4yNDgwNDY5IDkuODY3MTg3NUM1LjE0MTAyNzEgMTAuMjEwODggNS4wNjY4NjQ0IDEwLjU2ODc4OCA1LjAyOTI5NjkgMTAuOTM3NUM1LjAyOTIzMDkgMTAuOTM4MTQ1IDUuMDI5MzYyNiAxMC45Mzg4MDggNS4wMjkyOTY5IDEwLjkzOTQ1M0M1LjAxMDYwOSAxMS4xMjM1MDkgNSAxMS4zMTEwOTQgNSAxMS41TDUgMTMuNUw1IDM2LjVDNSAzOS41MzMgNy40NjggNDIgMTAuNSA0MkwyNC4wNTY2NDEgNDJDMjMuNDYyNjQxIDQxLjA3MyAyMi45Nzk3NjYgNDAuMDY4IDIyLjYzNDc2NiAzOUwxMC41IDM5QzkuMTIxIDM5IDggMzcuODc4IDggMzYuNUw4IDE1TDQwIDE1TDQwIDIzQzQxLjA4NCAyMy40NTIgNDIuMDg4IDI0LjA1MzU3OCA0MyAyNC43Njc1NzhMNDMgMTMuNUw0MyAxMS41QzQzIDExLjMwOTgzOCA0Mi45ODk2NSAxMS4xMjI3NTUgNDIuOTcwNzAzIDEwLjkzNzVDNDIuOTMzMTM2IDEwLjU2ODc4OCA0Mi44NTg5NzMgMTAuMjEwODggNDIuNzUxOTUzIDkuODY3MTg3NUM0Mi43NTE3NzEgOS44NjY2MDE4IDQyLjc1MjEzNiA5Ljg2NTgyIDQyLjc1MTk1MyA5Ljg2NTIzNDRDNDIuMDU0MzcxIDcuNjI3Njc2IDM5Ljk2MzUgNiAzNy41IDZMMTAuNSA2IHogTSAxMC41IDlDMTEuMzI4IDkgMTIgOS42NzIgMTIgMTAuNUMxMiAxMS4zMjggMTEuMzI4IDEyIDEwLjUgMTJDOS42NzIgMTIgOSAxMS4zMjggOSAxMC41QzkgOS43NzU1IDkuNTEzOTQ1MyA5LjE3MTE5NTMgMTAuMTk3MjY2IDkuMDMxMjVDMTAuMjk0ODgzIDkuMDExMjU3OCAxMC4zOTY1IDkgMTAuNSA5IHogTSAxNS41IDlDMTYuMzI4IDkgMTcgOS42NzIgMTcgMTAuNUMxNyAxMS4zMjggMTYuMzI4IDEyIDE1LjUgMTJDMTQuNjcyIDEyIDE0IDExLjMyOCAxNCAxMC41QzE0IDkuNjcyIDE0LjY3MiA5IDE1LjUgOSB6IE0gMzUgMjRDMjguOTI1IDI0IDI0IDI4LjkyNSAyNCAzNUMyNCA0MS4wNzUgMjguOTI1IDQ2IDM1IDQ2QzQxLjA3NSA0NiA0NiA0MS4wNzUgNDYgMzVDNDYgMjguOTI1IDQxLjA3NSAyNCAzNSAyNCB6IE0gMzUgMjhDMzUuNDggMjggMzUuOTA4NDUzIDI4LjMwNTc2NiAzNi4wNjQ0NTMgMjguNzU5NzY2TDM3LjE3NzczNCAzMkw0MC44NzUgMzJDNDEuMzU4IDMyIDQxLjc4NzQwNiAzMi4zMDg2MjUgNDEuOTQxNDA2IDMyLjc2NTYyNUM0Mi4wOTU0MDYgMzMuMjIzNjI1IDQxLjkzOTY4NyAzMy43Mjk0ODQgNDEuNTU0Njg4IDM0LjAyMTQ4NEwzOC41NjA1NDcgMzYuMjkyOTY5TDM5LjU3NDIxOSAzOS41MzkwNjJDMzkuNzIwMjE5IDQwLjAwNTA2MyAzOS41NDgzOTEgNDAuNTEwOTY5IDM5LjE1MDM5MSA0MC43OTI5NjlDMzguOTU1MzkxIDQwLjkzMDk2OSAzOC43MjcgNDEgMzguNSA0MUMzOC4yNjMgNDEgMzguMDI1MTcyIDQwLjkyNTM5MSAzNy44MjYxNzIgNDAuNzc1MzkxTDM1IDM4LjY2MDE1NkwzMi4xNzM4MjggNDAuNzc1MzkxQzMxLjc4MzgyOCA0MS4wNjgzOTEgMzEuMjQ4NjA5IDQxLjA3NjkyMiAzMC44NDk2MDkgNDAuNzk0OTIyQzMwLjQ1MTYwOSA0MC41MTI5MjIgMzAuMjc5NzgxIDQwLjAwNTA2MyAzMC40MjU3ODEgMzkuNTM5MDYyTDMxLjQzOTQ1MyAzNi4yOTQ5MjJMMjguNDQ1MzEyIDM0LjAyMTQ4NEMyOC4wNjAzMTIgMzMuNzI5NDg0IDI3LjkwNDU5NCAzMy4yMjU1NzggMjguMDU4NTk0IDMyLjc2NzU3OEMyOC4yMTM1OTQgMzIuMzA5NTc4IDI4LjY0MiAzMiAyOS4xMjUgMzJMMzIuODIyMjY2IDMyTDMzLjkzNTU0NyAyOC43NTk3NjZDMzQuMDkxNTQ3IDI4LjMwNTc2NiAzNC41MiAyOCAzNSAyOCB6Ii8+DQo8L3N2Zz4=",
             oncommand: "PlacesCommandHook.showPlacesOrganizer('AllBookmarks');"
         }];
 
@@ -300,6 +308,10 @@
                     return btn;
                 }
             });
+            let btn = CustomizableUI.getWidget(obj.id).forWindow(window).node;
+            if (obj.onCreated && typeof obj.onCreated == 'function') {
+                obj.onCreated(btn);
+            }
         },
         newMenuPopup(doc, obj) {
             if (!obj) return;
@@ -466,50 +478,52 @@
                 this.openCommand(event, url, where);
             if (postcommand) eval(postcommand);
         },
-        openCommand: function (event, url, where, postData) {
-            var uri;
-            try {
-                uri = Services.io.newURI(url, null, null);
-            } catch (e) {
-                return this.log('openCommand', 'url is invalid', url);
+        openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
+            const isJavaScriptURL = url.startsWith("javascript:");
+            const isWebURL = /^(f|ht)tps?:/.test(url);
+            const where = event.button === 1 ? 'tab' : aWhere;
+
+            // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
+            const allowThirdPartyFixup = { ...aAllowThirdPartyFixup };
+
+            // 遵循容器设定
+            if (!allowThirdPartyFixup.userContextId && isWebURL) {
+                allowThirdPartyFixup.userContextId = gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") || null;
             }
-            if (uri.scheme === "javascript") {
-                try {
-                    gBrowser.loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                } catch (e) {
-                    gBrowser.loadURI(uri, { triggeringPrincipal: gBrowser.contentPrincipal });
+
+            if (aPostData) {
+                allowThirdPartyFixup.postData = aPostData;
+            }
+            if (aReferrerInfo) {
+                allowThirdPartyFixup.referrerInfo = aReferrerInfo;
+            }
+
+            // Set triggeringPrincipal based on 'where' and URL scheme
+            allowThirdPartyFixup.triggeringPrincipal = (() => {
+                if (where === 'current' && !isJavaScriptURL) {
+                    return gBrowser.selectedBrowser.contentPrincipal;
                 }
-            } else if (where) {
-                if (this.appVersion < 78) {
-                    openUILinkIn(uri.spec, where, false, postData || null);
-                } else {
-                    openTrustedLinkIn(uri.spec, where, {
-                        postData: postData || null,
-                        triggeringPrincipal: where === 'current' ?
-                            gBrowser.selectedBrowser.contentPrincipal : (
-                                /^(f|ht)tps?:/.test(uri.spec) ?
-                                    Services.scriptSecurityManager.createNullPrincipal({}) :
-                                    Services.scriptSecurityManager.getSystemPrincipal()
-                            )
-                    });
-                }
-            } else if (event.button == 1) {
-                if (this.appVersion < 78) {
-                    openNewTabWith(uri.spec);
-                } else {
-                    openTrustedLinkIn(uri.spec, 'tab', {
-                        postData: postData || null,
-                        triggeringPrincipal: /^(f|ht)tps?:/.test(uri.spec) ? Services.scriptSecurityManager.createNullPrincipal({}) : Services.scriptSecurityManager.getSystemPrincipal()
-                    });
-                }
+
+                const userContextId = isWebURL ? allowThirdPartyFixup.userContextId : null;
+                return isWebURL ?
+                    Services.scriptSecurityManager.createNullPrincipal({ userContextId }) :
+                    Services.scriptSecurityManager.getSystemPrincipal();
+            })();
+
+            if (isJavaScriptURL) {
+                openTrustedLinkIn(url, 'current', {
+                    allowPopups: true,
+                    inBackground: allowThirdPartyFixup.inBackground || false,
+                    allowInheritPrincipal: true,
+                    private: PrivateBrowsingUtils.isWindowPrivate(window),
+                    userContextId: allowThirdPartyFixup.userContextId,
+                });
+            } else if (where || event.button === 1) {
+                openTrustedLinkIn(url, where, allowThirdPartyFixup);
             } else {
-                if (this.appVersion < 78)
-                    openUILink(uri.spec, event);
-                else {
-                    openUILink(uri.spec, event, {
-                        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
-                    });
-                }
+                openUILink(url, event, {
+                    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                });
             }
         },
         edit: function (edit) {
@@ -519,10 +533,11 @@
             else
                 this.exec(this.handleRelativePath(edit));
         },
-        exec: function (path, arg) {
+        exec: function (path, arg, opt = { startHidden: false }) {
             if (isDebugMode) this.log('exec', path, arg);
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+            if (opt.startHidden) process.startHidden = true;
             try {
                 var a;
                 if (typeof arg == "undefined") arg = []; // fix slice error
@@ -625,58 +640,6 @@
                 }
                 return;
             }
-
-            if (obj.keyword) {
-                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                if (engine) {
-                    if (isPromise(engine)) {
-                        engine.then(function (engine) {
-                            if (engine.iconURI) {
-                                // menu.setAttribute("image", engine.iconURI.spec);
-                                menu.style.listStyleImage = "url(" + engine.iconURI.spec + ")";
-                            }
-                        });
-                    } else if (engine.iconURI) {
-                        // menu.setAttribute("image", engine.iconURI.spec);
-                        menu.style.listStyleImage = "url(" + engine.iconURI.spec + ")";
-                    }
-                    return;
-                }
-            }
-            var setIconCallback = function (url) {
-                let uri, iconURI;
-                try {
-                    uri = Services.io.newURI(url, null, null);
-                } catch (e) {
-                    this.log(e)
-                }
-                if (!uri) return;
-
-                menu.setAttribute("scheme", uri.scheme);
-                PlacesUtils.favicons.getFaviconDataForPage(uri, {
-                    onComplete: function (aURI, aDataLen, aData, aMimeType) {
-                        try {
-                            // javascript: URI の host にアクセスするとエラー
-                            menu.setAttribute("image", aURI && aURI.spec ?
-                                "moz-anno:favicon:" + aURI.spec :
-                                "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-                        } catch (e) {
-                        }
-                    }
-                });
-            }
-            PlacesUtils.keywords.fetch(obj.keyword || '').then(entry => {
-                let url;
-                if (entry) {
-                    url = entry.url.href;
-                } else {
-                    url = (obj.url + '').replace(this.regexp, "");
-                }
-                setIconCallback(url);
-            }, e => {
-                this.log(e)
-            }).catch(e => {
-            });
         },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
