@@ -3872,6 +3872,10 @@ by underlining them (requires urlbarMods.uc.js) */
             background-image: url("./images/sync/manage-profiles.svg");
         }
 
+        #PanelUI-remotetabs-openAll {
+            background-image: url("./images/tab/new-window.svg");
+        }
+
         #PanelUI-fxa-menu-sendtab-button {
             list-style-image: url("./images/sync/send-to-device.svg");
         }
@@ -5119,16 +5123,22 @@ by underlining them (requires urlbarMods.uc.js) */
         #placesContext_open\:newtab,
         #placesContext_open\:newwindow,
         #placesContext_openContainer\:tabs,
-        #placesContext_open {
+        #placesContext_open,
+        #placesContext_openBookmarkLinks\:tabs,
+        #placesContext_openLinks\:tabs {
             background-image: url("./images/tab/new-window.svg");
         }
 
-        :is(#openPrivate, #openAllPrivate)>.menu-iconic-left {
+        #placesContext_showInFolder {
+            background-image: url("chrome://global/skin/icons/folder.svg");
+        }
+        :is(#openPrivate, #openAllPrivate, #openAllLinksPrivate)>.menu-iconic-left {
             visibility: hidden !important;
         }
 
         #openPrivate,
         #openAllPrivate,
+        #openAllLinksPrivate,
         #placesContext_open\:newprivatewindow {
             background-image: url("./images/tab/new-private-window.svg");
         }
@@ -5374,6 +5384,10 @@ by underlining them (requires urlbarMods.uc.js) */
             list-style-image: url("./images/tab/reload-tab.svg") !important;
         }
 
+        #menu-translate-selected {
+            background-image: url("./images/copycat/translate-selected-text.svg");
+        }
+
         #floorp-undo-closed-tab_floorp_ablaze_one-browser-action {
             list-style-image: url("./images/tab/unde-close.svg");
         }
@@ -5397,6 +5411,10 @@ by underlining them (requires urlbarMods.uc.js) */
 
         #changeUAWebpanelMenu {
             background-image: url("./images/skin/profile.svg");
+        }
+
+        #deleteWebpanelMenu {
+            background-image: url("./images/navbar/remove-extension.svg");
         }
 
         /** UC 脚本 */

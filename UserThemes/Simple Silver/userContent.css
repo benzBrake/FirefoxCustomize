@@ -1,0 +1,78 @@
+/*================ GLOBAL COLORS ================*/
+:root {
+	--accent-color: 214, 233, 250;
+	--secondary-accent-color: 255, 165, 138;
+	--light-color: 255, 255, 255;
+	--dark-color: 70, 82, 93;
+}
+
+/*================ LIGHT THEME ================*/
+:root {
+	--main-bgcolor: var(--dark-color);
+	--transparent-bgcolor: var(--dark-color);
+}
+
+/*================ DARK THEME ================*/
+:root:-moz-lwtheme-brighttext {
+	--main-bgcolor: var(--dark-color);
+	--transparent-bgcolor: var(--dark-color);
+}
+
+/*================== NEW TAB BG COLOR ==================*/
+@media (prefers-color-scheme: dark) {
+@-moz-document url("about:newtab"), url("about:home"), url("about:blank") {
+ body { background-color: rgba(var(--dark-color), 1) !important;}
+}
+}
+
+@media (prefers-color-scheme: light) {
+@-moz-document url("about:newtab"), url("about:home"), url("about:blank") {
+ body { background-color: rgba(var(--light-color), 1) !important;}
+}
+}
+
+/*================== SEARCH BAR ==================*/
+.search-wrapper input {
+	transition: all 0.3s ease !important;
+    background: rgba(var(--accent-color), 0.2) var(--newtab-search-icon) 12px center no-repeat !important;
+	background-size: 20px !important;
+	border: 2px solid !important;
+	border-color: rgba(var(--accent-color), 0.3) !important;
+	box-shadow: none !important;
+}
+.search-wrapper .search-inner-wrapper:hover input,
+.search-wrapper .search-inner-wrapper:active input,
+.search-wrapper input:focus {
+	border-color: rgba(var(--accent-color), 0.6) !important;
+}
+
+.search-wrapper .search-button,
+.search-wrapper .search-button {
+	transition: all 0.3s ease !important;
+}
+.search-wrapper .search-button:focus,
+.search-wrapper .search-button:hover {
+    background-color: rgba(var(--accent-color), 0.3) !important;
+}
+
+/*================== SEARCH BAR RESULTS ==================*/
+.contentSearchSuggestionTable .contentSearchSuggestionsContainer,
+.contentSearchSuggestionTable .contentSearchHeader {
+    background-color: rgba(var(--accent-color), 0.2) !important;
+}
+.contentSearchSuggestionTable .contentSearchSuggestionRow.selected,
+.contentSearchSuggestionTable .contentSearchOneOffItem.selected {
+	background-color: rgba(var(--accent-color), 0.3) !important;
+}
+
+.contentSearchSuggestionTable .contentSearchHeader,
+.contentSearchSuggestionTable .contentSearchSettingsButton,
+.contentSearchSuggestionTable .contentSearchOneOffsTable {
+	border-color: rgba(var(--accent-color), 0.3) !important;
+}
+
+.contentSearchSuggestionTable {
+	box-shadow: none !important;
+	border: 2px solid rgba(var(--accent-color), 0.6) !important;
+	border-radius: 3px !important;
+}
