@@ -1,6 +1,6 @@
 # userChrome.js 环境
 
-基于 alice0775 环境打包，加入了来自 xiaoxiaoflood 环境的 Bootstrap Loader，使用这个 userChrome.js 可以安装适配过的传统列表。
+基于 alice0775 环境打包，加入了来自 xiaoxiaoflood 环境的 Bootstrap Loader，使用这个 userChrome.js 可以安装适配过的传统扩展。
 
 ## Firefox 92+
 
