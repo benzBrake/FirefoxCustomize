@@ -3,13 +3,13 @@
 // @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         0.1.2
+// @version         20240417
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note            0.1.2 修复按钮不存在导致脚本中断
-// @note            0.1.1 修复新窗口不生效的问题
+// @note            20240417 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed
+
 // ==/UserScript==
 (function () {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
@@ -108,8 +108,9 @@
                         reload.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page');
                         let clickFn = function (event) {
                             if (event.button == 2) {
+                                const global = event.target.ownerGlobal;
                                 event.preventDefault();
-                                event.target.ownerGlobal.BrowserReloadSkipCache();
+                                "BrowserReloadSkipCache" in global ? global.BrowserReloadSkipCache() : global.BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
                             }
                         }
                         reload.addEventListener('click', clickFn);
