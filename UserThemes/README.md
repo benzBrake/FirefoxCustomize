@@ -2,12 +2,12 @@
 
 Ver 代表最后测试版本
 
-| Ver  | File           | Description                                                  |
-| ---- | -------------- | ------------------------------------------------------------ |
-| 90   | oneline.css    | 单行主题                                                     |
-| 104  | sidra          | benzbrake 主用的 CSS 主题                                    |
-| 90   | IE8            | 仿IE8主题，来自 matthewmx86/Redmond-Firefox，简单修复        |
-| 125  | Simple  Silver | 来自 [CristianDragos/FirefoxThemes](https://github.com/CristianDragos/FirefoxThemes/) |
+| Ver  | File            | Description                                                  |
+| ---- | --------------- | ------------------------------------------------------------ |
+| 90   | oneline.css     | 单行主题                                                     |
+| 104  | sidra           | benzbrake 主用的 CSS 主题                                    |
+| 90   | IE8(deprecated) | 仿IE8主题，来自 matthewmx86/Redmond-Firefox，简单修复        |
+| 125  | Simple Silver   | 来自 [CristianDragos/FirefoxThemes](https://github.com/CristianDragos/FirefoxThemes/) |
 
 ## 使用
 
