@@ -7,7 +7,7 @@
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @note            0.1.8 画板改为调用系统自带
+// @note            0.1.8 画板改为调用系统自带，修改 openCommand 函数，exec 增加第三个参数，移除部分无用代码
 // @note            0.1.7 修改【我的足迹：下载】，【我的足迹：书签】图标
 // @note            0.1.6 默认截图工具改为搜狗截图，支持联网 OCR，移除证书管理按钮和缩放控制按钮，修改部分图标，移除无用函数
 // @note            0.1.5 修复 firefox 115 无法读取已关闭标签列表
@@ -300,7 +300,7 @@
                         }
                         if (!obj.oncommand)
                             $A(btn, {
-                                oncommand: `if (event.target !== event.explicitOriginalTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
+                                oncommand: `if (event.target !== event.currentTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
                             });
                     } catch (e) {
                         this.error(e);
@@ -567,35 +567,13 @@
         },
         handleRelativePath: function (path, parentPath) {
             if (path) {
-                let handled = false;
-                path = this.replaceArray(path, [
-                    "{homeDir}",
-                    "{libDir}",
-                    "{localProfileDir}",
-                    "{profileDir}",
-                    "{tmpDir}"
-                ], [
-                    "{Home}",
-                    "{GreD}",
-                    "{ProfLD}",
-                    "{ProfD}",
-                    "{TmpD}"
-                ]);
-                ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
-                    if (path.includes("{" + key + "}")) {
-                        path = path.replace("{" + key + "}", this._paths[key] || "");
-                        handled = true;
+                path = path.replace(/\//g, '\\').toLocaleLowerCase();
+                if (/^(\\)/.test(path)) {
+                    if (!parentPath) {
+                        parentPath = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
                     }
-                })
-                if (!handled) {
-                    path = path.replace(/\//g, '\\').toLocaleLowerCase();
-                    if (/^(\\)/.test(path)) {
-                        if (!parentPath) {
-                            parentPath = Cc['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsIFile).path;
-                        }
-                        path = parentPath + path;
-                        path = path.replace("\\\\", "\\");
-                    }
+                    path = parentPath + path;
+                    path = path.replace("\\\\", "\\");
                 }
                 return path;
             }
@@ -631,28 +609,13 @@
                 } else {
                     if (aFile.isFile()) {
                         let fileURL = this.getURLSpecFromFile(aFile);
-                        // menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
                         menu.style.listStyleImage = "url(moz-icon://" + fileURL + "?size=16)";
                     } else {
-                        // menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
                         menu.style.listStyleImage = "url(chrome://global/skin/icons/folder.svg)";
                     }
                 }
                 return;
             }
-        },
-        alert: function (aMsg, aTitle, aCallback) {
-            var callback = aCallback ? {
-                observe: function (subject, topic, data) {
-                    if ("alertclickcallback" != topic)
-                        return;
-                    aCallback.call(null);
-                }
-            } : null;
-            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "DownloadPlus",
-                aMsg + "", !!callback, "", callback);
         },
         error: function (...args) {
             this.browserWindow.console.error("[CB]", ...args);
@@ -752,18 +715,6 @@
             return true;
         }
         return false;
-    }
-
-    function isDef(v) {
-        return v !== undefined && v !== null
-    }
-
-    function isPromise(val) {
-        return (
-            isDef(val) &&
-            typeof val.then === 'function' &&
-            typeof val.catch === 'function'
-        )
     }
 
     window.CustomButtons.init(window);
