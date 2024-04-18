@@ -209,9 +209,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                 const actor = window.windowGlobalChild.getActor("AddMenu");;
                 document.addEventListener("mouseup", function (event) {
                     var selectedText = getSelectedText();
-                    if (selectedText && !isEditableElement()) {
+                    if (selectedText) {
                         actor.sendAsyncMessage("AM:SetSeletedText", {
-                            text: selectedText
+                            text: selectedText,
+                            isEditableElement: isEditableElement()
                         });
                     }
                 });
