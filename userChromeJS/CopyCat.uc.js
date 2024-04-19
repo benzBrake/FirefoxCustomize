@@ -2,25 +2,26 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.2.3
+// @version         0.2.4
 // @compatibility   Firefox 78
 // @include         main
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @version         0.2.3 完善 Debug 日志
-// @version         0.2.2 Bug 1815439 - Remove useless loadURI wrapper from browser.js
-// @version         0.2.1 修复 openUILinkIn 被移除
-// @version         0.2.0 修正点击按钮无法关闭菜单
-// @version         0.1.9 新增隐藏内置菜单选项 （userChromeJS.CopyCat.hideInternal）
-// @version         0.1.8 支持切换 panelview 到 menupopup （userChromeJS.CopyCat.buildPanel），修复运行参数问题
-// @version         0.1.7 主题设置分离到 CopyCatTheme.uc.js
-// @version         0.1.6 分离菜单配置
-// @version         0.1.5 重写部分代码，摆脱 osfile_async_front.jsm 依赖，预防性修改
-// @version         0.1.4 Firefox Nightly 20220713 OS is not defined
-// @version         0.1.3 修改主题列表 tooltiptext，尝试修复有时候 CSS 未加载
-// @version         0.1.2 新增移动菜单功能，本地化覆盖所有菜单
-// @version         0.1.1 修复 bug，自动读取主题选项
-// @version         0.1.0 初始版本
+// @note            0.2.4 Uncaught NS_ERROR_XPC_BAD_CONVERT_JS: Could not convert JavaScript argument arg 0 [nsIFilePicker.init]
+// @note            0.2.3 完善 Debug 日志
+// @note            0.2.2 Bug 1815439 - Remove useless loadURI wrapper from browser.js
+// @note            0.2.1 修复 openUILinkIn 被移除
+// @note            0.2.0 修正点击按钮无法关闭菜单
+// @note            0.1.9 新增隐藏内置菜单选项 （userChromeJS.CopyCat.hideInternal）
+// @note            0.1.8 支持切换 panelview 到 menupopup （userChromeJS.CopyCat.buildPanel），修复运行参数问题
+// @note            0.1.7 主题设置分离到 CopyCatTheme.uc.js
+// @note            0.1.6 分离菜单配置
+// @note            0.1.5 重写部分代码，摆脱 osfile_async_front.jsm 依赖，预防性修改
+// @note            0.1.4 Firefox Nightly 20220713 OS is not defined
+// @note            0.1.3 修改主题列表 tooltiptext，尝试修复有时候 CSS 未加载
+// @note            0.1.2 新增移动菜单功能，本地化覆盖所有菜单
+// @note            0.1.1 修复 bug，自动读取主题选项
+// @note            0.1.0 初始版本
 // ==/UserScript==
 
 (function (css) {
@@ -41,6 +42,8 @@
             "reload-copycat-js": "重载 _copycat.js",
             "reload-copycat-js-complete": "重载 _copycat.js 完成",
             "save-config": "保存配置",
+            "please-set-editor-path": "请设置编辑器路径",
+            "set global editor": "设置全局编辑器"
         }
     }
 
@@ -118,7 +121,7 @@
                 }
             } : null;
             const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
+            alertsService.showAlertNotification("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
         },
         config: {
             /**
@@ -633,6 +636,7 @@
                 return item;
             },
             setIcon: function (menu, obj) {
+                if (menu.getAttribute("type") === "checkbox") return;
                 if (menu.hasAttribute("src") || menu.hasAttribute("image") || menu.hasAttribute("icon")) return;
                 if (obj.edit || obj.exec) {
                     var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
@@ -915,27 +919,38 @@
                 } catch (e) { }
 
                 if (!editor || !editor.exists()) {
-                    alert(formatStr('please set editor path'));
+                    alert(formatStr('please-set-editor-path'));
                     let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    fp.init(window, formatStr('set global editor'), fp.modeOpen);
-                    if (this.platform === "win")
-                        fp.appendFilter(formatStr('executable files'), "*.exe");
 
+                    try {
+                        fp.init(window.browsingContext, formatStr('set global editor'), fp.modeOpen);
+                    } catch (e) {
+                        fp.init(window, formatStr('set global editor'), fp.modeOpen);
+                    }
+
+                    fp.appendFilters(Ci.nsIFilePicker.filterApps);
+
+                    var isCompleted = false;
                     if (typeof fp.show !== 'undefined') {
                         if (fp.show() == fp.returnCancel || !fp.file)
                             return;
                         else {
                             editor = fp.file;
                             Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                            isCompleted = true;
                         }
                     } else {
                         fp.open(res => {
                             if (res != Ci.nsIFilePicker.returnOK) return;
                             editor = fp.file;
                             Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                            isCompleted = true;
                         });
                     }
-
+                    var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+                    while (!isCompleted) {
+                        thread.processNextEvent(true);
+                    }
                 }
 
                 let aURL = getURLSpecFromFile(aFile);
