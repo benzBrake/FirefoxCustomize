@@ -7,7 +7,7 @@
 // @description    使用第三方应用打开网页
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
-    (async function (CSS, REGEXP, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, WHERE_MAP, GE_90 /* 版本号大于等于 90 */, $, $C, $R, $RLP, $USF, $LOADURI /* 打开 JAVASCRIPT 地址函数 */, $ALERT, $COOKIE, $RSTR, $SAVE, $ESCAPE_CMD, LANGUAGE) {
+    (async function (CSS, R, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, WHERE_MAP, GE_90 /* 版本号大于等于 90 */, $, $C, $R, $RLP, $USF, $LOADURI /* 打开 JAVASCRIPT 地址函数 */, $ALERT, $COOKIE, $RSTR, $SAVE, $ESCAPE_CMD, LANGUAGE) {
         const { LANG, LOCALE } = LANGUAGE;
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
@@ -55,7 +55,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return new Promise(resolve => {
                         // 使用 Promise 让回调看起来不那么难受
                         const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                        fp.init(window, title, mode);
+                        try {
+                            fp.init(window.browsingContext, title, mode);
+                        } catch (e) {
+                            fp.init(window, title, mode);
+                        }
                         fp.open(async result => {
                             if (result === Ci.nsIFilePicker.returnOK) {
                                 resolve({ result, path: fp.file.path });
@@ -116,7 +120,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 // }
                 CTX_MENU.addEventListener('click', function (e) {
                     // 增加右键一级菜单点击功能
-                    if(e.target !== e.currentTarget) return;
+                    if (e.target !== e.currentTarget) return;
                     CTX_MENU.querySelector("[dynamic=true][exec]").doCommand();
                 }, false)
                 CTX_MENU.appendChild(CTX_POPUP);
@@ -236,7 +240,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let tab = TabContextMenu.contextTab || gBrowser.selectedTab || document.popupNode;
                 var bw = gContextMenu ? context.browser : tab.linkedBrowser;
 
-                return text.replace(REGEXP, function (str) {
+                return text.replace(R.REGEXP, function (str) {
                     str = str.toUpperCase().replace("%LINK", "%RLINK");
                     if (str.indexOf("_HTMLIFIED") >= 0)
                         return htmlEscape(convert(str.replace("_HTMLIFIED", "")));
@@ -473,7 +477,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     if (entry) {
                         url = entry.url.href;
                     } else {
-                        url = (obj.url + '').replace(this.regexp, "");
+                        url = (obj.url + '').replace(R.REGEXP, "");
                     }
                     setIconCallback(url);
                 }, e => {
@@ -493,13 +497,13 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     }
                 }
                 // hack，没写完（配合的 CSS 也没写完），凑合用
-                if ((menu.getAttribute("text") || "").includes("%LINK")) {
+                if (R.rLINK.test(menu.getAttribute("text"))) {
                     conditions.push("link");
                 }
-                if ((menu.getAttribute("text") || "").includes("%SEL")) {
+                if (R.rSEL.test(menu.getAttribute("text"))) {
                     conditions.push("select");
                 }
-                if ((menu.getAttribute("text") || "").includes("URL%") && !conditions.includes("notab")) {
+                if (R.rURL.test(menu.getAttribute("text")) && !conditions.includes("notab")) {
                     conditions.push("tab");
                 }
                 if (!conditions.includes("nobutton")) {
@@ -668,7 +672,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         let rSAVE_DIR = "%SAVE_DIR" + he + "%|%sd\\b";
         let rPROFILE_DIR = "%PROFILE_DIR" + he + "%|%pd\\b";
 
-        return new RegExp([rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR].join("|"), "ig");
+        let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR };
+        let obj = { REGEXP: new RegExp(Object.values(R).join("|"), "ig") }
+        for (let [k, v] of Object.entries(R)) {
+            obj[k] = new RegExp(v, "i");
+        }
+        return obj;
     })(), (function () {
         let PATHS = [];
         ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {

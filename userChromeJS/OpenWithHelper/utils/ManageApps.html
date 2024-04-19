@@ -77,16 +77,12 @@
               />
             </td>
             <td class="application-path item">
-              <div>
-                <label
-                  class="application-path-label flex-grow text-truncate"
-                ></label>
-                <button
-                  class="application-path-change btn-flat"
-                  data-l10n-id="change-path"
-                  onclick="gApplicationList.changePath(event)"
-                ></button>
-              </div>
+              <label class="application-path-label text-truncate"></label>
+              <button
+                class="application-path-change btn-flat"
+                data-l10n-id="change-path"
+                onclick="gApplicationList.changePath(event)"
+              ></button>
             </td>
             <td class="application-params item flex-grow">
               <input
@@ -292,10 +288,11 @@
       }
       #applications-list .application-path {
         width: 200px;
+        position: relative;
       }
       @media (min-width: 960px) {
         #applications-list .application-path {
-          width: 380px;
+          width: 320px;
         }
       }
       #applications-list .application-path.item {
@@ -306,7 +303,11 @@
       }
 
       #applications-list .application-path .application-path-change {
-        margin-right: 8px;
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 0.25em 0.5em;
       }
       #applications-list .application-path.requird-animate {
         background-color: #faafaa88;
@@ -491,7 +492,13 @@
             let demoRow = document.getElementById("demo-row");
             let row = demoRow.cloneNode(true);
             row.id = "";
-            row.querySelectorAll("input").forEach((el) => (el.value = ""));
+            row
+              .querySelectorAll("input")
+              .forEach(
+                (el) =>
+                  (el.value =
+                    el.name === "application-params" ? "%LINK_OR_URL%" : "")
+              );
             let parentNode = document.getElementById("demo-row").parentNode;
             event?.ctrlKey
               ? parentNode.insertBefore(row, parentNode.firstElementChild)
@@ -544,7 +551,11 @@
                 const fp = Cc["@mozilla.org/filepicker;1"].createInstance(
                   Ci.nsIFilePicker
                 );
-                fp.init(window, title, mode);
+                try {
+                  fp.init(window.browsingContext, title, mode);
+                } catch (e) {
+                  fp.init(window, title, mode);
+                }
                 fp.appendFilters(Ci.nsIFilePicker.filterImages);
                 fp.open(async (result) => {
                   if (result === Ci.nsIFilePicker.returnOK) {
@@ -596,12 +607,19 @@
               let fp = Cc["@mozilla.org/filepicker;1"].createInstance(
                 Ci.nsIFilePicker
               );
-              fp.init(
-                window,
-                formatStr("set applicaton path"),
-                Ci.nsIFilePicker.modeOpen
-              );
-
+              try {
+                fp.init(
+                  window.browsingContext,
+                  formatStr("set applicaton path"),
+                  Ci.nsIFilePicker.modeOpen
+                );
+              } catch (e) {
+                fp.init(
+                  window,
+                  formatStr("set applicaton path"),
+                  Ci.nsIFilePicker.modeOpen
+                );
+              }
               fp.appendFilters(Ci.nsIFilePicker.filterApps); // 只显示应用程序（可执行文件）
 
               fp.open((res) => {
