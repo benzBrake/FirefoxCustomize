@@ -205,6 +205,8 @@ if (typeof window === "undefined" || globalThis !== window) {
         this.AddMenuChild = class extends JSWindowActorChild {
             actorCreated() {
                 const window = this.contentWindow;
+                if (window.addMenu) return;
+                window.addMenu = { }
                 const { console, document } = window;
                 const actor = window.windowGlobalChild.getActor("AddMenu");;
                 document.addEventListener("mouseup", function (event) {
@@ -746,6 +748,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         if (content) return;
                         if (typeof tab === "undefined")
                             return;
+                        if (!(/^(f|ht)tps?:/.test(tab.linkedBrowser.currentURI.spec))) return;
                         try {
                             let hash = calculateHashFromStr(tab.linkedBrowser.currentURI.spec)
                             tab.faviconHash = hash;
