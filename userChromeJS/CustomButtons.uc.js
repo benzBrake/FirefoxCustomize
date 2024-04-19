@@ -300,7 +300,7 @@
                         }
                         if (!obj.oncommand)
                             $A(btn, {
-                                oncommand: `if (event.target !== event.currentTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
+                                oncommand: `if (event.target !== event.explicitOriginalTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
                             });
                     } catch (e) {
                         this.error(e);
