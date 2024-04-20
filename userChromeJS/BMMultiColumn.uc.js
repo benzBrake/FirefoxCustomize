@@ -4,9 +4,10 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2022.12.22
+// @version         2024.04.20
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @notes           2024.04.20 修复在【不支持 @include main注释】的UC环境里的一处报错
 // @notes           2022.12.22 融合 bookmarksmenu_scrollbar.uc.js，修复没超过最大宽度也会显示横向滚动条的 bug，支持主菜单的书签菜单
 // @note            2022.12.17 修复宽度异常，书签栏太多的话无法横向滚动，需要搭配 bookmarksmenu_scrollbar.uc.js 使用
 // @note            2022.11.19 fx 108 不完美修复
@@ -16,7 +17,7 @@
 // @note            适配Firefox57+
 // @ignorecache
 // ==/UserScript==
-(function (css) {
+location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
