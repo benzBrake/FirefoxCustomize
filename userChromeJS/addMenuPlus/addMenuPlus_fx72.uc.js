@@ -206,7 +206,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             actorCreated() {
                 const window = this.contentWindow;
                 if (window.addMenu) return;
-                window.addMenu = { }
+                window.addMenu = {}
                 const { console, document } = window;
                 const actor = window.windowGlobalChild.getActor("AddMenu");;
                 document.addEventListener("mouseup", function (event) {
@@ -574,6 +574,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         class: "addMenu-insert-point",
                         hidden: true
                     }));
+                    popup.addEventListener("popupshowing", this, false);
                     $("mainPopupSet").appendChild(popup);
                     MENU_ATTRS['ident'] = {
                         current: "ident",
@@ -1712,6 +1713,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 function img2base64(imgSrc, imgType) {
                     if (typeof imgSrc == 'undefined') return "";
                     imgType = imgType || "image/png";
+                    if (imgType === "image/svg+xml" || imgSrc.endsWith(".svg")) return svg2base64(imgSrc);
                     const NSURI = "http://www.w3.org/1999/xhtml";
                     var img = new Image();
                     var canvas,
@@ -1744,7 +1746,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 function svg2base64(svgSrc) {
                     if (typeof svgSrc == 'undefined') return "";
-                    if (/^(f|ht)tps?:/i.test(svgSrc)) {
+                    if (!isSVGSource(svgSrc)) {
                         var xmlhttp = new XMLHttpRequest();
                         xmlhttp.open("GET", svgSrc, false);
                         xmlhttp.send();
@@ -1758,7 +1760,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 function isSVGSource(str) {
                     str = str.trim();
-                    return str.startsWith('<svg') && str.endsWith('</svg>');
+                    return /<svg\b[^>]*>([\s\S]*?)<\/svg>/i.test(str);
                 }
             },
             setSelectedText: function (text) {
@@ -2029,6 +2031,9 @@ if (typeof window === "undefined" || globalThis !== window) {
     }
     .addMenu-insert-point,
     toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
+        display: none !important;
+    }
+    .addMenu[collapsed="true"] {
         display: none !important;
     }
     .addMenu.exec,
