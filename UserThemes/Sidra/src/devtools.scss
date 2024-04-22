@@ -1,0 +1,93 @@
+@-moz-document url-prefix("chrome://devtools/content/framework/toolbox-window.xhtml")
+{
+  @include Option("userChromeJS.Sidra.DevTools.Compact") {
+    #node-menu-edithtml {
+      --menu-image: url(./images/devtools/edithtml.svg);
+    }
+
+    #node-menu-add,
+    #storage-table-popup-add,
+    menuitem[label*="添加"] {
+      --menu-image: url(./images/devtools/add.svg);
+    }
+
+    #node-menu-duplicatenode {
+      --menu-image: url(./images/devtools/edit-copy.svg);
+    }
+
+    #node-menu-delete {
+      --menu-image: url(./images/devtools/edit-delete.svg);
+    }
+
+    #node-menu-mutation-breakpoint {
+      --menu-image: url(./images/devtools/mutation-breakpoint.svg);
+    }
+
+    #node-menu-useinconsole,
+    menuitem[label*="控制台"] {
+      --menu-image: url(./images/devtools/console.svg);
+    }
+
+    #node-menu-showdomproperties {
+      --menu-image: url(./images/devtools/showdomproperties.svg);
+    }
+
+    #node-menu-showaccessibilityproperties {
+      --menu-image: url(./images/devtools/showaccessibilityproperties.svg);
+    }
+
+    #node-menu-screenshotnode {
+      --menu-image: url(./images/devtools/screenshotnode.svg);
+    }
+
+    #node-menu-expand {
+      --menu-image: url(./images/devtools/expand.svg);
+    }
+
+    #node-menu-collapse {
+      --menu-image: url(./images/devtools/collapse.svg);
+    }
+
+    #node-menu-edithtml ~ [label="属性"] {
+      --menu-image: url(./images/devtools/attribute.svg);
+    }
+
+    #node-menu-edithtml ~ [label="更改伪类"] {
+      --menu-image: url(./images/devtools/select.svg);
+    }
+
+    #node-menu-edithtml ~ [label="画面滚动到节点"] {
+      --menu-image: url(./images/devtools/mouse-scrolling.svg);
+    }
+
+    #node-menu-edithtml ~ [label="复制"],
+    menuitem[label^="复制"],
+    menu[label^="复制"],
+    #console-menu-copy,
+    #console-menu-copy-object,
+    #console-menu-export-clipboard {
+      --menu-image: url(./images/devtools/edit-copy.svg);
+    }
+
+    #node-menu-edithtml ~ [label="粘贴"] {
+      --menu-image: url(./images/devtools/paste.svg);
+    }
+
+    menuitem[label="全选"] {
+      --menu-image: url(./images/devtools/edit-select-all.svg);
+    }
+
+    #console-menu-store {
+      --menu-image: url(./images/devtools/variable.svg);
+    }
+
+    #console-menu-export-file,
+    menuitem[label*="另存"] {
+      --menu-image: url(./images/devtools/save.svg);
+    }
+
+    menuitem[label*="新建标签"] {
+      --menu-image: url(./images/devtools/new-tab.svg);
+    }
+  }
+}

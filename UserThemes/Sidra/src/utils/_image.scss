@@ -1,0 +1,23 @@
+@function resource($uri) {
+  @return 'url("./' + $uri + '")';
+}
+
+@function image($uri) {
+  @return resource("images/" + $uri);
+}
+
+@mixin diagonalImage($imageUrl, $isMainDiagonal: true, $diagonalSize: 1px) {
+  $angle: if($isMainDiagonal, 45deg, 135deg);
+
+  $gradient: linear-gradient(
+    $angle,
+    transparent calc(50% - #{$diagonalSize}),
+    currentColor calc(50% - #{$diagonalSize}),
+    currentColor calc(50% + #{$diagonalSize}),
+    transparent calc(50% + #{$diagonalSize})
+  );
+
+  --menu-image:
+    #{$gradient},
+    url("#{$imageUrl}");
+}

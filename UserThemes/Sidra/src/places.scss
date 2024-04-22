@@ -1,0 +1,48 @@
+@-moz-document url(chrome://browser/content/places/places.xhtml)
+{
+  #detailsPane {
+    /*取消信息栏高度下限 */
+    min-height: auto !important;
+  }
+  #placesMenu > menu {
+    background-color: transparent;
+  }
+
+  #placesMenu > menu:hover,
+  #placesMenu > menu:focus {
+    background-color: var(--toolbarbutton-hover-background, #f7f7f7);
+  }
+
+  #placesMenu > menu:active {
+    background-color: var(--toolbarbutton-active-background, #f7f7f7);
+  }
+
+  #searchFilter {
+    transition: background-color var(--animation-speed, 0.13s);
+  }
+
+  #searchFilter[focused] {
+    outline: none;
+  }
+
+  #downloadsListBox {
+    margin: 0 !important;
+    scrollbar-width: thin;
+    > richlistitem[selected] {
+      background-color: color-mix(
+        in srgb,
+        var(--panel-item-active-bgcolor, #006cbe80) 80%,
+        blue
+      ) !important;
+      outline: none !important;
+      outline-offset: unset;
+      border-radius: 0 !important;
+      background-image: unset !important;
+      padding-inline-end: 0px !important;
+    }
+  }
+
+  #downloadsListBox:focus > richlistitem[selected] {
+    background-color: var(--panel-item-active-bgcolor, #006cbe80) !important;
+  }
+}

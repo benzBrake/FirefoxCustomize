@@ -1,0 +1,11 @@
+@-moz-document url("chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM")
+{
+    #contentAreaDownloadsView {
+        padding: 0 !important;
+    }
+    #downloadsListBox {
+        border: 0 !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+}

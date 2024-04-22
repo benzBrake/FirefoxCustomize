@@ -1,0 +1,659 @@
+@include Option("userChromeJS.Sidra.Menubar.AccessKey.Disabled") {
+  /*屏蔽Alt切换菜单 */
+  #toolbar-menubar[autohide="true"] {
+    display: none !important;
+  }
+}
+@include Option("userChromeJS.Sidra.MenuPopup.Compact") {
+  :root {
+    --icon-width: 16px;
+    --icon-height: 16px;
+    --uc-contextmenu-menuitem-padding-inline: 8px;
+    --menu-image-size: var(--icon-width) var(--icon-height);
+    --arrowpanel-menuitem-padding-block: 4px;
+    --arrowpanel-menuitem-padding-inline: 8px;
+    --arrowpanel-menuitem-padding: var(--arrowpanel-menuitem-padding-block)
+      var(--arrowpanel-menuitem-padding-inline);
+    --arrowpanel-menuitem-margin-block: 0;
+    --arrowpanel-menuitem-margin-inline: 8px;
+    --arrowpanel-menuitem-margin: var(--arrowpanel-menuitem-margin-block)
+      var(--arrowpanel-menuitem-margin-inline);
+    --subviewbutton-height: calc(
+      var(--icon-height, 16px) + 2 * var(--arrowpanel-menuitem-margin-block) + 2 *
+        var(--arrowpanel-menuitem-padding-block)
+    );
+    --menu-corner-rounding: 7px;
+    --label-padding-start: calc(
+      var(--icon-width, 16px) + 2 *
+        var(--uc-contextmenu-menuitem-padding-inline, 12px)
+    );
+  }
+
+  :root[uidensity="compact"] {
+    --menuitem-padding: 4px;
+    --uc-contextmenu-menuitem-padding-inline: 6px;
+    --arrowpanel-menuitem-padding-block: 4px;
+    --arrowpanel-menuitem-padding-inline: 4px;
+    --arrowpanel-menuitem-margin-block: 0;
+    --arrowpanel-menuitem-margin-inline: 4px;
+    --panel-subview-body-padding: 4px 0;
+  }
+
+  panelview {
+    outline: none !important;
+  }
+
+  .panel-arrow {
+    margin-top: 2px;
+  }
+
+  .panel-viewstack,
+  .panel-viewcontainer {
+    min-height: revert !important;
+  }
+
+  /* make the animation smoother */
+  .panel-viewcontainer[panelopen] {
+    transition-timing-function: var(--uc-smooth-timing-function) !important;
+  }
+
+  panel[panelopen] .panel-viewcontainer {
+    will-change: min-height, contents !important;
+  }
+
+  /* 缺少这一句的话，面板最后一个按钮有时候会贴着边界，与 userChrome.au.css 中的 .panel-subview-body 规则相关联 */
+  .panel-header + .panel-subview-body {
+    /* 出于某种原因，“最近关闭的标签”子视图没有
+标题下的分隔符。 模拟一个。 */
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(
+      to right,
+      transparent 4px,
+      var(--panel-separator-color) 4px,
+      var(--panel-separator-color) calc(100% - 4px),
+      transparent calc(100% - 4px)
+    );
+    border-image-slice: 1;
+    margin-block: var(--panel-separator-margin);
+    margin-block-end: 0;
+    /* revert the extra padding from the previous rule on certain panels that don't need it */
+    padding-bottom: 0 !important;
+  }
+
+  .panel-subview-body:not(:last-child) {
+    padding-bottom: 0 !important;
+  }
+
+  #protections-popup .panel-viewstack {
+    min-height: inherit !important;
+  }
+
+  #protections-popup-socialblockView,
+  #protections-popup-cookiesView,
+  #protections-popup-trackersView,
+  #protections-popup-fingerprintersView,
+  #protections-popup-cryptominersView {
+    max-height: calc(50vh + var(--height-offset)) !important;
+    min-height: inherit !important;
+  }
+
+  .protections-popup-list.empty {
+    padding: 16px !important;
+  }
+
+  .protections-popup-list.empty image {
+    color: var(--panel-description-color);
+  }
+
+  #widget-overflow panelview[extension] {
+    max-width: revert !important;
+  }
+
+  #widget-overflow .webextension-popup-browser {
+    background: none !important;
+  }
+
+  #identity-popup[type="arrow"][side="top"],
+  #identity-popup[type="arrow"][side="bottom"],
+  #protections-popup[type="arrow"][side="top"],
+  #protections-popup[type="arrow"][side="bottom"],
+  #notification-popup[type="arrow"][side="top"],
+  #notification-popup[type="arrow"][side="bottom"] {
+    margin-inline: -20.4px !important;
+  }
+
+  #permission-popup {
+    margin-inline: -18px !important;
+  }
+
+  #identity-popup[type="arrow"][side="top"][connection="chrome"] {
+    margin-inline: -46px !important;
+  }
+
+  #customizationui-widget-panel[viewId="PanelUI-profiler"][type="arrow"][side="top"] {
+    margin-inline: -19.4px !important;
+    margin-top: -3px !important;
+  }
+
+  #downloadsPanel,
+  #widget-overflow,
+  #appMenu-popup,
+  #customizationui-widget-panel,
+  #appMenu-notification-popup,
+  #editBookmarkPanel {
+    margin-top: -7px !important;
+  }
+
+  #identity-popup,
+  #protections-popup,
+  #permission-popup {
+    margin-top: -1px !important;
+  }
+
+  #customizationui-widget-panel.bookmarks-toolbar {
+    margin-top: revert !important;
+  }
+
+  #extension-notification-panel {
+    margin-top: -1px !important;
+  }
+
+  #notification-popup {
+    margin-top: calc(-1px - var(--uc-panel-top-offset, 0px)) !important;
+  }
+
+  panel[type="arrow"][side="top"] {
+    margin-top: -7px;
+  }
+
+  #confirmation-hint {
+    margin-top: -9px;
+  }
+
+  #confirmation-hint,
+  #protections-popup[toast] {
+    --arrowpanel-border-radius: var(--panel-border-radius-mini, 3px) !important;
+  }
+
+  #BMB_bookmarksPopup {
+    margin-top: -7px !important;
+  }
+
+  #editBookmarkPanel[on-toolbar-button] {
+    margin-top: -12px !important;
+  }
+
+  #protections-popup {
+    --popup-width: 33em !important;
+  }
+
+  .subview-subheader,
+  .PanelUI-remotetabs-clientcontainer > label:first-child,
+  .PanelUI-remotetabs-notabsforclient-label {
+    padding-block: var(--subview-subheader-padding, 4px) !important;
+  }
+
+  subviewbutton-back {
+    min-height: revert !important;
+    border-radius: var(--arrowpanel-menuitem-border-radius) !important;
+  }
+
+  .messageCloseButton {
+    appearance: none;
+    background-color: transparent;
+    -moz-context-properties: fill, fill-opacity !important;
+    fill-opacity: 0.6;
+    border-radius: var(--arrowpanel-menuitem-border-radius) !important;
+    padding: var(--arrowpanel-menuitem-padding) !important;
+    min-height: revert !important;
+    border-radius: var(--arrowpanel-menuitem-border-radius) !important;
+  }
+
+  .messageCloseButton > .toolbarbutton-icon {
+    padding: 0 !important;
+    margin-inline-end: 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    outline: revert !important;
+  }
+
+  .panel-header > .subviewbutton-back,
+  .messageCloseButton {
+    -moz-context-properties: fill, fill-opacity !important;
+    fill-opacity: 0.6;
+  }
+
+  .panel-header
+    > .subviewbutton-back:not([disabled], [open], :hover:active):is(
+      :hover,
+      :focus-visible
+    ),
+  .messageCloseButton:not([disabled], [open], :hover:active):is(
+      :hover,
+      :focus-visible
+    ) {
+    fill-opacity: 0.8;
+  }
+
+  .panel-header > .subviewbutton-back:not([disabled]):is([open], :hover:active),
+  .messageCloseButton:not([disabled]):is([open], :hover:active) {
+    fill-opacity: 1;
+  }
+
+  .panel-footer > button:not([disabled]):is(:hover, :focus-visible) {
+    background-color: var(
+      --button-hover-bgcolor,
+      color-mix(in srgb, currentColor 17%, transparent)
+    );
+  }
+
+  .panel-footer > button:not([disabled]):hover:active {
+    background-color: var(
+      --button-active-bgcolor,
+      color-mix(in srgb, currentColor 30%, transparent)
+    );
+  }
+
+  .messageCloseButton:not([disabled], [open], :active):is(
+      :hover,
+      :focus-visible
+    ) {
+    color: inherit !important;
+    background-color: var(--panel-item-hover-bgcolor) !important;
+  }
+
+  .messageCloseButton:not([disabled]):not([disabled]):is(
+      [open],
+      :hover:active
+    ) {
+    color: inherit !important;
+    background-color: var(--panel-item-active-bgcolor) !important;
+  }
+
+  toolbarseparator + .panel-subview-body,
+  .subview-subheader + .panel-subview-body {
+    padding: 0 !important;
+    margin-bottom: 8px;
+  }
+
+  #allTabsMenu-allTabsViewTabs {
+    padding: 0 !important;
+    margin: 0 4px 8px 4px;
+  }
+
+  #allTabsMenu-allTabsViewTabs > .all-tabs-item {
+    margin-inline: 4px;
+  }
+
+  #allTabsMenu-allTabsViewTabs > .all-tabs-item > toolbarbutton {
+    margin-inline: 0;
+  }
+
+  .subviewbutton.toolbaritem-combined-buttons > .toolbarbutton-text {
+    padding-inline-start: 0 !important;
+  }
+
+  .panel-subview-footer-button {
+    margin-bottom: 4px;
+  }
+
+  :root[uidensity="compact"]
+    .toolbaritem-combined-buttons.showText
+    > .subviewbutton
+    > image {
+    margin-left: calc(
+      var(--uc-contextmenu-menuitem-padding-inline, 12px) - 4px
+    ) !important;
+  }
+
+  menupopup {
+    --menu-color: var(--arrowpanel-color);
+    --menu-disabled-color: var(--panel-disabled-color);
+    --menu-border-color: var(--arrowpanel-border-color);
+    --menu-border-radius: var(--arrowpanel-border-radius);
+    --menu-border-width: 1px;
+    --menu-background-color: var(--arrowpanel-background);
+    --menuitem-hover-background-color: var(
+      --uc-popup-highlight,
+      var(--panel-item-hover-bgcolor)
+    );
+    --menu-separator-color: var(--menu-border-color);
+    --menuitem-margin-inline-end: 4px;
+    background-color: transparent;
+    padding: 0;
+    border: var(--menu-border-width, 1px) solid transparent;
+    appearance: none;
+    --windows-panel-box-shadow: unset;
+    --menuitem-padding: var(--arrowpanel-menuitem-padding-block);
+    --panel-shadow-margin: 0px;
+    /* Fx 113 */
+  }
+
+  :is(#history-menu, #bookmarksMenu) menupopup::part(content),
+  menupopup:not([placespopup="true"])::part(content) {
+    padding: var(--panel-subview-body-padding);
+    margin: 0;
+    border-radius: var(--menu-border-radius, 4px);
+    background-color: var(--menu-background-color);
+    border: var(--menu-border-width, 1px) solid var(--menu-border-color);
+  }
+
+  #PlacesToolbar menupopup[placespopup="true"]::part(arrowscrollbox),
+  #BMB_bookmarksPopup::part(arrowscrollbox),
+  #BMB_bookmarksPopup menupopup::part(arrowscrollbox),
+  :is(panel, menupopup)[type="arrow"]::part(content) {
+    padding: var(--panel-subview-body-padding);
+  }
+
+  panel[type="autocomplete-richlistbox"]::part(content) {
+    padding: 0;
+  }
+
+  menupopup:not([class="in-menulist"])
+    :is(
+      menu[disabled="true"],
+      menuitem[disabled="true"],
+      menu[_moz-menuactive="true"][disabled="true"],
+      menuitem[_moz-menuactive="true"][disabled="true"]
+    ) {
+    color: var(--menu-disabled-color);
+  }
+
+  #ContentSelectDropdown > menupopup > menucaption > .menu-iconic-text,
+  #ContentSelectDropdown > menupopup > menuitem > .menu-iconic-text {
+    padding-block: 1px;
+  }
+
+  menupopup menu:not(.menu-iconic) > .menubar-text {
+    margin-left: 0 !important;
+  }
+
+  :is(menu, menuitem) > .menu-iconic-left {
+    margin-inline-end: 0 !important;
+    padding-top: 0 !important;
+    appearance: none !important;
+    min-width: unset !important;
+    visibility: visible !important;
+  }
+
+  panelview :is(menu, menuitem, checkbox),
+  menupopup :is(menu, menuitem, checkbox),
+  menugroup > menuitem {
+    padding-inline-start: var(
+      --uc-contextmenu-menuitem-padding-inline,
+      12px
+    ) !important;
+    padding-block: var(--menuitem-padding, 0.5em) !important;
+    color: var(--menu-color);
+    appearance: none;
+  }
+
+  menupopup :is(menu, menuitem, checkbox):hover,
+  menupopup :is(menu, menuitem, checkbox):focus,
+  menupopup :is(menu, menuitem, checkbox):active,
+  menupopup :is(menu, menuitem, checkbox)[_moz-menuactive="true"] {
+    color: var(--menu-color) !important;
+    background-color: var(--menuitem-hover-background-color) !important;
+  }
+
+  menupopup > #context-navigation {
+    > .menuitem-iconic {
+      padding-inline: 0 !important;
+      --menuitem-min-width: unset;
+      &[_moz-menuactive="true"] > .menu-iconic-left > .menu-iconic-icon {
+        background-color: transparent !important;
+      }
+    }
+  }
+
+  menupopup checkbox,
+  menupopup menuitem:is([type="checkbox"], [type="radio"]) {
+    background-image: unset;
+  }
+
+  menugroup.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) {
+    padding-inline-start: 0px !important;
+    padding-inline-end: 0px !important;
+  }
+
+  menugroup.showFirstText
+    > .menuitem-iconic:not(:first-child):not(.showText)
+    > .menu-iconic-left {
+    margin-inline-start: var(
+      --uc-contextmenu-menuitem-padding-inline,
+      12px
+    ) !important;
+    margin-inline-end: var(
+      --uc-contextmenu-menuitem-padding-inline,
+      12px
+    ) !important;
+  }
+
+  menugroup:not(.showFirstText) > .menuitem-iconic.fixedSize {
+    padding-inline-start: var(
+      --uc-contextmenu-menuitem-padding-inline,
+      12px
+    ) !important;
+    padding-inline-end: var(
+      --uc-contextmenu-menuitem-padding-inline,
+      12px
+    ) !important;
+  }
+
+  menugroup > .menuitem-iconic:nth-child(2).noIcon {
+    padding-inline-start: 0 !important;
+  }
+
+  /** Show menuitem icon force */
+  :is(menu, menuitem):not([class*="identity-color"], .noIcon)
+    > .menu-iconic-left
+    > .menu-iconic-icon {
+    display: block !important;
+    -moz-context-properties: fill, fill-opacity !important;
+    fill: currentColor !important;
+  }
+
+  menupopup :is(menu, menuitem) > .menu-text {
+    appearance: none !important;
+    padding-inline-start: 0 !important;
+    margin-inline-start: 0 !important;
+  }
+
+  panelview :is(menu, menuitem) > .menu-iconic-text,
+  menupopup :is(menu, menuitem) > .menu-iconic-text {
+    padding-inline-start: var(
+      --uc-contextmenu-menuitem-padding-inline,
+      12px
+    ) !important;
+    margin-inline-start: 0 !important;
+  }
+
+  /** Force Menupopup indicator style */
+  :is(menu, menuitem) .menu-right {
+    appearance: none;
+    list-style-image: url("chrome://global/skin/icons/arrow-right.svg");
+    -moz-context-properties: fill, fill-opacity;
+    fill: currentColor;
+    fill-opacity: var(--menu-icon-opacity);
+    margin-inline-end: var(--menuitem-margin-inline-end, 4px);
+    padding-top: 0;
+  }
+
+  /** Select Dropdown Menu Padding*/
+  menulist > menupopup > menuitem,
+  menulist > menupopup > menucaption,
+  menulist > menupopup > menu {
+    padding-block: 2px;
+  }
+
+  /* checkbox */
+  :is(popup, menupopup, panel) :is([type="checkbox"], [type="radio"]) {
+    list-style-image: url("./images/icons/checkbox.svg") !important;
+  }
+
+  menupopup checkbox > .checkbox-check {
+    border: 0px;
+    background-color: transparent;
+    list-style-image: url("./images/icons/checkmark.svg") !important;
+  }
+
+  menupopup
+    checkbox:not([disabled="true"]):is(:hover, :focus, :active)
+    > .checkbox-check {
+    background-color: transparent;
+  }
+
+  :is(popup, menupopup) [checked="true"] > .menu-iconic-left,
+  panel [checked="true"] > .toolbarbutton-icon {
+    list-style-image: url("./images/icons/checkmark.svg") !important;
+  }
+
+  .toolbarbutton-1 > .toolbarbutton-icon,
+  .toolbarbutton-1 > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+    width: var(--icon-width, 16px);
+    height: var(--icon-height, 16px);
+  }
+
+  /** Hide menuitem without label */
+  menuitem:not([label]):not([data-l10n-id]) {
+    visibility: collapse;
+  }
+
+  /* Fix for extensionOptionsMenu.uc.js */
+  #eom-button-popup menuitem.noOptions {
+    color: var(--menu-disabled-color);
+  }
+
+  /*IDM、NDM 排在最后面*/
+  [id*="mozilla_cc3_internetdownloadmanager_com-menuitem-"],
+  [id*="_64d3e6d6-8a71-4443-b60b-a9b12ff1ec14_-menuitem-"] {
+    order: 99 !important;
+    -moz-box-ordinal-group: 99 !important;
+  }
+
+  /* 清理历史记录下拉框 */
+  #sanitizeDurationChoice {
+    outline: none;
+    margin-left: 10px;
+    border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
+  }
+
+  :not(:not(menubar) > menu, #ContentSelectDropdown)
+    > menupopup
+    > menuitem:not(
+      .menuitem-iconic,
+      [type="checkbox"],
+      [type="radio"],
+      .in-menulist,
+      .in-menulist menuitem,
+      .unified-nav-current
+    ),
+  :not(:not(menubar) > menu, #ContentSelectDropdown)
+    > menupopup
+    > menu:not(
+      .menu-iconic,
+      [type="checkbox"],
+      [type="radio"],
+      .in-menulist,
+      .in-menulist menu,
+      .unified-nav-current
+    ),
+  :not(:not(menubar) > menu, #ContentSelectDropdown) > menupopup > menucaption {
+    padding-inline-start: var(--label-padding-start, 32px) !important;
+  }
+
+  @include Option("userChromeJS.Sidra.Icons.Compact") {
+    /* 修正用户菜单边距 */
+    #appMenu-fxa-status2:not([fxastatus]) > #appMenu-fxa-label2 {
+      padding: var(--arrowpanel-menuitem-padding);
+      background-image: unset;
+    }
+
+    #appMenu-fxa-status2:not([fxastatus]) #appMenu-header-description {
+      height: var(--icon-height, 16px);
+      margin: 0;
+      position: relative;
+    }
+
+    #appMenu-fxa-status2:not([fxastatus]) #appMenu-header-description::before {
+      font-size: 12px !important;
+    }
+
+    .subviewbutton-back > .toolbarbutton-icon {
+      width: var(--icon-width, 16px);
+      height: var(--icon-height, 16px);
+      -moz-context-properties: inherit !important;
+    }
+
+    .subviewbutton > .toolbarbutton-text,
+    .widget-overflow-list
+      .toolbarbutton-1:not(.toolbarbutton-combined)
+      > .toolbarbutton-text {
+      padding-inline-start: var(
+        --uc-contextmenu-menuitem-padding-inline,
+        12px
+      ) !important;
+    }
+
+    .subviewbutton.toolbaritem-combined-buttons {
+      -moz-context-properties: fill, fill-opacity;
+      fill: currentColor;
+      background-repeat: no-repeat;
+      background-position: var(--uc-contextmenu-menuitem-padding-inline, 12px)
+        50%;
+    }
+
+    .subviewbutton.toolbaritem-combined-buttons:not(.showFirstText):not(
+        .showText
+      ),
+    #appMenu-fxa-label2 {
+      padding-inline-start: var(--label-padding-start, 32px) !important;
+    }
+
+    // 没有图标结构的按钮增加图标
+    #appMenu-fxa-label2,
+    #appMenu-zoom-controls {
+      background-image: var(--menu-image);
+      background-size: var(--icon-width, 16px) var(--icon-height, 16px);
+      background-position: var(--arrowpanel-menuitem-margin-inline) 50%;
+      background-repeat: no-repeat;
+    }
+  }
+
+  @include Option("userChromeJS.Sidra.MenuPopup.SubMenuPopup.Compact") {
+    #PanelUI-fxa-menu-syncnow-button .syncnow-label {
+      margin-inline-start: var(--uc-contextmenu-menuitem-padding-inline, 12px);
+    }
+
+    menupopup
+      menupopup
+      > :is(menu, menuitem):not(
+        .menu-iconic,
+        .menuitem-iconic,
+        [type="checkbox"],
+        [type="radio"],
+        [data-l10n-id="places-empty-bookmarks-folder"] /* 书签菜单 （空） */
+      ) {
+      padding-inline-start: var(--label-padding-start, 32px) !important;
+      background-image: var(--menu-image);
+      background-position: var(--uc-contextmenu-menuitem-padding-inline) center;
+      background-size: 16px;
+      background-repeat: no-repeat;
+    }
+
+    // 移除 TamperMonkey 菜单文字图标
+    #firefox_tampermonkey_net-menuitem-_root :is(menu, menuitem) {
+      > .menu-text {
+        transform: translateX(-16px);
+        clip-path: inset(0px 0px 0px 16px);
+      }
+    }
+  }
+
+  @include Option("userChromeJS.Sidra.ContextMenu.Navigation.Disabled") {
+    #context-navigation,
+    #context-sep-navigation {
+      display: none !important;
+    }
+  }
+}

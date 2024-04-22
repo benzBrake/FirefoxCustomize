@@ -1,0 +1,243 @@
+@use "utils/option" as *;
+/* preferences */
+@-moz-document url-prefix(about:preferences),
+  url-prefix(about:addons) {
+  .category[selected] {
+    position: relative !important;
+    border-radius: 4px !important;
+  }
+
+  .category[selected]:not(:hover, :active) {
+    background-color: var(--in-content-button-background) !important;
+  }
+
+  .category[selected]::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    margin-block: auto;
+    height: 24px;
+    width: 3px;
+    left: 2px;
+    background-color: var(--in-content-accent-color);
+    border-radius: 3px;
+  }
+
+  button.tab-button:hover {
+    border-block-color: transparent var(--in-content-box-border-color) !important;
+  }
+
+  button.tab-button[selected],
+  button.tab-button[selected]:hover {
+    border-block-color: transparent currentColor !important;
+  }
+
+  .toggle-button {
+    --toggle-dot-margin: 4px !important;
+    --toggle-width: 40px !important;
+    --toggle-height: 20px !important;
+    --toggle-background-color: transparent !important;
+    --toggle-dot-background-color: var(--in-content-page-color) !important;
+    --toggle-dot-background-color-on-pressed: #fff !important;
+    --toggle-dot-transform-x: calc(
+      var(--toggle-width) - 2 * var(--toggle-dot-margin) - 2 *
+        var(--toggle-border-width) - var(--toggle-dot-width)
+    ) !important;
+  }
+}
+
+/* fix page flashes when loading some websites */
+@-moz-document url(about:blank) {
+  body {
+    background: var(--in-content-page-background);
+    color: var(--in-content-page-color);
+  }
+}
+
+@-moz-document url(about:addons),
+url-prefix("chrome: //mozapps/content/extensions/aboutaddons.xhtml")
+{
+  @media (min-width: 960px) {
+    html[appname="Floorp"] .sticky-container {
+      max-width: 100% !important;
+    }
+    .main-search,
+    .main-heading,
+    #main {
+      max-width: calc(100% - 56px) !important;
+    }
+
+    .extension-enabled-section,
+    .extension-disabled-section,
+    .userchromejs-enabled-section,
+    .userchromejs-disabled-section,
+    .theme-disabled-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-column-gap: 20px;
+    }
+
+    .extension-enabled-section > .list-section-heading,
+    .extension-disabled-section > .list-section-heading,
+    .userchromejs-enabled-section > .list-section-heading,
+    .userchromejs-disabled-section > .list-section-heading,
+    .theme-disabled-section > .list-section-heading {
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
+
+    .card-heading-image {
+      width: calc(100% + 32px);
+      height: calc(100% / 3);
+      min-height: 32px;
+    }
+
+    .monochromatic-addon-list > section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-column-gap: 10px;
+    }
+
+    .monochromatic-addon-list > section > .header-name,
+    .monochromatic-addon-list > section > .list-section-subheading {
+      grid-column-start: 1;
+      grid-column-end: 4;
+    }
+
+    .monochromatic-addon-list addon-card .card {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  @media (min-width: 1290px) {
+    .extension-enabled-section,
+    .extension-disabled-section,
+    .userchromejs-enabled-section,
+    .userchromejs-disabled-section,
+    .monochromatic-addon-list > section {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .extension-enabled-section > .list-section-heading,
+    .extension-disabled-section > .list-section-heading,
+    .userchromejs-enabled-section > .list-section-heading,
+    .userchromejs-disabled-section > .list-section-heading {
+      grid-column-start: 1;
+      grid-column-end: 4;
+    }
+
+    .monochromatic-addon-list > section {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+
+    .monochromatic-addon-list > section > .header-name,
+    .monochromatic-addon-list > section > .list-section-subheading {
+      grid-column-start: 1;
+      grid-column-end: 5;
+    }
+  }
+
+  .addon-card-message[type="warning"],
+  .addon-card-message[type="error"] {
+    display: none;
+  }
+
+  .toggle-button,
+  [action="more-options"] {
+    flex-shrink: 0;
+  }
+
+  panel-list > panel-item-separator {
+    display: none;
+  }
+
+  .toggle-button,
+  [action="more-options"] {
+    flex-shrink: 0;
+  }
+
+  panel-list > panel-item-separator {
+    display: none;
+  }
+
+  panel-item {
+    position: relative;
+    &::before {
+      content: "";
+      width: 16px;
+      height: 16px;
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-image: var(--menu-image);
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center center;
+      z-index: 1;
+    }
+  }
+  [action="check-for-updates"] {
+    --menu-image: url("./images/aboutaddons/reload.svg");
+  }
+  [action="view-recent-updates"] {
+    --menu-image: url("./images/aboutaddons/new.svg");
+  }
+
+  [action="install-from-file"] {
+    --menu-image: url("./images/aboutaddons/browse.svg");
+  }
+
+  [action="debug-addons"] {
+    --menu-image: url("./images/aboutaddons/bug.svg");
+  }
+
+  [action="reset-update-states"] {
+    --menu-image: url("chrome://global/skin/icons/settings.svg");
+  }
+
+  [action="manage-shortcuts"] {
+    --menu-image: url("./images/aboutaddons/keyboard.svg");
+  }
+
+  [action="preferences"],
+  [action="expand"] {
+    --menu-image: url("chrome://global/skin/icons/settings.svg");
+  }
+
+  [action="AM-browse-dir"] {
+    --menu-image: url("./images/aboutaddons/browse.svg");
+  }
+
+  [action="AM-copy-name"] {
+    --menu-image: url("./images/aboutaddons/copy.svg");
+  }
+
+  [action="AM-open-url"] {
+    --menu-image: url("./images/aboutaddons/open-in-new.svg");
+  }
+
+  [action="AM-edit-script"] {
+    --menu-image: url("./images/aboutaddons/editor.svg");
+  }
+
+  /* Checkbox */
+  [action="set-update-automatically"],
+  [action="always-activate"],
+  [action="never-activate"] {
+    --menu-image: url("./images/icons/checkbox.svg");
+  }
+
+  .addon-permissions-list > li {
+    background-image: url("./images/icons/checkbox.svg") !important;
+  }
+
+  [checked] {
+    --menu-image: url("./images/icons/checkmark.svg");
+  }
+
+  .addon-permissions-list > li.permission-checked {
+    background-image: url("./images/icons/checkmark.svg") !important;
+  }
+}

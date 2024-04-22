@@ -1,0 +1,365 @@
+// 面板后退图标
+.panel-header > .subviewbutton-back {
+  list-style-image: url("./images/icons/arrow-left.svg") !important;
+}
+/*= Panel 杠弹出面板 - 首页 =====================================================*/
+/* firefox profile avatar in appmenu */
+#appMenu-fxa-status2 {
+  --menu-image: var(--avatar-image-url);
+}
+
+#appMenu-proton-update-banner::before {
+  content: url("./images/icons/whatsnew.svg");
+}
+
+#appMenu-proton-addon-banners > .addon-banner-item > .toolbarbutton-icon {
+  display: inline-flex !important;
+  display: -moz-inline-box !important;
+  margin-inline-start: var(--arrowpanel-menuicon-padding);
+  @include BoxOrder(0);
+}
+
+#appMenu-new-tab-button2 {
+  list-style-image: var(--uc-new-tab-icon);
+}
+
+#appMenu-new-window-button2 {
+  list-style-image: var(--uc-window-icon-appmenu);
+}
+
+#appMenu-new-private-window-button2 {
+  list-style-image: var(--uc-private-windown-icon);
+}
+
+#appMenu-ssb-button {
+  list-style-image: url("./images/icons/web.svg");
+}
+
+#appMenu-bookmarks-button {
+  list-style-image: url("./images/icons/bookmark-star-on-tray.svg");
+}
+
+#appMenu-history-button {
+  list-style-image: url("./images/icons/history.svg");
+}
+
+#appMenu-downloads-button {
+  list-style-image: url("./images/icons/downloads.svg");
+}
+
+#appMenu-passwords-button {
+  list-style-image: url("./images/icons/passwords.svg");
+}
+
+#appMenu-extensions-themes-button {
+  list-style-image: url("./images/icons/extension.svg");
+}
+
+#openprofiledir {
+  list-style-image: url("./images/icons/folder.svg");
+}
+
+#appMenu-print-button2 {
+  list-style-image: url("./images/icons/print.svg");
+}
+
+#appMenu-save-file-button2 {
+  list-style-image: url("./images/icons/save.svg");
+}
+
+#appMenu-find-button2 {
+  list-style-image: url("./images/icons/search-page.svg");
+}
+
+#appMenu-translate-button {
+  list-style-image: url("./images/icons/translate.svg");
+}
+
+#appMenu-zoom-controls2,
+#appMenu-zoom-controls {
+  --menu-image: url("./images/icons/zoom-control.svg");
+}
+#appMenu-settings-button,
+#appMenu-advanced-settings-button {
+  list-style-image: url("./images/icons/settings.svg");
+}
+
+#appMenu-certificate-manager-button {
+  list-style-image: url("./images/icons/certificate-manager.svg");
+}
+
+#appMenu-more-button2 {
+  list-style-image: url("./images/icons/menu.svg");
+}
+
+#appMenu-report-broken-site-button {
+  list-style-image: url("./images/icons/comments.svg");
+}
+
+#appMenu-help-button2 {
+  list-style-image: url("./images/icons/help.svg");
+}
+
+#appMenu-restart-button2,
+#rebootappmenu {
+  list-style-image: url("./images/icons/reload.svg");
+}
+
+#appMenu-quit-button2 {
+  list-style-image: url("./images/icons/quit.svg") !important;
+}
+
+/*= Panel 杠弹出面板 - 账户 =====================================================*/
+:root:not([appname="Floorp"]) {
+  #fxa-manage-account-button {
+    > vbox {
+      padding-inline-start: var(
+        --uc-arrowpanel-menuicon-margin-inline
+      ) !important;
+    }
+  }
+  #PanelUI-fxa-menu-syncnow-button > hbox {
+    padding-inline: 0 !important;
+  }
+}
+#fxa-manage-account-button {
+  &:before {
+    content: "";
+    @include Box;
+    background-image: var(--avatar-image-url);
+    background-size: 16px;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+  }
+}
+:root[appname="Floorp"] {
+  #fxa-manage-account-button > vbox {
+    padding-inline-start: var(--uc-contextmenu-menuitem-padding-inline);
+  }
+}
+.syncNowBtn {
+  visibility: visible !important;
+  @include BoxOrder(0, true);
+  transform: scale(1.3);
+}
+@media (prefers-reduced-motion: no-preference) {
+  #PanelUI-fxa-menu-syncnow-button[syncstatus="active"] > .toolbarbutton-icon,
+  #PanelUI-remotetabs-syncnow[syncstatus="active"] > .toolbarbutton-icon,
+  .syncNowBtn[syncstatus="active"] {
+    animation: syncRotateNew 0.8s linear infinite !important;
+  }
+}
+@keyframes syncRotateNew {
+  from {
+    transform: scale(1.3) rotate(0);
+  }
+  to {
+    transform: scale(1.3) rotate(360deg);
+  }
+}
+.syncnow-label {
+  padding-inline-start: var(--uc-arrowpanel-menuicon-margin-inline) !important;
+}
+#PanelUI-fxa-menu-setup-sync-button {
+  list-style-image: url("chrome://browser/skin/sync.svg");
+}
+#PanelUI-fxa-menu-connect-device-button {
+  list-style-image: url("./images/icons/devices.svg");
+}
+#PanelUI-fxa-menu-sendtab-button,
+.sendToDevice-device[clientId=""] {
+  list-style-image: url("./images/icons/send-to-device.svg");
+}
+#PanelUI-fxa-menu-sync-prefs-button,
+.sendToDevice-device:not([clientId]) {
+  list-style-image: url("./images/icons/settings.svg");
+}
+#PanelUI-fxa-menu-account-signout-button {
+  list-style-image: url("./images/icons/sign-out.svg");
+}
+#PanelUI-sign-out-separator {
+  display: none;
+}
+.sendToDevice-device[clientId=""] > .toolbarbutton-text,
+.sendToDevice-device:not([clientId]) > .toolbarbutton-text {
+  margin-block: revert !important;
+}
+
+/*= Panel 杠弹出面板 - 书签 =====================================================*/
+#panelMenuBookmarkThisPage {
+  list-style-image: url("./images/icons/bookmark-hollow.svg");
+}
+#panelMenuBookmarkThisPage[starred] {
+  list-style-image: url("./images/icons/bookmark.svg");
+}
+#panelMenu_viewBookmarksToolbar {
+  list-style-image: url("chrome://browser/skin/bookmarks-toolbar.svg");
+}
+#panelMenu_searchBookmarks {
+  list-style-image: var(--uc-search-icon);
+}
+#panelMenu_viewBookmarksToolbar {
+  list-style-image: url("./images/icons/bookmarks-toolbar-alt.svg");
+}
+#panelMenu_showAllBookmarks {
+  list-style-image: url("./images/icons/manage.svg") !important;
+}
+
+/*= Panel 杠弹出面板 - 历史 =====================================================*/
+#appMenuRecentlyClosedTabs {
+  list-style-image: var(--uc-tab-icon);
+}
+#appMenuRecentlyClosedWindows {
+  list-style-image: var(--uc-window-icon);
+}
+#appMenuSearchHistory {
+  list-style-image: var(--uc-search-icon);
+}
+#appMenuRestoreSession,
+#appMenu-restoreSession {
+  list-style-image: url("./images/organizer/restore-session.svg");
+}
+#appMenuClearRecentHistory {
+  list-style-image: url("./images/organizer/clean.svg");
+}
+#PanelUI-historyMore {
+  list-style-image: url("./images/icons/history.svg");
+}
+
+#appMenu-library-recentlyClosedTabs,
+#appMenu-library-recentlyClosedWindows {
+  .restoreallitem {
+    list-style-image: url("./images/organizer/restore-session.svg");
+  }
+}
+
+/*= Panel 杠弹出面板 - 更多工具 ==================================================*/
+#appmenu-moreTools-button {
+  list-style-image: url("./images/icons/customize.svg");
+}
+:is(#appmenu-developer-tools-view, #PanelUI-developer-tools-view) {
+  .subviewbutton {
+    &[key="key_toggleToolbox"] {
+      // 开发者工具
+      list-style-image: url("./images/icons/manage.svg");
+    }
+    &[key="key_aboutProcesses"] {
+      // 任务管理器
+      list-style-image: url("./images/icons/tool-profiler.svg");
+    }
+
+    &:nth-child(3) {
+      // 远程调试
+      list-style-image: url("./images/icons/bug.svg");
+    }
+
+    &[key="key_browserToolbox"] {
+      // 浏览器内容工具箱
+      list-style-image: url("./images/icons/window-dev-tools.svg");
+    }
+
+    &[key="key_browserConsole"] {
+      // 浏览器控制台
+      list-style-image: url("./images/icons/console.svg");
+    }
+
+    &[key="key_responsiveDesignMode"] {
+      // 响应式设计
+      list-style-image: url("./images/icons/command-responsivemode.svg");
+    }
+    &:nth-last-child(3) {
+      // 取色器
+      list-style-image: url("./images/icons/color-dropper.svg");
+    }
+    &[key="key_viewSource"] {
+      // 查看源码
+      list-style-image: url("./images/icons/search-page.svg");
+    }
+    &[data-l10n-id="appmenu-developer-tools-extensions"] {
+      list-style-image: url("./images/icons/extension.svg");
+    }
+  }
+}
+
+/*= Panel 杠弹出面板 - 帮助 =====================================================*/
+#appMenu_menu_openHelp {
+  list-style-image: url("./images/icons/help.svg");
+}
+#appMenu_feedbackPage {
+  list-style-image: url("./images/icons/comments.svg");
+}
+#appMenu_helpSafeMode {
+  list-style-image: url("./images/icons/system-report.svg");
+}
+#appMenu_troubleShooting {
+  list-style-image: var(--uc-menu-icon);
+}
+#appMenu-report-broken-site-button,
+#appMenu_help_reportSiteIssue {
+  list-style-image: url("chrome://global/skin/icons/lightbulb.svg");
+}
+#appMenu_menu_HelpPopup_reportPhishingtoolmenu {
+  list-style-image: url("chrome://global/skin/icons/warning.svg");
+}
+#appMenu_helpSwitchDevice {
+  list-style-image: url("./images/icons/devices.svg");
+}
+#appMenu_aboutName {
+  list-style-image: url("./images/icons/info.svg");
+}
+
+/*= Panel 杠弹出面板 - 库 =======================================================*/
+#appMenu-library-bookmarks-button {
+  list-style-image: url("./images/icons/bookmark-star-on-tray.svg");
+}
+#appMenu-library-history-button {
+  list-style-image: url("./images/icons/history.svg");
+}
+#appMenu-library-downloads-button {
+  list-style-image: url("./images/icons/downloads.svg");
+}
+
+/*= Panel 杠弹出面板 - 下载 =====================================================*/
+#downloadsHistory {
+  list-style-image: url("./images/icons/downloads.svg");
+  .button-text {
+    padding-inline-start: var(
+      --uc-arrowpanel-menuicon-margin-inline
+    ) !important;
+  }
+}
+#downloadsHistory .box-inherit.button-box {
+  display: inline-flex !important;
+  display: -moz-inline-box !important;
+}
+
+/*= Toolbar  工具栏 - 折叠菜单 ==================================================*/
+#overflowMenu-customize-button {
+  list-style-image: url("./images/icons/customize.svg") !important;
+}
+
+/*= Tabbar - 所有标签菜单 =======================================================*/
+#allTabsMenu-undoCloseTab {
+  list-style-image: url("./images/icons/edit-undo.svg");
+}
+#allTabsMenu-searchTab,
+#allTabsMenu-searchTabs {
+  list-style-image: var(--uc-search-icon);
+}
+#allTabsMenu-containerTabsButton {
+  list-style-image: url("./images/icons/container-tab.svg");
+}
+#allTabsMenu-hiddenTabsButton {
+  list-style-image: url("./images/icons/eye-hide.svg");
+}
+#allTabsMenu-containerTabsView .subviewbutton:last-child {
+  list-style-image: url("./images/icons/settings.svg");
+}
+/*= Tabbar - 来自其他设备的标签页 ================================================*/
+#PanelUI-remotetabs-view-managedevices {
+  --menu-image: url("./images/icons/settings.svg");
+}
+#PanelUI-remotetabs-openAll {
+  list-style-image: url("./images/icons/open-all.svg");
+}

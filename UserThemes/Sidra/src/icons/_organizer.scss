@@ -1,0 +1,97 @@
+#clearDownloadsButton {
+  list-style-image: url("./images/organizer/clean.svg");
+  > .toolbarbutton-text {
+    margin-inline-start: 6px !important;
+  }
+}
+#newbookmark,
+#newfolder,
+#newseparator {
+  --menu-image: url("./images/icons/plus.svg");
+}
+#orgUndo {
+  --menu-image: url("./images/icons/edit-undo.svg");
+}
+#orgRedo {
+  --menu-image: url("./images/icons/edit-redo.svg");
+}
+#orgCut {
+  --menu-image: url("./images/icons/edit-cut.svg");
+}
+#orgCopy {
+  --menu-image: url("./images/icons/edit-copy.svg");
+}
+#orgPaste {
+  --menu-image: url("./images/icons/edit-paste.svg");
+}
+#orgDelete {
+  --menu-image: url("./images/icons/edit-delete.svg");
+}
+#orgSelectAll {
+  --menu-image: url("./images/icons/edit-select-all.svg");
+}
+#orgClose {
+  --menu-image: url("./images/icons/quit.svg");
+}
+#viewColumns {
+  --menu-image: url("./images/organizer/columns.svg");
+}
+#viewSort {
+  --menu-image: url("./images/organizer/order.svg");
+}
+#backupBookmarks {
+  --menu-image: url("./images/organizer/download.svg");
+}
+#fileRestoreMenu {
+  --menu-image: url("./images/organizer/upload.svg");
+}
+#fileRestorePopup > menuitem {
+  --menu-image: url("./images/organizer/file.svg");
+}
+
+#fileRestorePopup > menuitem#restoreFromFile {
+  --menu-image: url("./images/organizer/folder.svg");
+}
+
+#fileImport {
+  --menu-image: url("./images/organizer/html.svg");
+}
+
+#fileExport {
+  --menu-image: url("./images/organizer/export.svg");
+}
+
+#browserImport {
+  --menu-image: url("chrome://devtools/skin/images/browsers/edge.svg");
+}
+.downloadPauseMenuItem {
+  --menu-image: url("./images/icons/media-pause.svg");
+}
+.downloadResumeMenuItem {
+  --menu-image: url("./images/icons/media-play.svg");
+}
+.downloadUnblockMenuItem {
+  --menu-image: url("./images/organizer/unlock.svg");
+}
+.downloadUseSystemDefaultMenuItem {
+  --menu-image: url("chrome://devtools/skin/images/browsers/ie.svg");
+}
+.downloadShowMenuItem {
+  --menu-image: url("./images/organizer/folder.svg");
+}
+.downloadOpenReferrerMenuItem {
+  --menu-image: url("./images/organizer/open-all.svg");
+}
+.downloadCopyLocationMenuItem {
+  --menu-image: url("./images/organizer/copy-link.svg");
+}
+.downloadDeleteFileMenuItem,
+#downloadRemoveFromHistoryEnhanceMenuItem {
+  --menu-image: url("./images/icons/edit-delete.svg");
+}
+.downloadRemoveFromHistoryMenuItem {
+  --menu-image: url("./images/organizer/delete-row.svg");
+}
+menuitem:is([command="downloadsCmd_clearDownloads"], [command="downloadsCmd_clearList"]) {
+  --menu-image: url("./images/organizer/clean.svg");
+}

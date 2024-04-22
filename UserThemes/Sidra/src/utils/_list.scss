@@ -1,0 +1,56 @@
+@use "sass:string";
+// https://kittygiraudel.com/2013/08/08/advanced-sass-list-functions/
+// https://gist.github.com/Jakobud/ec056b52f3673cc369dc97f2c2428424
+
+@function remove($list, $value, $recursive: false) {
+  $result: ();
+
+  @each $item in $list {
+    @if type-of($item) == list and $recursive {
+      $result: append($result, remove($item, $value, $recursive));
+    } @else if $item != $value {
+      $result: append($result, $item);
+    }
+  }
+
+  @return $result;
+}
+
+@function remove-list($list, $removeList, $recursive: false) {
+  @each $removeItem in $removeList {
+    $list: remove($list, $removeItem, $recursive);
+  }
+
+  @return $list;
+}
+
+@function to-string($list, $glue: "", $is-nested: false) {
+  $result: null;
+
+  @for $i from 1 through length($list) {
+    $e: nth($list, $i);
+
+    @if type-of($e) == list {
+      $result: $result#{to-string($e, $glue, true)};
+    } @else {
+      $result: if(
+        $i != length($list) or $is-nested,
+        $result#{$e}#{$glue},
+        $result#{$e}
+      );
+    }
+  }
+
+  @return $result;
+}
+
+@function to-list($string, $glue: "", $is-nested: false) {
+  $result: ();
+  $strings: string.split($string, $glue);
+
+  @each $str in $strings {
+    $result: append($result, if($is-nested, string-to-list($str), $str));
+  }
+
+  @return $result;
+}

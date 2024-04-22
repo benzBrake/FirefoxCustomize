@@ -1,0 +1,22 @@
+{
+  "name": "Sidra",
+  "version": "1.0.9",
+  "description": "I dont't like proton UI and aim to **** it.",
+  "private": true,
+  "scripts": {
+    "build": "sass src/userContent.scss:userContent.css src/userChrome.scss:userChrome.css src/userChrome-115.scss:userChrome-115.css",
+    "watch": "sass --watch src/userContent.scss:userContent.css src/userChrome.scss:userChrome.css src/userChrome-115.scss:userChrome-115.css",
+    "test": "jest"
+  },
+  "author": "Ryan <github-benzBrake@woai.ru>",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "csstree-validator": "^3.0.0",
+    "fast-glob": "^3.3.2",
+    "jest": "^29.7.0",
+    "jest-environment-node-single-context": "^29.4.0",
+    "prettier": "^3.2.4",
+    "sass": "^1.70.0",
+    "sass-true": "^7.0.1"
+  }
+}

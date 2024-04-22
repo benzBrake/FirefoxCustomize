@@ -1,0 +1,342 @@
+@include Option("userChromeJS.Sidra.Urlbar.Compact") {
+  #nav-bar:-moz-lwtheme #urlbar ::-moz-selection,
+  #nav-bar:not(:-moz-lwtheme) #urlbar ::-moz-selection {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+  }
+
+  #urlbar-input-container {
+    padding: var(--urlbar-container-padding)
+      var(--megabar_border_padding-inline, var(--urlbar-container-padding)) !important;
+  }
+
+  // 排序
+  #page-action-buttons > *:not(.urlbar-page-action) {
+    @include BoxOrder(99);
+  }
+  @include NotOption("userChromeJS.Sidra.Urlbar.Focus.Border.Enabled") {
+    /* 地址栏/搜索栏选中边框 */
+    #urlbar[focused="true"]:not([suppress-focus-border]) > #urlbar-background,
+    #searchbar:focus-within {
+      outline-width: 0px !important;
+    }
+  }
+  @include Option("userChromeJS.Sidra.Urlbar.Rounded.Enabled") {
+    :root {
+      --megabar_border_roundness: 20px;
+    }
+    :root[uidensity="compact"] {
+      --megabar_border_roundness: 12px;
+    }
+    @include Option("userChromeJS.Sidra.Urlbar.Button.Rounded.Enabled") {
+      :root {
+        --location-bar-icon-padding-inline: 12px;
+      }
+      :root[uidensity="compact"] {
+        --location-bar-icon-padding-inline: 6px;
+      }
+      #urlbar-input-container > #location-bar .toolbarbutton-1,
+      #urlbar-input-container #page-action-buttons > .urlbar-page-action,
+      #tracking-protection-icon-container {
+        width: calc(
+          16px + 2 * var(--location-bar-icon-padding-inline)
+        ) !important;
+        border-radius: 99999px !important;
+        @include BoxPack("center");
+      }
+
+      #identity-icon-box {
+        border-radius: 99999px !important;
+        &:has(> #identity-icon-label[collapsed="true"]) {
+          width: calc(
+            16px + 2 * var(--location-bar-icon-padding-inline)
+          ) !important;
+          @include BoxPack("center");
+          > .identify-icon {
+            width: 16px !important;
+          }
+        }
+      }
+    }
+
+    #urlbar #urlbar-background,
+    #urlbar,
+    #urlbar-input-container,
+    #searchbar,
+    .searchbar-textbox {
+      border-radius: var(--megabar_border_roundness) !important;
+    }
+
+    #urlbar[focused="true"]:not([usertyping="true"]) .urlbarView,
+    #urlbar .search-one-offs,
+    #urlbar .search-one-offs .search-panel-header,
+    #urlbar .search-one-offs .search-panel-one-offs-container {
+      border-bottom-left-radius: var(--megabar_border_roundness) !important;
+      border-bottom-right-radius: var(--megabar_border_roundness) !important;
+    }
+
+    #urlbar .search-one-offs .search-setting-button-compact {
+      border-bottom-right-radius: var(--megabar_border_roundness) !important;
+    }
+
+    #urlbar[focused="true"][open] #urlbar-input-container {
+      border-bottom-left-radius: 0px !important;
+      border-bottom-right-radius: 0px !important;
+    }
+
+    #urlbar[open="true"] #urlbar-background,
+    #urlbar[open="true"],
+    #urlbar[open="true"] #urlbar-input-container {
+      border-radius: calc(var(--megabar_border_roundness) / 1.5) !important;
+    }
+
+    #urlbar[focused="true"]:not([usertyping="true"]) .urlbarView,
+    #urlbar .search-one-offs,
+    #urlbar .search-one-offs .search-panel-header,
+    #urlbar .search-one-offs .search-panel-one-offs-container {
+      border-bottom-left-radius: calc(
+        var(--megabar_border_roundness) / 1.5
+      ) !important;
+      border-bottom-right-radius: calc(
+        var(--megabar_border_roundness) / 1.5
+      ) !important;
+    }
+
+    #urlbar .search-one-offs .search-setting-button-compact {
+      border-bottom-right-radius: calc(
+        var(--megabar_border_roundness) / 1.5
+      ) !important;
+    }
+  }
+
+  @include Option("userChromeJS.Sidra.Urlbar.Megarbar.Disabled") {
+    /* Megabar: disable breakout / expanding onto toolbar *********************************************/
+    #urlbar[breakout][breakout-extend] {
+      top: calc(
+        (var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2
+      ) !important;
+      left: 0px !important;
+      width: calc(100% - 0px) !important;
+    }
+
+    #urlbar[breakout][breakout-extend] > #urlbar-background {
+      animation-name: unset !important;
+    }
+
+    #urlbar[breakout][breakout-extend] > #urlbar-input-container {
+      height: var(--urlbar-height) !important;
+      padding-block: 1px !important;
+      padding-inline: 1px !important;
+      border-bottom-left-radius: 0px !important;
+      border-bottom-right-radius: 0px !important;
+    }
+
+    /* disable result item roundness */
+    #urlbar[breakout] .urlbarView-row-inner {
+      border-radius: 0px !important;
+    }
+
+    /* disable 'breakout' animation */
+    #urlbar[breakout],
+    #urlbar[breakout] > *,
+    #urlbar-input-container > *:not(.urlbar-page-action, #location-bar) {
+      animation: unset !important;
+      duration: 0s !important;
+      animation-duration: 0s !important;
+    }
+
+    .urlbarView-body-inner {
+      border-top: 0px !important;
+    }
+  }
+
+  @include Option("userChromeJS.Sidra.Urlbar.Popup.Compact") {
+    /* disable useless space wasting inside popup */
+    #urlbar[breakout][breakout-extend] > .urlbarView {
+      padding: unset !important;
+      margin: unset !important;
+    }
+
+    #urlbar[breakout] .urlbarView {
+      margin-inline: unset !important;
+      width: 100% !important;
+    }
+
+    /* disable space wasting inside popup around result items */
+    #urlbar[breakout] #urlbar-results {
+      padding: 0px !important;
+      margin: 0px !important;
+    }
+    #urlbar[breakout] #urlbar-results .urlbarView-body-outer,
+    #urlbar[breakout] #urlbar-results .urlbarView-row,
+    #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
+      margin-inline-start: 0 !important;
+      padding-inline-start: 0 !important;
+      margin-inline-end: 0 !important;
+      padding-inline-end: 0 !important;
+    }
+
+    #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
+      padding-inline-start: 4px !important;
+      padding-inline-end: 4px !important;
+    }
+
+    #urlbar[breakout] .urlbarView-row {
+      padding-block: 0px !important;
+    }
+
+    /* disable space wasting inside popup around search engines */
+    #urlbar[breakout] .search-one-offs {
+      padding-inline: 4px;
+      padding-block: calc(var(--urlbarView-item-block-padding) / 2) !important;
+    }
+  }
+
+  #page-action-buttons {
+    > #star-button-box {
+      @include BoxOrder(0);
+    }
+  }
+
+  @include Option(
+    "userChromeJS.Sidra.Urlbar.PageActionButtons.HoverToShow.Enabled"
+  ) {
+    #page-action-buttons > .urlbar-page-action,
+    #location-bar:hover > .toolbarbutton-1 {
+      opacity: 0;
+      transition: opacity 200ms linear;
+    }
+    #location-bar:hover > .toolbarbutton-1,
+    #page-action-buttons:hover > .urlbar-page-action,
+    .urlbar-page-action[open],
+    .urlbar-page-action[open]
+      ~ .urlbar-page-action
+      #page-action-buttons:has(.urlbar-page-action[open])
+      ~ #location-bar {
+      opacity: 1;
+      margin-inline-end: 0px !important;
+    }
+  }
+
+  @include Option("userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled") {
+    #nav-bar {
+      --uc-combined-circlebutton-background: hsla(0, 100%, 100%, 0.5);
+      --uc-combined-circlebutton-hover-background: var(
+        --uc-combined-circlebutton-background
+      );
+      --uc-combined-circlebutton-active-background: var(
+        --toolbarbutton-active-background
+      );
+      --uc-combined-circlebutton-border-color: hsla(240, 5%, 5%, 0.3);
+      --uc-toolbarbutton-boundary: calc(
+        var(--toolbarbutton-outer-padding) + var(--toolbarbutton-inner-padding)
+      );
+      --uc-toolbarbutton-padding: calc(2 * var(--uc-toolbarbutton-boundary));
+      --uc-toolbarbutton-size: calc(12px + var(--uc-toolbarbutton-padding));
+      --uc-toolbarbutton-halfsize: calc(6px + var(--uc-toolbarbutton-boundary));
+      --uc-urlbar-icon-size: calc(16px + 2 * var(--urlbar-icon-padding));
+    }
+    #nav-bar[brighttext] {
+      --uc-combined-circlebutton-background: var(
+        --toolbarbutton-hover-background
+      );
+      --uc-combined-circlebutton-hover-background: var(
+        --toolbarbutton-active-background
+      );
+      --uc-combined-circlebutton-active-background: color-mix(
+        in srgb,
+        currentColor 20%,
+        transparent
+      );
+    }
+    #nav-bar-customization-target > * {
+      @include BoxOrder(1);
+    }
+    .urlbarView {
+      width: calc(
+        100% - 2 * (5px + var(--urlbar-container-padding)) +
+          var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2
+      );
+    }
+    @include Option(
+      "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn"
+    ) {
+      #nav-bar-customization-target > #CopyCat-Btn {
+        @include BoxOrder(0, true);
+      }
+    }
+    #nav-bar-customization-target > #urlbar-container {
+      @include BoxOrder(5);
+    }
+    #nav-bar-customization-target > #urlbar-container ~ * {
+      @include BoxOrder(7);
+    }
+    #nav-bar-customization-target > #stop-reload-button {
+      @include BoxOrder(6);
+    }
+    #urlbar {
+      padding-right: calc(
+        var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2
+      );
+    }
+    #nav-bar-customization-target > #stop-reload-button {
+      z-index: 3;
+      position: relative;
+      --toolbarbutton-hover-background: var(--urlbar-box-hover-bgcolor);
+      color: var(--urlbar-box-hover-text-color) !important;
+      margin-left: calc(
+        -1 * (var(--uc-toolbarbutton-size) + var(--urlbar-margin-inline))
+      );
+      margin-right: var(--toolbarbutton-outer-padding) !important;
+    }
+    #nav-bar-customization-target
+      > #stop-reload-button
+      > .toolbarbutton-1
+      > .toolbarbutton-icon {
+      width: var(--uc-urlbar-icon-size) !important;
+      height: var(--uc-urlbar-icon-size) !important;
+      padding: var(--urlbar-icon-padding) !important;
+    }
+
+    @include Option("userChromeJS.Sidra.Urlbar.Rounded.Enabled") {
+      #urlbar-input-container {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+      }
+
+      #nav-bar-customization-target
+        > #stop-reload-button
+        > .toolbarbutton-1
+        > .toolbarbutton-icon {
+        border-top-right-radius: calc(
+          var(--megabar_border_roundness) / 2
+        ) !important;
+        border-bottom-right-radius: calc(
+          var(--megabar_border_roundness) / 2
+        ) !important;
+      }
+    }
+
+    @include Option("userChromeJS.Sidra.Urlbar.Button.Rounded.Enabled") {
+      #urlbar {
+        padding-right: calc(
+          var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2 +
+            var(--location-bar-icon-padding-inline)
+        );
+      }
+      #nav-bar-customization-target > #stop-reload-button {
+        margin-left: calc(
+          -1 * (var(--uc-toolbarbutton-size) + var(--urlbar-margin-inline) +
+                var(--location-bar-icon-padding-inline))
+        );
+        > .toolbarbutton-1 > .toolbarbutton-icon {
+          border-radius: 99999px !important;
+          width: calc(
+            16px + 2 * var(--location-bar-icon-padding-inline)
+          ) !important;
+          padding-inline: var(--location-bar-icon-padding-inline) !important;
+        }
+      }
+    }
+  }
+}

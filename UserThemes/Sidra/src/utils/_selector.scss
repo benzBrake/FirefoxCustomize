@@ -1,0 +1,104 @@
+@use "list" as list-utils;
+@mixin TabPosition($position, $appendSelector: "") {
+  @if $position == "hide" {
+    :root[tabbarstyle="0"][tabposition="0"]#{$appendSelector} {
+      @content;
+    }
+  } @else if $position == "top" {
+    :root[tabbarstyle="0"][tabposition="0"]#{$appendSelector} {
+      @content;
+    }
+  } @else if $position == "hide" {
+    :root[tabbarstyle="0"][tabposition="1"]#{$appendSelector} {
+      @content;
+    }
+  } @else if $position == "vertical-fit" {
+    :root[tabbarstyle="0"][tabposition="2"]#{$appendSelector} {
+      @content;
+    }
+  } @else if $position == "below-toolbar" {
+    :root[tabbarstyle="0"][tabposition="3"]#{$appendSelector} {
+      @content;
+    }
+  } @else if $position == "bottom" {
+    :root[tabbarstyle="0"][tabposition="4"]#{$appendSelector} {
+      @content;
+    }
+  } @else {
+    :root[tabbarstyle="0"][tabposition="0"]#{$appendSelector} {
+      @content;
+    }
+  }
+}
+
+@mixin ControlStyle($style, $appendSelector: "") {
+  @if str-index($style, ",") {
+    $styles: list-utils.to-list($styles, ",");
+    $selectors: ();
+    @each $s in $styles {
+      $selectors: append($selectors, '[sidra-controlstyle="#{$s}"]');
+    }
+    $selectorString: list-utils.to-string($selectors, "");
+    :root:is(#{$selectorString})#{$appendSelector} {
+      @content;
+    }
+  } @else {
+    :root[sidra-controlstyle="#{$style}"]#{$appendSelector} {
+      @content;
+    }
+  }
+}
+
+@mixin NotControlStyle($style, $appendSelector: "") {
+  @if str-index($style, ",") {
+    $styles: list-utils.to-list($styles, ",");
+    $selectors: ();
+    @each $s in $styles {
+      $selectors: append($selectors, ':not([sidra-controlstyle="#{$s}"])');
+    }
+    $selectorString: list-utils.to-string($selectors, "");
+    :root#{$selectorString}#{$appendSelector} {
+      @content;
+    }
+  } @else {
+    :root:not([sidra-controlstyle="#{$style}"])#{$appendSelector} {
+      @content;
+    }
+  }
+}
+
+@mixin TabStyle($styles, $appendSelector: "") {
+  @if str-index($styles, ",") {
+    $list: list-utils.to-list($styles, ",");
+    $selectors: ();
+    @each $style in $list {
+      $selectors: append($selectors, '[sidra-tabstyle="#{$style}"]');
+    }
+    $selectorString: list-utils.to-string($selectors, ", ");
+    :root:is(#{$selectorString})#{$appendSelector} {
+      @content;
+    }
+  } @else {
+    :root[sidra-tabstyle="#{$styles}"]#{$appendSelector} {
+      @content;
+    }
+  }
+}
+
+@mixin TabShadow($levels, $appendSelector: "") {
+  @if str-index($levels, ",") {
+    $list: list-utils.to-list($levels, ",");
+    $selectors: ();
+    @each $level in $list {
+      $selectors: append($selectors, '[sidra-tabshadow="#{$level}"]');
+    }
+    $selectorString: list-utils.to-string($selectors, ", ");
+    :root:is(#{$selectorString})#{$appendSelector} {
+      @content;
+    }
+  } @else {
+    :root[sidra-tabshadow="#{$levels}"]#{$appendSelector} {
+      @content;
+    }
+  }
+}
