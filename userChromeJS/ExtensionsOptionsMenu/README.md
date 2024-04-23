@@ -1,6 +1,6 @@
 # 扩展选项菜单
 
-两个版本，`extensionOptionsMenu.uc.js`是@xiaoxiaoflood的作品，我就汉化了（两行文字的事），`Extension Options Menu.uc.js`来自https://u6.getuploader.com/script/，我汉化了，并修复了新窗口不能用的问题。
+两个版本，`extensionOptionsMenu.uc.js`是@xiaoxiaoflood的作品，我就汉化了（两行文字的事），`Extension Options Menu.uc.js`来自[https://u6.getuploader.com/script/](https://u6.getuploader.com/script/)，我汉化了，并修复了新窗口不能用的问题。
 
 ## ❌extensionOptionsMenu.uc.js
 
