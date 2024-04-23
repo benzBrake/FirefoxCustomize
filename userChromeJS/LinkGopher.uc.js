@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 70
 // @charset        UTF-8
-// @version        0.1.5
+// @version        0.1.6
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/
 // ==/UserScript==
 if (typeof window === "undefined" || globalThis !== window) {
@@ -27,7 +27,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 matches: ["*://*/*", "file:///*", "about:*", "view-source:*", "moz-extension://*/*", "resource://*/*"],
             };
             ChromeUtils.registerWindowActor("LinkGopher", actorParams);
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            // console.error(e); 
+        }
 
         this.LinkGopherParent = class extends JSWindowActorParent {
             receiveMessage({ name, data }) {
@@ -116,8 +118,9 @@ if (typeof window === "undefined" || globalThis !== window) {
             }
             ChromeUtils.import(`resource://link-gopher/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`);
         }
-    } catch (e) { console.error(e); }
-    location.href.startsWith("chrome://browser/content/browser.x") && (async (id, css, i18n, $, createEl, applyAttr, removeEl, sprintf, addStyle, toRegex) => {
+    } catch (e) { /* console.error(e); */ }
+    (async (id, css, i18n) => {
+        if (!location.href.startsWith("chrome://browser/content/browser.x")) return;
         var lprintf = (f, ...args) => { return sprintf(f in i18n ? i18n[f] : f, ...args); };
         var LinkMenus = () => ([{
             id: "LinkGopher-Extract-All",
@@ -147,209 +150,296 @@ if (typeof window === "undefined" || globalThis !== window) {
             exclude: "^javascript:",
             text: "%h"
         }, {
+
+        }, {
             id: "LinkGopher-About",
             label: lprintf("about link gopher"),
             oncommand: "window.LinkGopher.onCommand(event)",
             url: "https://github.com/benzBrake/FirefoxCustomize/"
         }]);
-        if (!window.LinkGopher) {
-            window.LinkGopher = {
-                get regexp() {
-                    let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
-                    let rTITLE = "%TEXT" + he + "%|%t\\b";
-                    let rURL = "%URL" + he + "%|%u\\b";
-                    let rHOST = "%HOST" + he + "%|%h\\b";
-                    let rExt = "%EOL" + he + "%";
-                    this.rTITLE = new RegExp(rTITLE, "i");
-                    this.rURL = new RegExp(rURL, "i");
-                    this.rHOST = new RegExp(rHOST, "i");
-                    this.rExt = new RegExp(rExt, "i");
-                    delete this.regexp;
-                    return (this.regexp = new RegExp([rTITLE, rURL, rHOST, rExt].join("|"), "ig"));
-                },
-                init: async function () {
-                    if (!(CustomizableUI.getWidget(id) && CustomizableUI.getWidget(id).forWindow(window)?.node)) {
-                        try {
-                            CustomizableUI.createWidget({
-                                id,
-                                removable: true,
-                                defaultArea: CustomizableUI.AREA_NAVBAR,
-                                localized: false,
-                                onCreated: node => {
-                                    const { ownerDocument: document } = node;
-                                    applyAttr(node, {
-                                        id,
-                                        label: lprintf("linkgopher"),
-                                        tooltiptext: lprintf("one click to pick up links"),
-                                        contextmenu: false,
-                                        type: "menu"
-                                    });
-
-                                    let mp = applyAttr(createEl("menupopup", document), {
-                                        id: "LinkGopher-Popup",
-                                        class: "LinkGopher-Popup",
-                                    });
-
-                                    let mps = $('mainPopupSet', document);
-                                    mps ? mps.appendChild(mp) : node.appendChild(mp);
-
-                                    this.buildMenu(mp);
-
-                                    node.addEventListener("mouseover", (event) => {
-                                        let win = event.target.ownerGlobal, mp = $("LinkGopher-Popup", win.document);
-
-                                        if (mp)
-                                            mp.parentNode.id !== id && $(id, win.document)?.appendChild(mp);
-                                        else
-                                            return;
-
-                                        if (event.clientX > (win.innerWidth / 2) && event.clientY < (win.innerHeight / 2)) {
-                                            mp.setAttribute("position", "after_end");
-                                        } else if (event.clientX < (win.innerWidth / 2) && event.clientY > (win.innerHeight / 2)) {
-                                            mp.setAttribute("position", "before_start");
-                                        } else if (event.clientX > (win.innerWidth / 2) && event.clientY > (win.innerHeight / 2)) {
-                                            mp.setAttribute("position", "before_start");
-                                        } else {
-                                            mp.removeAttribute("position", "after_end");
-                                        }
-                                    });
-
-                                    LinkGopher.btn = node;
-                                },
-                            });
-                        } catch (e) { }
-                    }
-                    if (this.style) removeEl(this.style);
-                    this.style = addStyle(css);
-                    window.addEventListener("beforeunload", async () => {
-                        await this.destroy();
-                    });
-                },
-                buildMenu: async function (mp) {
-                    let { document } = mp.ownerGlobal;
-                    LinkMenus().forEach(o => {
-                        let tag = (Object.keys(o).length && o.type !== "menuseparator") ? "menuitem" : "menuseparator";
-                        mp.appendChild(applyAttr(createEl(tag, document), o));
-                    })
-                },
-                onCommand(event) {
-                    const { target } = event;
-                    const prompt = target.getAttribute("prompt");
-                    const text = target.getAttribute("text") || "%u";
-                    const exclude = target.getAttribute("exclude");
-                    const url = target.getAttribute("url");
-                    const where = target.getAttribute("where") || "tab";
-                    if (url) {
-                        openTrustedLinkIn(url, where, {
-                            postData: null,
-                            triggeringPrincipal: where === 'current' ?
-                                gBrowser.selectedBrowser.contentPrincipal : (
-                                    /^(f|ht)tps?:/.test(url) ?
-                                        Services.scriptSecurityManager.createNullPrincipal({}) :
-                                        Services.scriptSecurityManager.getSystemPrincipal()
-                                ),
-
-                        })
-                    } else {
-                        let keyword = event.target.getAttribute("keyword");
-                        if (prompt === "true") {
-                            let result = { value: keyword || "" };
-                            let status = Services.prompt.prompt(window, LinkGopher_LOCALE.includes("zh-") ? "根据关键字过滤" : "Filter by keyword", LinkGopher_LOCALE.includes("zh-") ? "输入关键字" : "Please input keyword", result, null, {})
-                            if (status) {
-                                keyword = result.value;
+        window.LinkGopher = {
+            get regexp() {
+                let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
+                let rTITLE = "%TEXT" + he + "%|%t\\b";
+                let rURL = "%URL" + he + "%|%u\\b";
+                let rHOST = "%HOST" + he + "%|%h\\b";
+                let rExt = "%EOL" + he + "%";
+                this.rTITLE = new RegExp(rTITLE, "i");
+                this.rURL = new RegExp(rURL, "i");
+                this.rHOST = new RegExp(rHOST, "i");
+                this.rExt = new RegExp(rExt, "i");
+                delete this.regexp;
+                return (this.regexp = new RegExp([rTITLE, rURL, rHOST, rExt].join("|"), "ig"));
+            },
+            init: async function () {
+                if (!CustomizableUI.getPlacementOfWidget(id)) {
+                    try {
+                        CustomizableUI.createWidget({
+                            id,
+                            defaultArea: CustomizableUI.AREA_NAVBAR,
+                            type: "custom",
+                            onBuild: (doc) => {
+                                return this.createButton(doc);
                             }
-                        }
-                        if (this.btn) {
-                            const { btn } = this;
-                            btn.setAttribute("status", "loading");
-                            this.timeOut = setTimeout(() => {
-                                btn.removeAttribute("status");
-                            }, 3000);
-                        }
-                        let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("LinkGopher");
-                        actor.sendAsyncMessage("LG:ExtractLinks", {
-                            keyword,
-                            text,
-                            exclude
                         });
+                    } catch (ex) { }
+                }
+                this.btn = CustomizableUI.getWidget(id).forWindow(window)?.node;
+                if (this.btn) this.btn.addEventListener("mouseover", this.onMouseOver);
+                if (this.style) removeEl(this.style);
+                this.style = addStyle(css);
+                window.addEventListener("beforeunload", async () => {
+                    await this.destroy();
+                });
+            },
+            createButton: function (doc) {
+                let btn = applyAttr(createEl('toolbarbutton', doc), {
+                    id,
+                    label: lprintf("linkgopher"),
+                    tooltiptext: lprintf("one click to pick up links"),
+                    type: 'menu',
+                    class: 'toolbarbutton-1 chromeclass-toolbar-additional',
+                });
+                let mp = applyAttr(createEl("menupopup", doc), {
+                    id: id + "-Popup",
+                    class: id + "-Popup",
+                });
+                btn.appendChild(mp);
+                LinkMenus().forEach(o => {
+                    let tag = (Object.keys(o).length && o.type !== "menuseparator") ? "menuitem" : "menuseparator";
+                    mp.appendChild(applyAttr(createEl(tag, doc), o));
+                });
+                return btn;
+            },
+            onMouseOver(event) {
+                if (event.target.id !== id) return;
+                let win = event.target.ownerGlobal;
+                let mp = event.target.querySelector(":scope>menupopup");
+                if (event.clientX > (win.innerWidth / 2) && event.clientY < (win.innerHeight / 2)) {
+                    mp.setAttribute("position", "after_end");
+                } else if (event.clientX < (win.innerWidth / 2) && event.clientY > (win.innerHeight / 2)) {
+                    mp.setAttribute("position", "before_start");
+                } else if (event.clientX > (win.innerWidth / 2) && event.clientY > (win.innerHeight / 2)) {
+                    mp.setAttribute("position", "before_start");
+                } else {
+                    mp.removeAttribute("position", "after_end");
+                }
+            },
+            onCommand(event) {
+                const { target } = event;
+                const prompt = target.getAttribute("prompt");
+                const text = target.getAttribute("text") || "%u";
+                const exclude = target.getAttribute("exclude");
+                const url = target.getAttribute("url");
+                const where = target.getAttribute("where") || "tab";
+                if (url) {
+                    openTrustedLinkIn(url, where, {
+                        postData: null,
+                        triggeringPrincipal: where === 'current' ?
+                            gBrowser.selectedBrowser.contentPrincipal : (
+                                /^(f|ht)tps?:/.test(url) ?
+                                    Services.scriptSecurityManager.createNullPrincipal({}) :
+                                    Services.scriptSecurityManager.getSystemPrincipal()
+                            ),
+
+                    })
+                } else {
+                    let keyword = event.target.getAttribute("keyword");
+                    if (prompt === "true") {
+                        let result = { value: keyword || "" };
+                        let status = Services.prompt.prompt(window, lprintf("filter by keyword"), lprintf("input keyword"), result, null, {})
+                        if (status) {
+                            keyword = result.value;
+                        }
                     }
-                },
-                processLinksData({ links, keyword, exclude, text }) {
-                    if (links && links.length) {
-                        const r = toRegex(keyword, exclude);
-                        links = links.filter(link => r.test(link.href)).map(link => this.convertText(text, link)).filter(text => text.length);
-                        if (/%H/.test(text.toUpperCase())) {
-                            // 转换为主机名的时候需要去重
-                            links = [...new Set(links)];
-                        }
-                        if (links.length) {
-                            this.copy(links.join("\n"));
-                            this.btn?.setAttribute("status", "success");
-                        } else {
-                            this.btn?.setAttribute("status", "failed");
-                        }
+                    if (this.btn) {
+                        const { btn } = this;
+                        btn.setAttribute("status", "loading");
+                        this.timeOut = setTimeout(() => {
+                            btn.removeAttribute("status");
+                        }, 3000);
+                    }
+                    let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("LinkGopher");
+                    actor.sendAsyncMessage("LG:ExtractLinks", {
+                        keyword,
+                        text,
+                        exclude
+                    });
+                }
+            },
+            processLinksData({ links, keyword, exclude, text }) {
+                if (links && links.length) {
+                    const r = keywordToRegex(keyword, exclude);
+                    links = links.filter(link => r.test(link.href)).map(link => this.convertText(text, link)).filter(text => text.length);
+                    if (/%H/.test(text.toUpperCase())) {
+                        // 转换为主机名的时候需要去重
+                        links = [...new Set(links)];
+                    }
+                    if (links.length) {
+                        this.copy(links.join("\n"));
+                        this.btn?.setAttribute("status", "success");
                     } else {
                         this.btn?.setAttribute("status", "failed");
                     }
-                    clearTimeout(this.timeOut);
-                    setTimeout(() => {
-                        LinkGopher.btn.removeAttribute("status");
-                    }, 2000);
-                },
-                convertText(text, link) {
-                    let result = text.replace(this.regexp, function (str) {
-                        str = str.toUpperCase();
-                        if (str.indexOf("_HTMLIFIED") >= 0)
-                            return htmlEscape(convert(str.replace("_HTMLIFIED", ""), link));
-                        if (str.indexOf("_HTML") >= 0)
-                            return htmlEscape(convert(str.replace("_HTML", ""), link));
-                        if (str.indexOf("_ENCODE") >= 0)
-                            return encodeURIComponent(convert(str.replace("_ENCODE", ""), link));
-                        return convert(str, link);
-                    });
-                    return result;
-
-                    function convert(str, link) {
-                        switch (str) {
-                            case "%T":
-                            case "%TEXT%":
-                                return link.innerText;
-                            case "%U":
-                            case "%URL%":
-                                return link.href;
-                            case "%H":
-                            case "%HOST%":
-                                return link.host;
-                            case "%EOL%":
-                                return "\r\n";
-                        }
-                    }
-                },
-                copy: function (aText) {
-                    Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
-                    //XULBrowserWindow.statusTextField.label = "Copy: " + aText;
-                },
-                alert: function (aMsg, aTitle, aCallback) {
-                    var callback = aCallback ? {
-                        observe: function (subject, topic, data) {
-                            if ("alertclickcallback" != topic)
-                                return;
-                            aCallback.call(null);
-                        }
-                    } : null;
-                    var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-                    alertsService.showAlertNotification(
-                        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "LinkGopher",
-                        aMsg + "", !!callback, "", callback);
-                },
-                log: console.log,
-                destroy: async function () {
-                    CustomizableUI.destroyWidget(id);
-                    removeEl(this.style);
-                    delete this;
+                } else {
+                    this.btn?.setAttribute("status", "failed");
                 }
+                clearTimeout(this.timeOut);
+                setTimeout(() => {
+                    LinkGopher.btn.removeAttribute("status");
+                }, 2000);
+            },
+            convertText(text, link) {
+                let result = text.replace(this.regexp, function (str) {
+                    str = str.toUpperCase();
+                    if (str.indexOf("_HTMLIFIED") >= 0)
+                        return htmlEscape(convert(str.replace("_HTMLIFIED", ""), link));
+                    if (str.indexOf("_HTML") >= 0)
+                        return htmlEscape(convert(str.replace("_HTML", ""), link));
+                    if (str.indexOf("_ENCODE") >= 0)
+                        return encodeURIComponent(convert(str.replace("_ENCODE", ""), link));
+                    return convert(str, link);
+                });
+                return result;
+
+                function convert(str, link) {
+                    switch (str) {
+                        case "%T":
+                        case "%TEXT%":
+                            return link.innerText;
+                        case "%U":
+                        case "%URL%":
+                            return link.href;
+                        case "%H":
+                        case "%HOST%":
+                            return link.host;
+                        case "%EOL%":
+                            return "\r\n";
+                    }
+                }
+            },
+            copy: function (aText) {
+                Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
+                //XULBrowserWindow.statusTextField.label = "Copy: " + aText;
+            },
+            alert: function (aMsg, aTitle, aCallback) {
+                var callback = aCallback ? {
+                    observe: function (subject, topic, data) {
+                        if ("alertclickcallback" != topic)
+                            return;
+                        aCallback.call(null);
+                    }
+                } : null;
+                var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+                alertsService.showAlertNotification(
+                    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "LinkGopher",
+                    aMsg + "", !!callback, "", callback);
+            },
+            log: console.log,
+            destroy: async function () {
+                CustomizableUI.destroyWidget(id);
+                removeEl(this.style);
+                delete this;
             }
-            await window.LinkGopher.init();
+        }
+        await window.LinkGopher.init();
+
+        /**
+         * 选取 DOM 元素
+         * 
+         * @param {string} s id 或者 css 选择器
+         * @param {Document|null} d 指定 document，不提供就是全局 document
+         * @returns 
+         */
+        function $(s, d) {
+            return /^[#\.\[]:/.test(s.trim()) ? (d || document).querySelector(s) : (d || document).getElementById(s)
+        }
+
+        /**
+         * 创建 DOM 元素
+         * 
+         * @param {string} t 元素 tagName
+         * @param {Document|null} d 指定 document，不提供就是全局 document
+         * @returns 
+         */
+        function createEl(t, d) {
+            return t ? (d || document).createXULElement(t) : null;
+        }
+
+
+        /**
+         * 给 DOM 元素应用属性
+         * 
+         * @param {HTMLElement} e DOM 元素
+         * @param {Object} o 属性键值对，使用 Object 方式存储
+         * @returns 
+         */
+        function applyAttr(e, o = {}) {
+            for (let [k, v] of Object.entries(o)) {
+                e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+            }
+            return e;
+        }
+
+        /**
+         * 格式化字符串
+         * 
+         * @param {string} f 格式字符串
+         * @param  {...any} args 剩余参数，只能是数字和字符串
+         * @returns 
+         */
+        function sprintf(f, ...args) {
+            let s = f; for (let a of args) s = s.replace(/%[sd]/, a); return s;
+        }
+
+        /**
+         * 删除 HTML 元素
+         * 
+         * @param {HTMLElement} e 
+         * @returns 
+         */
+        function removeEl(e) {
+            return e && e.parentNode && e.parentNode.removeChild(e);
+        }
+
+        /**
+         * 插入 CSS 样式到 document
+         * 
+         * @param {string} css CSS 字符串
+         * @param {Document} d 指定 document，不提供就是全局 document
+         * @returns 
+         */
+        function addStyle(css, d) {
+            return (d || document).insertBefore((d || document).createProcessingInstruction('xml-stylesheet', 'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'), (d || document).documentElement)
+        }
+
+        /**
+         * 关键字转正则对象
+         * 
+         * @param {string} keyword 包含关键字
+         * @param {string} excludeKeyword 排除关键字
+         * @returns RegExp
+         */
+        function keywordToRegex(keyword, excludeKeyword) {
+            // 不转义 '^', '$', 和 '.*'
+            const specialCharsToKeep = ['^', '$', '\\.*'];
+            let escapedInput = keyword.replace(/[\\.^$*+?()[\]{}|]/g, (char) => {
+                if (specialCharsToKeep.includes(char)) return char;
+                return '\\' + char;
+            });
+
+            // 如果有排除关键词，则添加负向前瞻断言
+            if (excludeKeyword) {
+                // 同样处理 excludeKeyword 内的特殊字符
+                const escapedExclude = excludeKeyword.replace(/[\\.^$*+?()[\]{}|]/g, (char) => {
+                    if (specialCharsToKeep.includes(char)) return char;
+                    return '\\' + char;
+                });
+                escapedInput = `(?!.*${escapedExclude}).*${escapedInput}`;
+            }
+
+            // 返回转换后的正则表达式
+            return new RegExp(escapedInput);
         }
     })(
         "LinkGopher-Btn",
@@ -376,7 +466,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                     "extract by keyword": "根据关键字提取",
                     "extract domain only": "只提取域名",
                     "extract selection only": "只提取选中内容",
-                    "about link gopher": "关于 LinkGopher.uc.js"
+                    "about link gopher": "关于 LinkGopher.uc.js",
+                    "filter by keyword": "根据关键字过滤",
+                    "input keyword": "输入关键字"
                 },
                 'en-US': {
                     "linkgopher": "LinkGopher",
@@ -387,7 +479,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                     "extract by keyword": "Extract by keyword",
                     "extract domain only": "Extract domain only",
                     "extract selection only": "Extract selection only",
-                    "about link gopher": "About LinkGopher.uc.js"
+                    "about link gopher": "About LinkGopher.uc.js",
+                    "filter by keyword": "Filter by keyword",
+                    "input keyword": "Please type keyword"
                 },
             }
             let LOCALE;
@@ -406,32 +500,5 @@ if (typeof window === "undefined" || globalThis !== window) {
             } catch (e) { }
             return LANG[Object.keys(LANG).includes(LOCALE) ? LOCALE : "en-US"];
         })(),
-        (s, d) => /^[#\.\[]:/.test(s.trim()) ? (d || document).querySelector(s) : (d || document).getElementById(s),
-        (t, d) => t ? (d || document).createXULElement(t) : null,
-        (e, o = {}) => { for (let [k, v] of Object.entries(o)) e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v); return e; },
-        s => s && s.parentNode && s.parentNode.removeChild(s),
-        (f, ...args) => { let s = f; for (let a of args) s = s.replace(/%[sd]/, a); return s; },
-        (css, d) => (d || document).insertBefore((d || document).createProcessingInstruction('xml-stylesheet', 'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'), (d || document).documentElement),
-        function (keyword, excludeKeyword) {
-            // 不转义 '^', '$', 和 '.*'
-            const specialCharsToKeep = ['^', '$', '\\.*'];
-            let escapedInput = keyword.replace(/[\\.^$*+?()[\]{}|]/g, (char) => {
-                if (specialCharsToKeep.includes(char)) return char;
-                return '\\' + char;
-            });
-
-            // 如果有排除关键词，则添加负向前瞻断言
-            if (excludeKeyword) {
-                // 同样处理 excludeKeyword 内的特殊字符
-                const escapedExclude = excludeKeyword.replace(/[\\.^$*+?()[\]{}|]/g, (char) => {
-                    if (specialCharsToKeep.includes(char)) return char;
-                    return '\\' + char;
-                });
-                escapedInput = `(?!.*${escapedExclude}).*${escapedInput}`;
-            }
-
-            // 返回转换后的正则表达式
-            return new RegExp(escapedInput);
-        }
     )
 }
