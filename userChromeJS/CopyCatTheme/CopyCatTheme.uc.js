@@ -587,12 +587,6 @@
                             file: tFile
                         });
                     } else {
-                        if (file.hasOwnProperty("min-version") && Services.vc.compare(Services.appinfo.version, file['min-version']) < 0) {
-                            return;
-                        }
-                        if (file.hasOwnProperty("max-version") && Services.vc.compare(Services.appinfo.version, file['max-version']) > 0) {
-                            return;
-                        }
                         this.styles.push({
                             url: Services.io.newURI(window.CopyCatTheme.THEME_URL_PREFIX + "/" + aFile.leafName + '/' + tFile.leafName),
                             type: file.hasOwnProperty("type") ? file.type : getStyleType(tFile.leafName),
@@ -1026,7 +1020,7 @@
                 let css = '@-moz-document url-prefix("chrome://"), url-prefix("moz-extension://"), url-prefix("about:")\n{\n:root{\n' + CSSVariables.join("\n") + "\n}\n}";
                 this.globalVariables = {
                     url: Services.io.newURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css)),
-                    type: Ci.nsIStyleSheetService.AUTHOR_SHEET || Ci.nsIStyleSheetService.AGENT_SHEET
+                    type: Ci.nsIStyleSheetService.AGENT_SHEET
                 }
 
                 let style = this.globalVariables;
