@@ -8,7 +8,7 @@
 // @include         chrome://browser/content/browser.xul
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @note            0.2.5 移除 panelview 支持
+// @note            0.2.5 移除 panelview 支持，修复关闭第一个窗口后新窗口无法弹出菜单的bug
 // @note            0.2.4 Uncaught NS_ERROR_XPC_BAD_CONVERT_JS: Could not convert JavaScript argument arg 0 [nsIFilePicker.init]
 // @note            0.2.3 完善 Debug 日志
 // @note            0.2.2 Bug 1815439 - Remove useless loadURI wrapper from browser.js
@@ -53,6 +53,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         class: 'showFirstText',
         group: [{
             label: lprintf("modify-copycat-js"),
+            image: "chrome://browser/skin/preferences/category-general.svg",
             oncommand: 'CopyCat.editConfig();'
         }, {
             label: lprintf("reload-copycat-js"),
@@ -234,6 +235,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 tooltiptext: lprintf("copycat-btn-tooltip"),
                 type: 'menu',
                 class: 'toolbarbutton-1 chromeclass-toolbar-additional',
+                onclick: function (event) {
+                    if (event.target.id !== "CopyCat-Btn") return;
+                    if (event.button === 2) {
+                        if (window.AM_Helper) {
+                            event.preventDefault();
+                            event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/userchromejs");
+                        }
+                    }
+                }
             });
             btn.appendChild(createElement(doc, "menupopup", {
                 id: "CopyCat-Popup",
@@ -882,8 +892,6 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 
-    window.CopyCat.init();
-
     /**
      * 选取 DOM 元素
      * 
@@ -930,8 +938,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
             if (typeof v == "function") {
-                e.addEventListener(k.replace(/^on/, ""), v, false);
-                // e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+                e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
             } else {
                 e.setAttribute(k, v);
             }
