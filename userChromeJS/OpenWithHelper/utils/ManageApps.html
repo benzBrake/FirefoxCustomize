@@ -708,7 +708,7 @@
               const enumerator = Services.wm.getEnumerator(null);
               while (enumerator.hasMoreElements()) {
                 const win = enumerator.getNext();
-                win?.OpenWithHelper.insertMenu(true);
+                win?.OpenWithHelper.reload(true);
               }
             }
           },

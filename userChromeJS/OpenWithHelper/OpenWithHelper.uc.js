@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.0a1
+// @version        1.0.0a2
 // @author         Ryan
 // @include        main
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
-    (async function (CSS, R, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, WHERE_MAP, GE_90 /* 版本号大于等于 90 */, $, $C, $R, $RLP, $USF, $LOADURI /* 打开 JAVASCRIPT 地址函数 */, $ALERT, $COOKIE, $RSTR, $SAVE, $ESCAPE_CMD, LANGUAGE) {
+    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */, LANGUAGE) {
         const { LANG, LOCALE } = LANGUAGE;
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
@@ -54,7 +54,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 async function openFilePickerDialog() {
                     return new Promise(resolve => {
                         // 使用 Promise 让回调看起来不那么难受
-                        const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                        const fp = makeFilePicker();
                         try {
                             fp.init(window.browsingContext, title, mode);
                         } catch (e) {
@@ -72,48 +72,116 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let status = await openFilePickerDialog();
                 if (status.result === Ci.nsIFilePicker.returnOK) {
                     this.saveDir = status.path;
-                    $ALERT(textIfOK);
+                    alerts(textIfOK);
                 } else {
                     // Ci.nsIFilePicker.returnCancel
-                    $ALERT(textIfCanceled);
+                    alerts(textIfCanceled);
                 }
             },
             init: async function () {
+                this.initRegexp();
                 var pi = document.createProcessingInstruction(
                     'xml-stylesheet',
                     'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(CSS) + '"'
                 );
                 this.style = document.insertBefore(pi, document.documentElement);
 
-                // 准备弹出菜单
-                let menupopup = $C('menupopup', { class: 'owh-popup' });
-                menupopup.appendChild($C('menuseparator', { class: 'owh-separator' }));
-                menupopup.appendChild($C("menuitem", { label: formatStr("open download dir"), class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
-                menupopup.appendChild($C("menuitem", { label: formatStr("change download dir"), class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
-                menupopup.appendChild($C('menuitem', { label: formatStr("manage applications"), class: "settings", url: 'chrome://userchrome/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
-                menupopup.appendChild($C('menuitem', { label: formatStr("about open with helper"), class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
-
-                this.menupopup = menupopup;
-                await this.insertMenu();
-
                 let tp = (gBrowser.mPanelContainer /* 屎山 */ || gBrowser.tabpanels);["mouseup", "keydown"].forEach(type => tp.addEventListener(type, this, false));
 
-                $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
-            },
-            insertMenu: async function (isAlert) {
-                $R($('OpenWithHelper-Btn-Popup'));
-                $R($('OpenWithHelper-Ctx-Menu'));
-                $R($('OpenWithHelper-Tab-Menu'));
-                await this.reloadApps();
-                menupopup = this.menupopup;
-                // 插入菜单
-                let BTN_POPUP = menupopup.cloneNode(true);
-                BTN_POPUP.id = 'OpenWithHelper-Btn-Popup';
-                $('mainPopupSet')?.appendChild(BTN_POPUP);
 
-                let CTX_POPUP = menupopup.cloneNode(true);
+                if (!(CustomizableUI.getWidget('OpenWithHelper-Btn') && CustomizableUI.getWidget('OpenWithHelper-Btn').forWindow(window)?.node)) {
+                    try {
+                        CustomizableUI.createWidget({
+                            id: 'OpenWithHelper-Btn',
+                            removable: true,
+                            defaultArea: CustomizableUI.AREA_NAVBAR,
+                            localized: false,
+                            onCreated: node => {
+                                for (let [key, value] of Object.entries({
+                                    label: formatStr("open with helper"),
+                                    tooltiptext: formatStr("open with helper tooltip"),
+                                    contextmenu: false,
+                                    type: "menu",
+                                })) {
+                                    node.setAttribute(key, value);
+                                }
+
+                                let popup = this.createBasicPopup(node.ownerDocument);
+                                popup.id = 'OpenWithHelper-Btn-Popup';
+                                node.appendChild(popup);
+                            },
+                            onDestroyed: node => {
+
+                            }
+                        });
+                    } catch (e) { }
+                }
+
+                this.btn = CustomizableUI.getWidget('OpenWithHelper-Btn').forWindow(window)?.node;
+
+                this.BTN_POPUP = $(":scope>menupopup", this.btn);
+
+                this.BTN_POPUP.addEventListener("popupshowing", this, false);
+                this.btn.addEventListener("mouseover", (event) => {
+                    if (event.target.id !== "OpenWithHelper-Btn") return;
+                    // 调整弹出菜单位置，按钮放在浏览器4个角都不一样
+                    const menupopup = event.target.querySelector("#OpenWithHelper-Btn-Popup");
+
+                    if (!menupopup) return;
+
+                    const { innerWidth: w, innerHeight: h } = event.target.ownerGlobal;
+                    const x = event.clientX;
+                    const y = event.clientY;
+
+                    let position;
+                    if (x > w / 2) {
+                        position = y < h / 2 ? 'after_end' : 'before_start';
+                    } else {
+                        position = 'before_start';
+                    }
+
+                    if (position) {
+                        menupopup.setAttribute("position", position);
+                    } else {
+                        menupopup.removeAttribute("position");
+                    }
+                });
+
+                this.initMenu(false);
+
+                $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
+                $("tabContextMenu").addEventListener("popupshowing", this, false);
+            },
+            initRegexp: function () {
+                // 初始化正则
+                let he = "(?:_HTML(?:IFIED)?|_ENCODE|_QUOT|_TXT)?";
+                let rTITLE = "%TITLE" + he + "%|%t\\b";
+                let rTITLES = "%TITLES" + he + "%|%t\\b";
+                let rURL = "%(?:R?LINK_OR_)?URL" + he + "%|%u\\b";
+                let rSEL = "%SEL" + he + "%|%s\\b";
+                let rLINK = "%R?LINK(?:_TEXT|_HOST)?" + he + "%|%l\\b";
+                let rExt = "%EOL" + he + "%";
+                let rCLIPBOARD = "%CLIPBOARD" + he + "%|%p\\b";
+                let rRLT_OR_UT = "%RLT_OR_UT" + he + "%";
+                let rCOOKIE = "%COOKIE" + he + "%";
+                let rCOOKIE_NESCAPE = "%COOKIE_NETSCAPE" + he + "%|%cn\\b";
+                let rCOOKIE_HOST = "%COOKIE_HOST" + he + "%|%ch\\b";
+                let rCOOKIES_SQLITE = "%COOKIES_SQLITE" + he + "%|%cs\\b";
+                let rSAVE_DIR = "%SAVE_DIR" + he + "%|%sd\\b";
+                let rPROFILE_DIR = "%PROFILE_DIR" + he + "%|%pd\\b";
+
+                let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR };
+                for (let [k, v] of Object.entries(R)) {
+                    this[k] = new RegExp(v, "i");
+                }
+                this.regexp = new RegExp(Object.values(R).join("|"), "ig");
+            },
+            initMenu: async function (isAlert, doc) {
+                doc || (doc = document);
+                let CTX_POPUP = this.createBasicPopup(doc);
                 CTX_POPUP.id = 'OpenWithHelper-Ctx-Popup';
-                let CTX_MENU = $C('menu', { id: 'OpenWithHelper-Ctx-Menu', label: formatStr("open with application") });
+                CTX_POPUP.addEventListener("popupshowing", this, false);
+                let CTX_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Ctx-Menu', label: formatStr("open with application") });
                 // remove the comment to hide context menu icon for firefox 90+
                 // if (GE_90) {
                 //     CTX_MENU.classList.remove("menu-iconic");
@@ -122,28 +190,50 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     // 增加右键一级菜单点击功能
                     if (e.target !== e.currentTarget) return;
                     CTX_MENU.querySelector("[dynamic=true][exec]").doCommand();
-                }, false)
-                CTX_MENU.appendChild(CTX_POPUP);
+                }, false);
+                this.CTX_POPUP = CTX_MENU.appendChild(CTX_POPUP);
                 $('contentAreaContextMenu')?.insertBefore(CTX_MENU, $('#contentAreaContextMenu > menuseparator:last-child'));
-                let TAB_POPUP = menupopup.cloneNode(true);
+                let TAB_POPUP = this.createBasicPopup(doc);
                 TAB_POPUP.id = 'OpenWithHelper-Tab-Popup';
-                let TAB_MENU = $C('menu', { id: 'OpenWithHelper-Tab-Menu', label: formatStr("open with application") });
+                TAB_POPUP.addEventListener("popupshowing", this, false);
+                let TAB_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Tab-Menu', label: formatStr("open with application") });
                 TAB_MENU.appendChild(TAB_POPUP);
-                $('tabContextMenu')?.insertBefore(TAB_MENU, $('context_reopenInContainer')?.nextElementSibling);
+                this.TAB_POPUP = $('tabContextMenu')?.insertBefore(TAB_MENU, $('context_reopenInContainer')?.nextElementSibling);
                 if (isAlert) {
-                    $ALERT(formatStr("menu refreshed"));
+                    alerts(formatStr("menu refreshed"));
                 }
             },
-            reloadApps: async function () {
-                let { menupopup } = this;
+            createBasicPopup: function (doc) {
+                let menupopup = createElement(doc, 'menupopup', { class: 'owh-popup', 'need-reload': true });
+                menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, label: formatStr("open download dir"), class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, label: formatStr("change download dir"), class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, label: formatStr("manage applications"), class: "settings", url: 'chrome://userchrome/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, label: formatStr("about open with helper"), class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                return menupopup;
+            },
+            reload(isAlert = false) {
+                if (this.BTN_POPUP)
+                    this.BTN_POPUP.setAttribute("need-reload", "true");
+                if (this.CTX_POPUP)
+                    this.CTX_POPUP.setAttribute("need-reload", "true");
+                if (this.TAB_POPUP)
+                    this.TAB_POPUP.setAttribute("need-reload", "true");
+                if (isAlert) {
+                    alerts(formatStr("menu refreshed"));
+                }
+            },
+            reloadApps: async function (menupopup) {
+                const doc = menupopup.ownerDocument;
                 menupopup.querySelectorAll("[dynamic=true]").forEach(el => {
                     el.parentNode.removeChild(el);
                 });
                 let insertPoint = menupopup.querySelector(".owh-separator");
                 (await this.getAppList()).forEach((app) => {
-                    if (Object.keys(app).length === 0) {
-                        let sep = menupopup.insertBefore($C("menuseparator", app), insertPoint);
+                    if (Object.keys(app).length === 0 || (Object.keys(app).length === 1 && "condition" in app)) {
+                        let sep = menupopup.insertBefore(createElement(doc, "menuseparator", app), insertPoint);
                         sep.setAttribute("dynamic", true);
+                        this.setCondition(sep, app.condition);
                         return;
                     }
                     if (!"exec" in app && !"url" in app) return;
@@ -161,21 +251,23 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         }
                     }
                     if (typeof exec !== "undefined") {
-                        app.exec = $RLP(exec);
+                        app.exec = handleRelativePath(exec);
                     }
                     if (typeof oncommand === "undefined") {
                         app.oncommand = 'OpenWithHelper.onCommand(event);';
                     }
                     Object.assign(app, { label, dynamic: true });
-                    let menuitem = $C('menuitem', app);
+                    let menuitem = createElement(doc, 'menuitem', app);
                     this.setIcon(menuitem, app);
                     this.setCondition(menuitem, app.condition);
                     menupopup.insertBefore(menuitem, insertPoint);
                 });
-                this.menupopup = menupopup;
+                menupopup.setAttribute("need-reload", "false");
             },
             destroy: function () {
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
+                $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
+                $("tabContextMenu").removeEventListener("popupshowing", this, false);
                 document.querySelectorAll(".owh-popup").forEach(el => {
                     if (el.parentNode)
                         el.parentNode.removeChild(el)
@@ -204,14 +296,21 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         break;
                     case "popupshowing":
                         if (event.target != event.currentTarget) return;
+                        if (event.target.getAttribute("need-reload") === "true") {
+                            this.reloadApps(event.target);
+                        }
                         if (event.target.id == 'contentAreaContextMenu') {
                             var state = [];
                             if (gContextMenu.onTextInput)
                                 state.push("input");
                             if (gContextMenu.isContentSelected || gContextMenu.isTextSelected)
                                 state.push("select");
-                            if (gContextMenu.onLink || event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden") !== "true" /* 兼容 textLink.uc.js */)
+                            if (gContextMenu.onLink || event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden") !== "true" /* 兼容 textLink.uc.js */) {
                                 state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
+                                if (/^https?:/.test(gContextMenu.link.href)) {
+                                    state.push("http");
+                                }
+                            }
                             if (gContextMenu.onCanvas)
                                 state.push("canvas image");
                             if (gContextMenu.onImage)
@@ -219,6 +318,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                             if (gContextMenu.onVideo || gContextMenu.onAudio)
                                 state.push("media");
                             $("OpenWithHelper-Ctx-Menu").setAttribute("openWith", state.join(" "));
+                        } else if (event.target.id === "tabContextMenu") {
+
                         }
                         break;
                 }
@@ -240,7 +341,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let tab = TabContextMenu.contextTab || gBrowser.selectedTab || document.popupNode;
                 var bw = gContextMenu ? context.browser : tab.linkedBrowser;
 
-                return text.replace(R.REGEXP, function (str) {
+                return text.replace(this.regexp, function (str) {
                     str = str.toUpperCase().replace("%LINK", "%RLINK");
                     if (str.indexOf("_HTMLIFIED") >= 0)
                         return htmlEscape(convert(str.replace("_HTMLIFIED", "")));
@@ -253,7 +354,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         let data = convert(str.replace("_TXT", ""));
                         let filename = (convert("%RLINK_HOST%") || convert("%H")) + ".txt";
                         let filepath = PathUtils.join(DEFINED_DIRS["TmpD"], filename);
-                        $SAVE(filepath, data);
+                        saveFile(filepath, data);
                         return filepath;
                     }
                     if (str.indexOf("_QUOT") >= 0)
@@ -321,7 +422,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         case "%SAVE_DIR%":
                             return OpenWithHelper.saveDir || DEFAULT_SAVE_DIR;
                         case "%COOKIE%":
-                            return $COOKIE(OpenWithHelper.convertText("%LINK_OR_URL%"));
+                            return collectCookies(OpenWithHelper.convertText("%LINK_OR_URL%"));
                         case "%CN":
                         case "%COOKIE_NETSCAPE%":
                             let netscapeStyle = true; // Nescapte 格式 Cookie
@@ -333,10 +434,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                                 cookiesURI = Services.io.newURI(cookiesURL, null, null);
                             } catch (e) {
                                 cookiesURI = {
-                                    host: $RSTR(10)
+                                    host: randomString(10)
                                 }
                             }
-                            let cookies = $COOKIE(cookiesURI.prePath, netscapeStyle);
+                            let cookies = collectCookies(cookiesURI.prePath, netscapeStyle);
                             return cookies;
                         case "%CS":
                         case "%COOKIES_SQLITE%":
@@ -364,31 +465,53 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     this.exec(exec, this.convertText(text));
                 }
             },
-            openCommand: function (event, url, where, aPostData, aReferrerInfo) {
-                // 整改完毕，addMenuPlus.uc.js 也会更新到这个函数
-                var uri;
-                try {
-                    uri = Services.io.newURI(url, null, null);
-                } catch (e) {
-                    return this.log('Url is invalid: %s').replace("%s", url);
-                }
-                if (uri.scheme === "javascript") {
-                    $LOADURI(url);
-                    return;
-                }
-                where = where || WHERE_MAP[event.button] || "tab";
-                aAllowThirdPartyFixup = {
-                    triggeringPrincipal: where === 'current' ?
-                        gBrowser.selectedBrowser.contentPrincipal : (
-                            /^(f|ht)tps?:/.test(url) ?
-                                Services.scriptSecurityManager.createNullPrincipal({}) :
-                                Services.scriptSecurityManager.getSystemPrincipal()
-                        ),
-                    postData: aPostData,
-                    referrerInfo: aReferrerInfo
+            openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
+                const isJavaScriptURL = url.startsWith("javascript:");
+                const isWebURL = /^(f|ht)tps?:/.test(url);
+                const where = event.button === 1 ? 'tab' : aWhere;
+
+                // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
+                const allowThirdPartyFixup = { ...aAllowThirdPartyFixup };
+
+                // 遵循容器设定
+                if (!allowThirdPartyFixup.userContextId && isWebURL) {
+                    allowThirdPartyFixup.userContextId = gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") || null;
                 }
 
-                openTrustedLinkIn(url, where, aAllowThirdPartyFixup);
+                if (aPostData) {
+                    allowThirdPartyFixup.postData = aPostData;
+                }
+                if (aReferrerInfo) {
+                    allowThirdPartyFixup.referrerInfo = aReferrerInfo;
+                }
+
+                // Set triggeringPrincipal based on 'where' and URL scheme
+                allowThirdPartyFixup.triggeringPrincipal = (() => {
+                    if (where === 'current' && !isJavaScriptURL) {
+                        return gBrowser.selectedBrowser.contentPrincipal;
+                    }
+
+                    const userContextId = isWebURL ? allowThirdPartyFixup.userContextId : null;
+                    return isWebURL ?
+                        Services.scriptSecurityManager.createNullPrincipal({ userContextId }) :
+                        Services.scriptSecurityManager.getSystemPrincipal();
+                })();
+
+                if (isJavaScriptURL) {
+                    openTrustedLinkIn(url, 'current', {
+                        allowPopups: true,
+                        inBackground: allowThirdPartyFixup.inBackground || false,
+                        allowInheritPrincipal: true,
+                        private: PrivateBrowsingUtils.isWindowPrivate(window),
+                        userContextId: allowThirdPartyFixup.userContextId,
+                    });
+                } else if (where || event.button === 1) {
+                    openTrustedLinkIn(url, where, allowThirdPartyFixup);
+                } else {
+                    openUILink(url, event, {
+                        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                    });
+                }
             },
             exec: function (path, arg) {
                 var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
@@ -441,7 +564,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     if (!aFile.exists()) {
                         menu.setAttribute("disabled", "true");
                     } else if (aFile.isFile()) {
-                        let fileURL = $USF(aFile);
+                        let fileURL = getURLSpecFromFile(aFile);
                         menu.style.listStyleImage = `url("moz-icon://${fileURL}?size=16")`;
                     } else {
                         menu.style.listStyleImage = `url("chrome://global/skin/icons/folder.svg")`;
@@ -497,13 +620,13 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     }
                 }
                 // hack，没写完（配合的 CSS 也没写完），凑合用
-                if (R.rLINK.test(menu.getAttribute("text"))) {
+                if (this.rLINK.test(menu.getAttribute("text"))) {
                     conditions.push("link");
                 }
-                if (R.rSEL.test(menu.getAttribute("text"))) {
+                if (this.rSEL.test(menu.getAttribute("text"))) {
                     conditions.push("select");
                 }
-                if (R.rURL.test(menu.getAttribute("text")) && !conditions.includes("notab")) {
+                if ((this.rURL.test(menu.getAttribute("text")) || menu.nodeName === "menuseparator") && !conditions.includes("notab")) {
                     conditions.push("tab");
                 }
                 if (!conditions.includes("nobutton")) {
@@ -513,12 +636,79 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     menu.setAttribute("condition", conditions.join(" "));
                 }
             },
-            alert: $ALERT,
             log: console.log,
             error: console.error
         }
 
         window.OpenWithHelper.init();
+        /**
+             * 选取 DOM 元素
+             * 
+             * @param {string} s id 或者 css 选择器
+             * @param {Document|null} d 指定 document，不提供就是全局 document
+             * @returns 
+             */
+        function $(s, d) {
+            return /[#\.[:]/i.test(s.trim()) ? (d || document).querySelector(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementById(s);
+        }
+
+        function $$(s, d, fn) {
+            let elems = /[#\.[:]/i.test(s.trim()) ? (d || document).querySelectorAll(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementsByTagName(s);
+            if (typeof fn === "function") {
+                [...elems].forEach(el => fn.call(el, el));
+            } return elems;
+        }
+
+        /**
+         * 创建 DOM 元素
+         * 
+         * @param {Document} d HTML 文档
+         * @param {string} t DOM 元素标签
+         * @param {Object} o DOM 元素属性键值对
+         * @param {Array} s 跳过属性
+         * @returns 
+         */
+        function createElement(d, t, o = {}, s = []) {
+            if (!d) return;
+            let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
+            e = applyAttr(e, o, s);
+            if (["menu", "menuitem"].includes(e.nodeName.toLowerCase())) {
+                e.classList.add(e.nodeName.toLowerCase() + "-iconic");
+            }
+            return e;
+        }
+
+
+        /**
+         * 给 DOM 元素应用属性
+         * 
+         * @param {HTMLElement} e DOM 元素
+         * @param {Object|null} o 属性键值对，使用 Object 方式存储
+         * @param {Object|null} s 跳过属性
+         * @returns 
+         */
+        function applyAttr(e, o = {}, s = []) {
+            for (let [k, v] of Object.entries(o)) {
+                if (s.includes(k)) continue;
+                if (typeof v == "function") {
+                    e.addEventListener(k.replace(/^on/, ""), v, false);
+                    // e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+                } else {
+                    e.setAttribute(k, v);
+                }
+            }
+            return e;
+        }
+
+        /**
+         * 删除 HTML 元素
+         * 
+         * @param {HTMLElement} e HTML 元素
+         * @returns 
+         */
+        function removeElement(e) {
+            return e && e.parentNode && e.parentNode.removeChild(e);
+        }
 
         function formatStr() {
             let key = arguments[0];
@@ -536,57 +726,150 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return s && s[0].toUpperCase() + s.slice(1);
         }
 
-        if (!(CustomizableUI.getWidget('OpenWithHelper-Btn') && CustomizableUI.getWidget('OpenWithHelper-Btn').forWindow(window)?.node)) {
-            try {
-                CustomizableUI.createWidget({
-                    id: 'OpenWithHelper-Btn',
-                    removable: true,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    localized: false,
-                    onCreated: node => {
-                        for (let [key, value] of Object.entries({
-                            label: formatStr("open with helper"),
-                            tooltiptext: formatStr("open with helper tooltip"),
-                            contextmenu: false,
-                            type: "menu",
-                        })) {
-                            node.setAttribute(key, value);
-                        }
-                        node.addEventListener("mouseover", (event) => {
-                            // 调整弹出菜单位置，按钮放在浏览器4个角都不一样
-                            const menupopup = node.ownerDocument.querySelector("#OpenWithHelper-Btn-Popup");
 
-                            if (!menupopup) return;
-
-                            if (menupopup.parentNode.id !== "OpenWithHelper-Btn") {
-                                event.target.appendChild(menupopup);
-                            }
-
-                            const { innerWidth: w, innerHeight: h } = event.target.ownerGlobal;
-                            const x = event.clientX;
-                            const y = event.clientY;
-
-                            let position;
-                            if (x > w / 2) {
-                                position = y < h / 2 ? 'after_end' : 'before_start';
-                            } else {
-                                position = 'before_start';
-                            }
-
-                            if (position) {
-                                menupopup.setAttribute("position", position);
-                            } else {
-                                menupopup.removeAttribute("position");
-                            }
-                        });
-                    },
-                    onDestroyed: node => {
-
+        function handleRelativePath(path, parentPath) {
+            if (path) {
+                var ffdir = parentPath ? parentPath : Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
+                // windows 的目录分隔符不一样
+                if (AppConstants.platform === "win") {
+                    path = path.replace(/\//g, '\\');
+                    if (/^(\\)/.test(path)) {
+                        return ffdir + path;
                     }
+                } else {
+                    path = path.replace(/\\/g, '//');
+                    if (/^(\/\/)/.test(path)) {
+                        return ffdir + path.replace(/^\/\//, "/");
+                    }
+                }
+                return path;
+            }
+        }
+
+        const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
+        function getURLSpecFromFile(f) {
+            return fph.getURLSpecFromActualFile(f);
+        }
+
+        function saveFile(path, data) {
+            let isCompleted = false, fileExists = false, isError = false;
+            IOUtils.exists(path).then(() => {
+                isCompleted = true;
+                fileExists = true;
+            }).catch(() => {
+                isCompleted = true;
+            });
+
+            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+            while (!isCompleted) {
+                thread.processNextEvent(true);
+            }
+
+            if (fileExists) {
+                isCompleted = false;
+                IOUtils.remove(path).then(() => {
+                    isCompleted = true;
+                }).catch((e) => {
+                    isCompleted = true;
+                    isError = true;
+                    console.error(e);
                 });
-            } catch (e) { }
-        } else {
-            return;
+
+                var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+                while (!isCompleted) {
+                    thread.processNextEvent(true);
+                }
+
+                if (isError) return;
+            }
+
+            isCompleted = false;
+            IOUtils.writeUTF8(path, data).then(() => {
+                isCompleted = true;
+            }).catch((e) => {
+                isCompleted = true;
+                console.error(e);
+            })
+
+            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+            while (!isCompleted) {
+                thread.processNextEvent(true);
+            }
+        }
+
+        function collectCookies(url, NetscapeStyle) {
+            let uri;
+            try {
+                uri = Services.io.newURI(url, null, null);
+            } catch (e) { return ""; }
+
+            let cookies = Services.cookies.getCookiesFromHost(uri.host, {});
+
+            if (NetscapeStyle) {
+                return cookies.map(formatCookieNetscapeStyle).join("");
+            } else {
+                return cookies.map(formatCookie).join("; ");
+            }
+
+            function formatCookie(cookiePair) {
+                return cookiePair.name + "=" + cookiePair.value;
+            }
+
+            function formatCookieNetscapeStyle(cookiePair) {
+                return [
+                    [
+                        cookiePair.isHttpOnly ? '#HttpOnly_' : '',
+                        cookiePair.host
+                    ].join(''),
+                    cookiePair.isDomain ? 'TRUE' : 'FALSE',
+                    cookiePair.path,
+                    cookiePair.isSecure ? 'TRUE' : 'FALSE',
+                    cookiePair.expires,
+                    cookiePair.name,
+                    cookiePair.value + '\n'
+                ].join('\t');
+            }
+        }
+
+        function randomString(e) {
+            e = e || 32;
+            var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
+                a = t.length,
+                n = "";
+            for (i = 0; i < e; i++) n += t.charAt(Math.floor(Math.random() * a));
+            return n
+        }
+
+        function escapeCommandLineArg(arg) {
+            // 需要转义的字符
+            const specialChars = ['\\', '"', '\'', '&', '|', '>', '<', '^', '~', '*', '?', '[', ']', '(', ')', '{', '}', '$', ';', '#'];
+
+            let escapedArg = '';
+            for (let i = 0; i < arg.length; i++) {
+                const char = arg.charAt(i);
+                if (specialChars.includes(char)) {
+                    // 如果是特殊字符，则添加转义字符
+                    escapedArg += '\\' + char;
+                } else {
+                    escapedArg += char;
+                }
+            }
+
+            return escapedArg;
+        }
+
+        function alerts(aMsg, aTitle, aCallback) {
+            var callback = aCallback ? {
+                observe: function (subject, topic, data) {
+                    if ("alertclickcallback" != topic)
+                        return;
+                    aCallback.call(null);
+                }
+            } : null;
+            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+            alertsService.showAlertNotification(
+                "chrome://devtools/skin/images/browsers/firefox.svg", aTitle || "Open With Helper",
+                aMsg + "", !!callback, "", callback);
         }
     })(`
 #OpenWithHelper-Btn,
@@ -636,229 +919,34 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 .owh-popup menuitem.settings {
     list-style-image:url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB0cmFuc2Zvcm09InNjYWxlKDEuMDUpIj4NCiAgPHBhdGggZmlsbD0iIzMyQkVBNiIgZD0iTTUwNC4xLDI1NkM1MDQuMSwxMTksMzkzLDcuOSwyNTYsNy45QzExOSw3LjksNy45LDExOSw3LjksMjU2QzcuOSwzOTMsMTE5LDUwNC4xLDI1Niw1MDQuMUMzOTMsNTA0LjEsNTA0LjEsMzkzLDUwNC4xLDI1NnoiIC8+DQogIDxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik00MTYuMiwyNzUuM3YtMzguNmwtMzYuNi0xMS41Yy0zLjEtMTIuNC04LTI0LjEtMTQuNS0zNC44bDE3LjgtMzQuMUwzNTUuNiwxMjlsLTM0LjIsMTcuOGMtMTAuNi02LjQtMjIuMi0xMS4yLTM0LjYtMTQuM2wtMTEuNi0zNi44aC0zOC43bC0xMS42LDM2LjhjLTEyLjMsMy4xLTI0LDcuOS0zNC42LDE0LjNMMTU2LjQsMTI5TDEyOSwxNTYuNGwxNy44LDM0LjFjLTYuNCwxMC43LTExLjQsMjIuMy0xNC41LDM0LjhsLTM2LjYsMTEuNXYzOC42bDM2LjQsMTEuNWMzLjEsMTIuNSw4LDI0LjMsMTQuNSwzNS4xTDEyOSwzNTUuNmwyNy4zLDI3LjNsMzMuNy0xNy42YzEwLjgsNi41LDIyLjcsMTEuNSwzNS4zLDE0LjZsMTEuNCwzNi4yaDM4LjdsMTEuNC0zNi4yYzEyLjYtMy4xLDI0LjQtOC4xLDM1LjMtMTQuNmwzMy43LDE3LjZsMjcuMy0yNy4zbC0xNy42LTMzLjhjNi41LTEwLjgsMTEuNC0yMi42LDE0LjUtMzUuMUw0MTYuMiwyNzUuM3ogTTI1NiwzNDAuOGMtNDYuNywwLTg0LjYtMzcuOS04NC42LTg0LjZjMC00Ni43LDM3LjktODQuNiw4NC42LTg0LjZjNDYuNywwLDg0LjUsMzcuOSw4NC41LDg0LjZDMzQwLjUsMzAzLDMwMi43LDM0MC44LDI1NiwzNDAuOHoiIC8+DQo8L3N2Zz4=);
 }
-#OpenWithHelper-Tab-Menu menuitem[dynamic=true]:not([condition~="tab"]),
-#OpenWithHelper-Tab-Menu menuitem[dynamic=true][condition~="notab"],
-#OpenWithHelper-Ctx-Menu menuitem[dynamic=true][condition],
-#OpenWithHelper-Btn-Popup menuitem[dynamic=true]:not([condition~="button"]),
-#OpenWithHelper-Btn-Popup menuitem[dynamic=true][condition~="nobutton"] {
+#OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]:not([condition~="tab"]),
+#OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="notab"],
+#OpenWithHelper-Ctx-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition],
+#OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]:not([condition~="button"]),
+#OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="nobutton"] {
     display: none;
 }
-#OpenWithHelper-Ctx-Menu[openWith=""] menuitem[dynamic=true][condition~="normal"],
-#OpenWithHelper-Ctx-Menu[openWith~="select"] menuitem[dynamic=true][condition~="select"],
-#OpenWithHelper-Ctx-Menu[openWith~="input"] menuitem[dynamic=true][condition~="select"],
-#OpenWithHelper-Ctx-Menu[openWith~="link"] menuitem[dynamic=true][condition~="link"],
-#OpenWithHelper-Ctx-Menu[openWith~="image"] menuitem[dynamic=true][condition~="image"],
-#OpenWithHelper-Ctx-Menu[openWith~="media"] menuitem[dynamic=true][condition~="media"],
-#OpenWithHelper-Ctx-Menu[openWith~="canvas"] menuitem[dynamic=true][condition~="canvas"]{
+#OpenWithHelper-Ctx-Menu[openWith=""] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="normal"],
+#OpenWithHelper-Ctx-Menu[openWith~="select"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="select"],
+#OpenWithHelper-Ctx-Menu[openWith~="input"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="input"],
+#OpenWithHelper-Ctx-Menu[openWith~="link"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="link"],
+#OpenWithHelper-Ctx-Menu[openWith~="image"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="image"],
+#OpenWithHelper-Ctx-Menu[openWith~="media"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="media"],
+#OpenWithHelper-Ctx-Menu[openWith~="canvas"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="canvas"]{
     display: flex;
     display: -moz-box;
 }
 
 `, (function () {
-        // 初始化正则
-        let he = "(?:_HTML(?:IFIED)?|_ENCODE|_QUOT|_TXT)?";
-        let rTITLE = "%TITLE" + he + "%|%t\\b";
-        let rTITLES = "%TITLES" + he + "%|%t\\b";
-        let rURL = "%(?:R?LINK_OR_)?URL" + he + "%|%u\\b";
-        let rSEL = "%SEL" + he + "%|%s\\b";
-        let rLINK = "%R?LINK(?:_TEXT|_HOST)?" + he + "%|%l\\b";
-        let rExt = "%EOL" + he + "%";
-        let rCLIPBOARD = "%CLIPBOARD" + he + "%|%p\\b";
-        let rRLT_OR_UT = "%RLT_OR_UT" + he + "%";
-        let rCOOKIE = "%COOKIE" + he + "%";
-        let rCOOKIE_NESCAPE = "%COOKIE_NETSCAPE" + he + "%|%cn\\b";
-        let rCOOKIE_HOST = "%COOKIE_HOST" + he + "%|%ch\\b";
-        let rCOOKIES_SQLITE = "%COOKIES_SQLITE" + he + "%|%cs\\b";
-        let rSAVE_DIR = "%SAVE_DIR" + he + "%|%sd\\b";
-        let rPROFILE_DIR = "%PROFILE_DIR" + he + "%|%pd\\b";
-
-        let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR };
-        let obj = { REGEXP: new RegExp(Object.values(R).join("|"), "ig") }
-        for (let [k, v] of Object.entries(R)) {
-            obj[k] = new RegExp(v, "i");
-        }
-        return obj;
-    })(), (function () {
         let PATHS = [];
         ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
             let path = Services.dirsvc.get(key, Ci.nsIFile);
             PATHS[key] = path.path;
         });
         return PATHS;
-    })(), PathUtils.join(PathUtils.profileDir, "chrome", ...(Services.prefs.getStringPref("userChromeJS.OpenWithHelper.FILE_PATH", "_openwith.json").replace(/\\/g, "/").split("/"))),
-        ["current", "tab", "tabshifted"],
-        Services.vc.compare(Services.appinfo.version, "89.0.2"),
-        function $(sel) {
-            return /^[\.#]/.test(sel) ? document.querySelector(sel) : document.getElementById(sel);
-        },
-        function createXULElement(tag, attrs) {
-            const el = document.createXULElement(tag);
-            for (const key in attrs) el.setAttribute(key, attrs[key]);
-            const iconicTags = ["menu", "menuitem"];
-            if (iconicTags.includes(el.tagName.toLowerCase())) {
-                el.classList.add(`${el.tagName.toLowerCase()}-iconic`);
-            }
-            return el;
-        },
-        function (target) {
-            if (target && target.parentNode && typeof target.parentNode.removeChild === "function")
-                return target.parentNode.removeChild(target);
-        },
-        (function () {
-            return function handleRelativePath(path, parentPath) {
-                if (path) {
-                    var ffdir = parentPath ? parentPath : Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
-                    // windows 的目录分隔符不一样
-                    if (AppConstants.platform === "win") {
-                        path = path.replace(/\//g, '\\');
-                        if (/^(\\)/.test(path)) {
-                            return ffdir + path;
-                        }
-                    } else {
-                        path = path.replace(/\\/g, '//');
-                        if (/^(\/\/)/.test(path)) {
-                            return ffdir + path.replace(/^\/\//, "/");
-                        }
-                    }
-                    return path;
-                }
-            }
-        })(),
-        (function () {
-            const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-
-            const getFileURLSpec = "getURLSpecFromFile" in fph ?
-                f => fph.getURLSpecFromFile(f) :
-                f => fph.getURLSpecFromActualFile(f);
-
-            return getFileURLSpec;
-        })(),
-        (function () {
-            if ("loadURI" in window) {
-                return (url) => {
-                    gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                }
-            } else {
-                return (url) => {
-                    try {
-                        gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
-                    } catch (ex) {
-                        console.error(ex);
-                    }
-                }
-            }
-        })(), function alert(aMsg, aTitle, aCallback) {
-            var callback = aCallback ? {
-                observe: function (subject, topic, data) {
-                    if ("alertclickcallback" != topic)
-                        return;
-                    aCallback.call(null);
-                }
-            } : null;
-            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                Services.vc.compare(Services.appinfo.version, "77.0.1") ? "chrome://devtools/skin/images/browsers/firefox.svg" : "chrome://global/skin/icons/information-32.png", aTitle || "Open With Helper",
-                aMsg + "", !!callback, "", callback);
-        }, function collectCookies(url, NetscapeStyle) {
-            let uri;
-            try {
-                uri = Services.io.newURI(url, null, null);
-            } catch (e) { return ""; }
-
-            let cookies = Services.cookies.getCookiesFromHost(uri.host, {});
-
-            if (NetscapeStyle) {
-                return cookies.map(formatCookieNetscapeStyle).join("");
-            } else {
-                return cookies.map(formatCookie).join("; ");
-            }
-
-            function formatCookie(cookiePair) {
-                return cookiePair.name + "=" + cookiePair.value;
-            }
-
-            function formatCookieNetscapeStyle(cookiePair) {
-                return [
-                    [
-                        cookiePair.isHttpOnly ? '#HttpOnly_' : '',
-                        cookiePair.host
-                    ].join(''),
-                    cookiePair.isDomain ? 'TRUE' : 'FALSE',
-                    cookiePair.path,
-                    cookiePair.isSecure ? 'TRUE' : 'FALSE',
-                    cookiePair.expires,
-                    cookiePair.name,
-                    cookiePair.value + '\n'
-                ].join('\t');
-            }
-        }, function randomString(e) {
-            e = e || 32;
-            var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
-                a = t.length,
-                n = "";
-            for (i = 0; i < e; i++) n += t.charAt(Math.floor(Math.random() * a));
-            return n
-        }, function saveFile(path, data) {
-            let isCompleted = false, fileExists = false, isError = false;
-            IOUtils.exists(path).then(() => {
-                isCompleted = true;
-                fileExists = true;
-            }).catch(() => {
-                isCompleted = true;
-            });
-
-            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-            while (!isCompleted) {
-                thread.processNextEvent(true);
-            }
-
-            if (fileExists) {
-                isCompleted = false;
-                IOUtils.remove(path).then(() => {
-                    isCompleted = true;
-                }).catch((e) => {
-                    isCompleted = true;
-                    isError = true;
-                    console.error(e);
-                });
-
-                var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-                while (!isCompleted) {
-                    thread.processNextEvent(true);
-                }
-
-                if (isError) return;
-            }
-
-            isCompleted = false;
-            IOUtils.writeUTF8(path, data).then(() => {
-                isCompleted = true;
-            }).catch((e) => {
-                isCompleted = true;
-                console.error(e);
-            })
-
-            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-            while (!isCompleted) {
-                thread.processNextEvent(true);
-            }
-        }, function escapeCommandLineArg(arg) {
-            // 需要转义的字符
-            const specialChars = ['\\', '"', '\'', '&', '|', '>', '<', '^', '~', '*', '?', '[', ']', '(', ')', '{', '}', '$', ';', '#'];
-
-            let escapedArg = '';
-            for (let i = 0; i < arg.length; i++) {
-                const char = arg.charAt(i);
-                if (specialChars.includes(char)) {
-                    // 如果是特殊字符，则添加转义字符
-                    escapedArg += '\\' + char;
-                } else {
-                    escapedArg += char;
-                }
-            }
-
-            return escapedArg;
-        }, (function () {
+    })(), PathUtils.join(PathUtils.profileDir, "chrome",
+        ...(Services.prefs.getStringPref("userChromeJS.OpenWithHelper.FILE_PATH", "_openwith.json").replace(/\\/g, "/").split("/"))),
+        Services.vc.compare(Services.appinfo.version, "89.0.2"), (function () {
             let LANG = {
                 "zh-CN": {
                     "open with helper": "打开助手",
