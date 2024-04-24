@@ -16,66 +16,9 @@
 // @note           coolingx 2019.07.19适配 69
 // ==/UserScript==
 (async function () {
-    function clone(src) {//浅克隆
-        if (!src) return;
-        let r = src.constructor === Object ?
-            new src.constructor() :
-            new src.constructor(src.valueOf());
-        for (let key in src) {
-            if (r[key] !== src[key]) {
-                r[key] = src[key];
-            }
-        }
-        r.toString = src.toString;
-        r.valueOf = src.valueOf;
-        return r;
-    }
+    var nDelay, whiteIDs, blackIDs;
+    const idWidgetPanel = 'customizationui-widget-panel', ppmPos = ['after_start', 'end_before', 'before_start', 'start_before'];
 
-    const $ = id => document.getElementById(id),
-        idWidgetPanel = 'customizationui-widget-panel',
-
-        ppmPos = ['after_start', 'end_before', 'before_start', 'start_before'];
-    function getPopupPos(elt) {
-        let box, w, h, b = !1,
-            x = elt.screenX,
-            y = elt.screenY;
-
-        while (elt = elt.parentNode.closest('toolbar,hbox,vbox')) {
-            h = elt.height;
-            w = elt.width;
-            if (h >= 45 && h >= 3 * w) {
-                b = !0;
-                break;
-            }
-            if (w >= 45 && w >= 3 * h) break;
-        }
-        if (!elt) return ppmPos[0];
-        box = elt;
-        x = b ? (x <= w / 2 + box.screenX ? 1 : 3) :
-            (y <= h / 2 + box.screenY ? 0 : 2);
-        return ppmPos[x];
-    }
-
-    function saveFile(fileOrName, data) {
-        var file;
-        if (typeof fileOrName == "string") {
-            file = Services.dirsvc.get('UChrm', Ci.nsIFile);
-            file.appendRelativePath(fileOrName);
-        } else {
-            file = fileOrName;
-        }
-
-        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-        suConverter.charset = 'UTF-8';
-        data = suConverter.ConvertFromUnicode(data);
-
-        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
-        foStream.init(file, 0x02 | 0x08 | 0x20, 0o664, 0);
-        foStream.write(data, data.length);
-        foStream.close();
-    }
-
-    let nDelay, blackIDs, whiteIDs;
     function loadUserSet() {
 
         // Bug 920187 - Deprecate and get rid of FileUtils.getFile() https://bugzilla.mozilla.org/show_bug.cgi?id=920187
@@ -89,23 +32,29 @@
         aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
         aFile.appendRelativePath(path);
         if (!aFile.exists()) {
-            saveFile(aFile, `nDelay = 290;//延迟毫秒数
+            saveFile(aFile, `
+            nDelay = 290;//延迟毫秒数
             //禁止自动弹出的(按钮)黑名单。CSS语法: #表示id  .表示class
             blackIDs = ['#back-button','#forward-button','#pocket-button','#alltabs-button']; //'.bookmark-item',
             //by xinggsf, 白名单，及触发动作
             whiteIDs = [
             {//三道杠按钮、面板
-                id : 'PanelUI-menu-button', //必填：按钮ID
-                popMenu : 'PanelUI-popup', //菜单ID
+                id : PanelUI.menuButton.id, //必填：按钮ID
+                popMenu : PanelUI.panel.id, //菜单ID
                 open: btn => PanelUI.show(),//要使用菜单DOM: $('PanelUI-popup')
-                close: menu => PanelUI.hide(),
+                close: menu => PanelUI.hide()
             },
             {//下载面板
                 id : 'downloads-button',
-                popMenu : 'downloadsPanel',
-                open: btn => DownloadsPanel.showPanel(),
-                close: menu => DownloadsPanel.hidePanel(),
-            };`);
+                popMenu : '',
+                open: e => DownloadsPanel.showPanel(),
+                close: e => DownloadsPanel.hidePanel()
+            }, {
+                id : gUnifiedExtensions.button.id,
+                popMenu : '',
+                open: e => gUnifiedExtensions.togglePanel(),
+                close: e => gUnifiedExtensions.togglePanel()
+            }];`);
         }
         let fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
         let sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
@@ -117,16 +66,18 @@
         } catch (e) { }
         sstream.close();
         fstream.close();
-        if (data) return eval(data);
-        /*
+        // if (data) return eval(data);
+
         let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
+        ["Services", "PanelUI", "DownloadsPanel", "gBrowser", "gUnifiedExtensions"].forEach(k => sandbox[k] = window[k]);
         try {
             Cu.evalInSandbox(data, sandbox, 'latest');
         } catch (e) {
+            console.log(e);
             return;
         }
-    
-        {nDelay, blackIDs, whiteIDs} = sandbox; */
+
+        return sandbox;
     }
 
     class MenuAct {//菜单动作基类
@@ -143,7 +94,6 @@
             if (this.menuId) return $(this.menuId);
             let s = e.getAttribute('context') || e.getAttribute('popup');
             return (s && $(s)) || e.querySelector('menupopup');
-            //let c = e.ownerDocument.getAnonymousNodes(e);
         }
         get ppm() {
             let m = this._ppm || this.getPopupMenu(this.btn);
@@ -156,7 +106,6 @@
         }
         open() {
             let m = this.ppm;
-            //console.log(m);
             if (m) {
                 if (m.openPopup)
                     m.openPopup(this.btn, getPopupPos(this.btn));
@@ -342,7 +291,10 @@
     window.onAutoPopup = {//事件处理“类”
         startup() {
             prevElt = null;
-            loadUserSet();
+            let data = loadUserSet();
+            nDelay = data?.delay || 290;
+            whiteIDs = data?.whiteIDs || [];
+            blackIDs = data?.blackIDs || [];
             let btnOmni = $('omnibar-defaultEngine');
             if (!BrowserSearch.searchBar || btnOmni)
                 menuActContainer.splice(6, 1);
@@ -365,5 +317,76 @@
             ppmManager.mouseOver(e);
         }
     }
-    onAutoPopup.startup();
+
+    if (gBrowserInit.delayedStartupFinished) onAutoPopup.startup();
+    else {
+        let delayedListener = (subject, topic) => {
+            if (topic == "browser-delayed-startup-finished" && subject == window) {
+                Services.obs.removeObserver(delayedListener, topic);
+                onAutoPopup.startup();
+            }
+        };
+        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    }
+
+
+    function clone(src) { // 浅克隆
+        if (!src) return;
+        let r = src.constructor === Object ?
+            new src.constructor() :
+            new src.constructor(src.valueOf());
+        for (let key in src) {
+            if (r[key] !== src[key]) {
+                r[key] = src[key];
+            }
+        }
+        r.toString = src.toString;
+        r.valueOf = src.valueOf;
+        return r;
+    }
+
+    function $(s) {
+        return document.getElementById(s);
+    }
+
+    function getPopupPos(elt) {
+        let box, w, h, b = !1,
+            x = elt.screenX,
+            y = elt.screenY;
+
+        while (elt = elt.parentNode.closest('toolbar,hbox,vbox')) {
+            h = elt.height;
+            w = elt.width;
+            if (h >= 45 && h >= 3 * w) {
+                b = !0;
+                break;
+            }
+            if (w >= 45 && w >= 3 * h) break;
+        }
+        if (!elt) return ppmPos[0];
+        box = elt;
+        x = b ? (x <= w / 2 + box.screenX ? 1 : 3) :
+            (y <= h / 2 + box.screenY ? 0 : 2);
+        return ppmPos[x];
+    }
+
+    function saveFile(fileOrName, data) {
+        var file;
+        if (typeof fileOrName == "string") {
+            file = Services.dirsvc.get('UChrm', Ci.nsIFile);
+            file.appendRelativePath(fileOrName);
+        } else {
+            file = fileOrName;
+        }
+
+        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        suConverter.charset = 'UTF-8';
+        data = suConverter.ConvertFromUnicode(data);
+
+        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
+        foStream.init(file, 0x02 | 0x08 | 0x20, 0o664, 0);
+        foStream.write(data, data.length);
+        foStream.close();
+    }
+
 })();
