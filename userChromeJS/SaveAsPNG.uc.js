@@ -2,6 +2,7 @@
 // @name           SaveAsPNG.uc.js
 // @version        2024.04.24
 // @author         Ryan
+// @compatibility  Firefox 72
 // @include        chrome://browser/content/browser.xhtml
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    保存图片为 PNG 格式
