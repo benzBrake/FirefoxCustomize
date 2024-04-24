@@ -293,7 +293,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.labelRef && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
                 return createElement(doc, "menuseparator", obj, ['type', 'group', 'popup']);
             }
-            if (['checkbox', 'radio'].includes(obj.type)) tagName = this.itemTag;
+            if (['checkbox', 'radio'].includes(obj.type)) tagName = "menuitem";
             if (obj.class) obj.class.split(' ').forEach(c => {
                 if (!classList.includes(c)) classList.push(c);
             });
