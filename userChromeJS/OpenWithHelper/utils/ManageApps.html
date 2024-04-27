@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title data-l10n-id="applications-list"></title>
+    <title data-l10n-id="manage-applications-list"></title>
     <link
       rel="icon"
       type="image/x-icon"
@@ -14,40 +14,40 @@
         <thead>
           <tr class="table-title">
             <th class="application-icon title" style="width: 40px">
-              <label
-                class="whitespace-nowrap"
-                data-l10n-id="application-icon"
-              ></label>
+              <label class="whitespace-nowrap" data-l10n-id="application-icon"
+                >Application Icon</label
+              >
             </th>
             <th class="application-title title" style="width: 120px">
-              <label
-                class="whitespace-nowrap"
-                data-l10n-id="application-title"
-              ></label>
+              <label class="whitespace-nowrap" data-l10n-id="application-title"
+                >Title</label
+              >
             </th>
             <th class="application-condition title" style="width: 120px">
               <label
                 class="whitespace-nowrap"
                 data-l10n-id="application-condition"
-              ></label>
+                >Condition</label
+              >
             </th>
             <th class="application-path title">
               <label
                 class="application-path-label whitespace-nowrap"
                 data-l10n-id="application-path"
-              ></label>
+                >Executable file path</label
+              >
             </th>
             <th class="application-params title flex-grow">
-              <label
-                class="whitespace-nowrap"
-                data-l10n-id="application-params"
-              ></label>
+              <label class="whitespace-nowrap" data-l10n-id="application-params"
+                >Parameters</label
+              >
             </th>
             <th class="application-operate title">
               <label
                 class="whitespace-nowrap"
                 data-l10n-id="application-operate"
-              ></label>
+                >Operations
+              </label>
             </th>
           </tr>
         </thead>
@@ -82,7 +82,9 @@
                 class="application-path-change btn-flat"
                 data-l10n-id="change-path"
                 onclick="gApplicationList.changePath(event)"
-              ></button>
+              >
+                Change
+              </button>
             </td>
             <td class="application-params item flex-grow">
               <input
@@ -97,24 +99,57 @@
                 class="btn-flat"
                 data-l10n-id="move-up"
                 onclick="gApplicationList.moveUp(event);"
-              ></button>
+              >
+                Move Up
+              </button>
               <button
                 class="btn-flat"
                 data-l10n-id="move-down"
                 onclick="gApplicationList.moveDown(event);"
-              ></button>
+              >
+                Move Down
+              </button>
               <button
                 class="btn-flat"
                 data-l10n-id="delete-application"
                 onclick="gApplicationList.removeBrowser(event);"
-              ></button>
+              >
+                Delete
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
       <div id="params-description" class="flex flex-col">
         <label data-l10n-id="call-params-description-label"></label>
-        <div data-l10n-id="call-params-description-content"></div>
+        <div>
+          <ul class="flex flex-wrap list-none cols-3">
+            <li><label>%EOL%</label><span>换行(\\r\\n)</span></li>
+            <li><label>%TITLE%</label><span>标题</span></li>
+            <li><label>%TITLES%</label><span>简化标题</span></li>
+            <li><label>%SEL%</label><span>选取范围内的文字</span></li>
+            <li><label>%URL%</label><span>当前页面网址</span></li>
+            <li>
+              <label>%LINK_OR_URL%</label
+              ><span>优先链接地址，否则获取当前网址</span>
+            </li>
+            <li><label>%LINK%</label><span>链接地址</span></li>
+            <li><label>%IMAGE_URL%</label><span>图片地址</span></li>
+            <li><label>%MEDIA_URL%</label><span>媒体地址</span></li>
+            <li>
+              <label>%PROFILE_DIR%</label><span>Firefox配置文件夹路径</span>
+            </li>
+            <li><label>%SAVE_DIR%</label><span>保存路径（默认桌面）</span></li>
+            <li>
+              <label>%COOKIE%</label><span>key1=value1; key2=value2</span>
+            </li>
+            <li><label>%COOKIE_TXT%</label><span>COOKIE 存到临时路径</span></li>
+            <li>
+              <label>%COOKIES_SQLITE%</label><span>cookies.sqlite 路径</span>
+            </li>
+            <li><label>更多的自己翻源码</label><span></span></li>
+          </ul>
+        </div>
       </div>
       <div id="operate-toolbar" class="flex flex-center gap-2">
         <button
@@ -415,53 +450,6 @@
     </style>
     <script>
       (function () {
-        const LANG = {
-          "zh-CN": {
-            "applications-list": "应用列表",
-            "application-icon": "图标",
-            "application-title": "标题",
-            "application-condition": "显示条件",
-            "application-path": "路径",
-            "application-params": "参数",
-            "application-operate": "操作",
-            "change-path": "修改路径",
-            "click-to-change": "点击修改",
-            "move-up": "上移",
-            "move-down": "下移",
-            "delete-application": "删除",
-            "call-params-description-label":
-              "参数说明（%号参数会被替换为实际内容）",
-            "call-params-description-content": `<ul class="flex flex-wrap list-none cols-3"><li><label>%EOL%</label><span>换行(\\r\\n)</span></li><li><label>%TITLE%</label><span>标题</span><li><label>%TITLES%</label><span>简化标题</span></li><li><label>%SEL%</label><span>选取范围内的文字</span></li><li><label>%URL%</label><span>当前页面网址</span></li><li><label>%LINK_OR_URL%</label><span>优先链接地址，否则获取当前网址</span></li><li><label>%LINK%</label><span>链接地址</span></li><li><label>%IMAGE_URL%</label><span>图片地址</span></li><li><label>%MEDIA_URL%</label><span>媒体地址</span></li><li><label>%PROFILE_DIR%</label><span>Firefox配置文件夹路径</span></li><li><label>%SAVE_DIR%</label><span>保存路径（默认桌面）</span></li><li><label>%COOKIE%</label><span>key1=value1; key2=value2</span></li><li><label>%COOKIE_TXT%</label><span>COOKIE 存到临时路径</span></li><li><label>%COOKIES_SQLITE%</label><span>cookies.sqlite 路径</span></li><li><label>更多的自己翻源码</label><span></span></li></ul>`,
-            "add-application": "添加应用",
-            "add-separator": "添加分隔符",
-            separator: "分隔符",
-            save: "保存",
-            "dont do that": "不要酱紫嘛！",
-            "set applicaton path": "设置应用路径",
-          },
-          "en-US": {
-            "applications-list": "App List",
-            "application-icon": "Icon",
-            "application-title": "Title",
-            "application-condition": "Condition",
-            "application-path": "Path",
-            "application-params": "Call Params",
-            "application-operate": "Operate",
-            "click-to-change": "Click to Change",
-            "move-up": "Up",
-            "move-down": "Down",
-            "call-params-description-label":
-              "The params will be passed to the application when it is called",
-            "delete-application": "Remove",
-            "add-application": "Add application",
-            "add-separator": "Add separator",
-            separator: "Separator",
-            save: "Save",
-            "dont do that": "Don't do that!",
-            "set applicaton path": "Set application path",
-          },
-        };
-
         const EMPTY_IMGSRC =
           "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII=";
 
@@ -513,10 +501,11 @@
             row.id = "";
             row.querySelectorAll("input").forEach((i) => {
               i.value = "";
-              i.setAttribute("placeholder", formatStr("separator"));
+              i.setAttribute("placeholder", gApplicationList.TEXT_SEPARATOR);
               i.setAttribute("disabled", "true");
             });
-            row.querySelector("label").textContent = formatStr("separator");
+            row.querySelector("label").textContent =
+              gApplicationList.TEXT_SEPARATOR;
             row.classList.add("separator");
             event?.ctrlKey
               ? demoRow.parentNode.insertBefore(
@@ -537,7 +526,7 @@
               return;
             }
             if (!img || !row || row.classList.contains("separator")) {
-              $ALERT(formatStr("dont do that"));
+              $ALERT(gApplicationList.TEXT_DONT_DO_THAT);
               return;
             }
             if (event.ctrlKey) {
@@ -603,20 +592,19 @@
               )
             ) {
               const label = event.target.previousElementSibling;
-              const locale = Services.locale.appLocaleAsBCP47;
               let fp = Cc["@mozilla.org/filepicker;1"].createInstance(
                 Ci.nsIFilePicker
               );
               try {
                 fp.init(
                   window.browsingContext,
-                  formatStr("set applicaton path"),
+                  gApplicationList.TEXT_SET_APP_PATH,
                   Ci.nsIFilePicker.modeOpen
                 );
               } catch (e) {
                 fp.init(
                   window,
-                  formatStr("set applicaton path"),
+                  gApplicationList.TEXT_SET_APP_PATH,
                   Ci.nsIFilePicker.modeOpen
                 );
               }
@@ -713,20 +701,26 @@
             }
           },
           async init() {
-            document.querySelectorAll("[data-l10n-id]").forEach((el) => {
-              el.innerHTML = formatStr(el.getAttribute("data-l10n-id"));
-            });
-            document.querySelectorAll(".application-input").forEach((el) => {
-              el.setAttribute("placeholder", formatStr("click-to-change"));
-            });
-            // 使用 Mutration 监控新增元素，如果函数 data-l10n-id 属性则设置 innerHTML
-            const observer = new MutationObserver((mutations) => {
-              mutations.forEach((mutation) => {
-                [...mutation.addedNodes].forEach((el) => {
-                  gApplicationList.setLabel(el);
-                });
-              });
-            });
+            let userChrome_js =
+              Services.wm.getMostRecentBrowserWindow().userChrome_js;
+            if (typeof userChrome_js && "L10nRegistry" in userChrome_js) {
+              var l10n = new DOMLocalization(
+                ["OpenWithHelper.ftl"],
+                false,
+                userChrome_js.L10nRegistry
+              );
+              l10n.connectRoot(document.documentElement);
+              l10n.translateRoots();
+              this.TEXT_SEPARATOR = await l10n.formatValue("separator");
+              this.TEXT_SET_APP_PATH = await l10n.formatValue(
+                "set-application-path"
+              );
+              this.TEXT_DONT_DO_THAT = await l10n.formatValue("dont-do-that");
+            } else {
+              this.TEXT_SEPARATOR = "Separator";
+              this.TEXT_SET_APP_PATH = "Set application path";
+              this.TEXT_DONT_DO_THAT = "Don't do that";
+            }
 
             const file = await this.getFile();
             const browserList = JSON.parse(await IOUtils.readUTF8(file.path));
@@ -756,15 +750,6 @@
                 gApplicationList.addSeparator();
               }
             });
-          },
-
-          setLabel(el) {
-            if (
-              el.nodeType === Node.ELEMENT_NODE &&
-              el.hasAttribute("data-l10n-id")
-            ) {
-              el.innerHTML = formatStr(el.getAttribute("data-l10n-id"));
-            }
           },
         };
 
@@ -810,21 +795,6 @@
             }
           }
           return false;
-        }
-
-        function formatStr() {
-          const LOCALE = LANG[Services.locale.appLocaleAsBCP47]
-            ? Services.locale.appLocaleAsBCP47
-            : "zh-CN";
-          let str = arguments[0];
-          if (str) {
-            if (!arguments.length) return "";
-            str = LANG[LOCALE][str] || str;
-            for (let i = 1; i < arguments.length; i++) {
-              str = str.replace(/%(s|d)/, arguments[i]);
-            }
-            return str;
-          } else return "";
         }
 
         function firstLetterUpperCase(str) {

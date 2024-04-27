@@ -7,8 +7,7 @@
 // @description    使用第三方应用打开网页
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
-    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */, LANGUAGE) {
-        const { LANG, LOCALE } = LANGUAGE;
+    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
         window.OpenWithHelper = {
@@ -50,13 +49,13 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.exec(this.saveDir);
             },
             async changeSaveDir(event) {
-                const mode = Ci.nsIFilePicker.modeGetFolder, title = formatStr("change download dir"), textIfCanceled = formatStr("Operaction Canceled!"), textIfOK = formatStr("Operaction Succeeded!");
+                const mode = Ci.nsIFilePicker.modeGetFolder, title = await OpenWithHelper.l10n.formatValue("change-download-dir"), textIfCanceled = await OpenWithHelper.l10n.formatValue("operation-canceled"), textIfOK = await OpenWithHelper.l10n.formatValue("opertaion-succeeded");
                 async function openFilePickerDialog() {
                     return new Promise(resolve => {
                         // 使用 Promise 让回调看起来不那么难受
                         const fp = makeFilePicker();
                         try {
-                            fp.init(window.browsingContext, title, mode);
+                            fp.init(window.browsingContext, dialogTitle, mode);
                         } catch (e) {
                             fp.init(window, title, mode);
                         }
@@ -86,6 +85,20 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 );
                 this.style = document.insertBefore(pi, document.documentElement);
 
+
+                if (typeof userChrome_js && "L10nRegistry" in userChrome_js) {
+                    this.l10n = new DOMLocalization(["OpenWithHelper.ftl"], false, userChrome_js.L10nRegistry);
+                } else {
+                    this.l10n = {
+                        formatValue: async function() {
+                            return "";
+                        },
+                        formatMessages: async function() {
+                            return "";
+                        }
+                    }
+                }
+
                 let tp = (gBrowser.mPanelContainer /* 屎山 */ || gBrowser.tabpanels);["mouseup", "keydown"].forEach(type => tp.addEventListener(type, this, false));
 
 
@@ -98,14 +111,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                             localized: false,
                             onCreated: node => {
                                 for (let [key, value] of Object.entries({
-                                    label: formatStr("open with helper"),
-                                    tooltiptext: formatStr("open with helper tooltip"),
+                                    'data-l10n-id': 'open-with-helper',
                                     contextmenu: false,
-                                    type: "menu",
+                                    type: "menu"
                                 })) {
                                     node.setAttribute(key, value);
                                 }
-
                                 let popup = this.createBasicPopup(node.ownerDocument);
                                 popup.id = 'OpenWithHelper-Btn-Popup';
                                 node.appendChild(popup);
@@ -151,6 +162,28 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
                 $("tabContextMenu").addEventListener("popupshowing", this, false);
+
+                [this.btn, this.CTX_MENU, this.TAB_MENU].forEach(node => {
+                    setText(node);
+                    $$('[data-l10n-id]', node, async el => setText(el));
+                    async function setText(el) {
+                        if (!el) return;
+                        const l10nId = el.getAttribute("data-l10n-id");
+                        const l10nArgs = el.getAttribute("data-l10n-args");
+                        const args = l10nArgs ? JSON.parse(l10nArgs) : undefined;
+                        const [msg] = await OpenWithHelper.l10n.formatMessages([
+                            { id: l10nId, args },
+                        ]);
+                        if (msg) {
+                            let label = msg.attributes.find(a => a.name === "label")?.value;
+                            if (label)
+                                el.setAttribute("label", label);
+                            let tooltiptext = msg.attributes.find(a => a.name === "tooltiptext")?.value;
+                            if (tooltiptext)
+                                el.setAttribute("tooltiptext", tooltiptext);
+                        }
+                    }
+                });
             },
             initRegexp: function () {
                 // 初始化正则
@@ -181,7 +214,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let CTX_POPUP = this.createBasicPopup(doc);
                 CTX_POPUP.id = 'OpenWithHelper-Ctx-Popup';
                 CTX_POPUP.addEventListener("popupshowing", this, false);
-                let CTX_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Ctx-Menu', label: formatStr("open with application") });
+                let CTX_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Ctx-Menu', 'data-l10n-id': 'open-with-applications', label: "Open With Application" });
                 // remove the comment to hide context menu icon for firefox 90+
                 // if (GE_90) {
                 //     CTX_MENU.classList.remove("menu-iconic");
@@ -196,20 +229,20 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let TAB_POPUP = this.createBasicPopup(doc);
                 TAB_POPUP.id = 'OpenWithHelper-Tab-Popup';
                 TAB_POPUP.addEventListener("popupshowing", this, false);
-                let TAB_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Tab-Menu', label: formatStr("open with application") });
+                let TAB_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Tab-Menu', 'data-l10n-id': 'open-with-applications', label: "Open With Application" });
                 TAB_MENU.appendChild(TAB_POPUP);
                 this.TAB_POPUP = $('tabContextMenu')?.insertBefore(TAB_MENU, $('context_reopenInContainer')?.nextElementSibling);
                 if (isAlert) {
-                    alerts(formatStr("menu refreshed"));
+                    OpenWithHelper.l10n.formatValue("menu-refreshed").then(text => alerts(text));
                 }
             },
             createBasicPopup: function (doc) {
                 let menupopup = createElement(doc, 'menupopup', { class: 'owh-popup', 'need-reload': true });
                 menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, label: formatStr("open download dir"), class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, label: formatStr("change download dir"), class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, label: formatStr("manage applications"), class: "settings", url: 'chrome://userchrome/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, label: formatStr("about open with helper"), class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchrome/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
                 return menupopup;
             },
             reload(isAlert = false) {
@@ -220,7 +253,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 if (this.TAB_POPUP)
                     this.TAB_POPUP.setAttribute("need-reload", "true");
                 if (isAlert) {
-                    alerts(formatStr("menu refreshed"));
+                    OpenWithHelper.l10n.formatValue("menu-refreshed").then(text => alerts(text));
                 }
             },
             reloadApps: async function (menupopup) {
@@ -655,7 +688,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         function $$(s, d, fn) {
             let elems = /[#\.[:]/i.test(s.trim()) ? (d || document).querySelectorAll(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementsByTagName(s);
             if (typeof fn === "function") {
-                [...elems].forEach(el => fn.call(el, el));
+                for (let el of [...elems]) { fn.call(el, el) };
             } return elems;
         }
 
@@ -708,18 +741,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          */
         function removeElement(e) {
             return e && e.parentNode && e.parentNode.removeChild(e);
-        }
-
-        function formatStr() {
-            let key = arguments[0];
-            if (key) {
-                if (!LANG[LOCALE].hasOwnProperty(key)) return capitalize(key);
-                let str = LANG[LOCALE][key];
-                for (let i = 1; i < arguments.length; i++) {
-                    str = str.replace("%s", arguments[i]);
-                }
-                return str;
-            } else return "";
         }
 
         function capitalize(s) {
@@ -946,49 +967,5 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         return PATHS;
     })(), PathUtils.join(PathUtils.profileDir, "chrome",
         ...(Services.prefs.getStringPref("userChromeJS.OpenWithHelper.FILE_PATH", "_openwith.json").replace(/\\/g, "/").split("/"))),
-        Services.vc.compare(Services.appinfo.version, "89.0.2"), (function () {
-            let LANG = {
-                "zh-CN": {
-                    "open with helper": "打开助手",
-                    "open with helper tooltip": "使用其他应用打开内容",
-                    "open with application": "在其他应用中打开",
-                    "open download dir": "打开下载目录",
-                    "change download dir": "更改下载目录",
-                    "manage applications": "管理应用",
-                    "about open with helper": "关于打开助手",
-                    "menu refreshed": "菜单已刷新!",
-                    "Operaction Canceled!": "操作已取消!",
-                    "Operaction Failed!": "操作失败!",
-                },
-                "en-US": {
-                    "open with helper": "Open With Helper",
-                    "open with helper tooltip": "Open content with applications",
-                    "open with application": "Open With Application",
-                    "open download dir": "Open Download Dir",
-                    "change download dir": "Change Download Dir",
-                    "manage applications": "Manage Applications",
-                    "about open with helper": "About Open With Helper",
-                    "menu refreshed": "Menu Refreshed!",
-                }
-            };
-            // 读取语言代码
-            let _locale;
-            try {
-                let _locales, osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
-                if (osPrefs.hasOwnProperty("getRegionalPrefsLocales").hasOwnProperty("getRegionalPrefsLocales"))
-                    _locales = osPrefs.getRegionalPrefsLocales();
-                else
-                    _locales = osPrefs.regionalPrefsLocales;
-                for (let i = 0; i < _locales.length; i++) {
-                    if (LANG.hasOwnProperty(_locales[i])) {
-                        _locale = _locales[i];
-                        break;
-                    }
-                }
-            } catch (e) { }
-            return {
-                LANG,
-                LOCALE: _locale || "en-US"
-            }
-        })())
+        Services.vc.compare(Services.appinfo.version, "89.0.2"))
 }
