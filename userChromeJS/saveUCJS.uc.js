@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         saveUCJS.uc.js
-// @description  保存 UC 脚本
-// @charset	     UTF-8
+// @description  右键添加保存 UC 脚本菜单
+// @charset      UTF-8
 // @include      main
 // @note         Nightlyで使っているSaveUserChromeJS.uc.jsが60で動かなかったので作成
+// @homepageURL  https://github.com/alice0775/userChrome.js/
 // ==/UserScript==
 (function () {
     "use strict";
@@ -68,7 +69,7 @@
                     alert('最新版本已在使用中');
                     return;
                 } else {
-                    xPref.set('userChrome.subloader.version', version);
+                    Services.prefs.setStringPref('userChrome.subloader.version', version);
                 }
             }
             saveUCJS(skip, xhr.responseText, title)
@@ -81,7 +82,12 @@
         if (!skip) {
             const nsIFilePicker = Components.interfaces.nsIFilePicker;
             const fp = Components.classes['@mozilla.org/filepicker;1'].createInstance(nsIFilePicker);
-            fp.init(window, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
+            // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+            try {
+                fp.init(window.browsingContext, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
+            } catch (e) {
+                fp.init(window, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
+            }
             fp.appendFilter('userChrome.js', '*.uc.js');
             fp.displayDirectory = Services.dirsvc.get('UChrm', Ci.nsIFile);
             fp.defaultExtension = 'uc.js';
@@ -156,5 +162,5 @@
             Services.startup.restartInSafeMode(Ci.nsIAppStartup.eAttemptQuit);
         else
             Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
-    },
+    }
 })()
