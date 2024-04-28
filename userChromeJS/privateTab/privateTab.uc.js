@@ -23,6 +23,8 @@ const {
   PrivateBrowsingUtils
 } = window;
 
+
+
 UC.privateTab = {
   config: {
     neverClearData: false, // if you want to not record history but don't care about other data, maybe even want to keep private logins
@@ -30,24 +32,21 @@ UC.privateTab = {
     doNotClearDataUntilFxIsClosed: true,
     deleteContainerOnDisable: false,
     clearDataOnDisable: false,
-    profileName: '无痕',
   },
 
-  strstr: function (str) {
-      return str.replace("%s", this.config.profileName);
-  },
   openTabs: new Set(),
 
   exec: function (win) {
     if (win.PrivateBrowsingUtils.isWindowPrivate(win))
       return;
 
-    let {document} = win;
+    let { document } = win;
 
     let openAll = document.getElementById('placesContext_openBookmarkContainer:tabs');
     let openAllPrivate = _uc.createElement(document, 'menuitem', {
       id: 'openAllPrivate',
-      label: this.strstr('在%s标签中全部打开'),
+      'data-l10n-id': 'open-all-private',
+      label: 'Open All in Private Tabs',
       accesskey: 'v',
       class: 'menuitem-iconic privatetab-icon',
       oncommand: 'event.userContextId = ' + UC.privateTab.container.userContextId + '; ' + openAll.getAttribute('oncommand'),
@@ -58,7 +57,8 @@ UC.privateTab = {
     let openAllLinks = document.getElementById('placesContext_openLinks:tabs');
     let openAllLinksPrivate = _uc.createElement(document, 'menuitem', {
       id: 'openAllLinksPrivate',
-      label: this.strstr('在%s标签中全部打开'),
+      'data-l10n-id': 'open-all-links-in-private',
+      label: 'Open All in Private Tabs',
       accesskey: 'v',
       class: 'menuitem-iconic privatetab-icon',
       oncommand: 'event.userContextId = ' + UC.privateTab.container.userContextId + '; ' + openAllLinks.getAttribute('oncommand'),
@@ -69,7 +69,8 @@ UC.privateTab = {
     let openTab = document.getElementById('placesContext_open:newtab');
     let openPrivate = _uc.createElement(document, 'menuitem', {
       id: 'openPrivate',
-      label: this.strstr('在%s标签中打开'),
+      'data-l10n-id': 'open-private',
+      label: 'Open in a New Private Tab',
       accesskey: 'v',
       class: 'menuitem-iconic privatetab-icon',
       oncommand: 'let view = event.target.parentElement._view; PlacesUIUtils._openNodeIn(view.selectedNode, "tab", view.ownerWindow, { aPrivate: false, userContextId: ' + UC.privateTab.container.userContextId + '})',
@@ -81,9 +82,9 @@ UC.privateTab = {
     if (win.location.href != _uc.BROWSERCHROME)
       return;
 
-    let {customElements, gBrowser, MozElements} = win;
+    let { customElements, gBrowser, MozElements } = win;
 
-    let keyset =  _uc.createElement(document, 'keyset', { id: 'privateTab-keyset' });
+    let keyset = _uc.createElement(document, 'keyset', { id: 'privateTab-keyset' });
     document.getElementById('mainKeyset').insertAdjacentElement('afterend', keyset);
 
     let toggleKey = _uc.createElement(document, 'key', {
@@ -104,7 +105,8 @@ UC.privateTab = {
 
     let menuOpenLink = _uc.createElement(document, 'menuitem', {
       id: 'menu_newPrivateTab',
-      label: this.strstr('打开新%s标签'),
+      'data-l10n-id': 'new-private-tab',
+      label: 'New Private Tab',
       accesskey: 'v',
       acceltext: 'Ctrl+Alt+P',
       class: 'menuitem-iconic privatetab-icon',
@@ -114,14 +116,15 @@ UC.privateTab = {
 
     let openLink = _uc.createElement(document, 'menuitem', {
       id: 'openLinkInPrivateTab',
-      label: this.strstr('在%s标签中打开'),
+      'data-l10n-id': 'Open in a New Private Tab',
+      label: 'Open Link in New Private Tab',
       accesskey: 'v',
       class: 'menuitem-iconic privatetab-icon',
       hidden: true
     });
 
     openLink.addEventListener('command', (e) => {
-      let {gContextMenu} = win;
+      let { gContextMenu } = win;
       win.openLinkIn(gContextMenu.linkURL, 'tab', gContextMenu._openLinkInParameters({
         userContextId: UC.privateTab.container.userContextId,
         triggeringPrincipal: document.nodePrincipal,
@@ -134,7 +137,8 @@ UC.privateTab = {
 
     let toggleTab = _uc.createElement(document, 'menuitem', {
       id: 'toggleTabPrivateState',
-      label: this.strstr('%s标签'),
+      'data-l10n-id': 'private-tab',
+      label: 'Private Tab',
       type: 'checkbox',
       accesskey: 'v',
       acceltext: 'Ctrl+Alt+T',
@@ -143,13 +147,11 @@ UC.privateTab = {
     document.getElementById('context_pinTab').insertAdjacentElement('afterend', toggleTab);
     document.getElementById('tabContextMenu').addEventListener('popupshowing', this.tabContext);
 
-    let privateMask = document.getElementsByClassName('private-browsing-indicator')[0];
-    privateMask.id = 'private-mask';
-
     let btn2 = _uc.createElement(document, 'toolbarbutton', {
       id: this.BTN2_ID,
-      label: this.strstr('打开新%s标签'),
-      tooltiptext: this.strstr('打开新%s标签(Ctrl+Alt+P)'),
+      'data-l10n-id': 'new-private-tab',
+      label: 'New Private Tab',
+      tooltiptext: 'Open a new private tab (Ctrl+Alt+P)',
       class: 'toolbarbutton-1 chromeclass-toolbar-additional',
     });
 
@@ -174,7 +176,7 @@ UC.privateTab = {
       if (!tab)
         return;
       let isPrivate = this.isPrivate(tab);
-    
+
       if (!isPrivate) {
         if (this.observePrivateTabs) {
           this.openTabs.delete(tab);
@@ -192,14 +194,14 @@ UC.privateTab = {
 
     win.addEventListener('XULFrameLoaderCreated', gBrowser.privateListener);
 
-    if(this.observePrivateTabs)
+    if (this.observePrivateTabs)
       gBrowser.tabContainer.addEventListener('TabClose', this.onTabClose);
 
     MozElements.MozTab.prototype.getAttribute = function (att) {
       if (att == 'usercontextid' && this.isToggling) {
         delete this.isToggling;
         return UC.privateTab.orig_getAttribute.call(this, att) ==
-               UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
+          UC.privateTab.container.userContextId ? 0 : UC.privateTab.container.userContextId;
       } else {
         return UC.privateTab.orig_getAttribute.call(this, att);
       }
@@ -246,14 +248,42 @@ UC.privateTab = {
           doc.getElementById(UC.privateTab.BTN2_ID).insertAdjacentElement('afterend', doc.getElementById('tabs-newtab-button'));
       }
     };
+
+    if (this.l10nIds && this.l10n) {
+      this.l10nIds.forEach((id, i) => {
+        let el = document.querySelector(`[data-l10n-id="${id}"]`);
+        if (el) {
+          let text = this.l10n[i];
+          if (text) {
+            el.setAttribute('label', text);
+          }
+        }
+      })
+    }
   },
 
   init: function () {
+    if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
+      this.l10nIds = ["open-all-private", "open-all-links-in-private", "open-private", "new-private-tab", "open-in-private-tab", "private-tab", "private-container-name"];
+      let l10n = (new DOMLocalization(["privateTab.ftl"], false, userChrome_js.L10nRegistry, Services.locale.appLocalesAsBCP47)).formatValues(this.l10nIds), isCompleted = false, lang = [];
+      l10n.then(l => {
+        lang = l;
+        isCompleted = true;
+      });
+      var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+      while (!isCompleted) {
+        thread.processNextEvent(true);
+      }
+      this.l10n = lang;
+    } else {
+      this.l10n = ["Private"];
+    }
+    this.PRIVATE_PROFILE_NAME = this.l10n.pop();
     ContextualIdentityService.ensureDataReady();
-    this.container = ContextualIdentityService._identities.find(container => container.name == this.config.profileName);
+    this.container = ContextualIdentityService._identities.find(container => container.name == this.PRIVATE_PROFILE_NAME);
     if (!this.container) {
-      ContextualIdentityService.create(this.config.profileName, 'fingerprint', 'purple');
-      this.container = ContextualIdentityService._identities.find(container => container.name == this.config.profileName);
+      ContextualIdentityService.create(this.PRIVATE_PROFILE_NAME, 'fingerprint', 'purple');
+      this.container = ContextualIdentityService._identities.find(container => container.name == this.PRIVATE_PROFILE_NAME);
     } else if (!this.config.neverClearData) {
       this.clearData();
     }
@@ -290,8 +320,8 @@ UC.privateTab = {
       onBuild: (doc) => {
         let btn = _uc.createElement(doc, 'toolbarbutton', {
           id: UC.privateTab.BTN_ID,
-          label: this.strstr('打开新%s标签'),
-          tooltiptext: this.strstr("打开新%s标签(Ctrl+Alt+P)"),
+          label: 'New Private Tab',
+          tooltiptext: 'Open a new private tab (Ctrl+Alt+P)',
           class: 'toolbarbutton-1 chromeclass-toolbar-additional',
           oncommand: 'UC.privateTab.BrowserOpenTabPrivate(window)',
         });
@@ -306,17 +336,17 @@ UC.privateTab = {
     };
 
     // resource:///modules/PlacesUIUtils.sys.mjs
-    function getBrowserWindow (aWindow) {
+    function getBrowserWindow(aWindow) {
       return aWindow &&
         aWindow.document.documentElement.getAttribute('windowtype') ==
-          'navigator:browser'
+        'navigator:browser'
         ? aWindow
         : lazy.BrowserWindowTracker.getTopWindow();
     }
 
     eval('PlacesUIUtils.openTabset = function ' +
-          PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
-                                                      '$1$2$1userContextId: aEvent.userContextId || 0,'));
+      PlacesUIUtils.openTabset.toString().replace(/(\s+)(inBackground: loadInBackground,)/,
+        '$1$2$1userContextId: aEvent.userContextId || 0,'));
 
     let { UUIDMap } = Cu.import('resource://gre/modules/Extension.jsm');
     let TST_ID = 'treestyletab@piro.sakura.ne.jp';
@@ -357,7 +387,7 @@ UC.privateTab = {
   },
 
   togglePrivate: function (win, tab = win.gBrowser.selectedTab) {
-    let {gBrowser} = win;
+    let { gBrowser } = win;
     tab.isToggling = true;
     let shouldSelect = tab == win.gBrowser.selectedTab;
     let newTab = gBrowser.duplicateTab(tab);
@@ -378,8 +408,8 @@ UC.privateTab = {
   },
 
   toggleMask: function (win) {
-    let {gBrowser} = win;
-    let privateMask = win.document.getElementById('private-mask');
+    let { gBrowser } = win;
+    let privateMask = win.document.getElementById('private-browsing-indicator-with-label');
     if (gBrowser.selectedTab.isToggling)
       privateMask.setAttribute('enabled', gBrowser.selectedTab.userContextId == this.container.userContextId ? 'false' : 'true');
     else
@@ -418,7 +448,7 @@ UC.privateTab = {
 
   placesContext: function (e) {
     let win = e.view;
-    let {document} = win;
+    let { document } = win;
     document.getElementById('openPrivate').disabled = document.getElementById('placesContext_open:newtab').disabled;
     document.getElementById('openPrivate').hidden = document.getElementById('placesContext_open:newtab').hidden;
     document.getElementById('openAllPrivate').disabled = document.getElementById('placesContext_openBookmarkContainer:tabs').disabled;
@@ -461,8 +491,8 @@ UC.privateTab = {
     this.STYLE = {
       url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
         @-moz-document url('${_uc.BROWSERCHROME}'), url-prefix('chrome://browser/content/places/') {
-          #private-mask[enabled="true"] {
-            display: block !important;
+          #private-browsing-indicator-with-label[enabled="true"] {
+            display: inherit !important;
           }
 
           .privatetab-icon {
@@ -539,7 +569,7 @@ UC.privateTab = {
       doc.getElementById('openAllLinksPrivate').remove();
       doc.getElementById('openPrivate').remove();
       doc.getElementById('placesContext').removeEventListener('popupshowing', this.placesContext);
-      let {gBrowser} = win;
+      let { gBrowser } = win;
       if (!gBrowser)
         return;
       doc.getElementById('privateTab-keyset').remove();
@@ -561,8 +591,7 @@ UC.privateTab = {
       win.customElements.get('tabbrowser-tabs').prototype.insertBefore = this.orig_insertBefore;
       win.customElements.get('tabbrowser-tabs').prototype._updateNewTabVisibility = this.orig__updateNewTabVisibility;
       gBrowser.tabContainer.removeAttribute('hasadjacentnewprivatetabbutton');
-      doc.getElementById('private-mask').removeAttribute('enabled');
-      doc.getElementById('private-mask').removeAttribute('id');
+      doc.getElementById('private-browsing-indicator-with-label').removeAttribute('enabled');
     }, false);
 
     CustomizableUI.destroyWidget(this.BTN_ID);
