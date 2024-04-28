@@ -46,10 +46,10 @@
         let url = file ? file : tool ? subloader : gBrowser.currentURI.spec;
         url = url.replace('/blob/', '/raw/');
         const menu = document.createXULElement('menuitem');
-        menu.setAttribute('hidden', (url.split(/\./).pop() != 'js') ? 'true' : 'false');
+        menu.setAttribute('hidden', (/(\.js|\.mjs|\.jsm)$/.test(url.split(/\./).pop())) ? 'true' : 'false');
         menu.setAttribute('id', tool ? 'ucjs_getUCJS_toolmenu' : 'ucjs_getUCJS_areamenu');
-        menu.setAttribute('label', tool ? '更新userChrome.js文件' : '保存UC脚本');
-        menu.setAttribute('tooltiptext', tool ? 'Alice 0775的下标加载程序脚本 ' : '保存为uc.js');
+        menu.setAttribute('label', tool ? '更新UC脚本' : '保存UC脚本');
+        menu.setAttribute('tooltiptext', tool ? 'Alice 0775的下标加载程序脚本 ' : '保存为脚本');
         menu.addEventListener('click', function () { getFile(skip, url, check) }, false);
         tool ? parentMenu.appendChild(menu) : parentMenu.insertBefore(menu, saveLink ? saveLink : parentMenu.firstChild);
     }
@@ -88,12 +88,24 @@
             } catch (e) {
                 fp.init(window, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
             }
-            fp.appendFilter('userChrome.js', '*.uc.js');
+            const ext = title.split(".").pop();
             fp.displayDirectory = Services.dirsvc.get('UChrm', Ci.nsIFile);
-            fp.defaultExtension = 'uc.js';
+            switch (ext) {
+                case 'js':
+                    fp.appendFilter('userChrome.js', '*.uc.js');
+                    fp.defaultExtension = 'uc.js';
+                    break;
+                case "mjs":
+                    fp.appendFilter('ES Module', '*.sys.mjs');
+                    fp.defaultExtension = 'sys.mjs';
+                    break;
+                case "jsm":
+                    fp.appendFilter('JavaScript Module', '*.jsm');
+                    fp.defaultExtension = '.jsm';
+            }
             fp.defaultString = oTitle;
             const result = fp.open(_saveUCJS);
-
+            
             function _saveUCJS(result) {
                 if (result == nsIFilePicker.returnOK || result == Ci.nsIFilePicker.returnReplace) {
                     file = fp.file;
