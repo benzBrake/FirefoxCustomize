@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            PrivateTab
 // @author          xiaoxiaoflood
+// @compatibility   Firefox 123
 // @include         main
 // @include         chrome://browser/content/places/bookmarksSidebar.xhtml
 // @include         chrome://browser/content/places/historySidebar.xhtml
