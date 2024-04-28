@@ -78,11 +78,10 @@
                 onclick: function (e) {
                     let r = CustomizableUI.getWidget("reload-button").forWindow(window).node;
                     if (r && r.getAttribute('displaystop'))
-                        e.target.ownerGlobal.BrowserStop();
+                        gBrowser.stop
                     else
                         if (e.button == 2) {
-                            const global = e.target.ownerGlobal;
-                            "BrowserReloadSkipCache" in global ? global.BrowserReloadSkipCache() : global.BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
+                            gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE) 
                         } else {
                             if (gBrowser.selectedBrowser._userTypedValue) {
                                 e.target.ownerGlobal.openTrustedLinkIn(gBrowser.selectedBrowser._userTypedValue, 'current', {
@@ -90,7 +89,7 @@
                                     triggeringPrincipal: gBrowser.selectedBrowser.contentPrincipal
                                 });
                             } else {
-                                e.target.ownerGlobal.BrowserReload();
+                                gBrowser.reload();
                             }
                         }
                 }
