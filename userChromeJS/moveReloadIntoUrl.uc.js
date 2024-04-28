@@ -16,8 +16,8 @@
 // ==/UserScript==
 (function () {
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
-    const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+
+    const isChinese = (Services.locale.appLocaleAsBCP47 || Services.locale.getAppLocaleAsBCP47()).includes("zh-");
 
     if (window.moveReloadIntoURL) {
         window.moveReloadIntoURL.unload();
@@ -48,7 +48,7 @@
                 this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
                 this.STYLE = {
                     url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
-                @-moz-document url('chrome://browser/content/browser.xhtml') {
+                @-moz-document url-prefix('chrome://browser/content/browser.x') {
                     #stop-reload-button {
                         display: none;
                     }
@@ -73,15 +73,16 @@
             let BTN = $C(document, 'hbox', {
                 id: "new-stop-reload-button",
                 class: "urlbar-page-action urlbar-addon-page-action",
-                "tooltiptext": Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
+                "tooltiptext": isChinese ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
                 style: "list-style-image: url('data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDE2IDE2IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+CiAgPHBhdGggZD0iTTEwLjcwNyA2IDE0LjcgNmwuMy0uMyAwLTMuOTkzYS41LjUgMCAwIDAtLjg1NC0uMzU0bC0xLjQ1OSAxLjQ1OUE2Ljk1IDYuOTUgMCAwIDAgOCAxQzQuMTQxIDEgMSA0LjE0MSAxIDhzMy4xNDEgNyA3IDdhNi45NyA2Ljk3IDAgMCAwIDYuOTY4LTYuMzIyLjYyNi42MjYgMCAwIDAtLjU2Mi0uNjgyLjYzNS42MzUgMCAwIDAtLjY4Mi41NjJBNS43MjYgNS43MjYgMCAwIDEgOCAxMy43NWMtMy4xNzEgMC01Ljc1LTIuNTc5LTUuNzUtNS43NVM0LjgyOSAyLjI1IDggMi4yNWE1LjcxIDUuNzEgMCAwIDEgMy44MDUgMS40NDVsLTEuNDUxIDEuNDUxYS41LjUgMCAwIDAgLjM1My44NTR6Ii8+Cjwvc3ZnPgo=",
                 onclick: function (e) {
                     let r = CustomizableUI.getWidget("reload-button").forWindow(window).node;
+                    e.preventDefault();
                     if (r && r.getAttribute('displaystop'))
-                        gBrowser.stop
+                        gBrowser.stop();
                     else
                         if (e.button == 2) {
-                            gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE) 
+                            gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE)
                         } else {
                             if (gBrowser.selectedBrowser._userTypedValue) {
                                 e.target.ownerGlobal.openTrustedLinkIn(gBrowser.selectedBrowser._userTypedValue, 'current', {
@@ -127,9 +128,10 @@
     }
 
     function $C(aDoc, tag, attrs, skipAttrs) {
+        let d = (aDoc || document);
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
-        var el = (aDoc || document).createXULElement(tag);
+        var el = "createXULElement" in d ? d.createXULElement(tag) : d.createElement(tag);
         return $A(el, attrs, skipAttrs);
     }
 
@@ -147,5 +149,5 @@
         return el;
     }
 
-    PlacesUIUtils.canLoadToolbarContentPromise.then(_ => moveReloadIntoURL.init());
+    "canLoadToolbarContentPromise" in PlacesUIUtils ? PlacesUIUtils.canLoadToolbarContentPromise.then(_ => moveReloadIntoURL.init()) : moveReloadIntoURL.init();
 })();
