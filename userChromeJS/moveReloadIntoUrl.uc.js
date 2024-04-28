@@ -6,7 +6,8 @@
 // @include        main
 // @shutdown       window.moveReloadIntoURL.unload();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
-// @version        1.2.3
+// @version        1.2.4
+// @note           1.2.4 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed and Bug 1820534 - Move front-end to modern flexbox
 // @note           1.2.3 修复在新窗口不生效，热插拔有事时候不能用
 // @note           1.2.2 修复 Firefox 103 兼容性
 // @note           1.2 改成可热插拔，兼容夜间模式，图片内置到脚本
@@ -26,9 +27,9 @@
     window.moveReloadIntoURL = {
         handleEvent: function (aEvent) {
             if (aEvent.type === "MoveReloadIntoUrlUnload") {
-                let win = aEvent.originalTarget,
-                    doc = win.document;
-                let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
+                let window = aEvent.originalTarget,
+                    doc = window.document;
+                let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(window).node;
                 if (RELOADBTN)
                     RELOADBTN.removeEventListener('DOMAttrModified', this.reloadBtnAttr);
                 let BTN = doc.getElementById("new-stop-reload-button");
@@ -37,13 +38,13 @@
                 if (this.STYLE) {
                     this.sss.unregisterSheet(this.STYLE.url, this.STYLE.type);
                 }
-                win.removeEventListener('MoveReloadIntoUrlUnload', this);
-                if (win.moveReloadIntoURL)
-                    delete win.moveReloadIntoURL;
+                window.removeEventListener('MoveReloadIntoUrlUnload', this);
+                if (window.moveReloadIntoURL)
+                    delete window.moveReloadIntoURL;
             }
         },
-        init: function (doc, win) {
-            if (win.moveReloadIntoURL) {
+        init: function () {
+            if (window.moveReloadIntoURL) {
                 this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
                 this.STYLE = {
                     url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
@@ -52,8 +53,10 @@
                         display: none;
                     }
                     #new-stop-reload-button {
-                        -moz-box-ordinal-group: 999;
+                        display: flex !important;
                         display: -moz-box !important;
+                        order: 9999;
+                        -moz-box-ordinal-group: 9999;
                     }
                     #new-stop-reload-button .urlbar-icon {
                         -moz-context-properties: fill, fill-opacity !important;
@@ -65,9 +68,9 @@
                 };
                 this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
             }
-            let PABTN = CustomizableUI.getWidget("pageActionButton").forWindow(win).node;
-            let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(win).node;
-            let BTN = $C(doc, 'hbox', {
+            let PABTN = CustomizableUI.getWidget("pageActionButton").forWindow(window).node;
+            let RELOADBTN = CustomizableUI.getWidget("reload-button").forWindow(window).node;
+            let BTN = $C(document, 'hbox', {
                 id: "new-stop-reload-button",
                 class: "urlbar-page-action urlbar-addon-page-action",
                 "tooltiptext": Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\r\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page',
@@ -78,7 +81,8 @@
                         e.target.ownerGlobal.BrowserStop();
                     else
                         if (e.button == 2) {
-                            e.target.ownerGlobal.BrowserReloadSkipCache();
+                            const global = e.target.ownerGlobal;
+                            "BrowserReloadSkipCache" in global ? global.BrowserReloadSkipCache() : global.BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
                         } else {
                             if (gBrowser.selectedBrowser._userTypedValue) {
                                 e.target.ownerGlobal.openTrustedLinkIn(gBrowser.selectedBrowser._userTypedValue, 'current', {
@@ -92,7 +96,7 @@
                 }
             })
 
-            BTN.appendChild($C(doc, 'image', {
+            BTN.appendChild($C(document, 'image', {
                 class: 'urlbar-icon',
             }));
 
@@ -100,7 +104,7 @@
             RELOADBTN.addEventListener('DOMAttrModified', this.reloadBtnAttr);
             this.reloadBtnAttr();
 
-            win.addEventListener('MoveReloadIntoUrlUnload', this)
+            window.addEventListener('MoveReloadIntoUrlUnload', this)
         },
         unload: function () {
             let windows = Services.wm.getEnumerator('navigator:browser');
@@ -144,14 +148,5 @@
         return el;
     }
 
-    if (gBrowserInit.delayedStartupFinished) window.moveReloadIntoURL.init(document, window)
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.moveReloadIntoURL.init(subject.document, subject);
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
+    PlacesUIUtils.canLoadToolbarContentPromise.then(_ => moveReloadIntoURL.init());
 })();
