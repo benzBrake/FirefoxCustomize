@@ -156,10 +156,11 @@
       padding: unset !important;
       margin: unset !important;
     }
-
-    #urlbar[breakout] .urlbarView {
-      margin-inline: unset !important;
-      width: 100% !important;
+    @include NotOption("userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled") {
+      #urlbar[breakout] .urlbarView {
+        margin-inline: unset !important;
+        width: 100% !important;
+      }
     }
 
     /* disable space wasting inside popup around result items */
@@ -254,9 +255,8 @@
     }
     .urlbarView {
       width: calc(
-        100% - 2 * (5px + var(--urlbar-container-padding)) +
-          var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2
-      );
+        100% + (var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2)
+      ) !important;
     }
     @include Option(
       "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn"

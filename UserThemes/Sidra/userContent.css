@@ -1,6 +1,7 @@
 /* preferences */
 @-moz-document url-prefix(about:preferences),
-  url-prefix(about:addons) {
+  url-prefix(about:addons),
+  url-prefix("chrome: //mozapps/content/extensions/aboutaddons.xhtml") {
   .category[selected] {
     position: relative !important;
     border-radius: 4px !important;
@@ -126,12 +127,8 @@ url-prefix("chrome: //mozapps/content/extensions/aboutaddons.xhtml") {
   [action=more-options] {
     flex-shrink: 0;
   }
-  panel-list > panel-item-separator {
-    display: none;
-  }
-  .toggle-button,
-  [action=more-options] {
-    flex-shrink: 0;
+  panel-list {
+    z-index: 99;
   }
   panel-list > panel-item-separator {
     display: none;
@@ -193,11 +190,14 @@ url-prefix("chrome: //mozapps/content/extensions/aboutaddons.xhtml") {
   [action=never-activate] {
     --menu-image: url("./images/icons/checkbox.svg");
   }
+  [action=set-update-automatically]::part(button),
+  [action=always-activate][checked]::part(button),
+  [action=never-activate][checked]::part(button),
   .addon-permissions-list > li {
-    background-image: url("./images/icons/checkbox.svg") !important;
+    background-image: url("./images/icons/checkmark.svg") !important;
   }
-  [checked] {
-    --menu-image: url("./images/icons/checkmark.svg");
+  panel-item[checked]::part(button) {
+    background-image: unset !important;
   }
   .addon-permissions-list > li.permission-checked {
     background-image: url("./images/icons/checkmark.svg") !important;

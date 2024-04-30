@@ -99,6 +99,11 @@
       --menu-image: url("./images/extensions/copy.svg");
     }
 
+    // CopyLinkPlusPlus
+    #_copylinksplusplus-BAP {
+      list-style-image: url("./images/extensions/copy-link-plus-plus/copy-link.svg") !important;
+    }
+
     // FlagFox
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:1\:options,
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:0\:options {
@@ -107,6 +112,13 @@
 
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:0\:submenu {
       --menu-image: url("./images/extensions/menu.svg");
+    }
+
+    #_copylinksplusplus-menuitem-_clpp-options {
+      --menu-image: url("./images/extensions/settings.svg");
+      > .menu-iconic-left {
+        visibility: hidden;
+      }
     }
 
     // Image Picka
@@ -592,7 +604,7 @@
     var(--arrowpanel-menuitem-padding-inline, 10px) $important;
   border-radius: var(--arrowpanel-menuitem-border-radius, 4px) !important;
   padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 12px);
-overflow: hidden;
+  overflow: hidden;
 
   &:hover,
   &:focus {

@@ -1553,11 +1553,16 @@
       padding: unset !important;
       margin: unset !important;
     }
+    /* disable space wasting inside popup around result items */
+    /* disable space wasting inside popup around search engines */
+  }
+  @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Popup.Compact") and (not (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled")) {
     #urlbar[breakout] .urlbarView {
       margin-inline: unset !important;
       width: 100% !important;
     }
-    /* disable space wasting inside popup around result items */
+  }
+  @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Popup.Compact") {
     #urlbar[breakout] #urlbar-results {
       padding: 0px !important;
       margin: 0px !important;
@@ -1577,7 +1582,6 @@
     #urlbar[breakout] .urlbarView-row {
       padding-block: 0px !important;
     }
-    /* disable space wasting inside popup around search engines */
     #urlbar[breakout] .search-one-offs {
       padding-inline: 4px;
       padding-block: calc(var(--urlbarView-item-block-padding) / 2) !important;
@@ -1639,7 +1643,7 @@
       -moz-box-ordinal-group: 1;
     }
     .urlbarView {
-      width: calc(100% - 2 * (5px + var(--urlbar-container-padding)) + var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2);
+      width: calc(100% + var(--uc-toolbarbutton-size) - var(--urlbar-margin-inline) / 2) !important;
     }
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") {
@@ -4650,12 +4654,21 @@
     #_446900e4-71c2-419f-a6a7-df9c091e268b_-menuitem-_copy-identifier {
       --menu-image: url("./images/extensions/copy.svg");
     }
+    #_copylinksplusplus-BAP {
+      list-style-image: url("./images/extensions/copy-link-plus-plus/copy-link.svg") !important;
+    }
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:1\:options,
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:0\:options {
       --menu-image: url("./images/extensions/settings.svg");
     }
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:0\:submenu {
       --menu-image: url("./images/extensions/menu.svg");
+    }
+    #_copylinksplusplus-menuitem-_clpp-options {
+      --menu-image: url("./images/extensions/settings.svg");
+    }
+    #_copylinksplusplus-menuitem-_clpp-options > .menu-iconic-left {
+      visibility: hidden;
     }
     #image-picka_eight04_blogspot_com-BAP {
       list-style-image: url("./images/extensions/gallery.svg") !important;
