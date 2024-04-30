@@ -46,7 +46,7 @@
         let url = file ? file : tool ? subloader : gBrowser.currentURI.spec;
         url = url.replace('/blob/', '/raw/');
         const menu = document.createXULElement('menuitem');
-        menu.setAttribute('hidden', (/(\.js|\.mjs|\.jsm)$/.test(url.split(/\./).pop())) ? 'true' : 'false');
+        menu.setAttribute('hidden', /(\.js|\.mjs|\.jsm)$/.test(url) ? 'false' : 'true');
         menu.setAttribute('id', tool ? 'ucjs_getUCJS_toolmenu' : 'ucjs_getUCJS_areamenu');
         menu.setAttribute('label', tool ? '更新UC脚本' : '保存UC脚本');
         menu.setAttribute('tooltiptext', tool ? 'Alice 0775的下标加载程序脚本 ' : '保存为脚本');
