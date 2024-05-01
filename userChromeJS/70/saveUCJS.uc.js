@@ -1,12 +1,11 @@
 // ==UserScript==
-// @name            saveUCJS.uc.js
-// @description     右键添加保存 UC 脚本菜单
-// @charset         UTF-8
-// @include         main
-// @compatibility   Firefox 80
-// @note            去除 FileUtils 依赖
-// @note            Nightlyで使っているSaveUserChromeJS.uc.jsが60で動かなかったので作成
-// @homepageURL     https://github.com/alice0775/userChrome.js/
+// @name           saveUCJS.uc.js
+// @description    右键添加保存 UC 脚本菜单
+// @charset        UTF-8
+// @include        main
+// @compatibility  Firefox 70
+// @note           Nightlyで使っているSaveUserChromeJS.uc.jsが60で動かなかったので作成
+// @homepageURL    https://github.com/alice0775/userChrome.js/
 // ==/UserScript==
 (function () {
     "use strict";
@@ -22,6 +21,7 @@
     const toolMenu = document.getElementById('menu_ToolsPopup');
     const saveLink = document.getElementById('context-savelink');
     const github = 'https://github.com/';
+    Cu.import('resource://gre/modules/FileUtils.jsm');
 
     let file;
 
@@ -106,33 +106,37 @@
             }
             fp.defaultString = oTitle;
             const result = fp.open(_saveUCJS);
-
+            
             function _saveUCJS(result) {
                 if (result == nsIFilePicker.returnOK || result == Ci.nsIFilePicker.returnReplace) {
-                    writeFile(fp.file.path, string)
+                    file = fp.file;
+                    writeFile(file, string)
                 }
             }
         } else {
-            writeFile(PathUtils.join(PathUtils.profileDir, "chrome", oTitle), string)
+            file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+            let path = FileUtils.getFile("UChrm", [oTitle]);
+            file.initWithPath(path);
+            writeFile(file, string)
         }
     }
 
-    function writeFile(path, string) {
-        var isCompleted = false;
-        IOUtils.writeUTF8(path, string, {
-            mode: 'overwrite'
-        }).then(function () {
-            isCompleted = true;
-        }).catch(function (e) {
-            isCompleted = true;
-            console.error(e);
-        });
-
-        var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-        while (!isCompleted) {
-            thread.processNextEvent(true);
-        }
-
+    function writeFile(file, string) {
+        const charset = 'UTF-8';
+        const fileStream = Components.classes['@mozilla.org/network/file-output-stream;1']
+            .createInstance(Components.interfaces.nsIFileOutputStream);
+        fileStream.init(file, 0x02 | 0x08 | 0x20, -1, 0);
+        const converterStream = Components.classes['@mozilla.org/intl/converter-output-stream;1']
+            .createInstance(Components.interfaces.nsIConverterOutputStream);
+        converterStream.init(
+            fileStream,
+            charset,
+            string.length,
+            Components.interfaces.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER
+        );
+        converterStream.writeString(string);
+        converterStream.close();
+        fileStream.close();
         setTimeout(function () {
             if (urgeRestart && window.confirm('UC脚本保存完成，重启后生效. Firefox要立即重启吗？')) restart();
         }, 100);
