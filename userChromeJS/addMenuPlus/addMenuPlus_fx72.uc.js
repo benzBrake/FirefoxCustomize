@@ -1668,9 +1668,12 @@ if (typeof window === "undefined" || globalThis !== window) {
                             if (addMenu.ContextMenu.onSvg && addMenu.ContextMenu.svg) {
                                 return svg2base64(addMenu.ContextMenu.svg);
                             } else {
-                                let url = addMenu.convertText("%RLINK_OR_URL%");
-                                if (url.startsWith("data:image/svg+xml")) return url;
-                                return url.endsWith("svg") ? svg2base64(url) : "";
+                                let imageURL = addMenu.convertText("%RLINK_OR_URL%");
+                                if (gContextMenu?.onImage) {
+                                    imageURL = addMenu.convertText("%i");
+                                }
+                                if (imageURL.startsWith("data:image/svg+xml")) return imageURL;
+                                return imageURL.endsWith("svg") ? svg2base64(imageURL) : "";
                             }
                         case "%M":
                             return context.mediaURL || "";
