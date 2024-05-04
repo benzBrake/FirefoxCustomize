@@ -8,9 +8,10 @@
 // @compatibility  Firefox 80
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader.uc.js
-// @version        0.0.5
+// @version        0.0.5r1
 // @charset        UTF-8
-// @note           FileUtils 改为 IOUtils，不兼容Fireofox 80以下，把主菜单项目改成工具按钮了。
+// @note           0.0.5r1 修复退出编辑器后不能自动更新
+// @note           0.0.5   FileUtils 改为 IOUtils，不兼容Fireofox 80以下，把主菜单项目改成工具按钮了。
 // ==/UserScript==
 
 /****** 使い方 ******
@@ -22,7 +23,7 @@
 其他.css是 AUTHOR_SHEET (默认)
 不忘忘记添加 @namespace 此脚本不会检查 css 内容
 
-支持关闭编辑器后自动重载 CSS（不支持 Code.exe），建议使用非多标签的独立编辑器比如 notepad2.exe 作为默认编辑器
+支持关闭编辑器后自动重载 CSS，建议使用非多标签的独立编辑器比如 notepad2.exe 作为默认编辑器
 
 about:config
 "view_source.editor.path" 指定编辑器路径
@@ -531,8 +532,8 @@ about:config
         let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
         try {
           process.init(editor);
-          return await new Promise((resolve, reject) => {
-            process.runwAsync(
+          return await new Promise(async (resolve, reject) => {
+            await process.runwAsync(
               args,
               args.length,
               this._processObserver(resolve, reject)
