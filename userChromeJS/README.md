@@ -88,7 +88,7 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 |      | 100  | [UndoCloseTabButtonN](UndoCloseTabButtonN.uc.js)             | 查看已关闭的标签页和窗口                                     | [📃](https://u6.getuploader.com/script/download/2043)         |
 |      | 115  | [unifiedExtensionsEnhance](unifiedExtensionsEnhance.uc.js)   | 扩展管理按钮增强，左键点击切换状态，点击设置按钮打开设置页面 |                                                              |
 |      | 100  | [unreadTabMods](unreadTabMods.uc.js)                         | 未读标签页修改                                               | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js) |
-|      | 80   | [UserCSSLoader](UserCSSLoader.uc.js)                         | UserCSSLoader 修改版，结合了部分 Styloaix 的特性，支持编辑保存后自动刷新 | [📃](https://github.com/Griever/userChromeJS)                 |
+|      | 80   | [UserCSSLoader](UserCSSLoader/UserCSSLoader.uc.js)           | UserCSSLoader 修改版，结合了部分 Styloaix 的特性，支持编辑保存后自动刷新 | [📃](https://github.com/Griever/userChromeJS)                 |
 |      | 70   | [verticalAddOnBar](verticalAddOnBar.uc.js)                   | 增加一个类似 vivaldi 的侧边工具栏                            |                                                              |
 |      | 100  | [verticalTabsPane](verticalTabsPane.uc.js)                   | 垂直标签栏，原版只能在 MrOtherGuy 的 UC 环境使用，修改版应该通用了，并且把默认快捷键修改为 Ctrl+F1 了 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/verticalTabsPane.uc.js) |
 
