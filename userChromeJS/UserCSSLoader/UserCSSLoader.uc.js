@@ -111,9 +111,11 @@ about:config
       return this.FOLDER = aFile;
     },
 
-    init() {
+    async init() {
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
+        this.MESSAGES = await this.l10n.formatValues(["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled"]);
+
       } else {
         this.l10n = {
           formatValue: async function () {
@@ -122,6 +124,18 @@ about:config
           formatMessages: async function () {
             return "";
           }
+        }
+        this.MESSAGES = {
+          "ucl-style-type-not-exists": "Style type not exists",
+          "ucl-create-style-prompt-title": "Creating %s style",
+          "ucl-file-not-exists": "File %s not exists",
+          "ucl-choose-style-editor": "Choose style editor",
+          "ucl-cannot-edit-style-notice": "Cannot edit style %s",
+          "user-css-loader": "User CSS Loader",
+          "ucl-delete-style": "Delete style",
+          "ucl-delete-style-prompt-message": "Are you sure to delete style %s?",
+          "ucl-enabled ": "Enabled",
+          "ucl-disabled": "Disabled"
         }
       }
 
@@ -135,7 +149,8 @@ about:config
         let ins = document.getElementById("devToolsSeparator");
         let menu = createElement(document, "menu", {
           label: "UserCSSLoader",
-          class: "menu-iconic"
+          class: "menu-iconic",
+          'data-l10n-id': 'user-css-loader'
         });
         this.MENU = ins.parentNode.insertBefore(menu, ins);
         let menupopup = createElement(document, "menupopup", {
@@ -143,6 +158,7 @@ about:config
           class: this.BTN_ID + "-popup"
         });
         this.menupopup = this.MENU.appendChild(menupopup);
+        this.l10n.connectRoot(this.MENU);
       } else {
         if (!(CustomizableUI.getWidget(this.BTN_ID) && CustomizableUI.getWidget(this.BTN_ID).forWindow(window)?.node)) {
           CustomizableUI.createWidget({
@@ -158,6 +174,7 @@ about:config
         this.BTN.addEventListener("mouseover", this, false);
         this.BTN.addEventListener("click", this, false);
         this.menupopup = this.BTN.querySelector("#" + this.BTN_ID + "-popup");
+        this.l10n.connectRoot(this.BTN);
       }
       this.menupopup.addEventListener("popupshowing", this, false);
 
@@ -169,12 +186,10 @@ about:config
     createButton(doc) {
       let btn = createElement(doc, 'toolbarbutton', {
         id: this.BTN_ID,
-        label: "UserCSSLoader",
+        label: "User CSS Loader",
+        'data-l10n-id': 'user-css-loader',
         type: 'menu',
-        class: 'toolbarbutton-1 chromeclass-toolbar-additional',
-        onclick: function (event) {
-          if (event.target.id !== window.UserCSSLoader.BTN_ID) return;
-        }
+        class: 'toolbarbutton-1 chromeclass-toolbar-additional'
       });
 
       let menupopup = createElement(doc, "menupopup", {
@@ -196,45 +211,56 @@ about:config
         popup_.removeChild(popup_.firstChild);
       }
 
+      const MESSAGES = this;
+
       [{
-        label: !this.prefs.getBoolPref("allDisabled", false) ? "Enabled" : "Disabled",
+        label: !this.prefs.getBoolPref("allDisabled", false) ? MESSAGES[8] : MESSAGES[9],
         class: "menuitem menuitem-iconic",
         type: "checkbox",
         oncommand: "UserCSSLoader.allDisabled = !UserCSSLoader.allDisabled;",
         onshowing: function () {
-          this.setAttribute("label", !UserCSSLoader.allDisabled ? "Enabled" : "Disabled");
+          const { MESSAGES } = UserCSSLoader;
+          this.setAttribute("label", !UserCSSLoader.allDisabled ? MESSAGES[8] : MESSAGES[9]);
           this.setAttribute("checked", !UserCSSLoader.allDisabled);
         }
       }, {}, {
         label: "Reload all styles",
+        'data-l10n-id': 'ucl-reload-all-styles',
         class: "menuitem menuitem-iconic",
         oncommand: "window.UserCSSLoader.rebuild();"
       }, {
         label: "Open Style Folder",
+        'data-l10n-id': 'ucl-open-style-folder',
         class: "menuitem menuitem-iconic",
         oncommand: "window.UserCSSLoader.openFolder();"
       }, {
         label: "Create Style",
+        'data-l10n-id': 'ucl-create-style',
         class: "menu menu-iconic",
         popup: [{
           label: "AUTHOR_SHEET",
+          'data-l10n-id': 'ucl-author-sheet',
           class: "menuitem menuitem-iconic",
           oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.AUTHOR_SHEET)"
         }, {
           label: "USER_SHEET",
+          'data-l10n-id': 'ucl-user-sheet',
           class: "menuitem menuitem-iconic",
           oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.USER_SHEET)"
         }, {
           label: "AGENT_SHEET",
+          'data-l10n-id': 'ucl-agent-sheet',
           class: "menuitem menuitem-iconic",
           oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.AGENT_SHEET)"
         }]
       }, {
 
       }, {
-        content: "Middle click not close menu",
+        content: "Middle click to keep menu open",
+        'data-l10n-id': "ucl-middle-click-to-keep-menu-open",
         type: "html:h2",
-        class: "subview-subheader"
+        class: "subview-subheader",
+        style: "text-align: center"
       }].forEach(menuObj => {
         popup_.appendChild(createMenu(doc, menuObj));
       });
@@ -244,28 +270,32 @@ about:config
         });
         [{
           type: "html:h2",
+          id: "ucl-change-style-popup-header",
           class: "subview-subheader",
           content: "Change style type",
           style: "text-align: center;"
         }, {
           label: "AUTHOR_SHEET",
+          'data-l10n-id': 'ucl-author-sheet',
           flag: "AUTHOR_SHEET",
           class: "menuitem menuitem-iconic",
           oncommand: "UserCSSLoader.changeStyleType(event, UserCSSLoader.AUTHOR_SHEET)"
         }, {
           label: "USER_SHEET",
+          'data-l10n-id': 'ucl-user-sheet',
           flag: "USER_SHEET",
           class: "menuitem menuitem-iconic",
           oncommand: "UserCSSLoader.changeStyleType(event, UserCSSLoader.USER_SHEET)"
         }, {
           label: "AGENT_SHEET",
+          'data-l10n-id': 'ucl-agent-sheet',
           flag: "AGENT_SHEET",
           class: "menuitem menuitem-iconic",
           oncommand: 'UserCSSLoader.changeStyleType(event, UserCSSLoader.AGENT_SHEET)'
         }].forEach(menuObj => {
           changeTypePopup.appendChild(createMenu(doc, menuObj));
         });
-        doc.getElementById("mainPopupSet").appendChild(changeTypePopup);
+        this.l10n.connectRoot(doc.getElementById("mainPopupSet").appendChild(changeTypePopup));
       }
 
       popup.setAttribute("initalized", true);
@@ -316,7 +346,10 @@ about:config
         });
         group.appendChild(item);
         let type = createElement(doc, 'menuitem', {
+          label: "Change style type",
+          tooltiptext: "Change style type",
           class: "menuitem menuitem-iconic style-flag",
+          'data-l10n-id': 'ucl-change-style-btn',
           flag: STYLES_NAME_MAP[entry.type]['name'],
           fullName: entry.fullName,
           closemenu: 'none',
@@ -324,13 +357,17 @@ about:config
         });
         group.appendChild(type);
         let edit = createElement(popup.ownerDocument, 'menuitem', {
-          label: "Edit",
+          label: "Edit style",
+          tooltiptext: "Edit style",
+          'data-l10n-id': 'ucl-edit-style-btn',
           class: "menuitem menuitem-iconic edit",
           oncommand: `window.UserCSSLoader.editStyle("${entry.fullName}");`
         });
         group.appendChild(edit);
         let del = createElement(popup.ownerDocument, 'menuitem', {
-          label: "Delete",
+          label: "Delete style",
+          tooltiptext: "Delete style",
+          'data-l10n-id': 'ucl-delete-style-btn',
           class: "menuitem menuitem-iconic delete",
           oncommand: `window.UserCSSLoader.deleteStyle("${entry.fullName}");`
         });
@@ -399,6 +436,7 @@ about:config
           this.initMenu(event.target);
           this.refreshCSSEntries(event.target);
           this.refreshMenuItemStatus(event.target);
+          this.l10n.translateRoots();
           break;
         case "unload":
           this.uninit();
@@ -441,13 +479,14 @@ about:config
     openFolder() {
       this.FOLDER.launch();
     },
-    createStyle(type) {
+    async createStyle(type) {
+      const { MESSAGES } = this;
       if (STYLES_NAME_MAP[type] === undefined) {
-        console.error("Invalid type:", type);
+        console.error(MESSAGES[0].replace("%s", type));
         return;
       }
       let result = { value: new Date().getTime() };
-      let aTitle = "Create %s Style".replace("%s", STYLES_NAME_MAP[type]['name']), aDetail = "Enter a name for the new style";
+      let aTitle = MESSAGES[1].replace("%s", STYLES_NAME_MAP[type]['name']), aDetail = MESSAGES[2].replace("%s", STYLES_NAME_MAP[type]['name']);
       if (Services.prompt.prompt(
         window, aTitle, aDetail, result, null, {}
       )) {
@@ -470,7 +509,7 @@ about:config
       const path = this.FOLDER.path + DIRECTORY_SEPARATOR + fileName;
       return new Promise(async (resolve, reject) => {
         if (await IOUtils.exists(path)) {
-          reject("File already exists");
+          reject(UserCSSLoader.MESSAGES[2].replace("%s", path));
         }
         try {
           await IOUtils.writeUTF8(path, "");
@@ -508,12 +547,13 @@ about:config
         editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
       } catch (e) { }
       if (!editor || !editor.exists()) {
-        editor = await new Promise(resolve => {
+        editor = await new Promise(async resolve => {
+          const { MESSAGES } = UserCSSLoader;
           let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
           try {
-            fp.init(window.browsingContext, "Select Editor", Ci.nsIFilePicker.modeOpen);
+            fp.init(window.browsingContext, MESSAGES[3], Ci.nsIFilePicker.modeOpen);
           } catch (e) {
-            fp.init(window, "Select Editor", Ci.nsIFilePicker.modeOpen);
+            fp.init(window, MESSAGES[3], Ci.nsIFilePicker.modeOpen);
           }
           fp.appendFilters(Ci.nsIFilePicker.filterApps);
           fp.appendFilters(Ci.nsIFilePicker.filterAll);
@@ -541,7 +581,7 @@ about:config
           });
         } catch (e) {
           console.error(e);
-          this.alert("Cannot edit style, click here to open styles folder.", "UserCSSLoader", function () {
+          this.alert(this.MESSAGES[4], this.MESSAGES[5], function () {
             this.openFolder();
           });
         }
@@ -580,7 +620,7 @@ about:config
     },
     changeStyleType(event, type) {
       if (STYLES_NAME_MAP[type] === undefined) {
-        console.error("Invalid type:", type);
+        console.error(this.MESSAGES[1].replace("%s", type));
         return;
       }
       let { anchorNode } = event.target.closest("menupopup");
@@ -609,8 +649,9 @@ about:config
         }
       }
     },
-    deleteStyle(fullName) {
-      let aTitle = "Delete Style", aMsg = "Are you sure you want to delete this style [%s]?".replace("%s", fullName);
+    async deleteStyle(fullName) {
+      const { MESSAGES } = this;
+      let aTitle = MESSAGES[6], aMsg = MESSAGES[7].replace("%s", fullName);
       if (Services.prompt.confirm(window, aTitle, aMsg, false)) {
         let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
         if (entry instanceof CSSEntry) {
@@ -631,7 +672,7 @@ about:config
       } : null;
       var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
       alertsService.showAlertNotification(
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "UserCSSLoader",
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || this.MESSAGES[5],
         aMsg + "", !!callback, "", callback);
     },
   };
