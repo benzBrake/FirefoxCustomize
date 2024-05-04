@@ -86,7 +86,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.style = document.insertBefore(pi, document.documentElement);
 
 
-                if (typeof userChrome_js && "L10nRegistry" in userChrome_js) {
+                if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
                     this.l10n = new DOMLocalization(["OpenWithHelper.ftl"], false, userChrome_js.L10nRegistry);
                 } else {
                     this.l10n = {
@@ -957,7 +957,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
     display: flex;
     display: -moz-box;
 }
-
 `, (function () {
         let PATHS = [];
         ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
