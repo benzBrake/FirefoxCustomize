@@ -63,10 +63,19 @@
   }
 
   :root[uidensity="compact"] {
-    --uc-contextmenu-menuitem-padding-block: 4px;
-    --uc-contextmenu-menuitem-padding-inline: 6px;
+    --uc-arrowpanel-menuicon-margin-inline: 8px;
     --arrowpanel-menuitem-padding-block: 4px !important;
     --arrowpanel-menuitem-padding-inline: 6px !important;
+    --uc-contextmenu-menuitem-padding-block: 4px;
+    --uc-contextmenu-menuitem-padding-inline: 6px;
+    --uc-contextmenu-menuicon-margin-inline: 6px;
+
+    --uc-panel-zoom-button-padding: 4px;
+    --uc-panel-zoom-button-inline-padding: 6px;
+
+    --uc-autocomplete-panel-menuicon-padding-inline: 8px;
+
+    --uc-permission-item-padding-inline: 8px;
   }
 
   /* app menu */
