@@ -8,8 +8,10 @@
 // @compatibility  Firefox 80
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader.uc.js
-// @version        0.0.5r1
+// @shutdown       window.UserCSSLoader.unload(true);
+// @version        0.0.5r2
 // @charset        UTF-8
+// @note           0.0.5r2 修复多个窗口的时候关闭一个窗口 CSS 就失效，以及有一个菜单没有翻译的问题
 // @note           0.0.5r1 修复退出编辑器后不能自动更新
 // @note           0.0.5   FileUtils 改为 IOUtils，不兼容Fireofox 80以下，把主菜单项目改成工具按钮了。
 // ==/UserScript==
@@ -270,7 +272,7 @@ about:config
         });
         [{
           type: "html:h2",
-          id: "ucl-change-style-popup-header",
+          'data-l10n-id': "ucl-change-style-popup-header",
           class: "subview-subheader",
           content: "Change style type",
           style: "text-align: center;"
@@ -392,13 +394,20 @@ about:config
         item.setAttribute("checked", !entry.disabled);
       });
     },
-    uninit() {
-      this.CSSEntries.forEach(entry => {
-        entry.unregister();
-      });
+    uninit(force = false) {
+      let windows = Services.wm.getEnumerator(null), i = 0;
+      while (windows.hasMoreElements()) {
+        let win = windows.getNext();
+        if (win.UserCSSLoader) i++;
+      }
+      if (i < 1 || force) {
+        this.CSSEntries.forEach(entry => {
+          entry.unregister();
+        });
+      }
       window.removeEventListener("unload", this);
     },
-    destroy() {
+    destroy(force = false) {
       if (doc.getElementById("ucl-change-style-popup")) {
         doc.getElementById("ucl-change-style-popup").parentNode.removeChild(doc.getElementById("ucl-change-style-popup"));
       }
@@ -406,7 +415,7 @@ about:config
         CustomizableUI.removeWidget(this.BTN_ID);
       else
         this.MENU?.parentNode?.removeChild(this.MENU);
-      this.uninit();
+      this.uninit(force);
       delete this;
     },
     handleEvent(event) {
