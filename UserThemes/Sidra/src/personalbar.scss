@@ -81,3 +81,70 @@ toolbarbutton.bookmark-item:not(.subviewbutton) {
   height: calc(2 * var(--bookmark-block-padding) + 16px) !important;
   padding: var(--bookmark-block-padding) !important;
 }
+@include Option("userChromeJS.Sidra.PlacesToolbar.Align.Center") {
+  #PlacesToolbarItems:has(+ #PlacesChevron[collapsed="true"]) {
+    -moz-box-pack: center;
+    justify-content: center;
+  }
+}
+@include Option("userChromeJS.Sidra.PlacesToolbar.IconsOnly.Enabled") {
+  #PersonalToolbar toolbarbutton.bookmark-item:not(.subviewbutton, [id]) {
+    margin-inline: 2px !important;
+    padding: 0 !important;
+  }
+
+  #PlacesToolbar toolbarbutton.bookmark-item[id] {
+    padding-inline: var(--toolbarbutton-inner-padding) !important;
+  }
+
+  #PersonalToolbar
+    toolbarbutton.bookmark-item:not(.subviewbutton, [id])
+    .toolbarbutton-icon {
+    margin: 0 !important;
+    width: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+    height: calc(2 * var(--toolbarbutton-inner-padding) + 16px) !important;
+    padding: var(--toolbarbutton-inner-padding) !important;
+    border-radius: var(--toolbarbutton-border-radius) !important;
+  }
+
+  #PersonalToolbar
+    toolbarbutton.bookmark-item:not(.subviewbutton, [id])
+    .toolbarbutton-text {
+    display: none !important;
+  }
+
+  /* display the background on the icon, not the button, similar to regular
+toolbar widgets. allows us to use padding to space the buttons instead of
+margins, so when we drag a bookmark between buttons, it doesn't get dropped
+at the end of the bookmarks */
+  :root:not([fluent-reveal-hover], [fluent-reveal-click])
+    #PersonalToolbar
+    toolbarbutton.bookmark-item:not(.subviewbutton, [id]) {
+    background: none !important;
+    margin-inline: 0 !important;
+    padding: 0 2px !important;
+  }
+
+  :root:not([fluent-reveal-hover], [fluent-reveal-click])
+    #PlacesToolbarDropIndicator {
+    margin-inline-start: -18px !important;
+  }
+
+  :root:not([fluent-reveal-hover], [fluent-reveal-click])
+    #PersonalToolbar
+    toolbarbutton.bookmark-item:not(.subviewbutton, [id]):is(
+      :hover,
+      :-moz-drag-over,
+      :focus-visible
+    )
+    .toolbarbutton-icon {
+    background-color: var(--button-solid-hover-background) !important;
+  }
+
+  :root:not([fluent-reveal-hover], [fluent-reveal-click])
+    #PersonalToolbar
+    toolbarbutton.bookmark-item:not(.subviewbutton, [id]):hover:active
+    .toolbarbutton-icon {
+    background-color: var(--button-solid-active-background) !important;
+  }
+}

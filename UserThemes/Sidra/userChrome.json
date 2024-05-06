@@ -236,6 +236,14 @@
             "group": "urlbar"
         },
         {
+            "pref": "userChromeJS.Sidra.PlacesToolbar.Align.Center",
+            "group": "places-toolbar"
+        },
+        {
+            "pref": "userChromeJS.Sidra.PlacesToolbar.IconsOnly.Enabled",
+            "group": "places-toolbar"
+        },
+        {
             "pref": "userChromeJS.Sidra.Icons.Compact",
             "group": "icons"
         },
@@ -403,6 +411,8 @@
             "userChromeJS.Sidra.Urlbar.Popup.Compact": "缩小地址栏弹出结果的间距",
             "userChromeJS.Sidra.Urlbar.PageActionButtons.HoverToShow.Enabled": "鼠标经过才显示地址栏快捷工具",
             "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled": "合并刷新按钮到地址栏内",
+            "userChromeJS.Sidra.PlacesToolbar.Align.Center": "书签工具栏居中显示",
+            "userChromeJS.Sidra.PlacesToolbar.IconsOnly.Enabled": "书签工具栏仅显示图标",
             "userChromeJS.Sidra.Sidebar.Compact": "侧边栏样式总开关",
             "userChromeJS.Sidra.Sidebar.AutoHide.Enabled": "自动隐藏原侧边栏",
             "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled": "自动隐藏 Modoki 侧边栏",
