@@ -95,6 +95,18 @@
 			"isFunction": false,
 			"action": "redirect",
 			"to": "https://weibo.com/"
+		},
+		{
+			"enable": true,
+			"name": "蓝奏云失效链接处理",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https?:\\/\\/www\\.lanzou(s|x)\\.com\\/(.*)",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "https://www.lanzouv.com/$2"
 		}
 	],
 	"sendHeader": [
@@ -688,20 +700,6 @@
 		},
 		{
 			"enable": true,
-			"name": "腾讯文档 UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "domain",
-			"pattern": "docs.qq.com",
-			"exclude": "",
-			"group": "用户代理",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-			}
-		},
-		{
-			"enable": true,
 			"name": "土豆视频播放页改UA",
 			"ruleType": "modifySendHeader",
 			"matchType": "prefix",
@@ -711,34 +709,6 @@
 			"action": {
 				"name": "user-agent",
 				"value": "Mozilla/5.0 (Linux; U; Android 4.0.4) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
-			},
-			"group": "用户代理"
-		},
-		{
-			"enable": true,
-			"name": "搜狐视频 UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "regexp",
-			"pattern": "^https?://my\\.tv\\.sohu\\.com/.+?\\.shtml",
-			"exclude": "",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (Linux; U; Android 4.0.4; GT-I9300 Build/IMM76D) AppleWebKit/534.30 Version/4.0 Mobile Safari/534.30"
-			},
-			"group": "用户代理"
-		},
-		{
-			"enable": true,
-			"name": "有道笔记 UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "regexp",
-			"pattern": "^https?://note\\.youdao\\.com/",
-			"exclude": "",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36 Windows"
 			},
 			"group": "用户代理"
 		},
@@ -757,38 +727,10 @@
 			"group": "用户代理"
 		},
 		{
-			"enable": true,
-			"name": "CCAV UA",
+			"enable": false,
+			"name": "强制使用 Chrome 123 UA",
 			"ruleType": "modifySendHeader",
-			"matchType": "domain",
-			"pattern": "tv.cctv.com",
-			"exclude": "",
-			"group": "用户代理",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-			}
-		},
-		{
-			"enable": true,
-			"name": "CAPCUT_UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "regexp",
-			"pattern": "https?:\\/\\/.*\\.capcut\\.cn\\/.*",
-			"exclude": "",
-			"group": "用户代理",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-			}
-		},
-		{
-			"enable": true,
-			"name": "西瓜视频 UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "domain",
+			"matchType": "all",
 			"pattern": "www.ixigua.com",
 			"exclude": "",
 			"group": "用户代理",
