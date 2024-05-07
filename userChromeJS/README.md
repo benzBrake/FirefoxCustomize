@@ -12,31 +12,42 @@
 
 自从 2022年12月1日开始基于 [alice0775](https://github.com/alice0775/userChrome.js) 的 UC 环境来修脚本。
 
-或者你可以安装我打包好的 [UC 环境](Loader)
+Since December 1, 2022, I have been modifying scripts based on [alice0775's](https://github.com/alice0775/userChrome.js) userChrome.js Loader.
 
-我的当前 Firefox 版本 Firefox 115 ESR
+你可以安装我打包好的 [UC 环境](Loader)，从2024年5月7日起，我这里打包的 UC环境有限度的兼容[@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts)和[@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js)这两个仓库的脚本，并且也能安装适配过的传统扩展。
 
-最低支持 101 版本就会放 101 目录里
+You can install my packaged [userChrome.js Loader](Loader). Starting from May 7, 2024, the userChrome.js Loader here has limited compatibility with scripts from [@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts) and [@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js) repositories, and can also install adapted legacy extensions.
+
+我的当前 Firefox 版本 Firefox 125.0.3。
+
+My current Firefox version is Firefox 125.0.3.
+
+最低支持 Firefox 101 的脚本就会放 101 目录里，不过版本可能不太准确。
+
+Scripts that support Firefox 101 at minimum will be placed in the 101 directory, although the version may not be accurate.
 
 ### 标志
 
 ⛔ 为不可用状态
 
-🅰️ 仅可以在 [alice0775](https://github.com/alice0775/userChrome.js) 的 userChromeJS 环境中使用。
+🅰️ 仅可以在 [alice0775](https://github.com/alice0775/userChrome.js) 的 userChromeJS 环境中使用。Can only be used in [alice0775's](https://github.com/alice0775/userChrome.js) userChrome.js Loader.
 
-❌ 仅可以在 [xiaoxiaoflood](https://github.com/xiaoxiaoflood/firefox-scripts/) 的 userChromeJS 环境中使用。
+❌ 仅可以在 [xiaoxiaoflood](https://github.com/xiaoxiaoflood/firefox-scripts/) 的 userChromeJS 环境中使用。Can only be used in [xiaoxiaoflood's](https://github.com/xiaoxiaoflood/firefox-scripts/) userChrome.js Loader.
 
-Ⓜ️ 仅可以在 [MrOtherGuy](https://github.com/MrOtherGuy/fx-autoconfig) 的 userChromeJS 环境中使用。
+Ⓜ️ 仅可以在 [MrOtherGuy](https://github.com/MrOtherGuy/fx-autoconfig) 的 userChromeJS 环境中使用。Can only be used in [MrOtherGuy](https://github.com/MrOtherGuy/fx-autoconfig)'s userChromeJS environment.
 
 ### 脚本列表
 
-PS：源链接不代表真正出处，只是说明原版从哪下载的，没有的就是我写的或者忘记了
+PS：源链接不代表真正出处，只是说明原版从哪下载的，没有的就是我写的或者忘记了。
+
+P.S.: The source links do not necessarily represent the true origin, they simply indicate where the original version was downloaded from. If no source is provided, it means that either I wrote it or forgot its origin.
 
 V：代表收集、修改时或者测试时的我所使用的最低Firefox版本，并不代表脚本的最低兼容脚本(兼容更低版本的脚本在版本号文件夹里)
 
+V: Represents the minimum Firefox version I used when collecting, modifying, or testing, and does not necessarily represent the minimum compatible version of the script. Scripts compatible with lower versions are placed in version-specific folders.
+
 | ℹ️    | V    | 脚本                                                         | 说明                                                         | 源                                                           |
 | ---- | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 🅰️    | 68   | [000-xiaoxiaoflood.uc.js](000-xiaoxiaoflood.uc.js)           | alice0775 的 userChrome.js 环境运行 xiaoxiaoflood 的脚本需要这个依赖 |                                                              |
 |      | 57   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
 |      | 90   | [AutoHideTabsToolbar](AutoHideTabsToolbar.uc.js)             | 只有一个标签时隐藏标签栏                                     | [📃](https://forum.mozilla-russia.org/viewtopic.php?id=76642) |
@@ -122,21 +133,9 @@ V：代表收集、修改时或者测试时的我所使用的最低Firefox版本
 
 ## 脚本使用
 
-### CopyCat.uc.js
-
-重载菜单命令
-
-```javascript
-CopyCat.rebuild(CopyCatUtils.config.buildPanel ? getViewCache(document).querySelector('#CopyCat-View') : document.querySelector("#CopyCat-Popup"));
-
-function getViewCache(aDoc) {
-    return (document.getElementById('appMenu-viewCache', aDoc) && document.getElementById('appMenu-viewCache', aDoc).content) || document.getElementById('appMenu-multiView', aDoc);
-}
-```
-
-
-
 ### sidebarAttrubesDetector.uc.js
+
+Firefox 支持 has 选择器后用不上了，直接使用 CSS 即可：https://github.com/benzBrake/FirefoxCustomize/blob/master/UserStyles/hide_tabstoolbar_when_tst_shown_fx122.css
 
 （别吐槽英文了，瞌睡打的英文）
 
