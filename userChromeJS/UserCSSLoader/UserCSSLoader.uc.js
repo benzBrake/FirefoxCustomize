@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.5r2
+// @version        0.0.5r3
 // @charset        UTF-8
+// @note           0.0.5r3 修正翻译问题
 // @note           0.0.5r2 修复多个窗口的时候关闭一个窗口 CSS 就失效，以及有一个菜单没有翻译的问题
 // @note           0.0.5r1 修复退出编辑器后不能自动更新
 // @note           0.0.5   FileUtils 改为 IOUtils，不兼容Fireofox 80以下，把主菜单项目改成工具按钮了。
@@ -116,8 +117,15 @@ about:config
     async init() {
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
-        this.MESSAGES = await this.l10n.formatValues(["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled"]);
-
+        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled"]
+        messages = await this.l10n.formatValues(keys);
+        this.MESSAGES = (() => {
+          let obj = {};
+          for (let index of messages.keys()) {
+            obj[keys[index]] = messages[index];
+          }
+          return obj;
+        })();
       } else {
         this.l10n = {
           formatValue: async function () {
@@ -130,15 +138,30 @@ about:config
         this.MESSAGES = {
           "ucl-style-type-not-exists": "Style type not exists",
           "ucl-create-style-prompt-title": "Creating %s style",
+          "ucl-create-style-prompt-text": "What would you like to name your %s style?",
           "ucl-file-not-exists": "File %s not exists",
           "ucl-choose-style-editor": "Choose style editor",
           "ucl-cannot-edit-style-notice": "Cannot edit style %s",
           "user-css-loader": "User CSS Loader",
           "ucl-delete-style": "Delete style",
           "ucl-delete-style-prompt-message": "Are you sure to delete style %s?",
-          "ucl-enabled ": "Enabled",
+          "ucl-enabled": "Enabled",
           "ucl-disabled": "Disabled"
         }
+      }
+
+      this.MESSAGES.format = function (str_key, ...args) {
+        let str;
+        if (str_key in this) {
+          str = this[str_key];
+          for (let i = 0; i < args.length; i++) {
+            if (!str.includes('%s')) break;
+            str = str.replace(/%(s|d)/, args[i]);
+          }
+        } else {
+          str = ''
+        }
+        return str;
       }
 
       if (!sss.sheetRegistered(this.STYLE.url, this.STYLE.type)) {
@@ -213,16 +236,16 @@ about:config
         popup_.removeChild(popup_.firstChild);
       }
 
-      const MESSAGES = this;
+      const { MESSAGES } = this;
 
       [{
-        label: !this.prefs.getBoolPref("allDisabled", false) ? MESSAGES[8] : MESSAGES[9],
+        label: !this.prefs.getBoolPref("allDisabled", false) ? MESSAGES.format('ucl-enabled') : MESSAGES.format('ucl-disabled'),
         class: "menuitem menuitem-iconic",
         type: "checkbox",
         oncommand: "UserCSSLoader.allDisabled = !UserCSSLoader.allDisabled;",
         onshowing: function () {
           const { MESSAGES } = UserCSSLoader;
-          this.setAttribute("label", !UserCSSLoader.allDisabled ? MESSAGES[8] : MESSAGES[9]);
+          this.setAttribute("label", !UserCSSLoader.allDisabled ? MESSAGES.format('ucl-enabled') : MESSAGES.format('ucl-disabled'));
           this.setAttribute("checked", !UserCSSLoader.allDisabled);
         }
       }, {}, {
@@ -491,11 +514,11 @@ about:config
     async createStyle(type) {
       const { MESSAGES } = this;
       if (STYLES_NAME_MAP[type] === undefined) {
-        console.error(MESSAGES[0].replace("%s", type));
+        console.error(MESSAGES.format('ucl-style-type-not-exists', type));
         return;
       }
       let result = { value: new Date().getTime() };
-      let aTitle = MESSAGES[1].replace("%s", STYLES_NAME_MAP[type]['name']), aDetail = MESSAGES[2].replace("%s", STYLES_NAME_MAP[type]['name']);
+      let aTitle = MESSAGES.format('ucl-create-style-prompt-title', STYLES_NAME_MAP[type]['name']), aDetail = MESSAGES.format('ucl-create-style-prompt-text', STYLES_NAME_MAP[type]['name']);
       if (Services.prompt.prompt(
         window, aTitle, aDetail, result, null, {}
       )) {
@@ -518,7 +541,7 @@ about:config
       const path = this.FOLDER.path + DIRECTORY_SEPARATOR + fileName;
       return new Promise(async (resolve, reject) => {
         if (await IOUtils.exists(path)) {
-          reject(UserCSSLoader.MESSAGES[2].replace("%s", path));
+          reject(UserCSSLoader.MESSAGES.format('ucl-file-not-exists', path));
         }
         try {
           await IOUtils.writeUTF8(path, "");
@@ -558,11 +581,12 @@ about:config
       if (!editor || !editor.exists()) {
         editor = await new Promise(async resolve => {
           const { MESSAGES } = UserCSSLoader;
+          let fpTitle = MESSAGES.format('ucl-choose-style-editor');
           let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
           try {
-            fp.init(window.browsingContext, MESSAGES[3], Ci.nsIFilePicker.modeOpen);
+            fp.init(window.browsingContext, fpTitle, Ci.nsIFilePicker.modeOpen);
           } catch (e) {
-            fp.init(window, MESSAGES[3], Ci.nsIFilePicker.modeOpen);
+            fp.init(window, fpTitle, Ci.nsIFilePicker.modeOpen);
           }
           fp.appendFilters(Ci.nsIFilePicker.filterApps);
           fp.appendFilters(Ci.nsIFilePicker.filterAll);
@@ -590,7 +614,7 @@ about:config
           });
         } catch (e) {
           console.error(e);
-          this.alert(this.MESSAGES[4], this.MESSAGES[5], function () {
+          this.alert(this.MESSAGES.format('ucl-cannot-edit-style-notice'), this.MESSAGES.format('user-css-loader'), function () {
             this.openFolder();
           });
         }
@@ -629,7 +653,7 @@ about:config
     },
     changeStyleType(event, type) {
       if (STYLES_NAME_MAP[type] === undefined) {
-        console.error(this.MESSAGES[1].replace("%s", type));
+        console.error(this.MESSAGES.format('ucl-style-type-not-exists', type));
         return;
       }
       let { anchorNode } = event.target.closest("menupopup");
@@ -660,7 +684,7 @@ about:config
     },
     async deleteStyle(fullName) {
       const { MESSAGES } = this;
-      let aTitle = MESSAGES[6], aMsg = MESSAGES[7].replace("%s", fullName);
+      let aTitle = MESSAGES.format('ucl-delete-style'), aMsg = MESSAGES.format('ucl-delete-style-prompt-message', fullName);
       if (Services.prompt.confirm(window, aTitle, aMsg, false)) {
         let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
         if (entry instanceof CSSEntry) {
@@ -681,7 +705,7 @@ about:config
       } : null;
       var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
       alertsService.showAlertNotification(
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || this.MESSAGES[5],
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || this.MESSAGES.format('user-css-loader'),
         aMsg + "", !!callback, "", callback);
     },
   };
