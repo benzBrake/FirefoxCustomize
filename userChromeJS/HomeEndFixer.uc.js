@@ -10,21 +10,14 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
-    let _loadURI = (url, params) => {
-        if ("fixupAndLoadURIString" in gBrowser) {
-            gBrowser.fixupAndLoadURIString(url, params)
-        } else {
-            gBrowser.loadURI(url, params);
-        }
-    }
-    const openInCurrent = (url) => {
-        try {
-            Services.io.newURI(url, null, null);
-        } catch (e) {
-            console.log("URL 有问题: %s".replace("%s", url));
-            return;
-        }
-        _loadURI(url, { triggeringPrincipal: gBrowser.contentPrincipal });
+    function openInCurrent(url) {
+        openTrustedLinkIn(url, 'current', {
+            allowPopups: true,
+            inBackground: false,
+            allowInheritPrincipal: true,
+            private: PrivateBrowsingUtils.isWindowPrivate(window),
+            userContextId: gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId")
+        });
     }
     window.addEventListener('keypress', function (event) {
         if (event.shiftKey || event.ctrlKey) return;
