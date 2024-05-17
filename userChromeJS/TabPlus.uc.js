@@ -330,7 +330,8 @@
             eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString()
                 .replace(' && lazy.PlacesUtils.nodeIsBookmark(aNode)', '')
                 .replace(' && PlacesUtils.nodeIsBookmark(aNode)', '')
-                .replace('getBrowserWindow(window)', '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()'));
+                .replace('getBrowserWindow(window)', '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
+                .replace('lazy.', ''));
         },
         restore(win) {
             window || (window = win);
@@ -431,7 +432,7 @@
         },
         handleEvent(e) {
             e.preventDefault();
-            let where = whereToOpenLink(e, false, false);
+            let where = (BrowserUtils || window).whereToOpenLink(e, false, false);
             if (where == "current") {
                 where = cPref.get(this.PREF, false) ? "tabshifted" : "tab";
             }
