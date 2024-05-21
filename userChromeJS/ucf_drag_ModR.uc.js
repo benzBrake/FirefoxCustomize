@@ -350,7 +350,10 @@
             const { Cc, Ci, gBrowser } = win;;
             const { nsIFilePicker } = Ci;
             var fp = Cc['@mozilla.org/filepicker;1'].createInstance(nsIFilePicker);
-            fp.init(win, "Select a File", Ci.nsIFilePicker.modeSave);
+            // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+            fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                ? window.browsingContext
+                : window, "Select a File", Ci.nsIFilePicker.modeSave);
             fp.appendFilters(nsIFilePicker.filterText);
             fp.defaultString = gBrowser.contentTitle.replace(/\s-\s.*/i, "").replace(/_[^\[\]【】]+$/, "") + '.txt';
             switch (await new Promise(resolve => { fp.open(rv => { resolve(rv); }); })) {

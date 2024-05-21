@@ -730,12 +730,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             if (!editor || !editor.exists()) {
                 alert(lprintf('please-set-editor-path'));
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-
-                try {
-                    fp.init(window.browsingContext, lprintf('set global editor'), fp.modeOpen);
-                } catch (e) {
-                    fp.init(window, lprintf('set global editor'), fp.modeOpen);
-                }
+                // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                    ? window.browsingContext
+                    : window, lprintf('set global editor'), fp.modeOpen);
 
                 fp.appendFilters(Ci.nsIFilePicker.filterApps);
 

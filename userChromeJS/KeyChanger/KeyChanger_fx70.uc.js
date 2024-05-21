@@ -480,7 +480,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                     } else {
                         function setPath() {
                             var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                            fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
+                            // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                            fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                                ? window.browsingContext
+                                : window, "设置全局脚本编辑器", fp.modeOpen);
                             fp.appendFilter("执行文件", "*.exe");
 
                             if (typeof fp.show !== 'undefined') {

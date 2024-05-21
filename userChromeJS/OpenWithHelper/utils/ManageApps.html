@@ -540,11 +540,17 @@
                 const fp = Cc["@mozilla.org/filepicker;1"].createInstance(
                   Ci.nsIFilePicker
                 );
-                try {
-                  fp.init(window.browsingContext, title, mode);
-                } catch (e) {
-                  fp.init(window, title, mode);
-                }
+                // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                fp.init(
+                  !(
+                    "inIsolatedMozBrowser" in
+                    window.browsingContext.originAttributes
+                  )
+                    ? window.browsingContext
+                    : window,
+                  title,
+                  mode
+                );
                 fp.appendFilters(Ci.nsIFilePicker.filterImages);
                 fp.open(async (result) => {
                   if (result === Ci.nsIFilePicker.returnOK) {
@@ -595,19 +601,17 @@
               let fp = Cc["@mozilla.org/filepicker;1"].createInstance(
                 Ci.nsIFilePicker
               );
-              try {
-                fp.init(
-                  window.browsingContext,
-                  gApplicationList.TEXT_SET_APP_PATH,
-                  Ci.nsIFilePicker.modeOpen
-                );
-              } catch (e) {
-                fp.init(
-                  window,
-                  gApplicationList.TEXT_SET_APP_PATH,
-                  Ci.nsIFilePicker.modeOpen
-                );
-              }
+              // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+              fp.init(
+                !(
+                  "inIsolatedMozBrowser" in
+                  window.browsingContext.originAttributes
+                )
+                  ? window.browsingContext
+                  : window,
+                gApplicationList.TEXT_SET_APP_PATH,
+                Ci.nsIFilePicker.modeOpen
+              );
               fp.appendFilters(Ci.nsIFilePicker.filterApps); // 只显示应用程序（可执行文件）
 
               fp.open((res) => {

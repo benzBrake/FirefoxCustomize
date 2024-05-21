@@ -1799,11 +1799,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                 if (!editor || !editor.exists()) {
                     alert($L('please set editor path'));
                     var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    try {
-                        fp.init(window.browsingContext, $L('set global editor'), fp.modeOpen);
-                    } catch (e) {
-                        fp.init(window, $L('set global editor'), fp.modeOpen);
-                    }
+                    // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                    fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                        ? window.browsingContext
+                        : window, $L('set global editor'), fp.modeOpen);
                     fp.appendFilters(Ci.nsIFilePicker.filterApps);
 
                     if (typeof fp.show !== 'undefined') {

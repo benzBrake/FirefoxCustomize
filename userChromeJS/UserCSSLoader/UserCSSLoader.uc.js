@@ -583,11 +583,10 @@ about:config
           const { MESSAGES } = UserCSSLoader;
           let fpTitle = MESSAGES.format('ucl-choose-style-editor');
           let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-          try {
-            fp.init(window.browsingContext, fpTitle, Ci.nsIFilePicker.modeOpen);
-          } catch (e) {
-            fp.init(window, fpTitle, Ci.nsIFilePicker.modeOpen);
-          }
+          // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+          fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+            ? window.browsingContext
+            : window, fpTitle, Ci.nsIFilePicker.modeOpen);
           fp.appendFilters(Ci.nsIFilePicker.filterApps);
           fp.appendFilters(Ci.nsIFilePicker.filterAll);
           fp.open(async (result) => {

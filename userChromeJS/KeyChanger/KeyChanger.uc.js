@@ -7,7 +7,8 @@
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
-// @version        2023.07.27
+// @version        2024.04.13
+// @note           2024.04.13 修复 openCommand 几个问题
 // @note           2023.07.27 修复 openCommand 不遵循容器设定
 // @note           2023.07.16 优化 openCommand 函数
 // @note           2023.06.17 修复 gBrowser.loadURI 第一个参数类型修改为 URI, Bug 1815439 - Remove useless loadURI wrapper from browser.js
@@ -20,60 +21,8 @@
 // @note           2018.1.25.2 Firefox59+ 修复
 // ==/UserScript==
 
-location.href.startsWith("chrome://browser/content/browser.x") && (function () {
+location.href.startsWith("chrome://browser/content/browser.x") && (function (INTERNAL_MAP, getURLSpecFromFile, loadText, _openTrustedLinkIn) {
     var useScraptchpad = true;  // If the editor does not exist, use the code snippet shorthand, otherwise set the editor path
-    //let {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
-    const INTERNAL_MAP = {
-        tab: {
-            close: {
-                current: function () {
-                    gBrowser.removeTab(gBrowser.selectedTab);
-                },
-                all: function () {
-                    gBrowser.removeTabs(gBrowser.tabs);
-                },
-                other: function () {
-                    gBrowser.removeAllTabsBut(gBrowser.selectedTab);
-                }
-            },
-            pin: {
-                current: function () {
-                    gBrowser.pinTab(gBrowser.selectedTab);
-                },
-                all: function (event) {
-                    gBrowser.tabs.forEach(t => gBrowser.pinTab(t));
-                },
-            },
-            unpin: {
-                current: function () {
-                    gBrowser.unpinTab(gBrowser.selectedTab);
-                },
-                all: function (event) {
-                    gBrowser.tabs.forEach(t => gBrowser.unpinTab(t));
-                },
-            },
-            "toggle-pin": {
-                current: function () {
-                    if (gBrowser.selectedTab.pinned)
-                        gBrowser.unpinTab(gBrowser.selectedTab);
-                    else
-                        gBrowser.pinTab(gBrowser.selectedTab);
-                },
-                all: function (event) {
-                },
-            },
-            prev: function () {
-                gBrowser.tabContainer.advanceSelectedTab(-1, true);
-            },
-            next: function () {
-                gBrowser.tabContainer.advanceSelectedTab(1, true);
-            },
-            duplicate: function () {
-                duplicateTabIn(gBrowser.selectedTab, 'tab');
-            }
-        }
-    }
 
     window.KeyChanger = {
         get appVersion() {
@@ -305,60 +254,53 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             }
             return cmd;
         },
-        openCommand: function (url, where, postData) {
-            var uri;
-            try {
-                uri = Services.io.newURI(url, null, null);
-            } catch (e) {
-                return this.log("URL 有问题: %s".replace("%s", url));
+        openCommand: function (url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
+            const isJavaScriptURL = url.startsWith("javascript:");
+            const isWebURL = /^(f|ht)tps?:/.test(url);
+            const where = aWhere || 'tab';
+
+
+            // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
+            const allowThirdPartyFixup = { ...aAllowThirdPartyFixup };
+
+            if (!allowThirdPartyFixup.userContextId && isWebURL) {
+                allowThirdPartyFixup.userContextId = gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") || null;
             }
-            if (uri.scheme === "javascript") {
-                this.loadURI(uri);
-            } else {
-                this.openUILinkIn(uri.spec, where || 'tab', gBrowser.contentPrincipal.originAttributes.userContextId ? {
-                    userContextId: gBrowser.contentPrincipal.originAttributes.userContextId
-                } : null, postData);
+
+            if (aPostData) {
+                allowThirdPartyFixup.postData = aPostData;
             }
-        },
-        loadURI: function (url) {
-            var loadURI;
-            if ("loadURI" in window) {
-                loadURI = (url) => {
-                    gBrowser.loadURI(url instanceof Ci.nsIURI ? url.spec : url, { triggeringPrincipal: gBrowser.contentPrincipal });
-                };
-            } else {
-                loadURI = (url) => {
-                    try {
-                        gBrowser.loadURI(url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null), { triggeringPrincipal: gBrowser.contentPrincipal });
-                    } catch (ex) {
-                        console.error(ex);
-                    }
-                };
+            if (aReferrerInfo) {
+                allowThirdPartyFixup.referrerInfo = aReferrerInfo;
             }
-            this.loadURI = loadURI; // 将 loadURI 赋值给 this.loadURI
-            loadURI(url); // 调用一次
-        },
-        openUILinkIn: function (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) {
-            const createFixUp = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
-                aAllowThirdPartyFixup = aAllowThirdPartyFixup instanceof Object ? aAllowThirdPartyFixup : {};
-                aAllowThirdPartyFixup.triggeringPrincipal = aAllowThirdPartyFixup.triggeringPrincipal || (where === 'current' ? gBrowser.selectedBrowser.contentPrincipal : (
-                    /^(f|ht)tps?:/.test(url) ?
-                        Services.scriptSecurityManager.createNullPrincipal({}) :
-                        Services.scriptSecurityManager.getSystemPrincipal()
-                ));
-                aAllowThirdPartyFixup.postData = aPostData || null;
-                aAllowThirdPartyFixup.referrerInfo = aReferrerInfo || null;
-                return aAllowThirdPartyFixup;
-            }
-            if ("openTrustedLinkIn" in window) {
-                var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) => {
-                    openTrustedLinkIn(url, where, createFixUp(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo));
+
+            // Set triggeringPrincipal based on 'where' and URL scheme
+            allowThirdPartyFixup.triggeringPrincipal = (() => {
+                if (where === 'current' && !isJavaScriptURL) {
+                    return gBrowser.selectedBrowser.contentPrincipal;
                 }
+
+                const userContextId = isWebURL ? allowThirdPartyFixup.userContextId : null;
+                return isWebURL ?
+                    Services.scriptSecurityManager.createNullPrincipal({ userContextId }) :
+                    Services.scriptSecurityManager.getSystemPrincipal();
+            })();
+
+            if (isJavaScriptURL) {
+                _openTrustedLinkIn(url, 'current', {
+                    allowPopups: true,
+                    inBackground: allowThirdPartyFixup.inBackground || false,
+                    allowInheritPrincipal: true,
+                    private: PrivateBrowsingUtils.isWindowPrivate(window),
+                    userContextId: allowThirdPartyFixup.userContextId,
+                });
+            } else if (where) {
+                _openTrustedLinkIn(url, where, allowThirdPartyFixup);
             } else {
-                var _openURL = (url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo) =>
-                    openUILinkIn(url, where, false, aPostData || null, aReferrerInfo);
+                openUILink(url, {}, {
+                    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+                });
             }
-            (this.openUILinkIn = _openURL)(url, where, aAllowThirdPartyFixup, aPostData, aReferrerInfo);
         },
         edit: function (aFile, aLineNumber) {
             if (KeyChanger.isBuilding) return;
@@ -376,7 +318,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
                 } else {
                     function setPath() {
                         var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                        fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
+                        // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                        fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                            ? window.browsingContext
+                            : window, "设置全局脚本编辑器", fp.modeOpen);
                         fp.appendFilter("执行文件", "*.exe");
 
                         if (typeof fp.show !== 'undefined') {
@@ -400,7 +345,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             }
 
             var aURL = "";
-            aURL = this.getURLSpecFromFile(aFile);
+            aURL = getURLSpecFromFile(aFile);
 
             var aDocument = null;
             var aCallBack = null;
@@ -439,15 +384,6 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
             } catch (e) {
                 this.log(e);
             }
-        },
-        getURLSpecFromFile(aFile) {
-            var aURL;
-            if (this.appVersion < 92) {
-                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);
-            } else {
-                aURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(aFile);
-            }
-            return aURL;
         },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
@@ -543,4 +479,86 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function () {
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
-})();
+})({
+    tab: {
+        close: {
+            current: function () {
+                gBrowser.removeTab(gBrowser.selectedTab);
+            },
+            all: function () {
+                gBrowser.removeTabs(gBrowser.tabs);
+            },
+            other: function () {
+                gBrowser.removeAllTabsBut(gBrowser.selectedTab);
+            }
+        },
+        pin: {
+            current: function () {
+                gBrowser.pinTab(gBrowser.selectedTab);
+            },
+            all: function (event) {
+                gBrowser.tabs.forEach(t => gBrowser.pinTab(t));
+            },
+        },
+        unpin: {
+            current: function () {
+                gBrowser.unpinTab(gBrowser.selectedTab);
+            },
+            all: function (event) {
+                gBrowser.tabs.forEach(t => gBrowser.unpinTab(t));
+            },
+        },
+        "toggle-pin": {
+            current: function () {
+                if (gBrowser.selectedTab.pinned)
+                    gBrowser.unpinTab(gBrowser.selectedTab);
+                else
+                    gBrowser.pinTab(gBrowser.selectedTab);
+            },
+            all: function (event) {
+            },
+        },
+        prev: function () {
+            gBrowser.tabContainer.advanceSelectedTab(-1, true);
+        },
+        next: function () {
+            gBrowser.tabContainer.advanceSelectedTab(1, true);
+        },
+        duplicate: function () {
+            duplicateTabIn(gBrowser.selectedTab, 'tab');
+        }
+    }
+}, (function () {
+    //  fix for 92+ port Bug 1723723 - Switch JS consumers from getURLSpecFromFile to either getURLSpecFromActualFile or getURLSpecFromDir
+    const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
+
+    const getFileURLSpec = "getURLSpecFromFile" in fph ?
+        f => fph.getURLSpecFromFile(f) :
+        f => fph.getURLSpecFromActualFile(f);
+
+    return getFileURLSpec;
+})(), function (path) {
+    var aFile = Cc["@mozilla.org/file/directory_service;1"]
+        .getService(Ci.nsIDirectoryService)
+        .QueryInterface(Ci.nsIProperties)
+        .get('UChrm', Ci.nsIFile);
+    aFile.initWithPath(path);
+    var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+    var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+    fstream.init(aFile, -1, 0, 0);
+    sstream.init(fstream);
+    var data = sstream.read(sstream.available());
+    try {
+        data = decodeURIComponent(escape(data));
+    } catch (e) { }
+    sstream.close();
+    fstream.close();
+    return data;
+}, (() => {
+    // Bug 1817443 - remove openUILinkIn entirely
+    return "openTrustedLinkIn" in window ? function (url, where, params) {
+        return openTrustedLinkIn(url, where, params);
+    } : function (url, where, params) {
+        return openUILinkIn(url, where, params);
+    }
+})());

@@ -84,11 +84,9 @@
             const nsIFilePicker = Components.interfaces.nsIFilePicker;
             const fp = Components.classes['@mozilla.org/filepicker;1'].createInstance(nsIFilePicker);
             // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
-            try {
-                fp.init(window.browsingContext, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
-            } catch (e) {
-                fp.init(window, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
-            }
+            fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                ? window.browsingContext
+                : window, '选择一个文件', Components.interfaces.nsIFilePicker.modeSave);
             const ext = title.split(".").pop();
             fp.displayDirectory = Services.dirsvc.get('UChrm', Ci.nsIFile);
             switch (ext) {
