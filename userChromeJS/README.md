@@ -2,6 +2,10 @@
 
 收集并涂改大佬的userChromeJS脚本。
 
+## Why stopped updating the script?
+
+I'm short of money, so I'm busy making money now.
+
 ## Want to support this project?
 
 **[[ Paypal Me \]](https://www.paypal.me/brakepay)** [ **[Buy me a coffee](https://www.buymeacoffee.com/buyryanacoffie)** ]
