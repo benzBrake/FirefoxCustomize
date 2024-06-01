@@ -3,17 +3,19 @@
 // @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20240417
+// @version         20240602
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20240602 Bug 1892965 - Rename SidebarUI and SidebarLauncher
 // @note            20240417 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed
 
 // ==/UserScript==
 (function () {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const SidebarController = globalThis.SidebarController || globalThis.SidebarUI;
 
     let config = {
         "urlbar paste and go add accesskey": { // 地址栏右键粘贴并前往增加 AccessKey
@@ -128,7 +130,7 @@
                         if (document.getElementById("sidebar-button")) {
                             document.getElementById("sidebar-button").click();
                         } else {
-                            SidebarUI.toggle("viewBookmarksSidebar");
+                            SidebarController.toggle("viewBookmarksSidebar");
                         }
                         Services.prefs.setBoolPref("sidebar.position_start", false);
                     }
@@ -223,13 +225,13 @@
                         e.stopPropagation();
                         switch (e.button) {
                             case 2:
-                                SidebarUI.toggle("viewHistorySidebar");
+                                SidebarController.toggle("viewHistorySidebar");
                                 break;
                             case 1:
                                 Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
                                 break;
                             case 0:
-                                SidebarUI.toggle("viewBookmarksSidebar")
+                                SidebarController.toggle("viewBookmarksSidebar")
                                 break;
                         }
                     }
