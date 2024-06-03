@@ -36,10 +36,10 @@ about:config
 
  **** 説明終わり ****/
 (async function (css) {
-  var { Services } = globalThis || ChromeUtils.import("resource://gre/modules/Services.jsm");
-  var { CustomizableUI } = globalThis || ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
+  const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
+  const CustomizableUI = globalThis.CustomizableUI || ChromeUtils.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
-  var sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+  const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
   const DIRECTORY_SEPARATOR = Services.appinfo.OS === "WINNT" ? "\\" : "/";
 
@@ -111,6 +111,10 @@ about:config
       if (!aFile.exists()) {
         aFile.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
       }
+      let resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
+      if (!resourceHandler.hasSubstitution("usercssloader")) {
+        resourceHandler.setSubstitution("usercssloader", Services.io.newFileURI(aFile));
+      }
       return this.FOLDER = aFile;
     },
 
@@ -133,7 +137,9 @@ about:config
           },
           formatMessages: async function () {
             return "";
-          }
+          },
+          translateRoots() { },
+          connectRoot() { }
         }
         this.MESSAGES = {
           "ucl-style-type-not-exists": "Style type not exists",
@@ -738,7 +744,7 @@ about:config
     this.fullName = aFile.leafName;
     this.name = aFile.leafName.replace(/(?:\.(?:user|as|ag||us))?\.css$/, '');
     this.path = aFile.path;
-    this.url = Services.io.newURI("chrome://userchrome/content/UserStyles/" + this.fullName)
+    this.url = Services.io.newURI("resource://usercssloader/" + this.fullName, null, null);
     this.lastModifiedTime = aFile.lastModifiedTime;
   }
 
