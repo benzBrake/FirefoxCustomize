@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.5r3
+// @version        0.0.5r4
 // @charset        UTF-8
+// @note           0.0.5r4 新增 Alt+R 重载所有样式
 // @note           0.0.5r3 修正翻译问题
 // @note           0.0.5r2 修复多个窗口的时候关闭一个窗口 CSS 就失效，以及有一个菜单没有翻译的问题
 // @note           0.0.5r1 修复退出编辑器后不能自动更新
@@ -200,6 +201,12 @@ about:config
             onBuild: doc => this.createButton(doc)
           });
         }
+
+        document.getElementById("mainKeyset").appendChild(
+          window.MozXULElement.parseXULToFragment(`
+          <key id="ucl-rebuild-key" oncommand="window.UserCSSLoader.rebuild();" key="R" modifiers="alt"/>
+          `),
+        );
 
         this.BTN = CustomizableUI.getWidget(this.BTN_ID).forWindow(window).node;
         this.BTN.addEventListener("mouseover", this, false);
@@ -440,6 +447,11 @@ about:config
       if (doc.getElementById("ucl-change-style-popup")) {
         doc.getElementById("ucl-change-style-popup").parentNode.removeChild(doc.getElementById("ucl-change-style-popup"));
       }
+
+      if (doc.getElementById('ucl-rebuild-key')) {
+        doc.getElementById('ucl-rebuild-key').parentNode.removeChild(doc.getElementById('ucl-rebuild-key'));
+      }
+
       if (this.BTN)
         CustomizableUI.removeWidget(this.BTN_ID);
       else
