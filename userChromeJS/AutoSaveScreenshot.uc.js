@@ -8,7 +8,8 @@
 // @compatibility  Firefox 127
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/AutoSaveScreenshot.uc.js
-// @version        0.0.2
+// @version        0.0.3
+// @note           0.0.3 修复总是在第一个窗口截图的问题
 // @note           0.0.2 修复在 127 版本的兼容问题
 // ==/UserScript==
 (async function () {
@@ -82,31 +83,18 @@
         },
         handleEvent(event) {
             if (event.button === 0) {
-                this.takeScreenshot(event.shiftKey);
+                this.takeScreenshot(event.target.ownerDocument, event.shiftKey);
             }
         },
-        async takeScreenshot(isFullPage) {
-            if (Services.prefs.getBoolPref("screenshots.browser.component.enabled", false)) {
-                Services.obs.notifyObservers(
-                    window,
-                    "menuitem-screenshot",
-                    "context_menu"
-                );
-            } else {
-                Services.obs.notifyObservers(
-                    null,
-                    "menuitem-screenshot-extension",
-                    "contextMenu"
-                );
-            }
-
-            let btn = await this.getScreenSortButton(isFullPage);
+        async takeScreenshot(doc, isFullPage) {
+            doc.getElementById('key_screenshot').doCommand();
+            let btn = await this.getScreenSortButton(doc, isFullPage);
             btn.click();
         },
-        async getScreenSortButton(isFullPage) {
+        async getScreenSortButton(doc, isFullPage) {
             let screenshotsPagePanel = await new Promise(resolve => {
                 let interval = setInterval(() => {
-                    let screenshotsPagePanel = document.getElementById("screenshotsPagePanel");
+                    let screenshotsPagePanel = doc.getElementById("screenshotsPagePanel");
                     if (screenshotsPagePanel) {
                         clearInterval(interval);
                         resolve(screenshotsPagePanel);
@@ -129,7 +117,7 @@
     function createElement(d, t, o = {}) {
         if (!d) return;
         let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
-        for(let [k, v] of Object.entries(o)) {
+        for (let [k, v] of Object.entries(o)) {
             e.setAttribute(k, v);
         }
         return e;
