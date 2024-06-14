@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name            miscMods.uc.js
-// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
+// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
 // @license         MIT License
 // @compatibility   Firefox 90
 // @version         20240602
@@ -8,6 +8,7 @@
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20240614 移除 Styloaix 按钮功能，继续修复 Bug 1880914
 // @note            20240602 Bug 1892965 - Rename SidebarUI and SidebarLauncher
 // @note            20240417 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed
 
@@ -145,27 +146,12 @@
                     let clickFn = function (event) {
                         if (event.button == 2 && event.target.localName == 'toolbarbutton') {
                             event.preventDefault();
-                            event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
+                            AddonMgr('addons://list/extension');
                         }
                     }
                     eom.addEventListener('click', clickFn);
                 };
                 eom.addEventListener('mouseover', callback);
-            }
-            if (config["right click styloaix button to open themes management"] && CustomizableUI.getPlacementOfWidget('styloaix-button', true)) {
-                let btn = CustomizableUI.getWidget('styloaix-button').forWindow(window).node;
-                let callback = function () {
-                    btn.removeEventListener('mouseover', callback);
-                    btn.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
-                    let clickFn = function (event) {
-                        if (event.button == 2 && event.target.localName == 'toolbarbutton') {
-                            event.preventDefault();
-                            event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/theme');
-                        }
-                    }
-                    btn.addEventListener('click', clickFn);
-                };
-                btn.addEventListener('mouseover', callback);
             }
             if (config["downloads button add middle and right click"]) {
                 let btn = CustomizableUI.getWidget('downloads-button').forWindow(window).node;
@@ -278,6 +264,13 @@
                 document.getElementById('cmd_find').setAttribute('oncommand', 'if (!gFindBar || gFindBar.hidden) { gLazyFindCommand("onFindCommand") } else { gFindBar.close() }');
             }
         }
+    }
+
+    function AddonMgr() {
+        let args = [...arguments], b = "openAddonsMgr";
+        eval(`${parseInt(Services.appinfo.version) < 126
+            ? "Browser" + b[0].toUpperCase() + b.slice(1)
+            : "BrowserAddonUI." + b}(...args)`);
     }
 
     const miscUtils = new MiscUtils();

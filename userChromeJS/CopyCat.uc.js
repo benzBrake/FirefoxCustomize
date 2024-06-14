@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.2.5
+// @version         0.2.6
 // @compatibility   Firefox 78
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.6 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed
 // @note            0.2.5 移除 panelview 支持，修复关闭第一个窗口后新窗口无法弹出菜单的bug
 // @note            0.2.4 Uncaught NS_ERROR_XPC_BAD_CONVERT_JS: Could not convert JavaScript argument arg 0 [nsIFilePicker.init]
 // @note            0.2.3 完善 Debug 日志
@@ -240,7 +241,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     if (event.button === 2) {
                         if (window.AM_Helper) {
                             event.preventDefault();
-                            event.target.ownerGlobal.BrowserOpenAddonsMgr("addons://list/userchromejs");
+                            const b = 'openAddonsMgr';
+                            eval(`${parseInt(Services.appinfo.version) < 126
+                                ? "Browser" + b[0].toUpperCase() + b.slice(1)
+                                : "BrowserAddonUI." + b}("addons://list/userchromejs")`);
                         }
                     }
                 }
