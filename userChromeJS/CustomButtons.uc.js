@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name            CustomButtons.uc.js
-// @description     添加多个自定义按钮，截图、UndoCloseTab、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
+// @description     添加多个自定义按钮，UndoCloseTab、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
-// @version         0.1.8
+// @version         0.1.9
 // @compatibility   Firefox 70 +
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.1.9 分离高级截图为 ScreenshotTools.uc.js
 // @note            0.1.8 画板改为调用系统自带，修改 openCommand 函数，exec 增加第三个参数，移除部分无用代码
 // @note            0.1.7 修改【我的足迹：下载】，【我的足迹：书签】图标
 // @note            0.1.6 默认截图工具改为搜狗截图，支持联网 OCR，移除证书管理按钮和缩放控制按钮，修改部分图标，移除无用函数
@@ -19,14 +20,6 @@
 
     const LANG = {
         'zh-CN': {
-            "take snapshot": "高级截图",
-            "take snapshot tooltip": "左键：截图\n右键：截图菜单",
-            "hide firefox to take snapshot": "隐藏火狐截图",
-            "scroll snapshot": "滚动截图工具",
-            "color picker": "颜色拾取工具",
-            "screen to gif": "录制动态图片",
-            "faststone capture": "完整截图工具",
-            "microsoft paint": "打开系统画板",
             "undo close tab": "撤销关闭标签页",
             "undo close tab tooltip": "左键：撤销关闭标签页\n右键：已关闭标签页列表",
             "clean history": "清除历史记录",
@@ -39,55 +32,7 @@
         }
     }
 
-    const BUTTONS_CONFIG = [
-        {
-            id: 'CB-SnapShot',
-            label: $L("take snapshot"),
-            tooltiptext: $L("take snapshot tooltip"),
-            type: "contextmenu",
-            tool: "\\SGScreencapture\\screencapture.exe",
-            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzAgMzAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMykiPg0KICA8cGF0aCBkPSJNNiA0QzQuODk1IDQgNCA0Ljg5NSA0IDZMNCA3QzQgNy41NTIgNC40NDggOCA1IDhDNS41NTIgOCA2IDcuNTUyIDYgN0w2IDZMNyA2QzcuNTUyIDYgOCA1LjU1MiA4IDVDOCA0LjQ0OCA3LjU1MiA0IDcgNEw2IDQgeiBNIDExIDRDMTAuNDQ4IDQgMTAgNC40NDggMTAgNUMxMCA1LjU1MyAxMC40NDggNiAxMSA2TDEzIDZDMTMuNTUyIDYgMTQgNS41NTIgMTQgNUMxNCA0LjQ0OCAxMy41NTIgNCAxMyA0TDExIDQgeiBNIDE3IDRDMTYuNDQ4IDQgMTYgNC40NDggMTYgNUMxNiA1LjU1MiAxNi40NDggNiAxNyA2TDE5IDZDMTkuNTUyIDYgMjAgNS41NTIgMjAgNUMyMCA0LjQ0OCAxOS41NTIgNCAxOSA0TDE3IDQgeiBNIDIzIDRDMjIuNDQ4IDQgMjIgNC40NDggMjIgNUMyMiA1LjU1MiAyMi40NDggNiAyMyA2TDI0IDZMMjQgN0MyNCA3LjU1MiAyNC40NDggOCAyNSA4QzI1LjU1MiA4IDI2IDcuNTUyIDI2IDdMMjYgNkMyNiA0Ljg5NSAyNS4xMDUgNCAyNCA0TDIzIDQgeiBNIDUgMTBDNC40NDggMTAgNCAxMC40NDggNCAxMUw0IDEzQzQgMTMuNTUyIDQuNDQ4IDE0IDUgMTRDNS41NTMgMTQgNiAxMy41NTIgNiAxM0w2IDExQzYgMTAuNDQ4IDUuNTUyIDEwIDUgMTAgeiBNIDI1IDEwQzI0LjQ0OCAxMCAyNCAxMC40NDggMjQgMTFMMjQgMTMuMDAxOTUzQzI0IDEzLjU1Mzk1MyAyNC40NDggMTQuMDAxOTUzIDI1IDE0LjAwMTk1M0MyNS41NTIgMTQuMDAxOTUzIDI2IDEzLjU1Mzk1MyAyNiAxMy4wMDE5NTNMMjYgMTFDMjYgMTAuNDQ4IDI1LjU1MiAxMCAyNSAxMCB6IE0gMTUuNjE3MTg4IDE0QzE1LjIzODE4OCAxNCAxNC44OTM2MDkgMTQuMjEzNzM0IDE0LjcyNDYwOSAxNC41NTI3MzRMMTQuNTUyNzM0IDE0Ljg5NDUzMUMxNC4yMTM3MzQgMTUuNTcxNTMxIDEzLjUyMDY3MiAxNiAxMi43NjM2NzIgMTZMMTEgMTZDMTAuNDQ4IDE2IDEwIDE2LjQ0OCAxMCAxN0wxMCAyNUMxMCAyNS41NTIgMTAuNDQ4IDI2IDExIDI2TDI1IDI2QzI1LjU1MiAyNiAyNiAyNS41NTIgMjYgMjVMMjYgMTdDMjYgMTYuNDQ4IDI1LjU1MiAxNiAyNSAxNkwyMy4yMzYzMjggMTZDMjIuNDc4MzI4IDE2IDIxLjc4NjI2NiAxNS41NzI1MzEgMjEuNDQ3MjY2IDE0Ljg5NDUzMUwyMS4yNzUzOTEgMTQuNTUyNzM0QzIxLjEwNjM5MSAxNC4yMTQ3MzQgMjAuNzYxODEzIDE0IDIwLjM4MjgxMiAxNEwxNS42MTcxODggMTQgeiBNIDUgMTZDNC40NDggMTYgNCAxNi40NDggNCAxN0w0IDE5QzQgMTkuNTUyIDQuNDQ4IDIwIDUgMjBDNS41NTIgMjAgNiAxOS41NTIgNiAxOUw2IDE3QzYgMTYuNDQ4IDUuNTUyIDE2IDUgMTYgeiBNIDE4IDE3QzIwLjIwOSAxNyAyMiAxOC43OTEgMjIgMjFDMjIgMjMuMjA5IDIwLjIwOSAyNSAxOCAyNUMxNS43OTEgMjUgMTQgMjMuMjA5IDE0IDIxQzE0IDE4Ljc5MSAxNS43OTEgMTcgMTggMTcgeiBNIDE4IDE5IEEgMiAyIDAgMCAwIDE2IDIxIEEgMiAyIDAgMCAwIDE4IDIzIEEgMiAyIDAgMCAwIDIwIDIxIEEgMiAyIDAgMCAwIDE4IDE5IHogTSA1IDIyQzQuNDQ4IDIyIDQgMjIuNDQ4IDQgMjNMNCAyNEM0IDI1LjEwNSA0Ljg5NSAyNiA2IDI2TDcgMjZDNy41NTIgMjYgOCAyNS41NTIgOCAyNUM4IDI0LjQ0OCA3LjU1MiAyNCA3IDI0TDYgMjRMNiAyM0M2IDIyLjQ0OCA1LjU1MiAyMiA1IDIyIHoiIC8+DQo8L3N2Zz4=",
-            popup: [{
-                label: $L("hide firefox to take snapshot"),
-                tool: "\\SGScreencapture\\screencapture.exe",
-                oncommand: function (event) {
-                    window.minimize();
-                    setTimeout(() => {
-                        CustomButtons.onCommand(event);
-                    }, 500);
-                },
-                image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2aWV3Qm94PSIwIDAgMjAgMjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy4zNjcgNC43OCBMIDMuODM3IDQuNzggTCAzLjgzNyA4LjI5NyBMIDUuNjAyIDguMjk3IEwgNS42MDIgNi41MzggTCA3LjM2NyA2LjUzOCBNIDE2LjE5MSA4LjI5NyBMIDE0LjQyNiA4LjI5NyBMIDE0LjQyNiAxMC4wNTUgTCAxMi42NiAxMC4wNTUgTCAxMi42NiAxMS44MTQgTCAxNi4xOTEgMTEuODE0IE0gMTcuOTU1IDEzLjU3MiBMIDIuMDczIDEzLjU3MiBMIDIuMDczIDMuMDIxIEwgMTcuOTU1IDMuMDIxIE0gMTcuOTU1IDEuMjYzIEwgMi4wNzMgMS4yNjMgQyAxLjA5MyAxLjI2MyAwLjMwOCAyLjA0NiAwLjMwOCAzLjAyMSBMIDAuMzA4IDEzLjU3MiBDIDAuMzA4IDE0LjU0MyAxLjA5NyAxNS4zMzIgMi4wNzMgMTUuMzMyIEwgOC4yNDkgMTUuMzMyIEwgOC4yNDkgMTcuMDkgTCA2LjQ4NCAxNy4wOSBMIDYuNDg0IDE4Ljg0OSBMIDEzLjU0NCAxOC44NDkgTCAxMy41NDQgMTcuMDkgTCAxMS43NzggMTcuMDkgTCAxMS43NzggMTUuMzMyIEwgMTcuOTU1IDE1LjMzMiBDIDE4LjkzIDE1LjMzMiAxOS43MiAxNC41NDMgMTkuNzIgMTMuNTcyIEwgMTkuNzIgMy4wMjEgQyAxOS43MiAyLjA1IDE4LjkzIDEuMjYzIDE3Ljk1NSAxLjI2MyIgc3R5bGU9IiIvPgo8L3N2Zz4='
-            }, {
-                label: $L("scroll snapshot"),
-                oncommand: function () {
-                    const ScreenshotsUtils = globalThis.ScreenshotsUtils || Cu.import("resource:///modules/ScreenshotsUtils.jsm");
-                    ScreenshotsUtils.notify(window, "shortcut");
-                },
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGQ9Ik01IDZMNSAxNEw3IDE0TDcgMTFMOSAxMUw5IDlMNyA5TDcgOEwxMCA4TDEwIDYgWiBNIDExIDZMMTEgMTFDMTEgMTIuNjQ0NTMxIDEyLjM1NTQ2OSAxNCAxNCAxNEMxNS42NDQ1MzEgMTQgMTcgMTIuNjQ0NTMxIDE3IDExTDE3IDZMMTUgNkwxNSAxMUMxNSAxMS41NjY0MDYgMTQuNTY2NDA2IDEyIDE0IDEyQzEzLjQzMzU5NCAxMiAxMyAxMS41NjY0MDYgMTMgMTFMMTMgNiBaIE0gMTggNkwxOCAxNEwyMiAxNEwyMiAxMkwyMCAxMkwyMCA2IFogTSAyMyA2TDIzIDE0TDI3IDE0TDI3IDEyTDI1IDEyTDI1IDYgWiBNIDUgMTZMNSAyNkw3IDI2TDcgMThMMTUgMThMMTUgMjIuNTYyNUwxMy43MTg3NSAyMS4yODEyNUwxMi4yODEyNSAyMi43MTg3NUwxNS4yODEyNSAyNS43MTg3NUwxNiAyNi40MDYyNUwxNi43MTg3NSAyNS43MTg3NUwxOS43MTg3NSAyMi43MTg3NUwxOC4yODEyNSAyMS4yODEyNUwxNyAyMi41NjI1TDE3IDE4TDI1IDE4TDI1IDI2TDI3IDI2TDI3IDE2WiIvPjwvc3ZnPg=='
-            }, {
-                label: $L("color picker"),
-                tool: '\\Colors\\Colors.exe',
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMy4xTDcuMDUgOC4wNWE3IDcgMCAxIDAgOS45IDBMMTIgMy4xem0wLTIuODI4bDYuMzY0IDYuMzY0YTkgOSAwIDEgMS0xMi43MjggMEwxMiAuMjcyeiIvPjwvc3ZnPg=='
-            }, {}, {
-                label: $L("screen to gif"),
-                tool: "\\ScreenToGif.exe",
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTcgOS4ybDUuMjEzLTMuNjVhLjUuNSAwIDAgMSAuNzg3LjQxdjEyLjA4YS41LjUgMCAwIDEtLjc4Ny40MUwxNyAxNC44VjE5YTEgMSAwIDAgMS0xIDFIMmExIDEgMCAwIDEtMS0xVjVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjQuMnptMCAzLjE1OWw0IDIuOFY4Ljg0bC00IDIuOHYuNzE4ek0zIDZ2MTJoMTJWNkgzem0yIDJoMnYySDVWOHoiLz48L3N2Zz4='
-            }, {
-                label: $L("faststone capture"),
-                tool: "\\FSCapture\\FSCapture.exe",
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMyAzaDJ2MkgzVjN6bTQgMGgydjJIN1Yzem00IDBoMnYyaC0yVjN6bTQgMGgydjJoLTJWM3ptNCAwaDJ2MmgtMlYzem0wIDRoMnYyaC0yVjd6TTMgMTloMnYySDN2LTJ6bTAtNGgydjJIM3YtMnptMC00aDJ2Mkgzdi0yem0wLTRoMnYySDNWN3ptNy42NjcgNGwxLjAzNi0xLjU1NUExIDEgMCAwIDEgMTIuNTM1IDloMi45M2ExIDEgMCAwIDEgLjgzMi40NDVMMTcuMzMzIDExSDIwYTEgMSAwIDAgMSAxIDF2OGExIDEgMCAwIDEtMSAxSDhhMSAxIDAgMCAxLTEtMXYtOGExIDEgMCAwIDEgMS0xaDIuNjY3ek05IDE5aDEwdi02aC0yLjczN2wtMS4zMzMtMmgtMS44NmwtMS4zMzMgMkg5djZ6bTUtMWEyIDIgMCAxIDEgMC00IDIgMiAwIDAgMSAwIDR6Ii8+PC9zdmc+'
-            }, {
-                label: $L("microsoft paint"),
-                image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTkuMjI4IDE4LjczMmwxLjc2OC0xLjc2OCAxLjc2NyAxLjc2OGEyLjUgMi41IDAgMSAxLTMuNTM1IDB6TTguODc4IDEuMDhsMTEuMzE0IDExLjMxM2ExIDEgMCAwIDEgMCAxLjQxNWwtOC40ODUgOC40ODVhMSAxIDAgMCAxLTEuNDE0IDBsLTguNDg1LTguNDg1YTEgMSAwIDAgMSAwLTEuNDE1bDcuNzc4LTcuNzc4LTIuMTIyLTIuMTIxTDguODggMS4wOHpNMTEgNi4wM0wzLjkyOSAxMy4xIDExIDIwLjE3M2w3LjA3MS03LjA3MUwxMSA2LjAyOXoiLz48L3N2Zz4=',
-                oncommand: function () {
-                    var environment = Components.classes["@mozilla.org/process/environment;1"].
-                        getService(Components.interfaces.nsIEnvironment);
-
-                    var cmd = PathUtils.join(environment.get("SystemRoot"), "System32", "cmd.exe");
-                    CustomButtons.exec(cmd, "/c start /b mspaint.exe", { startHidden: true });
-                }
-            }]
-        }, {
+    const BUTTONS_CONFIG = [{
             id: 'CB-undoCloseTab',
             label: $L("undo close tab"),
             tooltiptext: $L("undo close tab tooltip"),
