@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.3
+// @version         0.2.5
 // @compatibility   Firefox 115
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.5 BrowserOpenAddonsMgr改名，适配 userChrome.js Loader 的调整
 // @note            0.2.4 给工具栏扩展图标右键菜单增加禁用扩展功能
 // @note            0.2.3 给工具栏扩展图标右键菜单增加复制 ID 功能
 // @note            0.2.2 转换 unified-extensions-item 的图标为 CSS，方便使用 userChrome.css 覆盖图标，修复向上/向下按钮一处无影响报错以及显示问题，修复部分扩展无法打开设置页面的问题，调整几个图标的尺寸
@@ -310,7 +311,8 @@
         openAddonsMgr(event) {
             if (event.button == 2 && event.target.localName == 'toolbarbutton') {
                 event.preventDefault();
-                event.target.ownerGlobal.BrowserOpenAddonsMgr('addons://list/extension');
+                const addonMgr = "BrowserOpenAddonsMgr" in window ? event.target.ownerGlobal.BrowserOpenAddonsMgr : event.target.ownerGlobal.BrowserAddonUI.openAddonsMgr;
+                addonMgr('addons://list/extension');
             }
         },
         createAdditionalButtons(node) {
@@ -517,9 +519,10 @@
             if (!addon.isActive || !addon.optionsURL)
                 return;
 
-            switch (Number(addon.optionsType)) {
+            switch (Number(addon.__AddonInternal__.optionsType)) {
                 case 5:
-                    win.BrowserOpenAddonsMgr('addons://detail/' + encodeURIComponent(addon.id) + '/preferences');
+                    const addonMgr = "BrowserOpenAddonsMgr" in window ? BrowserOpenAddonsMgr : BrowserAddonUI.openAddonsMgr;
+                    addonMgr('addons://detail/' + encodeURIComponent(addon.id) + '/preferences');
                     break;
                 case 3:
                     win.switchToTabHavingURI(addon.optionsURL, true);
