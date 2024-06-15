@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 127
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/AutoSaveScreenshot.uc.js
+// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/127/AutoSaveScreenshot.uc.js
 // @version        0.0.3
 // @note           0.0.3 修复总是在第一个窗口截图的问题
 // @note           0.0.2 修复在 127 版本的兼容问题
