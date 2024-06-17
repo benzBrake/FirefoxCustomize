@@ -1,6 +1,6 @@
 # addMenuPlus.uc.js
 
-ℹ`addMenuPlus_fx70.uc.js` 是采用 JSActor 架构的新版本，**从2024.04.14开始传统版本`addMenuPlus.uc.js`会降低维护频率，请尽量使用`addMenuPlus_fx70.uc.js` 。**
+ℹ`addMenuPlus_fx72.uc.js` 是采用 JSActor 架构的新版本，**从2024.04.14开始传统版本`addMenuPlus.uc.js`会降低维护频率，请尽量使用`addMenuPlus_fx72.uc.js` 。**
 
 addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文件可添加、修改、隐藏菜单，修改后无需重启生效。
 
@@ -254,7 +254,10 @@ new function () {
             let prefs = addMenu.prefs, browser = prefs.getStringPref("chooseBrowser", "");
             function chooseBrowser() {
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                fp.init(window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
+            	// Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+            	fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                ? window.browsingContext
+                : window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
                 fp.appendFilter(Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file", "*.exe"); // 非 Windows 必须注释这一行，不过不一定能用
                 fp.open(res => {
                     if (res != Ci.nsIFilePicker.returnOK) return;
@@ -1241,7 +1244,10 @@ page([
       var data = addMenu.convertText("%SEL%");
 
       var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-      fp.init(window, "另存为", Ci.nsIFilePicker.modeSave);
+      // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+      fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                ? window.browsingContext
+                : window, "另存为", Ci.nsIFilePicker.modeSave);
       fp.appendFilter("文本文件", "*.txt");
       fp.defaultString = addMenu.convertText("%TITLES%") + ".txt";
       fp.open((res) => {
