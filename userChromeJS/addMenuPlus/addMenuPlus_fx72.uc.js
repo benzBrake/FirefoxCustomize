@@ -12,6 +12,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note           0.2.1 r1 修复 favicon 获取
 // @note           0.2.1 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox, 修复 about:neterror 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 resource url 获取选中文本，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数, Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，移除 openScriptInScratchpad，移除 getSelection、getRangeAll、getInputSelection、focusedWindow、$$，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行）
 // @note           0.2.0 采用 JSWindowActor 与内容进程通信（替代 e10s 时代的 loadFrameScript，虽然目前还能用），修复 onshowing 仅在页面右键生效的 bug，修复合并窗口后 CSS 失效的问题
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效
@@ -255,19 +256,25 @@ if (typeof window === "undefined" || globalThis !== window) {
                     case "AM:GetFaviconLink":
                         if (doc.location.href.startsWith("about")) return;
                         if (!"head" in doc) return;
-                        let link = doc.head.querySelector('[rel~="shortcut"]');
+                        let link = doc.head.querySelector('[rel~="shortcut"],[rel="icon"]');
                         let href = "";
                         if (link) {
-                            href = link.getAttribute("href");
+                            href = processRelLink(link.getAttribute("href"));
+                        } else if (icon) {
+                            href = processRelLink(icon.getAttribute("href"));
+                            console.label(88888, href);
+                        } else {
+                            href = doc.location.protocol + "//" + doc.location.host + "/" + "favicon.ico";
+                        }
+                        actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
+                        function processRelLink(href) {
                             if (href.startsWith("//")) {
                                 href = doc.location.protocol + href;
                             } else if (href.startsWith("/")) {
                                 href = doc.location.protocol + "//" + doc.location.host + "/" + href;
                             }
-                        } else {
-                            href = doc.location.protocol + "//" + doc.location.host + "/" + "favicon.ico";
+                            return href;
                         }
-                        actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
                         break;
                     case "AM:ExectueScript":
                         if (data && data.script) {
