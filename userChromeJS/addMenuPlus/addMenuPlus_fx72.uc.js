@@ -268,9 +268,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                         }
                         actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
                         function processRelLink(href) {
-                            if (href.startsWith("//")) {
+                            if (href.startsWith("http")) {
+                                return href;
+                            } else if (href.startsWith("//")) {
                                 href = doc.location.protocol + href;
-                            } else if (href.startsWith("/")) {
+                            } else if (href.startsWith("./") || href.startsWith("/")) {
+                                href = doc.location.protocol + "//" + doc.location.host + "/" + href.replace(/^\.?\//g, "");
+                            } else {
                                 href = doc.location.protocol + "//" + doc.location.host + "/" + href;
                             }
                             return href;
