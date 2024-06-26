@@ -1,6 +1,7 @@
 // @name            AutoPopup
 // @description     自动弹出菜单
 // @charset         UTF-8
+// @compatibility   Firefox 57
 // @include         main
 // ==/UserScript==
 
