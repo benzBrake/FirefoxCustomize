@@ -1,4 +1,8 @@
 # FirefoxCustomize
+<p style="font-size: 32px; color: red; font-weight: bold;">如果你在 github.com 以外的网站看到此页面，证明是盗版页面，请访问正版页面：<a href="https://github.com/benzBrake/FirefoxCustomize">https://github.com/benzBrake/FirefoxCustomize/</a></p>
+
+
+
 Ryan 的 Firefox 自定义资源收藏夹
 
 ## Want to support this project?

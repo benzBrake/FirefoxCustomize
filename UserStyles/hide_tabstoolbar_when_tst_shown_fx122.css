@@ -9,7 +9,8 @@
 @-moz-document url("chrome://browser/content/browser.xhtml") {
 
     :root:has(#browser > #sidebar-box:is([sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"],
-            [sidebarcommand="_3c078156-979c-498b-8990-85f7987dd929_-sidebar-action"], [sidebarcommand="tabcenter-reborn_ariasuni-sidebar-action"], [sidebarcommand="treetabs_jagiello_it-sidebar-action"], [sidebarcommand="_8d808887-ed13-4931-9f5a-4c0bff979a5a_-sidebar-action"], [sidebarcommand="sidebartabs_asamuzak_jp-sidebar-action"], [sidebarcommand="_f463182b-f93b-4b6d-9a68-b5e9d6d0fd40_-sidebar-action"]):not([hidden="true"])) {
+            [sidebarcommand="_3c078156-979c-498b-8990-85f7987dd929_-sidebar-action"], [sidebarcommand="tabcenter-reborn_ariasuni-sidebar-action"], [sidebarcommand="treetabs_jagiello_it-sidebar-action"], [sidebarcommand="_8d808887-ed13-4931-9f5a-4c0bff979a5a_-sidebar-action"], [sidebarcommand="sidebartabs_asamuzak_jp-sidebar-action"], [sidebarcommand="_f463182b-f93b-4b6d-9a68-b5e9d6d0fd40_-sidebar-action"],
+            [sidebarcommand="containertabssidebar_maciekmm_net-sidebar-action"]):not([hidden="true"])) {
         --uc-control-width: 136.5px;
         /** 默认模式控制按钮高度 */
         --uc-control-height: 40px;
