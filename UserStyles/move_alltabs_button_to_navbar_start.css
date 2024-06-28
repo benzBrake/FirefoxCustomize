@@ -1,0 +1,34 @@
+/* ==UserStyle==
+ * @name            移动所有标签按钮到导航栏前边
+ * @author          Ryan
+ * @compatibility   Firefox 117
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+ * @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/master/UserStyles/move_alltabs_button_to_navbar_start.css
+==/UserStyle== */
+#alltabs-button {
+    position: absolute;
+    left: 8px;
+    top: calc(var(--tab-min-height) + 2 * var(--tab-block-margin)
+            /** height of TabsToolbar */
+            + 4px
+            /** padding-top of urlbar-container */
+        );
+
+    & .toolbarbutton-icon {
+        transform: translateY(1px);
+    }
+}
+
+#titlebar {
+    /** make sure the titlebar is on top of the navbar **/
+    z-index: 99;
+}
+
+#nav-bar-customization-target {
+    padding-left: calc((var(--toolbarbutton-outer-padding) + var(--toolbarbutton-inner-padding)) * 2 + 16px);
+}
+
+#customizationui-widget-panel[viewId="allTabsMenu-allTabsView"] {
+    padding-inline-start: 40px;
+    transform: translateX(-40px);
+}
