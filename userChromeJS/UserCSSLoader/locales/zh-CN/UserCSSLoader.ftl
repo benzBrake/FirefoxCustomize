@@ -1,6 +1,6 @@
 user-css-loader =
     .label = User CSS Loader
-    .tooltiptext = User CSS Loader 复活版 By Ryan
+    .tooltiptext = User CSS Loader 复活版 By Ryan\n左键：菜单\n中键：启用/禁用 UserCSSLoader\nshift+中键重载所有样式
 ucl-enabled = 已启用
 ucl-disabled = 已禁用
 ucl-reload-all-styles =
@@ -17,6 +17,9 @@ ucl-agent-sheet =
     .label = AGENT SHEET
 ucl-middle-click-to-keep-menu-open = 中键点击样式名称不会关闭菜单
 ucl-change-style-popup-header = 修改样式类型
+ucl-open-homepage-btn =
+    .label = 打开主页
+    .tooltiptext = 打开主页
 ucl-change-style-btn =
     .label = 修改样式类型
     .tooltiptext = 修改样式类型
