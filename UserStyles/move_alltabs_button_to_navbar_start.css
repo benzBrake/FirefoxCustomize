@@ -30,5 +30,5 @@
 
 #customizationui-widget-panel[viewId="allTabsMenu-allTabsView"] {
     padding-inline-start: 40px;
-    transform: translateX(-40px);
+    margin-inline-start: -40px;
 }
