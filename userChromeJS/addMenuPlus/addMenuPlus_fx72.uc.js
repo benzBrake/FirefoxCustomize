@@ -7,11 +7,13 @@
 // @license        MIT License
 // @compatibility  Firefox 72
 // @charset        UTF-8
-// @version        0.2.1
+// @version        0.2.1 r3
 // @shutdown       window.addMenu.destroy();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note           0.2.1 r3 新增 command 菜单跟随原菜单的 disabled/collapsed/hidden 属性，标签页右键菜单支持，无 command 二级菜单在第一个子菜单为 disabled 点击该二级菜单不再执行该子菜单的 command
+// @note           0.2.1 r2 修复 网页链接复制
 // @note           0.2.1 r1 修复 favicon 获取
 // @note           0.2.1 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox, 修复 about:neterror 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 resource url 获取选中文本，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数, Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，移除 openScriptInScratchpad，移除 getSelection、getRangeAll、getInputSelection、focusedWindow、$$，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行）
 // @note           0.2.0 采用 JSWindowActor 与内容进程通信（替代 e10s 时代的 loadFrameScript，虽然目前还能用），修复 onshowing 仅在页面右键生效的 bug，修复合并窗口后 CSS 失效的问题
@@ -605,8 +607,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                 }), ins);
 
                 // Photon Compact
-                if (enableContentAreaContextMenuCompact && versionGE("90a1"))
+                if (enableContentAreaContextMenuCompact && versionGE("90a1")) {
                     $("contentAreaContextMenu").setAttribute("photoncompact", "true");
+                    $("tabContextMenu").setAttribute("photoncompact", "true");
+                }
 
                 // 响应鼠标键释放事件（eg：获取选中文本）
                 (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
@@ -730,6 +734,32 @@ if (typeof window === "undefined" || globalThis !== window) {
                             } catch (ex) {
                                 console.error($L('custom showing method error'), obj.fnSource, ex);
                             }
+                        });
+
+                        const delay = new Promise(resolve => {
+                            setTimeout(resolve, 10);
+                        });
+                        delay.then(() => {
+                            event.target.querySelectorAll('menuitem.addMenu[command],menu.addMenu[command]').forEach(elem => {
+                                if (/^menugroup$/i.test(elem.parentNode.nodeName)) return;
+                                let original = document.getElementById(elem.getAttribute('command'));
+                                if (original) {
+                                    elem.hidden = original.hidden;
+                                    elem.collapsed = original.collapsed;
+                                    elem.disabled = original.disabled;
+                                }
+                            });
+                            event.target.querySelectorAll('menugroup.addMenu').forEach(group => {
+                                [...group.children].forEach(elem => {
+                                    if ((/menu$/i.test(elem.nodeName) || /menuitem$/i.test(elem.nodeName)) && elem.hasAttribute('command')) {
+                                        elem.removeAttribute('hidden');
+                                        const oringal = document.getElementById(elem.getAttribute('command'));
+                                        if (oringal) {
+                                            elem.disabled = oringal.hidden;
+                                        }
+                                    }
+                                });
+                            });
                         });
 
                         break;
@@ -1205,6 +1235,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         if (event.button === 1) {\
                             checkForMiddleClick(firstItem, event);\
                         } else {\
+                            if (firstItem.disabled) return; \
                             firstItem.doCommand();\
                             closeMenus(event.currentTarget);\
                         }\
@@ -2082,10 +2113,10 @@ if (typeof window === "undefined" || globalThis !== window) {
         -moz-context-properties: fill, fill-opacity !important;
         fill: currentColor !important;
     }
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left,
-    #contentAreaContextMenu[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > .menu-iconic-left {
+    :is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
+    :is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
+    :is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left,
+    :is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > .menu-iconic-left {
         visibility: collapse;
     }
     menugroup.addMenu > .menuitem-iconic.fixedSize {
