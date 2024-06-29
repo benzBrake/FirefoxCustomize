@@ -132,12 +132,13 @@
 }
 #unified-extensions-search-input {
     flex-grow: 1;
-    border-right-width: 1px;
-    border-right-color: var(--panel-border-color);
     height: 100%;
     padding: 5px;
     line-height: 20px;
     font-size: 16px;
+    max-width: calc(100% - 40px);
+    overflow-x: scroll;
+    outline: none;
     &[empty="true"] {
         &+#unified-extensions-search-clear {
             background-position: -30px 50%, 8px 50%;
@@ -153,6 +154,12 @@
     background-position: 8px 50%, 30px 50%;
     background-repeat: no-repeat no-repeat;
     transition: background-position 0.2s ease-in-out;
+    &:hover {
+        background-color: var(--toolbarbutton-hover-background);
+    }
+    &:active {
+        background-color: var(--toolbarbutton-active-background);
+    }
 }
 .unified-extensions-item[hidden=true] {
     display: none;
