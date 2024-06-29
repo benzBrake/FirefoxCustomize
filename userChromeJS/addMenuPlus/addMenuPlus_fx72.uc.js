@@ -262,13 +262,12 @@ if (typeof window === "undefined" || globalThis !== window) {
                             href = processRelLink(link.getAttribute("href"));
                         } else if (icon) {
                             href = processRelLink(icon.getAttribute("href"));
-                            console.label(88888, href);
                         } else {
                             href = doc.location.protocol + "//" + doc.location.host + "/" + "favicon.ico";
                         }
                         actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
                         function processRelLink(href) {
-                            if (href.startsWith("http")) {
+                            if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.include("://")) || href.startsWith("data:")) {
                                 return href;
                             } else if (href.startsWith("//")) {
                                 href = doc.location.protocol + href;
@@ -1713,7 +1712,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                 }
 
                 function getUrl() {
-                    const URI = bw.documentURI;
+                    const URI = bw.currentURI;
                     if (URI.schemeIs("about")) {
                         switch (URI.filePath) {
                             case "neterror":
