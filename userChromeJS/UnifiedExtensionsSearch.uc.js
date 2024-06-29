@@ -5,6 +5,7 @@
 // @include         main
 // @version         0.1
 // @compatibility   Firefox 126
+// @destroy         window.UnifiedExtensionsSearch.onUnload();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // ==/UserScript==
 (window.UnifiedExtensionsSearch = {
@@ -107,10 +108,14 @@
         this.resetExtensions();
     },
     onUnload () {
+        window.removeEventListener('unload', this, false);
         if (this.style && this.style.parentNode) {
             this.style.parentNode.removeChild(this.style);
             this.style = null;
         }
+        ["ViewHiding"].forEach(t => this.view.removeEventListener(t, this, false));
+        let c = view.querySelector('#unified-extensions-search-input-container');
+        if (c && c.parentNode) c.parentNode.removeChild(c);
         delete window.UnifiedExtensionsSearch;
     }
 }).init(gUnifiedExtensions.panel && PanelMultiView.getViewNode(
