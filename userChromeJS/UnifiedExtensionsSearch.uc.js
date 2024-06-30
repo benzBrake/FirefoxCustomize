@@ -3,14 +3,17 @@
 // @description     在扩展面板中搜索扩展
 // @author          Ryan
 // @include         main
-// @version         0.1
+// @version         0.1.1
 // @compatibility   Firefox 126
 // @destroy         window.UnifiedExtensionsSearch.onUnload();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @license         MIT
+// @charset         UTF-8
+// @note            0.1.1 整理代码，优化搜索效果
 // ==/UserScript==
 (window.UnifiedExtensionsSearch = {
     timer: [],
-    init: function (v, c) {
+    init: function (v, c, on, cre) {
         if (!v) return;
         this.view = v;
         var pi = document.createProcessingInstruction(
@@ -18,30 +21,39 @@
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(c) + '"'
         );
         this.style = document.insertBefore(pi, document.documentElement);
-        ["ViewHiding"].forEach(t => v.addEventListener(t, this, false));
-        window.addEventListener("unload", this, false); // Corrected line
-        let w = document.createElement('html:div');
-        for (let [k, v] of Object.entries({
+        on.call(this.view, 'ViewHiding', this, false);
+        on.call(window, 'unload', this, false);
+        let w = cre(document, 'html:div', {
             id: 'unified-extensions-search-input-container',
             class: 'unified-extensions-search-input-container',
             role: 'searchbox',
-        })) { w.setAttribute(k, v) }
-        let i = document.createElement('html:div');
-        for (let [k, v] of Object.entries({
+        });
+        let i = cre(document, 'html:input', {
             id: 'unified-extensions-search-input',
             class: 'unified-extensions-search-input',
             role: 'search',
             contenteditable: true,
             empty: true
-        })) { i.setAttribute(k, v) }
-        this.input = w.appendChild(i);
-        ['input', 'change', 'keypress'].forEach(e => i.addEventListener(e, this, false));
-        let cl = document.createElement('html:button');
-        for (let [k, v] of Object.entries({
+        });
+        this.input = {
+            el: w.appendChild(i),
+            set val (v) {
+                this.el.innerHTML = v;
+                this.el.setAttribute('empty', v.length == 0);
+            },
+            get val () {
+                return this.el.textContent;
+            },
+            setAttribute (k, v) {
+                this.el.setAttribute(k, v);
+            },
+        };
+        on.call(i, ['input', 'change', 'keypress'], this, false);
+        let cl = cre(document, 'html:button', {
             id: 'unified-extensions-search-clear',
             class: 'unified-extensions-search-clear',
             role: 'button',
-        })) { cl.setAttribute(k, v) }
+        });
         this.btn = w.appendChild(cl);
         cl.addEventListener('click', this, false);
         v.querySelector('.panel-subview-body[context="unified-extensions-context-menu"]').before(w);
@@ -49,9 +61,11 @@
     handleEvent (event) {
         const { type } = event;
         // 防止回车换行
-        if (type == 'keypress' && event.keyCode == 13) {
-            event.preventDefault();
-            event.stopPropagation();
+        if (type == 'keypress') {
+            if (event.keyCode == 13) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             return;
         }
         if (this.timer[type]) clearTimeout(this.timer[type]);
@@ -65,32 +79,29 @@
         }, 100);
     },
     onViewHiding () {
-        this.input.textContent = '';
-        this.input.setAttribute("empty", true);
+        this.input.val = '';
         this.resetExtensions();
     },
     onInput () {
-        let val = this.input.textContent;
-        if (val) {
+        if (this.input.val) {
             this.input.setAttribute("empty", false);
             this.searchExtensions();
         } else {
-            this.input.setAttribute("empty", true);
-            this.input.innerHTML = '';
+            this.input.val = '';
             this.resetExtensions();
         }
     },
     searchExtensions () {
-        let val = this.input.textContent.trim();
+        let val = this.input.val.trim();
         if (val) {
-            let search = val.toLowerCase();
+            let search = val.toLowerCase().split(' ');
             let items = this.view.querySelectorAll('.unified-extensions-item');
             for (let item of items) {
                 let name = item.querySelector('.unified-extensions-item-name').textContent.toLowerCase();
-                if (name.includes(search)) {
+                if (search.every(s => name.includes(s))) {
                     item.removeAttribute("hidden");
                 } else {
-                    item.setAttribute("hidden", true);
+                    item.setAttribute("hidden", "true");
                 }
             }
         }
@@ -103,20 +114,23 @@
     },
     onClick () {
         if (this.input.getAttribute('empty') === "true") return;
-        this.input.innerHTML = '';
-        this.input.setAttribute("empty", true);
+        this.input.val = '';
         this.resetExtensions();
     },
     onUnload () {
         window.removeEventListener('unload', this, false);
-        if (this.style && this.style.parentNode) {
-            this.style.parentNode.removeChild(this.style);
-            this.style = null;
+        off.call(this.view, 'ViewHiding', this, false);
+        remove(this.style);
+        remove(view.querySelector('#unified-extensions-search-input-container'));
+        function off (type, fn, arg) {
+            if (!Array.isArray(type)) type = [type];
+            type.forEach(t => this.removeEventListener(t, fn, arg));
         }
-        ["ViewHiding"].forEach(t => this.view.removeEventListener(t, this, false));
-        let c = view.querySelector('#unified-extensions-search-input-container');
-        if (c && c.parentNode) c.parentNode.removeChild(c);
+        function remove (el) {
+            el && el.parentNode && el.parentNode.removeChild(el);
+        }
         delete window.UnifiedExtensionsSearch;
+
     }
 }).init(gUnifiedExtensions.panel && PanelMultiView.getViewNode(
     document,
@@ -166,4 +180,13 @@
     visibility: collapse;
     opacity: 0;
 }
-`);
+`, function (type, fn, arg) {
+    if (!Array.isArray(type)) type = [type];
+    type.forEach(t => this.addEventListener(t, fn, arg));
+}, function (doc, tag, attrs) {
+    let el = tag.startsWith('html:') ? doc.createElement(tag) : doc.createXULElement(tag);
+    for (let [k, v] of Object.entries(attrs)) {
+        el.setAttribute(k, v);
+    }
+    return el;
+});
