@@ -175,6 +175,9 @@
         background-color: var(--toolbarbutton-active-background);
     }
 }
+:root[lwt-toolbar-field="dark"] #unified-extensions-search-clear {
+    filter: invert(1);
+}
 .unified-extensions-item[hidden=true] {
     display: none;
     visibility: collapse;
