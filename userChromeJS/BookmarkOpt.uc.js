@@ -25,7 +25,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @version         1.4.0 重写，中键点击图标添加书签后当前书签图标显示为成功图标，1s后自动恢复，移除无用的 userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick 开关，增加 userChromeJS.BookmarkOpt.enableToggleButton 开关（用于控制 显示/隐藏书签工具栏按钮）
+// @version         1.4.0 重写，中键点击图标添加书签后当前书签图标显示为成功图标，1s后自动恢复，移除无用的 userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick 开关，增加 userChromeJS.BookmarkOpt.enableToggleButton 开关（用于控制 显示/隐藏书签工具栏按钮），去除中键单击地址栏复制当前地址
 // @version         1.3.8 添加书签到此处支持 PlacesChevron
 // @version         1.3.7 中键单击地址栏复制当前地址，修改切换书签栏按钮图标
 // @version         1.3.6 书签工具栏更多菜单自动适应弹出位置
@@ -171,7 +171,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
             switch (location.href) {
                 case this.X_MAIN:
                     if (!$("urlbar").getAttribute("bmopt-inited")) {
-                        add_events($('urlbar'), ['dblclick', 'click'], this, false);
+                        add_events($('urlbar'), ['dblclick'], this, false);
                         $('urlbar').setAttribute('bmopt-inited', true);
                     }
                     if (!$("PlacesToolbar").getAttribute("bmopt-inited")) {
@@ -248,7 +248,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
             }
             switch (location.href) {
                 case this.X_MAIN:
-                    remove_events($('urlbar'), ['dblclick', 'click'], this, false);
+                    remove_events($('urlbar'), ['dblclick'], this, false);
                     $('urlbar').removeAttribute('bmopt-inited');
                     this.items.forEach(item => {
                         item.parentNode.removeChild(item);
@@ -287,41 +287,35 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 
                 case 'click':
                     if (button == 1) {
-                        if (target.id.startsWith("urlbar")) {
+                        let addBookmark = true;
+                        if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false)
+                            && target.getAttribute("container") == "true" /* 点击的是文件夹 */
+                            && !target.hasAttribute("query") /* 排除最近访问 */
+                        ) {
+                            let targetRect = target.getBoundingClientRect();
+                            let x = event.clientX - target.getBoundingClientRect().left; // 鼠标点击位置相对于当前书签
+                            let icon = target.tagName.toLowerCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild;
+                            let iconRect = icon.getBoundingClientRect();
+                            let paddingLeft = iconRect.left - targetRect.left;
+                            if (x > paddingLeft + iconRect.width) {
+                                // 点击的是标签，不覆盖默认的功能：打开全部
+                                addBookmark = false;
+                            }
+                        }
+                        if (addBookmark) {
                             event.preventDefault();
                             event.stopPropagation();
-                            copy_text(gBrowser.selectedTab.linkedBrowser.currentURI.spec);
-                        } else {
-                            let addBookmark = true;
-                            if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false)
-                                && target.getAttribute("container") == "true" /* 点击的是文件夹 */
-                                && !target.hasAttribute("query") /* 排除最近访问 */
-                            ) {
-                                let targetRect = target.getBoundingClientRect();
-                                let x = event.clientX - target.getBoundingClientRect().left; // 鼠标点击位置相对于当前书签
-                                let icon = target.tagName.toLowerCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild;
-                                let iconRect = icon.getBoundingClientRect();
-                                let paddingLeft = iconRect.left - targetRect.left;
-                                if (x > paddingLeft + iconRect.width) {
-                                    // 点击的是标签，不覆盖默认的功能：打开全部
-                                    addBookmark = false;
-                                }
-                            }
-                            if (addBookmark) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                this.operate(event, 'add', target, (...args) => {
-                                    let icon = target.tagName === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild.firstChild;
-                                    let src = icon.getAttribute('src');
-                                    icon.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiB0cmFuc2Zvcm09InNjYWxlKDEuMSkiPjxsaW5lYXJHcmFkaWVudCBpZD0iNXp6TUdWUW5OX1F5UllXR21KVXNRYSIgeDE9IjkuODU4IiB4Mj0iMzguMTQyIiB5MT0iOS44NTgiIHkyPSIzOC4xNDIiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyMWFkNjQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwODgyNDIiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGZpbGw9InVybCgjNXp6TUdWUW5OX1F5UllXR21KVXNRYSkiIGQ9Ik00NCwyNGMwLDExLjA0NS04Ljk1NSwyMC0yMCwyMFM0LDM1LjA0NSw0LDI0UzEyLjk1NSw0LDI0LDRTNDQsMTIuOTU1LDQ0LDI0eiIvPjxwYXRoIGQ9Ik0zMi4xNzIsMTYuMTcyTDIyLDI2LjM0NGwtNS4xNzItNS4xNzJjLTAuNzgxLTAuNzgxLTIuMDQ3LTAuNzgxLTIuODI4LDBsLTEuNDE0LDEuNDE0Yy0wLjc4MSwwLjc4MS0wLjc4MSwyLjA0NywwLDIuODI4bDgsOGMwLjc4MSwwLjc4MSwyLjA0NywwLjc4MSwyLjgyOCwwbDEzLTEzYzAuNzgxLTAuNzgxLDAuNzgxLTIuMDQ3LDAtMi44MjhMMzUsMTYuMTcyQzM0LjIxOSwxNS4zOTEsMzIuOTUzLDE1LjM5MSwzMi4xNzIsMTYuMTcyeiIgb3BhY2l0eT0iLjA1Ii8+PHBhdGggZD0iTTIwLjkzOSwzMy4wNjFsLTgtOGMtMC41ODYtMC41ODYtMC41ODYtMS41MzYsMC0yLjEyMWwxLjQxNC0xLjQxNGMwLjU4Ni0wLjU4NiwxLjUzNi0wLjU4NiwyLjEyMSwwTDIyLDI3LjA1MWwxMC41MjUtMTAuNTI1YzAuNTg2LTAuNTg2LDEuNTM2LTAuNTg2LDIuMTIxLDBsMS40MTQsMS40MTRjMC41ODYsMC41ODYsMC41ODYsMS41MzYsMCwyLjEyMWwtMTMsMTNDMjIuNDc1LDMzLjY0NiwyMS41MjUsMzMuNjQ2LDIwLjkzOSwzMy4wNjF6IiBvcGFjaXR5PSIuMDciLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjEuMjkzLDMyLjcwN2wtOC04Yy0wLjM5MS0wLjM5MS0wLjM5MS0xLjAyNCwwLTEuNDE0bDEuNDE0LTEuNDE0YzAuMzkxLTAuMzkxLDEuMDI0LTAuMzkxLDEuNDE0LDBMMjIsMjcuNzU4bDEwLjg3OS0xMC44NzljMC4zOTEtMC4zOTEsMS4wMjQtMC4zOTEsMS40MTQsMGwxLjQxNCwxLjQxNGMwLjM5MSwwLjM5MSwwLjM5MSwxLjAyNCwwLDEuNDE0bC0xMywxM0MyMi4zMTcsMzMuMDk4LDIxLjY4MywzMy4wOTgsMjEuMjkzLDMyLjcwN3oiLz48L3N2Zz4=';
-                                    setTimeout(() => {
-                                        if (src)
-                                            icon.src = src;
-                                        else
-                                            icon.removeAttribute('src');
-                                    }, 1000);
-                                });
-                            }
+                            this.operate(event, 'add', target, (...args) => {
+                                let icon = target.tagName === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild.firstChild;
+                                let src = icon.getAttribute('src');
+                                icon.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiB0cmFuc2Zvcm09InNjYWxlKDEuMSkiPjxsaW5lYXJHcmFkaWVudCBpZD0iNXp6TUdWUW5OX1F5UllXR21KVXNRYSIgeDE9IjkuODU4IiB4Mj0iMzguMTQyIiB5MT0iOS44NTgiIHkyPSIzOC4xNDIiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyMWFkNjQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwODgyNDIiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGZpbGw9InVybCgjNXp6TUdWUW5OX1F5UllXR21KVXNRYSkiIGQ9Ik00NCwyNGMwLDExLjA0NS04Ljk1NSwyMC0yMCwyMFM0LDM1LjA0NSw0LDI0UzEyLjk1NSw0LDI0LDRTNDQsMTIuOTU1LDQ0LDI0eiIvPjxwYXRoIGQ9Ik0zMi4xNzIsMTYuMTcyTDIyLDI2LjM0NGwtNS4xNzItNS4xNzJjLTAuNzgxLTAuNzgxLTIuMDQ3LTAuNzgxLTIuODI4LDBsLTEuNDE0LDEuNDE0Yy0wLjc4MSwwLjc4MS0wLjc4MSwyLjA0NywwLDIuODI4bDgsOGMwLjc4MSwwLjc4MSwyLjA0NywwLjc4MSwyLjgyOCwwbDEzLTEzYzAuNzgxLTAuNzgxLDAuNzgxLTIuMDQ3LDAtMi44MjhMMzUsMTYuMTcyQzM0LjIxOSwxNS4zOTEsMzIuOTUzLDE1LjM5MSwzMi4xNzIsMTYuMTcyeiIgb3BhY2l0eT0iLjA1Ii8+PHBhdGggZD0iTTIwLjkzOSwzMy4wNjFsLTgtOGMtMC41ODYtMC41ODYtMC41ODYtMS41MzYsMC0yLjEyMWwxLjQxNC0xLjQxNGMwLjU4Ni0wLjU4NiwxLjUzNi0wLjU4NiwyLjEyMSwwTDIyLDI3LjA1MWwxMC41MjUtMTAuNTI1YzAuNTg2LTAuNTg2LDEuNTM2LTAuNTg2LDIuMTIxLDBsMS40MTQsMS40MTRjMC41ODYsMC41ODYsMC41ODYsMS41MzYsMCwyLjEyMWwtMTMsMTNDMjIuNDc1LDMzLjY0NiwyMS41MjUsMzMuNjQ2LDIwLjkzOSwzMy4wNjF6IiBvcGFjaXR5PSIuMDciLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjEuMjkzLDMyLjcwN2wtOC04Yy0wLjM5MS0wLjM5MS0wLjM5MS0xLjAyNCwwLTEuNDE0bDEuNDE0LTEuNDE0YzAuMzkxLTAuMzkxLDEuMDI0LTAuMzkxLDEuNDE0LDBMMjIsMjcuNzU4bDEwLjg3OS0xMC44NzljMC4zOTEtMC4zOTEsMS4wMjQtMC4zOTEsMS40MTQsMGwxLjQxNCwxLjQxNGMwLjM5MSwwLjM5MSwwLjM5MSwxLjAyNCwwLDEuNDE0bC0xMywxM0MyMi4zMTcsMzMuMDk4LDIxLjY4MywzMy4wOTgsMjEuMjkzLDMyLjcwN3oiLz48L3N2Zz4=';
+                                setTimeout(() => {
+                                    if (src)
+                                        icon.src = src;
+                                    else
+                                        icon.removeAttribute('src');
+                                }, 1000);
+                            });
                         }
                     }
                     if (target.id !== "BookmarkOpt-Toggle-PersonalToolbar") break;
