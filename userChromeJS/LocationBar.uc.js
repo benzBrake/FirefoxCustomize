@@ -131,38 +131,38 @@
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 })(`
-#urlbar-input-container .optional-hidden {
+:is(#urlbar-input-container,.urlbar-input-container) .optional-hidden {
     visibility: collapse;
 }
-#urlbar-input-container #location-bar {
+:is(#urlbar-input-container,.urlbar-input-container) #location-bar {
     background-color: transparent;
 }
-#urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-icon, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-text, #urlbar-input-container > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-badge-stack {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-icon, :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-text, :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-badge-stack {
     background-color: transparent;
 }
-#urlbar-input-container > #location-bar .chromeclass-toolbar-additional {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .chromeclass-toolbar-additional {
     height: unset;
     width: unset;
 }
-#urlbar-input-container > #location-bar .toolbarbutton-1 {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1 {
     width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
     height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
     border-radius: var(--urlbar-icon-border-radius);
     padding: 0 var(--urlbar-icon-padding) !important;
     color: inherit;
 }
-#urlbar-input-container > #location-bar :where(#reload-button, #stop-button) > .toolbarbutton-icon {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar :where(#reload-button, #stop-button) > .toolbarbutton-icon {
     padding: var(--toolbarbutton-inner-padding) !important;
 }
-#urlbar-input-container > #location-bar .toolbarbutton-1:hover {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover {
     background-color: var(--urlbar-box-hover-bgcolor);
     color: var(--urlbar-box-hover-text-color);
 }
-#urlbar-input-container > #location-bar .toolbarbutton-1:hover:active {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover:active {
     background-color: var(--urlbar-box-active-bgcolor);
     color: var(--urlbar-box-hover-text-color);
 }
-#urlbar-input-container > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
     width: 16px !important;
     height: 16px !important;
     -moz-context-properties: fill, fill-opacity;
@@ -170,14 +170,14 @@
     fill-opacity: var(--urlbar-icon-fill-opacity);
     padding: 0 !important;
 }
-#urlbar-input-container #location-bar toolbarbutton {
+:is(#urlbar-input-container,.urlbar-input-container) #location-bar toolbarbutton {
     --toolbarbutton-hover-background: transparent;
 }
-:root[uidensity="compact"] #urlbar-input-container #location-bar toolbarbutton > .toolbarbutton-badge-stack > .toolbarbutton-badge {
+:root[uidensity="compact"] :is(#urlbar-input-container,.urlbar-input-container) #location-bar toolbarbutton > .toolbarbutton-badge-stack > .toolbarbutton-badge {
     margin-inline-end: 0 !important;
 }
 
-#urlbar-input-container #location-bar #stop-reload-button[animate] > #reload-button > .toolbarbutton-icon, #urlbar-input-container #location-bar #stop-reload-button[animate] > #reload-button[displaystop] + #stop-button > .toolbarbutton-icon {
+:is(#urlbar-input-container,.urlbar-input-container) #location-bar #stop-reload-button[animate] > #reload-button > .toolbarbutton-icon, :is(#urlbar-input-container,.urlbar-input-container) #location-bar #stop-reload-button[animate] > #reload-button[displaystop] + #stop-button > .toolbarbutton-icon {
     fill: var(--urlbar-box-hover-text-color);
 }
 `)
