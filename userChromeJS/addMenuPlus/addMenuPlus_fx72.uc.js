@@ -179,7 +179,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         } catch (e) { console.error(e); }
 
         this.AddMenuParent = class extends JSWindowActorParent {
-            receiveMessage({ name, data }) {
+            receiveMessage ({ name, data }) {
                 // https://searchfox.org/mozilla-central/rev/43ee5e789b079e94837a21336e9ce2420658fd19/browser/actors/ContextMenuParent.sys.mjs#60-63
                 let windowGlobal = this.manager.browsingContext.currentWindowGlobal;
                 let browser = windowGlobal.rootFrameLoader.ownerElement;
@@ -191,6 +191,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         break;
                     case "AM:FaviconLink":
                         if (typeof data.href !== "undefined" && typeof data.hash !== "undefined") {
+                            ;
                             win.gBrowser.tabs.filter(t => t.faviconHash === data.hash).forEach(t => t.faviconUrl = data.href);
                         }
                         break;
@@ -206,7 +207,7 @@ if (typeof window === "undefined" || globalThis !== window) {
         this.EXPORTED_SYMBOLS = ["AddMenuChild"];
 
         this.AddMenuChild = class extends JSWindowActorChild {
-            actorCreated() {
+            actorCreated () {
                 const window = this.contentWindow;
                 if (window.addMenu) return;
                 window.addMenu = {}
@@ -233,7 +234,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     actor.sendAsyncMessage("AM:OnElement", data);
                 });
 
-                function getSelectedText() {
+                function getSelectedText () {
                     var text = "";
                     if (window.getSelection) {
                         text = window.getSelection().toString();
@@ -243,13 +244,13 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return text;
                 }
 
-                function isEditableElement() {
+                function isEditableElement () {
                     var element = window.getSelection().focusNode.parentNode;
                     return element.nodeName === "INPUT" || element.nodeName === "TEXTAREA" || element.isContentEditable;
                 }
 
             }
-            receiveMessage({ name, data }) {
+            receiveMessage ({ name, data }) {
                 const win = this.contentWindow;
                 const console = win.console;
                 const doc = win.document;
@@ -262,13 +263,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                         let href = "";
                         if (link) {
                             href = processRelLink(link.getAttribute("href"));
-                        } else if (icon) {
-                            href = processRelLink(icon.getAttribute("href"));
                         } else {
                             href = doc.location.protocol + "//" + doc.location.host + "/" + "favicon.ico";
                         }
                         actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
-                        function processRelLink(href) {
+                        function processRelLink (href) {
                             if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.include("://")) || href.startsWith("data:")) {
                                 return href;
                             } else if (href.startsWith("//")) {
@@ -299,7 +298,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             let scriptPath = Components.stack.filename;
             if (scriptPath.startsWith("chrome")) {
                 scriptPath = resolveChromeURL(scriptPath);
-                function resolveChromeURL(str) {
+                function resolveChromeURL (str) {
                     const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
                     try {
                         return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
@@ -437,15 +436,15 @@ if (typeof window === "undefined" || globalThis !== window) {
 
         window.addMenu = {
             _selectedText: "",
-            get prefs() {
+            get prefs () {
                 delete this.prefs;
                 return this.prefs = Services.prefs.getBranch("addMenu.")
             },
-            get platform() {
+            get platform () {
                 delete this.platform;
                 return this.platform = AppConstants.platform;
             },
-            get FILE() {
+            get FILE () {
                 let path;
                 try {
                     // addMenu.FILE_PATH があればそれを使う
@@ -469,15 +468,15 @@ if (typeof window === "undefined" || globalThis !== window) {
                 delete this.FILE;
                 return this.FILE = aFile;
             },
-            get supportLocalization() {
+            get supportLocalization () {
                 delete this.supportLocalization;
                 return this.supportLocalization = typeof Localization === "function";
             },
-            get locale() {
+            get locale () {
                 delete this.locale;
                 return this.locale = ADDMENU_LOCALE || "en-US";
             },
-            get panelId() {
+            get panelId () {
                 delete this.panelId;
                 return this.panelId = Math.floor(Math.random() * 900000 + 99999);
             },
@@ -713,6 +712,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                         if (event.target.id === "tabContextMenu") {
                             insertPoint = "addMenu-tab-insertpoint";
+                            triggerFavMsg(TabContextMenu.contextTab);
                         }
 
                         if (event.target.id === "identity-box-contextmenu") {
@@ -782,23 +782,26 @@ if (typeof window === "undefined" || globalThis !== window) {
                     case 'click':
                         if (event.button == 2 && event.target.id === this.identityBox.id)
                             $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
-
                         break;
                     case 'TabAttrModified':
                         let tab = event.target;
-                        if (content) return;
-                        if (typeof tab === "undefined")
-                            return;
-                        if (!(/^(f|ht)tps?:/.test(tab.linkedBrowser.currentURI.spec))) return;
-                        try {
-                            let hash = calculateHashFromStr(tab.linkedBrowser.currentURI.spec)
-                            tab.faviconHash = hash;
-                            let actor = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
-                            actor.sendAsyncMessage("AM:GetFaviconLink", { hash: hash });
-                        } catch (error) { }
+                        triggerFavMsg(tab);
                         break;
+
                 }
-                function calculateHashFromStr(data) {
+                function triggerFavMsg (tab) {
+                    if (content) return;
+                    if (typeof tab === "undefined")
+                        return;
+                    if (!(/^(f|ht)tps?:/.test(tab.linkedBrowser.currentURI.spec))) return;
+                    try {
+                        let hash = calculateHashFromStr(tab.linkedBrowser.currentURI.spec)
+                        tab.faviconHash = hash;
+                        let actor = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
+                        actor.sendAsyncMessage("AM:GetFaviconLink", { hash: hash });
+                    } catch (error) { }
+                }
+                function calculateHashFromStr (data) {
                     // Lazily create a reusable hasher
                     let gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
                         Ci.nsICryptoHash
@@ -1037,7 +1040,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         }
                 }, this);
 
-                function ps(item, array) {
+                function ps (item, array) {
                     ("join" in item && "unshift" in item) ? [].push.apply(array, item) :
                         array.push(item);
                 }
@@ -1483,7 +1486,7 @@ if (typeof window === "undefined" || globalThis !== window) {
 
                 }
 
-                function insertMenuItem(obj, menuitem, noMove) {
+                function insertMenuItem (obj, menuitem, noMove) {
                     let ins;
                     if (obj.parent && (ins = $(obj.parent))) {
                         ins.appendChild(menuitem);
@@ -1562,7 +1565,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         setImage(menu, getIconURL(engine));
                     });
                     return;
-                    function getIconURL(engine) {
+                    function getIconURL (engine) {
                         // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
                         return (engine._iconURI || engine.iconURI)?.spec || "chrome://browser/skin/search-engine-placeholder.png";
                     }
@@ -1650,7 +1653,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return convert(str);
                 });
 
-                function convert(str) {
+                function convert (str) {
                     switch (str) {
                         case "%T":
                             return bw.contentTitle;
@@ -1738,11 +1741,11 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return str;
                 }
 
-                function htmlEscape(s) {
+                function htmlEscape (s) {
                     return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
                 }
 
-                function getUrl() {
+                function getUrl () {
                     const URI = bw.currentURI;
                     if (URI.schemeIs("about")) {
                         switch (URI.filePath) {
@@ -1757,7 +1760,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     }
                 }
 
-                function getEmailAddress() {
+                function getEmailAddress () {
                     var url = context.linkURL;
                     if (!url || !/^mailto:([^?]+).*/i.test(url)) return "";
                     var addresses = RegExp.$1;
@@ -1769,7 +1772,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return addresses;
                 }
 
-                function img2base64(imgSrc, imgType) {
+                function img2base64 (imgSrc, imgType) {
                     if (typeof imgSrc == 'undefined') return "";
                     imgType = imgType || "image/png";
                     if (imgType === "image/svg+xml" || imgSrc.endsWith(".svg")) return svg2base64(imgSrc);
@@ -1803,7 +1806,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return data;
                 }
 
-                function svg2base64(svgSrc) {
+                function svg2base64 (svgSrc) {
                     if (typeof svgSrc == 'undefined') return "";
                     if (!isSVGSource(svgSrc)) {
                         var xmlhttp = new XMLHttpRequest();
@@ -1817,7 +1820,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                     return svg64;
                 }
 
-                function isSVGSource(str) {
+                function isSVGSource (str) {
                     str = str.trim();
                     return /<svg\b[^>]*>([\s\S]*?)<\/svg>/i.test(str);
                 }
@@ -1954,31 +1957,31 @@ if (typeof window === "undefined" || globalThis !== window) {
             error: error
         }
 
-        function $(id) {
+        function $ (id) {
             return document.getElementById(id);
         }
 
-        function $$(exp, doc) {
+        function $$ (exp, doc) {
             return Array.prototype.slice.call((doc || document).querySelectorAll(exp));
         }
 
-        function $A(args) {
+        function $A (args) {
             return Array.prototype.slice.call(args);
         }
 
-        function log(...args) {
+        function log (...args) {
             console.log(...args);
         }
 
-        function error(...args) {
+        function error (...args) {
             console.error(...args);
         }
 
-        function U(text) {
+        function U (text) {
             return 1 < 'あ'.length ? decodeURIComponent(escape(text)) : text
         };
 
-        function $C(name, attr) {
+        function $C (name, attr) {
             attr || (attr = {});
             var el = document.createXULElement(name);
             if (attr) Object.keys(attr).forEach(function (n) {
@@ -1987,7 +1990,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             return el;
         }
 
-        function addStyle(css) {
+        function addStyle (css) {
             var pi = document.createProcessingInstruction(
                 'xml-stylesheet',
                 'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
@@ -1995,7 +1998,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             return document.insertBefore(pi, document.documentElement);
         }
 
-        function saveFile(fileOrName, data) {
+        function saveFile (fileOrName, data) {
             var file;
             if (typeof fileOrName == "string") {
                 file = Services.dirsvc.get('UChrm', Ci.nsIFile);
@@ -2014,11 +2017,11 @@ if (typeof window === "undefined" || globalThis !== window) {
             foStream.close();
         }
 
-        function capitalize(s) {
+        function capitalize (s) {
             return s && s[0].toUpperCase() + s.slice(1);
         }
 
-        function $L() {
+        function $L () {
             let key = arguments[0];
             if (key) {
                 if (!ADDMENU_LANG[ADDMENU_LOCALE].hasOwnProperty(key)) return capitalize(key);
@@ -2030,11 +2033,11 @@ if (typeof window === "undefined" || globalThis !== window) {
             } else return "";
         }
 
-        function isDef(v) {
+        function isDef (v) {
             return v !== undefined && v !== null
         }
 
-        function setImage(menu, imageUrl) {
+        function setImage (menu, imageUrl) {
             if (imageUrl) {
                 if (enableConvertImageAttrToListStyleImage) {
                     menu.style.listStyleImage = `url(${imageUrl})`;
