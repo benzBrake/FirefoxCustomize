@@ -1,13 +1,30 @@
 // ==UserScript==
 // @name            miscMods.uc.js
-// @description     没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
+// @long-description
+// @description
+/* 没有分类的脚本合集
+
+1. 粘贴并转到增加 Access Key
+2. 中键单击地址栏复制当前地址
+3. 右键地址栏收藏按钮打开书签管理
+4. 右键刷新按钮强制刷新
+5. 右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面
+6. 中键下载按钮提示保存 URL
+7. 右键下载按钮打开下载管理
+8. 左键侧边栏按钮打开书签侧边栏
+9. 中键侧边栏按钮切换侧边栏方向
+10.右键侧边栏按钮打开历史侧边栏
+11.CTRL + F 开关侧边栏
+12.只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
+*/
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20240602
+// @version         20240710
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20240710 修复中键地址栏复制地址，修复中键下载按钮提示保存 URL
 // @note            20240614 移除 Styloaix 按钮功能，继续修复 Bug 1880914
 // @note            20240602 Bug 1892965 - Rename SidebarUI and SidebarLauncher
 // @note            20240417 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed
@@ -38,7 +55,7 @@
         "ctrl f to toggle findbar": true, // Ctrl + F 开关查找栏,
     }
 
-    function MiscUtils() {
+    function MiscUtils () {
         Services.obs.addObserver(this, 'domwindowopened', false);
     }
 
@@ -63,13 +80,16 @@
                         document.getElementById('paste-and-go').setAttribute('accesskey', accesskey);
                     });
             }
-            if (config["urlbar middle click copy url"].enabled) {
-                let input = CustomizableUI.getWidget('urlbar-input').forWindow(window).node;
+            if (config["urlbar middle click copy url"]) {
+                let input = document.getElementById('urlbar');
                 if (input)
-                    input.addEventListener('click', function () {
-                        if (e.button == 1)
+                    input.addEventListener('click', function (e) {
+                        if (e.button == 1) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(gBrowser.currentURI.spec);
-                    });
+                        }
+                    }, false);
             }
             if (config["searchbar paste and go add accesskey"].enabled) {
                 let accesskey = config["urlbar paste and go add accesskey"].accesskey || 'S';
@@ -162,14 +182,11 @@
                             e.preventDefault();
                             e.stopPropagation();
 
-                            var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
-                                .getService(Components.interfaces.nsIPromptService);
-
-                            var check = { value: false };               // default the checkbox to false
                             var input = { value: readFromClipboard() || "" };                  // default the edit field to Bob
-                            var result = prompts.prompt(null, "保存 URL", "请输入 URL?", input, null, check);
+                            var result = Services.prompt.prompt(null, "保存 URL", "请输入 URL?", input, null, {});
                             if (!result)
                                 return;
+                            if (!(/(chrome|resource|ftp|http|https):\/\//i.test(input.value))) return;
                             let cookieJarSettings = gBrowser.selectedBrowser.cookieJarSettings;
                             //saveURL(aURL, aOriginalURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
                             //        aSkipPrompt, aReferrer, aCookieJarSettings,
@@ -177,7 +194,7 @@
                             //        aIsContentWindowPrivate,
                             //        aPrincipal)
                             saveURL(
-                                result,
+                                input.value,
                                 null,
                                 null,
                                 null,
@@ -252,7 +269,7 @@
                         addEvent(header);
                     }
 
-                    function addEvent(header) {
+                    function addEvent (header) {
                         header.addEventListener('dblclick', ({ target }) => {
                             if (target !== header) return;
                             Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
@@ -266,7 +283,7 @@
         }
     }
 
-    function AddonMgr() {
+    function AddonMgr () {
         let args = [...arguments], b = "openAddonsMgr";
         eval(`${parseInt(Services.appinfo.version) < 126
             ? "Browser" + b[0].toUpperCase() + b.slice(1)
