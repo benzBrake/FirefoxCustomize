@@ -104,6 +104,20 @@
       list-style-image: url("./images/extensions/copy-link-plus-plus/copy-link.svg") !important;
     }
 
+    // Copy URL
+    @include InvertButtonIcon("{c0c63e02-d8b5-4b8d-accf-d29e3735f58a}");
+
+    // Custom Buttons
+    [data-l10n-id="custombuttons-viewmenu-item"] > .menu-iconic-left {
+      list-style-image: url("./images/extensions/custom-buttons/add-button.svg") !important;
+    }
+
+    :root[lwt-popup="dark"]
+      [data-l10n-id="custombuttons-viewmenu-item"]
+      > .menu-iconic-left {
+      filter: invert(100%);
+    }
+
     // FlagFox
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:1\:options,
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:0\:options {
@@ -180,11 +194,22 @@
       --menu-image: url("./images/extensions/internet-download-manager/idm.svg");
     }
 
+    // KeePassXC
+    #keepassxc-browser_keepassxc_org-BAP .toolbarbutton-icon {
+      transform: scale(1.15);
+    }
+
     // Link Gopher 链接提取
     #linkgopher_oooninja_com-BAP,
     .unified-extensions-item-action-button[data-extensionid="linkgopher@oooninja.com"] {
       list-style-image: url("./images/extensions/link-gopher/grab-links.svg") !important;
     }
+
+    // MaoXian Web Clipper
+    @include InvertButtonIcon("{7deb155c-e51d-4bbb-a904-37dec499340c}");
+
+    // Media Controller
+    @include InvertButtonIcon("media-controller.extension@tnychn");
 
     // OneTab
     #extension_one-tab_com-browser-action,
@@ -210,6 +235,12 @@
       --menu-image: url("./images/extensions/help.svg");
     }
 
+    // Override Text Encoding
+    @include InvertButtonIcon("{eac1b56f-f3a7-40f4-9181-557dd6e63bf3}");
+
+    // QRCode Util
+    @include InvertButtonIcon("{98646173-7966-4aea-b2ca-4a7e75ff7682}");
+
     // Robo Form
     #rf-firefox_siber_com-menuitem-_SaveForms {
       --menu-image: url("./images/extensions/save.svg");
@@ -234,6 +265,9 @@
     #rf-firefox_siber_com-menuitem-_Options {
       --menu-image: url("./images/extensions/settings.svg");
     }
+
+    // Sound Fixer
+    @include InvertButtonIcon("soundfixer@unrelenting.technology");
 
     // Stylish
     #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-manager {
@@ -431,6 +465,11 @@
     }
 
     // Tree Style Tab
+    :root[lwt-popup="dark"]
+      #treestyletab_piro_sakura_ne_jp-menuitem-_treestyletab
+      .menu-iconic-icon {
+      filter: invert(1);
+    }
     #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0 {
       --menu-image: url("./images/extensions/tree-style-tab/skin.svg");
     }

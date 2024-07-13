@@ -2,11 +2,25 @@
   #sidebar-box {
     --sidebar-background-color: var(--toolbar-bgcolor);
   }
-  [appname="Floorp"] #sidebar-select-box{
+  [appname="Floorp"] #sidebar-select-box {
     background-color: var(--toolbar-bgcolor) !important;
   }
   #sidebar-header {
-    background-color: transparent;
+    background-color: var(--sidebar-background-color);
+  }
+
+  #sidebar-search-container {
+    margin: 8px;
+    @include OS("mac") {
+      margin: 4px;
+    }
+    border: 1px solid var(--arrowpanel-border-color);
+    padding: 0 !important;
+
+    #search-box {
+      appearance: none !important;
+      padding: 5px 8px !important;
+    }
   }
 
   #SM_tabpanels {
@@ -87,11 +101,15 @@
     }
 
     /* Add sidebar divider and give it background */
-
     #sidebar,
     #sidebar-header {
-      border-inline: 1px solid rgb(80, 80, 80);
+      border-inline: 1px solid
+        var(--uc-appcontent-border-color, rgb(80, 80, 80));
       border-inline-width: 0px 1px;
+    }
+
+    #sidebar-header {
+      border-top: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
     }
 
     #sidebar {

@@ -108,7 +108,6 @@ $urlPrefix: "resource://copycat-uchrm/UserThemes/Sidra/";
       background-color: #f7f7f7 !important;
     }
   }
-
   @import "control-button";
   @import "tabs-bar";
   @import "navbar";
@@ -116,6 +115,8 @@ $urlPrefix: "resource://copycat-uchrm/UserThemes/Sidra/";
   @import "personalbar";
   @import "sidebar";
   @import "menus";
+  @import "findbar";
+  @import "tree";
 }
 @layer HighPriority {
   @-moz-document url-prefix("chrome://"),

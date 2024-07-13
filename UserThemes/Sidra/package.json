@@ -4,8 +4,8 @@
   "description": "I dont't like proton UI and aim to **** it.",
   "private": true,
   "scripts": {
-    "build": "sass src/userContent.scss:userContent.css src/userChrome.scss:userChrome.css src/userChrome-115.scss:userChrome-115.css",
-    "watch": "sass --watch src/userContent.scss:userContent.css src/userChrome.scss:userChrome.css src/userChrome-115.scss:userChrome-115.css",
+    "build": "sass src/userContent.scss:userContent.css src/userChrome.scss:userChrome.css",
+    "watch": "sass --watch src/userContent.scss:userContent.css src/userChrome.scss:userChrome.css",
     "test": "jest"
   },
   "author": "Ryan <github-benzBrake@woai.ru>",

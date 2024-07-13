@@ -17,6 +17,10 @@
         border-radius: var(--uc-appcontent-raidus, 8px);
       }
 
+      > #sidebar-splitter {
+        border-color: transparent !important;
+      }
+
       > #appcontent {
         padding: 0 var(--uc-appcontent-padding, 4px)
           var(--uc-appcontent-padding, 4px); // 内容区域四边缩进
@@ -103,12 +107,29 @@
 
       #sidebar-box {
         width: calc(100% - var(--uc-appcontent-padding, 4px));
+
+        > #sidebar-header {
+          border-bottom-color: transparent !important;
+        }
+
         #sidebar {
           position: relative;
           border: 1px solid var(--uc-appcontent-border-color);
-          border-radius: var(--uc-appcontent-raidus, 8px);
           margin-bottom: var(--uc-appcontent-padding, 4px);
           overflow: hidden;
+          @include NotOption("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
+            border-radius: var(--uc-appcontent-raidus, 8px);
+          }
+
+          @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
+            border-radius: 0 0 0 var(--uc-appcontent-raidus, 8px);
+          }
+        }
+
+        #sidebar-header {
+          @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
+            border-radius: var(--uc-appcontent-raidus, 8px) 0 0 0 ;
+          }
         }
 
         &:not([hidden="true"]) {
@@ -134,8 +155,19 @@
                   )
               );
             }
+            border: 1px solid var(--uc-appcontent-border-color);
           }
         }
+      }
+    }
+
+    #sidebar-search-container {
+      border-radius: 4px !important;
+      #search-box {
+        border-radius: 4px 0 0 4px;
+      }
+      #viewButton {
+        border-radius: 0 4px 4px 0;
       }
     }
 

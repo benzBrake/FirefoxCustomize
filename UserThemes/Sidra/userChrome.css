@@ -398,14 +398,14 @@
       width: calc(var(--titlebar-spacer-width, 32px) / 2) !important;
     }
     #toolbar-menubar:not([inactive=true])[autohide=true] + #TabsToolbar > .titlebar-buttonbox-container {
-      visibility: collapse;
+      visibility: collapse !important;
     }
     #toolbar-menubar:not([inactive=true]):not([autohide=true]) .titlebar-buttonbox-container {
-      visibility: collapse;
-    }
-    #toolbar-menubar:not([inactive=true]):not([autohide=true]) + #TabsToolbar > .titlebar-buttonbox-container {
       display: flex !important;
       display: -moz-box !important;
+    }
+    #toolbar-menubar:not([inactive=true]):not([autohide=true]) + #TabsToolbar > .titlebar-buttonbox-container {
+      visibility: collapse !important;
     }
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Tabs.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Titlebar.Horizontal.Enabled") and (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft") {
@@ -1436,9 +1436,10 @@
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (not (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Focus.Border.Enabled")) {
     /* 地址栏/搜索栏选中边框 */
-    #urlbar[focused=true]:not([suppress-focus-border]) > #urlbar-background,
+    #urlbar[focused]:not([suppress-focus-border]) > #urlbar-background,
     #searchbar:focus-within {
       outline-width: 0px !important;
+      --tab-selected-outline-color: transparent;
     }
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Rounded.Enabled") {
@@ -1515,16 +1516,15 @@
     }
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Megarbar.Disabled") {
-    /* Megabar: disable breakout / expanding onto toolbar *********************************************/
     #urlbar[breakout][breakout-extend] {
-      top: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
+      top: calc((var(--urlbar-container-height, --urlbar-toolbar-height) - var(--urlbar-height)) / 2) !important;
       left: 0px !important;
       width: calc(100% - 0px) !important;
     }
     #urlbar[breakout][breakout-extend] > #urlbar-background {
       animation-name: unset !important;
     }
-    #urlbar[breakout][breakout-extend] > #urlbar-input-container {
+    #urlbar[breakout][breakout-extend] > :is(#urlbar-input-container, .urlbar-input-container) {
       height: var(--urlbar-height) !important;
       padding-block: 1px !important;
       padding-inline: 1px !important;
@@ -1537,8 +1537,7 @@
     }
     /* disable 'breakout' animation */
     #urlbar[breakout],
-    #urlbar[breakout] > *,
-    #urlbar-input-container > *:not(.urlbar-page-action, #location-bar) {
+    #urlbar[breakout] * {
       animation: unset !important;
       duration: 0s !important;
       animation-duration: 0s !important;
@@ -1553,6 +1552,9 @@
       padding: unset !important;
       margin: unset !important;
     }
+    .urlbarView {
+      overflow: unset !important;
+    }
     /* disable space wasting inside popup around result items */
     /* disable space wasting inside popup around search engines */
   }
@@ -1566,6 +1568,7 @@
     #urlbar[breakout] #urlbar-results {
       padding: 0px !important;
       margin: 0px !important;
+      --urlbarView-labeled-row-margin-top: 16px;
     }
     #urlbar[breakout] #urlbar-results .urlbarView-body-outer,
     #urlbar[breakout] #urlbar-results .urlbarView-row,
@@ -1574,6 +1577,7 @@
       padding-inline-start: 0 !important;
       margin-inline-end: 0 !important;
       padding-inline-end: 0 !important;
+      --urlbarView-item-block-padding: 3px;
     }
     #urlbar[breakout] #urlbar-results .urlbarView-row-inner {
       padding-inline-start: 4px !important;
@@ -1582,9 +1586,32 @@
     #urlbar[breakout] .urlbarView-row {
       padding-block: 0px !important;
     }
+    #urlbar[breakout] .urlbarView-row[rich-suggestion] .urlbarView-favicon {
+      width: var(--urlbarView-favicon-width) !important;
+      height: var(--urlbarView-favicon-height) !important;
+    }
+    #urlbar[breakout] .urlbarView-row[rich-suggestion] > .urlbarView-row-inner > .urlbarView-row-body {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+    #urlbar[breakout] .urlbarView-row[rich-suggestion] > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top > .urlbarView-row-body-top-no-wrap {
+      align-items: center !important;
+    }
+    #urlbar[breakout] .urlbarView-row[rich-suggestion] > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-description {
+      display: inline-flex !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis;
+    }
+    #urlbar[breakout] .urlbarView-row[rich-suggestion]:not(:hover) .urlbarView-row-body-top-no-wrap > .urlbarView-title-separator {
+      display: block !important;
+    }
     #urlbar[breakout] .search-one-offs {
-      padding-inline: 4px;
-      padding-block: calc(var(--urlbarView-item-block-padding) / 2) !important;
+      padding-top: 0px !important;
+      padding-bottom: 0px !important;
+    }
+    #main-window:not([uidensity=compact]) #identity-box {
+      margin-inline-end: unset !important;
     }
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") {
@@ -1682,6 +1709,11 @@
       padding: var(--urlbar-icon-padding) !important;
     }
   }
+  @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled") and (not (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Megarbar.Disabled")) {
+    #urlbar .search-panel-one-offs-container {
+      margin-inline-end: var(--urlbar-margin-inline);
+    }
+  }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled") and (-moz-bool-pref: "userChromeJS.Sidra.Urlbar.Rounded.Enabled") {
     #urlbar-input-container {
       border-top-right-radius: 0 !important;
@@ -1707,6 +1739,9 @@
   }
   /* Edge-Frfox - personalbar.css
    * https://github.com/bmFtZQ/edge-frfox */
+  /*
+    MARK: Variables
+  */
   :root {
     --bookmark-block-padding: 6px !important;
     --bookmark-inline-padding: 6px !important;
@@ -1721,7 +1756,9 @@
   #PersonalToolbar {
     padding-bottom: var(--uc-bookmark-toolbar-padding-bottom) !important;
   }
-  /* Bookmarks bar item sizing */
+  /*
+    MARK: Bookmark items
+  */
   #personal-toolbar-empty-description,
   #PersonalToolbar .toolbarbutton-1,
   toolbarbutton.bookmark-item:not(.subviewbutton) {
@@ -1742,7 +1779,22 @@
   #PersonalToolbar .toolbarbutton-1 {
     padding: 0 !important;
   }
-  /* Bookmarks bar separators */
+  /* Spacing between icon and label for bookmarks bar items */
+  #managed-bookmarks > .toolbarbutton-icon,
+  #bookmarks-toolbar-placeholder > .toolbarbutton-icon,
+  #PlacesToolbarItems > .bookmark-item > .toolbarbutton-icon[label]:not([label=""]),
+  #OtherBookmarks.bookmark-item[container] > .toolbarbutton-icon {
+    margin-inline-end: 8px !important;
+  }
+  /* Sizing for bookmarks bar icons */
+  #PersonalToolbar .toolbarbutton-1 > .toolbarbutton-icon {
+    width: calc(2 * var(--bookmark-block-padding) + 16px) !important;
+    height: calc(2 * var(--bookmark-block-padding) + 16px) !important;
+    padding: var(--bookmark-block-padding) !important;
+  }
+  /*
+    MARK: Separators
+  */
   #PlacesToolbarItems > toolbarseparator {
     padding-inline: calc(3px - var(--bookmark-inline-margin)) !important;
     align-items: center !important;
@@ -1761,20 +1813,7 @@
   }
   /* Left and Right padding of bookmarks bar */
   #PersonalToolbar {
-    padding-inline: calc(var(--toolbar-start-end-padding) - 6px) calc(var(--toolbar-start-end-padding) - 6px) !important;
-  }
-  /* Spacing between icon and label for bookmarks bar items */
-  #managed-bookmarks > .toolbarbutton-icon,
-  #bookmarks-toolbar-placeholder > .toolbarbutton-icon,
-  #PlacesToolbarItems > .bookmark-item > .toolbarbutton-icon[label]:not([label=""]),
-  #OtherBookmarks.bookmark-item[container] > .toolbarbutton-icon {
-    margin-inline-end: 8px !important;
-  }
-  /* Sizing for bookmarks bar icons */
-  #PersonalToolbar .toolbarbutton-1 > .toolbarbutton-icon {
-    width: calc(2 * var(--bookmark-block-padding) + 16px) !important;
-    height: calc(2 * var(--bookmark-block-padding) + 16px) !important;
-    padding: var(--bookmark-block-padding) !important;
+    padding-inline: calc(var(--toolbar-start-end-padding) - 2px) calc(var(--toolbar-start-end-padding) + 4px) !important;
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.PlacesToolbar.Align.Center") {
     #PlacesToolbarItems:has(+ #PlacesChevron[collapsed=true]) {
@@ -1821,6 +1860,19 @@
       background-color: var(--button-solid-active-background) !important;
     }
   }
+  @media (-moz-bool-pref: "userChromeJS.Sidra.PlacesToolbar.Compact.Minimum.Enabled") {
+    :root {
+      --bookmark-block-padding: 2px !important;
+      --bookmark-inline-padding: 2px !important;
+      --bookmark-block-margin: 1px !important;
+      --bookmark-inline-margin: 1px !important;
+      --uc-bookmark-toolbar-padding-bottom: 1px;
+      --bookmarks-toolbar-overlapping-browser-height: calc(
+        var(--uc-bookmark-toolbar-padding-bottom) + 16px +
+          (var(--bookmark-block-margin) + var(--bookmark-block-padding)) * 2
+      ) !important;
+    }
+  }
   @media (-moz-bool-pref: "userChromeJS.Sidra.Sidebar.Compact") {
     #sidebar-box {
       --sidebar-background-color: var(--toolbar-bgcolor);
@@ -1829,7 +1881,23 @@
       background-color: var(--toolbar-bgcolor) !important;
     }
     #sidebar-header {
-      background-color: transparent;
+      background-color: var(--sidebar-background-color);
+    }
+    #sidebar-search-container {
+      margin: 8px;
+      border: 1px solid var(--arrowpanel-border-color);
+      padding: 0 !important;
+    }
+  }
+  @media (-moz-bool-pref: "userChromeJS.Sidra.Sidebar.Compact") and (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
+    #sidebar-search-container {
+      margin: 4px;
+    }
+  }
+  @media (-moz-bool-pref: "userChromeJS.Sidra.Sidebar.Compact") {
+    #sidebar-search-container #search-box {
+      appearance: none !important;
+      padding: 5px 8px !important;
     }
     #SM_tabpanels {
       background-color: var(--sidebar-background-color) !important;
@@ -1900,8 +1968,11 @@
     /* Add sidebar divider and give it background */
     #sidebar,
     #sidebar-header {
-      border-inline: 1px solid rgb(80, 80, 80);
+      border-inline: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
       border-inline-width: 0px 1px;
+    }
+    #sidebar-header {
+      border-top: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
     }
     #sidebar {
       background-color: inherit !important;
@@ -2442,6 +2513,10 @@
       background-color: var(--uc-panel-item-hover, var(--panel-item-hover-bgcolor, var(--toolbar-bgcolor))) !important;
       color: inherit !important;
     }
+    menupopup menu[_moz-menuactive=true][disabled=true],
+    menupopup menuitem[_moz-menuactive=true][disabled=true] {
+      background-color: var(--uc-panel-item-hover, var(--panel-item-hover-bgcolor, var(--toolbar-bgcolor))) !important;
+    }
     menupopup menuitem:hover:active:not([disabled=true]),
     menupopup menu:hover:active:not([disabled=true]) {
       background-color: var(--uc-panel-item-active, var(--panel-item-active-bgcolor, var(--toolbar-field-background-color))) !important;
@@ -2681,6 +2756,132 @@
       display: none;
     }
   }
+  /* Edge-Frfox - findbar.css
+   * https://github.com/bmFtZQ/edge-frfox */
+  /*
+    MARK: Findbar textbox
+  */
+  @media (-moz-bool-pref: "userChromeJS.Sidra.FindBar.Compact") {
+    .findbar-textbox {
+      border: 0 !important;
+      border-radius: var(--toolbarbutton-border-radius) !important;
+      background-color: var(--toolbar-field-background-color) !important;
+      /* Add shadow when in light mode with no theme applied, like the URL bar. */
+    }
+    :root:not([lwtheme]) .findbar-textbox {
+      box-shadow: 0 0 4px light-dark(rgba(0, 0, 0, 0.1), transparent) !important;
+    }
+    .findbar-textbox:focus {
+      outline-width: 2px !important;
+      outline-offset: -1px !important;
+    }
+    .findbar-textbox[status=notfound] {
+      outline: 2px solid var(--input-error-border-color, #e22850) !important;
+      outline-offset: -1px !important;
+    }
+    /* Prevent focus outline from being cut off on the findbar textbox. */
+    .findbar-container {
+      overflow-inline: visible !important;
+      /* Add ability to drag window from empty space in the findbar. */
+    }
+    .findbar-container::after {
+      content: "";
+      flex: 1;
+      align-self: stretch;
+      margin-block: -6px;
+      -moz-window-dragging: drag;
+    }
+    /*
+      MARK: Findbar buttons
+    */
+    .findbar-find-previous,
+    .findbar-find-next,
+    findbar .close-icon {
+      border-radius: var(--toolbarbutton-border-radius) !important;
+    }
+    .findbar-find-previous:not([disabled]):hover,
+    .findbar-find-next:not([disabled]):hover,
+    findbar .close-icon:not([disabled]):hover {
+      background-color: var(--toolbarbutton-hover-background, rgba(190, 190, 190, 0.2)) !important;
+    }
+    .findbar-find-previous:not([disabled]):hover:active,
+    .findbar-find-next:not([disabled]):hover:active,
+    findbar .close-icon:not([disabled]):hover:active {
+      background-color: var(--toolbarbutton-active-background, rgba(190, 190, 190, 0.4)) !important;
+    }
+  }
+  /* Edge-Frfox - tree.css */
+  /* Change height of tree items and add rounded corners */
+  treechildren::-moz-tree-row,
+  treecol:not([hideheader=true]),
+  .tree-columnpicker-button {
+    min-height: max(28px, 1.3em) !important;
+    border-radius: 2px !important;
+  }
+  /* Change the background colour on hover */
+  @media not (prefers-contrast) {
+    treechildren::-moz-tree-row(hover) {
+      background-color: var(--toolbarbutton-hover-background) !important;
+    }
+  }
+  /* Change the background colour when pressed */
+  treechildren::-moz-tree-row(selected) {
+    background-color: var(--toolbarbutton-active-background) !important;
+  }
+  /* Change the background colour when focused */
+  treechildren::-moz-tree-row(selected, focus) {
+    background-color: var(--button-primary-bgcolor) !important;
+  }
+  treechildren::-moz-tree-row(current, focus) {
+    outline: var(--default-focusring);
+    outline-color: var(--button-primary-bgcolor) !important;
+    outline-offset: calc(-1 * var(--default-focusring-width));
+  }
+  treechildren::-moz-tree-image(selected),
+  treechildren::-moz-tree-twisty(selected),
+  treechildren::-moz-tree-cell-text(selected) {
+    color: inherit !important;
+  }
+  treechildren::-moz-tree-image(selected, focus),
+  treechildren::-moz-tree-twisty(selected, focus),
+  treechildren::-moz-tree-cell-text(selected, focus) {
+    color: var(--button-primary-color) !important;
+  }
+  /* Spacing between icon and label */
+  treechildren::-moz-tree-image {
+    margin-inline-end: 8px !important;
+  }
+  /* Separator appearance */
+  treechildren::-moz-tree-separator {
+    border-top: 1px solid var(--toolbarseparator-color) !important;
+    border-bottom: none !important;
+  }
+  /* Change the colour of the drop feedback elements */
+  treechildren::-moz-tree-cell-text(primary, dropOn) {
+    background-color: var(--button-primary-bgcolor) !important;
+    color: var(--button-primary-color) !important;
+  }
+  treechildren::-moz-tree-drop-feedback {
+    background-color: var(--toolbarbutton-icon-fill-attention) !important;
+    border-radius: 2px !important;
+  }
+  /* Change the appearance for the expandable items */
+  treechildren::-moz-tree-twisty {
+    padding-top: 0 !important;
+    padding-inline: 4px !important;
+    width: 16px !important;
+    list-style-image: url("./images/icons/arrow-filled-right.svg") !important;
+  }
+  treechildren:-moz-locale-dir(rtl)::-moz-tree-twisty(closed) {
+    list-style-image: url("./images/icons/arrow-filled-left.svg") !important;
+  }
+  treechildren::-moz-tree-twisty(open) {
+    list-style-image: url("./images/icons/arrow-filled-down.svg") !important;
+  }
+  /* Change the identation of child items */
+  treechildren::-moz-tree-indentation {
+    width: 16px !important;
+  }
 }
 @layer HighPriority {
   @-moz-document url-prefix("chrome://"),
@@ -2775,6 +2976,11 @@
             var(--copycat-btn-margin-inline-end)
         );
         position: relative;
+        --copycat-btn-position: absolute;
+      }
+      #navigator-toolbox:not(:has(#CopyCat-Btn)) {
+        --copycat-btn-fix-margin: 0;
+        --copycat-btn-position: static;
       }
       #nav-bar:not([tabs-hidden=true]) {
         position: static !important;
@@ -2840,11 +3046,21 @@
     @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft")) and (not (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled")) {
       #CopyCat-Btn {
         margin-block: 0;
-        position: absolute;
+        position: var(--copycat-btn-position);
         top: 0;
         left: var(--copycat-btn-margin-inline-start);
         border-radius: 0 0 6px 6px;
       }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft")) and (not (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled")) and (not (-moz-bool-pref: "userChromeJS.Sidra.Titlebar.Horizontal.Enabled")) {
+      :root[menubarInactive=true] #TabsToolbar {
+        margin-inline-start: var(--copycat-btn-fix-margin) !important;
+      }
+      :root:not([menubarInactive=true]) #toolbar-menubar {
+        margin-inline-start: var(--copycat-btn-fix-margin) !important;
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft")) and (not (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled")) and (-moz-bool-pref: "userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
       #TabsToolbar {
         margin-inline-start: var(--copycat-btn-fix-margin) !important;
       }
@@ -3549,6 +3765,14 @@
       menupopup menuitem:is([type=checkbox], [type=radio]):not([checked=true]) {
         list-style-image: url("./images/icons/checkbox.svg") !important;
       }
+      menupopup menuitem:is([checked=true], [selected=true]) .menu-iconic-icon {
+        list-style-image: url("./images/icons/checkmark.svg") !important;
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-platform: linux) {
+      menupopup menuitem:is([checked=true], [selected=true]) .menu-iconic-icon {
+        list-style-image: none !important;
+      }
     }
     @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.MenuPopup.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.ContextMenu.Enabled") {
       /** addMenu 增加的菜单  */
@@ -3572,16 +3796,6 @@
       }
       #context-bookmarkpage[starred] {
         list-style-image: url("./images/icons/bookmark.svg") !important;
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.MenuPopup.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.ContextMenu.Enabled") {
-      menupopup > menuitem:is([checked=true], [selected=true]) .menu-iconic-icon {
-        list-style-image: url("./images/icons/checkmark.svg") !important;
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.MenuPopup.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.ContextMenu.Enabled") and (-moz-platform: linux) {
-      menupopup > menuitem:is([checked=true], [selected=true]) .menu-iconic-icon {
-        list-style-image: none !important;
       }
     }
     @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.MenuPopup.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.ContextMenu.Enabled") {
@@ -3699,9 +3913,6 @@
       #addMenu-copy-link-and-title {
         list-style-image: url("./images/icons/website.svg") !important;
       }
-      #addMenu-copy-favicon > .addMenu[text="%FAVICON_BASE64%"] {
-        list-style-image: url("./images/icons/64.svg") !important;
-      }
       #context-savepage,
       #context-saveframe {
         --menu-image: url("./images/icons/save.svg");
@@ -3784,6 +3995,9 @@
       }
       #context-searchselect-private {
         --menu-image: url("./images/icons/search-private.svg");
+      }
+      #context-translate-selection {
+        --menu-image: url("./images/icons/translate.svg");
       }
       #context-viewimage {
         --menu-image: url("./images/icons/image-open.svg");
@@ -3981,6 +4195,7 @@
       #context_splitView {
         --menu-image: url("./images/icons/column.svg");
       }
+      #context_closeDuplicateTabs,
       #context_closeTab {
         --menu-image: var(--uc-close-icon);
       }
@@ -4180,7 +4395,8 @@
       #CB-undoCloseTab {
         list-style-image: url("./images/icons/edit-undo.svg") !important;
       }
-      #CB-SnapShot {
+      #CB-SnapShot,
+      #ScreenshotTools-button {
         list-style-image: url("./images/icons/screenshot-colorful.svg") !important;
       }
       #memoryMinimizationButton {
@@ -4385,6 +4601,9 @@
       :root:not([sizemode=fullscreen]) #browser > #TabsToolbar {
         border-radius: var(--uc-appcontent-raidus, 8px);
       }
+      :root:not([sizemode=fullscreen]) #browser > #sidebar-splitter {
+        border-color: transparent !important;
+      }
       :root:not([sizemode=fullscreen]) #browser > #appcontent {
         padding: 0 var(--uc-appcontent-padding, 4px) var(--uc-appcontent-padding, 4px);
         background-color: var(--toolbar-bgcolor);
@@ -4435,13 +4654,32 @@
       :root:not([sizemode=fullscreen]) #browser #sidebar-box {
         width: calc(100% - var(--uc-appcontent-padding, 4px));
       }
+      :root:not([sizemode=fullscreen]) #browser #sidebar-box > #sidebar-header {
+        border-bottom-color: transparent !important;
+      }
       :root:not([sizemode=fullscreen]) #browser #sidebar-box #sidebar {
         position: relative;
         border: 1px solid var(--uc-appcontent-border-color);
-        border-radius: var(--uc-appcontent-raidus, 8px);
         margin-bottom: var(--uc-appcontent-padding, 4px);
         overflow: hidden;
       }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.AppContent.Rounded.Enabled") and (not (-moz-bool-pref: "userChromeJS.Sidra.Sidebar.AutoHide.Enabled")) {
+      :root:not([sizemode=fullscreen]) #browser #sidebar-box #sidebar {
+        border-radius: var(--uc-appcontent-raidus, 8px);
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.AppContent.Rounded.Enabled") and (-moz-bool-pref: "userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
+      :root:not([sizemode=fullscreen]) #browser #sidebar-box #sidebar {
+        border-radius: 0 0 0 var(--uc-appcontent-raidus, 8px);
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.AppContent.Rounded.Enabled") and (-moz-bool-pref: "userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
+      :root:not([sizemode=fullscreen]) #browser #sidebar-box #sidebar-header {
+        border-radius: var(--uc-appcontent-raidus, 8px) 0 0 0;
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.AppContent.Rounded.Enabled") {
       :root:not([sizemode=fullscreen]) #browser #sidebar-box:not([hidden=true])[style*="order: 5"] {
         padding-right: var(--uc-appcontent-padding, 4px);
       }
@@ -4450,9 +4688,19 @@
       }
       :root:not([sizemode=fullscreen]) #browser #sidebar-box:not([hidden=true])[style*="order: 3"] {
         padding-left: var(--uc-appcontent-padding, 4px);
+        border: 1px solid var(--uc-appcontent-border-color);
       }
       :root:not([sizemode=fullscreen]) #browser #sidebar-box:not([hidden=true])[style*="order: 3"] ~ #appcontent {
         padding-left: calc(var(--uc-appcontent-padding, 4px) - var(--uc-appcontent-spliter-width, 2px));
+      }
+      :root:not([sizemode=fullscreen]) #sidebar-search-container {
+        border-radius: 4px !important;
+      }
+      :root:not([sizemode=fullscreen]) #sidebar-search-container #search-box {
+        border-radius: 4px 0 0 4px;
+      }
+      :root:not([sizemode=fullscreen]) #sidebar-search-container #viewButton {
+        border-radius: 0 4px 4px 0;
       }
       :root:not([sizemode=fullscreen]) #sidebar2-box:not([style*="max-width:0"]) ~ #sidebar-select-box,
       :root:not([sizemode=fullscreen]) #status-bar,
@@ -4708,6 +4956,16 @@
     #_copylinksplusplus-BAP {
       list-style-image: url("./images/extensions/copy-link-plus-plus/copy-link.svg") !important;
     }
+    :root[lwt-toolbar-field=dark] toolbaritem[data-extensionid="{c0c63e02-d8b5-4b8d-accf-d29e3735f58a}"][cui-areatype=toolbar] .toolbarbutton-icon,
+    :root[lwt-popup=dark] toolbarbutton[data-extensionid="{c0c63e02-d8b5-4b8d-accf-d29e3735f58a}"]:not(.unified-extensions-item-menu-button) image {
+      filter: invert(1);
+    }
+    [data-l10n-id=custombuttons-viewmenu-item] > .menu-iconic-left {
+      list-style-image: url("./images/extensions/custom-buttons/add-button.svg") !important;
+    }
+    :root[lwt-popup=dark] [data-l10n-id=custombuttons-viewmenu-item] > .menu-iconic-left {
+      filter: invert(100%);
+    }
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:1\:options,
     #_1018e4d6-728f-4b20-ad56-37578a4de76b_-menuitem-_Flagfox\:0\:options {
       --menu-image: url("./images/extensions/settings.svg");
@@ -4760,9 +5018,20 @@
     #contentAreaContextMenu [id^=mozilla_cc3_internet][id*=manager] {
       --menu-image: url("./images/extensions/internet-download-manager/idm.svg");
     }
+    #keepassxc-browser_keepassxc_org-BAP .toolbarbutton-icon {
+      transform: scale(1.15);
+    }
     #linkgopher_oooninja_com-BAP,
     .unified-extensions-item-action-button[data-extensionid="linkgopher@oooninja.com"] {
       list-style-image: url("./images/extensions/link-gopher/grab-links.svg") !important;
+    }
+    :root[lwt-toolbar-field=dark] toolbaritem[data-extensionid="{7deb155c-e51d-4bbb-a904-37dec499340c}"][cui-areatype=toolbar] .toolbarbutton-icon,
+    :root[lwt-popup=dark] toolbarbutton[data-extensionid="{7deb155c-e51d-4bbb-a904-37dec499340c}"]:not(.unified-extensions-item-menu-button) image {
+      filter: invert(1);
+    }
+    :root[lwt-toolbar-field=dark] toolbaritem[data-extensionid="media-controller.extension@tnychn"][cui-areatype=toolbar] .toolbarbutton-icon,
+    :root[lwt-popup=dark] toolbarbutton[data-extensionid="media-controller.extension@tnychn"]:not(.unified-extensions-item-menu-button) image {
+      filter: invert(1);
     }
     #extension_one-tab_com-browser-action,
     #extension_one-tab_com-BAP {
@@ -4777,6 +5046,14 @@
     }
     [id^=extension_one-tab_com-menuitem] :is(menuitem[label^=帮助], menuitem[label^=Help]) {
       --menu-image: url("./images/extensions/help.svg");
+    }
+    :root[lwt-toolbar-field=dark] toolbaritem[data-extensionid="{eac1b56f-f3a7-40f4-9181-557dd6e63bf3}"][cui-areatype=toolbar] .toolbarbutton-icon,
+    :root[lwt-popup=dark] toolbarbutton[data-extensionid="{eac1b56f-f3a7-40f4-9181-557dd6e63bf3}"]:not(.unified-extensions-item-menu-button) image {
+      filter: invert(1);
+    }
+    :root[lwt-toolbar-field=dark] toolbaritem[data-extensionid="{98646173-7966-4aea-b2ca-4a7e75ff7682}"][cui-areatype=toolbar] .toolbarbutton-icon,
+    :root[lwt-popup=dark] toolbarbutton[data-extensionid="{98646173-7966-4aea-b2ca-4a7e75ff7682}"]:not(.unified-extensions-item-menu-button) image {
+      filter: invert(1);
     }
     #rf-firefox_siber_com-menuitem-_SaveForms {
       --menu-image: url("./images/extensions/save.svg");
@@ -4795,6 +5072,10 @@
     }
     #rf-firefox_siber_com-menuitem-_Options {
       --menu-image: url("./images/extensions/settings.svg");
+    }
+    :root[lwt-toolbar-field=dark] toolbaritem[data-extensionid="soundfixer@unrelenting.technology"][cui-areatype=toolbar] .toolbarbutton-icon,
+    :root[lwt-popup=dark] toolbarbutton[data-extensionid="soundfixer@unrelenting.technology"]:not(.unified-extensions-item-menu-button) image {
+      filter: invert(1);
     }
     #_7a7a4a92-a2a0-41d1-9fd7-1e92480d612d_-menuitem-_open-manager {
       --menu-image: url("./images/extensions/stylus/css.svg");
@@ -4941,6 +5222,9 @@
     #firefox_tampermonkey_net-menuitem-_root > menupopup > menu menuitem {
       --menu-image: url("./images/extensions/settings.svg");
     }
+    :root[lwt-popup=dark] #treestyletab_piro_sakura_ne_jp-menuitem-_treestyletab .menu-iconic-icon {
+      filter: invert(1);
+    }
     #treestyletab_piro_sakura_ne_jp-menuitem-_browserActionItem\:0 {
       --menu-image: url("./images/extensions/tree-style-tab/skin.svg");
     }
@@ -4979,9 +5263,7 @@
       --menu-image: url("./images/extensions/tree-style-tab/pin.svg");
     }
     #treestyletab_piro_sakura_ne_jp-menuitem-_context_unpinTab {
-      --menu-image:
-        linear-gradient(45deg, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + 1px), transparent calc(50% + 1px)),
-        url("./images/extensions/tree-style-tab/pin.svg");
+      --menu-image: linear-gradient(45deg, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + 1px), transparent calc(50% + 1px)), url("./images/extensions/tree-style-tab/pin.svg");
     }
     #treestyletab_piro_sakura_ne_jp-menuitem-_context_duplicateTab {
       --menu-image: url("./images/extensions/tree-style-tab/duplicate-tab.svg");

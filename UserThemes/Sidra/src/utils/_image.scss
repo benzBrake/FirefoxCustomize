@@ -17,7 +17,27 @@
     transparent calc(50% + #{$diagonalSize})
   );
 
-  --menu-image:
-    #{$gradient},
-    url("#{$imageUrl}");
+  --menu-image: #{$gradient}, url("#{$imageUrl}");
+}
+
+@mixin InvertButtonIcon($id) {
+  :root[lwt-toolbar-field="dark"]
+    toolbaritem[data-extensionid="#{$id}"][cui-areatype="toolbar"]
+    .toolbarbutton-icon,
+  :root[lwt-popup="dark"]
+    toolbarbutton[data-extensionid="#{$id}"]:not(
+      .unified-extensions-item-menu-button
+    )
+    image {
+    filter: invert(1);
+  }
+}
+
+@mixin InvertMenuIcon($id) {
+  :root[lwt-popup="dark"]
+    :-moz-any(menu, menuitem)
+    > .menu-iconic-left
+    > .menu-iconic-icon {
+    filter: invert(1);
+  }
 }

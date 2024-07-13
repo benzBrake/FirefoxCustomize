@@ -37,15 +37,15 @@
       }
 
       &[autohide="true"] + #TabsToolbar > .titlebar-buttonbox-container {
-        visibility: collapse;
+        visibility: collapse !important;
       }
 
       &:not([autohide="true"]) {
         .titlebar-buttonbox-container {
-          visibility: collapse;
+          @include Box(true);
         }
         + #TabsToolbar > .titlebar-buttonbox-container {
-          @include Box(true);
+          visibility: collapse !important;
         }
       }
     }

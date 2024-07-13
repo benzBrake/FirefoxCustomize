@@ -150,8 +150,11 @@ url-prefix("chrome: //mozapps/content/extensions/aboutaddons.xhtml")
     flex-shrink: 0;
   }
 
+  .addon {
+    --z-index-popup: 99
+  }
+
   panel-list {
-    z-index: 99;
     > panel-item-separator {
       display: none;
     }

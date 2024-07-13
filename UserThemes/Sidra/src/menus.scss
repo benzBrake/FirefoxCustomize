@@ -694,6 +694,14 @@
     color: inherit !important;
   }
 
+  menupopup menu[_moz-menuactive="true"][disabled="true"],
+  menupopup menuitem[_moz-menuactive="true"][disabled="true"] {
+    background-color: var(
+      --uc-panel-item-hover,
+      var(--panel-item-hover-bgcolor, var(--toolbar-bgcolor))
+    ) !important;
+  }
+
   menupopup menuitem:hover:active:not([disabled="true"]),
   menupopup menu:hover:active:not([disabled="true"]) {
     background-color: var(

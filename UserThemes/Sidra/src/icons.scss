@@ -55,6 +55,12 @@
           var(--copycat-btn-margin-inline-end)
       );
       position: relative;
+      --copycat-btn-position: absolute;
+    }
+
+    #navigator-toolbox:not(:has(#CopyCat-Btn)) {
+      --copycat-btn-fix-margin: 0;
+      --copycat-btn-position: static;
     }
 
     #nav-bar:not([tabs-hidden="true"]) {
@@ -171,14 +177,30 @@
       @include NotOption("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
         #CopyCat-Btn {
           margin-block: 0;
-          position: absolute;
+          position: var(--copycat-btn-position);
           top: 0;
           left: var(--copycat-btn-margin-inline-start);
           border-radius: 0 0 6px 6px;
         }
 
-        #TabsToolbar {
-          margin-inline-start: var(--copycat-btn-fix-margin) !important;
+        @include NotOption("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
+          :root[menubarInactive="true"] {
+            #TabsToolbar {
+              margin-inline-start: var(--copycat-btn-fix-margin) !important;
+            }
+          }
+
+          :root:not([menubarInactive="true"]) {
+            #toolbar-menubar {
+              margin-inline-start: var(--copycat-btn-fix-margin) !important;
+            }
+          }
+        }
+
+        @include Option("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
+          #TabsToolbar {
+            margin-inline-start: var(--copycat-btn-fix-margin) !important;
+          }
         }
       }
     }
@@ -634,6 +656,13 @@
     menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]) {
       list-style-image: url("./images/icons/checkbox.svg") !important;
     }
+    menuitem:is([checked="true"], [selected="true"]) .menu-iconic-icon {
+      list-style-image: url("./images/icons/checkmark.svg") !important;
+
+      @media (-moz-platform: linux) {
+        list-style-image: none !important;
+      }
+    }
   }
 
   @include Option("userChromeJS.Sidra.MenuPopup.Compact") {
@@ -665,16 +694,6 @@
       }
 
       // Context Menu Icons
-      menupopup
-        > menuitem:is([checked="true"], [selected="true"])
-        .menu-iconic-icon {
-        list-style-image: url("./images/icons/checkmark.svg") !important;
-
-        @media (-moz-platform: linux) {
-          list-style-image: none !important;
-        }
-      }
-
       #context-video-pictureinpicture:not([checked="true"]) .menu-iconic-icon {
         list-style-image: url("./images/icons/media-pip.svg") !important;
       }
@@ -829,10 +848,6 @@
         list-style-image: url("./images/icons/website.svg") !important;
       }
 
-      #addMenu-copy-favicon > .addMenu[text="%FAVICON_BASE64%"] {
-        list-style-image: url("./images/icons/64.svg") !important;
-      }
-
       /** 原生菜单 */
       #context-savepage,
       #context-saveframe {
@@ -933,6 +948,10 @@
 
       #context-searchselect-private {
         --menu-image: url("./images/icons/search-private.svg");
+      }
+
+      #context-translate-selection {
+        --menu-image: url("./images/icons/translate.svg");
       }
 
       #context-viewimage {
@@ -1178,6 +1197,7 @@
         --menu-image: url("./images/icons/column.svg");
       }
 
+      #context_closeDuplicateTabs,
       #context_closeTab {
         --menu-image: var(--uc-close-icon);
       }
@@ -1446,7 +1466,8 @@
     list-style-image: url("./images/icons/edit-undo.svg") !important;
   }
   // 高级截图
-  #CB-SnapShot {
+  #CB-SnapShot,
+  #ScreenshotTools-button {
     list-style-image: url("./images/icons/screenshot-colorful.svg") !important;
   }
   // 内存优化

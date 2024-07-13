@@ -10,11 +10,6 @@
             "min-version": "122a1"
         },
         {
-            "filename": "userChrome-115.css",
-            "min-version": "115a1",
-            "max-version": "121.0.1"
-        },
-        {
             "filename": "userContent.css"
         }
     ],
@@ -43,6 +38,7 @@
         "userChromeJS.Sidra.DevTools.Compact",
         "userChromeJS.Sidra.AppContent.Rounded.Enabled",
         "userChromeJS.Sidra.Menubar.AccessKey.Disabled",
+        "userChromeJS.Sidra.FindBar.Compact",
         {
             "pref": "userChromeJS.Sidra.Tabs.Compact",
             "group": "tabs-bar"
@@ -244,6 +240,10 @@
             "group": "places-toolbar"
         },
         {
+            "pref": "userChromeJS.Sidra.PlacesToolbar.Compact.Minimum.Enabled",
+            "group": "places-toolbar"
+        },
+        {
             "pref": "userChromeJS.Sidra.Icons.Compact",
             "group": "icons"
         },
@@ -323,6 +323,11 @@
             "targetAttr": "photoncompact"
         },
         {
+            "eval": "!Services.prefs.getBoolPref('userChromeJS.Sidra.MenuPopup.Compact', false)",
+            "target": "#tabContextMenu",
+            "targetAttr": "photoncompact"
+        },
+        {
             "eval": "getComputedStyle(document.getElementById('nav-bar')).height",
             "target": "#navigator-toolbox",
             "timeOut": 100,
@@ -355,6 +360,11 @@
             "from": "#sidebar-box",
             "attr": "hidden",
             "targetAttr": "sidebarHidden"
+        },
+        {
+            "from": "#toolbar-menubar",
+            "attr": "inactive",
+            "targetAttr": "menubarInactive"
         }
     ],
     "locales": {
@@ -369,6 +379,7 @@
             "userChromeJS.Sidra.AppContent.Rounded.Enabled": "内容区域圆角",
             "userChromeJS.Sidra.ControlButton.ShowOnLeft": "控制显示在左边",
             "userChromeJS.Sidra.Menubar.AccessKey.Disabled": "禁用 Alt 弹出主菜单",
+            "userChromeJS.Sidra.FindBar.Compact": "应用查找栏样式",
             "userChromeJS.Sidra.Tabs.Compact": "标签栏样式总开关",
             "userChromeJS.Sidra.Tabs.DragSpace.Left.Disabled": "隐藏标签栏左侧拖拽空间",
             "userChromeJS.Sidra.Tabs.DragSpace.Right.Disabled": "隐藏标签栏右侧拖拽空间",
@@ -413,6 +424,7 @@
             "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled": "合并刷新按钮到地址栏内",
             "userChromeJS.Sidra.PlacesToolbar.Align.Center": "书签工具栏居中显示",
             "userChromeJS.Sidra.PlacesToolbar.IconsOnly.Enabled": "书签工具栏仅显示图标",
+            "userChromeJS.Sidra.PlacesToolbar.Compact.Minimum.Enabled": "书签工具栏极限紧凑",
             "userChromeJS.Sidra.Sidebar.Compact": "侧边栏样式总开关",
             "userChromeJS.Sidra.Sidebar.AutoHide.Enabled": "自动隐藏原侧边栏",
             "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled": "自动隐藏 Modoki 侧边栏",
