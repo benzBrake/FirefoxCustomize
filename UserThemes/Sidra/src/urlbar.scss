@@ -143,7 +143,7 @@
 
     /* disable 'breakout' animation */
     #urlbar[breakout],
-    #urlbar[breakout] * {
+    #urlbar[breakout] *:not(.toolbarbutton-1, .toolbarbutton-badge-stack, .toolbarbutton-badge-stack *) {
       animation: unset !important;
       duration: 0s !important;
       animation-duration: 0s !important;
