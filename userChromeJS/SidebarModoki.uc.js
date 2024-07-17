@@ -452,6 +452,7 @@ var SidebarModoki = {
     this.ToolBox = document.getElementById("SM_toolbox");
     this.Splitter = document.getElementById("SM_splitter");
     this.Header = document.getElementById("SM_header");
+    this.Tabs = document.getElementById("SM_tabs");
     this.ContentBox = document.getElementById("SM_contentbox");
     this.TabBox = document.getElementById("SM_tabbox");
     this.ControlButtons = document.getElementById("SM_buttons");
@@ -472,6 +473,8 @@ var SidebarModoki = {
     this.ToolBox.removeAttribute("collapsed");
     this.Splitter.removeAttribute("collapsed");
     window.addEventListener("aftercustomization", this, false);
+
+    this.Tabs.addEventListener("wheel", this, false);
 
     this.prefs.addObserver("sidebar.position_start", (p, v) => {
       setTimeout(() => {
@@ -651,10 +654,19 @@ var SidebarModoki = {
 
   handleEvent: function (event) {
     switch (event.type) {
-      case 'focus':
-        this.onSelect(event);
-        break;
-      case 'resize':
+      case 'wheel':
+        clearTimeout(this.timeOut);
+        this.timeOut = setTimeout(() => {
+          let index = parseInt(this.selectedTab.id.replace("SM_tab", ""), 10);
+          // 滚轮向上 index +1 滚轮上下 index-1，少于0则设置为 this.Tabs.children.length，超过this.Tabs.children.length,设置为0
+          index += event.deltaY > 0 ? 1 : -1;
+          if (index < 0) {
+            index = this.Tabs.children.length - 1;
+          } else if (index >= this.Tabs.children.length - 1) {
+            index = 0;
+          }
+          this.switchToTab(index);
+        }, 10);
         break;
       case 'MozDOMFullscreen:Entered':
         if (!!this.ToolBox) {
