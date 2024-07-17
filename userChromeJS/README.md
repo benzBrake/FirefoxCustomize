@@ -276,6 +276,56 @@ Firefox 支持 has 选择器后用不上了，直接使用 CSS 即可：https://
   }],
 ```
 
+### 自动隐藏（仅支持 2024.07.17之后的版本）
+
+```css
+#browser:has(#SM_toolbox[open="true"]) {
+    position: relative;
+}
+#SM_toolbox[open=true][style*="--width"] {
+      --uc-autohide-sidebar-delay: 600ms; /* Wait 0.6s before hiding sidebar */
+      --uc-autohide-transition-duration: 115ms;
+      --uc-autohide-transition-type: linear;
+      --sidebar-background-color: transparent;
+      transition: width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay);
+      will-change: width;
+      position: absolute;
+      height: 100%;
+      top: 0;
+      z-index: 1;
+      border-top: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
+      min-width: unset;
+    }
+    #SM_toolbox[open=true][style*="--width"] > #SM_content {
+      width: calc(100% - var(--width));
+    }
+    #SM_toolbox[open=true][style*="--width"]:not([positionend=true]) {
+      border-right: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
+      left: 0;
+    }
+    #SM_toolbox[open=true][style*="--width"]:not([positionend=true]) ~ #appcontent {
+      margin-inline-start: 34px;
+    }
+    #SM_toolbox[open=true][style*="--width"][positionend=true] {
+      right: 0;
+    }
+    #SM_toolbox[open=true][style*="--width"][positionend=true] ~ #appcontent {
+      margin-inline-end: 34px;
+    }
+    #SM_toolbox[open=true][style*="--width"]:not(:hover, :focus, :focus-within, :active) {
+      --width: 34px !important ;
+    }
+    #SM_toolbox[open=true][style*="--width"] ~ #SM_splitter {
+      visibility: collapse;
+    }
+    #SM_toolbox[positionend=true] {
+      border-left: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
+    }
+}
+```
+
+
+
 ## Views Counter
 
 <div align='center'><a href='https://www.websitecounterfree.com'><img src='https://www.websitecounterfree.com/c.php?d=9&id=56124&s=1' border='0' alt='Free Website Counter'></a><br / ><small><a href='https://www.websitecounterfree.com' title="Free Website Counter">Free Website Counter Since:2024.06.30</a></small></div>
