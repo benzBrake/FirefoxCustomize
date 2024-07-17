@@ -275,25 +275,25 @@ var SidebarModoki = {
         flex-wrap: wrap-reverse;
         gap: 4px;
       }
-      #SM_buttons_group {
+      #SM_header_toolbar {
         padding: 3px;
         justify-content: space-between;
       }
-      #SM_buttons .toolbarbutton-1 {
+      #SM_control .toolbarbutton-1 {
         padding: 0 !important;
         appearance: none !important;
       }
-      #SM_buttons .toolbarbutton-1 > .toolbarbutton-icon {
+      #SM_control .toolbarbutton-1 > .toolbarbutton-icon {
         padding: 2px !important;
         height: 20px !important;
         width: 20px !important;
       }
-      #SM_buttons .toolbarbutton-1:hover,
-      #SM_buttons .toolbarbutton-1:focus {
+      #SM_control .toolbarbutton-1:hover,
+      #SM_control .toolbarbutton-1:focus {
         background-color: var(--toolbarbutton-hover-background) !important;
       }
-      #SM_buttons .toolbarbutton-1:hover > .toolbarbutton-icon,
-      #SM_buttons .toolbarbutton-1:focus > .toolbarbutton-icon {
+      #SM_control .toolbarbutton-1:hover > .toolbarbutton-icon,
+      #SM_control .toolbarbutton-1:focus > .toolbarbutton-icon {
         background-color: transparent !important;
       }
       #SM_stopReloadButton {
@@ -357,8 +357,8 @@ var SidebarModoki = {
         ["vbox", { id: "SM_contentbox", flex: 1 },
           ["hbox", { id: "SM_header", align: "center" },
             ["label", { flex: 1 }, "SidebarModoki"],
-            ["hbox", { id: 'SM_buttons_group', flex: 1 },
-              ["hbox", { id: "SM_buttons", align: "end" },
+            ["hbox", { id: 'SM_header_toolbar', flex: 1 },
+              ["hbox", { id: "SM_control", align: "end" },
                 ["toolbarbutton", { id: "SM_backButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Back", image: "chrome://browser/skin/back.svg", oncommand: "SidebarModoki.back()" }],
                 ["toolbarbutton", { id: "SM_forwardButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Forward", image: "chrome://browser/skin/forward.svg", oncommand: "SidebarModoki.forward()" }],
                 ["toolbaritem", { id: "SM_stopReloadButton", class: "tabbable" },
@@ -455,7 +455,7 @@ var SidebarModoki = {
     this.Tabs = document.getElementById("SM_tabs");
     this.ContentBox = document.getElementById("SM_contentbox");
     this.TabBox = document.getElementById("SM_tabbox");
-    this.ControlButtons = document.getElementById("SM_buttons");
+    this.Control = document.getElementById("SM_control");
 
     this.updatePosition();
 
@@ -527,10 +527,10 @@ var SidebarModoki = {
       index = -1;
     }
     if (this.selectedBrowser) {
-      this.ControlButtons.collapsed = false;
+      this.Control.collapsed = false;
       this.updateButtons();
     } else {
-      this.ControlButtons.collapsed = true;
+      this.Control.collapsed = true;
     }
     if (saveIndex) {
       this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, index);
@@ -551,8 +551,9 @@ var SidebarModoki = {
   },
 
   updateButtons () {
+    if (this.selectedTab)
+      this.Control.collapsed = !this.selectedTab.src.startsWith("http");
     if (this.selectedBrowser && this.selectedTab && this.selectedTab.src.startsWith("http")) {
-      this.ControlButtons.collapsed = !this.selectedTab.src.startsWith("http");
       const { canGoBack, canGoForward, isNavigating } = this.selectedBrowser.webNavigation;
       if (canGoBack) {
         document.getElementById("SM_backButton").removeAttribute("disabled");
