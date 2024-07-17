@@ -506,6 +506,8 @@ var SidebarModoki = {
           document.getElementById("SM_tabpanels").selectedIndex = index;
           this.ContentBox.removeAttribute("collapsed");
           this.ToolBox.setAttribute("open", true);
+          this.ToolBox.removeAttribute("width");
+          this.ToolBox.style.removeProperty("width");
           this.ToolBox.style.setProperty("--width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
           this.Splitter.setAttribute("open", true);
           tabIndex = index;
@@ -519,6 +521,7 @@ var SidebarModoki = {
     } else {
       this.ContentBox.setAttribute("collapsed", true);
       this.Splitter.removeAttribute("open");
+      this.ToolBox.style.removeProperty("width");
       this.ToolBox.style.removeProperty("--width");
       document.querySelectorAll("#SM_tabs toolbarbutton[checked]").forEach(btn => btn.removeAttribute('checked'));
       index = -1;
@@ -701,8 +704,8 @@ var SidebarModoki = {
           setTimeout(() => {
             if (this.ToolBox.getBoundingClientRect().width < 200) {
               this.ToolBox.removeAttribute("collapsed");
-              this.ToolBox.setAttribute("--width", 200);
-              this.ToolBox.style.width = "200px";
+              this.ToolBox.removeAttribute("width");
+              this.ToolBox.style.setProperty("--width", 200);
             }
           }, 0)
           if (event.type == "mouseup") {
