@@ -73,28 +73,32 @@ var SidebarModoki = {
     "data-l10n-id": "appmenuitem-downloads",
     image: "chrome://browser/skin/downloads/downloads.svg",
   }, {
-    "addon-id": "treestyletab@piro.sakura.ne.jp",
-    src: "sidebar/sidebar.html",
-    label: "TST"
+    src: "https://music.youtube.com",
+    label: "YouTube Music"
   }, {
-    "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
-    src: "popup/index.html",
-    label: "Bitwarden"
-  }, {
-    "addon-id": "{bd97f89b-17ba-4539-9fec-06852d07f917}",
-    src: "sidebar/checkmarks-sidebar.html",
-    label: "Checkmarks"
+    src: "https://translate.google.com",
+    label: "谷歌翻译"
   }, {
     src: "https://papago.naver.com/",
     label: "papago"
+  }, {
+    src: "https://1password.com/zh-cn/password-generator/",
+    label: "密码生成"
+  }, {
+    src: 'https://snapdrop.net',
+    label: '文件传输'
   }],
   // -- config --
 
   kSM_Open: "userChrome.SidebarModoki.Open",
+  kSM_Visible: "userChrome.SidebarModoki.Visible",
   kSM_lastSelectedTabIndex: "userChrome.SidebarModoki.lastSelectedTabIndex",
   kSM_lastSelectedTabWidth: "userChrome.SidebarModoki.lastSelectedTabWidth",
   ToolBox: null,
   Button: null,
+
+  _selectedTab: null,
+  _lastSelectedIndex: null,
 
   get prefs() {
     delete this.prefs;
@@ -178,10 +182,21 @@ var SidebarModoki = {
       
       #SM_toolbox
       {
-        width: {SM_WIDTH}px;
         background-color: var(--toolbar-bgcolor);
         color: -moz-dialogtext;
         text-shadow: none;
+        position: relative;
+      }
+      #SM_toolbox[open="true"] {
+        min-width: 14em;
+        max-width: 42em;
+      }
+      #SM_toolbox[open="false"] {
+        width: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
+        overflow: hidden;
+      }
+      #SM_toolbox[open="false"] + #SM_splitter {
+        display: none;
       }
       #SM_toolbox:-moz-lwtheme {
         /*background-color: var(--lwt-accent-color);*/
@@ -190,24 +205,38 @@ var SidebarModoki = {
       }
       #SM_toolbox[position="left"] {
         order: -1 !important;
+        border-right: 1px solid var(--chrome-content-separator-color) !important;
       }
       #SM_toolbox[position="right"] {
         order: 10 !important;
+        border-left: 1px solid var(--chrome-content-separator-color) !important;
+      }
+      #SM_toolbox[open="true"][position="left"] + #SM_splitter {
+        border-right: 1px solid var(--chrome-content-separator-color) !important;
+      }
+      #SM_toolbox[open="true"][position="right"] + #SM_splitter {
+        border-left: 1px solid var(--chrome-content-separator-color) !important;
       }
       .SM_toolbarspring {
           max-width: unset !important;
       }
-      
+      #SM_toolbox[collapsed] {
+        visibility:visible;
+      }
+      #SM_toolbox[aria-hidden="true"],
+      #SM_toolbox[moz-collapsed="true"]{
+        display: none !important;
+      }
       /*visibility*/
-      #SM_toolbox[collapsed],
       #SM_splitter[collapsed],
       /*フルスクリーン*/
-      #SM_toolbox[moz-collapsed="true"],
+      
       #SM_splitter[moz-collapsed="true"]
       {
         visibility:collapse;
       }
       #SM_splitter {
+        min-width: 1px !important;
         background-color: var(--toolbar-bgcolor) !important;
         border-inline-start-color: var(--toolbar-bgcolor) !important;
         border-inline-end-color: var(--toolbar-bgcolor) !important;
@@ -217,6 +246,13 @@ var SidebarModoki = {
       }
       #SM_splitter[position="right"] {
         order: 9 !important;
+      }
+
+      #SM_toolbox,
+      #SM_splitter {
+        /* Make room for the bookmarks toolbar so that it won't actually overlap the
+           new tab page and sidebar contents. */
+        padding-top: var(--bookmarks-toolbar-height);
       }
 
       /*ポップアップの時*/
@@ -230,28 +266,76 @@ var SidebarModoki = {
       { 
         appearance: none !important;
         padding: 0 !important;
-        margin: {MARGINHACK}; /*hack*/
         appearance: unset;
         color-scheme: unset !important;
         flex: 1 1 100%;
+        margin-top: 34px;
+      }
+
+      #SM_toolbox:not([open="true"]) #SM_tabpanels {
+        display: none;
       }
 
       #SM_header {
-        background-color: var(--toolbar-field-background-color, var(--toolbar-bgcolor));
+        background-color: var(var(--toolbar-bgcolor));
         padding: 6px !important;
         border-bottom: 0px solid transparent !important;
         color: inherit !important;
         font-size: 1.2em !important;
         color: var(--toolbar-color);
+        position: absolute;
+        z-index: 1;
+        left: 0;
+        right: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding) - 1px);
+        z-index: 1;
+        overflow: hidden;
+      }
+
+      #SM_toolbox:not([open="true"]) > #SM_header {
+        display: none;
+      }
+
+      #SM_toolbox[position="left"] > #SM_header {
+        right: -2px;
+        left: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
+      }
+
+      #SM_controls {
+        position: absolute;
+        right: 0;
+        height: 100%;
+        background-color: var(--toolbar-bgcolor);
+        padding-block: 4px;
+        gap: 2px;
+      }
+
+      #SM_controls > toolbarbutton {
+        appearance: none !important;
+        -moz-context-properties: fill, fill-opacity;
+        border-radius: 4px;
+        color: inherit;
+        fill: currentColor;
+        padding: 2px !important;
+        width: 20px;
+        height: auto;
+      }
+
+      #SM_openInTabButton {
+        list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNNCAxYTMgMyAwIDAgMC0zIDN2OGEzIDMgMCAwIDAgMyAzaDQuNWEuNS41IDAgMCAwIDAtMUg0YTIgMiAwIDAgMS0yLTJWNGEyIDIgMCAwIDEgMi0yaDhhMiAyIDAgMCAxIDIgMnYyLjVhLjUuNSAwIDAgMCAxIDBWNGEzIDMgMCAwIDAtMy0zSDR6bTIuNTA4IDVBLjUuNSAwIDAgMCA2IDYuNDk0VjExLjVhLjUuNSAwIDEgMCAxIDBWNy43MDdsNi4xNDYgNi4xNDZhLjUuNSAwIDAgMCAuNzA3LS43MDdMNy43MDcgN0gxMS41YS41LjUgMCAwIDAgMC0xSDYuNTA4eiIvPgo8L3N2Zz4K");
+        > image {
+          transform: rotateY(180deg)
+        }
       }
 
       toolbar[brighttext]:-moz-lwtheme #SM_tabbox {
         background-color: var(--toolbar-bgcolor);
       }
+
       #SM_tabbox {
         display: flex;
         flex-direction: row;
       }
+
       #SM_toolbox[position="right"] #SM_tabbox{
         flex-direction: row-reverse;
       }
@@ -266,6 +350,12 @@ var SidebarModoki = {
         align-items: center;
         flex-shrink: 0;
         padding: 0 2px;
+      }
+      #SM_toolbox[open="true"][position="left"] #SM_tabs {
+        border-right: 1px solid var(--chrome-content-separator-color);
+      }
+      #SM_toolbox[open="true"][position="right"] #SM_tabs {
+        border-left: 1px solid var(--chrome-content-separator-color);
       }
       #SM_tabs tab {
         appearance: none !important;
@@ -293,17 +383,11 @@ var SidebarModoki = {
       #SM_tabs tab > hbox > .tab-icon {
         width: 16px;
         height: 16px;
+        -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
+        fill: var(--lwt-toolbarbutton-icon-fill, currentColor) !important;
       }
       #SM_tabs tab[iconized="true"] .tab-text {
         visibility: collapse;
-      }
-      #SM_Button
-      {
-        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQ0lEQVQ4jWNgoAL4z8DA8N/AwAArTQRGFSBBI4YBDHhonC6n3AA1NTUMZ6F5gyQXYFNEsheweWnUBfRyAbmYcgMoAgBFX4a/wlDliwAAAABJRU5ErkJggg==');
-      }
-      toolbar[brighttext]:-moz-lwtheme #SM_Button
-      {
-        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVQ4jWP4TyFg+P///38GBgayMHUNwEdjdTrVDcDnTKJdgEsRSV5ACaBRF9DZBQObFygBAMeIxVdCQIJTAAAAAElFTkSuQmCC');
       }
      `;
     var sss = Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService);
@@ -321,46 +405,24 @@ var SidebarModoki = {
           return document.documentElement.getAttribute(name);
         };
     */
-    ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
+    // ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
     // xxxx try-catch may need for 2nd window
-    try {
-      CustomizableUI.createWidget({ //must run createWidget before windowListener.register because the register function needs the button added first
-        id: 'SM_Button',
-        type: 'custom',
-        defaultArea: CustomizableUI.AREA_NAVBAR,
-        onBuild: function (aDocument) {
-          var toolbaritem = aDocument.createElementNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'toolbarbutton');
-          var props = {
-            id: "SM_Button",
-            class: "toolbarbutton-1 chromeclass-toolbar-additional",
-            tooltiptext: "Sidebar Modoki",
-            oncommand: "SidebarModoki.toggle();",
-            type: "button",
-            label: "Sidebar Modoki",
-            removable: "true"
-          };
-          for (var p in props) {
-            toolbaritem.setAttribute(p, props[p]);
-          }
-
-          return toolbaritem;
-        }
-      });
-    } catch (e) { }
 
     // to do, replace with MozXULElement.parseXULToFragment();
-    let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
-    document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
+    // let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
+    // document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
 
     template = ["key", { id: "key_SidebarModoki", key: "B", modifiers: "accel,alt", command: "cmd_SidebarModoki", }];
     document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
     //to do xxx ordinal=xx shoud be replaced with style="-moz-box-ordinal-group: xx;"
     template =
-      ["vbox", { id: "SM_toolbox", position: this.SM_RIGHT ? "right" : "left" },
+      ["vbox", { id: "SM_toolbox", class: "browser-toolbar", position: this.SM_RIGHT ? "right" : "left" },
         ["hbox", { id: "SM_header", align: "center" },
           ["label", {}, "SidebarModoki"],
-          ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
-          ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
+          ["toolbaritem", { id: "SM_controls", class: "chromeclass-toolbar-additional toolbaritem-combined-buttons" },
+            ["toolbarbutton", { id: "SM_openInTabButton", class: "sm-icon tabbable", tooltiptext: "Open In New Tab", oncommand: "SidebarModoki.openInTab();" }],
+            ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
+          ],
         ],
         ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
           ["tabs", { id: "SM_tabs" },
@@ -387,7 +449,7 @@ var SidebarModoki = {
           }
         }
       }
-      if (tab.src.startsWith("http")) {
+      if (tab.src.startsWith("http") && !("image" in tab)) {
         tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32"
       }
       if (tab.hasOwnProperty("image")) {
@@ -445,28 +507,26 @@ var SidebarModoki = {
 
       // Don't check if the event was already consumed because tab
       // navigation should always work for better user experience.
-      let imports = {};
-      ChromeUtils.defineModuleGetter(
-        imports,
-        "ShortcutUtils",
-        "resource://gre/modules/ShortcutUtils.jsm"
-      );
-      const { ShortcutUtils } = imports;
+      const lazy = {};
 
-      switch (ShortcutUtils.getSystemActionForEvent(event)) {
-        case ShortcutUtils.CYCLE_TABS:
+      ChromeUtils.defineESModuleGetters(lazy, {
+        ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
+      });
+
+      switch (lazy.ShortcutUtils.getSystemActionForEvent(event)) {
+        case lazy.ShortcutUtils.CYCLE_TABS:
           if (this.tabs && this.handleCtrlTab) {
             this.tabs.advanceSelectedTab(event.shiftKey ? -1 : 1, true);
             event.preventDefault();
           }
           break;
-        case ShortcutUtils.PREVIOUS_TAB:
+        case lazy.ShortcutUtils.PREVIOUS_TAB:
           if (this.tabs && this.handleCtrlPageUpDown) {
             this.tabs.advanceSelectedTab(-1, true);
             event.preventDefault();
           }
           break;
-        case ShortcutUtils.NEXT_TAB:
+        case lazy.ShortcutUtils.NEXT_TAB:
           if (this.tabs && this.handleCtrlPageUpDown) {
             this.tabs.advanceSelectedTab(1, true);
             event.preventDefault();
@@ -475,15 +535,28 @@ var SidebarModoki = {
       }
     };
 
-    let index = document.getElementById("SM_tabpanels").selectedIndex;
+    let tabpannels = document.getElementById("SM_tabpanels");
+    this.Tabpanels = tabpannels;
+    this.Tabbox = tabbox;
+    let index = tabpannels.selectedIndex;
     let tb0 = document.getElementById("SM_tab0");
     let tb1 = document.getElementById("SM_tab1");
     let tb2 = document.getElementById("SM_tab2");
     tb0.parentNode.insertBefore(tb0, tb1);
     tb0.parentNode.insertBefore(tb1, tb2);
-    document.getElementById("SM_tabs").selectedIndex = index;
 
-    setTimeout(function () { this.observe(); }.bind(this), 0);
+    tabbox.selectedIndex = index;
+
+    tabbox.querySelectorAll('tab').forEach(function (tab) {
+      let aIndex = tab.id.slice(-1);
+      let browser = document.getElementById("SM_tab" + aIndex + "-browser");
+      tab.linkedBrowser = browser;
+      browser.linkTab = tab;
+    }.bind(this));
+
+    this.addMenu();
+
+    setTimeout(function () { this.observe(); this.onKSMOpen({}); }.bind(this), 0);
 
     //F11 fullscreen
     FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
@@ -522,20 +595,58 @@ var SidebarModoki = {
     */
   },
 
+  addMenu: function () {
+    document.getElementById("toolbarItemsMenuSeparator").after(this.jsonToDOM([
+      'menuitem', { id: 'toggle_sidebar-modoki', label: 'SidebarModoki', type: 'checkbox', label: 'Sidebar Modoki', oncommand: 'SidebarModoki.toggleVisible(event);', checked: this.getPref(this.kSM_Visible, "bool", true) }
+    ], document, {}))
+  },
+
+  toggleVisible: function (e) {
+    this.isMenuTriggered = true;
+    this.prefs.setBoolPref(this.kSM_Visible, e.target.getAttribute("checked") == "true");
+  },
 
   observe: function () {
     this.ToolBox = document.getElementById("SM_toolbox");
     this.Splitter = document.getElementById("SM_splitter");
-    this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left")
-    this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left")
+    this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left");
+    this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left");
 
-    if (this.getPref(this.kSM_Open, "bool", true)) {
-      this.toggle(true);
-    } else {
-      this.close();
+    let status = this.getPref(this.kSM_Open, "bool", true);
+    this.ToolBox.setAttribute("open", status);
+    if (!status) {
+      Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
+        el.removeAttribute("selected");
+        el.removeAttribute("visuallyselected");
+      });
     }
-    document.getElementById("SM_tabs").addEventListener("focus", this, true);
+
+    let tabs = document.getElementById("SM_tabs");
+    tabs.addEventListener("focus", this, true);
     window.addEventListener("aftercustomization", this, false);
+
+    let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
+    if (index > - 1) {
+      this.switchToTab(index);
+    }
+
+    Services.prefs.addObserver(this.kSM_Open, (p, v) => {
+      this.onKSMOpen({});
+    });
+
+    this.ToolBox.setAttribute("aria-hidden", !this.prefs.getBoolPref(this.kSM_Visible, true));
+
+    Services.prefs.addObserver(this.kSM_Visible, (p, msg) => {
+      let status = Services.prefs.getBoolPref(this.kSM_Visible, true)
+      if (!this.isMenuTriggered) {
+        if (status)
+          document.getElementById('toggle_sidebar-modoki').setAttribute("checked", status);
+        else
+          document.getElementById('toggle_sidebar-modoki').removeAttribute("checked");
+      }
+      this.ToolBox.setAttribute("aria-hidden", !status);
+      this.isMenuTriggered = false;
+    });
 
     // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
     Services.prefs.addObserver("sidebar.position_start", () => {
@@ -544,70 +655,111 @@ var SidebarModoki = {
     });
   },
 
-  onSelect: function (event) {
-    let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
-    this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
-    width = this.getPref(this.kSM_lastSelectedTabWidth + aIndex, "int", this.SM_WIDTH);
-    if (document.getElementById("SM_tab" + aIndex + "-browser").src == "") {
-      document.getElementById("SM_tab" + aIndex + "-browser").src = this.TABS[aIndex].src;
+  onKSMOpen: function (event) {
+    let status = this.getPref(this.kSM_Open, "bool", true);
+    this.ToolBox.setAttribute("open", status);
+    if (status) {
+      addEventListener("resize", this, false);
+      this.Splitter.addEventListener("mouseup", this, false);
+      // document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
+    } else {
+      removeEventListener("resize", this, false);
+      this.Splitter.removeEventListener("mouseup", this, false);
+      this.ToolBox.style.width = null;
+      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, -1);
+      Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
+        el.removeAttribute("selected");
+        el.removeAttribute("visuallyselected");
+      });
     }
-    document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
   },
 
-  toggle: function (forceopen) {
-    this.Button = document.getElementById("SM_Button");
-    if (!this.Button.hasAttribute("checked") || forceopen) {
-      this.Button.setAttribute("checked", true);
-      this.ToolBox.collapsed = false;
-      this.Splitter.collapsed = false;
-      let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
-      document.getElementById("SM_tabs").selectedIndex = index;
-      width = this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH);
-      document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-      this.prefs.setBoolPref(this.kSM_Open, true)
-      this.onSelect({});
-      addEventListener("resize", this, false);
-    } else {
-      this.close();
+  set selectedTab(tab) {
+    if (!tab) return;
+    this._selectedTab = tab;
+    document.getElementById("SM_tabs").selectedIndex = tab.id.slice(-1);
+    this.onSelect();
+  },
+
+  get selectedTab() {
+    return this._selectedTab;
+  },
+
+  onSelect: function (event) {
+    this.prefs.setBoolPref(this.kSM_Open, true);
+    let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
+    if (aIndex != -1) {
+      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
+      width = this.getPanelWidth(aIndex);
+      let { selectedTab } = this;
+      if (selectedTab.linkedBrowser.src == "") {
+        selectedTab.linkedBrowser.src = this.TABS[aIndex].src;
+      }
+      if (selectedTab.hasAttribute("label")) {
+        document.querySelector("#SM_header label").innerHTML = selectedTab.getAttribute("label");
+      }
+      this.ToolBox.style.setProperty("width", width + "px", "");
+      this.ToolBox.style.setProperty("--sm-width", width + "px", "");
+      if (selectedTab.linkedBrowser.src.startsWith("http")) {
+        document.getElementById("SM_openInTabButton").style.visibility = "visible";
+      } else {
+        document.getElementById("SM_openInTabButton").style.visibility = "collapse";
+      }
+      this._lastSelectedIndex = aIndex;
     }
   },
 
   switchToTab: function (tabNo) {
-    this.toggle(true);
+    this.prefs.setBoolPref(this.kSM_Open, true);
     let tab = document.getElementById("SM_tab" + tabNo);
     if (tab) {
-      document.getElementById("SM_tabs").selectedIndex = tabNo;
-      this.onSelect();
+      this.selectedTab = tab;
     }
   },
 
   advanceSelectedTab: function (dir) {
     if (typeof dir == "undefined") return;
     document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
+    this._selectedTab = tab;
     this.onSelect();
   },
-  close: function () {
-    removeEventListener("resize", this, false);
-    this.Button = document.getElementById("SM_Button");
-    this.Button.removeAttribute("checked");
-    this.ToolBox.collapsed = true;
-    this.Splitter.collapsed = true;
-    this.prefs.setBoolPref(this.kSM_Open, false)
+
+  openInTab: function () {
+    let uri;
+    try {
+      uri = Services.io.newURI(this.selectedTab.src, null, null);
+    } catch (e) {
+      return;
+    }
+    openWebLinkIn(uri.spec, 'tab', {
+      postData: null,
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
+        userContextId: gBrowser.selectedBrowser.getAttribute(
+          "userContextId"
+        )
+      })
+    });
   },
 
+  close: function () {
+    this.prefs.setBoolPref(this.kSM_Open, false);
+    this.ToolBox.style.width = null;
+    this.ToolBox.style.removeProperty("--sm-width");
+  },
 
   //ここからは, 大きさの調整
   onResize: function (event) {
     let width = this.ToolBox.getBoundingClientRect().width;
-    let aIndex = document.getElementById("SM_tabs").selectedIndex;
-    this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
+    let aIndex = this.selectedTab.id.slice(-1);
+    this.setPanelWidth(aIndex, width);
   },
 
   handleEvent: function (event) {
     switch (event.type) {
       case 'focus':
-        this.onSelect(event);
+        this.selectedTab = event.target;
         break;
+      case 'mouseup':
       case 'resize':
         this.onResize(event);
         break;
@@ -629,6 +781,21 @@ var SidebarModoki = {
         }
         break;
     }
+  },
+
+  setPanelWidth: function (tabNo, width) {
+    if (typeof width !== "number") {
+      return false;
+    }
+    this.ToolBox.style.setProperty("--sm-width", width + "px", "");
+    let aIndex = tabNo.toString();
+    return this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
+  },
+
+  getPanelWidth: function (tabNo) {
+    let aIndex = tabNo.toString();
+    let width = this.prefs.getIntPref(this.kSM_lastSelectedTabWidth + aIndex, this.SM_WIDTH);
+    return width;
   },
 
   //pref読み込み

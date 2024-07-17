@@ -3,10 +3,14 @@
 // @namespace      http://space.geocities.yahoo.co.jp/gl/alice0775
 // @description    TST
 // @include        main
-// @compatibility  Firefox 113
 // @author         Alice0775
+// @compatibility  127
+// @version        2024/05/05 Bug 1892965 - Rename Sidebar launcher and SidebarUI
 // @note           Tree Style Tab がある場合にブックマークと履歴等を別途"サイドバーもどき"で表示
 // @note           SidebarModoki.uc.js.css をuserChrome.cssに読み込ませる必要あり
+// @version        2024/03/19 WIP Bug 1884792 - Remove chrome-only :-moz-lwtheme pseudo-class
+// @version        2023/07/19 00:00 add padding-top due to Bug 1705215
+// @version        2023/07/17 00:00 use ES module imports
 // @version        2023/03/09 Bug 1820534 - Move front-end to modern flexbox.
 // @version        2022/10/12 Bug 1794630
 // @version        2022/09/29 fix Bug 1689816 
@@ -15,7 +19,7 @@
 // @version        2022/09/14 use toolbarspring instead of spacer
 // @version        2022/08/26 Bug 1695435 - Remove @@hasInstance for IDL interfaces in chrome context
 // @version        2022/04/01 23:00 Convert Components.utils.import to ChromeUtils.import
-// @version        2022/03/26 23:00 Bug 1760342 - Remove :-moz-lwtheme-{brighttext,darktext}
+// @version        2022/03/26 23:00 Bug 1760342 - Remove [lwtheme]-{brighttext,darktext}
 // @version        2021/11/21 18:00 Bug 1742111 - Rename internal accentcolor and textcolor properties to be more consistent with the webext theme API
 // @version        2021/11/14 13:00 wip change css(Bug 1740230 - moz-lwtheme* pseudo-classes don't get invalidated correctly)
 // @version        2021/09/30 22:00 change splitter color
@@ -54,8 +58,11 @@
 
 var SidebarModoki = {
   // -- config --
-  get SM_RIGHT() {
+  get SM_RIGHT () {
     return this.getPref("sidebar.position_start", "bool", false);
+  },
+  get SM_MARGINHACK () {
+    return this.SM_RIGHT ? "0 0 0 0" : "0 -2px 0 0";
   },
   SM_WIDTH: 230,
   SM_AUTOHIDE: false,  //F11 Fullscreen
@@ -91,16 +98,35 @@ var SidebarModoki = {
   // -- config --
 
   kSM_Open: "userChrome.SidebarModoki.Open",
-  kSM_Visible: "userChrome.SidebarModoki.Visible",
   kSM_lastSelectedTabIndex: "userChrome.SidebarModoki.lastSelectedTabIndex",
   kSM_lastSelectedTabWidth: "userChrome.SidebarModoki.lastSelectedTabWidth",
   ToolBox: null,
   Button: null,
-
+  Splitter: null,
+  ContentBox: null,
   _selectedTab: null,
-  _lastSelectedIndex: null,
-
-  get prefs() {
+  get selectedTab () {
+    return this._selectedTab;
+  },
+  set selectedTab (tab) {
+    if (tab) {
+      this.Header.firstChild.innerHTML = tab.hasAttribute("label") ? tab.getAttribute("label") : "SidebarModoki"
+    }
+    this._selectedTab = tab;
+  },
+  _selectedBrowser: null,
+  set selectedBrowser (browser) {
+    let tab = this.getTabForBrowser(browser);
+    if (browser && tab && tab.src.startsWith("http") && !browser.hasAttribute("sm-bind", true)) {
+      browser.webProgress.addProgressListener(SidebarModoki.progressListener, Ci.nsIWebProgress.NOTIFY_ALL);
+      browser.setAttribute("sm-bind", true);
+    }
+    this._selectedBrowser = browser;
+  },
+  get selectedBrowser () {
+    return this._selectedBrowser;
+  },
+  get prefs () {
     delete this.prefs;
     return this.prefs = Services.prefs;
   },
@@ -111,14 +137,14 @@ var SidebarModoki = {
       xul: "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
     };
     jsonToDOM.defaultNamespace = jsonToDOM.namespaces.xul;
-    function jsonToDOM(jsonTemplate, doc, nodes) {
-      function namespace(name) {
+    function jsonToDOM (jsonTemplate, doc, nodes) {
+      function namespace (name) {
         var reElemNameParts = /^(?:(.*):)?(.*)$/.exec(name);
         return { namespace: jsonToDOM.namespaces[reElemNameParts[1]], shortName: reElemNameParts[2] };
       }
 
       // Note that 'elemNameOrArray' is: either the full element name (eg. [html:]div) or an array of elements in JSON notation
-      function tag(elemNameOrArray, elemAttr) {
+      function tag (elemNameOrArray, elemAttr) {
         // Array of elements?  Parse each one...
         if (Array.isArray(elemNameOrArray)) {
           var frag = doc.createDocumentFragment();
@@ -176,76 +202,31 @@ var SidebarModoki = {
       return; // do nothing
     }
 
-    let MARGINHACK = this.SM_RIGHT ? "0 0 0 0" : "0 -2px 0 0";
     let style = `
       @namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
-      
-      #SM_toolbox
-      {
+      #SM_toolbox {
         background-color: var(--toolbar-bgcolor);
-        color: -moz-dialogtext;
-        text-shadow: none;
-        position: relative;
-      }
-      #SM_toolbox[open="true"] {
-        min-width: 14em;
         max-width: 42em;
       }
-      #SM_toolbox[open="false"] {
-        width: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
-        overflow: hidden;
-      }
-      #SM_toolbox[open="false"] + #SM_splitter {
-        display: none;
-      }
-      #SM_toolbox:-moz-lwtheme {
-        /*background-color: var(--lwt-accent-color);*/
-        background-color: var(--toolbar-bgcolor);
-        color: var(--lwt-text-color);
-      }
-      #SM_toolbox[position="left"] {
-        order: -1 !important;
-        border-right: 1px solid var(--chrome-content-separator-color) !important;
-      }
-      #SM_toolbox[position="right"] {
-        order: 10 !important;
-        border-left: 1px solid var(--chrome-content-separator-color) !important;
-      }
-      #SM_toolbox[open="true"][position="left"] + #SM_splitter {
-        border-right: 1px solid var(--chrome-content-separator-color) !important;
-      }
-      #SM_toolbox[open="true"][position="right"] + #SM_splitter {
-        border-left: 1px solid var(--chrome-content-separator-color) !important;
+      #SM_toolbox:not(:has(#SM_contentbox[collapsed="true"])) {
+        min-width: 200px;
       }
       .SM_toolbarspring {
           max-width: unset !important;
       }
-      #SM_toolbox[collapsed] {
-        visibility:visible;
-      }
-      #SM_toolbox[aria-hidden="true"],
-      #SM_toolbox[moz-collapsed="true"]{
-        display: none !important;
-      }
+      #SM_toolbox:not([open="true"]),
+      #SM_splitter:not([open="true"]),
       /*visibility*/
-      #SM_splitter[collapsed],
       /*フルスクリーン*/
-      
+      #SM_toolbox[moz-collapsed="true"],
       #SM_splitter[moz-collapsed="true"]
       {
         visibility:collapse;
       }
       #SM_splitter {
-        min-width: 1px !important;
         background-color: var(--toolbar-bgcolor) !important;
         border-inline-start-color: var(--toolbar-bgcolor) !important;
         border-inline-end-color: var(--toolbar-bgcolor) !important;
-      }
-      #SM_splitter[position="left"] {
-        order: 0 !important;
-      }
-      #SM_splitter[position="right"] {
-        order: 9 !important;
       }
 
       #SM_toolbox,
@@ -261,178 +242,136 @@ var SidebarModoki = {
       {
         visibility: collapse;
       }
-
       #SM_tabpanels
       { 
         appearance: none !important;
         padding: 0 !important;
         appearance: unset;
         color-scheme: unset !important;
-        flex: 1 1 100%;
-        margin-top: 34px;
       }
-
-      #SM_toolbox:not([open="true"]) #SM_tabpanels {
-        display: none;
-      }
-
-      #SM_header {
-        background-color: var(var(--toolbar-bgcolor));
-        padding: 6px !important;
-        border-bottom: 0px solid transparent !important;
-        color: inherit !important;
-        font-size: 1.2em !important;
-        color: var(--toolbar-color);
-        position: absolute;
-        z-index: 1;
-        left: 0;
-        right: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding) - 1px);
-        z-index: 1;
-        overflow: hidden;
-      }
-
-      #SM_toolbox:not([open="true"]) > #SM_header {
-        display: none;
-      }
-
-      #SM_toolbox[position="left"] > #SM_header {
-        right: -2px;
-        left: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
-      }
-
-      #SM_controls {
-        position: absolute;
-        right: 0;
-        height: 100%;
-        background-color: var(--toolbar-bgcolor);
-        padding-block: 4px;
-        gap: 2px;
-      }
-
-      #SM_controls > toolbarbutton {
-        appearance: none !important;
-        -moz-context-properties: fill, fill-opacity;
-        border-radius: 4px;
-        color: inherit;
-        fill: currentColor;
-        padding: 2px !important;
-        width: 20px;
-        height: auto;
-      }
-
-      #SM_openInTabButton {
-        list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNNCAxYTMgMyAwIDAgMC0zIDN2OGEzIDMgMCAwIDAgMyAzaDQuNWEuNS41IDAgMCAwIDAtMUg0YTIgMiAwIDAgMS0yLTJWNGEyIDIgMCAwIDEgMi0yaDhhMiAyIDAgMCAxIDIgMnYyLjVhLjUuNSAwIDAgMCAxIDBWNGEzIDMgMCAwIDAtMy0zSDR6bTIuNTA4IDVBLjUuNSAwIDAgMCA2IDYuNDk0VjExLjVhLjUuNSAwIDEgMCAxIDBWNy43MDdsNi4xNDYgNi4xNDZhLjUuNSAwIDAgMCAuNzA3LS43MDdMNy43MDcgN0gxMS41YS41LjUgMCAwIDAgMC0xSDYuNTA4eiIvPgo8L3N2Zz4K");
-        > image {
-          transform: rotateY(180deg)
-        }
-      }
-
-      toolbar[brighttext]:-moz-lwtheme #SM_tabbox {
+      toolbar[brighttext] #SM_tabbox {
         background-color: var(--toolbar-bgcolor);
       }
-
-      #SM_tabbox {
-        display: flex;
-        flex-direction: row;
-      }
-
-      #SM_toolbox[position="right"] #SM_tabbox{
-        flex-direction: row-reverse;
-      }
-
       #SM_tabs {
-        overflow-x: hidden;
-        display: flex;
-        flex-direction: column !important;
-        width: calc(2 * 2px + 16px + 2 * var(--toolbarbutton-inner-padding));
-        height: auto;
-        justify-content: flex-start;
-        align-items: center;
+        width: 34px;
+        overflow: auto hidden;
         flex-shrink: 0;
-        padding: 0 2px;
       }
-      #SM_toolbox[open="true"][position="left"] #SM_tabs {
-        border-right: 1px solid var(--chrome-content-separator-color);
+      #SM_tabs .toolbarbutton-1 {
+        --toolbarbutton-outer-padding: 3px;
+        --toolbarbutton-inner-padding: 6px;
       }
-      #SM_toolbox[open="true"][position="right"] #SM_tabs {
-        border-left: 1px solid var(--chrome-content-separator-color);
+      #SM_tabs .toolbarbutton-1 .toolbarbutton-text {
+        display: none;
       }
-      #SM_tabs tab {
-        appearance: none !important;
+      #SM_header {
+        padding-block: 3px;
+      }
+      #SM_buttons {
+        margin-right: 12px;
+      }
+      #SM_buttons .toolbarbutton-1 {
         padding: 0 !important;
-        margin: 0 !important;
-        margin-top: 4px;
-        color: unset !important;
+        appearance: none !important;
       }
-      #SM_tabs tab:not([selected]) {
-        opacity: 0.6 !important;
+      #SM_buttons .toolbarbutton-1 > .toolbarbutton-icon {
+        padding: 2px !important;
+        height: 20px !important;
+        width: 20px !important;
       }
-      #SM_tabs tab:not([selected]):hover > hbox {
-        background-color: var(--toolbarbutton-hover-background);
+      #SM_buttons .toolbarbutton-1:hover,
+      #SM_buttons .toolbarbutton-1:focus {
+        background-color: var(--toolbarbutton-hover-background) !important;
       }
-      #SM_tabs tab[selected] > hbox {
-        background-color: var(--toolbarbutton-active-background);
+      #SM_buttons .toolbarbutton-1:hover > .toolbarbutton-icon,
+      #SM_buttons .toolbarbutton-1:focus > .toolbarbutton-icon {
+        background-color: transparent !important;
       }
-      #SM_tabs tab > hbox {
-        padding: var(--toolbarbutton-inner-padding) !important;
-        border-radius: var(--toolbarbutton-border-radius) !important;
-        height: calc(16px + 2* var(--toolbarbutton-inner-padding));
-        width: calc(16px + 2* var(--toolbarbutton-inner-padding));
-        outline: none !important;
+      #SM_stopReloadButton {
+        display:flex
       }
-      #SM_tabs tab > hbox > .tab-icon {
-        width: 16px;
-        height: 16px;
-        -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity !important;
-        fill: var(--lwt-toolbarbutton-icon-fill, currentColor) !important;
-      }
-      #SM_tabs tab[iconized="true"] .tab-text {
+      #SM_stopReloadButton:not([display-stop="true"]) > #SM_stopButton,
+      #SM_stopReloadButton[display-stop="true"] > #SM_reloadButton {
         visibility: collapse;
       }
+      #SM_Button
+      {
+        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQ0lEQVQ4jWNgoAL4z8DA8N/AwAArTQRGFSBBI4YBDHhonC6n3AA1NTUMZ6F5gyQXYFNEsheweWnUBfRyAbmYcgMoAgBFX4a/wlDliwAAAABJRU5ErkJggg==');
+      }
+      toolbar[brighttext] #SM_Button
+      {
+        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVQ4jWP4TyFg+P///38GBgayMHUNwEdjdTrVDcDnTKJdgEsRSV5ACaBRF9DZBQObFygBAMeIxVdCQIJTAAAAAElFTkSuQmCC');
+      }
      `;
+
     var sss = Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService);
-    var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK)));
+    var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH)));
     if (!sss.sheetRegistered(uri, sss.AGENT_SHEET))
       sss.loadAndRegisterSheet(uri, sss.AGENT_SHEET);
-    /*
-        style = style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{MARGINHACK\}/g, MARGINHACK);
-        let sspi = document.createProcessingInstruction(
-          'xml-stylesheet',
-          'type="text/css" href="data:text/css,' + encodeURIComponent(style) + '"'
-        );
-        document.insertBefore(sspi, document.documentElement);
-        sspi.getAttribute = function(name) {
-          return document.documentElement.getAttribute(name);
-        };
-    */
-    // ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
     // xxxx try-catch may need for 2nd window
+    if (!document.getElementById("SM_Button"))
+      try {
+        CustomizableUI.createWidget({ //must run createWidget before windowListener.register because the register function needs the button added first
+          id: 'SM_Button',
+          type: 'custom',
+          defaultArea: CustomizableUI.AREA_NAVBAR,
+          onBuild: function (aDocument) {
+            var toolbaritem = aDocument.createElementNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'toolbarbutton');
+            var props = {
+              id: "SM_Button",
+              class: "toolbarbutton-1 chromeclass-toolbar-additional",
+              tooltiptext: "Sidebar Modoki",
+              oncommand: "SidebarModoki.toggle();",
+              type: "button",
+              label: "Sidebar Modoki",
+              removable: "true"
+            };
+            for (var p in props) {
+              toolbaritem.setAttribute(p, props[p]);
+            }
+
+            return toolbaritem;
+          }
+        });
+      } catch (e) { }
 
     // to do, replace with MozXULElement.parseXULToFragment();
-    // let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
-    // document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
+    let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
+    document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
 
     template = ["key", { id: "key_SidebarModoki", key: "B", modifiers: "accel,alt", command: "cmd_SidebarModoki", }];
     document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
-    //to do xxx ordinal=xx shoud be replaced with style="-moz-box-ordinal-group: xx;"
     template =
-      ["vbox", { id: "SM_toolbox", class: "browser-toolbar", position: this.SM_RIGHT ? "right" : "left" },
-        ["hbox", { id: "SM_header", align: "center" },
-          ["label", {}, "SidebarModoki"],
-          ["toolbaritem", { id: "SM_controls", class: "chromeclass-toolbar-additional toolbaritem-combined-buttons" },
-            ["toolbarbutton", { id: "SM_openInTabButton", class: "sm-icon tabbable", tooltiptext: "Open In New Tab", oncommand: "SidebarModoki.openInTab();" }],
-            ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Close SidebarModoki", oncommand: "SidebarModoki.close();" }]
-          ],
+      ["hbox", { id: "SM_toolbox" },
+        ["toolbar", { id: "SM_tabs", orient: 'vertical', flex: 0 },
         ],
-        ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
-          ["tabs", { id: "SM_tabs" },
+        ["vbox", { id: "SM_contentbox", flex: 1 },
+          ["hbox", { id: "SM_header", align: "center" },
+            ["label", {}, "SidebarModoki"],
+            ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
+            ["hbox", { id: "SM_buttons", align: "end" },
+              ["toolbarbutton", { id: "SM_backButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Back", image: "chrome://browser/skin/back.svg", oncommand: "SidebarModoki.back()" }],
+              ["toolbarbutton", { id: "SM_forwardButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Forward", image: "chrome://browser/skin/forward.svg", oncommand: "SidebarModoki.forward()" }],
+              ["toolbaritem", { id: "SM_stopReloadButton", class: "tabbable" },
+                ["toolbarbutton", { id: "SM_reloadButton", class: "toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Reload", image: "chrome://global/skin/icons/reload.svg", oncommand: "SidebarModoki.reload()" }],
+                ["toolbarbutton", { id: "SM_stopButton", class: "toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Stop", image: "chrome://global/skin/icons/close.svg", oncommand: "" }]
+              ],
+              ["toolbarbutton", { id: "SM_homeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Home", image: "chrome://browser/skin/home.svg", oncommand: "SidebarModoki.home()" }],
+            ],
+            ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Hide Webpanel", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
           ],
-          ["tabpanels", { id: "SM_tabpanels", flex: "1", style: "border: none;" },
+          ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
+            ["tabpanels", { id: "SM_tabpanels", flex: "1", style: "border: none;" },
+            ]
           ]
         ]
       ];
     for (let i = 0; i < this.TABS.length; i++) {
-      let tab = Object.assign(this.TABS[i], { id: "SM_tab" + i });
+      let tab = Object.assign(this.TABS[i], {
+        id: "SM_tab" + i,
+        class: 'toolbarbutton-1 chromeclass-toolbar-additional',
+        oncommand: "SidebarModoki.switchTab(event);",
+      });
       if (tab.hasOwnProperty("addon-id")) {
         let policy = WebExtensionPolicy.getByID(tab["addon-id"]);
         if (policy && policy.active) {
@@ -449,20 +388,23 @@ var SidebarModoki = {
           }
         }
       }
-      if (tab.src.startsWith("http") && !("image" in tab)) {
-        tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32"
+      if (tab.src.startsWith("http")) {
+        tab.iswebpage = true;
+        if (!("image" in tab)) {
+          tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32"
+        }
       }
       if (tab.hasOwnProperty("image")) {
         tab.iconized = true;
       }
       if (tab.hasOwnProperty("shortcut")) {
         let shortcut = tab["shortcut"];
-        shortcut.oncommand = `SidebarModoki.switchToTab(${i})`
+        shortcut.oncommand = `SidebarModoki.switchToTab(${i}, true)`
         let template = ["key", shortcut];
         document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
         delete tab["shortcut"];
       }
-      template[3][2].push(["tab", tab]);
+      template[2].push(["toolbarbutton", tab]);
       let browser = { id: "SM_tab" + i + "-browser", flex: "1", autoscroll: "false", src: "" };
       if (tab.src.startsWith("moz")) {
         browser.messagemanagergroup = "webext-browsers";
@@ -481,287 +423,222 @@ var SidebarModoki = {
         browser.maychangeremoteness = "true";
         browser.disablefullscreen = "true"
       }
-      template[3][3].push(["tabpanel", { id: "SM_tab" + i + "-container", orient: "vertical", flex: "1" }, ["browser", browser]]);
+      template[3][3][2].push(["tabpanel", { id: "SM_tab" + i + "-container", orient: "vertical", flex: "1" }, ["browser", browser]]);
     }
+
     let sidebar = document.getElementById("sidebar-box");
     sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
 
     template =
-      ["splitter", { id: "SM_splitter", position: this.SM_RIGHT ? "right" : "left", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none" },
+      ["splitter", { id: "SM_splitter", state: "open", collapse: this.SM_RIGHT ? "after" : "before", resizebefore: "sibling", resizeafter: "none", collapsed: "true" },
         ["grippy", {}]
       ];
     sidebar.parentNode.insertBefore(this.jsonToDOM(template, document, {}), sidebar);
 
-    //xxx 69 hack
-    let tabbox = document.getElementById("SM_tabbox");
-    tabbox.handleEvent = function handleEvent(event) {
-      if (!event.isTrusted) {
-        // Don't let untrusted events mess with tabs.
-        return;
-      }
-
-      // Skip this only if something has explicitly cancelled it.
-      if (event.defaultCancelled) {
-        return;
-      }
-
-      // Don't check if the event was already consumed because tab
-      // navigation should always work for better user experience.
-      const lazy = {};
-
-      ChromeUtils.defineESModuleGetters(lazy, {
-        ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
-      });
-
-      switch (lazy.ShortcutUtils.getSystemActionForEvent(event)) {
-        case lazy.ShortcutUtils.CYCLE_TABS:
-          if (this.tabs && this.handleCtrlTab) {
-            this.tabs.advanceSelectedTab(event.shiftKey ? -1 : 1, true);
-            event.preventDefault();
-          }
-          break;
-        case lazy.ShortcutUtils.PREVIOUS_TAB:
-          if (this.tabs && this.handleCtrlPageUpDown) {
-            this.tabs.advanceSelectedTab(-1, true);
-            event.preventDefault();
-          }
-          break;
-        case lazy.ShortcutUtils.NEXT_TAB:
-          if (this.tabs && this.handleCtrlPageUpDown) {
-            this.tabs.advanceSelectedTab(1, true);
-            event.preventDefault();
-          }
-          break;
-      }
-    };
-
-    let tabpannels = document.getElementById("SM_tabpanels");
-    this.Tabpanels = tabpannels;
-    this.Tabbox = tabbox;
-    let index = tabpannels.selectedIndex;
-    let tb0 = document.getElementById("SM_tab0");
-    let tb1 = document.getElementById("SM_tab1");
-    let tb2 = document.getElementById("SM_tab2");
-    tb0.parentNode.insertBefore(tb0, tb1);
-    tb0.parentNode.insertBefore(tb1, tb2);
-
-    tabbox.selectedIndex = index;
-
-    tabbox.querySelectorAll('tab').forEach(function (tab) {
-      let aIndex = tab.id.slice(-1);
-      let browser = document.getElementById("SM_tab" + aIndex + "-browser");
-      tab.linkedBrowser = browser;
-      browser.linkTab = tab;
-    }.bind(this));
-
-    this.addMenu();
-
-    setTimeout(function () { this.observe(); this.onKSMOpen({}); }.bind(this), 0);
-
-    //F11 fullscreen
-    FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
-    FullScreen.showNavToolbox = function (trackMouse = true) {
-      FullScreen.showNavToolbox_org(trackMouse);
-      if (!!SidebarModoki.ToolBox) {
-        SidebarModoki.ToolBox.removeAttribute("moz-collapsed");
-        SidebarModoki.Splitter.removeAttribute("moz-collapsed");
-      }
-    }
-    FullScreen.hideNavToolbox_org = FullScreen.hideNavToolbox;
-    FullScreen.hideNavToolbox = function (aAnimate = false) {
-      FullScreen.hideNavToolbox_org(aAnimate);
-      if (SidebarModoki.SM_AUTOHIDE && !!SidebarModoki.ToolBox) {
-        SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
-        SidebarModoki.Splitter.setAttribute("moz-collapsed", "true");
-      }
-    }
-
-    //DOM fullscreen
-    window.addEventListener("MozDOMFullscreen:Entered", this,
-                            /* useCapture */ true,
-                            /* wantsUntrusted */ false);
-    window.addEventListener("MozDOMFullscreen:Exited", this,
-                            /* useCapture */ true,
-                            /* wantsUntrusted */ false);
-    /*
-        SidebarUI.setPosition_org = SidebarUI.setPosition;
-        SidebarUI.setPosition = function() {
-          SidebarUI.setPosition_org();
-          if (SidebarModoki && SidebarModoki.ToolBox) 
-          SidebarModoki.ToolBox.style.setProperty("-moz-box-ordinal-group", SidebarModoki.SM_RIGHT ? "10" : "0", "");
-          if (SidebarModoki && SidebarModoki.Splitter) 
-          SidebarModoki.Splitter.style.setProperty("-moz-box-ordinal-group", SidebarModoki.SM_RIGHT ? "9" : "0", "");
-        };
-    */
-  },
-
-  addMenu: function () {
-    document.getElementById("toolbarItemsMenuSeparator").after(this.jsonToDOM([
-      'menuitem', { id: 'toggle_sidebar-modoki', label: 'SidebarModoki', type: 'checkbox', label: 'Sidebar Modoki', oncommand: 'SidebarModoki.toggleVisible(event);', checked: this.getPref(this.kSM_Visible, "bool", true) }
-    ], document, {}))
-  },
-
-  toggleVisible: function (e) {
-    this.isMenuTriggered = true;
-    this.prefs.setBoolPref(this.kSM_Visible, e.target.getAttribute("checked") == "true");
+    setTimeout(function () { this.observe(); }.bind(this), 0);
   },
 
   observe: function () {
     this.ToolBox = document.getElementById("SM_toolbox");
     this.Splitter = document.getElementById("SM_splitter");
-    this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left");
-    this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left");
+    this.Header = document.getElementById("SM_header");
+    this.ContentBox = document.getElementById("SM_contentbox");
+    this.TabBox = document.getElementById("SM_tabbox");
+    this.ControlButtons = document.getElementById("SM_buttons");
 
-    let status = this.getPref(this.kSM_Open, "bool", true);
-    this.ToolBox.setAttribute("open", status);
-    if (!status) {
-      Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
-        el.removeAttribute("selected");
-        el.removeAttribute("visuallyselected");
-      });
-    }
+    this.updatePosition();
 
-    let tabs = document.getElementById("SM_tabs");
-    tabs.addEventListener("focus", this, true);
-    window.addEventListener("aftercustomization", this, false);
+    this.ToolBox.addEventListener("resize", this, false);
 
-    let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
-    if (index > - 1) {
+    this.Splitter.addEventListener("mousedown", this, false);
+
+    if (this.prefs.getBoolPref(this.kSM_Open, true)) {
+      document.getElementById('SM_Button').setAttribute('checked', true);
+      let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
+      this.ToolBox.setAttribute("open", true);
       this.switchToTab(index);
     }
 
-    Services.prefs.addObserver(this.kSM_Open, (p, v) => {
-      this.onKSMOpen({});
-    });
+    this.ToolBox.removeAttribute("collapsed");
+    this.Splitter.removeAttribute("collapsed");
+    window.addEventListener("aftercustomization", this, false);
 
-    this.ToolBox.setAttribute("aria-hidden", !this.prefs.getBoolPref(this.kSM_Visible, true));
-
-    Services.prefs.addObserver(this.kSM_Visible, (p, msg) => {
-      let status = Services.prefs.getBoolPref(this.kSM_Visible, true)
-      if (!this.isMenuTriggered) {
-        if (status)
-          document.getElementById('toggle_sidebar-modoki').setAttribute("checked", status);
-        else
-          document.getElementById('toggle_sidebar-modoki').removeAttribute("checked");
-      }
-      this.ToolBox.setAttribute("aria-hidden", !status);
-      this.isMenuTriggered = false;
-    });
-
-    // xxxx native sidebar changes ordinal when change position of the native sidebar and open/close
-    Services.prefs.addObserver("sidebar.position_start", () => {
-      this.ToolBox.setAttribute("position", this.SM_RIGHT ? "right" : "left")
-      this.Splitter.setAttribute("position", this.SM_RIGHT ? "right" : "left")
-    });
+    this.prefs.addObserver("sidebar.position_start", (p, v) => {
+      setTimeout(() => {
+        SidebarModoki.updatePosition();
+      }, 1);
+    })
   },
 
-  onKSMOpen: function (event) {
-    let status = this.getPref(this.kSM_Open, "bool", true);
-    this.ToolBox.setAttribute("open", status);
-    if (status) {
-      addEventListener("resize", this, false);
-      this.Splitter.addEventListener("mouseup", this, false);
-      // document.getElementById("SM_toolbox").style.setProperty("width", width + "px", "");
-    } else {
-      removeEventListener("resize", this, false);
-      this.Splitter.removeEventListener("mouseup", this, false);
-      this.ToolBox.style.width = null;
-      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, -1);
-      Array.from(this.ToolBox.querySelectorAll("[selected],[visuallyselected]")).forEach(el => {
-        el.removeAttribute("selected");
-        el.removeAttribute("visuallyselected");
+  switchTab ({ target }) {
+    let index = target.id.replace(/^SM_tab/, "");
+    this.switchToTab(target.getAttribute("checked") === "true" ? -1 : index, true);
+  },
+
+  switchToTab: function (index, saveIndex) {
+    if (index >= 0) {
+      let tabIndex = - 1;
+      this.selectedTab = null;
+      this.selectedBrowser = null;
+      [...document.getElementById('SM_tabs').children].forEach(tab => {
+        if (tab.id == "SM_tab" + index) {
+          tab.setAttribute('checked', true);
+          let browser = this.getBrowserForTab(tab);
+          if (!browser.src)
+            browser.src = tab.src;
+          document.getElementById("SM_tabpanels").selectedIndex = index;
+          this.ContentBox.removeAttribute("collapsed");
+          this.ToolBox.setAttribute("open", true);
+          this.ToolBox.style.setProperty("width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
+          this.Splitter.setAttribute("open", true);
+          tabIndex = index;
+          this.selectedTab = tab;
+          this.selectedBrowser = browser;
+        } else {
+          tab.removeAttribute('checked');
+        }
       });
+      index = tabIndex;
+    } else {
+      this.ContentBox.setAttribute("collapsed", true);
+      this.Splitter.removeAttribute("open");
+      this.ToolBox.style.removeProperty("width");
+      document.querySelectorAll("#SM_tabs toolbarbutton[checked]").forEach(btn => btn.removeAttribute('checked'));
+      index = -1;
+    }
+    if (this.selectedBrowser) {
+      this.ControlButtons.collapsed = false;
+      this.updateButtons();
+    } else {
+      this.ControlButtons.collapsed = true;
+    }
+    if (saveIndex) {
+      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, index);
     }
   },
 
-  set selectedTab(tab) {
-    if (!tab) return;
-    this._selectedTab = tab;
-    document.getElementById("SM_tabs").selectedIndex = tab.id.slice(-1);
-    this.onSelect();
+  updatePosition () {
+    const { ToolBox, Splitter } = this;
+    let posiotionend = this.SM_RIGHT;
+
+    ToolBox.style.setProperty("order", posiotionend ? 10 : -1, "");
+    ToolBox.style.setProperty("flex-direction", posiotionend ? "row-reverse" : "row");
+    ToolBox.style.setProperty("margin", this.SM_MARGINHACK);
+    Splitter.style.setProperty("order", posiotionend ? 9 : -1, "");
+    Splitter.setAttribute("collapse", posiotionend ? "after" : "before");
   },
 
-  get selectedTab() {
-    return this._selectedTab;
-  },
-
-  onSelect: function (event) {
-    this.prefs.setBoolPref(this.kSM_Open, true);
-    let aIndex = document.getElementById("SM_tabpanels").selectedIndex;
-    if (aIndex != -1) {
-      this.prefs.setIntPref(this.kSM_lastSelectedTabIndex, aIndex);
-      width = this.getPanelWidth(aIndex);
-      let { selectedTab } = this;
-      if (selectedTab.linkedBrowser.src == "") {
-        selectedTab.linkedBrowser.src = this.TABS[aIndex].src;
-      }
-      if (selectedTab.hasAttribute("label")) {
-        document.querySelector("#SM_header label").innerHTML = selectedTab.getAttribute("label");
-      }
-      this.ToolBox.style.setProperty("width", width + "px", "");
-      this.ToolBox.style.setProperty("--sm-width", width + "px", "");
-      if (selectedTab.linkedBrowser.src.startsWith("http")) {
-        document.getElementById("SM_openInTabButton").style.visibility = "visible";
+  updateButtons () {
+    if (this.selectedBrowser && this.selectedTab && this.selectedTab.src.startsWith("http")) {
+      this.ControlButtons.collapsed = !this.selectedTab.src.startsWith("http");
+      const { canGoBack, canGoForward, isNavigating } = this.selectedBrowser.webNavigation;
+      if (canGoBack) {
+        document.getElementById("SM_backButton").removeAttribute("disabled");
       } else {
-        document.getElementById("SM_openInTabButton").style.visibility = "collapse";
+        document.getElementById("SM_backButton").setAttribute("disabled", true);
       }
-      this._lastSelectedIndex = aIndex;
+      if (canGoForward) {
+        document.getElementById("SM_forwardButton").removeAttribute("disabled");
+      } else {
+        document.getElementById("SM_forwardButton").setAttribute("disabled", true);
+      }
+      document.getElementById("SM_stopReloadButton").setAttribute("display-stop", !!isNavigating);
     }
   },
 
-  switchToTab: function (tabNo) {
-    this.prefs.setBoolPref(this.kSM_Open, true);
-    let tab = document.getElementById("SM_tab" + tabNo);
-    if (tab) {
-      this.selectedTab = tab;
+  getBrowserForTab (tab) {
+    if (tab instanceof Object && tab.id.startsWith("SM_tab")) {
+      return document.getElementById(tab.id + "-browser");
     }
   },
 
-  advanceSelectedTab: function (dir) {
-    if (typeof dir == "undefined") return;
-    document.getElementById("SM_tabs").advanceSelectedTab(parseInt(dir) > 0 ? 1 : -1, true);
-    this._selectedTab = tab;
-    this.onSelect();
+  getTabForBrowser (browser) {
+    if (browser instanceof Object && browser.id.startsWith("SM_tab")) {
+      return document.getElementById(browser.id.replace("-browser", ""));
+    }
   },
 
-  openInTab: function () {
-    let uri;
-    try {
-      uri = Services.io.newURI(this.selectedTab.src, null, null);
-    } catch (e) {
-      return;
+  progressListener: {
+    QueryInterface: ChromeUtils.generateQI([
+      "nsIWebProgressListener",
+      "nsISupportsWeakReference",
+    ]),
+    onStateChange (progress, request, flag) {
+      if (progress === SidebarModoki.selectedBrowser.webProgress) {
+        const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
+        if (!!isStop) {
+          document.getElementById("SM_stopReloadButton").removeAttribute("display-stop");
+        } else {
+          document.getElementById("SM_stopReloadButton").setAttribute("display-stop", true);
+        }
+      }
+    },
+
+    onLocationChange (progress, request, location, flag) {
+      if (progress === SidebarModoki.selectedBrowser.webProgress) {
+        SidebarModoki.updateButtons();
+      }
     }
-    openWebLinkIn(uri.spec, 'tab', {
-      postData: null,
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
-        userContextId: gBrowser.selectedBrowser.getAttribute(
-          "userContextId"
-        )
-      })
-    });
+  },
+
+  reload () {
+    let b = this.getBrowserForTab(this.selectedTab);
+    if (b) {
+      document.getElementById('SM_stopReloadButton').setAttribute("display-stop", true);
+      b.reload();
+    }
+  },
+
+  stop () {
+    this.getBrowserForTab(this.selectedTab)?.stop();
+  },
+
+  home () {
+    if (this.selectedTab && this.selectedBrowser && this.selectedTab.src !== this.selectedBrowser.currentURI.spec) {
+      this.selectedBrowser.src = "";
+      this.selectedBrowser.src = this.selectedTab.src;
+    }
+  },
+
+  back () {
+    this.getBrowserForTab(this.selectedTab)?.goBack();
+  },
+
+  forward () {
+    this.getBrowserForTab(this.selectedTab)?.goForward();
+  },
+
+  toggle: function () {
+    this.Button = document.getElementById("SM_Button");
+    if (!this.Button.hasAttribute("checked")) {
+      this.Button.setAttribute("checked", true);
+      this.ToolBox.setAttribute("open", true);
+      this.Splitter.setAttribute("open", true);
+      let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
+      width = this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH);
+      this.ToolBox.style.setProperty("width", width + "px", "");
+      this.prefs.setBoolPref(this.kSM_Open, true)
+      this.switchToTab(index);
+    } else {
+      this.close();
+    }
   },
 
   close: function () {
-    this.prefs.setBoolPref(this.kSM_Open, false);
-    this.ToolBox.style.width = null;
-    this.ToolBox.style.removeProperty("--sm-width");
-  },
-
-  //ここからは, 大きさの調整
-  onResize: function (event) {
-    let width = this.ToolBox.getBoundingClientRect().width;
-    let aIndex = this.selectedTab.id.slice(-1);
-    this.setPanelWidth(aIndex, width);
+    removeEventListener("resize", this, false);
+    this.Button = document.getElementById("SM_Button");
+    this.Button.removeAttribute("checked");
+    this.ToolBox.removeAttribute("open");
+    this.Splitter.removeAttribute("open");
+    this.prefs.setBoolPref(this.kSM_Open, false)
   },
 
   handleEvent: function (event) {
     switch (event.type) {
       case 'focus':
-        this.selectedTab = event.target;
+        this.onSelect(event);
         break;
-      case 'mouseup':
       case 'resize':
-        this.onResize(event);
         break;
       case 'MozDOMFullscreen:Entered':
         if (!!this.ToolBox) {
@@ -776,26 +653,43 @@ var SidebarModoki = {
         }
         break;
       case 'aftercustomization':
+        this.Button = document.getElementById("SM_Button");
         if (this.getPref(this.kSM_Open, "bool", true)) {
           this.Button.setAttribute("checked", true);
+        } else {
+          this.Button.removeAttribute("checked");
+        }
+        this.ToolBox.removeAttribute("collapsed");
+        this.Splitter.removeAttribute("collapsed");
+        break;
+      case 'mousedown':
+        this.isMouseDown = true;
+        document.addEventListener("mousemove", this, false);
+        document.addEventListener("mouseup", this, false);
+        break;
+      case 'mousemove':
+      case 'mouseup':
+        if (this.isMouseDown) {
+          setTimeout(() => {
+            if (this.ToolBox.getBoundingClientRect().width < 200) {
+              this.ToolBox.removeAttribute("collapsed");
+              this.ToolBox.setAttribute("width", 200);
+              this.ToolBox.style.width = "200px";
+            }
+          }, 0)
+          if (event.type == "mouseup") {
+            this.isMouseDown = false;
+            document.removeEventListener("mousemove", this, false);
+            document.removeEventListener("mouseup", this, false);
+            let checkedTab = document.querySelectorAll("#SM_tabs toolbarbutton[checked]")[0];
+            if (checkedTab) {
+              let index = checkedTab.id.replace("SM_tab", "");
+              this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + index, this.ToolBox.getBoundingClientRect().width);
+            }
+          }
         }
         break;
     }
-  },
-
-  setPanelWidth: function (tabNo, width) {
-    if (typeof width !== "number") {
-      return false;
-    }
-    this.ToolBox.style.setProperty("--sm-width", width + "px", "");
-    let aIndex = tabNo.toString();
-    return this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + aIndex, width);
-  },
-
-  getPanelWidth: function (tabNo) {
-    let aIndex = tabNo.toString();
-    let width = this.prefs.getIntPref(this.kSM_lastSelectedTabWidth + aIndex, this.SM_WIDTH);
-    return width;
   },
 
   //pref読み込み
@@ -814,7 +708,6 @@ var SidebarModoki = {
     }
     return aDefault;
   }
-
 }
 
 SidebarModoki.init();
