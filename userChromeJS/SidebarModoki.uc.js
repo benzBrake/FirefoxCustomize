@@ -110,7 +110,8 @@ var SidebarModoki = {
   },
   set selectedTab (tab) {
     if (tab) {
-      this.Header.firstChild.innerHTML = tab.hasAttribute("label") ? tab.getAttribute("label") : "SidebarModoki"
+      if (tab.hasAttribute("label"))
+        this.Header.firstChild.innerHTML = tab.hasAttribute("label") ? tab.getAttribute("label") : "SidebarModoki"
     }
     this._selectedTab = tab;
   },
@@ -476,6 +477,10 @@ var SidebarModoki = {
         SidebarModoki.updatePosition();
       }, 1);
     })
+
+    setTimeout(() => {
+      this.selectedTab = this.selectedTab;
+    }, 300)
   },
 
   switchTab ({ target }) {
