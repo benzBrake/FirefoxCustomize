@@ -211,6 +211,7 @@ var SidebarModoki = {
       }
       #SM_toolbox:not(:has(#SM_contentbox[collapsed="true"])) {
         min-width: 200px;
+        width: var(--width);
       }
       .SM_toolbarspring {
           max-width: unset !important;
@@ -351,7 +352,7 @@ var SidebarModoki = {
     document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
     template =
       ["hbox", { id: "SM_toolbox" },
-        ["toolbar", { id: "SM_tabs", orient: 'vertical', flex: 0 },
+        ["toolbar", { id: "SM_tabs", orient: 'vertical', flex: 0, fullscreentoolbar: "true" },
         ],
         ["vbox", { id: "SM_contentbox", flex: 1 },
           ["hbox", { id: "SM_header", align: "center" },
@@ -502,7 +503,7 @@ var SidebarModoki = {
           document.getElementById("SM_tabpanels").selectedIndex = index;
           this.ContentBox.removeAttribute("collapsed");
           this.ToolBox.setAttribute("open", true);
-          this.ToolBox.style.setProperty("width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
+          this.ToolBox.style.setProperty("--width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
           this.Splitter.setAttribute("open", true);
           tabIndex = index;
           this.selectedTab = tab;
@@ -515,7 +516,7 @@ var SidebarModoki = {
     } else {
       this.ContentBox.setAttribute("collapsed", true);
       this.Splitter.removeAttribute("open");
-      this.ToolBox.style.removeProperty("width");
+      this.ToolBox.style.removeProperty("--width");
       document.querySelectorAll("#SM_tabs toolbarbutton[checked]").forEach(btn => btn.removeAttribute('checked'));
       index = -1;
     }
@@ -631,7 +632,7 @@ var SidebarModoki = {
       this.Splitter.setAttribute("open", true);
       let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
       width = this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH);
-      this.ToolBox.style.setProperty("width", width + "px", "");
+      this.ToolBox.style.setProperty("--width", width + "px", "");
       this.prefs.setBoolPref(this.kSM_Open, true)
       this.switchToTab(index);
     } else {
@@ -688,7 +689,7 @@ var SidebarModoki = {
           setTimeout(() => {
             if (this.ToolBox.getBoundingClientRect().width < 200) {
               this.ToolBox.removeAttribute("collapsed");
-              this.ToolBox.setAttribute("width", 200);
+              this.ToolBox.setAttribute("--width", 200);
               this.ToolBox.style.width = "200px";
             }
           }, 0)
