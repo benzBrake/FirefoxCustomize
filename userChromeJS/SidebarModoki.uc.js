@@ -264,11 +264,18 @@ var SidebarModoki = {
       #SM_tabs .toolbarbutton-1 .toolbarbutton-text {
         display: none;
       }
+      #SM_contentbox {
+        overflow: hidden;
+      }
       #SM_header {
         padding-block: 3px;
+        justify-content: space-between;
+        flex-wrap: wrap-reverse;
+        gap: 4px;
       }
-      #SM_buttons {
-        margin-right: 12px;
+      #SM_buttons_group {
+        padding: 3px;
+        justify-content: space-between;
       }
       #SM_buttons .toolbarbutton-1 {
         padding: 0 !important;
@@ -288,7 +295,7 @@ var SidebarModoki = {
         background-color: transparent !important;
       }
       #SM_stopReloadButton {
-        display:flex
+        display:flex;
       }
       #SM_stopReloadButton:not([display-stop="true"]) > #SM_stopButton,
       #SM_stopReloadButton[display-stop="true"] > #SM_reloadButton {
@@ -347,18 +354,19 @@ var SidebarModoki = {
         ],
         ["vbox", { id: "SM_contentbox", flex: 1 },
           ["hbox", { id: "SM_header", align: "center" },
-            ["label", {}, "SidebarModoki"],
-            ["toolbarspring", { class: "SM_toolbarspring", flex: "1000" }],
-            ["hbox", { id: "SM_buttons", align: "end" },
-              ["toolbarbutton", { id: "SM_backButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Back", image: "chrome://browser/skin/back.svg", oncommand: "SidebarModoki.back()" }],
-              ["toolbarbutton", { id: "SM_forwardButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Forward", image: "chrome://browser/skin/forward.svg", oncommand: "SidebarModoki.forward()" }],
-              ["toolbaritem", { id: "SM_stopReloadButton", class: "tabbable" },
-                ["toolbarbutton", { id: "SM_reloadButton", class: "toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Reload", image: "chrome://global/skin/icons/reload.svg", oncommand: "SidebarModoki.reload()" }],
-                ["toolbarbutton", { id: "SM_stopButton", class: "toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Stop", image: "chrome://global/skin/icons/close.svg", oncommand: "" }]
+            ["label", { flex: 1 }, "SidebarModoki"],
+            ["hbox", { id: 'SM_buttons_group', flex: 1 },
+              ["hbox", { id: "SM_buttons", align: "end" },
+                ["toolbarbutton", { id: "SM_backButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Back", image: "chrome://browser/skin/back.svg", oncommand: "SidebarModoki.back()" }],
+                ["toolbarbutton", { id: "SM_forwardButton", class: "tabbable toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Forward", image: "chrome://browser/skin/forward.svg", oncommand: "SidebarModoki.forward()" }],
+                ["toolbaritem", { id: "SM_stopReloadButton", class: "tabbable" },
+                  ["toolbarbutton", { id: "SM_reloadButton", class: "toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Reload", image: "chrome://global/skin/icons/reload.svg", oncommand: "SidebarModoki.reload()" }],
+                  ["toolbarbutton", { id: "SM_stopButton", class: "toolbarbutton-1 chromeclass-toolbar-additional", tooltiptext: "Stop", image: "chrome://global/skin/icons/close.svg", oncommand: "" }]
+                ],
+                ["toolbarbutton", { id: "SM_homeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Home", image: "chrome://browser/skin/home.svg", oncommand: "SidebarModoki.home()" }],
               ],
-              ["toolbarbutton", { id: "SM_homeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Home", image: "chrome://browser/skin/home.svg", oncommand: "SidebarModoki.home()" }],
+              ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Hide Webpanel", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
             ],
-            ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Hide Webpanel", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
           ],
           ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
             ["tabpanels", { id: "SM_tabpanels", flex: "1", style: "border: none;" },
