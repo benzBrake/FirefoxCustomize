@@ -526,6 +526,8 @@ var SidebarModoki = {
     ToolBox.style.setProperty("margin", this.SM_MARGINHACK);
     Splitter.style.setProperty("order", posiotionend ? 9 : -1, "");
     Splitter.setAttribute("collapse", posiotionend ? "after" : "before");
+    ToolBox.setAttribute("positionend", posiotionend);
+    Splitter.setAttribute("positionend", posiotionend);
   },
 
   updateButtons () {
