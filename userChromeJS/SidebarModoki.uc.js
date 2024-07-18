@@ -75,6 +75,7 @@ var SidebarModoki = {
     src: "chrome://browser/content/places/historySidebar.xhtml",
     "data-l10n-id": "appmenuitem-history",
     image: "chrome://browser/skin/history.svg",
+    shortcut: { key: "h", modifiers: "accel", replace: true }
   }, {
     src: "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
     "data-l10n-id": "appmenuitem-downloads",
@@ -220,8 +221,8 @@ var SidebarModoki = {
       #SM_splitter:not([open="true"]),
       /*visibility*/
       /*フルスクリーン*/
-      #SM_toolbox[moz-collapsed="true"],
-      #SM_splitter[moz-collapsed="true"]
+      #SM_toolbox[moz-collapsed],
+      #SM_splitter[moz-collapsed]
       {
         visibility:collapse;
       }
@@ -409,9 +410,20 @@ var SidebarModoki = {
       }
       if (tab.hasOwnProperty("shortcut")) {
         let shortcut = tab["shortcut"];
+        let mainKeySet = document.getElementById("mainKeyset");
+        if ("replace" in shortcut && (shortcut.replace === "true" || shortcut.replace === "1" || shortcut.replace === true)) {
+          delete shortcut.replace;
+          let sel = "";
+          for (const [key, value] of Object.entries(shortcut)) {
+            sel += `[${key}="${value}"]`;
+          }
+          let node = mainKeySet.querySelector(sel);
+          if (node)
+            node.parentNode.removeChild(node);
+        }
         shortcut.oncommand = `SidebarModoki.switchToTab(${i}, true)`
         let template = ["key", shortcut];
-        document.getElementById("mainKeyset").appendChild(this.jsonToDOM(template, document, {}));
+        mainKeySet.appendChild(this.jsonToDOM(template, document, {}));
         delete tab["shortcut"];
       }
       template[2].push(["toolbarbutton", tab]);
@@ -472,6 +484,27 @@ var SidebarModoki = {
 
     this.ToolBox.removeAttribute("collapsed");
     this.Splitter.removeAttribute("collapsed");
+
+    if (this.SM_AUTOHIDE) {
+      //F11 fullscreen
+      FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
+      FullScreen.showNavToolbox = function (trackMouse = true) {
+        FullScreen.showNavToolbox_org(trackMouse);
+        if (!!SidebarModoki.ToolBox) {
+          SidebarModoki.ToolBox.removeAttribute("moz-collapsed");
+          SidebarModoki.Splitter.removeAttribute("moz-collapsed");
+        }
+      }
+      FullScreen.hideNavToolbox_org = FullScreen.hideNavToolbox;
+      FullScreen.hideNavToolbox = function (aAnimate = false) {
+        FullScreen.hideNavToolbox_org(aAnimate);
+        if (SidebarModoki.SM_AUTOHIDE && !!SidebarModoki.ToolBox) {
+          SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
+          SidebarModoki.Splitter.setAttribute("moz-collapsed", "true");
+        }
+      }
+    }
+
     window.addEventListener("aftercustomization", this, false);
 
     this.Tabs.addEventListener("wheel", this, false);
@@ -511,6 +544,10 @@ var SidebarModoki = {
           this.ToolBox.style.setProperty("--width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
           this.Splitter.setAttribute("open", true);
           tabIndex = index;
+          this.ToolBox.setAttribute("disiable-auto-hide", true);
+          setTimeout(() => {
+            this.ToolBox.removeAttribute("disiable-auto-hide");
+          }, 3000);
           this.selectedTab = tab;
           this.selectedBrowser = browser;
         } else {
@@ -671,18 +708,6 @@ var SidebarModoki = {
           }
           this.switchToTab(index);
         }, 10);
-        break;
-      case 'MozDOMFullscreen:Entered':
-        if (!!this.ToolBox) {
-          this.ToolBox.setAttribute("moz-collapsed", "true");
-          this.Splitter.setAttribute("moz-collapsed", "true");
-        }
-        break;
-      case 'MozDOMFullscreen:Exited':
-        if (!!this.ToolBox) {
-          this.ToolBox.removeAttribute("moz-collapsed");
-          this.Splitter.removeAttribute("moz-collapsed");
-        }
         break;
       case 'aftercustomization':
         this.Button = document.getElementById("SM_Button");
