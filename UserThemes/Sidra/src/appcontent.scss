@@ -73,7 +73,8 @@
 
         &[open="true"] {
           // 显示 SidebarModoki 后，SidebarModoki 的分割线会占据一部分宽度，需要减去
-          &[position="left"] {
+          border-bottom: 1px solid var(--uc-appcontent-border-color);
+          &:not([positionend="true"]) {
             & ~ #appcontent {
               padding-left: calc(
                 var(--uc-appcontent-padding, 4px) - var(
@@ -81,9 +82,20 @@
                     2px
                   )
               );
+              @include Option(
+                "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
+              ) {
+                padding-left: var(--uc-appcontent-padding, 4px) !important;
+              }
+            }
+            @include Option(
+              "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
+            ) {
+              border-radius: 0 var(--uc-appcontent-raidus, 8px)
+                var(--uc-appcontent-raidus, 8px);
             }
           }
-          &[position="right"] {
+          &[positionend="true"] {
             & ~ #appcontent {
               padding-right: calc(
                 var(--uc-appcontent-padding, 4px) - var(
@@ -91,15 +103,34 @@
                     2px
                   )
               );
+              @include Option(
+                "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
+              ) {
+                padding-right: var(--uc-appcontent-padding, 4px) !important;
+              }
+            }
+            @include Option(
+              "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
+            ) {
+              border-radius: var(--uc-appcontent-raidus, 8px) 0 0
+                var(--uc-appcontent-raidus, 8px);
             }
           }
           #SM_tabpanels {
-            border-radius: var(--uc-appcontent-raidus, 8px);
-            margin-bottom: var(--uc-appcontent-padding, 4px);
-            > tabpanel {
-              border: 1px solid var(--uc-appcontent-border-color);
+            @include NotOption(
+              "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
+            ) {
               border-radius: var(--uc-appcontent-raidus, 8px);
-              overflow: hidden;
+              margin-bottom: var(--uc-appcontent-padding, 4px);
+            }
+            > tabpanel {
+              @include NotOption(
+                "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
+              ) {
+                border: 1px solid var(--uc-appcontent-border-color);
+                border-radius: var(--uc-appcontent-raidus, 8px);
+                overflow: hidden;
+              }
             }
           }
         }
@@ -128,7 +159,7 @@
 
         #sidebar-header {
           @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
-            border-radius: var(--uc-appcontent-raidus, 8px) 0 0 0 ;
+            border-radius: var(--uc-appcontent-raidus, 8px) 0 0 0;
           }
         }
 

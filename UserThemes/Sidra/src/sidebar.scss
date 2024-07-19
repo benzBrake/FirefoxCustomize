@@ -30,7 +30,7 @@
   @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
     #sidebar-box {
       --uc-sidebar-width: 36px;
-      --uc-sidebar-hover-width: 210px;
+      --uc-sidebar-hover-width: 280px;
       --uc-autohide-sidebar-delay: 600ms; /* Wait 0.6s before hiding sidebar */
       --uc-autohide-transition-duration: 115ms;
       --uc-autohide-transition-type: linear;
@@ -78,8 +78,17 @@
 
     #sidebar-header,
     #sidebar {
-      transition: min-width var(--uc-autohide-transition-duration)
-        var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
+      @include NotOption("userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled") {
+        transition: min-width var(--uc-autohide-transition-duration)
+          var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
+      }
+      @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled") {
+        transition:
+          min-width var(--uc-autohide-transition-duration)
+            var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay),
+          filter var(--uc-autohide-transition-duration)
+            var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
+      }
       min-width: var(--uc-sidebar-width) !important;
       will-change: min-width;
     }
@@ -88,7 +97,11 @@
       min-width: var(--uc-sidebar-hover-width) !important;
       transition-delay: 0ms !important;
     }
-
+    @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled") {
+      #sidebar-box:not(:hover, :active, :focus-within) > #sidebar {
+        filter: blur(4px);
+      }
+    }
     .sidebar-panel {
       background-color: transparent !important;
       color: var(--newtab-text-primary-color) !important;
@@ -129,6 +142,61 @@
     #sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel-label {
       margin-inline: 0px !important;
       border-left-style: solid !important;
+    }
+  }
+
+  @include Option("userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled") {
+    #browser:has(#SM_toolbox[open="true"]) {
+      position: relative;
+    }
+    #SM_toolbox[open="true"][style*="--width"] {
+      --uc-autohide-sidebar-delay: 600ms; /* Wait 0.6s before hiding sidebar */
+      --uc-autohide-transition-duration: 115ms;
+      --uc-autohide-transition-type: linear;
+      --sidebar-background-color: transparent;
+      transition: width var(--uc-autohide-transition-duration)
+        var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay);
+      will-change: width;
+      position: absolute;
+      height: 100%;
+      top: 0;
+      z-index: 1;
+      border-top: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
+      min-width: unset;
+      > #SM_content {
+        width: calc(100% - var(--width));
+      }
+      &:not([positionend="true"]) {
+        border-right: 1px solid
+          var(--uc-appcontent-border-color, rgb(80, 80, 80));
+        left: 0;
+        &:not([moz-collapsed]) ~ #appcontent {
+          margin-inline-start: 34px;
+        }
+      }
+      &[positionend="true"] {
+        right: 0;
+        &:not([moz-collapsed]) ~ #appcontent {
+          margin-inline-end: 34px;
+        }
+      }
+      &:not(
+          :hover,
+          :focus,
+          :focus-within,
+          :active,
+          [disiable-auto-hide="true"]
+        ) {
+        --width: 34px !important
+      ;
+      }
+      & ~ #SM_splitter {
+        visibility: collapse;
+      }
+    }
+
+    #SM_toolbox[positionend="true"] {
+      border-left: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
     }
   }
 }

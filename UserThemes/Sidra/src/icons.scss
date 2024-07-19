@@ -184,15 +184,18 @@
         }
 
         @include NotOption("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-          :root[menubarInactive="true"] {
+          :root:has(#toolbar-menubar[inactive="true"]) {
             #TabsToolbar {
               margin-inline-start: var(--copycat-btn-fix-margin) !important;
             }
           }
 
-          :root:not([menubarInactive="true"]) {
+          :root:has(:not(#toolbar-menubar[inactive="true"])) {
             #toolbar-menubar {
               margin-inline-start: var(--copycat-btn-fix-margin) !important;
+            }
+            #CopyCat-Btn {
+              top: 0 !important;
             }
           }
         }

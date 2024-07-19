@@ -274,6 +274,14 @@
         {
             "pref": "userChromeJS.Sidra.Sidebar.AutoHide.Enabled",
             "group": "sidebar"
+        },
+        {
+            "pref": "userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled",
+            "group": "sidebar"
+        },
+        {
+            "pref": "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled",
+            "group": "sidebar"
         }
     ],
     "monitors": [
@@ -347,21 +355,6 @@
             "stop": "document.getElementById('navigator-toolbox').style.removeProperty('--urlbar-height'); document.getElementById('navigator-toolbox').style.removeProperty('--urlbar-toolbar-height')"
         },
         {
-            "from": "toolbarbutton[data-l10n-id=\"show-TST-sidebar\"]",
-            "attr": "checked",
-            "targetAttr": "tstopened"
-        },
-        {
-            "from": "#sidebar-box",
-            "attr": "sidebarcommand",
-            "targetAttr": "sidebarCommand"
-        },
-        {
-            "from": "#sidebar-box",
-            "attr": "hidden",
-            "targetAttr": "sidebarHidden"
-        },
-        {
             "from": "#toolbar-menubar",
             "attr": "inactive",
             "targetAttr": "menubarInactive"
@@ -427,6 +420,7 @@
             "userChromeJS.Sidra.PlacesToolbar.Compact.Minimum.Enabled": "书签工具栏极限紧凑",
             "userChromeJS.Sidra.Sidebar.Compact": "侧边栏样式总开关",
             "userChromeJS.Sidra.Sidebar.AutoHide.Enabled": "自动隐藏原侧边栏",
+            "userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled": "自动隐藏时原侧边栏增加模糊效果",
             "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled": "自动隐藏 Modoki 侧边栏",
             "userChromeJS.Sidra.Icons.Compact": "补全图标总开关",
             "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn": "CopyCat 按钮仿 Firefox 经典按钮",
