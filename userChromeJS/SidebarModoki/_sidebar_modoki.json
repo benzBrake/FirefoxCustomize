@@ -1,0 +1,51 @@
+[
+  {
+    "src": "chrome://browser/content/places/bookmarksSidebar.xhtml",
+    "data-l10n-id": "library-bookmarks-menu",
+    "image": "chrome://browser/skin/bookmark-star-on-tray.svg",
+    "shortcut": {
+      "key": "b",
+      "modifiers": "accel",
+      "replace": true
+    }
+  },
+  {
+    "src": "chrome://browser/content/places/historySidebar.xhtml",
+    "data-l10n-id": "appmenuitem-history",
+    "image": "chrome://browser/skin/history.svg",
+    "shortcut": {
+      "key": "h",
+      "modifiers": "accel",
+      "replace": true
+    }
+  },
+  {
+    "src": "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
+    "data-l10n-id": "appmenuitem-downloads",
+    "image": "chrome://browser/skin/downloads/downloads.svg"
+  },
+  {
+	"addon-id": "bookmarkdupes@martin-vaeth.org",
+	"src": "data/tab/index.html"
+  },
+  {
+    "src": "https://music.youtube.com",
+    "label": "YouTube Music"
+  },
+  {
+    "src": "https://translate.google.com",
+    "label": "谷歌翻译"
+  },
+  {
+    "src": "https://papago.naver.com/",
+    "label": "papago"
+  },
+  {
+    "src": "https://1password.com/zh-cn/password-generator/",
+    "label": "密码生成"
+  },
+  {
+    "src": "https://snapdrop.net",
+    "label": "文件传输"
+  }
+]

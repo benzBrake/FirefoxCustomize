@@ -89,7 +89,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 96   | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |                                                              |
 |      | 100  | [showLimitedTimeTheme](showLimitedTimeTheme.uc.js)           | 主题中心显示过期的限时主题                                   | [📃](https://bbs.kafan.cn/thread-2234549-1-1.html)            |
 |      | 78   | [sidebarAttrubesDetector](sidebarAttrubesDetector.uc.js)     | 浏览器主窗口增加`sidebarHidden`和`sidebarCommand`属性        |                                                              |
-|      | 117  | [SidebarModoki](SidebarModoki.uc.js)                         | 侧边工具栏修改版                                             | [📃](https://github.com/alice0775/userChrome.js/blob/master/106/SidebarModoki.uc.js) |
+|      | 117  | [SidebarModoki](SidebarModoki/SidebarModoki.uc.js)           | 侧边工具栏修改版                                             | [📃](https://github.com/alice0775/userChrome.js/blob/master/127/SidebarModoki.uc.js) |
 |      | 107  | [StatusBar](StatusBar.uc.js)                                 | 状态栏脚本，应该通用吧                                       | [📃](https://github.com/Floorp-Projects/Floorp/blob/242338213f92dcdc79e677842526d7ca098d9218/floorp/browser/base/content/browser-statusbar.js) |
 |      | 90   | [syncTabsMod](syncTabsMod.uc.js)                             | 受同步的标签页按钮/侧边栏增强                                | [📃](https://blog.iplayloli.com/synctabsbtnmoducjs-firefox-enhanced-with-synchronized-tab-buttons.html) |
 |      | 90   | [tabNotifitionBadge.uc.js](tabNotifitionBadge.uc.js)         | 仿 Vivaldi 的功能  标签页图标显示未读消息数量                |                                                              |
@@ -225,106 +225,6 @@ Firefox 支持 has 选择器后用不上了，直接使用 CSS 即可：https://
 效果如图所示：
 
 ![TST](Screenshots/TST.gif)
-
-### SidebarModoki.uc.js
-
-脚本前边这一段是定义侧边栏网页的配置项，支持 Firefox 内置页面，扩展页面和网页。
-
-| 字段         | 说明                                                         |
-| ------------ | ------------------------------------------------------------ |
-| addon-id     | 扩展 ID，指明这个Tab要链接到扩展的页面（Firefox 的扩展地址是随机生成的，填写脚本会自动读取对应的地址） |
-| src          | 网页地址，支持 Firefox 内置页面，扩展页面和网页。如果填写addon-id，必须填写扩展页面相对地址 |
-| image        | 图标地址，支持 Firefox 内置图标，网页图标和base64编码的图标  |
-| label        | Tab 名称                                                     |
-| data-l10n-id | firefox 多语言属性，自动从对应 ID 读取相应的文本             |
-| shortcut     | 快捷键，不知道还管用不，好久没用过了                         |
-
-```
-  TABS: [{
-    src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
-    "data-l10n-id": "library-bookmarks-menu",
-    image: "chrome://browser/skin/bookmark-star-on-tray.svg",
-    // shortcut: { key: "Q", modifiers: "accel,alt" } // uncomment to enable shortcut
-  }, {
-    src: "chrome://browser/content/places/historySidebar.xhtml",
-    "data-l10n-id": "appmenuitem-history",
-    image: "chrome://browser/skin/history.svg",
-  }, {
-    src: "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
-    "data-l10n-id": "appmenuitem-downloads",
-    image: "chrome://browser/skin/downloads/downloads.svg",
-  }, {
-    "addon-id": "treestyletab@piro.sakura.ne.jp",
-    src: "sidebar/sidebar.html",
-    label: "Tree Style Tab",
-  }, {
-    "addon-id": "{446900e4-71c2-419f-a6a7-df9c091e268b}",
-    src: "popup/index.html",
-    label: "Bitwarden"
-  }, {
-    src: "https://music.youtube.com",
-    label: "YouTube Music"
-  }, {
-    src: "https://papago.naver.com/",
-    label: "papago"
-  }, {
-    src: "https://1password.com/zh-cn/password-generator/",
-    label: "密码生成"
-  }, {
-    src: 'https://snapdrop.net',
-    label: '文件传输'
-  }],
-```
-
-### 自动隐藏（仅支持 2024.07.17之后的版本）
-
-```css
-#browser:has(#SM_toolbox[open="true"]) {
-    position: relative;
-}
-#SM_toolbox[open=true][style*="--width"] {
-      --uc-autohide-sidebar-delay: 600ms; /* Wait 0.6s before hiding sidebar */
-      --uc-autohide-transition-duration: 115ms;
-      --uc-autohide-transition-type: linear;
-      --sidebar-background-color: transparent;
-      transition: width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay);
-      will-change: width;
-      position: absolute;
-      height: 100%;
-      top: 0;
-      z-index: 1;
-      border-top: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
-      min-width: unset;
-    }
-    #SM_toolbox[open=true][style*="--width"] > #SM_content {
-      width: calc(100% - var(--width));
-    }
-    #SM_toolbox[open=true][style*="--width"]:not([positionend=true]) {
-      border-right: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
-      left: 0;
-    }
-    #SM_toolbox[open=true][style*="--width"]:not([positionend=true]) ~ #appcontent {
-      margin-inline-start: 34px;
-    }
-    #SM_toolbox[open=true][style*="--width"][positionend=true] {
-      right: 0;
-    }
-    #SM_toolbox[open=true][style*="--width"][positionend=true] ~ #appcontent {
-      margin-inline-end: 34px;
-    }
-    #SM_toolbox[open=true][style*="--width"]:not(:hover, :focus, :focus-within, :active) {
-      --width: 34px !important ;
-    }
-    #SM_toolbox[open=true][style*="--width"] ~ #SM_splitter {
-      visibility: collapse;
-    }
-    #SM_toolbox[positionend=true] {
-      border-left: 1px solid var(--uc-appcontent-border-color, rgb(80, 80, 80));
-    }
-}
-```
-
-
 
 ## Views Counter
 
