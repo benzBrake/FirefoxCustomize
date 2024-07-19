@@ -14,7 +14,7 @@
 8. 左键侧边栏按钮打开书签侧边栏
 9. 中键侧边栏按钮切换侧边栏方向
 10.右键侧边栏按钮打开历史侧边栏
-11.CTRL + F 开关侧边栏
+11.CTRL + F 开关查找栏
 12.只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
 */
 // @license         MIT License
@@ -278,7 +278,19 @@
                 }
             }
             if (config["ctrl f to toggle findbar"]) {
-                document.getElementById('cmd_find').setAttribute('oncommand', 'if (!gFindBar || gFindBar.hidden) { gLazyFindCommand("onFindCommand") } else { gFindBar.close() }');
+                let cmd = document.getElementById('cmd_find');
+                cmd.parentNode.removeChild(cmd);
+                document.addEventListener('keypress', (e) => {
+                    const { ownerGlobal: win } = e.target;
+                    const { gFindBar, gLazyFindCommand } = win;
+                    if (e.ctrlKey && e.key === "f") {
+                        if (!gFindBar || gFindBar.hidden) {
+                            gLazyFindCommand("onFindCommand");
+                        } else {
+                            gFindBar.close();
+                        }
+                    }
+                });
             }
         }
     }
