@@ -66,6 +66,7 @@ var SidebarModoki = {
   },
   SM_WIDTH: 230,
   SM_AUTOHIDE: false,  //F11 Fullscreen
+  SM_TABS_FILE: "chrome/UserConfig/_sidebar_modoki.json",
   TABS: [{
     src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
     "data-l10n-id": "library-bookmarks-menu",
@@ -80,21 +81,6 @@ var SidebarModoki = {
     src: "chrome://browser/content/downloads/contentAreaDownloadsView.xhtml?SM",
     "data-l10n-id": "appmenuitem-downloads",
     image: "chrome://browser/skin/downloads/downloads.svg",
-  }, {
-    src: "https://music.youtube.com",
-    label: "YouTube Music"
-  }, {
-    src: "https://translate.google.com",
-    label: "谷歌翻译"
-  }, {
-    src: "https://papago.naver.com/",
-    label: "papago"
-  }, {
-    src: "https://1password.com/zh-cn/password-generator/",
-    label: "密码生成"
-  }, {
-    src: 'https://snapdrop.net',
-    label: '文件传输'
   }],
   // -- config --
 
@@ -202,6 +188,13 @@ var SidebarModoki = {
     if (chromehidden &&
       document.getElementById("main-window").getAttribute("chromehidden").includes("extrachrome")) {
       return; // do nothing
+    }
+
+    if (await IOUtils.exists(PathUtils.join(PathUtils.profileDir, ...this.SM_TABS_FILE.split("/")))) {
+      try {
+        let obj = JSON.parse(await IOUtils.readUTF8(PathUtils.join(PathUtils.profileDir, ...this.SM_TABS_FILE.split("/"))));
+        this.TABS = obj;
+      } catch (e) { }
     }
 
     let style = `
@@ -312,10 +305,20 @@ var SidebarModoki = {
       {
         list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVQ4jWP4TyFg+P///38GBgayMHUNwEdjdTrVDcDnTKJdgEsRSV5ACaBRF9DZBQObFygBAMeIxVdCQIJTAAAAAElFTkSuQmCC');
       }
+      {SM_CUSTOM_CSS}
      `;
 
+    var customCSS = '';
+    for (let i = 0; i < this.TABS.length; i++) {
+      let tab = this.TABS[i];
+      if (tab.hasOwnProperty("css")) {
+        customCSS += tab.css;
+        delete tab.css;
+      }
+    }
+
     var sss = Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService);
-    var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH)));
+    var uri = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(style.replace(/\s+/g, " ").replace(/\{SM_WIDTH\}/g, this.SM_WIDTH).replace(/\{SM_CUSTOM_CSS\}/g, customCSS)));
     if (!sss.sheetRegistered(uri, sss.AGENT_SHEET))
       sss.loadAndRegisterSheet(uri, sss.AGENT_SHEET);
     // xxxx try-catch may need for 2nd window

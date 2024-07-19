@@ -7,7 +7,8 @@
       "key": "b",
       "modifiers": "accel",
       "replace": true
-    }
+    },
+    "css": "#sidebar-switcher-bookmarks { display: none }"
   },
   {
     "src": "chrome://browser/content/places/historySidebar.xhtml",
