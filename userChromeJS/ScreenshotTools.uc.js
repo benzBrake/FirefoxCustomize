@@ -62,13 +62,13 @@
                 }
             }
         ],
-        getId(suffix) {
+        getId (suffix) {
             return this.ID_PREFIX + '-' + suffix;
         },
-        init() {
+        init () {
             document.addEventListener('DOMContentLoaded', this);
             const BTN_ID = this.getId('button');
-            if (!(CustomizableUI.getWidget(BTN_ID) && CustomizableUI.getWidget(BTN_ID).forWindow(window)?.node)) {
+            try {
                 CustomizableUI.createWidget({
                     id: BTN_ID,
                     removable: true,
@@ -76,9 +76,9 @@
                     type: "custom",
                     onBuild: doc => this.createButton(doc, BTN_ID, this.getId('popup'))
                 });
-            }
+            } catch (ex) { }
         },
-        createButton(doc, BTN_ID, POPUP_ID) {
+        createButton (doc, BTN_ID, POPUP_ID) {
             let btn = cEl(doc, 'toolbarbutton', {
                 id: BTN_ID,
                 label: "截图工具",
@@ -96,7 +96,7 @@
             btn.addEventListener('click', this, false);
             return btn;
         },
-        handleEvent(event) {
+        handleEvent (event) {
             switch (event.type) {
                 case 'DOMContentLoaded':
                     this.initScreenPopupUIHanler(event.target);
@@ -119,7 +119,7 @@
                     break;
             }
         },
-        async initScreenPopupUIHanler(win) {
+        async initScreenPopupUIHanler (win) {
             const { location, documentElement: doc } = win;
             if (location.href.startsWith("chrome://browser/content/screenshots/screenshots-preview.html?")) {
                 let preview_area = await new Promise(resolve => {
@@ -161,7 +161,7 @@
                 download_btn.click();
             }
         },
-        initPopupMenu(popup) {
+        initPopupMenu (popup) {
             const doc = popup.ownerDocument;
             this.MENUS.forEach(cfg => {
                 let el;
@@ -181,7 +181,7 @@
                 if (el) popup.appendChild(el);
             });
         },
-        handleRelativePath(path, parentPath) {
+        handleRelativePath (path, parentPath) {
             if (path) {
                 path = path.replace(/\//g, '\\');
                 if (/^(\\)/.test(path)) {
@@ -194,7 +194,7 @@
                 return path;
             }
         },
-        setIcon(menu, cfg) {
+        setIcon (menu, cfg) {
             if (menu.hasAttribute("src") || menu.hasAttribute("icon"))
                 return;
 
@@ -223,11 +223,11 @@
                 return;
             }
         },
-        getURLSpecFromFile(aFile) {
+        getURLSpecFromFile (aFile) {
             const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
             return fph.getURLSpecFromActualFile(aFile);
         },
-        onCommand(event) {
+        onCommand (event) {
             let item = event.target;
             let precommand = item.getAttribute('precommand') || "",
                 postcommand = item.getAttribute("postcommand") || "",
@@ -238,7 +238,7 @@
                 this.exec(exec, text);
             if (postcommand) eval(postcommand);
         },
-        exec(path, arg, opt = { startHidden: false }) {
+        exec (path, arg, opt = { startHidden: false }) {
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             if (opt.startHidden) process.startHidden = true;
@@ -269,7 +269,7 @@
                 console.error(e);
             }
         },
-        async takeWebpageScreenShot(doc, isFullPage) {
+        async takeWebpageScreenShot (doc, isFullPage) {
             doc.getElementById('key_screenshot').doCommand();
             let btn = await this.getScreenSortButton(doc, isFullPage);
             if (btn) {
@@ -278,7 +278,7 @@
                 this.alert("截图按钮未找到，请手动截图");
             }
         },
-        async getScreenSortButton(doc, isFullPage) {
+        async getScreenSortButton (doc, isFullPage) {
             let screenshotsPagePanel = await new Promise(resolve => {
                 let count = 0;
                 let interval = setInterval(() => {
@@ -308,7 +308,7 @@
                 "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
                 aMsg + "", !!callback, "", callback);
         },
-        destroy() {
+        destroy () {
             document.removeEventListener('DOMContentLoaded', this);
             CustomizableUI.destroyWidget(this.getId('button'));
         }
@@ -316,7 +316,7 @@
 
     window.ScreenshotTools.init();
 
-    function imp(name) {
+    function imp (name) {
         if (name in globalThis) return globalThis[name];
         var url = `resource:///modules/${name}.`;
         try { var exp = ChromeUtils.importESModule(url + "sys.mjs"); }
@@ -332,7 +332,7 @@
      * @param {Object} o DOM 元素属性键值对
      * @returns 
      */
-    function cEl(d, t, o = {}, s) {
+    function cEl (d, t, o = {}, s) {
         if (!d) return;
         if (!Array.isArray(s)) s = [];
         let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);

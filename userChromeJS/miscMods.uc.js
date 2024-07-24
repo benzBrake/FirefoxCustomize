@@ -279,7 +279,8 @@
             }
             if (config["ctrl f to toggle findbar"]) {
                 let cmd = document.getElementById('cmd_find');
-                cmd.parentNode.removeChild(cmd);
+                if (cmd)
+                    cmd.parentNode.removeChild(cmd);
                 document.addEventListener('keypress', (e) => {
                     const { ownerGlobal: win } = e.target;
                     const { gFindBar, gLazyFindCommand } = win;
