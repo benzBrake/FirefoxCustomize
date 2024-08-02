@@ -374,12 +374,10 @@ var SidebarModoki = {
               ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Hide Webpanel", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
             ],
           ],
-          ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false },
-            ["tabpanels", { id: "SM_tabpanels", flex: "1", style: "border: none;" },
-            ]
-          ]
+          ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false }]
         ]
       ];
+
     for (let i = 0; i < this.TABS.length; i++) {
       let tab = Object.assign(this.TABS[i], {
         id: "SM_tab" + i,
@@ -431,24 +429,27 @@ var SidebarModoki = {
       }
       template[2].push(["toolbarbutton", tab]);
       let browser = { id: "SM_tab" + i + "-browser", flex: "1", autoscroll: "false", src: "" };
+      browser.messagemanagergroup = tab.messagemanagergroup || "browsers";
+      browser.disablehistory = tab.disablehistory || true;
+      browser.disableglobalhistory = tab.disableglobalhistory || true;
+      browser.tooltip = tab.tooltip || "aHTMLTooltip";
+      browser.disablefullscreen = tab.disablefullscreen || "true"
       if (tab.src.startsWith("moz")) {
-        browser.messagemanagergroup = "webext-browsers";
-        browser.disableglobalhistory = true;
-        browser["webextension-view-type"] = "sidebar";
+        browser["webextension-view-type"] = tab["webextension-view-type"] || "sidebar";
         browser.type = "content";
-        browser.remote = true;
+        browser.remote = tab.remote || true;
         browser.maychangeremoteness = "true";
-        browser.disablefullscreen = "true"
       } else if (tab.src.startsWith("http")) {
-        browser.messagemanagergroup = "browsers";
-        browser.disableglobalhistory = true;
-        browser["webextension-view-type"] = "popup";
+        browser["webextension-view-type"] = tab["webextension-view-type"] || "popup";
         browser.type = "content";
-        browser.remote = true;
+        browser.remote = tab.remote || true;
         browser.maychangeremoteness = "true";
-        browser.disablefullscreen = "true"
+        browser.context = "contentAreaContextMenu";
       }
-      template[3][3][2].push(["tabpanel", { id: "SM_tab" + i + "-container", orient: "vertical", flex: "1" }, ["browser", browser]]);
+      if (tab.hasOwnProperty("autocompletepopup")) {
+        browser.autocompletepopup = tab.autocompletepopup;
+      }
+      template[3][3].push(["browser", browser]);
     }
 
     let sidebar = document.getElementById("sidebar-box");
@@ -508,7 +509,7 @@ var SidebarModoki = {
       }
 
       let fullScreenObserver = new MutationObserver((mutations) => {
-        for(let mutation of mutations) {
+        for (let mutation of mutations) {
           if (mutation.target.id === "main-window" && mutation.attributeName === "inFullscreen") {
             if (mutation.target.getAttribute("inFullscreen") === "true") {
               SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
@@ -533,6 +534,14 @@ var SidebarModoki = {
       }, 1);
     })
 
+    let openInSidebarModokiMenu = this.jsonToDOM(
+      ["menuitem", { id: "openInSidebarModokiMenu", label: "在 SidebarModoki 中打开", accesskey: "S", oncommand: "SidebarModoki.temporaryLoad(gContextMenu?.link?.href)" }],
+      document, {});
+
+    document.getElementById('contentAreaContextMenu').insertBefore(openInSidebarModokiMenu, document.getElementById('context-openlinkinusercontext-menu'))
+
+    this.OpenInMenu = document.getElementById('contentAreaContextMenu').addEventListener("popupshowing", this);
+
     setTimeout(() => {
       this.selectedTab = this.selectedTab;
     }, 300)
@@ -540,7 +549,7 @@ var SidebarModoki = {
 
   switchTab ({ target }) {
     let index = target.id.replace(/^SM_tab/, "");
-    this.switchToTab(target.getAttribute("checked") === "true" ? -1 : index, true);
+    this.switchToTab(target.getAttribute("checked") === "true" ? -1 : index, !target.hasAttribute("temporary"));
   },
 
   switchToTab: function (index, saveIndex) {
@@ -554,7 +563,6 @@ var SidebarModoki = {
           let browser = this.getBrowserForTab(tab);
           if (!browser.src)
             browser.src = tab.src;
-          document.getElementById("SM_tabpanels").selectedIndex = index;
           this.ContentBox.removeAttribute("collapsed");
           this.ToolBox.setAttribute("open", true);
           this.ToolBox.removeAttribute("width");
@@ -562,6 +570,10 @@ var SidebarModoki = {
           this.ToolBox.style.setProperty("--width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
           this.Splitter.setAttribute("open", true);
           tabIndex = index;
+          this.TabBox.querySelectorAll('browser:not([collapsed="true"])').forEach(browser => {
+            browser.setAttribute("collapsed", "true");
+          });
+          browser.removeAttribute("collapsed");
           this.selectedTab = tab;
           this.selectedBrowser = browser;
         } else {
@@ -570,11 +582,19 @@ var SidebarModoki = {
       });
       index = tabIndex;
     } else {
+      if (this.selectedTab && this.selectedTab.hasAttribute("temporary")) {
+        this.Tabs.removeChild(this.selectedTab);
+        this.selectedTab = null;
+      }
       this.ContentBox.setAttribute("collapsed", true);
       this.Splitter.removeAttribute("open");
       this.ToolBox.style.removeProperty("width");
       this.ToolBox.style.removeProperty("--width");
       document.querySelectorAll("#SM_tabs toolbarbutton[checked]").forEach(btn => btn.removeAttribute('checked'));
+      if (this.selectedBrowser?.hasAttribute("temporary")) {
+        this.TabBox.removeChild(this.selectedBrowser);
+        this.selectedBrowser = null;
+      }
       index = -1;
     }
     if (this.selectedBrowser) {
@@ -617,6 +637,29 @@ var SidebarModoki = {
         document.getElementById("SM_forwardButton").setAttribute("disabled", true);
       }
       document.getElementById("SM_stopReloadButton").setAttribute("display-stop", !!isNavigating);
+    }
+  },
+
+  temporaryLoad (url) {
+    if (typeof url !== "string") return;
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      let count = SidebarModoki.Tabs.children.length;
+      let title = gContextMenu.linkText();
+      if (!title) {
+        title = url.replace(/^https?:\/\//, "");
+        if (title.includes("/")) {
+          title = title.split("/")[0];
+        }
+      }
+      let tab = this.jsonToDOM(
+        ["toolbarbutton", { id: "SM_tab" + count, class: "toolbarbutton-1 chromeclass-toolbar-additional", src: url, iswebpage: true, label: title, image: `https://favicon.yandex.net/favicon/v2/${url}/?size=32`, iconized: true, temporary: true, oncommand: "SidebarModoki.switchTab(event)" }],
+        document, {});
+      this.Tabs.appendChild(tab);
+      let browser = this.jsonToDOM(
+        ["browser", { id: "SM_tab" + count + "-browser", autoscroll: false, context: "contentAreaContextMenu", disablefullscreen: true, disableglobalhistory: true, disablehistory: true, flex: 1, maychangeremoteness: true, messagemanagergroup: "browsers", remote: true, src: "", tooltip: "aHTMLTooltip", type: "content", "webextension-view-type": "popup", temporary: true }],
+        document, {});
+      this.TabBox.appendChild(browser);
+      this.switchToTab(count, false);
     }
   },
 
@@ -753,12 +796,16 @@ var SidebarModoki = {
             document.removeEventListener("mousemove", this, false);
             document.removeEventListener("mouseup", this, false);
             let checkedTab = document.querySelectorAll("#SM_tabs toolbarbutton[checked]")[0];
-            if (checkedTab) {
+            if (checkedTab && !this.getBrowserForTab(checkedTab).hasAttribute("temporary")) {
               let index = checkedTab.id.replace("SM_tab", "");
               this.prefs.setIntPref(this.kSM_lastSelectedTabWidth + index, this.ToolBox.getBoundingClientRect().width);
             }
           }
         }
+        break;
+      case "popupshowing":
+        if (this.OpenInMenu)
+          this.OpenInMenu.collapsed = !(gContextMenu.onLink && gContextMenu.link.href.startsWith("http"))
         break;
     }
   },
