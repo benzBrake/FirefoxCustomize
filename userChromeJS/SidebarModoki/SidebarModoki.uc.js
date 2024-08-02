@@ -65,7 +65,7 @@ var SidebarModoki = {
     return this.SM_RIGHT ? "0 0 0 0" : "0 -2px 0 0";
   },
   SM_WIDTH: 230,
-  SM_AUTOHIDE: false,  //F11 Fullscreen
+  SM_HIDE_IN_FULLSCREEN: true,  // Fullscreen
   SM_TABS_FILE: "chrome/UserConfig/_sidebar_modoki.json",
   TABS: [{
     src: "chrome://browser/content/places/bookmarksSidebar.xhtml",
@@ -488,7 +488,7 @@ var SidebarModoki = {
     this.ToolBox.removeAttribute("collapsed");
     this.Splitter.removeAttribute("collapsed");
 
-    if (this.SM_AUTOHIDE) {
+    if (this.SM_HIDE_IN_FULLSCREEN) {
       //F11 fullscreen
       FullScreen.showNavToolbox_org = FullScreen.showNavToolbox;
       FullScreen.showNavToolbox = function (trackMouse = true) {
@@ -501,11 +501,26 @@ var SidebarModoki = {
       FullScreen.hideNavToolbox_org = FullScreen.hideNavToolbox;
       FullScreen.hideNavToolbox = function (aAnimate = false) {
         FullScreen.hideNavToolbox_org(aAnimate);
-        if (SidebarModoki.SM_AUTOHIDE && !!SidebarModoki.ToolBox) {
+        if (SidebarModoki.SM_HIDE_IN_FULLSCREEN && !!SidebarModoki.ToolBox) {
           SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
           SidebarModoki.Splitter.setAttribute("moz-collapsed", "true");
         }
       }
+
+      let fullScreenObserver = new MutationObserver((mutations) => {
+        for(let mutation of mutations) {
+          if (mutation.target.id === "main-window" && mutation.attributeName === "inFullscreen") {
+            if (mutation.target.getAttribute("inFullscreen") === "true") {
+              SidebarModoki.ToolBox.setAttribute("moz-collapsed", "true");
+              SidebarModoki.Splitter.setAttribute("moz-collapsed", "true");
+            } else {
+              SidebarModoki.ToolBox.removeAttribute("moz-collapsed");
+              SidebarModoki.Splitter.removeAttribute("moz-collapsed");
+            }
+          }
+        }
+      });
+      fullScreenObserver.observe(document.getElementById("main-window"), { attributes: true, attributeFilter: ["inFullscreen"] });
     }
 
     window.addEventListener("aftercustomization", this, false);
@@ -547,10 +562,6 @@ var SidebarModoki = {
           this.ToolBox.style.setProperty("--width", this.getPref(this.kSM_lastSelectedTabWidth + index, "int", this.SM_WIDTH) + "px", "");
           this.Splitter.setAttribute("open", true);
           tabIndex = index;
-          this.ToolBox.setAttribute("disiable-auto-hide", true);
-          setTimeout(() => {
-            this.ToolBox.removeAttribute("disiable-auto-hide");
-          }, 3000);
           this.selectedTab = tab;
           this.selectedBrowser = browser;
         } else {
