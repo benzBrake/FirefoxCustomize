@@ -538,9 +538,9 @@ var SidebarModoki = {
       ["menuitem", { id: "openInSidebarModokiMenu", label: "在 SidebarModoki 中打开", accesskey: "S", oncommand: "SidebarModoki.temporaryLoad(gContextMenu?.link?.href)" }],
       document, {});
 
-    document.getElementById('contentAreaContextMenu').insertBefore(openInSidebarModokiMenu, document.getElementById('context-openlinkinusercontext-menu'))
+    this.OpenInMenu = document.getElementById('contentAreaContextMenu').insertBefore(openInSidebarModokiMenu, document.getElementById('context-openlinkinusercontext-menu'))
 
-    this.OpenInMenu = document.getElementById('contentAreaContextMenu').addEventListener("popupshowing", this);
+    document.getElementById('contentAreaContextMenu').addEventListener("popupshowing", this);
 
     setTimeout(() => {
       this.selectedTab = this.selectedTab;
