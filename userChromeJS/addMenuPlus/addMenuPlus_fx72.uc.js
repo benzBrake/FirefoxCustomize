@@ -2058,6 +2058,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     #contentAreaContextMenu > menugroup > .addMenu[condition],
     #contentAreaContextMenu menugroup.addMenu[condition] {
         display: none;
+        visibility: collsapse;
     }
     #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"]:not([hidden="true"]),
     #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"]:not([hidden="true"]),
@@ -2075,7 +2076,7 @@ if (typeof window === "undefined" || globalThis !== window) {
     #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"]:not([hidden="true"]),
     #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"]:not([hidden="true"]),
     #contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"]:not([hidden="true"]) {
-        display: flex; display: -moz-box;
+        display: flex !important; display: -moz-box !important;
     }
     #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
     #toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
