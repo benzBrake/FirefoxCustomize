@@ -14,16 +14,19 @@
 8. 左键侧边栏按钮打开书签侧边栏
 9. 中键侧边栏按钮切换侧边栏方向
 10.右键侧边栏按钮打开历史侧边栏
-11.CTRL + F 开关查找栏
-12.只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能），双击侧边栏标题切换侧边栏显示位置
+11.双击侧边栏标题切换侧边栏显示位置
+12.中键 SidebarModoki 按钮切换侧边栏方向
+13.CTRL + F 开关查找栏
+
 */
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20240710
+// @version         20240806
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20240806 修复 Ctrl + F 右键级太高，新增中键 SidebarModoki 按钮切换侧边栏方向
 // @note            20240710 修复中键地址栏复制地址，修复中键下载按钮提示保存 URL
 // @note            20240614 移除 Styloaix 按钮功能，继续修复 Bug 1880914
 // @note            20240602 Bug 1892965 - Rename SidebarUI and SidebarLauncher
@@ -52,6 +55,7 @@
         "right click styloaix button to open themes management": true, // https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/styloaix.uc.js
         "downloads button add middle and right click": true, // 中键点击保存剪贴板链接，右键打开下载管理
         "modify sidebar button behavior": true, // 左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏, 双击侧边栏标题按钮切换侧边栏方向
+        "middle click sidebarmodoki button toggle sidebar direction": true, // 中键 SidebarModoki 按钮切换侧边栏方向
         "ctrl f to toggle findbar": true, // Ctrl + F 开关查找栏,
     }
 
@@ -277,13 +281,41 @@
                     }
                 }
             }
+            if (config["middle click sidebarmodoki button toggle sidebar direction"]) {
+                let btn = document.getElementById("SM_Button"), count = 0;
+                if (!btn) {
+                    var t = setInterval(() => {
+                        count++;
+                        btn = document.getElementById("SM_Button");
+                        if (count > 10) clearInterval(t);
+                        if (btn) {
+                            bindSMButton(btn);
+                            clearInterval(t);
+                        }
+                    }, 100);
+                }
+                window.addEventListener("aftercustomization", function () {
+                    bindSMButton(document.getElementById("SM_Button"));
+                });
+                function bindSMButton (btn) {
+                    if (!btn) return;
+                    if (btn.getAttribute("misc_bind") == "true") return;
+                    btn.setAttribute("misc_bind", "true");
+                    btn.addEventListener('click', function (e) {
+                        if (e.button == 1) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+                        }
+                    });
+                }
+            }
             if (config["ctrl f to toggle findbar"]) {
                 let cmd = document.getElementById('cmd_find');
                 if (cmd) {
                     let parentNode = cmd.parentNode;
                     parentNode.removeChild(cmd);
                     parentNode.appendChild(window.MozXULElement.parseXULToFragment(`<command id="cmd_find" oncommand="if (!gFindBar || gFindBar.hidden) { gLazyFindCommand('onFindCommand') } else { gFindBar.close() }"/>`));
-                    cmd = document.getElementById('cmd_find');
                 }
             }
         }
