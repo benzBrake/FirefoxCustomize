@@ -279,19 +279,12 @@
             }
             if (config["ctrl f to toggle findbar"]) {
                 let cmd = document.getElementById('cmd_find');
-                if (cmd)
-                    cmd.parentNode.removeChild(cmd);
-                document.addEventListener('keypress', (e) => {
-                    const { ownerGlobal: win } = e.target;
-                    const { gFindBar, gLazyFindCommand } = win;
-                    if (e.ctrlKey && e.key === "f") {
-                        if (!gFindBar || gFindBar.hidden) {
-                            gLazyFindCommand("onFindCommand");
-                        } else {
-                            gFindBar.close();
-                        }
-                    }
-                });
+                if (cmd) {
+                    let parentNode = cmd.parentNode;
+                    parentNode.removeChild(cmd);
+                    parentNode.appendChild(window.MozXULElement.parseXULToFragment(`<command id="cmd_find" oncommand="if (!gFindBar || gFindBar.hidden) { gLazyFindCommand('onFindCommand') } else { gFindBar.close() }"/>`));
+                    cmd = document.getElementById('cmd_find');
+                }
             }
         }
     }
