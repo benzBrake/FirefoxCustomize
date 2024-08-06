@@ -532,7 +532,20 @@ var SidebarModoki = {
       setTimeout(() => {
         SidebarModoki.updatePosition();
       }, 1);
-    })
+    });
+
+    this.sidebarBoxObserver = new MutationObserver((mutations) => {
+      for (let mutation of mutations) {
+        if (mutation.target.id === "sidebar-box") {
+          console.log(111);
+          setTimeout(() => {
+            SidebarModoki.updatePosition();
+          }, 1);
+        }
+      }
+    });
+
+    this.sidebarBoxObserver.observe(document.getElementById("sidebar-box"), { attributes: true, attributeFilter: ["collapsed", "hidden", "sidebarcommand", "style"] });
 
     let openInSidebarModokiMenu = this.jsonToDOM(
       ["menuitem", { id: "openInSidebarModokiMenu", label: "在 SidebarModoki 中打开", accesskey: "S", oncommand: "SidebarModoki.temporaryLoad(gContextMenu?.link?.href)" }],
@@ -611,7 +624,6 @@ var SidebarModoki = {
   updatePosition () {
     const { ToolBox, Splitter } = this;
     let posiotionend = this.SM_RIGHT;
-
     ToolBox.style.setProperty("order", posiotionend ? 10 : -1, "");
     ToolBox.style.setProperty("flex-direction", posiotionend ? "row-reverse" : "row");
     ToolBox.style.setProperty("margin", this.SM_MARGINHACK);
