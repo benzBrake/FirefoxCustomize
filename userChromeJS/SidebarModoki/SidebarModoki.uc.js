@@ -299,11 +299,14 @@ var SidebarModoki = {
       }
       #SM_Button
       {
-        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQ0lEQVQ4jWNgoAL4z8DA8N/AwAArTQRGFSBBI4YBDHhonC6n3AA1NTUMZ6F5gyQXYFNEsheweWnUBfRyAbmYcgMoAgBFX4a/wlDliwAAAABJRU5ErkJggg==');
+        list-style-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyOCAyOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB0cmFuc2Zvcm09InNjYWxlKDEuNzUsIDEuNzUpIj48cGF0aCBkPSJNNi43NSA5LjI1QzYuNzUgOC40MjE1NyA3LjQyMTU3IDcuNzUgOC4yNSA3Ljc1SDE5Ljc1QzIwLjU3ODQgNy43NSAyMS4yNSA4LjQyMTU3IDIxLjI1IDkuMjVWMTguNzVDMjEuMjUgMTkuNTc4NCAyMC41Nzg0IDIwLjI1IDE5Ljc1IDIwLjI1SDguMjVDNy40MjE1NyAyMC4yNSA2Ljc1IDE5LjU3ODQgNi43NSAxOC43NVY5LjI1WiIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS41Ij48L3BhdGg+PHBhdGggb3BhY2l0eT0iMC4zNSIgZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04LjUgMTEuNUM4LjUgMTEuMjIzOSA4LjcyMzg2IDExIDkgMTFIMTAuNUMxMC43NzYxIDExIDExIDExLjIyMzkgMTEgMTEuNUMxMSAxMS43NzYxIDEwLjc3NjEgMTIgMTAuNSAxMkg5QzguNzIzODYgMTIgOC41IDExLjc3NjEgOC41IDExLjVaTTguNSAxMy41QzguNSAxMy4yMjM5IDguNzIzODYgMTMgOSAxM0gxMC41QzEwLjc3NjEgMTMgMTEgMTMuMjIzOSAxMSAxMy41QzExIDEzLjc3NjEgMTAuNzc2MSAxNCAxMC41IDE0SDlDOC43MjM4NiAxNCA4LjUgMTMuNzc2MSA4LjUgMTMuNVpNOSAxNUM4LjcyMzg2IDE1IDguNSAxNS4yMjM5IDguNSAxNS41QzguNSAxNS43NzYxIDguNzIzODYgMTYgOSAxNkgxMC41QzEwLjc3NjEgMTYgMTEgMTUuNzc2MSAxMSAxNS41QzExIDE1LjIyMzkgMTAuNzc2MSAxNSAxMC41IDE1SDlaIiBmaWxsPSJjdXJyZW50Q29sb3IiPjwvcGF0aD48bGluZSB4MT0iMTIuNzUiIHkxPSI4IiB4Mj0iMTIuNzUiIHkyPSIyMCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS41Ij48L2xpbmU+DQo8L3N2Zz4=');
       }
-      toolbar[brighttext] #SM_Button
+      toolbar[brighttext] #SM_Button .toolbarbutton-icon
       {
-        list-style-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANklEQVQ4jWP4TyFg+P///38GBgayMHUNwEdjdTrVDcDnTKJdgEsRSV5ACaBRF9DZBQObFygBAMeIxVdCQIJTAAAAAElFTkSuQmCC');
+        filter: invert(1);
+      }
+      #SM_Button[positionend="true"] .toolbarbutton-icon {
+        transform: scaleX(-1) translateY(-0.5px);
       }
       {SM_CUSTOM_CSS}
      `;
@@ -472,6 +475,7 @@ var SidebarModoki = {
     this.ContentBox = document.getElementById("SM_contentbox");
     this.TabBox = document.getElementById("SM_tabbox");
     this.Control = document.getElementById("SM_control");
+    this.Button = document.getElementById('SM_Button');
 
     this.updatePosition();
 
@@ -480,7 +484,7 @@ var SidebarModoki = {
     this.Splitter.addEventListener("mousedown", this, false);
 
     if (this.prefs.getBoolPref(this.kSM_Open, true)) {
-      document.getElementById('SM_Button').setAttribute('checked', true);
+      this.Button?.setAttribute('checked', true);
       let index = this.getPref(this.kSM_lastSelectedTabIndex, "int", 0);
       this.ToolBox.setAttribute("open", true);
       this.switchToTab(index);
@@ -537,7 +541,6 @@ var SidebarModoki = {
     this.sidebarBoxObserver = new MutationObserver((mutations) => {
       for (let mutation of mutations) {
         if (mutation.target.id === "sidebar-box") {
-          console.log(111);
           setTimeout(() => {
             SidebarModoki.updatePosition();
           }, 1);
@@ -622,7 +625,7 @@ var SidebarModoki = {
   },
 
   updatePosition () {
-    const { ToolBox, Splitter } = this;
+    const { ToolBox, Splitter, Button } = this;
     let posiotionend = this.SM_RIGHT;
     ToolBox.style.setProperty("order", posiotionend ? 10 : -1, "");
     ToolBox.style.setProperty("flex-direction", posiotionend ? "row-reverse" : "row");
@@ -631,6 +634,7 @@ var SidebarModoki = {
     Splitter.setAttribute("collapse", posiotionend ? "after" : "before");
     ToolBox.setAttribute("positionend", posiotionend);
     Splitter.setAttribute("positionend", posiotionend);
+    Button.setAttribute("positionend", posiotionend);
   },
 
   updateButtons () {
@@ -738,8 +742,7 @@ var SidebarModoki = {
   },
 
   toggle: function () {
-    this.Button = document.getElementById("SM_Button");
-    if (!this.Button.hasAttribute("checked")) {
+    if (!this.Button?.hasAttribute("checked")) {
       this.Button.setAttribute("checked", true);
       this.ToolBox.setAttribute("open", true);
       this.Splitter.setAttribute("open", true);
@@ -755,8 +758,7 @@ var SidebarModoki = {
 
   close: function () {
     removeEventListener("resize", this, false);
-    this.Button = document.getElementById("SM_Button");
-    this.Button.removeAttribute("checked");
+    this.Button?.removeAttribute("checked");
     this.ToolBox.removeAttribute("open");
     this.Splitter.removeAttribute("open");
     this.prefs.setBoolPref(this.kSM_Open, false)
@@ -781,9 +783,9 @@ var SidebarModoki = {
       case 'aftercustomization':
         this.Button = document.getElementById("SM_Button");
         if (this.getPref(this.kSM_Open, "bool", true)) {
-          this.Button.setAttribute("checked", true);
+          this.Button?.setAttribute("checked", true);
         } else {
-          this.Button.removeAttribute("checked");
+          this.Button?.removeAttribute("checked");
         }
         this.ToolBox.removeAttribute("collapsed");
         this.Splitter.removeAttribute("collapsed");
