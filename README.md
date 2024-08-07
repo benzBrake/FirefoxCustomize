@@ -9,7 +9,7 @@ Ryan 的 Firefox 自定义资源收藏夹
 
 **[[ Paypal Me \]](https://www.paypal.me/brakepay)** [ **[Buy me a coffee](https://www.buymeacoffee.com/buyryanacoffie)** ] [ Wechat / Alipay ]↓
 
-![二维码](images/donate.png)
+![二维码](images/donate.v2.png)
 
 ## 成品预览
 
