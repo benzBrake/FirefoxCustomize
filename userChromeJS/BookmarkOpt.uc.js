@@ -21,31 +21,34 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.1
+// @version         1.4.2
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @version         1.4.1 修复中键添加书签任何位置也会添加书签的 BUG，修复快速点击中键两次导致图标无法回复的 BUG
-// @version         1.4.0 重写，中键点击图标添加书签后当前书签图标显示为成功图标，1s后自动恢复，移除无用的 userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick 开关，增加 userChromeJS.BookmarkOpt.enableToggleButton 开关（用于控制 显示/隐藏书签工具栏按钮），去除中键单击地址栏复制当前地址
-// @version         1.3.8 添加书签到此处支持 PlacesChevron
-// @version         1.3.7 中键单击地址栏复制当前地址，修改切换书签栏按钮图标
-// @version         1.3.6 书签工具栏更多菜单自动适应弹出位置
-// @version         1.3.5 新增中建点击图标才添加书签的功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly，默认不启用）
-// @version         1.3.4 新增中建点击添加书签功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick，默认不启用）
-// @version         1.3.3 还原显示隐藏书签工具栏按钮
-// @version         1.3.2 增加双击地址栏显示/隐藏书签工具栏的开关（userChromeJS.BookmarkOpt.doubleClickToShow）
-// @version         1.3.1 去除显示隐藏书签工具栏按钮
-// @version         1.3 尝试兼容 Firefox 57+
-// @version         1.2.2 修改界面语言读取方式
-// @version         1.2.1 新增显示隐藏书签工具栏按钮
-// @version         1.2 修复黑夜模式更新书签图标不变色，增加获取 GUID
-// @version         1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
-// @version         1.0 初始化版本
+// @note            1.4.2 Bug 1904909
+// @note            1.4.1 修复中键添加书签任何位置也会添加书签的 BUG，修复快速点击中键两次导致图标无法回复的 BUG
+// @note            1.4.0 重写，中键点击图标添加书签后当前书签图标显示为成功图标，1s后自动恢复，移除无用的 userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick 开关，增加 userChromeJS.BookmarkOpt.enableToggleButton 开关（用于控制 显示/隐藏书签工具栏按钮），去除中键单击地址栏复制当前地址
+// @note            1.3.8 添加书签到此处支持 PlacesChevron
+// @note            1.3.7 中键单击地址栏复制当前地址，修改切换书签栏按钮图标
+// @note            1.3.6 书签工具栏更多菜单自动适应弹出位置
+// @note            1.3.5 新增中建点击图标才添加书签的功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly，默认不启用）
+// @note            1.3.4 新增中建点击添加书签功能（userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick，默认不启用）
+// @note            1.3.3 还原显示隐藏书签工具栏按钮
+// @note            1.3.2 增加双击地址栏显示/隐藏书签工具栏的开关（userChromeJS.BookmarkOpt.doubleClickToShow）
+// @note            1.3.1 去除显示隐藏书签工具栏按钮
+// @note            1.3 尝试兼容 Firefox 57+
+// @note            1.2.2 修改界面语言读取方式
+// @note            1.2.1 新增显示隐藏书签工具栏按钮
+// @note            1.2 修复黑夜模式更新书签图标不变色，增加获取 GUID
+// @note            1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
+// @note            1.0 初始化版本
 // ==/UserScript==
 (async function (css, imp, ucfirst, add_style, copy_text, $, create_el, add_events, remove_events) {
     const Services = imp("Services");
     const PlacesUIUtils = imp("PlacesUIUtils");
     const PlacesUtils = imp("PlacesUtils");
+    // Bug 1904909 PlacesUtils::GatherDataText and GatherDataHtml should not recurse into queries
+    if (typeof PlacesUtils.nodeIsFolder === "undefined") PlacesUtils.nodeIsFolder = PlacesUtils.nodeIsFolderOrShortcut;
     const LANG = {
         'zh-CN': {
             "add bookmark here": "添加书签到此处",
@@ -493,6 +496,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                         let folder = nodeIsHistoryFolder ? aNode : PlacesUtils.getFolderContents(aNode.targetFolderGuid).root;
                         for (let i = 0; i < folder.childCount; i++) {
                             let child = folder.getChild(i);
+                            
                             if (PlacesUtils.nodeIsFolder(child)) continue; // 跳过书签文件夹
                             strs.push(convertText(child, format));
                         }
