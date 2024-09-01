@@ -376,7 +376,7 @@ var SidebarModoki = {
                 ["toolbarbutton", { id: "SM_openButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Open", image: "chrome://global/skin/icons/open-in-new.svg", oncommand: "SidebarModoki.open()" }],
                 ["toolbarbutton", { id: "SM_unloadButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Unload", image: "chrome://global/skin/icons/close.svg", oncommand: "SidebarModoki.unload()" }],
               ],
-              ["toolbarbutton", { id: "SM_closeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Hide Webpanel", image: "chrome://global/skin/icons/minus.svg", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
+              ["toolbarbutton", { id: "SM_closeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Hide Webpanel", image: "resource://gre-resources/password-hide.svg", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
             ],
           ],
           ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false }]
@@ -736,12 +736,21 @@ var SidebarModoki = {
   },
 
   open () {
-    if (this.selectedTab && this.selectedBrowser && this.selectedTab.src !== this.selectedBrowser.currentURI.spec) {
-    gBrowser.loadTabs([this.selectedBrowser.currentURI.spec] , {
-        inBackground: false,
-        relatedToCurrent: false,
-        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}) //FF63
-    });
+    let url;
+    if (this.selectedBrowser && this.selectedBrowser.currentURI.spec) {
+      url = this.selectedBrowser.currentURI.spec;  // 如果跳转了页面，优先获取跳转后的
+    } else if (this.selectedTab && this.selectedTab.src) {
+      url = this.selectedTab.src;
+    }
+    if (url) {
+      try {
+        switchToTabHavingURI(url, true); // 尝试切换到已经存在的标签页
+      } catch (ex) {
+        openTrustedLinkIn(url, 'tab', {
+          relatedToCurrent: false,
+          triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+        });
+      }
     }
   },
 
