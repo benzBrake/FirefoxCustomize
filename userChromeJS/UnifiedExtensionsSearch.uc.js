@@ -3,12 +3,13 @@
 // @description     在扩展面板中搜索扩展
 // @author          Ryan
 // @include         main
-// @version         0.1.1
+// @version         0.1.2
 // @compatibility   Firefox 126
 // @destroy         window.UnifiedExtensionsSearch.onUnload();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @license         MIT
 // @charset         UTF-8
+// @note            0.1.2 修复搜索框显示横向滚动条的问题
 // @note            0.1.1 整理代码，优化搜索效果
 // ==/UserScript==
 (window.UnifiedExtensionsSearch = {
@@ -151,7 +152,8 @@
     line-height: 20px;
     font-size: 16px;
     max-width: calc(100% - 40px);
-    overflow-x: scroll;
+    overflow-x: scorll;
+    scrollbar-width: none;
     outline: none;
     &[empty="true"] {
         &+#unified-extensions-search-clear {
