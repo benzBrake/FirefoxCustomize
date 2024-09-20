@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.2.6
+// @version         0.2.7
 // @compatibility   Firefox 78
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.7 修复 CopycatUtils.alert 未定义，修复 saveFile 未定义，修复自定义 CSS 无效，修复 command 复制弹出菜单不递归绑定 command 的 bug，修复 onBuild 参数错误，绑定 PlacesMenu、HistoryMenu 到 sandbox
 // @note            0.2.6 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed
 // @note            0.2.5 移除 panelview 支持，修复关闭第一个窗口后新窗口无法弹出菜单的bug
 // @note            0.2.4 Uncaught NS_ERROR_XPC_BAD_CONVERT_JS: Could not convert JavaScript argument arg 0 [nsIFilePicker.init]
@@ -27,10 +28,9 @@
 // @note            0.1.0 初始版本
 // ==/UserScript==
 
-location.href.startsWith("chrome://browser/content/browser.x") && (function (css, i18n, sss, SEPARATOR_TYPE) {
+location.href.startsWith("chrome://browser/content/browser.x") && (function (css, i18n, sss, SEPARATOR_TYPE, saveFile) {
     const { LANG, LOCALE } = i18n;
     var lprintf = (f, ...args) => { return sprintf(f in LANG ? LANG[f] : f, ...args); };
-
 
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
@@ -71,28 +71,28 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
     }];
 
     window.CopyCatUtils = {
-        get platform() {
+        get platform () {
             delete this.platform;
             return this.platform = AppConstants.platform;
         },
-        get debug() {
+        get debug () {
             return this.prefs.get("userChromeJS.CopyCat.debug", false);
         },
-        get TOOLS_RELATIVE_PATH() {
+        get TOOLS_RELATIVE_PATH () {
             delete this.TOOLS_RELATIVE_PATH;
             return this.TOOLS_RELATIVE_PATH = "\\chrome\\UserTools";
         },
-        get TOOLS_PATH() {
+        get TOOLS_PATH () {
             delete this.TOOLS_PATH;
             return this.TOOLS_PATH = handleRelativePath(this.TOOLS_RELATIVE_PATH);
         },
-        get FILE() {
+        get FILE () {
             var path = CopyCatUtils.prefs.get("userChromeJS.CopyCat.FILE_PATH", "_copycat.js")
             var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
             aFile.appendRelativePath(path);
             if (!aFile.exists()) {
-                saveFile(aFile, '');
-                CopyCatUtils.alert('配置文件为空');
+                saveFile(aFile.path, '');
+                alerts('配置文件为空');
             }
             delete this.FILE;
             return this.FILE = aFile;
@@ -229,7 +229,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     break;
             }
         },
-        createButton(doc) {
+        createButton (doc) {
             let btn = createElement(doc, 'toolbarbutton', {
                 id: 'CopyCat-Btn',
                 label: lprintf("copycat-brand"),
@@ -330,6 +330,29 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         if (dest.hasAttribute('closemenu'))
                             dest.setAttribute('orgClosemenu', dest.getAttribute('closemenu'));
                         dest.setAttribute('closemenu', 'none');
+
+                        if (obj.clone && obj['fix-id']) {
+                            // fix id
+                            if (dest.id) {
+                                dest.id += '_clone';
+                            }
+                            dest.querySelectorAll('menu,menupopup,menuseparator').forEach(item => {
+                                if (item.id) item.id += '_clone';
+                            });
+                            // add command
+                            let menuitems = dest.querySelectorAll('menuitem');
+                            for (let i = 0; i < menuitems.length; i++) {
+                                let item = menuitems[i];
+                                if (item.localName === 'menuitem') {
+                                    command_id = item.getAttribute('id');
+                                    if (command_id && !dest.getAttribute('command')) {
+                                        item.setAttribute('id', command_id + '_clone');
+                                        item.setAttribute('command', command_id);
+                                        item.setAttribute("oncommand", "CopyCat.onCommand(event);");
+                                    }
+                                }
+                            }
+                        }
                     }
                     if ('class' in obj) {
                         // fix menu icon
@@ -379,13 +402,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         }));
                         right.appendChild(createElement(doc, 'image'));
                     }
+
                     if ('onBuild' in obj && typeof dest !== 'undefined') {
                         if (typeof obj.onBuild === "function") {
-                            obj.onBuild(doc, org);
+                            obj.onBuild.call(org, doc, dest);
                         } else {
                             eval("(" + obj.onBuild + ").call(org, doc, dest)")
                         }
                     }
+
                     let replacement = createElement(doc, 'menuseparator', {
                         hidden: true, class: 'CopyCat-Replacement', 'original-id': obj.command
                     });
@@ -538,7 +563,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 alerts(lprintf("reload-copycat-js-complete"));
             }
         },
-        makeMenus(menupopup) {
+        makeMenus (menupopup) {
             if (typeof menupopup === "undefined") return;
             let data = loadText(CopyCatUtils.FILE.path);
             if (!data) return null;
@@ -554,6 +579,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             sandbox.CopyCat = this;
             sandbox.lprintf = lprintf;
             sandbox.locale = LOCALE;
+            sandbox.console = console;
             sandbox['_menus'] = [];
             sandbox['_css'] = [];
             sandbox['_lang'] = {
@@ -561,11 +587,16 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     return "";
                 }
             };
+            if (typeof PlacesMenu !== "undefined") {
+                sandbox['PlacesMenu'] = PlacesMenu;
+            }
+            if (typeof HistoryMenu !== "undefined") {
+                sandbox['HistoryMenu'] = HistoryMenu;
+            }
             sandbox['menus'] = function (itemObj) {
                 ps(itemObj, sandbox['_menus']);
             }
-
-            function ps(item, array) {
+            function ps (item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) : array.push(item);
             }
 
@@ -585,44 +616,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             sandbox._menus.forEach((itemObj) => {
                 this.insertMenuitem(aDoc, itemObj, this.newMenuitem(aDoc, itemObj));
             });
-
-            this._lang = sandbox._lang;
-
-            ["label", "tooltiptext"].forEach((attr) => {
-                $$(`.CopyCat-Popup [${attr}Ref]`, menupopup, (btn) => {
-                    if (btn.hasAttribute(attr + "Ref")) setText(btn, attr);
-                });
-                $$(`.CopyCat-Popup [${attr}Ref]`, menupopup, (btn) => {
-                    if (btn.hasAttribute(attr + "Ref")) setText(btn, attr);
-                });
-            });
-
-
-            function setText(item, attr) {
-                var ref = item.getAttribute(attr + "Ref");
-                if (sandbox._lang[sandbox.locale]) {
-                    if (sandbox._lang[sandbox.locale][ref]) {
-                        item.setAttribute(attr, sandbox._lang[sandbox.locale][ref]);
-                    } else {
-                        item.setAttribute(attr, capitalizeFirstLetter(ref));
-                    }
-                }
-            }
-
-            function capitalizeFirstLetter(string) {
+            function capitalizeFirstLetter (string) {
                 return string.charAt(0).toUpperCase() + string.slice(1);
             }
 
             if (sandbox._css.length) {
-                // windows((doc, win, location) => {
-                //     if (win.CopyCat) {
-                //         if (win.CopyCat.STYLE2) removeElement(win.CopyCat.STYLE2);
-                //         win.CopyCat.STYLE2 = addStyle(sandbox._css.join("\n"))
-                //     }
-                // });
+                this.menuStyle = addStyle(sandbox.css.join('\n'));
             }
         },
-        onCommand(event) {
+        onCommand (event) {
             event.stopPropagation();
             let item = event.target;
             let precommand = item.getAttribute('precommand') || "",
@@ -811,7 +813,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         copyText: function (aText) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
         },
-        insertMenuitem(doc, obj, item) {
+        insertMenuitem (doc, obj, item) {
             if (!item) {
                 CopyCatUtils.log("Item to be inserted is null!");
                 return;
@@ -836,8 +838,11 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         uninit: function (menupopup) {
             if (this.initializing) return;
             if (!menupopup) return;
+            if (this.menuStyle && this.menuStyle.parentNode) {
+                this.menuStyle.parentNode.removeChild(this.menuStyle);
+            }
             restoreMenusInPopup(menupopup);
-            function restoreMenusInPopup(menupopup) {
+            function restoreMenusInPopup (menupopup) {
                 $$('[restoreBeforeUnload="true"]', menupopup, item => {
                     item.removeAttribute("closemenu");
                     item.getAttributeNames().filter(attr => attr.startsWith("org")).forEach(attr => {
@@ -901,11 +906,11 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {Document|null} d 指定 document，不提供就是全局 document
      * @returns 
      */
-    function $(s, d) {
+    function $ (s, d) {
         return /[#\.[:]/i.test(s.trim()) ? (d || document).querySelector(s) : (d instanceof HTMLDocument ? d : d.ownerDocument || document).getElementById(s);
     }
 
-    function $$(s, d, fn) {
+    function $$ (s, d, fn) {
         let elems = /[#\.[:]/i.test(s.trim()) ? (d || document).querySelectorAll(s) : (d instanceof HTMLDocument ? d : d.ownerDocument || document).getElementsByTagName(s);
         if (typeof fn === "function") {
             [...elems].forEach(el => fn.call(el, el));
@@ -921,7 +926,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {Array} s 跳过属性
      * @returns 
      */
-    function createElement(d, t, o = {}, s = []) {
+    function createElement (d, t, o = {}, s = []) {
         if (!d) return;
         let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
         return applyAttr(e, o, s);
@@ -936,7 +941,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {Object|null} s 跳过属性
      * @returns 
      */
-    function applyAttr(e, o = {}, s = []) {
+    function applyAttr (e, o = {}, s = []) {
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
             if (typeof v == "function") {
@@ -955,7 +960,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {HTMLElement} e HTML 元素
      * @returns 
      */
-    function removeElement(e) {
+    function removeElement (e) {
         return e && e.parentNode && e.parentNode.removeChild(e);
     }
 
@@ -966,7 +971,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {string|null} aTitle 消息标题，不提供则为 CopyCat Button
      * @param {Function} aCallback 回掉函数
      */
-    function alerts(aMsg, aTitle, aCallback) {
+    function alerts (aMsg, aTitle, aCallback) {
         var callback = aCallback ? {
             observe: function (subject, topic, data) {
                 if ("alertclickcallback" != topic)
@@ -987,7 +992,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param  {...any} args 剩余参数，只能是数字和字符串
      * @returns 
      */
-    function sprintf(f, ...args) {
+    function sprintf (f, ...args) {
         let s = f; for (let a of args) s = s.replace(/%[sd]/, a); return s;
     }
 
@@ -997,7 +1002,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {Ci.nsIFile} f 
      * @returns 
      */
-    function getURLSpecFromFile(f) {
+    function getURLSpecFromFile (f) {
         const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
         return fph.getURLSpecFromActualFile(f);
     }
@@ -1008,7 +1013,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {string} path 
      * @returns 
      */
-    function loadText(path) {
+    function loadText (path) {
         var aFile = Cc["@mozilla.org/file/directory_service;1"]
             .getService(Ci.nsIDirectoryService)
             .QueryInterface(Ci.nsIProperties)
@@ -1034,7 +1039,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
      * @param {string} path 
      * @param {string} data 
      */
-    function saveText(path, data) {
+    function saveText (path, data) {
         var aFile = Cc["@mozilla.org/file/directory_service;1"]
             .getService(Ci.nsIDirectoryService)
             .QueryInterface(Ci.nsIProperties)
@@ -1050,7 +1055,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         foStream.close();
     }
 
-    function getFile(path) {
+    function getFile (path) {
         let aFile;
         if (path instanceof Ci.nsIFile) {
             aFile = path;
@@ -1061,7 +1066,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         return aFile;
     }
 
-    function handleRelativePath(path, parentPath) {
+    function handleRelativePath (path, parentPath) {
         if (path) {
             var ffdir = parentPath ? parentPath : PathUtils.profileDir
             // windows 的目录分隔符不一样
@@ -1195,4 +1200,27 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         LANG: LANG[LOCALE],
         LOCALE
     };
-})(), Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService), ["separator", "menuseparator"])
+})(), Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService), ["separator", "menuseparator"],
+    function saveFile (path, string) {
+        var isCompleted = false;
+        IOUtils.writeUTF8(path, string, {
+            mode: 'overwrite'
+        }).then(function () {
+            isCompleted = true;
+        }).catch(function (e) {
+            isCompleted = true;
+            console.error(e);
+        });
+
+        var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+        while (!isCompleted) {
+            thread.processNextEvent(true);
+        }
+    }, function addStyle (css) {
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
+    }
+)
