@@ -336,12 +336,6 @@
             "targetAttr": "photoncompact"
         },
         {
-            "eval": "getComputedStyle(document.getElementById('nav-bar')).height",
-            "target": "#navigator-toolbox",
-            "timeOut": 100,
-            "targetStyle": "--navbar-height"
-        },
-        {
             "eval": "getComputedStyle(document.getElementById('TabsToolbar')).height",
             "target": "#navigator-toolbox",
             "targetStyle": "--tabs-height"
@@ -349,10 +343,6 @@
         {
             "start": "document.getElementById('navigator-toolbox').style.setProperty('--control-width-default', getComputedStyle(document.querySelector('.titlebar-buttonbox-container')).width)",
             "stop": "document.getElementById('navigator-toolbox').style.removeProperty('--control-width-default')"
-        },
-        {
-            "start": "setTimeout(() => {var urlbar = document.getElementById('urlbar'); var toolbox = document.getElementById('navigator-toolbox'); toolbox.style.setProperty('--urlbar-height', urlbar.style.getPropertyValue('--urlbar-height')); toolbox.style.setProperty('--urlbar-toolbar-height', urlbar.style.getPropertyValue('--urlbar-toolbar-height'));}, 50)",
-            "stop": "document.getElementById('navigator-toolbox').style.removeProperty('--urlbar-height'); document.getElementById('navigator-toolbox').style.removeProperty('--urlbar-toolbar-height')"
         },
         {
             "from": "#toolbar-menubar",

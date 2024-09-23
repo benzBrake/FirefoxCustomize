@@ -1,5 +1,10 @@
 /** Mostly copy from WaveFox */
 @include Option("userChromeJS.Sidra.Tabs.Compact") {
+  @property --drag-space {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+  }
   #TabsToolbar {
     --toolbarbutton-inner-padding: inherit !important;
     &::before {

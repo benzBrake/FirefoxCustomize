@@ -36,8 +36,8 @@
       :root[uidensity="compact"] {
         --location-bar-icon-padding-inline: 6px;
       }
-      #urlbar-input-container > #location-bar .toolbarbutton-1,
-      #urlbar-input-container #page-action-buttons > .urlbar-page-action,
+      :is(#urlbar-input-container, .urlbar-input-container) > #location-bar .toolbarbutton-1,
+      :is(#urlbar-input-container, .urlbar-input-container) #page-action-buttons > .urlbar-page-action,
       #tracking-protection-icon-container {
         width: calc(
           16px + 2 * var(--location-bar-icon-padding-inline)
@@ -56,6 +56,17 @@
           > .identify-icon {
             width: 16px !important;
           }
+        }
+      }
+
+      #identity-permission-box {
+        border-radius: 99999px !important;
+        width: calc(
+          16px + 2 * var(--location-bar-icon-padding-inline)
+        ) !important;
+        @include BoxPack("center");
+        > .permissions-granted-icon {
+          width: 16px !important;
         }
       }
     }
@@ -143,7 +154,12 @@
 
     /* disable 'breakout' animation */
     #urlbar[breakout],
-    #urlbar[breakout] *:not(.toolbarbutton-1, .toolbarbutton-badge-stack, .toolbarbutton-badge-stack *) {
+    #urlbar[breakout]
+      *:not(
+        .toolbarbutton-1,
+        .toolbarbutton-badge-stack,
+        .toolbarbutton-badge-stack *
+      ) {
       animation: unset !important;
       duration: 0s !important;
       animation-duration: 0s !important;
@@ -172,6 +188,10 @@
         margin-inline: unset !important;
         width: 100% !important;
       }
+    }
+
+    .urlbarView-button {
+      border-radius: var(--toolbarbutton-border-radius) !important;
     }
 
     /* disable space wasting inside popup around result items */

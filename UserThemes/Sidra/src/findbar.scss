@@ -5,6 +5,9 @@
   MARK: Findbar textbox
 */
 @include Option("userChromeJS.Sidra.FindBar.Compact") {
+  /*
+  MARK: Findbar textbox
+*/
   .findbar-textbox {
     border: 0 !important;
     border-radius: var(--toolbarbutton-border-radius) !important;
@@ -41,8 +44,8 @@
   }
 
   /*
-    MARK: Findbar buttons
-  */
+  MARK: Findbar buttons
+*/
   .findbar-find-previous,
   .findbar-find-next,
   findbar .close-icon {

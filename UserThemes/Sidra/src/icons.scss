@@ -71,7 +71,6 @@
       list-style-image: url("chrome://devtools/skin/images/browsers/firefox.svg") !important;
       background-clip: padding-box !important;
       fill: white;
-      margin: calc((var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2);
       width: var(--copycat-btn-width) !important;
       padding-inline: 0.5em;
       @include BoxOrder(0);
@@ -149,6 +148,14 @@
       }
     }
 
+    :root[appname="Firefox"][appchannel="esr"] {
+      #CopyCat-Btn {
+        &::after {
+          content: "ESRFox" !important;
+        }
+      }
+    }
+
     :root[appname="Firefox"][appchannel="aurora"] {
       #CopyCat-Btn {
         &::after {
@@ -173,50 +180,63 @@
       }
     }
 
-    @include NotOption("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
-      @include NotOption("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
-        #CopyCat-Btn {
-          margin-block: 0;
-          position: var(--copycat-btn-position);
-          top: 0;
-          left: var(--copycat-btn-margin-inline-start);
-          border-radius: 0 0 6px 6px;
+    @include NotOption(
+      "userChromeJS.Sidra.ControlButton.ShowOnLeft",
+      "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled"
+    ) {
+      #CopyCat-Btn {
+        margin-block: 0;
+        position: var(--copycat-btn-position);
+        top: 0;
+        left: calc(
+          (var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding)) /
+            2
+        );
+        border-radius: 0 0 6px 6px;
+      }
+
+      #TabsToolbar {
+        margin-inline-start: calc(
+          var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding) +
+            var(--copycat-btn-width)
+        );
+      }
+      @include NotOption("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
+        :root:has(#toolbar-menubar[inactive="true"]) {
         }
-
-        @include NotOption("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-          :root:has(#toolbar-menubar[inactive="true"]) {
-            #TabsToolbar {
-              margin-inline-start: var(--copycat-btn-fix-margin) !important;
-            }
+        :root:has(#toolbar-menubar:not([inactive="true"])) {
+          #toolbar-menubar {
+            margin-inline-start: calc(
+              var(--navbar-height) - 16px - 2 *
+                var(--toolbarbutton-inner-padding) + var(--copycat-btn-width)
+            );
           }
-
-          :root:has(:not(#toolbar-menubar[inactive="true"])) {
-            #toolbar-menubar {
-              margin-inline-start: var(--copycat-btn-fix-margin) !important;
-            }
-            #CopyCat-Btn {
-              top: 0 !important;
-            }
-          }
-        }
-
-        @include Option("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
           #TabsToolbar {
-            margin-inline-start: var(--copycat-btn-fix-margin) !important;
+            margin-inline-start: revert;
           }
         }
       }
     }
 
     @include Option(
-      "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled",
-      "userChromeJS.Sidra.ControlButton.ShowOnLeft"
+      "userChromeJS.Sidra.ControlButton.ShowOnLeft",
+      "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled"
     ) {
       #CopyCat-Btn {
+        --copycat-btn-position: relative;
+        left: unset;
+        top: unset;
+        border-radius: 6px;
+        height: calc(16px + 2 * var(--toolbarbutton-inner-padding));
         margin: calc(
-          (var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2
+          (
+              var(--navbar-height) - 16px - 2 *
+                var(--toolbarbutton-inner-padding)
+            ) / 2
         ) !important;
-        margin-inline-end: revert !important;
+      }
+      #TabsToolbar {
+        margin-inline-start: revert;
       }
     }
 
@@ -224,12 +244,12 @@
       #titlebar:has(#toolbar-menubar[autohide="true"]:not([inactive="true"]))
         + #nav-bar
         #CopyCat-Btn {
-        top: calc(var(--tabs-height));
         border-radius: 6px;
       }
     }
 
     @include Option("userChromeJS.sidra.Tabs.VerticalOrient.Enabled") {
+      /** 仅显示 TST 侧边栏时 */
       :root:has(
           #browser
             > #sidebar-box:is(
@@ -238,13 +258,17 @@
             ):not([hidden="true"])
         ) {
         #CopyCat-Btn {
-          position: relative;
+          --copycat-btn-position: relative;
           top: unset;
           left: unset;
           right: unset;
           border-radius: 6px;
+          height: calc(16px + 2 * var(--toolbarbutton-inner-padding));
           margin: calc(
-            (var(--urlbar-toolbar-height) - var(--urlbar-height)) / 2
+            (
+                var(--navbar-height) - 16px - 2 *
+                  var(--toolbarbutton-inner-padding)
+              ) / 2
           ) !important;
         }
       }
@@ -458,6 +482,14 @@
   #identity-popup-mainView-panel-header-span::before {
     --header-image: url("./images/icons/info.svg");
     --uc-enabled: 1;
+  }
+
+  [data-l10n-id="urlbar-result-menu-remove-from-history"] {
+    --menu-image: url("./images/icons/edit-delete.svg");
+  }
+
+  [data-l10n-id="urlbar-result-menu-learn-more"] {
+    --menu-image: url("./images/icons/info.svg");
   }
 
   /*= 查找栏图标 ================================================================*/
@@ -1322,61 +1354,6 @@
     }
   }
 
-  /* Header icons for the app menu sub menus (eg. fx account, history...) */
-  .panel-header > h1 > span {
-    &::before {
-      content: "";
-      background: var(--header-image, none) center / 16px no-repeat;
-      -moz-context-properties: fill, fill-opacity;
-      fill: currentColor;
-      padding-inline-start: calc(var(--uc-enabled, 0) * 16px);
-      margin-inline-end: calc(var(--uc-enabled, 0) * 8px);
-    }
-
-    #PanelUI-fxa &::before {
-      --header-image: var(--avatar-image-url);
-      --uc-enabled: 1;
-      transform: scale(1.25);
-      border-radius: 99px;
-      display: inline-block;
-      height: 16px;
-      vertical-align: text-bottom;
-    }
-
-    #PanelUI-bookmarks &::before {
-      --header-image: url("./images/icons/bookmark-star-on-tray.svg");
-      --uc-enabled: 1;
-    }
-
-    #PanelUI-history &::before {
-      --header-image: url("./images/icons/history.svg");
-      --uc-enabled: 1;
-    }
-
-    #PanelUI-helpView &::before {
-      --header-image: url("./images/icons/help.svg");
-      --uc-enabled: 1;
-    }
-
-    #appMenu-libraryView &::before {
-      --header-image: url("./images/icons/library.svg");
-      --uc-enabled: 1;
-    }
-
-    #unified-extensions-panel &::before {
-      --header-image: url("./images/icons/extension.svg");
-      --uc-enabled: 1;
-    }
-    #appmenu-moreTools &::before {
-      --header-image: url("./images/icons/menu.svg");
-      --uc-enabled: 1;
-    }
-    #allTabsMenu-containerTabsView &::before {
-      --header-image: url("./images/icons/container-tab.svg");
-      --uc-enabled: 1;
-    }
-  }
-
   toolbarbutton[data-l10n-id="user-context-manage-containers"] {
     list-style-image: url("./images/icons/manage-profiles.svg");
   }
@@ -1386,7 +1363,6 @@
   }
 
   /** 弹出窗口选项菜单 */
-
   #blockedPopupAllowSite {
     --menu-image: url("./images/icons/ok.svg");
   }
@@ -1481,6 +1457,10 @@
   #CB-CleanHistory {
     list-style-image: url("./images/icons/broom.svg") !important;
   }
+  // SidebarModoki
+  #openInSidebarModokiMenu {
+    --menu-image: url("./images/icons/sidebars.svg") !important;
+  }
   // Styloaix
   #styloaix-button {
     list-style-image: url("./images/icons/skin.svg") !important;
@@ -1519,11 +1499,20 @@
   #styloaix-style-delete {
     background-image: url("chrome://global/skin/icons/delete.svg");
   }
+  // UserCSSLoader
+  [data-l10n-id="ucl-reload-all-styles"] {
+    --menu-image: url("./images/icons/reload.svg");
+  }
+  [data-l10n-id="ucl-open-style-folder"] {
+    --menu-image: url("./images/icons/folder.svg") !important;
+  }
+  [data-l10n-id="ucl-create-style"] {
+    --menu-image: url("./images/icons/create.svg");
+  }
   // VideoBtn
   #VideoBtn-Button {
     list-style-image: url("./images/icons/video-streaming.svg") !important;
   }
-
   // LinkGopher
   #LinkGopher-Extract-All {
     --menu-image: url("./images/icons/copy-links.svg");

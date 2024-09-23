@@ -99,6 +99,11 @@
       --menu-image: url("./images/extensions/copy.svg");
     }
 
+    // ChromeMask
+    #chrome-mask_overengineer_dev-BAP {
+      list-style-image: url("./images/extensions/chrome.svg") !important;
+    }
+
     // CopyLinkPlusPlus
     #_copylinksplusplus-BAP {
       list-style-image: url("./images/extensions/copy-link-plus-plus/copy-link.svg") !important;
@@ -240,6 +245,9 @@
 
     // QRCode Util
     @include InvertButtonIcon("{98646173-7966-4aea-b2ca-4a7e75ff7682}");
+    #_98646173-7966-4aea-b2ca-4a7e75ff7682_-menuitem-_qr-img {
+      --menu-image: url("./images/extensions/qrcode-util/read_qrcode.svg");
+    }
 
     // Robo Form
     #rf-firefox_siber_com-menuitem-_SaveForms {
@@ -631,7 +639,7 @@
 }
 @mixin PanelItem($important: false) {
   $important: _important($important);
-  cursor: normal;
+  cursor: default;
   -moz-context-properties:
     fill,
     fill-opacity $important;
@@ -665,11 +673,85 @@
   html {
     --menuitem-padding-start: var(
       --label-padding-start,
-      calc(
-        var(--uc-contextmenu-menuitem-padding-inline) + 16px +
-          var(--uc-contextmenu-menuicon-margin-inline)
-      )
+      calc(var(--uc-contextmenu-menuitem-padding-inline) + 16px)
     );
+  }
+
+  // Feedbro
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] {
+    #mainmenu {
+      margin: 0;
+      padding: var(--panel-subview-body-padding);
+    }
+
+    div#menuitems div.menuitem {
+      cursor: default;
+      -moz-context-properties: fill, fill-opacity !important;
+      fill: currentColor !important;
+      height: calc(
+        16px + 2 * var(--arrowpanel-menuitem-padding-block, 6px)
+      ) !important;
+      margin: var(--arrowpanel-menuitem-margin, 2px) !important;
+      padding-block: var(--arrowpanel-menuitem-padding-block, 6px) !important;
+      padding-inline: var(--menuitem-padding-start)
+        var(--arrowpanel-menuitem-padding-inline, 10px) !important;
+      border-radius: var(--arrowpanel-menuitem-border-radius, 4px) !important;
+      padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 12px);
+      overflow: hidden;
+      background-repeat: no-repeat;
+      background-position: calc(var(--arrowpanel-menuitem-padding-inline, 10px) / 2) center;
+      background-image: var(--menu-image);
+      background-size: 16px !important;
+
+      &:hover,
+      &:focus {
+        background-color: var(
+          --uc-panel-item-hover-bgcolor,
+          #cfcfd8a8
+        ) !important;
+      }
+
+      &:active {
+        background-color: var(
+          --uc-panel-item-active-bgcolor,
+          #cfcfd8
+        ) !important;
+      }
+    }
+
+    div#menuitems div.menuitem:hover {
+      background-color: var(--panel-item-hover-bgcolor) !important;
+    }
+    div.divider {
+      margin-top: 2px;
+      margin-bottom: 2xp;
+    }
+    div#articlelist {
+      margin-left: var(--icon-gap);
+      margin-right: 4px;
+      margin-bottom: 0;
+    }
+  }
+
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #reader {
+    --menu-image: url("./images/extensions/feedbro/rss.svg");
+  }
+
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #findfeeds {
+    --menu-image: url("./images/extensions/feedbro/search-glass.svg");
+  }
+
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #options {
+    --menu-image: url("./images/extensions/settings.svg");
+  }
+
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #explorer {
+    --menu-image: url("./images/extensions/feedbro/news.svg");
+  }
+
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] #articlelist,
+  [uc-extension-id="{a9c2ad37-e940-4892-8dce-cd73c6cbbc0c}"] div.article-popup {
+    background-color: transparent;
   }
   // Header Editor
   [uc-extension-id="headereditor-amo@addon.firefoxcn.net"] {
@@ -681,6 +763,7 @@
       @include BoxDirection("column", true);
       > div.md-switch {
         @include Box(true);
+        @include BoxAlign("center", true);
         @include BoxPack("start", true);
         @include PanelItem(true);
         @include BackgroundImage("./images/extensions/checkbox.svg");
@@ -689,6 +772,8 @@
           display: none !important;
         }
         .md-switch-label {
+          height: 16px !important;
+          line-height: 16px !important;
           @include BoxFlex(1);
           padding-inline-start: var(--menuitem-padding-start) !important;
           user-select: none;
@@ -704,12 +789,15 @@
         all: unset !important;
         @include Box(true);
         @include BoxPack("start", true);
+        @include BoxAlign("center", true);
         @include PanelItem(true);
         @include BackgroundImage("./images/extensions/settings.svg");
+        padding-block: 0 !important;
         &:before {
           content: none !important;
         }
         > .md-ripple {
+          height: 16px !important;
           padding: 0 !important;
           padding-inline-start: var(--menuitem-padding-start) !important;
           @include BoxPack("start", true);
@@ -900,7 +988,7 @@
       margin: var(--arrowpanel-menuitem-margin, 2px) !important;
     }
     .ml {
-      cursor: normal;
+      cursor: default;
       -moz-context-properties: fill, fill-opacity !important;
       fill: currentColor !important;
       height: calc(
@@ -943,7 +1031,7 @@
       --menu-image: url("./images/extensions/help.svg");
     }
     .menu:not(.ml) {
-      cursor: normal;
+      cursor: default;
       -moz-context-properties: fill, fill-opacity !important;
       fill: currentColor !important;
       @include PanelItem(true);

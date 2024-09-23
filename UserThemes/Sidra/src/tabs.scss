@@ -111,8 +111,6 @@
   @include TabStyle("1,2,3,4,5") {
     /* -------------------- Floating Tabs -------------------- */
     --tab-first-last-inline-margin: calc(var(--tab-block-margin) / 2);
-    --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
-    --tab-inset-clip-path: 0px calc(-1 * var(--tab-first-last-inline-margin));
     --tab-scroll-animation-inline-margin: calc(
       -1 * var(--tab-first-last-inline-margin)
     );
@@ -122,10 +120,6 @@
     --tab-bg-block-margin: var(--tab-block-margin);
     --tab-inline-padding: var(--tab-first-last-inline-margin);
     --tab-separator-offset: var(--tab-first-last-inline-margin);
-    --tab-attention-indicator-position: center bottom
-      calc(
-        ((var(--tab-min-height) - 16px) / 2 - 4px) / 2 + var(--tab-block-margin)
-      );
   }
 
   @include TabStyle("2,3,4,5") {
@@ -135,9 +129,6 @@
 
   @include TabStyle("6,7,8,9,10,11,12,13") {
     /* -------------------- Attached Tabs -------------------- */
-    --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
-    --tab-inset-clip-path: -4px calc(-1 * var(--tab-first-last-inline-margin))
-      0px;
     --tab-scroll-animation-inline-margin: calc(
       -1 * var(--tab-first-last-inline-margin)
     );
@@ -145,13 +136,23 @@
     --tab-bg-block-margin: 0px;
     --tab-inline-padding: 0px;
     --tab-separator-offset: 0px;
-    --tab-attention-indicator-position: center bottom
-      calc(((var(--tab-min-height) - 16px) / 2 - 4px) / 2);
   }
-
   /* ---------------------------------------- System Theme ---------------------------------------- */
   @media not (prefers-contrast) {
-    :root:not(:-moz-lwtheme) {
+    :root:not([lwtheme]) {
+      .titlebar-color {
+        --toolbarbutton-hover-background: color-mix(
+          in srgb,
+          currentColor 17%,
+          transparent
+        ) !important;
+        --toolbarbutton-active-background: color-mix(
+          in srgb,
+          currentColor 30%,
+          transparent
+        ) !important;
+      }
+
       .tabbrowser-tab[visuallyselected] {
         color: var(--toolbar-color) !important;
 

@@ -13,14 +13,7 @@
       border-bottom: 0px !important;
     }
     #browser {
-      > #TabsToolbar {
-        border-radius: var(--uc-appcontent-raidus, 8px);
-      }
-
-      > #sidebar-splitter {
-        border-color: transparent !important;
-      }
-
+      background-color: var(--toolbar-bgcolor);
       > #appcontent {
         padding: 0 var(--uc-appcontent-padding, 4px)
           var(--uc-appcontent-padding, 4px); // 内容区域四边缩进
@@ -29,6 +22,58 @@
           border: 1px solid var(--uc-appcontent-border-color);
           border-radius: var(--uc-appcontent-raidus, 8px); // 内容区域圆角
           overflow: hidden;
+        }
+      }
+      #SM_toolbox[open="true"] {
+        border-bottom: none !important;
+        #SM_tabbox {
+          overflow: hidden;
+          @include NotOption(
+            "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enable"
+          ) {
+            border: 1px solid var(--uc-appcontent-border-color);
+          }
+          border-radius: var(--uc-appcontent-raidus, 8px);
+        }
+
+        &:not([positionend="true"]):has(> #SM_contentbox[collapsed="true"])
+          ~ #appcontent {
+          padding-left: 0;
+        }
+
+        &[positionend="true"]:has(> #SM_contentbox[collapsed="true"])
+          ~ #appcontent {
+          padding-right: 0;
+        }
+      }
+      #sidebar-splitter {
+        opacity: 0; // 透明度不改 0 会丢失边框
+      }
+      #sidebar-box {
+        --sidebar-background-color: transparent;
+        &:not([positionend="true"]) {
+          padding-left: var(--uc-appcontent-padding, 4px);
+        }
+        &[positionend="true"] {
+          padding-right: var(--uc-appcontent-padding, 4px);
+        }
+
+        @include NotOption("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
+          #sidebar {
+            overflow: hidden;
+            border: 1px solid var(--uc-appcontent-border-color);
+            border-radius: var(--uc-appcontent-raidus, 8px);
+          }
+        }
+      }
+      &:has(~ #status-bar[hidden="true"]) {
+        #sidebar-box {
+          margin-bottom: var(--uc-appcontent-padding, 4px) !important;
+        }
+
+        #SM_toolbox[open="true"] {
+          border-bottom: none !important;
+          margin-bottom: var(--uc-appcontent-padding, 4px) !important;
         }
       }
 
@@ -41,19 +86,6 @@
         #SM_tabbox > #SM_tabpanels {
           margin-bottom: 0;
         }
-      }
-
-      > #SM_toolbox {
-        // 假装去除 SidebarModoki 的分割线
-        --chrome-content-separator-color: var(--toolbar-bgcolor);
-      }
-
-      #SM_splitter,
-      #sidebar-splitter {
-        margin-inline: 0 !important;
-        --chrome-content-separator-color: var(--toolbar-bgcolor);
-        width: var(--uc-appcontent-spliter-width, 2px) !important;
-        background-color: var(--chrome-content-separator-color) !important;
       }
 
       #SM_toolbox {
@@ -74,14 +106,10 @@
         &[open="true"] {
           // 显示 SidebarModoki 后，SidebarModoki 的分割线会占据一部分宽度，需要减去
           border-bottom: 1px solid var(--uc-appcontent-border-color);
+
           &:not([positionend="true"]) {
             & ~ #appcontent {
-              padding-left: calc(
-                var(--uc-appcontent-padding, 4px) - var(
-                    --uc-appcontent-spliter-width,
-                    2px
-                  )
-              );
+              padding-left: var(--uc-appcontent-padding, 4px);
               @include Option(
                 "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
               ) {
@@ -97,12 +125,7 @@
           }
           &[positionend="true"] {
             & ~ #appcontent {
-              padding-right: calc(
-                var(--uc-appcontent-padding, 4px) - var(
-                    --uc-appcontent-spliter-width,
-                    2px
-                  )
-              );
+              padding-right: var(--uc-appcontent-padding, 4px);
               @include Option(
                 "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
               ) {
@@ -116,77 +139,17 @@
                 var(--uc-appcontent-raidus, 8px);
             }
           }
-          #SM_tabpanels {
-            @include NotOption(
-              "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
-            ) {
-              border-radius: var(--uc-appcontent-raidus, 8px);
-              margin-bottom: var(--uc-appcontent-padding, 4px);
-            }
-            > tabpanel {
-              @include NotOption(
-                "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled"
-              ) {
-                border: 1px solid var(--uc-appcontent-border-color);
-                border-radius: var(--uc-appcontent-raidus, 8px);
-                overflow: hidden;
-              }
-            }
-          }
         }
       }
 
       #sidebar-box {
-        width: calc(100% - var(--uc-appcontent-padding, 4px));
-
         > #sidebar-header {
           border-bottom-color: transparent !important;
-        }
-
-        #sidebar {
-          position: relative;
-          border: 1px solid var(--uc-appcontent-border-color);
-          margin-bottom: var(--uc-appcontent-padding, 4px);
-          overflow: hidden;
-          @include NotOption("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
-            border-radius: var(--uc-appcontent-raidus, 8px);
-          }
-
-          @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
-            border-radius: 0 0 0 var(--uc-appcontent-raidus, 8px);
-          }
         }
 
         #sidebar-header {
           @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
             border-radius: var(--uc-appcontent-raidus, 8px) 0 0 0;
-          }
-        }
-
-        &:not([hidden="true"]) {
-          &[style*="order: 5"] {
-            padding-right: var(--uc-appcontent-padding, 4px);
-            ~ #appcontent {
-              padding-right: calc(
-                var(--uc-appcontent-padding, 4px) - var(
-                    --uc-appcontent-spliter-width,
-                    2px
-                  )
-              );
-            }
-          }
-
-          &[style*="order: 3"] {
-            padding-left: var(--uc-appcontent-padding, 4px);
-            ~ #appcontent {
-              padding-left: calc(
-                var(--uc-appcontent-padding, 4px) - var(
-                    --uc-appcontent-spliter-width,
-                    2px
-                  )
-              );
-            }
-            border: 1px solid var(--uc-appcontent-border-color);
           }
         }
       }
@@ -202,20 +165,9 @@
       }
     }
 
-    #sidebar2-box:not([style*="max-width:0"]) ~ #sidebar-select-box,
     #status-bar,
     #statusBar {
-      --chrome-content-separator-color: var(
-        --toolbar-bgcolor
-      ); // 假装去除状态栏的分割线
-    }
-
-    #sidebar2-box[style*="order: 1"]:not([style*="max-width:0"]) ~ #appcontent {
-      padding-left: 0;
-    }
-
-    #sidebar2-box[style*="order: 6"]:not([style*="max-width:0"]) ~ #appcontent {
-      padding-right: 0;
+      border-top: 0px !important;
     }
 
     @include Option("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
@@ -245,7 +197,14 @@
       }
 
       @include Option("userChromeJS.Sidra.Sidebar.Compact") {
-        #browser {
+        #browser:not(
+            :has(
+                > #sidebar-box:is(
+                    [sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"],
+                    [sidebarcommand="_3c078156-979c-498b-8990-85f7987dd929_-sidebar-action"]
+                  ):not([hidden="true"])
+              )
+          ) {
           #sidebar,
           #sidebar-box,
           #sidebar-header,

@@ -8,7 +8,6 @@
   #sidebar-header {
     background-color: var(--sidebar-background-color);
   }
-
   #sidebar-search-container {
     margin: 8px;
     @include OS("mac") {
@@ -16,17 +15,44 @@
     }
     border: 1px solid var(--arrowpanel-border-color);
     padding: 0 !important;
+    overflow: hidden;
 
     #search-box {
       appearance: none !important;
       padding: 5px 8px !important;
     }
   }
-
-  #SM_tabpanels {
-    background-color: var(--sidebar-background-color) !important;
+  #SM_splitter {
+    position: relative;
+    width: var(--uc-appcontent-spliter-width, 4px);
+    min-width: 1px !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-inline-width: 1px 0;
+    opacity: 0;
+    &[open="true"] {
+      --offset: calc(0 - var(--uc-appcontent-spliter-width, 4px));
+      &:not([positionend="true"]) {
+        left: var(--offset);
+      }
+      &[positionend="true"] {
+        right: var(--offset);
+      }
+    }
   }
-
+  #SM_header {
+    padding: 8px;
+    font-size: 1.333em;
+  }
+  #SM_header_toolbar {
+    padding-inline: 0;
+  }
+  :root[uidensity="compact"] {
+    #sidebar-header,
+    #SM_header {
+      padding: 4px !important;
+    }
+  }
   @include Option("userChromeJS.Sidra.Sidebar.AutoHide.Enabled") {
     #sidebar-box {
       --uc-sidebar-width: 36px;
@@ -180,13 +206,7 @@
           margin-inline-end: 34px;
         }
       }
-      &:not(
-          :hover,
-          :focus,
-          :focus-within,
-          :active,
-          [disiable-auto-hide="true"]
-        ) {
+      &:not(:hover, [disiable-auto-hide="true"]) {
         --width: 34px !important
       ;
       }

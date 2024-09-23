@@ -347,6 +347,9 @@
 #allTabsMenu-searchTabs {
   list-style-image: var(--uc-search-icon);
 }
+#allTabsMenu-closeDuplicateTabs {
+  list-style-image: var(--uc-close-icon)
+}
 #allTabsMenu-containerTabsButton {
   list-style-image: url("./images/icons/container-tab.svg");
 }
@@ -362,4 +365,58 @@
 }
 #PanelUI-remotetabs-openAll {
   list-style-image: url("./images/icons/open-all.svg");
+}
+/* Header icons for the app menu sub menus (eg. fx account, history...) */
+.panel-header > h1 > span {
+  &::before {
+    content: "";
+    background: var(--header-image, none) center / 16px no-repeat;
+    -moz-context-properties: fill, fill-opacity;
+    fill: currentColor;
+    padding-inline-start: calc(var(--uc-enabled, 0) * 16px);
+    margin-inline-end: calc(var(--uc-enabled, 0) * 8px);
+  }
+
+  #PanelUI-fxa &::before {
+    --header-image: var(--avatar-image-url);
+    --uc-enabled: 1;
+    transform: scale(1.25);
+    border-radius: 99px;
+    display: inline-block;
+    height: 16px;
+    vertical-align: text-bottom;
+  }
+
+  #PanelUI-bookmarks &::before {
+    --header-image: url("./images/icons/bookmark-star-on-tray.svg");
+    --uc-enabled: 1;
+  }
+
+  #PanelUI-history &::before {
+    --header-image: url("./images/icons/history.svg");
+    --uc-enabled: 1;
+  }
+
+  #PanelUI-helpView &::before {
+    --header-image: url("./images/icons/help.svg");
+    --uc-enabled: 1;
+  }
+
+  #appMenu-libraryView &::before {
+    --header-image: url("./images/icons/library.svg");
+    --uc-enabled: 1;
+  }
+
+  #unified-extensions-panel &::before {
+    --header-image: url("./images/icons/extension.svg");
+    --uc-enabled: 1;
+  }
+  #appmenu-moreTools &::before {
+    --header-image: url("./images/icons/menu.svg");
+    --uc-enabled: 1;
+  }
+  #allTabsMenu-containerTabsView &::before {
+    --header-image: url("./images/icons/container-tab.svg");
+    --uc-enabled: 1;
+  }
 }

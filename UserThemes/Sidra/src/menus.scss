@@ -549,12 +549,6 @@
       margin-inline: 0 var(--uc-autocomplete-panel-menuicon-padding-inline) !important;
     }
 
-    & .ac-title {
-      margin-inline: calc(
-        16px + var(--uc-autocomplete-panel-menuicon-padding-inline)
-      ) !important;
-    }
-
     & .two-line-wrapper {
       padding: 0 !important;
       gap: 0 !important;

@@ -1,0 +1,24 @@
+/* Windows has 1px missing space on top of window, but not when accent colour is
+ * applied to the title bar. */
+@media (-moz-platform: windows) and (not (-moz-windows-accent-color-in-titlebar)) {
+  :root[sizemode="normal"][tabsintitlebar]:not([inFullscreen])
+    #navigator-toolbox {
+    padding-top: 1px !important;
+  }
+}
+
+/* Add a shadow when the toolbars move over content, eg. in macOS hovering over
+ * the menu bar in fullscreen mode. */
+#navigator-toolbox[style*="transform"] {
+  box-shadow: 0 -3px 5px 3px light-dark(rgb(0 0 0 / 0.3), rgb(0 0 0 / 0.6)) !important;
+}
+
+/* Remove the shadow and background from the status bar. */
+#status-bar {
+  --toolbar-field-focus-background-color: transparent;
+
+  #statuspanel-label {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
