@@ -1871,6 +1871,15 @@
     #urlbar-input-container {
       padding: var(--urlbar-container-padding) var(--megabar_border_padding-inline, var(--urlbar-container-padding)) !important;
     }
+    #identity-box[pageproxystate=valid].extensionPage #identity-icon-label {
+      display: none;
+    }
+    #urlbar[focused] #identity-box[pageproxystate=valid]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button:not(:hover, [open]) {
+      background-color: var(--urlbar-box-focus-bgcolor);
+    }
+    #urlbar[focused] #tracking-protection-icon-container:has(+ #identity-box[pageproxystate=valid]:is(.notSecureText, .chromeUI, .extensionPage)):not(:hover, [open]) {
+      background-color: var(--urlbar-box-focus-bgcolor);
+    }
     #page-action-buttons > *:not(.urlbar-page-action) {
       order: 99;
       -moz-box-ordinal-group: 99;

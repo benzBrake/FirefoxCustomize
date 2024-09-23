@@ -10,6 +10,24 @@
       var(--megabar_border_padding-inline, var(--urlbar-container-padding)) !important;
   }
 
+  #identity-box[pageproxystate="valid"].extensionPage {
+    // 隐藏扩展页面 identity-box 的插件名
+    #identity-icon-label {
+      display: none;
+    }
+  }
+
+  #urlbar[focused] {
+    & #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button:not(:hover, [open])
+     {
+      background-color: var(--urlbar-box-focus-bgcolor);
+    }
+
+    & #tracking-protection-icon-container:has(+#identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage)):not(:hover, [open]) {
+      background-color: var(--urlbar-box-focus-bgcolor);
+    }
+  }
+
   // 排序
   #page-action-buttons > *:not(.urlbar-page-action) {
     @include BoxOrder(99);
