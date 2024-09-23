@@ -92,10 +92,6 @@
   list-style-image: url("./images/icons/menu.svg");
 }
 
-#appMenu-report-broken-site-button {
-  list-style-image: url("./images/icons/comments.svg");
-}
-
 #appMenu-help-button2 {
   list-style-image: url("./images/icons/help.svg");
 }
@@ -296,7 +292,8 @@
   list-style-image: var(--uc-menu-icon);
 }
 #appMenu-report-broken-site-button,
-#appMenu_help_reportSiteIssue {
+#appMenu_help_reportSiteIssue,
+#protections-popup-report-broken-site-button {
   list-style-image: url("chrome://global/skin/icons/lightbulb.svg");
 }
 #appMenu_menu_HelpPopup_reportPhishingtoolmenu {
