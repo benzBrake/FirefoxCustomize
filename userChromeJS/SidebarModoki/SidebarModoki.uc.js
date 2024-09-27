@@ -64,7 +64,7 @@ var SidebarModoki = {
   get SM_MARGINHACK () {
     return this.SM_RIGHT ? "0 0 0 0" : "0 -2px 0 0";
   },
-  SM_WIDTH: 230,
+  SM_WIDTH: 350,
   SM_HIDE_IN_FULLSCREEN: true,  // Fullscreen
   SM_TABS_FILE: "chrome/UserConfig/_sidebar_modoki.json",
   TABS: [{
@@ -351,6 +351,8 @@ var SidebarModoki = {
         });
       } catch (e) { }
 
+    this.Shortcuts = []
+
     // to do, replace with MozXULElement.parseXULToFragment();
     let template = ["command", { id: "cmd_SidebarModoki", oncommand: "SidebarModoki.toggle()" }];
     document.getElementById("mainCommandSet").appendChild(this.jsonToDOM(template, document, {}));
@@ -374,9 +376,8 @@ var SidebarModoki = {
                 ],
                 ["toolbarbutton", { id: "SM_homeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Home", image: "chrome://browser/skin/home.svg", oncommand: "SidebarModoki.home()" }],
                 ["toolbarbutton", { id: "SM_openButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Open", image: "chrome://global/skin/icons/open-in-new.svg", oncommand: "SidebarModoki.open()" }],
-                ["toolbarbutton", { id: "SM_unloadButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Unload", image: "chrome://global/skin/icons/close.svg", oncommand: "SidebarModoki.unload()" }],
               ],
-              ["toolbarbutton", { id: "SM_closeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Hide Webpanel", image: "resource://gre-resources/password-hide.svg", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
+              ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Hide Webpanel", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
             ],
           ],
           ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false }]
@@ -408,29 +409,18 @@ var SidebarModoki = {
       if (tab.src.startsWith("http")) {
         tab.iswebpage = true;
         if (!("image" in tab)) {
-          tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32"
+          tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32";
+          tab['dynamic-icon'] = true;
         }
       }
       if (tab.hasOwnProperty("image")) {
         tab.iconized = true;
       }
       if (tab.hasOwnProperty("shortcut")) {
-        let shortcut = tab["shortcut"];
-        let mainKeySet = document.getElementById("mainKeyset");
-        if ("replace" in shortcut && (shortcut.replace === "true" || shortcut.replace === "1" || shortcut.replace === true)) {
-          delete shortcut.replace;
-          let sel = "";
-          for (const [key, value] of Object.entries(shortcut)) {
-            sel += `[${key}="${value}"]`;
-          }
-          let node = mainKeySet.querySelector(sel);
-          if (node)
-            node.parentNode.removeChild(node);
-        }
-        shortcut.oncommand = `SidebarModoki.switchToTab(${i}, true)`
-        let template = ["key", shortcut];
-        mainKeySet.appendChild(this.jsonToDOM(template, document, {}));
-        delete tab["shortcut"];
+        const { shortcut } = tab;
+        shortcut.oncommand = `SidebarModoki.switchToTab(${i}, true);`;
+        this.Shortcuts.push(tab.shortcut);
+        delete tab.shortcut;
       }
       template[2].push(["toolbarbutton", tab]);
       let browser = { id: "SM_tab" + i + "-browser", flex: "1", autoscroll: "false", src: "" };
@@ -478,6 +468,28 @@ var SidebarModoki = {
     this.TabBox = document.getElementById("SM_tabbox");
     this.Control = document.getElementById("SM_control");
     this.Button = document.getElementById('SM_Button');
+
+    this.Tabs.querySelectorAll('toolbarbutton[dynamic-icon="true"]').forEach((btn) => {
+      // 防止内网的 Tab 无法通过 favicon.yandex.net 获取图标
+      let uri;
+      try {
+          uri = Services.io.newURI(btn.src, null, null);
+      } catch (e) {
+
+      }
+      if (!uri) return;
+      PlacesUtils.favicons.getFaviconDataForPage(uri, {
+        onComplete: function (aURI, aDataLen, aData, aMimeType) {
+          try {
+            // javascript: URI の host にアクセスするとエラー
+            let iconURL = aURI && aURI.spec ?
+              "page-icon:" + aURI.spec :
+              "page-icon:" + uri.spec;
+            btn.setAttribute("image", iconURL);
+          } catch (e) { }
+        }
+      });
+    });
 
     this.updatePosition();
 
@@ -529,6 +541,21 @@ var SidebarModoki = {
       });
       fullScreenObserver.observe(document.getElementById("main-window"), { attributes: true, attributeFilter: ["inFullscreen"] });
     }
+
+    // Insert shortcuts
+    const mks = document.getElementById('mainKeyset');
+    this.Shortcuts.forEach(function (shortcut) {
+      const { key, modifiers } = shortcut;
+      if (shortcut.replace) {
+        let el = mks.querySelector(`[key="${key}"][modifiers="${modifiers}"]`);
+        if (el) {
+          el.parentNode.removeChild(el);
+        }
+      }
+      mks.appendChild(SidebarModoki.jsonToDOM(
+        ["key", shortcut],
+        document, {}));
+    });
 
     window.addEventListener("aftercustomization", this, false);
 
@@ -618,6 +645,7 @@ var SidebarModoki = {
     if (this.selectedBrowser) {
       this.Control.collapsed = false;
       this.updateButtons();
+      this.selectedBrowser.contentWindow.dispatchEvent(new CustomEvent("SidebarFocused", { bubbles: true }));
     } else {
       this.Control.collapsed = true;
     }
@@ -735,10 +763,18 @@ var SidebarModoki = {
     }
   },
 
+  back () {
+    this.getBrowserForTab(this.selectedTab)?.goBack();
+  },
+
+  forward () {
+    this.getBrowserForTab(this.selectedTab)?.goForward();
+  },
+
   open () {
     let url;
     if (this.selectedBrowser && this.selectedBrowser.currentURI.spec) {
-      url = this.selectedBrowser.currentURI.spec;  // 如果跳转了页面，优先获取跳转后的
+      url = this.selectedBrowser.currentURI.spec;
     } else if (this.selectedTab && this.selectedTab.src) {
       url = this.selectedTab.src;
     }
@@ -752,20 +788,6 @@ var SidebarModoki = {
         });
       }
     }
-  },
-
-  unload () {
-    if (this.selectedTab && this.selectedBrowser) {
-      this.selectedBrowser.src = "";
-    }
-  },
-
-  back () {
-    this.getBrowserForTab(this.selectedTab)?.goBack();
-  },
-
-  forward () {
-    this.getBrowserForTab(this.selectedTab)?.goForward();
   },
 
   toggle: function () {
