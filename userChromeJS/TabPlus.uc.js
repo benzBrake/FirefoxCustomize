@@ -113,14 +113,14 @@
     let TabPlus = {
         listeners: {},
         modules: {},
-        get showMenuIcon() {
+        get showMenuIcon () {
             return parseInt(Services.appinfo.version) < 90
         },
-        get sss() {
+        get sss () {
             delete this.sss;
             return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
         },
-        init(win) {
+        init (win) {
             this.menus = [];
             Object.values(this.modules).forEach(module => {
                 if (!isTMPActive || module.compactWithTMP) {
@@ -135,7 +135,7 @@
             });
             this.createOptionsMenu(win.document, this.menus);
         },
-        destroy() {
+        destroy () {
             let menu = $("TabPlus-menu");
             if (menu)
                 menu.parentNode.removeChild(menu);
@@ -148,7 +148,7 @@
             if (this.style)
                 removeStyle(this.sss, this.style);
         },
-        createOptionsMenu(doc, obj) {
+        createOptionsMenu (doc, obj) {
             let ins = $("devToolsSeparator", doc);
             let menu = ins.parentNode.insertBefore($C(doc, "menu", {
                 id: 'TabPlus-menu',
@@ -169,7 +169,7 @@
                 })
             }
         },
-        newMenuitem(doc, obj) {
+        newMenuitem (doc, obj) {
             if (!obj || !doc) return;
             let item, classList = [], tagName = obj.type || "menuitem";
             if (['separator', 'toolbarseparator'].includes(obj.type) || !obj.group && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
@@ -252,7 +252,7 @@
         addPrefListener: function (pref, callback) {
             this.listeners[pref] = cPref.addListener(pref, callback);
         },
-        onCommand(event) {
+        onCommand (event) {
             let item = event.target;
             let precommand = item.hasAttribute("precommand"),
                 pref = item.getAttribute("pref") || "",
@@ -266,7 +266,7 @@
                 closeMenus(event.target.closest("menupopup"));
 
         },
-        handlePref(event, pref) {
+        handlePref (event, pref) {
             let item = event.target;
             if (item.getAttribute('type') === 'checkbox') {
                 let setVal = cPref.get(pref);
@@ -324,7 +324,7 @@
         menus: [{
             label: $L('history'), type: 'checkbox', pref: 'browser.tabs.loadHistoryInTabs'
         }],
-        replace(win) {
+        replace (win) {
             window || (window = win);
             this.ORIG_FUNC = PlacesUIUtils.openNodeWithEvent.toString();
             eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString()
@@ -333,7 +333,7 @@
                 .replace('getBrowserWindow(window)', '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
                 .replace('lazy.', ''));
         },
-        restore(win) {
+        restore (win) {
             window || (window = win);
             if (this.ORIG_FUNC) {
                 eval('PlacesUIUtils.openNodeWithEvent = ' + this.ORIG_FUNC
@@ -342,10 +342,10 @@
                 delete this.ORIG_FUNC;
             }
         },
-        init(win) {
+        init (win) {
             if (cPref.get(this.PREF, false))
                 this.replace(win);
-            function callback(value, pref) {
+            function callback (value, pref) {
                 if (value)
                     TabPlus.modules.loadHistoryInTabs.replace();
                 else
@@ -353,7 +353,7 @@
             }
             this.PREF_LISTENER = cPref.addListener(this.PREF, callback);
         },
-        destroy(win) {
+        destroy (win) {
             this.restore(win);
             if (this.PREF_LISTENER)
                 cPref.removeListener(this.PREF_LISTENER);
@@ -372,12 +372,12 @@
         }, {
             label: $L("right click"), type: 'checkbox', pref: 'browser.tabs.closeTabByRightClick'
         }, {}],
-        init(win) {
+        init (win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.addEventListener('dblclick', this, false);
             gBrowser.tabContainer.addEventListener('click', this, false);
         },
-        handleEvent(event) {
+        handleEvent (event) {
             switch (event.type) {
                 case 'dblclick':
                     if (!cPref.get(this.PREF_DBLCLICK, false)) return;
@@ -405,7 +405,7 @@
             }
 
         },
-        destroy(win) {
+        destroy (win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.removeEventListener('dblclick', this, false);
             gBrowser.tabContainer.removeEventListener('click', this, false);
@@ -425,13 +425,14 @@
         menus: [{
             label: $L("image link"), type: 'checkbox', pref: 'browser.tabs.loadImageInBackground'
         }, {}],
-        replace(win) {
+        replace (win) {
             win || (win = window);
             win.document.getElementById('context-viewimage').setAttribute('oncommand', null);
             win.document.getElementById('context-viewimage').addEventListener('command', this, false);
         },
-        handleEvent(e) {
+        handleEvent (e) {
             e.preventDefault();
+            e.stopPropagation();
             let where = (BrowserUtils || window).whereToOpenLink(e, false, false);
             if (where == "current") {
                 where = cPref.get(this.PREF, false) ? "tabshifted" : "tab";
@@ -457,16 +458,16 @@
                 });
             }
         },
-        restore(win) {
+        restore (win) {
             win || (win = window);
             win.document.getElementById('context-viewimage').removeEventListener('command', this, false);
             win.document.getElementById('context-viewimage').setAttribute('oncommand', 'gContextMenu.viewMedia(event);');
         },
-        init(win) {
+        init (win) {
             window || (window = win);
             this.replace(window);
         },
-        destroy(win) {
+        destroy (win) {
             window || (window = win);
             this.restore(window);
         }
@@ -500,7 +501,7 @@
             type: 'checkbox'
         }],
         // 初始化方法
-        init(win) {
+        init (win) {
             let { gBrowser } = win || window;
             // 监听鼠标移入事件
             gBrowser.tabContainer.parentNode.addEventListener('mouseover', this, false);
@@ -508,7 +509,7 @@
             gBrowser.tabContainer.addEventListener('click', this, false);
         },
         // 事件处理方法
-        handleEvent(event) {
+        handleEvent (event) {
             let { target } = event,
                 { ownerGlobal: win } = target,
                 { gBrowser } = win;
@@ -545,7 +546,7 @@
                         setTimeout(() => {
                             restorePref();
                         }, 3000);
-                        function restorePref() {
+                        function restorePref () {
                             that.isTriggered = false;
                             cPref.set(that.PREF, lastValue);
                             gBrowser.tabContainer.removeEventListener('mouseleave', restorePref, false);
@@ -555,7 +556,7 @@
             }
         },
         // 处理标签悬停方法
-        _onTabHover(tab, wait) {
+        _onTabHover (tab, wait) {
             tab.addEventListener("mouseleave", function () {
                 clearTimeout(wait);
                 tab.removeEventListener("mouseleave", tab);
@@ -569,7 +570,7 @@
             }, cPref.get('browser.tabs.switchOnHoverDelay', 150));
         },
         // 销毁方法
-        destroy(win) {
+        destroy (win) {
             let { gBrowser } = win || window;
             // 移除事件监听器
             gBrowser.tabContainer.parentNode.removeEventListener('mouseover', this, false);
@@ -586,7 +587,7 @@
             type: 'checkbox'
         }, {}],
         compactWithTMP: true,
-        init(win) {
+        init (win) {
             win || (win = window);
             let list = win.document.getElementById("vertical-tabs-list");
             if (list) list.addEventListener('mouseover', this, false);
@@ -601,7 +602,7 @@
             })
             cPref.addListener(this.PREF, this.listener);
         },
-        listener(value, pref) {
+        listener (value, pref) {
             AddonManager.getAddonByID('tst-hoverswitch@klemens.io').then(addon => {
                 if (addon) {
                     if (value) {
@@ -612,7 +613,7 @@
                 }
             })
         },
-        handleEvent(event) {
+        handleEvent (event) {
             if (!cPref.get(this.PREF, false)) return;
             let { target } = event,
                 { ownerGlobal: win } = target;
@@ -622,7 +623,7 @@
             if (!tab) return;
             var timeout = setTimeout(() => tab.click(), cPref.get('browser.tabs.switchOnHoverDelay', cPref.get('browser.tabs.switchOnHoverDelay', 150)));
         },
-        destroy(win) {
+        destroy (win) {
             win || (win = window);
             let list = win.document.getElementById("vertical-tabs-list");
             if (list) list.removeEventListener('mouseover', this, false);
@@ -666,11 +667,11 @@
             pref: 'browser.tabs.newTabBtn.rightClickLoadFromClipboard'
         },
         compactWithTMP: true,
-        init(win) {
+        init (win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.addEventListener('click', this, false);
         },
-        handleEvent(e) {
+        handleEvent (e) {
             if (!cPref.get(this.PREF, false)) return;
             let { target } = e;
             if (['tabs-newtab-button', 'new-tab-button'].includes(target.id) && e.button === 2 && !e.shiftKey) {
@@ -707,7 +708,7 @@
                 }
             }
 
-            function isDataURLBase64(url) {
+            function isDataURLBase64 (url) {
                 if (typeof url !== 'string') {
                     return false;
                 }
@@ -730,7 +731,7 @@
                 return isValidBase64(base64Data);
             }
 
-            function isValidBase64(base64String) {
+            function isValidBase64 (base64String) {
                 try {
                     // 使用 atob 解码 base64
                     atob(base64String);
@@ -740,7 +741,7 @@
                 }
             }
         },
-        destroy(win) {
+        destroy (win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.removeEventListener('click', this, false);
         }
@@ -762,11 +763,11 @@
             type: 'checkbox',
             pref: 'browser.tabs.selectLeftTabOnClose'
         },
-        init(win) {
+        init (win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.addEventListener('TabClose', this, false);
         },
-        handleEvent(event) {
+        handleEvent (event) {
             if (!cPref.get(this.PREF, false)) return;
             var tab = event.target;
             gBrowser.selectedTab = tab;
@@ -774,7 +775,7 @@
                 gBrowser.tabContainer.advanceSelectedTab(-1, true);
             }
         },
-        destroy(win) {
+        destroy (win) {
             let { gBrowser } = win || window;
             gBrowser.tabContainer.removeEventListener('TabClose', this, false);
         }
@@ -790,11 +791,11 @@
         },
     }
 
-    function $(id, aDoc) {
+    function $ (id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
 
-    function $C(aDoc, tag, attrs, skipAttrs) {
+    function $C (aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
         var el;
@@ -807,7 +808,7 @@
         return $A(el, attrs, skipAttrs);
     }
 
-    function $A(el, obj, skipAttrs) {
+    function $A (el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
@@ -821,7 +822,7 @@
         return el;
     }
 
-    function $L(str, replace) {
+    function $L (str, replace) {
         const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
         if (str) {
             str = LANG[LOCALE][str] || str;
@@ -829,7 +830,7 @@
         } else return "";
     }
 
-    function $S(str, replace) {
+    function $S (str, replace) {
         str || (str = '');
         if (typeof replace !== "undefined") {
             str = str.replace("%s", replace);
@@ -837,7 +838,7 @@
         return str || "";
     }
 
-    function addStyle(sss, css, type = 0) {
+    function addStyle (sss, css, type = 0) {
         if (sss instanceof Ci.nsIStyleSheetService && typeof css === "string") {
             let STYLE = {
                 url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)), type: type
@@ -847,7 +848,7 @@
         }
     }
 
-    function removeStyle(sss, style) {
+    function removeStyle (sss, style) {
         if (sss instanceof Ci.nsIStyleSheetService && style && style.url && style.type) {
             sss.unregisterSheet(STYLE.url, STYLE.type);
             return true;
