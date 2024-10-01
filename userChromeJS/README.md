@@ -4,7 +4,7 @@
 
 ## Why stopped updating the script?
 
-I'm short of money, so I'm busy making money now.
+I'm short of money, so I'm busy making money now. Currently I can only try to fix the scripts to ESR 128.
 
 ## Want to support this project?
 
@@ -59,7 +59,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 74   | [BookmarkOpt](BookmarkOpt.uc.js)                             | 书签操作增强，添加”添加书签到此处“和“更新书签为当前网址“<br />融合了`AddBMHere.uc.js`、`AddBookmarkHere.uc.js`、`UpdateBookmarkLite.uc.js`侧边栏添加“复制标题”和“复制链接”<br />增加了一个【显示/隐藏书签工具栏】的按钮<br />低版本Firefox有的功能不能用，建议升级 Firefox |                                                              |
 |      | 100  | [browsertoolbox](browsertoolbox.uc.js)                       | 新增一个打开“浏览器内容工具箱”的按钮                         | [📃](https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js) |
 |      | 90   | [ColorfulTabs](ColorfulTabs.uc.js)                           | 多彩标签页                                                   |                                                              |
-|      | 100  | [CopyCat](CopyCat.uc.js)                                     | 给 Firefox 增加一个按钮，类似于 AnoBtn                       |                                                              |
+|      | 100  | [CopyCat](CopyCat/CopyCat.uc.js)                             | 给 Firefox 增加一个按钮，类似于 AnoBtn                       |                                                              |
 |      | 100  | [CopyCatTheme](CopyCatTheme/CopyCatTheme.uc.js)              | 读取 Firefox CSS 主题                                        |                                                              |
 |      | 57   | [CopyPlainText](CopyPlainText.uc.js)                         | 右键菜单复制和Ctrl+C强制复制纯文本                           |                                                              |
 |      | 108  | [CustomButtons](CustomButtons.uc.js)                         | 替代 [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js) |                                                              |
