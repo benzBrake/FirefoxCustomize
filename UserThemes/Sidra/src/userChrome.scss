@@ -13,11 +13,10 @@
 @use "utils/theme";
 @use "utils/os" as *;
 @use "utils/image" as *;
-
 @include mode.MEDIA_PREF;
-
 $urlPrefix: "resource://copycat-uchrm/UserThemes/Sidra/";
 @layer LowPriority, HighPriority;
+@import "special/windows.css" layer(HighPriority) /* supports() */ (-moz-platform: windows);
 @-moz-document url-prefix("chrome://"),
   url-prefix("moz-extension://"),
   url("about:downloads") {

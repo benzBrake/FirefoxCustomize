@@ -260,6 +260,25 @@
 
   #TabsToolbar {
     --toolbarbutton-inner-padding: inherit !important;
+    position: relative !important;
+  }
+
+  #TabsToolbar::before {
+    content: "";
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    bottom: 0px;
+    inset-inline-start: 0px;
+    box-shadow: var(--additional-inner-box-shadow, inset 0 0 0 transparent),
+      var(--inner-box-shadow, inset 0 0 0 transparent);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  #TabsToolbar #search-container {
+    padding-block: 0 !important;
   }
 
   // ---------------------------------------- Indents ----------------------------------------
@@ -314,6 +333,7 @@
     ) !important;
     z-index: 0 !important;
   }
+
   /** Floorp 样式修复 */
   :root[tabposition="4"] {
     #TabsToolbar {
@@ -535,15 +555,15 @@
       @include BoxOrder(2, true);
     }
 
-    #toolbar-menubar {
-      --toolbarbutton-icon-fill: inherit !important;
-      background-color: var(--toolbar-bgcolor) !important;
-      color: var(--toolbar-color) !important;
-      appearance: none !important;
+    #toolbar-menubar
+    {
+        --toolbarbutton-icon-fill: inherit !important;
+        background-color: var(--toolbar-bgcolor) !important;
+        color: var(--toolbar-color) !important;
+        appearance: none !important;
     }
 
     #TabsToolbar {
-      margin-inline: var(--tab-bg-block-margin);
       &::before {
         transform: rotateX(180deg);
       }

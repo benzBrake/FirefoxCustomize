@@ -104,13 +104,12 @@
     --tab-first-last-inline-margin: calc(var(--tab-min-height) / 2);
     --outer-drop-border-offset: 1px;
   }
-  @include TabStyle("default") {
-    --tab-bg-block-margin: 4px;
-  }
 
   @include TabStyle("1,2,3,4,5") {
     /* -------------------- Floating Tabs -------------------- */
     --tab-first-last-inline-margin: calc(var(--tab-block-margin) / 2);
+    --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
+    --tab-inset-clip-path: 0px calc(-1 * var(--tab-first-last-inline-margin));
     --tab-scroll-animation-inline-margin: calc(
       -1 * var(--tab-first-last-inline-margin)
     );
@@ -129,6 +128,9 @@
 
   @include TabStyle("6,7,8,9,10,11,12,13") {
     /* -------------------- Attached Tabs -------------------- */
+    --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
+    --tab-inset-clip-path: -4px calc(-1 * var(--tab-first-last-inline-margin))
+      0px;
     --tab-scroll-animation-inline-margin: calc(
       -1 * var(--tab-first-last-inline-margin)
     );
@@ -162,13 +164,25 @@
       }
     }
   }
-
   /* ---------------------------------------- Light Theme / Dark Theme ---------------------------------------- */
 
   :root:is(
       [style*="--lwt-accent-color: rgb(240, 240, 244); --lwt-text-color: rgba(21, 20, 26)"],
       [style*="--lwt-accent-color: rgb(28, 27, 34); --lwt-text-color: rgba(251, 251, 254)"]
     ) {
+    .titlebar-color {
+      --toolbarbutton-hover-background: color-mix(
+        in srgb,
+        currentColor 17%,
+        transparent
+      ) !important;
+      --toolbarbutton-active-background: color-mix(
+        in srgb,
+        currentColor 30%,
+        transparent
+      ) !important;
+    }
+
     .tabbrowser-tab[visuallyselected] {
       color: var(--toolbar-color) !important;
 
@@ -210,19 +224,35 @@
 
   :root {
     --tab-shadow-max-size: 0px !important;
-    --tabs-navbar-shadow-size: 0px !important;
+    --tab-attention-indicator-position: 50% calc(50% + 12px);
+  }
+
+  /* ---------------------------------------- Nav Bar ---------------------------------------- */
+
+  #nav-bar {
+    border: none !important;
   }
 
   /* ---------------------------------------- Titlebar ---------------------------------------- */
 
-  :root[tabsintitlebar]:-moz-window-inactive {
+  :root[tabsintitlebar] {
     #titlebar {
+      will-change: auto !important;
+      transition: none !important;
       opacity: 1 !important;
     }
 
     .titlebar-color {
-      color: color-mix(in srgb, currentColor 60%, transparent) !important;
-      --toolbarbutton-icon-fill: currentColor !important;
+      will-change: auto !important;
+      transition: color var(--inactive-window-transition) !important;
+    }
+
+    &:-moz-window-inactive .titlebar-color {
+      color: color-mix(
+        in srgb,
+        currentColor calc(var(--inactive-titlebar-opacity) * 100%),
+        transparent
+      ) !important;
     }
   }
 
@@ -256,7 +286,10 @@
     &[visuallyselected] {
       position: relative;
       z-index: 2 !important;
-      filter: var(--outer-drop-border, drop-shadow(0 0 0 transparent))
+      filter: var(
+          --additional-outer-drop-shadow,
+          drop-shadow(0 0 0 transparent)
+        )
         var(--outer-drop-shadow, drop-shadow(0 0 0 transparent));
     }
 
@@ -290,6 +323,17 @@
       border-radius: 0px !important;
       pointer-events: none !important;
     }
+
+    &[pinned] .tab-content {
+      padding-inline: calc(
+        (var(--tab-min-height) - 16px) / 2 +
+          var(--pinned-tabs-width-offset, 0px)
+      ) !important;
+    }
+
+    &:not([pinned]) .tab-content {
+      padding-inline: 10px !important;
+    }
   }
 
   .tab-drop-indicator {
@@ -301,19 +345,7 @@
   }
 
   .tabbrowser-tab[pending] .tab-icon-image {
-    opacity: 0.5 !important;
-  }
-
-  .tab-content {
-    padding-inline: calc(
-      (var(--tab-min-height) - 16px) / 2 + var(--pinned-tabs-width-offset, 0px)
-    ) !important;
-  }
-
-  :root[onload="TMP_TBP_Startup();"] .tab-content {
-    padding-inline: calc(
-      (var(--tab-min-height) - 16px) + var(--pinned-tabs-width-offset, 0px)
-    ) !important;
+    filter: saturate(0) !important;
   }
 
   .tab-close-button {
@@ -440,12 +472,10 @@
     position: absolute;
     width: 16px;
     height: 16px;
-    background-image: url("chrome://global/skin/media/picture-in-picture-open.svg");
-    background-size: 16px;
-    background-position: center center;
-    background-repeat: no-repeat;
-    fill: currentColor;
-    -moz-context-properties: fill;
+    background-color: currentColor;
+    mask-size: 16px 16px;
+    mask-position: center center;
+    mask-repeat: no-repeat;
   }
 
   :root:-moz-locale-dir(rtl)
@@ -473,7 +503,6 @@
     )
     .tab-icon-stack::before {
     mask-image: #{image("skin/PIP.svg")};
-    mask-size: 100% 100%;
   }
 
   .tabbrowser-tab[pictureinpicture]:not([busy], [crashed]):is(
@@ -483,7 +512,6 @@
     )
     .tab-icon-stack::before {
     mask-image: #{image("skin/PIP_Sound.svg")};
-    mask-size: 100% 100%;
   }
 
   /* -------------------- Tab Text -------------------- */

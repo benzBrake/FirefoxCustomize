@@ -7,6 +7,7 @@
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
  * @notes utils 来自 black7375/Firefox-UI-Fix，很多样式来自 bmFtZQ/edge-frfox、aminomancer/uc.css.js、Aris-t2/CustomCSSforFx、MrOtherGuy/firefox-csshacks
 ==/UserStyle== */
+@import "special/windows.css" layer(HighPriority) (-moz-platform: windows);
 @layer LowPriority, HighPriority;
 @-moz-document url-prefix("chrome://"),
   url-prefix("moz-extension://"),
@@ -1006,6 +1007,22 @@
     }
     #TabsToolbar {
       --toolbarbutton-inner-padding: inherit !important;
+      position: relative !important;
+    }
+    #TabsToolbar::before {
+      content: "";
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      bottom: 0px;
+      inset-inline-start: 0px;
+      box-shadow: var(--additional-inner-box-shadow, inset 0 0 0 transparent), var(--inner-box-shadow, inset 0 0 0 transparent);
+      pointer-events: none;
+      z-index: 2;
+    }
+    #TabsToolbar #search-container {
+      padding-block: 0 !important;
     }
     #TabsToolbar-customization-target > :is(toolbarbutton, toolbaritem):first-child,
     #TabsToolbar-customization-target > toolbarpaletteitem:first-child > :is(toolbarbutton, toolbaritem) {
@@ -1240,12 +1257,11 @@
         --tab-first-last-inline-margin: calc(var(--tab-min-height) / 2);
         --outer-drop-border-offset: 1px;
       }
-      :root[sidra-tabstyle=default] {
-        --tab-bg-block-margin: 4px;
-      }
       :root:is([sidra-tabstyle="1"], [sidra-tabstyle="2"], [sidra-tabstyle="3"], [sidra-tabstyle="4"], [sidra-tabstyle="5"]) {
         /* -------------------- Floating Tabs -------------------- */
         --tab-first-last-inline-margin: calc(var(--tab-block-margin) / 2);
+        --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
+        --tab-inset-clip-path: 0px calc(-1 * var(--tab-first-last-inline-margin));
         --tab-scroll-animation-inline-margin: calc(
           -1 * var(--tab-first-last-inline-margin)
         );
@@ -1262,6 +1278,9 @@
       }
       :root:is([sidra-tabstyle="6"], [sidra-tabstyle="7"], [sidra-tabstyle="8"], [sidra-tabstyle="9"], [sidra-tabstyle="10"], [sidra-tabstyle="11"], [sidra-tabstyle="12"], [sidra-tabstyle="13"]) {
         /* -------------------- Attached Tabs -------------------- */
+        --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
+        --tab-inset-clip-path: -4px calc(-1 * var(--tab-first-last-inline-margin))
+          0px;
         --tab-scroll-animation-inline-margin: calc(
           -1 * var(--tab-first-last-inline-margin)
         );
@@ -1292,6 +1311,19 @@
         }
       }
       /* ---------------------------------------- Light Theme / Dark Theme ---------------------------------------- */
+      :root:is([style*="--lwt-accent-color: rgb(240, 240, 244); --lwt-text-color: rgba(21, 20, 26)"],
+      [style*="--lwt-accent-color: rgb(28, 27, 34); --lwt-text-color: rgba(251, 251, 254)"]) .titlebar-color {
+        --toolbarbutton-hover-background: color-mix(
+          in srgb,
+          currentColor 17%,
+          transparent
+        ) !important;
+        --toolbarbutton-active-background: color-mix(
+          in srgb,
+          currentColor 30%,
+          transparent
+        ) !important;
+      }
       :root:is([style*="--lwt-accent-color: rgb(240, 240, 244); --lwt-text-color: rgba(21, 20, 26)"],
       [style*="--lwt-accent-color: rgb(28, 27, 34); --lwt-text-color: rgba(251, 251, 254)"]) .tabbrowser-tab[visuallyselected] {
         color: var(--toolbar-color) !important;
@@ -1325,15 +1357,24 @@
       /* ---------------------------------------- Main Window ---------------------------------------- */
       :root {
         --tab-shadow-max-size: 0px !important;
-        --tabs-navbar-shadow-size: 0px !important;
+        --tab-attention-indicator-position: 50% calc(50% + 12px);
+      }
+      /* ---------------------------------------- Nav Bar ---------------------------------------- */
+      #nav-bar {
+        border: none !important;
       }
       /* ---------------------------------------- Titlebar ---------------------------------------- */
-      :root[tabsintitlebar]:-moz-window-inactive #titlebar {
+      :root[tabsintitlebar] #titlebar {
+        will-change: auto !important;
+        transition: none !important;
         opacity: 1 !important;
       }
+      :root[tabsintitlebar] .titlebar-color {
+        will-change: auto !important;
+        transition: color var(--inactive-window-transition) !important;
+      }
       :root[tabsintitlebar]:-moz-window-inactive .titlebar-color {
-        color: color-mix(in srgb, currentColor 60%, transparent) !important;
-        --toolbarbutton-icon-fill: currentColor !important;
+        color: color-mix(in srgb, currentColor calc(var(--inactive-titlebar-opacity) * 100%), transparent) !important;
       }
       /* ---------------------------------------- Density ---------------------------------------- */
       :root {
@@ -1360,7 +1401,7 @@
       .tabbrowser-tab[visuallyselected] {
         position: relative;
         z-index: 2 !important;
-        filter: var(--outer-drop-border, drop-shadow(0 0 0 transparent)) var(--outer-drop-shadow, drop-shadow(0 0 0 transparent));
+        filter: var(--additional-outer-drop-shadow, drop-shadow(0 0 0 transparent)) var(--outer-drop-shadow, drop-shadow(0 0 0 transparent));
       }
       .tabbrowser-tab:not([visuallyselected]) {
         color: inherit !important;
@@ -1383,6 +1424,12 @@
         border-radius: 0px !important;
         pointer-events: none !important;
       }
+      .tabbrowser-tab[pinned] .tab-content {
+        padding-inline: calc((var(--tab-min-height) - 16px) / 2 + var(--pinned-tabs-width-offset, 0px)) !important;
+      }
+      .tabbrowser-tab:not([pinned]) .tab-content {
+        padding-inline: 10px !important;
+      }
       .tab-drop-indicator {
         opacity: 0 !important;
       }
@@ -1390,13 +1437,7 @@
         z-index: auto !important;
       }
       .tabbrowser-tab[pending] .tab-icon-image {
-        opacity: 0.5 !important;
-      }
-      .tab-content {
-        padding-inline: calc((var(--tab-min-height) - 16px) / 2 + var(--pinned-tabs-width-offset, 0px)) !important;
-      }
-      :root[onload="TMP_TBP_Startup();"] .tab-content {
-        padding-inline: calc(var(--tab-min-height) - 16px + var(--pinned-tabs-width-offset, 0px)) !important;
+        filter: saturate(0) !important;
       }
       .tab-close-button {
         width: 16px !important;
@@ -1489,12 +1530,10 @@
         position: absolute;
         width: 16px;
         height: 16px;
-        background-image: url("chrome://global/skin/media/picture-in-picture-open.svg");
-        background-size: 16px;
-        background-position: center center;
-        background-repeat: no-repeat;
-        fill: currentColor;
-        -moz-context-properties: fill;
+        background-color: currentColor;
+        mask-size: 16px 16px;
+        mask-position: center center;
+        mask-repeat: no-repeat;
       }
       :root:-moz-locale-dir(rtl) .tabbrowser-tab[pictureinpicture]:not([busy], [crashed]) .tab-icon-stack::before {
         transform: rotateY(180deg);
@@ -1512,13 +1551,11 @@
       [muted],
       [activemedia-blocked]) .tab-icon-stack::before {
         mask-image: url("./images/skin/PIP.svg");
-        mask-size: 100% 100%;
       }
       .tabbrowser-tab[pictureinpicture]:not([busy], [crashed]):is([soundplaying],
       [muted],
       [activemedia-blocked]) .tab-icon-stack::before {
         mask-image: url("./images/skin/PIP_Sound.svg");
-        mask-size: 100% 100%;
       }
       /* -------------------- Tab Text -------------------- */
       .tab-label-container {
@@ -1584,9 +1621,6 @@
       background-color: var(--toolbar-bgcolor) !important;
       color: var(--toolbar-color) !important;
       appearance: none !important;
-    }
-    #TabsToolbar {
-      margin-inline: var(--tab-bg-block-margin);
     }
     #TabsToolbar::before {
       transform: rotateX(180deg);
