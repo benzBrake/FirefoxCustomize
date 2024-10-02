@@ -3,6 +3,7 @@
 // @namespace      http://space.geocities.yahoo.co.jp/gl/alice0775
 // @description    TST
 // @include        main
+// @include        
 // @author         Alice0775
 // @compatibility  127
 // @version        2024/05/05 Bug 1892965 - Rename Sidebar launcher and SidebarUI
@@ -376,8 +377,9 @@ var SidebarModoki = {
                 ],
                 ["toolbarbutton", { id: "SM_homeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Home", image: "chrome://browser/skin/home.svg", oncommand: "SidebarModoki.home()" }],
                 ["toolbarbutton", { id: "SM_openButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Open", image: "chrome://global/skin/icons/open-in-new.svg", oncommand: "SidebarModoki.open()" }],
+                ["toolbarbutton", { id: "SM_unloadButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Unload", image: "chrome://global/skin/icons/close.svg", oncommand: "SidebarModoki.unload(event)" }],
               ],
-              ["toolbarbutton", { id: "SM_closeButton", class: "close-icon tabbable", tooltiptext: "Hide Webpanel", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
+              ["toolbarbutton", { id: "SM_closeButton", class: "tabbable toolbarbutton-1 chromeclass-toPolbar-additional", tooltiptext: "Hide Webpanel", image: "resource://gre-resources/password-hide.svg", oncommand: "SidebarModoki.switchToTab(-1, true)" }]
             ],
           ],
           ["tabbox", { id: "SM_tabbox", flex: "1", handleCtrlPageUpDown: false, handleCtrlTab: false }]
@@ -645,7 +647,7 @@ var SidebarModoki = {
     if (this.selectedBrowser) {
       this.Control.collapsed = false;
       this.updateButtons();
-      this.selectedBrowser.contentWindow.dispatchEvent(new CustomEvent("SidebarFocused", { bubbles: true }));
+      this.selectedBrowser.contentWindow?.dispatchEvent(new CustomEvent("SidebarFocused", { bubbles: true }));
     } else {
       this.Control.collapsed = true;
     }
@@ -761,6 +763,13 @@ var SidebarModoki = {
       this.selectedBrowser.src = "";
       this.selectedBrowser.src = this.selectedTab.src;
     }
+  },
+
+  unload (e) {
+    if (this.selectedTab && this.selectedBrowser) {
+      this.selectedBrowser.src = "";
+    }
+    e.target.blur();
   },
 
   back () {
