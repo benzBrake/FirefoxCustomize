@@ -274,21 +274,21 @@ var SidebarModoki = {
         padding: 3px;
         justify-content: space-between;
       }
-      #SM_control .toolbarbutton-1 {
+      #SM_header_toolbar .toolbarbutton-1 {
         padding: 0 !important;
         appearance: none !important;
       }
-      #SM_control .toolbarbutton-1 > .toolbarbutton-icon {
+      #SM_header_toolbar .toolbarbutton-1 > .toolbarbutton-icon {
         padding: 2px !important;
         height: 20px !important;
         width: 20px !important;
       }
-      #SM_control .toolbarbutton-1:hover,
-      #SM_control .toolbarbutton-1:focus {
+      #SM_header_toolbar .toolbarbutton-1:hover,
+      #SM_header_toolbar .toolbarbutton-1:focus {
         background-color: var(--toolbarbutton-hover-background) !important;
       }
-      #SM_control .toolbarbutton-1:hover > .toolbarbutton-icon,
-      #SM_control .toolbarbutton-1:focus > .toolbarbutton-icon {
+      #SM_header_toolbar .toolbarbutton-1:hover > .toolbarbutton-icon,
+      #SM_header_toolbar .toolbarbutton-1:focus > .toolbarbutton-icon {
         background-color: transparent !important;
       }
       #SM_stopReloadButton {
@@ -412,7 +412,6 @@ var SidebarModoki = {
         tab.iswebpage = true;
         if (!("image" in tab)) {
           tab.image = "https://favicon.yandex.net/favicon/v2/" + tab.src + "?size=32";
-          tab['dynamic-icon'] = true;
         }
       }
       if (tab.hasOwnProperty("image")) {
@@ -470,28 +469,6 @@ var SidebarModoki = {
     this.TabBox = document.getElementById("SM_tabbox");
     this.Control = document.getElementById("SM_control");
     this.Button = document.getElementById('SM_Button');
-
-    this.Tabs.querySelectorAll('toolbarbutton[dynamic-icon="true"]').forEach((btn) => {
-      // 防止内网的 Tab 无法通过 favicon.yandex.net 获取图标
-      let uri;
-      try {
-          uri = Services.io.newURI(btn.src, null, null);
-      } catch (e) {
-
-      }
-      if (!uri) return;
-      PlacesUtils.favicons.getFaviconDataForPage(uri, {
-        onComplete: function (aURI, aDataLen, aData, aMimeType) {
-          try {
-            // javascript: URI の host にアクセスするとエラー
-            let iconURL = aURI && aURI.spec ?
-              "page-icon:" + aURI.spec :
-              "page-icon:" + uri.spec;
-            btn.setAttribute("image", iconURL);
-          } catch (e) { }
-        }
-      });
-    });
 
     this.updatePosition();
 
