@@ -21,6 +21,11 @@
         #tabbrowser-tabbox {
           border: 1px solid var(--uc-appcontent-border-color);
           border-radius: var(--uc-appcontent-raidus, 8px); // 内容区域圆角
+          #tabbrowser-tabpanels {
+            clip-path: xywh(
+              0 0 100% 100% round var(--uc-appcontent-raidus, 8px)
+            ) !important;
+          }
           overflow: hidden;
         }
       }
@@ -34,6 +39,9 @@
             border: 1px solid var(--uc-appcontent-border-color);
           }
           border-radius: var(--uc-appcontent-raidus, 8px);
+          browser {
+            clip-path: xywh(0 0 100% 100% round var(--uc-appcontent-raidus, 8px)) !important;
+          }
         }
 
         &:not([positionend="true"]):has(> #SM_contentbox[collapsed="true"])
@@ -63,6 +71,7 @@
             overflow: hidden;
             border: 1px solid var(--uc-appcontent-border-color);
             border-radius: var(--uc-appcontent-raidus, 8px);
+            clip-path: xywh(0 0 100% 100% round var(--uc-appcontent-raidus, 8px)) !important;
           }
         }
       }
