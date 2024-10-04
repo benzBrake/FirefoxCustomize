@@ -1,0 +1,15 @@
+copycat-button =
+    .label = CopyCat 菜单
+    .tootiptext = 自定义菜单按钮
+copycat-open-chrome-folder =
+    .label = 打开 Chrome 文件夹
+copycat-menu-restart =
+    .label = 重启 Firefox
+    .tooltiptext = 重启 Firefox
+copycat-edit-config = 
+    .label = 修改 CopyCat 配置
+copycat-reload-config =
+    .label = 重载 CopyCat 配置
+    .tooltiptext = 重载 CopyCat 配置
+copycat-about =
+    .label = 关于 CopyCat

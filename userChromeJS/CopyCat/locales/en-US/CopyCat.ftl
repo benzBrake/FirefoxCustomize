@@ -1,0 +1,15 @@
+copycat-button = 
+    .label = CopyCat Button
+    .tootiptext = A custom tools menu button
+copycat-open-chrome-folder =
+    .label = Open Userchrome Folder
+copycat-menu-restart =
+    .label = Restart Firefox
+    .tooltiptext = Restart Firefox
+copycat-edit-config = 
+    .label = Modify CopyCat config
+copycat-reload-config =
+    .label = Reload CopyCat config
+    .tooltiptext = Reload CopyCat config
+copycat-about =
+    .label = About CopyCat
