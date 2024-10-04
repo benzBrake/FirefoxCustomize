@@ -11,6 +11,7 @@
 // @note            0.3.0 整理代码，移除 tool 属性支持，减小 css 影响范围，修复移动主菜单栏项目事件失效，增加多语言支持
 // ==/UserScript==
 (async function (CSS, SS_SERVICE, DEFINED_MENUS_OBJ, SEPARATOR_TYPE) {
+    const AUTOFIT_POPUP_POSITION = false;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     let _bmSource = await new Promise((resolve, reject) => {
@@ -173,6 +174,8 @@
             if (!this.btn) return;
             this.l10n.connectRoot(this.btn);
             this.btn.appendChild(this.createDefaultPopup(this.btn.ownerDocument));
+            this.setPopupPosition();
+            window.addEventListener("aftercustomization", this, false);
             await this.rebuild();
         },
         createButton: function (doc) {
@@ -213,6 +216,31 @@
             mp.addEventListener("popuphiding", this, false);
             return mp;
         },
+        setPopupPosition: function () {
+            if (!AUTOFIT_POPUP_POSITION) return;
+            if (!this.btn) return;
+            const { btn } = this;
+            let mp = $("#CopyCat-Popup", btn);
+            if (!mp) return;
+            // 获取按钮的位置信息
+            const rect = btn.getBoundingClientRect();
+            // 获取窗口的宽度和高度
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            const x = rect.left + rect.width / 2;  // 按钮的水平中心点
+            const y = rect.top + rect.height / 2;  // 按钮的垂直中心点
+        
+            if (x < windowWidth / 2 && y < windowHeight / 2) {
+                mp.removeAttribute("position");
+            } else if (x >= windowWidth / 2 && y < windowHeight / 2) {
+                mp.setAttribute("position", "after_end");
+            } else if (x >= windowWidth / 2 && y >= windowHeight / 2) {
+                mp.setAttribute("position", "before_end");
+            } else {
+                mp.setAttribute("position", "before_start");
+            }
+        },
         handleEvent: function (event) {
             if (typeof this["on" + event.type] === "function") {
                 this["on" + event.type](event);
@@ -223,6 +251,9 @@
         onpopupshowing: async function (event) {
             let mp = event.target;
             mp.setAttribute("HideNoneDynamicItems", xPref.get("userChromeJS.CopyCat.hideInternal", false));
+        },
+        onaftercustomization: function(event) {
+            this.setPopupPosition();
         },
         newMenugroup: function (doc, obj) {
             if (!doc || !obj) return;
@@ -730,6 +761,7 @@
             this.initializing = true;
             this.uninit();
             this.btn.appendChild(this.createDefaultPopup(this.btn.ownerDocument));
+            this.setPopupPosition();
             await this.makeMenus();
             if (isAlert || this.NEED_ALERT) {
                 this.NEED_ALERT = false;
