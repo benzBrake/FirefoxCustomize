@@ -24,8 +24,6 @@ const {
   PrivateBrowsingUtils
 } = window;
 
-
-
 UC.privateTab = {
   config: {
     neverClearData: false, // if you want to not record history but don't care about other data, maybe even want to keep private logins
@@ -171,6 +169,9 @@ UC.privateTab = {
 
     gBrowser.tabContainer.addEventListener('TabSelect', this.onTabSelect);
 
+    if (gBrowser.selectedTab?.userContextId === UC.privateTab.container.userContextId)
+      UC.privateTab.toggleMask(win);
+
     gBrowser.privateListener = (e) => {
       let browser = e.target;
       let tab = gBrowser.getTabForBrowser(browser);
@@ -207,6 +208,14 @@ UC.privateTab = {
         return UC.privateTab.orig_getAttribute.call(this, att);
       }
     };
+
+    let kAttr2 = "hasadjacentnewprivatetabbutton";
+    let tt = document.getElementById('tabbrowser-tabs');
+    if (document.getElementById("new-tab-button").nextElementSibling.id === UC.privateTab.BTN_ID) {
+      tt.setAttribute(kAttr2, "true");
+    } else {
+      tt.removeAttribute(kAttr2);
+    }
 
     customElements.get('tabbrowser-tabs').prototype._updateNewTabVisibility = function () {
       let wrap = n =>
@@ -337,7 +346,7 @@ UC.privateTab = {
     };
 
     // resource:///modules/PlacesUIUtils.sys.mjs
-    function getBrowserWindow(aWindow) {
+    function getBrowserWindow (aWindow) {
       return aWindow &&
         aWindow.document.documentElement.getAttribute('windowtype') ==
         'navigator:browser'
@@ -351,7 +360,7 @@ UC.privateTab = {
 
     let { UUIDMap } = Cu.import('resource://gre/modules/Extension.jsm');
     let TST_ID = 'treestyletab@piro.sakura.ne.jp';
-    this.TST_UUID = UUIDMap.get(TST_ID, false);//null se nao tiver
+    this.TST_UUID = UUIDMap.get(TST_ID, false);
 
     if (this.TST_UUID)
       this.setTstStyle(this.TST_UUID);
@@ -410,11 +419,11 @@ UC.privateTab = {
 
   toggleMask: function (win) {
     let { gBrowser } = win;
-    let privateMask = win.document.getElementById('private-browsing-indicator-with-label');
+    let privateIndicator = win.document.getElementById('private-browsing-indicator-with-label');
     if (gBrowser.selectedTab.isToggling)
-      privateMask.setAttribute('enabled', gBrowser.selectedTab.userContextId == this.container.userContextId ? 'false' : 'true');
+      privateIndicator.setAttribute('enabled', gBrowser.selectedTab.userContextId == this.container.userContextId ? 'false' : 'true');
     else
-      privateMask.setAttribute('enabled', gBrowser.selectedTab.userContextId == this.container.userContextId ? 'true' : 'false');
+      privateIndicator.setAttribute('enabled', gBrowser.selectedTab.userContextId == this.container.userContextId ? 'true' : 'false');
   },
 
   BrowserOpenTabPrivate: function (win) {
@@ -475,7 +484,7 @@ UC.privateTab = {
     }
   },
 
-  get observePrivateTabs() {
+  get observePrivateTabs () {
     return this.observePrivateTabs = !this.config.neverClearData && !this.config.doNotClearDataUntilFxIsClosed;
   },
 
@@ -494,6 +503,10 @@ UC.privateTab = {
         @-moz-document url('${_uc.BROWSERCHROME}'), url-prefix('chrome://browser/content/places/') {
           #private-browsing-indicator-with-label[enabled="true"] {
             display: inherit !important;
+          }
+
+          #main-window:not([privatebrowsingmode]) #private-browsing-indicator-with-label label {
+            display: none;
           }
 
           .privatetab-icon {
