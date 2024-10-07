@@ -4,11 +4,10 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2024.10.07
-// @compatibility   Firefox 131
+// @version         2024.04.20
+// @compatibility   Firefox 108
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
-// @notes           2024.10.07 fx131
 // @notes           2024.04.20 修复在【不支持 @include main注释】的UC环境里的一处报错
 // @notes           2022.12.22 融合 bookmarksmenu_scrollbar.uc.js，修复没超过最大宽度也会显示横向滚动条的 bug，支持主菜单的书签菜单
 // @note            2022.12.17 修复宽度异常，书签栏太多的话无法横向滚动，需要搭配 bookmarksmenu_scrollbar.uc.js 使用
@@ -21,6 +20,8 @@
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
+
 
     if (window.BMMultiColumn) {
         window.BMMultiColumn.destroy();
@@ -73,13 +74,13 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 }, 250, this, i);
             }
         },
-        destroy () {
+        destroy() {
             window.removeEventListener('unload', this, false);
             window.removeEventListener("aftercustomization", this, false);
             this.uninit();
             this.sss.unregisterSheet(this.style, 2);
         },
-        handleEvent (event) {
+        handleEvent(event) {
             switch (event.type) {
                 case 'popupshowing':
                     let menupopup;
@@ -98,7 +99,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     break;
             }
         },
-        initPopup (menupopup, event) {
+        initPopup(menupopup, event) {
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
             let inited = false;
@@ -106,16 +107,14 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 inited = true;
                 scrollbox.style.minHeight = "21px";
                 scrollbox.style.height = "auto";
-                // fx131 中已经无用了
-                // scrollbox.style.display = "flex";
-                // scrollbox.style.flexFlow = "column wrap";
-                // scrollbox.style.overflow = "-moz-hidden-unscrollable";
-                scrollbox.style.flexWrap = "wrap";
-                scrollbox.style.overflow = "auto hidden";
+                scrollbox.style.display = "flex";
+                scrollbox.style.flexFlow = "column wrap";
+                scrollbox.style.overflow = "-moz-hidden-unscrollable";
                 scrollbox.style.width = "unset";
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
             }
             menupopup.style.maxWidth = "calc(100vw - 20px)";
+
             if (inited) {
                 let maxWidth = parseInt(getComputedStyle(menupopup)['max-width']);
                 scrollbox.style.width = Math.min(maxWidth, scrollbox.scrollWidth) + "px";
@@ -125,46 +124,26 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     scrollbox.style.setProperty("margin-bottom", "0", "important");
                     // 上下のスクロールボタン
                     event.originalTarget.on_DOMMenuItemActive = function (event) { };
+                    arrowscrollbox._scrollButtonUp.style.display = "none";
+                    arrowscrollbox._scrollButtonDown.style.display = "none";
                 }
-
-                // fx131 清除 slot 的 flex 属性
-                let slot = scrollbox.firstChild;
-                if (slot.tagName === "html:slot") {
-                    slot.style.display = "contents";
-                }
-
-                // 隐藏滚动按钮
-                var scrollButtonUp = arrowscrollbox.shadowRoot.getElementById("scrollbutton-up");
-                var scrollButtonDown = arrowscrollbox.shadowRoot.getElementById("scrollbutton-down");
-                scrollButtonUp.style.setProperty("display", "none", "");
-                scrollButtonDown.style.setProperty("display", "none", "");
-                var spacer1 = arrowscrollbox.shadowRoot.querySelector('[part="overflow-start-indicator"]');
-                var spacer2 = arrowscrollbox.shadowRoot.querySelector('[part="overflow-start-indicator"]');
-                spacer1.style.setProperty("display", "none", "");
-                spacer2.style.setProperty("display", "none", "");
-
                 let lastmenu = menupopup.lastChild;
                 while (lastmenu) {
-                    lastmenu.style.setProperty("width", lastmenu.getBoundingClientRect().width + "px", "");
-                    lastmenu.style.setProperty("height", lastmenu.getBoundingClientRect().height + "px", "")
+                    if (lastmenu.scrollWidth >= 90) break;
                     lastmenu = lastmenu.previousSibling;
                 }
-                // while (lastmenu) {
-                //     if (lastmenu.scrollWidth >= 90) break;
-                //     lastmenu = lastmenu.previousSibling;
-                // }
 
-                // if (lastmenu && lastmenu.scrollWidth >= 90) {
-                //     let pos1 = lastmenu.x - 0 + lastmenu.clientWidth;
-                //     let pos2 = scrollbox.x - 0 + arrowscrollbox.clientWidth;
-                //     if (pos2 - pos1 > 30) {
-                //         arrowscrollbox.width = "";
-                //         arrowscrollbox.width = scrollbox.scrollWidth;
-                //     }
-                // }
+                if (lastmenu && lastmenu.scrollWidth >= 90) {
+                    let pos1 = lastmenu.x - 0 + lastmenu.clientWidth;
+                    let pos2 = scrollbox.x - 0 + arrowscrollbox.clientWidth;
+                    if (pos2 - pos1 > 30) {
+                        arrowscrollbox.width = "";
+                        arrowscrollbox.width = scrollbox.scrollWidth;
+                    }
+                }
             }
         },
-        resetPopup (menupopup) {
+        resetPopup(menupopup) {
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             if (!arrowscrollbox) return;
             arrowscrollbox.style.maxHeight = "";
@@ -188,7 +167,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
     }
 
 
-    function $ (id, aDoc) {
+    function $(id, aDoc) {
         id = id || "";
         let doc = aDoc || document;
         if (id.startsWith('#')) id = id.substring(1, id.length);
