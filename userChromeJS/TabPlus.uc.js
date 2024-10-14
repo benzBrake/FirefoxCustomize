@@ -1,18 +1,19 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
-// @version         1.0.5
+// @version         1.0.6
 // @license         MIT License
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.0.6 修正菜单样式问题
 // @note            1.0.5 移除 BuildPanel 支持
 // @note            1.0.4 修复右键新标签页按钮不能兼容data:image 链接的bug
 // @note            1.0.3 兼容 TST 扩展 Switch Tab On Hover，依赖扩展 TST Hoverswitch
 // ==/UserScript==
-(async function () {
+(async function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
     let addon = await AddonManager.getAddonByID("{dc572301-7619-498c-a57d-39143191b318}");
@@ -134,6 +135,7 @@
                 }
             });
             this.createOptionsMenu(win.document, this.menus);
+            this.style = addStyle(this.sss, css, 0);
         },
         destroy () {
             let menu = $("TabPlus-menu");
@@ -146,7 +148,7 @@
                 module.destroy(window);
             });
             if (this.style)
-                removeStyle(this.sss, this.style);
+                removeStyle(this.sss, this.style, 0);
         },
         createOptionsMenu (doc, obj) {
             let ins = $("devToolsSeparator", doc);
@@ -850,7 +852,7 @@
 
     function removeStyle (sss, style) {
         if (sss instanceof Ci.nsIStyleSheetService && style && style.url && style.type) {
-            sss.unregisterSheet(STYLE.url, STYLE.type);
+            sss.unregisterSheet(style.url, style.type, 2);
             return true;
         }
         return false;
@@ -868,4 +870,10 @@
         };
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
-})();
+})(`
+@-moz-document url-prefix("chrome://browser/content/browser.x") {
+    #TabPlus-menupopup menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]) > .menu-iconic-left > .menu-iconic-icon {
+        display: -moz-box !important;
+        display: inline-flex !important;
+    }
+}`);
