@@ -14,22 +14,6 @@
     const AUTOFIT_POPUP_POSITION = false;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
-    let _bmSource = await new Promise((resolve, reject) => {
-        if (Services.vc.compare(Services.appinfo.version, "130a1")) {
-            resolve("");
-        }
-        fetch("chrome://browser/content/browser-menubar.js")
-            .then(response => {
-                if (!response.ok) {
-                    reject(`Error: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(data => resolve(data))
-            .catch(error => reject(error));
-    });
-
-    const bmSource = typeof _bmSource === "string" ? _bmSource.replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace('.getElementById("historyMenuPopup")', '.querySelector("#CopyCat-Popup #historyMenuPopup")').replaceAll('getElementById("history-menu")', 'querySelector("#CopyCat-Popup #history-menu")').replace('.getElementById("menu_EditPopup")', '.querySelector("#CopyCat-Popup #menu_EditPopup")') : "";
 
     const xPref = {
         get: function (prefPath, defaultValue) {
@@ -230,7 +214,7 @@
 
             const x = rect.left + rect.width / 2;  // 按钮的水平中心点
             const y = rect.top + rect.height / 2;  // 按钮的垂直中心点
-        
+
             if (x < windowWidth / 2 && y < windowHeight / 2) {
                 mp.removeAttribute("position");
             } else if (x >= windowWidth / 2 && y < windowHeight / 2) {
@@ -252,7 +236,7 @@
             let mp = event.target;
             mp.setAttribute("HideNoneDynamicItems", xPref.get("userChromeJS.CopyCat.hideInternal", false));
         },
-        onaftercustomization: function(event) {
+        onaftercustomization: function (event) {
             this.setPopupPosition();
         },
         newMenugroup: function (doc, obj) {
@@ -815,8 +799,11 @@
                 this.MENU_STYLE = addStyle(sandbox.css.join('\n'));
             }
 
-            if (this.EXEC_BMS && bmSource) {
-                eval(bmSource);
+            if (this.EXEC_BMS && $('#main-menubar > script')) {
+                const CCjs = {};
+                CCjs.res = await fetch($('#main-menubar > script').src);
+                CCjs.text = (await CCjs.res.text()).replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace('.getElementById("historyMenuPopup")', '.querySelector("#CopyCat-Popup #historyMenuPopup")').replaceAll('getElementById("history-menu")', 'querySelector("#CopyCat-Popup #history-menu")').replace('.getElementById("menu_EditPopup")', '.querySelector("#CopyCat-Popup #menu_EditPopup")');
+                eval(CCjs.text);
                 this.EXEC_BMS = false;
             }
         },
@@ -916,6 +903,9 @@
      */
     function $ (s, d) {
         s = s.trim();
+        if (s.startsWith(">")) {
+            s = ':scope' + s;
+        }
         const isComplexSelector = /[#\.[:]/i.test(s);
         const doc = d instanceof Document ? d : (d ? d.ownerDocument : document);
         return isComplexSelector ? (d || document).querySelector(s) : doc.getElementById(s);
