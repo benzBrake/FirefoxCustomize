@@ -133,10 +133,7 @@
                 let str;
                 if (str_key in this) {
                     str = this[str_key];
-                    for (let i = 0; i < args.length; i++) {
-                        if (!str.includes('%s')) break;
-                        str = str.replace(/%(s|d)/, args[i]);
-                    }
+                    str = sprintf(str, ...args);
                 } else {
                     str = ''
                 }
@@ -1000,6 +997,8 @@
      * @returns 
      */
     function sprintf (f, ...args) {
+        if (!args.length) return f;
+        if (!args.indexOf("%")) return f;
         let s = f; for (let a of args) s = s.replace(/%[sd]/, a); return s;
     }
 
