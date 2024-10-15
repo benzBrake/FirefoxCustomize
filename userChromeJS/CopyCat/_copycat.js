@@ -143,35 +143,33 @@ menus([{
         label: "浏览器内容工具箱",
         oncommand: function (event) {
             var doc = event.target.ownerDocument;
-            if (!doc.getElementById('menu_browserToolbox')) {
-                let {
-                    require
-                } = Cu.import("resource://devtools/shared/loader/Loader.jsm", {});
-                require("devtools/client/framework/devtools-browser");
-            };
-            doc.getElementById('menu_browserToolbox').click();
+            if (document.querySelector("#main-menubar > script")) {
+                let { require } = ChromeUtils.importESModule('resource://devtools/shared/loader/Loader.sys.mjs', {});
+                let { BrowserToolboxLauncher } = require('resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs');
+                BrowserToolboxLauncher.init();
+            } else {
+                if (!doc.getElementById('menu_browserToolbox')) {
+                    let { require } = Cu.import("resource://devtools/shared/loader/Loader.jsm", {});
+                    require("devtools/client/framework/devtools-browser");
+                };
+                doc.getElementById('menu_browserToolbox').click();
+            }
         },
         image: "chrome://devtools/skin/images/tool-inspector.svg"
     },
     {
         label: "修复浏览器内容工具箱",
         tooltiptext: "修复浏览器内容工具箱",
-        oncommand: function () {
+        oncommand: async function () {
             let targetPath;
-            if (CopyCatUtils.appVersion >= 100) {
-                // 先记录一下，下边的也能用
-                targetPath = PathUtils.join(
-                    PathUtils.profileDir,
-                    "chrome_debugger_profile"
-                );
-            } else {
-                targetPath = FileUtils.getFile("ProfD", [
-                    "chrome_debugger_profile"
-                ], false).path;
-            }
-            IOUtils.setPermissions(targetPath,
+            // 先记录一下，下边的也能用
+            targetPath = PathUtils.join(
+                PathUtils.profileDir,
+                "chrome_debugger_profile"
+            );
+            await IOUtils.setPermissions(targetPath,
                 0o660);
-            IOUtils.remove(targetPath, {
+            await IOUtils.remove(targetPath, {
                 recursive: true
             });
         },
@@ -184,18 +182,6 @@ menus([{
     closemenu: true,
     contextmenu: false,
     popup: [{
-        label: "浏览实用工具",
-        exec: "\\chrome\\UserTools"
-    }, {}, {
-        label: "配置优化",
-        exec: '\\chrome\\UserTools\\speedyfox.exe',
-    }, {
-        label: "鼠标手势",
-        exec: '\\chrome\\UserTools\\MouseInc\\MouseInc.exe'
-    }, {
-        label: "Notepad2",
-        exec: '\\chrome\\UserTools\\Notepad2\\Notepad2.exe'
-    }, {
         label: "复制扩展清单",
         tooltiptext: "左键：名称 + 相关网页\nShift+左键：Markdown 表格",
         image: "chrome://mozapps/skin/extensions/extension.svg",
