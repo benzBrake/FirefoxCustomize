@@ -1166,10 +1166,12 @@
         id: 'CopyCat-Function-Group',
         class: 'showFirstText',
         group: [{
+            id: 'CopyCat-OpenChromeFolder-Item',
             label: 'Open chrome folder',
             'data-l10n-id': 'copycat-open-chrome-folder',
             exec: '\\chrome',
         }, {
+            id: 'CopyCat-Restart-Item',
             label: 'Restart Firefox',
             tooltiptext: 'Restart Firefox',
             'data-l10n-id': 'copycat-menu-restart',
@@ -1181,25 +1183,35 @@
     }, {
         id: 'CopyCat-InsertPoint'
     }, {
-        id: 'Copycat-Config-Group',
-        class: 'showFirstText',
-        group: [{
-            label: 'Modify CopyCat config',
-            'data-l10n-id': 'copycat-edit-config',
-            image: "chrome://browser/skin/preferences/category-general.svg",
-            oncommand: 'CopyCat.editConfig();'
+        'data-l10n-id': "appmenuitem-more-tools",
+        id: 'CopyCat-MoreTools-Item',
+        image: 'data:image/svg+xml;utf8,%EF%BB%BF<?xml version="1.0" encoding="utf-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M7.6289062 3.0429688L6.2148438 4.4570312L11.095703 9.3378906L2.7363281 17.697266C1.7543281 18.680266 1.7533281 20.279719 2.7363281 21.261719C3.2123281 21.738719 3.8465313 22 4.5195312 22C5.1925313 22 5.8247813 21.737719 6.3007812 21.261719L14.660156 12.902344L18.585938 16.828125L19.292969 16.121094L22.824219 12.589844L18.919922 8.6445312L20.28125 7.28125L19.662109 6.6621094L17.337891 4.3378906L16.71875 3.71875L15.373047 5.0625L13.375 3.0429688L7.6289062 3.0429688 z M 9.6289062 5.0429688L12.539062 5.0429688L20.003906 12.582031L18.585938 14L9.6289062 5.0429688 z" /></svg>',
+        popup: [{
+            id: 'Copycat-Config-Group',
+            class: 'showFirstText',
+            group: [{
+                label: 'Modify CopyCat config',
+                'data-l10n-id': 'copycat-edit-config',
+                image: 'chrome://browser/skin/preferences/category-general.svg',
+                oncommand: 'CopyCat.editConfig();'
+            }, {
+                label: 'Reload CopyCat config',
+                tooltiptext: 'Reload CopyCat config',
+                'data-l10n-id': 'copycat-reload-config',
+                style: 'list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);',
+                oncommand: 'CopyCat.rebuild(true);'
+            }]
         }, {
-            label: 'Reload CopyCat config',
-            tooltiptext: 'Reload CopyCat config',
-            'data-l10n-id': 'copycat-reload-config',
-            style: "list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);",
-            oncommand: 'CopyCat.rebuild(true);'
+            label: 'About CopyCat',
+            id: 'Copycat-About-Item',
+            'data-l10n-id': 'copycat-about',
+            where: 'tab',
+            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=',
+            url: 'https://blog.iplayloli.com/firefox-ryan-personal-customization.html'
         }]
     }, {
-        label: 'About CopyCat',
-        id: 'Copycat-About-Item',
-        'data-l10n-id': 'copycat-about',
-        where: 'tab',
-        image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADHUlEQVQ4T22TX0jaURTH9zP/tObsNwfVbLNly9mouRepwbKC9WCbQcUop7V6KgrBBkFRKPZQBNG2SGbh1stsgbUtsRWMdFFs5ZQiVlMLJQLXcKUii7TQnSs5LCZcvPd37vlwzvd8L3Yu7heJRIhwvAtLHAqFeIeHh5dQODEx0Ucmk82w1cL6imHYcSwNi20gmQ77Vo/HI1heXt4xmUxbDofDTyAQMA6HgxcXF7Pz8/Ov0un0abg3AJB9lBsFoORwODywsrLCamtrm4HkX+hzLH7yj5WVlaX19vY+zM3NtQO4FUEwSE6AC0qr1covLy/Xud3uoFQqZWVkZCRDLOL1eg+NRuPu0tKSF0FZLBZ1ampKBJBPcFYgAB/KHhCJRJNzc3MeCoVCWl9fb8rMzLx1cHAQgN4pgUBgv7u7e2xwcHALQaqqqhgajaYSx3EpArw0fDSkCR8IUW8EABBtNlsLlUq9KJPJRktKSpj19fWPLRbLl4KCgrcnmkWgqkqIbWPBYNDS2dlp6u/vt8cAdru9BUCU7OzsgerqaoZKpZKtrq5+A8DYiR5hpVJ5u6Ojg4/5/X6nWCx+bTAYkHAYqmBjY6M5PT39usvlsqWkpKQdHR2FFArF+PDwsCsGkEgkzJGRkYYooLa2dlSv1+/GAxgMBhME3QYx2QsLC0Yo932cZcJ1dXVMtVrdgFqwyuXyz319fT/iW0DilZaWqnQ6nZjJZN5obGx8odVqd9AdWOGenp47MPJ7SET17OwsQyAQ6P+nAfTJaW9vb1pcXDQVFRVNxkScn59/xOfzndEx7u3tPQel34EOu2iMZrP5CdiXzOPxXtFotARQvCEpKYlaU1OjAdBv0Iw5pBqqxJPx5n9GWltbu19RUTHudDr/cLlcGpFIxMBcATT3nJycC6mpqRQA+7Oyss5PTExI2Gz2DMTk8VZ+Bupzurq6psFp7jNWjtoaRnoNDCWE5O9wlkWtfOYxPfX5fEJ4Ez9Becfm5qYPxaECemFh4c08bt4VnIZ/gE+nH1McJPacJTD7/OPj48soRiKR9qGlJdi+gXXqOf8FiAp+x+cxAKgAAAAASUVORK5CYII=',
-        url: 'https://blog.iplayloli.com/firefox-ryan-personal-customization.html'
+        id: 'CopyCat-Exit-Item',
+        'data-l10n-id': 'appmenuitem-exit2',
+        oncommand: "goQuitApplication(event);",
+        image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M5.561 3.112c-.132-.32-.5-.474-.807-.314a7 7 0 1 0 6.492 0c-.306-.16-.675-.006-.807.314s.021.683.325.85a5.747 5.747 0 1 1-5.528 0c.303-.167.457-.53.325-.85Z"/><path fill-rule="evenodd" d="M8 1.375c.345 0 .625.28.625.625v6a.625.625 0 1 1-1.25 0V2c0-.345.28-.625.625-.625Z" clip-rule="evenodd"/></svg>'
     }], ["separator", "menuseparator"])
