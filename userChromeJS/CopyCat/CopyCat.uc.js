@@ -285,7 +285,7 @@
             }
             let classList = [], tagName = obj.type || "menuitem";
             // 分隔符
-            if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
+            if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref && !obj['data-l10n-id']) {
                 return createElement(doc, "menuseparator", obj, ['type', 'group', 'popup']);
             }
             if (['checkbox', 'radio'].includes(obj.type)) tagName = "menuitem";
@@ -464,6 +464,12 @@
                         }
                     }
                 }
+            }
+
+            if (!obj.label && obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
+                // Localization 支持
+                let strings = new Localization([obj["data-l10n-href"]], true); // 第二个参数为 true 则是同步返回
+                item.setAttribute('label', strings.formatValueSync([obj['data-l10n-id']]) || item.getAttribute("label"));
             }
 
             if (obj.content) {
