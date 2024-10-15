@@ -83,7 +83,10 @@
             var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
             aFile.appendRelativePath(path);
             if (!aFile.exists()) {
-                alerts('配置文件为空');
+                const that = this;
+                alerts(this.MESSAGES.format("copycat-config-file-is-empty"), null, function () {
+                    that.edit(aFile.path);
+                });
             }
             delete this.FILE;
             return this.FILE = aFile;
@@ -98,10 +101,23 @@
             if (!SS_SERVICE.sheetRegistered(this.STYLE.url, this.STYLE.type)) {
                 SS_SERVICE.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
             }
+            let _messages = {
+                "copycat-button": "CopyCat Button",
+                "copycat-open-chrome-folder": "Open chrome folder",
+                "copycat-menu-restart": "Restart Firefox",
+                "copycat-edit-config": "Modify CopyCat config",
+                "copycat-reload-config": "Reload CopyCat config",
+                "copycat-about": "About CopyCat",
+                "copycat-reload-config-success": "Config reloaded successfully!",
+                "copycat-config-file-is-empty": "Config file is empty, Click to edit!",
+                "copycat-please-set-editor-path": "Please set editor path, please choose a text editor after clicking confirm.",
+                "copycat-choose-a-text-editor": "Choose a text editor",
+                "copycat-config-error-message": "Please check config file by line %s"
+            };
             if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
                 this.l10n = new DOMLocalization(["CopyCat.ftl"], false, userChrome_js.L10nRegistry);
-                let keys = ["copycat-button", "copycat-open-chrome-folder", "copycat-menu-restart", "copycat-edit-config", "copycat-reload-config", "copycat-about"];
-                messages = await this.l10n.formatValues(keys);
+                let keys = Object.keys(_messages);
+                let messages = await this.l10n.formatValues(keys);
                 this.MESSAGES = (() => {
                     let obj = {};
                     for (let index of messages.keys()) {
@@ -120,14 +136,7 @@
                     translateRoots () { },
                     connectRoot () { }
                 }
-                this.MESSAGES = {
-                    "copycat-button": "CopyCat Button",
-                    "copycat-open-chrome-folder": "Open chrome folder",
-                    "copycat-menu-restart": "Restart Firefox",
-                    "copycat-edit-config": "Modify CopyCat config",
-                    "copycat-reload-config": "Reload CopyCat config",
-                    "copycat-about": "About CopyCat"
-                }
+                this.MESSAGES = _messages;
             }
 
             this.MESSAGES.format = function (str_key, ...args) {
@@ -662,12 +671,12 @@
             } catch (e) { }
 
             if (!editor || !editor.exists()) {
-                alt("Please set editor path");
+                alt(this.MESSAGES.format("copycat-please-set-editor-path"));
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
                 // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
                 fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
                     ? window.browsingContext
-                    : window, "Choose a global editor.", fp.modeOpen);
+                    : window, this.MESSAGES.format("copycat-choose-a-text-editor"), fp.modeOpen);
 
                 fp.appendFilters(Ci.nsIFilePicker.filterApps);
 
@@ -744,10 +753,10 @@
             this.uninit();
             this.btn.appendChild(this.createDefaultPopup(this.btn.ownerDocument));
             this.setPopupPosition();
-            await this.makeMenus();
+            isAlert = await this.makeMenus();
             if (isAlert || this.NEED_ALERT) {
                 this.NEED_ALERT = false;
-                alerts("CopyCat 重新加载完毕");
+                alerts(this.MESSAGES.format("copycat-reload-config-success"));
             }
             this.initializing = false;
         },
@@ -783,10 +792,11 @@
                 Cu.evalInSandbox("function css(code){ this._css.push(code+'') };\nfunction lang(obj) { Object.assign(this._lang, obj); }" + d, sandbox, "1.8");
             } catch (e) {
                 let line = e.lineNumber - lineFinder.lineNumber - 1;
-                alerts(e + sprintf("\nPlease check config file by line %s", line), null, function () {
+                alerts(e + this.MESSAGES.format("copycat-config-error-message", line), null, function () {
                     this.edit(this.FILE, line);
                 });
-                return console.error(e);
+                console.error(e);
+                return false;
             }
 
             let { ownerDocument: aDoc } = mp;
@@ -804,6 +814,7 @@
                 eval(CCjs.text);
                 this.EXEC_BMS = false;
             }
+            return true;
         },
         insertMenuitem (doc, obj, item) {
             if (!item) {
@@ -974,7 +985,7 @@
      * 
      * @param {string} aMsg 消息内容
      * @param {string|null} aTitle 消息标题，不提供则为 CopyCat Button
-     * @param {Function} aCallback 回掉函数
+     * @param {Function} aCallback 回调函数
      */
     function alerts (aMsg, aTitle, aCallback) {
         var callback = aCallback ? {
