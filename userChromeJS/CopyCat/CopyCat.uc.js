@@ -285,7 +285,7 @@
             }
             let classList = [], tagName = obj.type || "menuitem";
             // 分隔符
-            if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.labelRef && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
+            if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
                 return createElement(doc, "menuseparator", obj, ['type', 'group', 'popup']);
             }
             if (['checkbox', 'radio'].includes(obj.type)) tagName = "menuitem";
@@ -753,10 +753,12 @@
             this.uninit();
             this.btn.appendChild(this.createDefaultPopup(this.btn.ownerDocument));
             this.setPopupPosition();
-            isAlert = await this.makeMenus();
-            if (isAlert || this.NEED_ALERT) {
-                this.NEED_ALERT = false;
-                alerts(this.MESSAGES.format("copycat-reload-config-success"));
+            let isError = !await this.makeMenus();
+            if (!isError) {
+                if (isAlert || this.NEED_ALERT) {
+                    this.NEED_ALERT = false;
+                    alerts(this.MESSAGES.format("copycat-reload-config-success"));
+                }
             }
             this.initializing = false;
         },
@@ -831,7 +833,7 @@
             if (obj && obj.insertBefore && $(obj.insertBefore, doc)) {
                 $(obj.insertBefore, doc).before(item)
             } else if (obj && obj.insertAfter && $(obj.insertAfter, doc)) {
-                $(obj.insertBefore, doc).after(item)
+                $(obj.insertAfter, doc).after(item)
             } else if ($('#CopyCat-InsertPoint', aPopup)) {
                 aPopup.insertBefore(item, $('#CopyCat-InsertPoint', aPopup));
             } else {
