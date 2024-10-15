@@ -185,7 +185,7 @@
         createDefaultPopup: function (doc) {
             let mp = createElement(doc, "menupopup", {
                 id: "CopyCat-Popup",
-                class: "CopyCat-Popup"
+                class: "CopyCat-Popup",
             });
             if (Array.isArray(DEFINED_MENUS_OBJ)) {
                 DEFINED_MENUS_OBJ.forEach(obj => {
@@ -793,7 +793,7 @@
                 this.insertMenuitem(aDoc, itemObj, this.newMenuitem(aDoc, itemObj));
             });
             if (sandbox._css.length) {
-                this.MENU_STYLE = addStyle(sandbox.css.join('\n'));
+                this.MENU_STYLE = addStyle(sandbox._css.join('\n'));
             }
 
             if (this.EXEC_BMS && $('#main-menubar > script')) {
@@ -1078,7 +1078,7 @@
 }
 .CopyCat-Group .menuitem-iconic,
 .CopyCat-Popup menugroup .menuitem-iconic {
-    padding-block: 4px;
+    padding-block: 0.5em;
 }
 
 .CopyCat-Popup .menu-iconic > .menu-iconic-left {
@@ -1117,13 +1117,12 @@
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
-.CopyCat-View menuitem:is([type="checkbox"], [checked="true"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon,
-.CopyCat-Popup menuitem:is([type="checkbox"], [checked="true"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon {
-    display: block;
+:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]):not([checked]) {
+    padding-inline-start: 1em !important;
 }
-.CopyCat-View menupopup[needsgutter] menuitem:is([type="checkbox"], [checked="true"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon,
-.CopyCat-Popup menupopup[needsgutter] menuitem:is([type="checkbox"], [checked="true"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon {
-    display: none;
+:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon {
+    display: -moz-box !important;
+    display: inline-flex !important;
 }
 .subviewbutton.reload,
 .CopyCat-Popup .menuitem-iconic.reload {
