@@ -14,6 +14,7 @@
     const AUTOFIT_POPUP_POSITION = false;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const alt = (aMsg, aTitle) => Services.prompt.alert(window, aTitle ?? Services.appinfo.name, aMsg)
 
     const xPref = {
         get: function (prefPath, defaultValue) {
@@ -661,7 +662,7 @@
             } catch (e) { }
 
             if (!editor || !editor.exists()) {
-                alert("Please set editor path");
+                alt("Please set editor path");
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
                 // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
                 fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
