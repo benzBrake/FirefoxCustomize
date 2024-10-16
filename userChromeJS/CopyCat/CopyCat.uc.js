@@ -283,9 +283,9 @@
             if (obj.popup) {
                 return this.newMenupopup(doc, obj);
             }
-            let classList = [], tagName = obj.type || "menuitem";
+            let classList = [], tagName = obj.type || "menuitem", noDefaultLabel = !obj.label;
             // 分隔符
-            if (SEPARATOR_TYPE.includes(obj.type) || !obj.group && !obj.popup && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref && !obj['data-l10n-id']) {
+            if (SEPARATOR_TYPE.includes(obj.type) || obj.label === "separator" || !obj.group && !obj.popup && noDefaultLabel && !obj.tooltiptext && !obj.image && !obj.content && !obj.url && !obj.command && !obj.pref && !obj['data-l10n-id']) {
                 return createElement(doc, "menuseparator", obj, ['type', 'group', 'popup']);
             }
             if (['checkbox', 'radio'].includes(obj.type)) tagName = "menuitem";
@@ -302,6 +302,10 @@
 
             if (obj.exec) {
                 obj.exec = handleRelativePath(obj.exec);
+            }
+
+            if (obj.edit) {
+                obj.edit = handleRelativePath(obj.edit);
             }
 
             if (obj.command) {
@@ -340,6 +344,7 @@
                             }
                         }
                     }
+                    // Firefox 130 + need to bind events after move menuitem from main-menubar
                     if (org.closest('#main-menubar')) {
                         dest.setAttribute("fromMenubar", true);
                         this.EXEC_BMS = true;
@@ -373,7 +378,6 @@
                             }
                         }
                     }
-
                     // Support attribute insert for clone node
                     ["image", "style", "label", "tooltiptext", "type"].forEach(attr => {
                         if (attr in obj) {
@@ -436,7 +440,7 @@
                 item = createElement(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
                 if (classList.length) item.setAttribute('class', classList.join(' '));
                 applyAttr(item, obj, ['class', 'defaultValue', 'popup', 'onpopupshowing', 'type', 'value']);
-                let label = obj.label || obj.command || obj.oncommand || "";
+                let label = obj.label || obj.command || obj.oncommand || obj.url || "";
                 if (label)
                     item.setAttribute('label', label);
 
@@ -466,7 +470,7 @@
                 }
             }
 
-            if (!obj.label && obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
+            if (noDefaultLabel && obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
                 // Localization 支持
                 let strings = new Localization([obj["data-l10n-href"]], true); // 第二个参数为 true 则是同步返回
                 item.setAttribute('label', strings.formatValueSync([obj['data-l10n-id']]) || item.getAttribute("label"));
@@ -573,7 +577,7 @@
             if (pref)
                 this.handlePref(event, pref);
             else if (edit)
-                this.edit(handleRelativePath(edit));
+                this.edit(edit);
             else if (exec)
                 this.exec(exec, text);
             else if (url)
