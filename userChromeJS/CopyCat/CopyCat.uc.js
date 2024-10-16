@@ -617,6 +617,10 @@
         openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
             const isJavaScriptURL = url.startsWith("javascript:");
             const isWebURL = /^(f|ht)tps?:/.test(url);
+            if (aWhere?.indexOf('tab') >= 0 && gBrowser.selectedTab.isEmpty) {
+                // remove empty tab
+                aWhere = 'current';
+            }
             const where = event.button === 1 ? 'tab' : aWhere;
 
             // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object

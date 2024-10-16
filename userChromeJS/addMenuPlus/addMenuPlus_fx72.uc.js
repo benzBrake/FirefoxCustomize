@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 72
 // @charset        UTF-8
-// @version        0.2.1 r3
+// @version        0.2.1 r4
 // @shutdown       window.addMenu.destroy();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
@@ -862,6 +862,10 @@ if (typeof window === "undefined" || globalThis !== window) {
             openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
                 const isJavaScriptURL = url.startsWith("javascript:");
                 const isWebURL = /^(f|ht)tps?:/.test(url);
+                if (aWhere?.indexOf('tab') >= 0 && gBrowser.selectedTab.isEmpty) {
+                    // reuse empty tab
+                    aWhere = 'current';
+                }
                 const where = event.button === 1 ? 'tab' : aWhere;
 
                 // Assign values to allowThirdPartyFixup if provided, or initialize with an empty object
