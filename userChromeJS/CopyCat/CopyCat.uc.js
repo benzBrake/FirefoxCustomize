@@ -10,7 +10,7 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            0.3.0 整理代码，移除 tool 属性支持，减小 css 影响范围，修复移动主菜单栏项目事件失效，增加多语言支持
 // ==/UserScript==
-(async function (CSS, SS_SERVICE, DEFINED_MENUS_OBJ, SEPARATOR_TYPE, OPTION_TYPE) {
+(async function (CSS, SS_SERVICE, DEFINED_MENUS_OBJ, SEPARATOR_TYPE, OPTION_TYPE, PATH_ATTRS) {
     const AUTOFIT_POPUP_POSITION = false;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
@@ -242,11 +242,12 @@
         },
         onpopupshowing: async function (event) {
             let mp = event.target;
+            if (mp.id !== "CopyCat-Popup") return;
             mp.setAttribute("HideNoneDynamicItems", xPref.get("userChromeJS.CopyCat.hideInternal", false));
             this.CUSTOM_SHOWINGS.filter(o => !o.disabled).forEach(function (obj) {
                 var curItem = obj.item;
                 try {
-                    eval('(' + obj.fnSource + ').call(curItem, curItem)');
+                    eval('(' + obj.fnSource + ').call(obj, curItem)');
                 } catch (ex) {
                     console.error('Custom showing method error', obj.fnSource, ex);
                 }
@@ -293,7 +294,7 @@
                 return this.newMenupopup(doc, obj);
             }
             let classList = [], tagName = obj.type || "menuitem", noDefaultLabel = !obj.label;
-            
+
             // 分隔符
             if (SEPARATOR_TYPE.includes(obj.type) || obj.label === "separator" || !obj.group && !obj.popup && noDefaultLabel && !obj.tooltiptext && !obj.image && !obj.content && !obj.url && !obj.command && !obj.pref && !obj['data-l10n-id']) {
                 return createElement(doc, "menuseparator", obj, ['type', 'group', 'popup']);
@@ -308,15 +309,18 @@
                 delete obj.type;
             }
 
-            classList.push("menuitem-iconic");
-
-            if (obj.exec) {
-                obj.exec = handleRelativePath(obj.exec);
+            if (tagName === "menuitem") {
+                classList.push("menuitem-iconic");
+            } else if(tagName === "menu") {
+                classList.push("menu-iconic");
             }
 
-            if (obj.edit) {
-                obj.edit = handleRelativePath(obj.edit);
-            }
+            // process relative path
+            PATH_ATTRS.forEach(attr => {
+                if (obj[attr]) {
+                    obj[attr] = handleRelativePath(obj[attr]);
+                }
+            });
 
             if (obj.command) {
                 // 移动菜单
@@ -389,21 +393,14 @@
                         this.CUSTOM_SHOWINGS.push({
                             item: dest,
                             fnSource: function (item) {
-                                if (item.hasAttribute('image') && item.querySelector(':scope>.menu-text, :scope>.menubar-text')) {
-                                    item.style.setProperty('--menu-image', `url(${item.getAttribute('image')})`);
-                                    item.removeAttribute('image');
+                                if (item.hasAttribute("image")) {
+                                    if (item.querySelector(':scope>.menu-text, :scope>.menubar-text')) {
+                                        item.style.setProperty('--menu-image', `url(${item.getAttribute('image')})`);
+                                    }
                                 }
                             }.toString(),
                             once: true
                         });
-                    }
-
-                    if ('onBuild' in obj && typeof dest !== 'undefined') {
-                        if (typeof obj.onBuild === "function") {
-                            obj.onBuild.call(org, doc, dest);
-                        } else {
-                            eval("(" + obj.onBuild + ").call(org, doc, dest)");
-                        }
                     }
 
                     let replacement = createElement(doc, 'menuseparator', {
@@ -417,16 +414,19 @@
                     } else {
                         this.log('Cloning Item: ' + obj.command, dest);
                     }
-
-                    return dest;
-                } else if (!'placehoder' in obj || obj.placeholder) {
-                    return createElement(doc, 'menuseparator', {
-                        class: "CopyCat-Replacement",
-                        hidden: true
-                    });
                 } else {
                     return;
                 }
+
+                if ('onBuild' in obj && typeof dest !== 'undefined') {
+                    if (typeof obj.onBuild === "function") {
+                        obj.onBuild.call(org, doc, dest);
+                    } else {
+                        eval("(" + obj.onBuild + ").call(org, doc, dest)");
+                    }
+                }
+
+                return dest;
             } else {
                 item = createElement(doc, tagName, obj, ['popup', 'onpopupshowing', 'class', 'exec', 'edit', 'group', 'onBuild']);
                 if (classList.length) item.setAttribute('class', classList.join(' '));
@@ -859,17 +859,19 @@
                     $$('[restoreBeforeUnload="true"]', mp, item => {
                         if (item.originalAttrs) {
                             const originalKeys = Object.keys(item.originalAttrs);
-                            
+
                             // remove attrs not in originalAttrs
                             item.getAttributeNames().forEach(attr => {
                                 if (!originalKeys.includes(attr)) item.removeAttribute(attr);
                             });
-                        
+
                             // restore attrs in originalAttrs
                             Object.entries(item.originalAttrs).forEach(([key, value]) => {
                                 item.setAttribute(key, value);
                             });
                         }
+
+                        $$(':scope>[deleteOnRemove]', item, item => removeElement(item));
 
                         let { restoreHolder } = item;
                         if (restoreHolder) {
@@ -1099,7 +1101,6 @@
     padding-inline-start: 1em;
 }
 
-.CopyCat-Popup .menu-iconic > .menu-iconic-left ~ .menu-iconic-left /** 不想研究为什么会多了一个结构 */,
 .CopyCat-Group:not(.showText):not(.showFirstText) > :is(menu, menuitem):not(.showText) > label,
 .CopyCat-Group.showFirstText > :is(menu, menuitem):not(:first-child) > label,
 .CopyCat-Group > :is(menu, menuitem) > .menu-accel-container,
@@ -1124,7 +1125,8 @@
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
-:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]) {
+:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]),
+:is(.CopyCat-View,.CopyCat-Popup) :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"]) {
     padding-inline-start: 1em !important;
 }
 :is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]) > .menu-iconic-left {
@@ -1142,10 +1144,10 @@
     list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
 }
 .CopyCat-Popup menu:not(.menu-iconic, [style*="--menu-image"], [menuright="true"]),
-.CopyCat-Popup menuitem:not(.menuitem-iconic):not([type="checkbox"], [type="radio"]) {
+.CopyCat-Popup menuitem:not(.menuitem-iconic, [style*="--menu-image"]):not([type="checkbox"], [type="radio"]) {
     padding-inline-start: 36px !important;
 }
-.CopyCat-Popup menu[style*="--menu-image"]:not(.menu-iconic)::before {
+.CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"])::before {
     content: "";
     display: block;
     width: 16px;
@@ -1230,4 +1232,4 @@
         'data-l10n-id': 'appmenuitem-exit2',
         oncommand: "goQuitApplication(event);",
         image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M5.561 3.112c-.132-.32-.5-.474-.807-.314a7 7 0 1 0 6.492 0c-.306-.16-.675-.006-.807.314s.021.683.325.85a5.747 5.747 0 1 1-5.528 0c.303-.167.457-.53.325-.85Z"/><path fill-rule="evenodd" d="M8 1.375c.345 0 .625.28.625.625v6a.625.625 0 1 1-1.25 0V2c0-.345.28-.625.625-.625Z" clip-rule="evenodd"/></svg>'
-    }], ["separator", "menuseparator"], ['checkbox', 'radio'])
+    }], ["separator", "menuseparator"], ['checkbox', 'radio'], ['exec', 'edit'])
