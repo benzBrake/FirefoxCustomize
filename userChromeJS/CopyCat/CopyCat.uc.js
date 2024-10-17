@@ -10,7 +10,7 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            0.3.0 整理代码，移除 tool 属性支持，减小 css 影响范围，修复移动主菜单栏项目事件失效，增加多语言支持
 // ==/UserScript==
-(async function (CSS, SS_SERVICE, DEFINED_MENUS_OBJ, SEPARATOR_TYPE) {
+(async function (CSS, SS_SERVICE, DEFINED_MENUS_OBJ, SEPARATOR_TYPE, OPTION_TYPE) {
     const AUTOFIT_POPUP_POSITION = false;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
@@ -91,6 +91,7 @@
             delete this.FILE;
             return this.FILE = aFile;
         },
+        CUSTOM_SHOWINGS: [],
         EXEC_BMS: false,
         STYLE: {
             url: makeURI("data:text/css;charset=utf-8," + encodeURIComponent(CSS)),
@@ -242,6 +243,15 @@
         onpopupshowing: async function (event) {
             let mp = event.target;
             mp.setAttribute("HideNoneDynamicItems", xPref.get("userChromeJS.CopyCat.hideInternal", false));
+            this.CUSTOM_SHOWINGS.filter(o => !o.disabled).forEach(function (obj) {
+                var curItem = obj.item;
+                try {
+                    eval('(' + obj.fnSource + ').call(curItem, curItem)');
+                } catch (ex) {
+                    console.error('Custom showing method error', obj.fnSource, ex);
+                }
+                if (obj.once) obj.disabled = true;
+            });
         },
         onaftercustomization: function (event) {
             this.setPopupPosition();
@@ -260,17 +270,16 @@
             if (!doc || !obj) return;
             let aItem;
 
-            aItem = createElement(doc, "menu", obj, ["popup", "onBuild"]);
+            aItem = createElement(doc, "menu", obj, ["popup", "onbuild"]);
             this.log("[newMenupopup] Creating Menu " + (obj.label || "<empty label>"), aItem);
             aItem.classList.add("menu-iconic");
             let menupopup = aItem.appendChild(createElement(doc, "menupopup"));
             obj.popup.forEach(mObj => menupopup.appendChild(this.newMenuitem(doc, mObj)));
-
-            if (obj.onBuild) {
-                if (typeof obj.onBuild === "function") {
-                    obj.onBuild(doc, item);
+            if (obj.onbuild) {
+                if (typeof obj.onbuild === "function") {
+                    obj.onbuild(doc, item);
                 } else {
-                    eval("(" + obj.onBuild + ").call(item, doc, item)")
+                    eval("(" + obj.onbuild + ").call(item, doc, item)")
                 }
             }
             return aItem;
@@ -284,11 +293,12 @@
                 return this.newMenupopup(doc, obj);
             }
             let classList = [], tagName = obj.type || "menuitem", noDefaultLabel = !obj.label;
+            
             // 分隔符
             if (SEPARATOR_TYPE.includes(obj.type) || obj.label === "separator" || !obj.group && !obj.popup && noDefaultLabel && !obj.tooltiptext && !obj.image && !obj.content && !obj.url && !obj.command && !obj.pref && !obj['data-l10n-id']) {
                 return createElement(doc, "menuseparator", obj, ['type', 'group', 'popup']);
             }
-            if (['checkbox', 'radio'].includes(obj.type)) tagName = "menuitem";
+            if (OPTION_TYPE.includes(obj.type)) tagName = "menuitem";
             if (obj.class) obj.class.split(' ').forEach(c => {
                 if (!classList.includes(c)) classList.push(c);
             });
@@ -315,11 +325,18 @@
                     dest;
                 if (org) {
                     dest = dest = obj.clone ? org.cloneNode(true) : org;
+
+                    if (!obj.clone) {
+                        // Save original attributes
+                        const attrs = {};
+                        dest.getAttributeNames().forEach(n => attrs[n] = dest.getAttribute(n));
+                        dest.originalAttrs = attrs;
+                    }
+
                     if (dest.localName === "menu") {
                         // fix close menu
                         if (dest.hasAttribute('closemenu'))
-                            dest.setAttribute('orgClosemenu', dest.getAttribute('closemenu'));
-                        dest.setAttribute('closemenu', 'none');
+                            dest.setAttribute('closemenu', 'none');
 
                         if (obj.clone && obj['fix-id']) {
                             // fix id
@@ -344,67 +361,41 @@
                             }
                         }
                     }
+
                     // Firefox 130 + need to bind events after move menuitem from main-menubar
                     if (org.closest('#main-menubar')) {
-                        dest.setAttribute("fromMenubar", true);
                         this.EXEC_BMS = true;
                     }
-                    if ('class' in obj) {
-                        // fix menu icon
-                        dest.setAttribute('orgClass', dest.getAttribute('class'));
-                        dest.setAttribute('class', obj.class);
-                        if (obj.class.split(' ').includes("menu-iconic")) {
-                            // fix menu left icon
-                            if (!dest.querySelector(':scope>.menu-iconic-left')) {
-                                let left = dest.insertBefore(createElement(doc, 'hbox', {
-                                    class: 'menu-iconic-left',
-                                    align: 'center',
-                                    pack: 'center',
-                                    'aria-hidden': true
-                                }), dest.firstChild);
-                                left.appendChild(createElement(doc, 'image', {
-                                    class: 'menu-iconic-icon'
-                                }));
-                                dest.setAttribute('removeMenuLeft', 'true');
-                            }
 
-                            // fix menu-text
-                            let nextEl = dest.querySelector(":scope>.menu-text")
-                            if (nextEl && nextEl.localName.toLowerCase() === "label") {
-                                if (!nextEl.classList.contains("menu-iconic-text")) {
-                                    nextEl.setAttribute('orgClass', nextEl.getAttribute("class"));
-                                    nextEl.setAttribute('class', 'menu-iconic-text');
-                                }
-                            }
-                        }
+                    // fix menupopup indicator
+                    if ($(':scope>.menubar-text', dest)) {
+                        dest.setAttribute('menuright', true);
                     }
+
+                    // convert class
+                    if (obj.class) {
+                        dest.setAttribute('class', obj.class.replace('...', dest.getAttribute('class') || ""));
+                    }
+
                     // Support attribute insert for clone node
                     ["image", "style", "label", "tooltiptext", "type"].forEach(attr => {
                         if (attr in obj) {
-                            let orgName = 'org' + attr.slice(0, 1).toUpperCase() + attr.slice(1);
-                            if (dest.hasAttribute(attr)) {
-                                dest.setAttribute(orgName, org.getAttribute(attr));
-                            } else {
-                                dest.setAttribute(orgName, "")
-                            }
-                            if (attr === "image") {
-                                dest.style.listStyleImage = `url(${obj['image']})`;
-                                dest.removeAttribute("image");
-                            } else {
-                                dest.setAttribute(attr, obj[attr]);
-                            }
+                            dest.setAttribute(attr, obj[attr]);
                         }
                     });
 
-                    // fix menu-right
-                    if (!obj.clone && obj["menu-right"]) {
-                        dest.setAttribute("removeMenuRight", "true");
-                        let right = dest.appendChild(createElement(doc, 'hbox', {
-                            class: 'menu-right',
-                            align: 'center',
-                            'aria-hidden': true
-                        }));
-                        right.appendChild(createElement(doc, 'image'));
+                    // fix menuitem without icon struct
+                    if (dest.hasAttribute('image') && (!dest.hasAttribute('menu-iconic') && !dest.hasAttribute('menuitem-iconic'))) {
+                        this.CUSTOM_SHOWINGS.push({
+                            item: dest,
+                            fnSource: function (item) {
+                                if (item.hasAttribute('image') && item.querySelector(':scope>.menu-text, :scope>.menubar-text')) {
+                                    item.style.setProperty('--menu-image', `url(${item.getAttribute('image')})`);
+                                    item.removeAttribute('image');
+                                }
+                            }.toString(),
+                            once: true
+                        });
                     }
 
                     if ('onBuild' in obj && typeof dest !== 'undefined') {
@@ -520,11 +511,7 @@
             if (obj.keyword) {
                 let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
                 if (engine) {
-                    if (isPromise(engine)) {
-                        engine.then(function (engine) {
-                            if (engine.iconURI) menu.setAttribute("image", engine.iconURI.spec);
-                        });
-                    } else if (engine.iconURI) {
+                    if (engine.iconURI) {
                         menu.setAttribute("image", engine.iconURI.spec);
                     }
                     return;
@@ -827,7 +814,9 @@
                 const CCjs = {};
                 CCjs.res = await fetch($('#main-menubar > script').src);
                 CCjs.text = (await CCjs.res.text()).replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace('.getElementById("historyMenuPopup")', '.querySelector("#CopyCat-Popup #historyMenuPopup")').replaceAll('getElementById("history-menu")', 'querySelector("#CopyCat-Popup #history-menu")').replace('.getElementById("menu_EditPopup")', '.querySelector("#CopyCat-Popup #menu_EditPopup")');
-                eval(CCjs.text);
+                try {
+                    eval(CCjs.text);
+                } catch (e) { }
                 this.EXEC_BMS = false;
             }
             return true;
@@ -855,6 +844,7 @@
             }
         },
         uninit () {
+            this.CUSTOM_SHOWINGS = [];
             let mp = $('#CopyCat-Popup', this.btn);
             if (mp) {
                 mp.removeEventListener("popupshowing", this, false);
@@ -867,34 +857,23 @@
                  */
                 function rmip (mp) {
                     $$('[restoreBeforeUnload="true"]', mp, item => {
-                        item.removeAttribute("closemenu");
-                        item.removeAttribute("fromMenubar")
-                        item.getAttributeNames().filter(attr => attr.startsWith("org")).forEach(attr => {
-                            item.setAttribute(attr.substring(3, attr.length).toLowerCase(), item.getAttribute(attr));
-                            item.removeAttribute(attr);
-                        });
-                        let labels = [...item.childNodes].filter(el => el.localName.toLowerCase() === "label");
-                        if (labels.length) {
-                            labels.forEach(label => {
-                                label.getAttributeNames().filter(attr => attr.startsWith("org")).forEach(attr => {
-                                    label.setAttribute(attr.substring(3, attr.length).toLowerCase(), label.getAttribute(attr));
-                                    label.removeAttribute(attr);
-                                });
-                            })
+                        if (item.originalAttrs) {
+                            const originalKeys = Object.keys(item.originalAttrs);
+                            
+                            // remove attrs not in originalAttrs
+                            item.getAttributeNames().forEach(attr => {
+                                if (!originalKeys.includes(attr)) item.removeAttribute(attr);
+                            });
+                        
+                            // restore attrs in originalAttrs
+                            Object.entries(item.originalAttrs).forEach(([key, value]) => {
+                                item.setAttribute(key, value);
+                            });
                         }
-                        if (item.getAttribute("removeMenuLeft") == "true") {
-                            removeElement(item.querySelector(":scope > .menu-iconic-left"));
-                            item.removeAttribute("removeMenuLeft");
-                            item.classList.remove("menu-iconic");
-                            let label = item.querySelector(':scope>.menu-iconic-text');
-                            if (label) label.className = 'menu-text';
-                        }
-                        if (item.getAttribute("removeMenuRight") == "true") {
-                            removeElement(item.querySelector(":scope > .menu-right"));
-                            item.removeAttribute("removeMenuRight")
-                        }
+
                         let { restoreHolder } = item;
                         if (restoreHolder) {
+                            // restore element to original position
                             restoreHolder.parentNode.insertBefore(item, restoreHolder);
                             removeElement(restoreHolder);
                             item.restoreHolder = null;
@@ -1145,8 +1124,11 @@
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
-:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]):not([checked]) {
+:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]) {
     padding-inline-start: 1em !important;
+}
+:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]) > .menu-iconic-left {
+    margin-inline-end: 8px;
 }
 :is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon {
     display: -moz-box !important;
@@ -1159,9 +1141,27 @@
 .CopyCat-Popup .menuitem-iconic.option {
     list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
 }
-.CopyCat-Popup menu:not(.menu-iconic),
-.CopyCat-Popup menuitem:not(.menuitem-iconic) {
-    padding-inline-start: 36px;
+.CopyCat-Popup menu:not(.menu-iconic, [style*="--menu-image"], [menuright="true"]),
+.CopyCat-Popup menuitem:not(.menuitem-iconic):not([type="checkbox"], [type="radio"]) {
+    padding-inline-start: 36px !important;
+}
+.CopyCat-Popup menu[style*="--menu-image"]:not(.menu-iconic)::before {
+    content: "";
+    display: block;
+    width: 16px;
+    height: 16px;
+    margin-inline-end: 8px;
+    background-image: var(--menu-image);
+}
+.CopyCat-Popup menu[menuright="true"]:not(.menu-iconic)::after {
+    content: "";
+    display: block;
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    fill-opacity: var(--menu-icon-opacity);
+    background-image: url("chrome://global/skin/icons/arrow-right.svg");
+    margin-inline-end: 1em;
 }
 .CopyCat-Popup menu:not(.menu-iconic) > label {
     margin-left: 0 !important;
@@ -1230,4 +1230,4 @@
         'data-l10n-id': 'appmenuitem-exit2',
         oncommand: "goQuitApplication(event);",
         image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M5.561 3.112c-.132-.32-.5-.474-.807-.314a7 7 0 1 0 6.492 0c-.306-.16-.675-.006-.807.314s.021.683.325.85a5.747 5.747 0 1 1-5.528 0c.303-.167.457-.53.325-.85Z"/><path fill-rule="evenodd" d="M8 1.375c.345 0 .625.28.625.625v6a.625.625 0 1 1-1.25 0V2c0-.345.28-.625.625-.625Z" clip-rule="evenodd"/></svg>'
-    }], ["separator", "menuseparator"])
+    }], ["separator", "menuseparator"], ['checkbox', 'radio'])
