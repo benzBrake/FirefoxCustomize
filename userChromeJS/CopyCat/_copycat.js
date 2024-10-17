@@ -1,317 +1,314 @@
+css(`
+#CopyCat-Function-Group, #CopyCat-ChromeFolder-Sep, #CopyCat-InsertPoint, #toolbar-menubar, #toggle_toolbar-menubar, #TabsToolbar > .titlebar-spacer[type="pre-tabs"] {
+    display: none;
+}
+:root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"] + #TabsToolbar > .titlebar-buttonbox-container {
+    display: -moz-box !important;
+    display: flex !important;
+}
+#fullScreenItem:not([checked="true"]) {
+    list-style-image: url(chrome://browser/skin/fullscreen.svg);
+}
+`)
+const isZh = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService).requestedLocale.includes("zh");
 menus([{
-    label: "修改配置文件",
-    image: 'chrome://browser/skin/preferences/category-general.svg',
-    popup: [{
-        label: "设置编辑器",
-        image: 'chrome://browser/skin/preferences/category-general.svg',
-        oncommand: async function () {
-            let editor = await new Promise(resolve => {
-                let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-                try {
-                    fp.init(window.browsingContext, "Select Editor", Ci.nsIFilePicker.modeOpen);
-                } catch (e) {
-                    fp.init(window, "Select Editor", Ci.nsIFilePicker.modeOpen);
-                }
-                fp.appendFilters(Ci.nsIFilePicker.filterApps);
-                fp.appendFilters(Ci.nsIFilePicker.filterAll);
-                fp.open(async (result) => {
-                    if (result == Ci.nsIFilePicker.returnOK) {
-                        Services.prefs.setComplexValue("view_source.editor.path", Ci.nsIFile, fp.file);
-                        resolve(fp.file);
-                    } else {
-                        resolve(null);
-                    }
-                })
-            });
-            let alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            if (editor) {
-                alertsService.showAlertNotification(
-                    "chrome://global/skin/icons/info.svg", "CopyCat",
-                    "编辑器设置成功", false, "", null);
-            } else {
-                alertsService.showAlertNotification(
-                    "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4NCiAgPHBhdGggZmlsbD0iI0UwNEY1RiIgZD0iTTUwNC4xLDI1NkM1MDQuMSwxMTksMzkzLDcuOSwyNTYsNy45QzExOSw3LjksNy45LDExOSw3LjksMjU2QzcuOSwzOTMsMTE5LDUwNC4xLDI1Niw1MDQuMUMzOTMsNTA0LjEsNTA0LjEsMzkzLDUwNC4xLDI1NnoiIC8+DQogIDxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik0yODUsMjU2bDcyLjUtODQuMmM3LjktOS4yLDYuOS0yMy0yLjMtMzFjLTkuMi03LjktMjMtNi45LTMwLjksMi4zTDI1NiwyMjIuNGwtNjguMi03OS4yYy03LjktOS4yLTIxLjgtMTAuMi0zMS0yLjNjLTkuMiw3LjktMTAuMiwyMS44LTIuMywzMUwyMjcsMjU2bC03Mi41LDg0LjJjLTcuOSw5LjItNi45LDIzLDIuMywzMWM0LjEsMy42LDkuMiw1LjMsMTQuMyw1LjNjNi4yLDAsMTIuMy0yLjYsMTYuNi03LjZsNjguMi03OS4ybDY4LjIsNzkuMmM0LjMsNSwxMC41LDcuNiwxNi42LDcuNmM1LjEsMCwxMC4yLTEuNywxNC4zLTUuM2M5LjItNy45LDEwLjItMjEuOCwyLjMtMzFMMjg1LDI1NnoiIC8+DQo8L3N2Zz4=", "CopyCat",
-                    "编辑器设置失败", false, "", null);
-            }
-
-        }
-    }, {
-        class: 'showText',
-        group: [{
-            label: "菜单",
-            oncommand: async function () {
-                if (!window.addMenu) return;
-                const regex = /include\("([^"]+)"\)/gm;
-                let paths = [];
-                paths.push(addMenu.FILE.path);
-                let fileExists = await IOUtils.exists(addMenu.FILE.path);
-                if (fileExists) {
-                    let text = await IOUtils.readUTF8(addMenu.FILE.path), m;
-                    while ((m = regex.exec(text)) !== null) {
-                        if (m.index === regex.lastIndex) {
-                            regex.lastIndex++;
-                        }
-                        let path = m[1];
-                        if (!path.startsWith("\\")) {
-                            path = "\\" + path;
-                        }
-                        paths.push(addMenu.handleRelativePath(path, addMenu.FILE.parent.path));
-                    }
-                    paths.forEach(p => {
-                        setTimeout(async () => {
-                            addMenu.edit(await IOUtils.getFile(p));
-                        }, 10);
-                    })
-                }
-            },
-            flex: "1",
-            image: "chrome://browser/skin/menu.svg"
-        },
-        {
-            label: "重新载入配置文件",
-            tooltiptext: "重新载入配置文件",
-            oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
-            style: "list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);",
-        }
-        ]
-    },
-    {
-        label: "使用横排菜单",
-        type: "checkbox",
-        pref: "addMenu.Menu.Horizontal.Enabled",
-        defaultValue: false,
-        postcommand: function () {
-            setTimeout(() => {
-                addMenu.rebuild(true);
-            }, 10);
-        }
-    },
-    {
-        class: 'showText',
-        group: [{
-            label: "快捷键",
-            oncommand: "KeyChanger.edit(KeyChanger.FILE);",
-            flex: "1",
-            image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gMTcuNjggMi44NDIgTCA5Ljk1IDIuODQyIEwgMi4yMiAyLjg0MiBDIDEuNzQ3IDIuODQyIDEuMzE4IDMuMDM1IDEuMDA3IDMuMzQ3IEMgMC42OTUgMy42NTggMC41MDIgNC4wODggMC41MDIgNC41NiBMIDAuNTAyIDEwLjE0MyBMIDAuNTAyIDE1LjcyNSBDIDAuNTAyIDE2LjE5OCAwLjY5NSAxNi42MjcgMS4wMDcgMTYuOTM4IEMgMS4zMTggMTcuMjUgMS43NDcgMTcuNDQzIDIuMjIgMTcuNDQzIEwgOS45NSAxNy40NDMgTCAxNy42OCAxNy40NDMgQyAxOC4xNTIgMTcuNDQzIDE4LjU4MSAxNy4yNSAxOC44OTMgMTYuOTM4IEMgMTkuMjA0IDE2LjYyNyAxOS4zOTcgMTYuMTk4IDE5LjM5NyAxNS43MjUgTCAxOS4zOTcgMTAuMTQzIEwgMTkuMzk3IDQuNTYgQyAxOS4zOTcgNC4wODggMTkuMjA0IDMuNjU4IDE4Ljg5MyAzLjM0NyBDIDE4LjU4MSAzLjAzNSAxOC4xNTIgMi44NDIgMTcuNjggMi44NDIgWiBNIDE3LjY4IDE1LjcyNSBMIDkuOTUgMTUuNzI1IEwgMi4yMiAxNS43MjUgTCAyLjIyIDEwLjE0MyBMIDIuMjIgNC41NiBMIDkuOTUgNC41NiBMIDE3LjY4IDQuNTYgTCAxNy42OCAxMC4xNDMgWiBNIDcuMzczIDYuMjc4IEwgOC4yMzIgNi4yNzggTCA5LjA5MSA2LjI3OCBMIDkuMDkxIDcuMTM3IEwgOS4wOTEgNy45OTUgTCA4LjIzMiA3Ljk5NSBMIDcuMzczIDcuOTk1IEwgNy4zNzMgNy4xMzcgWiBNIDMuOTM4IDYuMjc4IEwgNC43OTcgNi4yNzggTCA1LjY1NSA2LjI3OCBMIDUuNjU1IDcuMTM3IEwgNS42NTUgNy45OTUgTCA0Ljc5NyA3Ljk5NSBMIDMuOTM4IDcuOTk1IEwgMy45MzggNy4xMzcgWiBNIDYuNTE0IDEzLjE0OSBMIDkuOTUgMTMuMTQ5IEwgMTMuMzg1IDEzLjE0OSBMIDEzLjM4NSAxMy41NzggTCAxMy4zODUgMTQuMDA3IEwgOS45NSAxNC4wMDcgTCA2LjUxNCAxNC4wMDcgTCA2LjUxNCAxMy41NzggWiBNIDEwLjgwOSA2LjI3OCBMIDExLjY2NyA2LjI3OCBMIDEyLjUyNiA2LjI3OCBMIDEyLjUyNiA3LjEzNyBMIDEyLjUyNiA3Ljk5NSBMIDExLjY2NyA3Ljk5NSBMIDEwLjgwOSA3Ljk5NSBMIDEwLjgwOSA3LjEzNyBaIE0gNy4zNzMgOS43MTMgTCA4LjIzMiA5LjcxMyBMIDkuMDkxIDkuNzEzIEwgOS4wOTEgMTAuNTcyIEwgOS4wOTEgMTEuNDMxIEwgOC4yMzIgMTEuNDMxIEwgNy4zNzMgMTEuNDMxIEwgNy4zNzMgMTAuNTcyIFogTSAzLjkzOCA5LjcxMyBMIDQuNzk3IDkuNzEzIEwgNS42NTUgOS43MTMgTCA1LjY1NSAxMC41NzIgTCA1LjY1NSAxMS40MzEgTCA0Ljc5NyAxMS40MzEgTCAzLjkzOCAxMS40MzEgTCAzLjkzOCAxMC41NzIgWiBNIDEwLjgwOSA5LjcxMyBMIDExLjY2NyA5LjcxMyBMIDEyLjUyNiA5LjcxMyBMIDEyLjUyNiAxMC41NzIgTCAxMi41MjYgMTEuNDMxIEwgMTEuNjY3IDExLjQzMSBMIDEwLjgwOSAxMS40MzEgTCAxMC44MDkgMTAuNTcyIFogTSAxNC4yNDQgNi4yNzggTCAxNS4xMDMgNi4yNzggTCAxNS45NjIgNi4yNzggTCAxNS45NjIgNy4xMzcgTCAxNS45NjIgNy45OTUgTCAxNS4xMDMgNy45OTUgTCAxNC4yNDQgNy45OTUgTCAxNC4yNDQgNy4xMzcgWiBNIDE0LjI0NCA5LjcxMyBMIDE1LjEwMyA5LjcxMyBMIDE1Ljk2MiA5LjcxMyBMIDE1Ljk2MiAxMC41NzIgTCAxNS45NjIgMTEuNDMxIEwgMTUuMTAzIDExLjQzMSBMIDE0LjI0NCAxMS40MzEgTCAxNC4yNDQgMTAuNTcyIFoiIHN0eWxlPSIiLz4KPC9zdmc+"
-        },
-        {
-            label: "重新载入配置文件",
-            tooltiptext: "重新载入配置文件",
-            oncommand: 'setTimeout(function(){ KeyChanger.makeKeyset(true);},10)',
-            style: "list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);",
-        }
-        ]
-    }, {
-        label: "按钮功能",
-        edit: "\\chrome\\UserChromeJS\\miscMods.uc.js"
-    }, {
-        label: "拖拽手势",
-        edit: "\\chrome\\UserChromeJS\\ucf_drag_ModR.uc.js"
-    }, {
-        label: "新侧边栏网页",
-        edit: "\\chrome\\UserConfig\\_sidebar_modoki.json"
-    }, {
-        label: 'user.js',
-        edit: '\\user.js',
-    }, {
-        label: 'userChrome.css',
-        edit: '\\chrome\\userChrome.css'
-    }, {
-        label: 'userContent.css',
-        edit: '\\chrome\\userContent.css'
-    },
-    {}, {
-        label: "便携配置",
-        exec: "\\..\\CopyCat.exe",
-        text: "-set"
-    }
-    ]
+    command: 'file-menu',
+    image: 'chrome://devtools/content/debugger/images/folder.svg'
 }, {
-    command: "CopyCatTheme-Menu",
-    class: 'menu-iconic',
-    style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4xNSkiPg0KICA8cGF0aCBkPSJNMTUuNTkzNzUgMi45Njg3NUMxNS4wNjI1IDIuOTg0Mzc1IDE0LjUxNTYyNSAzLjA0Mjk2OSAxMy45Njg3NSAzLjEyNUwxMy45Mzc1IDMuMTI1QzguNjEzMjgxIDMuOTk2MDk0IDQuMzAwNzgxIDguMTkxNDA2IDMuMjE4NzUgMTMuNUMyLjg5NDUzMSAxNS4wMTE3MTkgMi45MTQwNjMgMTYuNDIxODc1IDMuMTI1IDE3LjgxMjVDMy4xMzI4MTMgMTcuODE2NDA2IDMuMTI1IDE3LjgzNTkzOCAzLjEyNSAxNy44NDM3NUMzLjQ1MzEyNSAyMC4xOTE0MDYgNi41IDIxLjIxODc1IDguMjE4NzUgMTkuNUM5LjQ0OTIxOSAxOC4yNjk1MzEgMTEuMjY5NTMxIDE4LjI2OTUzMSAxMi41IDE5LjVDMTMuNzMwNDY5IDIwLjczMDQ2OSAxMy43MzA0NjkgMjIuNTUwNzgxIDEyLjUgMjMuNzgxMjVDMTAuNzgxMjUgMjUuNSAxMS44MDg1OTQgMjguNTQ2ODc1IDE0LjE1NjI1IDI4Ljg3NUMxNC4xNjQwNjMgMjguODc1IDE0LjE4MzU5NCAyOC44NjcxODggMTQuMTg3NSAyOC44NzVDMTUuNTY2NDA2IDI5LjA4NTkzOCAxNi45Njg3NSAyOS4wOTc2NTYgMTguNDY4NzUgMjguNzgxMjVDMTguNDgwNDY5IDI4Ljc4MTI1IDE4LjQ4ODI4MSAyOC43ODEyNSAxOC41IDI4Ljc4MTI1QzIzLjgyNDIxOSAyNy43ODkwNjMgMjguMDA3ODEzIDIzLjM3NSAyOC44NzUgMTguMDYyNUwyOC44NzUgMTguMDMxMjVDMzAuMDA3ODEzIDEwLjM5MDYyNSAyNC40MjE4NzUgMy43MTg3NSAxNy4xNTYyNSAzLjAzMTI1QzE2LjYzNjcxOSAyLjk4MDQ2OSAxNi4xMjUgMi45NTMxMjUgMTUuNTkzNzUgMi45Njg3NSBaIE0gMTUuNjI1IDQuOTY4NzVDMTYuMDc4MTI1IDQuOTUzMTI1IDE2LjUyNzM0NCA0Ljk2MDkzOCAxNi45Njg3NSA1QzIzLjE2NDA2MyA1LjU2NjQwNiAyNy44NzUgMTEuMjE0ODQ0IDI2LjkwNjI1IDE3Ljc1QzI2LjE3NTc4MSAyMi4yMjY1NjMgMjIuNTg1OTM4IDI1Ljk5MjE4OCAxOC4xMjUgMjYuODEyNUwxOC4wOTM3NSAyNi44MTI1QzE2LjgxNjQwNiAyNy4wODU5MzggMTUuNjM2NzE5IDI3LjA4OTg0NCAxNC40Mzc1IDI2LjkwNjI1QzEzLjYxNzE4OCAyNi44MDQ2ODggMTMuMjM4MjgxIDI1Ljg4NjcxOSAxMy45MDYyNSAyNS4yMTg3NUMxNS44NzUgMjMuMjUgMTUuODc1IDIwLjA2MjUgMTMuOTA2MjUgMTguMDkzNzVDMTEuOTM3NSAxNi4xMjUgOC43NSAxNi4xMjUgNi43ODEyNSAxOC4wOTM3NUM2LjExMzI4MSAxOC43NjE3MTkgNS4xOTUzMTMgMTguMzgyODEzIDUuMDkzNzUgMTcuNTYyNUM0LjkxMDE1NiAxNi4zNjMyODEgNC45MTQwNjMgMTUuMTgzNTk0IDUuMTg3NSAxMy45MDYyNUM2LjEwNTQ2OSA5LjQxNzk2OSA5Ljc3MzQzOCA1LjgyNDIxOSAxNC4yNSA1LjA5Mzc1QzE0LjcxODc1IDUuMDIzNDM4IDE1LjE3MTg3NSA0Ljk4NDM3NSAxNS42MjUgNC45Njg3NSBaIE0gMTQgN0MxMi44OTQ1MzEgNyAxMiA3Ljg5NDUzMSAxMiA5QzEyIDEwLjEwNTQ2OSAxMi44OTQ1MzEgMTEgMTQgMTFDMTUuMTA1NDY5IDExIDE2IDEwLjEwNTQ2OSAxNiA5QzE2IDcuODk0NTMxIDE1LjEwNTQ2OSA3IDE0IDcgWiBNIDIxIDlDMTkuODk0NTMxIDkgMTkgOS44OTQ1MzEgMTkgMTFDMTkgMTIuMTA1NDY5IDE5Ljg5NDUzMSAxMyAyMSAxM0MyMi4xMDU0NjkgMTMgMjMgMTIuMTA1NDY5IDIzIDExQzIzIDkuODk0NTMxIDIyLjEwNTQ2OSA5IDIxIDkgWiBNIDkgMTFDNy44OTQ1MzEgMTEgNyAxMS44OTQ1MzEgNyAxM0M3IDE0LjEwNTQ2OSA3Ljg5NDUzMSAxNSA5IDE1QzEwLjEwNTQ2OSAxNSAxMSAxNC4xMDU0NjkgMTEgMTNDMTEgMTEuODk0NTMxIDEwLjEwNTQ2OSAxMSA5IDExIFogTSAyMyAxNkMyMS44OTQ1MzEgMTYgMjEgMTYuODk0NTMxIDIxIDE4QzIxIDE5LjEwNTQ2OSAyMS44OTQ1MzEgMjAgMjMgMjBDMjQuMTA1NDY5IDIwIDI1IDE5LjEwNTQ2OSAyNSAxOEMyNSAxNi44OTQ1MzEgMjQuMTA1NDY5IDE2IDIzIDE2IFogTSAxOSAyMUMxNy44OTQ1MzEgMjEgMTcgMjEuODk0NTMxIDE3IDIzQzE3IDI0LjEwNTQ2OSAxNy44OTQ1MzEgMjUgMTkgMjVDMjAuMTA1NDY5IDI1IDIxIDI0LjEwNTQ2OSAyMSAyM0MyMSAyMS44OTQ1MzEgMjAuMTA1NDY5IDIxIDE5IDIxWiIvPg0KPC9zdmc+);"
-},
-{
-    command: "TabPlus-menu",
-    class: 'menu-iconic',
-    image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMTUpIj4NCiAgPHBhdGggZD0iTTUuNzUgM0M1LjM5NSAzIDUuMDY1NzE4OCAzLjE4OTA5MzcgNC44ODY3MTg4IDMuNDk2MDkzOEwzLjEzNjcxODggNi40OTYwOTM4QzMuMDQ3NzE4OCA2LjY0OTA5MzcgMyA2LjgyMyAzIDdMMyAxOUMzIDIwLjEwMyAzLjg5NyAyMSA1IDIxTDEyLjI5NDkyMiAyMUMxMi4xMDU5MjIgMjAuMzY2IDEyIDE5LjY5NSAxMiAxOUw1IDE5TDUgOUwxOSA5TDE5IDEyQzE5LjY5NSAxMiAyMC4zNjYgMTIuMTA1OTIyIDIxIDEyLjI5NDkyMkwyMSA3QzIxIDYuODIzIDIwLjk1MjI4MSA2LjY0OTA5MzggMjAuODYzMjgxIDYuNDk2MDkzOEwxOS4xMTMyODEgMy40OTYwOTM4QzE4LjkzNDI4MSAzLjE4OTA5MzcgMTguNjA1IDMgMTguMjUgM0w1Ljc1IDMgeiBNIDYuMzI0MjE4OCA1TDE3LjY3NTc4MSA1TDE4Ljg0MTc5NyA3TDUuMTU4MjAzMSA3TDYuMzI0MjE4OCA1IHogTSA5IDExTDkgMTNMMTUgMTNMMTUgMTFMOSAxMSB6IE0gMTguMDQ4ODI4IDE0QzE3LjkxOTgyOCAxNCAxNy44MTE4NzUgMTQuMDk2NjA5IDE3Ljc5Njg3NSAxNC4yMjQ2MDlMMTcuNjc5Njg4IDE1LjIzNjMyOEMxNy4xOTU2ODcgMTUuNDA0MzI4IDE2Ljc1NzkwNiAxNS42NjAyODEgMTYuMzc4OTA2IDE1Ljk4ODI4MUwxNS40NDMzNTkgMTUuNTgyMDMxQzE1LjMyNTM1OSAxNS41MzEwMzEgMTUuMTg3MDQ3IDE1LjU3ODQ1MyAxNS4xMjMwNDcgMTUuNjg5NDUzTDE0LjE4NzUgMTcuMzEwNTQ3QzE0LjEyMzUgMTcuNDIxNTQ3IDE0LjE1Mjg1OSAxNy41NjM2MjUgMTQuMjU1ODU5IDE3LjY0MDYyNUwxNS4wNjI1IDE4LjI0MDIzNEMxNS4wMTQ1IDE4LjQ4NzIzNCAxNC45ODQzNzUgMTguNzQgMTQuOTg0Mzc1IDE5QzE0Ljk4NDM3NSAxOS4yNiAxNS4wMTQ1IDE5LjUxMjc2NiAxNS4wNjI1IDE5Ljc1OTc2NkwxNC4yNTU4NTkgMjAuMzU5Mzc1QzE0LjE1Mjg1OSAyMC40MzYzNzUgMTQuMTIyNSAyMC41Nzg0NTMgMTQuMTg3NSAyMC42ODk0NTNMMTUuMTIzMDQ3IDIyLjMxMDU0N0MxNS4xODcwNDcgMjIuNDIyNTQ3IDE1LjMyNTM1OSAyMi40NjcwMTYgMTUuNDQzMzU5IDIyLjQxNjAxNkwxNi4zNzg5MDYgMjIuMDExNzE5QzE2Ljc1NzkwNiAyMi4zNDA3MTkgMTcuMTk1Njg3IDIyLjU5NTY3MiAxNy42Nzk2ODggMjIuNzYzNjcyTDE3Ljc5Njg3NSAyMy43NzUzOTFDMTcuODExODc1IDIzLjkwMzM5MSAxNy45MTk4MjggMjQgMTguMDQ4ODI4IDI0TDE5LjkyMTg3NSAyNEMyMC4wNTA4NzUgMjQgMjAuMTU4ODI4IDIzLjkwMzM5MSAyMC4xNzM4MjggMjMuNzc1MzkxTDIwLjI4OTA2MiAyMi43NjM2NzJDMjAuNzczMDYzIDIyLjU5NTY3MiAyMS4yMTI3OTcgMjIuMzM5NzE5IDIxLjU5MTc5NyAyMi4wMTE3MTlMMjIuNTI3MzQ0IDIyLjQxNzk2OUMyMi42NDUzNDQgMjIuNDY4OTY5IDIyLjc4MzY1NiAyMi40MjE1NDcgMjIuODQ3NjU2IDIyLjMxMDU0N0wyMy43ODMyMDMgMjAuNjg5NDUzQzIzLjg0NzIwMyAyMC41Nzc0NTMgMjMuODE3ODQ0IDIwLjQzNTM3NSAyMy43MTQ4NDQgMjAuMzU5Mzc1TDIyLjkwODIwMyAxOS43NTk3NjZDMjIuOTU2MjAzIDE5LjUxMjc2NiAyMi45ODQzNzUgMTkuMjYgMjIuOTg0Mzc1IDE5QzIyLjk4NDM3NSAxOC43NCAyMi45NTYyMDMgMTguNDg3MjM0IDIyLjkwODIwMyAxOC4yNDAyMzRMMjMuNzE0ODQ0IDE3LjY0MDYyNUMyMy44MTc4NDQgMTcuNTYzNjI1IDIzLjg0ODIwMyAxNy40MjE1NDcgMjMuNzgzMjAzIDE3LjMxMDU0N0wyMi44NDc2NTYgMTUuNjg5NDUzQzIyLjc4MzY1NiAxNS41Nzg0NTMgMjIuNjQ1MzQ0IDE1LjUzMTAzMSAyMi41MjczNDQgMTUuNTgyMDMxTDIxLjU5MTc5NyAxNS45ODgyODFDMjEuMjEyNzk3IDE1LjY2MDI4MSAyMC43NzMwNjIgMTUuNDA0MzI4IDIwLjI4OTA2MiAxNS4yMzYzMjhMMjAuMTczODI4IDE0LjIyNDYwOUMyMC4xNTg4MjggMTQuMDk2NjA5IDIwLjA1MDg3NSAxNCAxOS45MjE4NzUgMTRMMTguMDQ4ODI4IDE0IHogTSAxOC45ODQzNzUgMTdDMjAuMDg4Mzc1IDE3IDIwLjk4NDM3NSAxNy44OTUgMjAuOTg0Mzc1IDE5QzIwLjk4NDM3NSAyMC4xMDQgMjAuMDg4Mzc1IDIxIDE4Ljk4NDM3NSAyMUMxNy44ODAzNzUgMjEgMTYuOTg0Mzc1IDIwLjEwNCAxNi45ODQzNzUgMTlDMTYuOTg0Mzc1IDE3Ljg5NSAxNy44ODAzNzUgMTcgMTguOTg0Mzc1IDE3IHoiLz4NCjwvc3ZnPg=="
+    command: 'edit-menu',
+    image: 'chrome://global/skin/icons/edit.svg'
 }, {
-    command: "tabmix-menu"
+    command: 'view-menu',
+    image: 'chrome://devtools/skin/images/command-frames.svg',
+    style: 'fill-opacity: 0;'
+}, {
+    command: 'history-menu',
+    image: 'chrome://browser/skin/history.svg'
+}, {
+    command: 'bookmarksMenu',
+    image: 'chrome://browser/skin/bookmark.svg'
+}, {
+    command: 'tools-menu',
+    image: 'chrome://devtools/skin/images/tool-application.svg'
 }, {}, {
-    class: 'showFirstText',
-    group: [{
-        label: "浏览器内容工具箱",
-        oncommand: function (event) {
-            var doc = event.target.ownerDocument;
-            if (document.querySelector("#main-menubar > script")) {
-                let { require } = ChromeUtils.importESModule('resource://devtools/shared/loader/Loader.sys.mjs', {});
-                let { BrowserToolboxLauncher } = require('resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs');
-                BrowserToolboxLauncher.init();
-            } else {
-                if (!doc.getElementById('menu_browserToolbox')) {
-                    let { require } = Cu.import("resource://devtools/shared/loader/Loader.jsm", {});
-                    require("devtools/client/framework/devtools-browser");
-                };
-                doc.getElementById('menu_browserToolbox').click();
-            }
-        },
-        image: "chrome://devtools/skin/images/tool-inspector.svg"
+    label: isZh ? "修改配置文件" : "Edit Config File",
+    image: 'chrome://browser/skin/preferences/category-general.svg',
+    popup: [{ label: 'user.js', edit: '\\user.js', },
+    { label: 'userChrome.css', edit: '\\chrome\\userChrome.css' },
+    { label: 'userContent.css', edit: '\\chrome\\userContent.css' }, {},
+    {
+        label: isZh ? 'user.js 推荐' : 'Recommended user.js', where: 'tab',
+        url: 'https://github.com/arkenfox/user.js'
     },
     {
-        label: "修复浏览器内容工具箱",
-        tooltiptext: "修复浏览器内容工具箱",
-        oncommand: async function () {
-            let targetPath;
-            // 先记录一下，下边的也能用
-            targetPath = PathUtils.join(
-                PathUtils.profileDir,
-                "chrome_debugger_profile"
-            );
-            await IOUtils.setPermissions(targetPath,
-                0o660);
-            await IOUtils.remove(targetPath, {
-                recursive: true
-            });
-        },
-        image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTIwLjcxLDMuMjljLTEuMDQtMS4wNC0yLjUtMS41NS00LjEyLTEuNDVjLTEuNSwwLjEtMi45NSwwLjc0LTMuOTgsMS43N2MtMS4wNiwxLjA2LTEuNDksMi4zNS0xLjI1LDMuNzJjMC4wNCwwLjI0LDAuMSwwLjQ3LDAuMTgsMC43MWwtMy41LDMuNWMtMC4yNC0wLjA4LTAuNDctMC4xNC0wLjcxLTAuMThjLTEuMzctMC4yNC0yLjY2LDAuMTktMy43MiwxLjI1Yy0xLjAzLDEuMDMtMS42NywyLjQ4LTEuNzcsMy45OGMtMC4xLDEuNjIsMC40MSwzLjA4LDEuNDUsNC4xMmMwLjk1LDAuOTUsMi4yNiwxLjQ2LDMuNzEsMS40NmMwLjEzLDAsMC4yNywwLDAuNDEtMC4wMWMxLjUtMC4xLDIuOTUtMC43NCwzLjk4LTEuNzdjMS4wNi0xLjA2LDEuNDktMi4zNSwxLjI1LTMuNzJjLTAuMDQtMC4yNC0wLjEtMC40Ny0wLjE4LTAuNzFsMy41LTMuNWMwLjI0LDAuMDgsMC40NywwLjE0LDAuNzEsMC4xOGMwLjI1LDAuMDUsMC40OSwwLjA3LDAuNzMsMC4wN2MxLjEsMCwyLjEyLTAuNDUsMi45OS0xLjMyYzEuMDMtMS4wMywxLjY3LTIuNDgsMS43Ny0zLjk4QzIyLjI2LDUuNzksMjEuNzUsNC4zMywyMC43MSwzLjI5eiBNMTguOTgsOS45N2MtMC4zOSwwLjM5LTAuNzksMC42My0xLjIzLDAuN2MtMC4yNCwwLjA1LTAuNDgsMC4wNS0wLjc0LDBjLTAuNDYtMC4wOC0wLjk1LTAuMy0xLjQ1LTAuNjVsLTEuNDMsMS40M2wtMi42OCwyLjY4bC0xLjQzLDEuNDNjMC4zNSwwLjUsMC41NywwLjk5LDAuNjUsMS40NWMwLjAyLDAuMTMsMC4wNCwwLjI2LDAuMDQsMC4zOWMwLDAuMS0wLjAxLDAuMi0wLjAyLDAuMjljLTAuMDcsMC40Ni0wLjMxLDAuODgtMC43MSwxLjI4Yy0wLjY5LDAuNjktMS42OCwxLjEyLTIuNywxLjE5Yy0wLjYzNCwwLjA0My0xLjIxNS0wLjA3NC0xLjcyMS0wLjMwNGwyLjE0OC0yLjE0OWMwLjM5MS0wLjM5MSwwLjM5MS0xLjAyMywwLTEuNDE0cy0xLjAyMy0wLjM5MS0xLjQxNCwwbC0yLjE0OCwyLjE0OWMtMC4yMzEtMC41MDYtMC4zNDgtMS4wODgtMC4zMDUtMS43MjJjMC4wNy0xLjAyLDAuNS0yLjAxLDEuMTgtMi42OWMwLjQxLTAuNDEsMC44NC0wLjY1LDEuMy0wLjcxYzAuMDktMC4wMiwwLjE5LTAuMDMsMC4yOS0wLjAzYzAuMTIsMCwwLjI1LDAuMDEsMC4zOCwwLjA0YzAuNDYsMC4wOCwwLjk1LDAuMywxLjQ1LDAuNjVsMS40My0xLjQzbDIuNjgtMi42OGwxLjQzLTEuNDNjLTAuMzUtMC41LTAuNTctMC45OS0wLjY1LTEuNDVjLTAuMDQtMC4yNC0wLjA1LTAuNDYtMC4wMi0wLjY4YzAuMDctMC40NiwwLjMxLTAuODgsMC43MS0xLjI4YzAuNjktMC42OSwxLjY4LTEuMTIsMi43LTEuMTljMC4xLTAuMDEsMC4xOS0wLjAxLDAuMjgtMC4wMWMwLjUzLDAsMS4wMSwwLjEsMS40NCwwLjMxaDAuMDA1bC0yLjE1MywyLjE1M2MtMC4zOTEsMC4zOTEtMC4zOTEsMS4wMjMsMCwxLjQxNEMxNi40ODgsNy45MDIsMTYuNzQ0LDgsMTcsOHMwLjUxMi0wLjA5OCwwLjcwNy0wLjI5M2wyLjE2My0yLjE2M1Y1LjU1YzAuMjMsMC41LDAuMzMsMS4xLDAuMjksMS43M0MyMC4wOSw4LjMsMTkuNjYsOS4yOSwxOC45OCw5Ljk3eiIvPg0KPC9zdmc+"
-    }
-    ]
-}, {
-    label: "实用工具",
-    image: 'data:image/svg+xml;base64,77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCiAgPHBhdGggZD0iTTcuNjI4OTA2MiAzLjA0Mjk2ODhMNi4yMTQ4NDM4IDQuNDU3MDMxMkwxMS4wOTU3MDMgOS4zMzc4OTA2TDIuNzM2MzI4MSAxNy42OTcyNjZDMS43NTQzMjgxIDE4LjY4MDI2NiAxLjc1MzMyODEgMjAuMjc5NzE5IDIuNzM2MzI4MSAyMS4yNjE3MTlDMy4yMTIzMjgxIDIxLjczODcxOSAzLjg0NjUzMTMgMjIgNC41MTk1MzEyIDIyQzUuMTkyNTMxMyAyMiA1LjgyNDc4MTMgMjEuNzM3NzE5IDYuMzAwNzgxMiAyMS4yNjE3MTlMMTQuNjYwMTU2IDEyLjkwMjM0NEwxOC41ODU5MzggMTYuODI4MTI1TDE5LjI5Mjk2OSAxNi4xMjEwOTRMMjIuODI0MjE5IDEyLjU4OTg0NEwxOC45MTk5MjIgOC42NDQ1MzEyTDIwLjI4MTI1IDcuMjgxMjVMMTkuNjYyMTA5IDYuNjYyMTA5NEwxNy4zMzc4OTEgNC4zMzc4OTA2TDE2LjcxODc1IDMuNzE4NzVMMTUuMzczMDQ3IDUuMDYyNUwxMy4zNzUgMy4wNDI5Njg4TDcuNjI4OTA2MiAzLjA0Mjk2ODggeiBNIDkuNjI4OTA2MiA1LjA0Mjk2ODhMMTIuNTM5MDYyIDUuMDQyOTY4OEwyMC4wMDM5MDYgMTIuNTgyMDMxTDE4LjU4NTkzOCAxNEw5LjYyODkwNjIgNS4wNDI5Njg4IHoiIC8+DQo8L3N2Zz4=',
-    closemenu: true,
-    contextmenu: false,
-    popup: [{
-        label: "复制扩展清单",
-        tooltiptext: "左键：名称 + 相关网页\nShift+左键：Markdown 表格",
-        image: "chrome://mozapps/skin/extensions/extension.svg",
-        onclick: function (e) {
-            e.preventDefault();
-            Cu.import("resource://gre/modules/addons/AddonRepository.jsm");
-            AddonManager.getAddonsByTypes(['extension']).then(
-                addons => {
-
-                    return addons.map(addon => {
-                        let data = [],
-                            repositoryAddon = AddonRepository._parseAddon(addon);
-                        if (addon.isBuiltin) return data;
-                        data['url'] = addon.homepageURL || addon.installTelemetryInfo?.sourceURL || '';;
-                        ["name", command, "isWebExtension", "version", "isActive"].forEach(k => {
-                            data[k] = addon[k] || '';
-                        });
-                        data['name'] = data['name'].replaceAll('|', '丨');
-                        data['description'] = repositoryAddon.fullDescription.replaceAll('|', '丨');
-                        return data;
-                    });
-                }
-            ).then(arr => arr = arr.filter(m => !!m.id)).then(arr => {
-                let text = e.shiftKey ? "| 名称 | 版本 | 介绍 | 默 | \n| ---- | ---- | ---- | ---- |\n" : "",
-                    glue = e.shiftKey ? "|" : " ";
-                arr.forEach(item => {
-                    let nameWithUrl = item.name;
-                    if (item.url) {
-                        nameWithUrl = `[${item.name}](${item.url})`;
-                    }
-                    let line = (e.shiftKey ? [nameWithUrl, item.version, item.description, item.isActive ? '✔' : '✘'] : [item.name, item.version, item.url, item.isActive ? '✔' : '✘']).join(glue);
-                    if (e.shiftKey) line = [glue, glue].join(line);
-                    text += line + '\n';
-                })
-                CopyCat.copyText(text);
-            });
-        }
-    }, {
-        label: "复制UC脚本清单",
-        tooltiptextRef: "左键：名称 + 主页\nShift+左键：Markdown 表格",
-        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABeSURBVDhPY6AKSCms+x+SkPMfREOFwACXOAYYNQBVITrGJQ7CUO0IA0jFUO0QA3BhkEJs4iAM1Y4bgBTBDIAKkQYGlwHYMFQZbgBSBDIAF4Yqww3QbUTHUGWUAAYGAEyi7ERKirMnAAAAAElFTkSuQmCC",
-        onclick: function (e) {
-            e.preventDefault();
-            if (e.button > 0) return;
-            var scripts;
-            if (window.userChrome_js) {
-                scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
-
-                scripts = scripts.map(script => {
-                    let meta = readScriptInfo(script.file);
-                    return {
-                        filename: script.filename,
-                        url: script.url.indexOf("http") === 0 ? script.url : "",
-                        isEnabled: !userChrome_js.scriptDisable[this.name],
-                        description: script.description,
-                        version: meta.version.split(" ")[0],
-                        charset: meta.charset,
-                        url: meta.homepage || meta.homepageURL || meta.downloadURL || ""
-                    }
-                });
-            } else if (window._uc && !window._uc.isFaked) {
-                scripts = Object.values(_uc.scripts);
-            } else if (typeof _ucUtils === 'object') {
-                scripts = _ucUtils.getScriptData().map(script => {
-                    let aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-                    let path = resolveChromeURL(`chrome://userscripts/content/${script.filename}`);
-                    path = path.replace("file:///", "").replace(/\//g, '\\\\');
-                    aFile.initWithPath(path);
-                    return Object.assign(script, {
-                        file: aFile
-                    });
-                });
-                function resolveChromeURL (str) {
-                    const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
-                    try {
-                        return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
-                    } catch (e) {
-                        console.error(e);
-                        return ""
-                    }
-                }
-            }
-            let text = e.shiftKey ? "| 名称 | 版本 | 介绍 | 默 | \n| ---- | ---- | ---- | ---- |\n" : "",
-                glue = e.shiftKey ? "|" : " ";
-            scripts.forEach(item => {
-                let line = (e.shiftKey ? [item.url ? `[${item.filename}](${item.url})` : item.filename, item.version, item.description, item.isEnabled ? '✔' : '✘'] : [item.filename, item.url]).join(glue);
-                if (e.shiftKey) line = [glue, glue].join(line);
-                text += line + '\n';
-            })
-            CopyCat.copyText(text);
-
-            function readFile (aFile, metaOnly) {
-                if (!aFile) {
-                    console.error($L("param is invalid", "readFile", "aFile"));
-                    return;
-                }
-                let stream = Cc['@mozilla.org/network/file-input-stream;1'].createInstance(Ci.nsIFileInputStream);
-                stream.init(aFile, 0x01, 0, 0);
-                let cvstream = Cc['@mozilla.org/intl/converter-input-stream;1'].createInstance(Ci.nsIConverterInputStream);
-                cvstream.init(stream, 'UTF-8', 1024, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
-                let content = '', data = {};
-                while (cvstream.readString(4096, data)) {
-                    content += data.value;
-                    if (metaOnly && (content.indexOf('// ==/UserScript==' || content.indexOf('==/UserStyle=='))) > 0) {
-                        break;
-                    }
-                }
-                cvstream.close();
-                return content.replace(/\r\n?/g, '\n');
-            }
-
-            function readScriptInfo (aFile) {
-                let header = readFile(aFile, true);
-                let def = ['', ''];
-                return {
-                    filename: aFile.leafName || '',
-                    name: (header.match(/@name\s+(.+)\s*$/im) || def)[1],
-                    charset: (header.match(/@charset\s+(.+)\s*$/im) || def)[1],
-                    version: (header.match(/@version\s+(.+)\s*$/im) || def)[1],
-                    description: (header.match(/@description\s+(.+)\s*$/im) || def)[1],
-                    homepage: (header.match(/@homepage\s+(.+)\s*$/im) || def)[1],
-                    homepageURL: (header.match(/@homepageURL\s+(.+)\s*$/im) || def)[1],
-                    downloadURL: (header.match(/@downloadURL\s+(.+)\s*$/im) || def)[1],
-                    updateURL: (header.match(/@updateURL\s+(.+)\s*$/im) || def)[1],
-                    optionsURL: (header.match(/@optionsURL\s+(.+)\s*$/im) || def)[1],
-                    author: (header.match(/@author\s+(.+)\s*$/im) || def)[1],
-                    license: (header.match(/@license\s+(.+)\s*$/im) || def)[1],
-                    licenseURL: (header.match(/@licenseURL\s+(.+)\s*$/im) || def)[1],
-                }
-            }
-        }
+        label: isZh ? 'Firefox CSS 商店' : 'Firefox CSS Store', where: 'tab',
+        url: 'https://firefoxcss-store.github.io/'
     }]
+}, {
+    command: 'CopyCatTheme-Menu',
+    image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4xNSkiPjxwYXRoIGQ9Ik0xNS41OTM3NSAyLjk2ODc1QzE1LjA2MjUgMi45ODQzNzUgMTQuNTE1NjI1IDMuMDQyOTY5IDEzLjk2ODc1IDMuMTI1TDEzLjkzNzUgMy4xMjVDOC42MTMyODEgMy45OTYwOTQgNC4zMDA3ODEgOC4xOTE0MDYgMy4yMTg3NSAxMy41QzIuODk0NTMxIDE1LjAxMTcxOSAyLjkxNDA2MyAxNi40MjE4NzUgMy4xMjUgMTcuODEyNUMzLjEzMjgxMyAxNy44MTY0MDYgMy4xMjUgMTcuODM1OTM4IDMuMTI1IDE3Ljg0Mzc1QzMuNDUzMTI1IDIwLjE5MTQwNiA2LjUgMjEuMjE4NzUgOC4yMTg3NSAxOS41QzkuNDQ5MjE5IDE4LjI2OTUzMSAxMS4yNjk1MzEgMTguMjY5NTMxIDEyLjUgMTkuNUMxMy43MzA0NjkgMjAuNzMwNDY5IDEzLjczMDQ2OSAyMi41NTA3ODEgMTIuNSAyMy43ODEyNUMxMC43ODEyNSAyNS41IDExLjgwODU5NCAyOC41NDY4NzUgMTQuMTU2MjUgMjguODc1QzE0LjE2NDA2MyAyOC44NzUgMTQuMTgzNTk0IDI4Ljg2NzE4OCAxNC4xODc1IDI4Ljg3NUMxNS41NjY0MDYgMjkuMDg1OTM4IDE2Ljk2ODc1IDI5LjA5NzY1NiAxOC40Njg3NSAyOC43ODEyNUMxOC40ODA0NjkgMjguNzgxMjUgMTguNDg4MjgxIDI4Ljc4MTI1IDE4LjUgMjguNzgxMjVDMjMuODI0MjE5IDI3Ljc4OTA2MyAyOC4wMDc4MTMgMjMuMzc1IDI4Ljg3NSAxOC4wNjI1TDI4Ljg3NSAxOC4wMzEyNUMzMC4wMDc4MTMgMTAuMzkwNjI1IDI0LjQyMTg3NSAzLjcxODc1IDE3LjE1NjI1IDMuMDMxMjVDMTYuNjM2NzE5IDIuOTgwNDY5IDE2LjEyNSAyLjk1MzEyNSAxNS41OTM3NSAyLjk2ODc1IFogTSAxNS42MjUgNC45Njg3NUMxNi4wNzgxMjUgNC45NTMxMjUgMTYuNTI3MzQ0IDQuOTYwOTM4IDE2Ljk2ODc1IDVDMjMuMTY0MDYzIDUuNTY2NDA2IDI3Ljg3NSAxMS4yMTQ4NDQgMjYuOTA2MjUgMTcuNzVDMjYuMTc1NzgxIDIyLjIyNjU2MyAyMi41ODU5MzggMjUuOTkyMTg4IDE4LjEyNSAyNi44MTI1TDE4LjA5Mzc1IDI2LjgxMjVDMTYuODE2NDA2IDI3LjA4NTkzOCAxNS42MzY3MTkgMjcuMDg5ODQ0IDE0LjQzNzUgMjYuOTA2MjVDMTMuNjE3MTg4IDI2LjgwNDY4OCAxMy4yMzgyODEgMjUuODg2NzE5IDEzLjkwNjI1IDI1LjIxODc1QzE1Ljg3NSAyMy4yNSAxNS44NzUgMjAuMDYyNSAxMy45MDYyNSAxOC4wOTM3NUMxMS45Mzc1IDE2LjEyNSA4Ljc1IDE2LjEyNSA2Ljc4MTI1IDE4LjA5Mzc1QzYuMTEzMjgxIDE4Ljc2MTcxOSA1LjE5NTMxMyAxOC4zODI4MTMgNS4wOTM3NSAxNy41NjI1QzQuOTEwMTU2IDE2LjM2MzI4MSA0LjkxNDA2MyAxNS4xODM1OTQgNS4xODc1IDEzLjkwNjI1QzYuMTA1NDY5IDkuNDE3OTY5IDkuNzczNDM4IDUuODI0MjE5IDE0LjI1IDUuMDkzNzVDMTQuNzE4NzUgNS4wMjM0MzggMTUuMTcxODc1IDQuOTg0Mzc1IDE1LjYyNSA0Ljk2ODc1IFogTSAxNCA3QzEyLjg5NDUzMSA3IDEyIDcuODk0NTMxIDEyIDlDMTIgMTAuMTA1NDY5IDEyLjg5NDUzMSAxMSAxNCAxMUMxNS4xMDU0NjkgMTEgMTYgMTAuMTA1NDY5IDE2IDlDMTYgNy44OTQ1MzEgMTUuMTA1NDY5IDcgMTQgNyBaIE0gMjEgOUMxOS44OTQ1MzEgOSAxOSA5Ljg5NDUzMSAxOSAxMUMxOSAxMi4xMDU0NjkgMTkuODk0NTMxIDEzIDIxIDEzQzIyLjEwNTQ2OSAxMyAyMyAxMi4xMDU0NjkgMjMgMTFDMjMgOS44OTQ1MzEgMjIuMTA1NDY5IDkgMjEgOSBaIE0gOSAxMUM3Ljg5NDUzMSAxMSA3IDExLjg5NDUzMSA3IDEzQzcgMTQuMTA1NDY5IDcuODk0NTMxIDE1IDkgMTVDMTAuMTA1NDY5IDE1IDExIDE0LjEwNTQ2OSAxMSAxM0MxMSAxMS44OTQ1MzEgMTAuMTA1NDY5IDExIDkgMTEgWiBNIDIzIDE2QzIxLjg5NDUzMSAxNiAyMSAxNi44OTQ1MzEgMjEgMThDMjEgMTkuMTA1NDY5IDIxLjg5NDUzMSAyMCAyMyAyMEMyNC4xMDU0NjkgMjAgMjUgMTkuMTA1NDY5IDI1IDE4QzI1IDE2Ljg5NDUzMSAyNC4xMDU0NjkgMTYgMjMgMTYgWiBNIDE5IDIxQzE3Ljg5NDUzMSAyMSAxNyAyMS44OTQ1MzEgMTcgMjNDMTcgMjQuMTA1NDY5IDE3Ljg5NDUzMSAyNSAxOSAyNUMyMC4xMDU0NjkgMjUgMjEgMjQuMTA1NDY5IDIxIDIzQzIxIDIxLjg5NDUzMSAyMC4xMDU0NjkgMjEgMTkgMjFaIi8+PC9zdmc+'
+}, { command: 'TabPlus-menu' }, {
+    label: isZh ? "Firefox 功能" : "Firefox functions",
+    image: "chrome://branding/content/about-logo.svg",
+    popup: [{
+        label: isZh ? "Web 开发者工具" : "Web Developer Tools",
+        oncommand: function () {
+            var { require } = ChromeUtils.importESModule('resource://devtools/shared/loader/Loader.sys.mjs', {});
+            var { gDevToolsBrowser } = require('devtools/client/framework/devtools-browser');
+            gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, Cu.now());
+        },
+        image: 'chrome://global/skin/icons/performance.svg'
+    }, {
+        class: 'showFirstText',
+        group: [{
+            label: isZh ? "浏览器内容工具箱" : "Browser Toolbox",
+            image: "chrome://devtools/skin/images/command-frames.svg",
+            oncommand: function (event) {
+                var doc = event.target.ownerDocument;
+                if (document.querySelector("#main-menubar > script")) {
+                    let { require } = ChromeUtils.importESModule('resource://devtools/shared/loader/Loader.sys.mjs', {});
+                    let { BrowserToolboxLauncher } = require('resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs');
+                    BrowserToolboxLauncher.init();
+                } else {
+                    if (!doc.getElementById('menu_browserToolbox')) {
+                        let { require } = Cu.import("resource://devtools/shared/loader/Loader.jsm", {});
+                        require("devtools/client/framework/devtools-browser");
+                    };
+                    doc.getElementById('menu_browserToolbox').click();
+                }
+            }
+        },
+        {
+            label: isZh ? "修复浏览器内容工具箱" : "Repair Browser Toolbox",
+            tooltiptext: isZh ? "修复浏览器内容工具箱" : "Repair Browser Toolbox",
+            insertBefore: 'Copycat-Config-Group',
+            oncommand: async function () {
+                const targetPath = PathUtils.join(PathUtils.profileDir, "chrome_debugger_profile");
+                await IOUtils.remove(targetPath, { recursive: true });
+                await IOUtils.setPermissions(targetPath, 0o660);
+            },
+            image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M20.71,3.29c-1.04-1.04-2.5-1.55-4.12-1.45c-1.5,0.1-2.95,0.74-3.98,1.77c-1.06,1.06-1.49,2.35-1.25,3.72c0.04,0.24,0.1,0.47,0.18,0.71l-3.5,3.5c-0.24-0.08-0.47-0.14-0.71-0.18c-1.37-0.24-2.66,0.19-3.72,1.25c-1.03,1.03-1.67,2.48-1.77,3.98c-0.1,1.62,0.41,3.08,1.45,4.12c0.95,0.95,2.26,1.46,3.71,1.46c0.13,0,0.27,0,0.41-0.01c1.5-0.1,2.95-0.74,3.98-1.77c1.06-1.06,1.49-2.35,1.25-3.72c-0.04-0.24-0.1-0.47-0.18-0.71l3.5-3.5c0.24,0.08,0.47,0.14,0.71,0.18c0.25,0.05,0.49,0.07,0.73,0.07c1.1,0,2.12-0.45,2.99-1.32c1.03-1.03,1.67-2.48,1.77-3.98C22.26,5.79,21.75,4.33,20.71,3.29z M18.98,9.97c-0.39,0.39-0.79,0.63-1.23,0.7c-0.24,0.05-0.48,0.05-0.74,0c-0.46-0.08-0.95-0.3-1.45-0.65l-1.43,1.43l-2.68,2.68l-1.43,1.43c0.35,0.5,0.57,0.99,0.65,1.45c0.02,0.13,0.04,0.26,0.04,0.39c0,0.1-0.01,0.2-0.02,0.29c-0.07,0.46-0.31,0.88-0.71,1.28c-0.69,0.69-1.68,1.12-2.7,1.19c-0.634,0.043-1.215-0.074-1.721-0.304l2.148-2.149c0.391-0.391,0.391-1.023,0-1.414s-1.023-0.391-1.414,0l-2.148,2.149c-0.231-0.506-0.348-1.088-0.305-1.722c0.07-1.02,0.5-2.01,1.18-2.69c0.41-0.41,0.84-0.65,1.3-0.71c0.09-0.02,0.19-0.03,0.29-0.03c0.12,0,0.25,0.01,0.38,0.04c0.46,0.08,0.95,0.3,1.45,0.65l1.43-1.43l2.68-2.68l1.43-1.43c-0.35-0.5-0.57-0.99-0.65-1.45c-0.04-0.24-0.05-0.46-0.02-0.68c0.07-0.46,0.31-0.88,0.71-1.28c0.69-0.69,1.68-1.12,2.7-1.19c0.1-0.01,0.19-0.01,0.28-0.01c0.53,0,1.01,0.1,1.44,0.31h0.005l-2.153,2.153c-0.391,0.391-0.391,1.023,0,1.414C16.488,7.902,16.744,8,17,8s0.512-0.098,0.707-0.293l2.163-2.163V5.55c0.23,0.5,0.33,1.1,0.29,1.73C20.09,8.3,19.66,9.29,18.98,9.97z"/></svg>'
+        }]
+    }, {
+        'data-l10n-id': 'appmenuitem-passwords',
+        oncommand: "LoginHelper.openPasswordManager(window, { entryPoint: 'mainmenu' })",
+        image: 'chrome://browser/skin/login.svg'
+    }]
+}, {
+    label: "about:",
+    image: "chrome://global/skin/icons/developer.svg",
+    onclick: "event.target.querySelector('menuitem').click()",
+    popup: [{ url: 'about:about', where: 'tab', image: 'chrome://branding/content/about-logo.svg' },
+    { url: 'about:cache', where: 'tab', image: 'chrome://global/skin/icons/developer.svg' },
+    { url: 'about:certificate', where: 'tab', image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="16" height="16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M25 2C12.296875 2 2 12.296875 2 25C2 37.703125 12.296875 48 25 48C37.703125 48 48 37.703125 48 25C48 12.296875 37.703125 2 25 2 Z M 25 4C36.578125 4 46 13.421875 46 25C46 36.578125 36.578125 46 25 46C13.421875 46 4 36.578125 4 25C4 13.421875 13.421875 4 25 4 Z M 25 8C20.035156 8 16 12.035156 16 17L16 21L22 21L22 17C22 15.347656 23.347656 14 25 14C26.652344 14 28 15.347656 28 17L28 21L34 21L34 17C34 12.035156 29.964844 8 25 8 Z M 25 10C28.867188 10 32 13.132813 32 17L32 19L30 19L30 17C30 14.238281 27.761719 12 25 12C22.238281 12 20 14.238281 20 17L20 19L18 19L18 17C18 13.132813 21.132813 10 25 10 Z M 16 22C13.792969 22 12 23.792969 12 26L12 36C12 38.207031 13.792969 40 16 40L34 40C36.207031 40 38 38.207031 38 36L38 26C38 23.792969 36.207031 22 34 22 Z M 16 24L34 24C35.105469 24 36 24.894531 36 26L36 36C36 37.105469 35.105469 38 34 38L16 38C14.894531 38 14 37.105469 14 36L14 26C14 24.894531 14.894531 24 16 24 Z M 17 26C16.449219 26 16 26.449219 16 27L16 35C16 35.550781 16.449219 36 17 36C17.550781 36 18 35.550781 18 35L18 27C18 26.449219 17.550781 26 17 26 Z M 25 26C23.894531 26 23 26.894531 23 28C23 28.714844 23.382813 29.375 24 29.730469L24 35L26 35L26 29.730469C26.617188 29.371094 27 28.714844 27 28C27 26.894531 26.105469 26 25 26Z" /></svg>' },
+    { url: 'about:checkerboard', where: 'tab', image: 'chrome://global/skin/icons/clipboard.svg' },
+    { url: 'about:compat', where: 'tab', image: 'resource://devtools-shared-images/alert-small.svg' },
+    { url: 'about:config', where: 'tab', image: 'chrome://global/skin/icons/settings.svg' },
+    { url: 'about:crashes', where: 'tab', image: 'chrome://global/skin/icons/loading.svg' },
+    { url: 'about:debugging', where: 'tab', image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M5 5a3 3 0 0 1 6 0v7a3 3 0 1 1-6 0V5Z"/><path fill-rule="evenodd" d="M6.369 0c.345 0 .625.28.625.625v1.371a1.006 1.006 0 0 0 2.012 0V.626a.625.625 0 1 1 1.25 0v1.37a2.256 2.256 0 1 1-4.512 0V.626c0-.346.28-.626.625-.626ZM2.627 1c.345 0 .625.28.625.626v1.871c0 .76.616 1.376 1.376 1.376h6.745c.76 0 1.376-.616 1.376-1.376V1.626a.625.625 0 0 1 1.25 0v1.871a2.627 2.627 0 0 1-2.626 2.627H4.628A2.627 2.627 0 0 1 2 3.497V1.626c0-.345.28-.625.626-.625ZM0 8.63c0-.345.28-.625.625-.625h14.75a.625.625 0 1 1 0 1.25H.625A.625.625 0 0 1 0 8.63Zm4.628 3.498c-.76 0-1.376.616-1.376 1.375v1.872a.625.625 0 1 1-1.25 0v-1.872a2.627 2.627 0 0 1 2.626-2.626h6.745a2.627 2.627 0 0 1 2.626 2.626v1.872a.625.625 0 1 1-1.25 0v-1.872c0-.76-.616-1.375-1.376-1.375H4.628Z" clip-rule="evenodd"/></svg>' },
+    { url: 'about:downloads', where: 'tab', image: 'chrome://browser/skin/downloads/downloads.svg' },
+    { url: 'about:logging', where: 'tab', image: 'chrome://devtools/skin/images/tool-webconsole.svg' },
+    { url: 'about:logins', where: 'tab', image: 'chrome://browser/skin/login.svg' },
+    { url: 'about:memory', where: 'tab', image: 'chrome://devtools/skin/images/tool-memory.svg' },
+    { url: 'about:networking', where: 'tab', image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path fill-rule="evenodd" d="m12.499 9.154 1.326-1.326a4 4 0 0 0-5.657-5.656L6.842 3.497a.625.625 0 0 0 0 .884l4.773 4.773c.244.244.64.244.884 0ZM9.052 3.055a2.75 2.75 0 0 1 3.889 3.89l-.878.878-3.89-3.89.879-.878ZM3.497 6.842 2.172 8.168a4 4 0 0 0 5.656 5.657l1.326-1.326a.625.625 0 0 0 0-.884L4.381 6.842a.625.625 0 0 0-.884 0Zm3.448 6.099a2.75 2.75 0 0 1-3.89-3.89l.876-.875 3.889 3.89-.875.875Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M15.812.188a.625.625 0 0 1 0 .884l-2 2a.625.625 0 1 1-.884-.884l2-2a.625.625 0 0 1 .884 0Zm-8.37 6.37a.625.625 0 0 1 0 .884l-1.5 1.5a.625.625 0 0 1-.884-.884l1.5-1.5a.625.625 0 0 1 .884 0Zm2 2a.625.625 0 0 1 0 .884l-1.5 1.5a.625.625 0 1 1-.884-.884l1.5-1.5a.625.625 0 0 1 .884 0Zm-6.5 4.5a.625.625 0 0 1 0 .884l-1.87 1.87a.625.625 0 0 1-.884-.884l1.87-1.87a.625.625 0 0 1 .884 0Z" clip-rule="evenodd"/></svg>' },
+    { url: 'about:processes', where: 'tab', image: 'chrome://global/skin/icons/performance.svg' },
+    { url: 'about:policies', where: 'tab', image: 'chrome://browser/content/policies/policies-active.svg' },
+    { url: 'about:profiles', where: 'tab', image: 'chrome://global/skin/icons/info.svg' },
+    { url: 'about:profiling', where: 'tab', image: 'chrome://devtools/skin/images/profiler-stopwatch.svg' },
+    { url: 'about:protections', where: 'tab', image: 'chrome://browser/skin/tracking-protection.svg' },
+    { url: 'about:rights', where: 'tab', image: 'chrome://global/skin/illustrations/about-rights.svg' },
+    { url: 'about:serviceworkers', where: 'tab', image: 'chrome://global/skin/icons/developer.svg' },
+    { url: 'about:studies', where: 'tab', image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" transform="scale(1.1)"><path fill="context-fill light-dark(black, white)" d="M13.9 9.81a1.23 1.23 0 0 0 0-.17v-.08a5.67 5.67 0 0 0-2.4-3.36 1.17 1.17 0 0 1-.56-.95V3a1 1 0 0 0-1-1H6.06a1 1 0 0 0-1 1v2.25a1.17 1.17 0 0 1-.56 1 5.66 5.66 0 0 0-2.35 3.33v.12a.53.53 0 0 0 0 .11 5.35 5.35 0 0 0-.11 1 5.65 5.65 0 0 0 3.24 5.09 1 1 0 0 0 .44.1h4.57a1 1 0 0 0 .44-.1A5.65 5.65 0 0 0 14 10.83a5.3 5.3 0 0 0-.1-1.02zm-8.27-2a3.18 3.18 0 0 0 1.43-2.6V4h1.88v1.25a3.18 3.18 0 0 0 1.43 2.6 3.68 3.68 0 0 1 1.54 2.24v.22a2.82 2.82 0 0 1-3.68-.59A3.48 3.48 0 0 0 4.56 9a3.76 3.76 0 0 1 1.07-1.15z"></path></svg>' },
+    { url: 'about:support', where: 'tab', image: 'chrome://devtools/skin/images/browsers/firefox.svg' },
+    { url: 'about:sync-log', where: 'tab', image: 'chrome://browser/skin/sync.svg' },
+    { url: 'about:telemetry', where: 'tab', image: 'chrome://global/skin/icons/arrow-down.svg' },
+    { url: 'about:third-party', where: 'tab', image: 'chrome://browser/skin/library.svg' },
+    { url: 'about:unloads', where: 'tab', image: 'chrome://mozapps/skin/extensions/category-available.svg' },
+    { url: 'about:url-classifier', where: 'tab', image: 'chrome://global/skin/icons/link.svg' },
+    { url: 'about:webrtc', where: 'tab', image: 'chrome://browser/skin/notification-icons/screen.svg' },
+    { url: 'about:windows-messages', where: 'tab', image: 'chrome://browser/skin/window.svg' }]
+}, {
+    label: isZh ? "编辑器设置" : "Set Text Editor",
+    insertBefore: 'Copycat-Config-Group',
+    image: 'chrome://browser/skin/preferences/category-general.svg',
+    oncommand: async function () {
+        let isZh = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService).requestedLocale.includes("zh");
+        let editor = await new Promise(resolve => {
+            let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+            fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                ? window.browsingContext
+                : window, isZh ? "选择编辑器" : "Select Editor", Ci.nsIFilePicker.modeOpen);
+            fp.appendFilters(Ci.nsIFilePicker.filterApps);
+            fp.appendFilters(Ci.nsIFilePicker.filterAll);
+            fp.open(async (result) => {
+                if (result == Ci.nsIFilePicker.returnOK) {
+                    Services.prefs.setComplexValue("view_source.editor.path", Ci.nsIFile, fp.file);
+                    resolve(fp.file);
+                } else {
+                    resolve(null);
+                }
+            })
+        });
+        let alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+        if (editor) {
+            alertsService.showAlertNotification(
+                "chrome://global/skin/icons/info.svg", "CopyCat",
+                isZh ? "编辑器设置成功!" : "Text editor changed successfully!", false, "", null);
+        } else {
+            alertsService.showAlertNotification(
+                'data:image/svg+xml;utf8,<svg width="32" height="32" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="24" fill="red" stroke-width="0"/><line x1="15" y1="15" x2="35" y2="35" stroke="white" stroke-width="4" stroke-linecap="round"/><line x1="35" y1="15" x2="15" y2="35" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>', "CopyCat",
+                "编辑器设置失败", false, "", null);
+        }
+
+    }
+}, {
+    label: isZh ? "复制扩展清单" : "Copy Extension Manifest",
+    tooltiptext: isZh ? "左键：名称 + 相关网页\nShift+左键：Markdown 表格" : "Left click: Copy Extension Manifest\nShift+Left click: Markdown Table",
+    image: "chrome://mozapps/skin/extensions/extension.svg",
+    insertBefore: 'Copycat-Config-Group',
+    onclick: async function (e) {
+        e.preventDefault();
+        let isZh = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService).requestedLocale.includes("zh");
+        let AddonRepository;
+        try {
+            AddonRepository = ChromeUtils.importESModule("resource://gre/modules/addons/AddonRepository.sys.mjs", {}).AddonRepository
+        } catch (ex) {
+            AddonRepository = Cu.import("resource://gre/modules/addons/AddonRepository.jsm", {}).AddonRepository;
+        }
+        let addons = await AddonManager.getAddonsByTypes(['extension']);
+        addons = addons.filter(addon => !addon.isBuiltin).map(addon => {
+            let data = [],
+                repositoryAddon = AddonRepository._parseAddon(addon);
+
+            data['url'] = addon.homepageURL || addon.installTelemetryInfo?.sourceURL || '';;
+            ["name", "command", "isWebExtension", "version", "isActive"].forEach(k => {
+                data[k] = addon[k] || '';
+            });
+            data['name'] = data['name'].replaceAll('|', '丨');
+            data['description'] = repositoryAddon.fullDescription.replaceAll('|', '丨');
+            return data;
+        })
+        let text = e.shiftKey ? (isZh ? "| 名称 | 版本 | 介绍 | 默 |" : "| Name | Version | Description | Enabled |") + " \n| ---- | ---- | ---- | ---- |\n" : "",
+            glue = e.shiftKey ? "|" : " ";
+        addons.forEach(item => {
+            let nameWithUrl = item.name;
+            if (item.url) {
+                nameWithUrl = `[${item.name}](${item.url})`;
+            }
+            let line = (e.shiftKey ? [nameWithUrl, item.version, item.description, item.isActive ? '✔' : '✘'] : [item.name, item.version, item.url, item.isActive ? '✔' : '✘']).join(glue);
+            if (e.shiftKey) line = [glue, glue].join(line);
+            text += line + '\n';
+        });
+        Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(text);
+    }
+}, {
+    label: isZh ? "复制UC脚本清单" : "Copy userChrome.js Scripts List",
+    insertBefore: 'Copycat-Config-Group',
+    tooltiptext: isZh ? "左键：名称 + 主页\nShift+左键：Markdown 表格" : "Left click: Copy userChrome.js Scripts List\nShift+Left click: Markdown Table",
+    image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABeSURBVDhPY6AKSCms+x+SkPMfREOFwACXOAYYNQBVITrGJQ7CUO0IA0jFUO0QA3BhkEJs4iAM1Y4bgBTBDIAKkQYGlwHYMFQZbgBSBDIAF4Yqww3QbUTHUGWUAAYGAEyi7ERKirMnAAAAAElFTkSuQmCC",
+    onclick: function (e) {
+        e.preventDefault();
+        if (e.button > 0) return;
+        var scripts;
+        if (window.userChrome_js) {
+            scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
+
+            scripts = scripts.map(script => {
+                let meta = readScriptInfo(script.file);
+                return {
+                    filename: script.filename,
+                    url: script.url.indexOf("http") === 0 ? script.url : "",
+                    isEnabled: !userChrome_js.scriptDisable[this.name],
+                    description: script.description,
+                    version: meta.version.split(" ")[0],
+                    charset: meta.charset,
+                    url: meta.homepage || meta.homepageURL || meta.downloadURL || ""
+                }
+            });
+        } else if (window._uc && !window._uc.isFaked) {
+            scripts = Object.values(_uc.scripts);
+        } else if (typeof _ucUtils === 'object') {
+            scripts = _ucUtils.getScriptData().map(script => {
+                let aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+                let path = resolveChromeURL(`chrome://userscripts/content/${script.filename}`);
+                path = path.replace("file:///", "").replace(/\//g, '\\\\');
+                aFile.initWithPath(path);
+                return Object.assign(script, {
+                    file: aFile
+                });
+            });
+            function resolveChromeURL (str) {
+                const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
+                try {
+                    return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
+                } catch (e) {
+                    console.error(e);
+                    return ""
+                }
+            }
+        }
+        let text = e.shiftKey ? (isZh ? "| 名称 | 版本 | 介绍 | 默 |" : "| Name | Version | Description | Enabled") + " \n| ---- | ---- | ---- | ---- |\n" : "",
+            glue = e.shiftKey ? "|" : " ";
+        scripts.forEach(item => {
+            let line = (e.shiftKey ? [item.url ? `[${item.filename}](${item.url})` : item.filename, item.version, item.description, item.isEnabled ? '✔' : '✘'] : [item.filename, item.url]).join(glue);
+            if (e.shiftKey) line = [glue, glue].join(line);
+            text += line + '\n';
+        })
+        Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(text);
+
+        function readFile (aFile, metaOnly) {
+            if (!aFile) {
+                console.error("No file provided");
+                return;
+            }
+            let stream = Cc['@mozilla.org/network/file-input-stream;1'].createInstance(Ci.nsIFileInputStream);
+            stream.init(aFile, 0x01, 0, 0);
+            let cvstream = Cc['@mozilla.org/intl/converter-input-stream;1'].createInstance(Ci.nsIConverterInputStream);
+            cvstream.init(stream, 'UTF-8', 1024, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+            let content = '', data = {};
+            while (cvstream.readString(4096, data)) {
+                content += data.value;
+                if (metaOnly && (content.indexOf('// ==/UserScript==' || content.indexOf('==/UserStyle=='))) > 0) {
+                    break;
+                }
+            }
+            cvstream.close();
+            return content.replace(/\r\n?/g, '\n');
+        }
+
+        function readScriptInfo (aFile) {
+            let header = readFile(aFile, true);
+            let def = ['', ''];
+            return {
+                filename: aFile.leafName || '',
+                name: (header.match(/@name\s+(.+)\s*$/im) || def)[1],
+                charset: (header.match(/@charset\s+(.+)\s*$/im) || def)[1],
+                version: (header.match(/@version\s+(.+)\s*$/im) || def)[1],
+                description: (header.match(/@description\s+(.+)\s*$/im) || def)[1],
+                homepage: (header.match(/@homepage\s+(.+)\s*$/im) || def)[1],
+                homepageURL: (header.match(/@homepageURL\s+(.+)\s*$/im) || def)[1],
+                downloadURL: (header.match(/@downloadURL\s+(.+)\s*$/im) || def)[1],
+                updateURL: (header.match(/@updateURL\s+(.+)\s*$/im) || def)[1],
+                optionsURL: (header.match(/@optionsURL\s+(.+)\s*$/im) || def)[1],
+                author: (header.match(/@author\s+(.+)\s*$/im) || def)[1],
+                license: (header.match(/@license\s+(.+)\s*$/im) || def)[1],
+                licenseURL: (header.match(/@licenseURL\s+(.+)\s*$/im) || def)[1],
+            }
+        }
+    }
+}, { insertBefore: 'Copycat-Config-Group' }, {
+    'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
+    'data-l10n-id': 'restart-button-label',
+    insertAfter: 'CopyCat-MoreTools-Item',
+    class: 'reload',
+    oncommand: `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+    onclick: `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`
+}, { command: 'fullScreenItem', clone: true, insertAfter: 'CopyCat-MoreTools-Item' }, {
+    insertAfter: 'CopyCat-MoreTools-Item'
+}, {
+    command: 'helpMenu',
+    insertAfter: 'CopyCat-MoreTools-Item',
+    image: 'chrome://global/skin/icons/help.svg'
+}, {
+    insertAfter: 'CopyCat-MoreTools-Item'
 }])
