@@ -1112,16 +1112,8 @@
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
-:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]),
-:is(.CopyCat-View,.CopyCat-Popup) :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"]) {
-    padding-inline-start: 1em !important;
-}
-:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]) > .menu-iconic-left {
-    margin-inline-end: 8px;
-}
-:is(.CopyCat-View,.CopyCat-Popup) menuitem:is([type="checkbox"], [type="radio"]) > .menu-iconic-left > .menu-iconic-icon {
-    display: -moz-box !important;
-    display: inline-flex !important;
+.CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"]) {
+    padding-inline-start: 1em;
 }
 .subviewbutton.reload,
 .CopyCat-Popup .menuitem-iconic.reload {
@@ -1130,9 +1122,8 @@
 .CopyCat-Popup .menuitem-iconic.option {
     list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
 }
-.CopyCat-Popup menu:not(.menu-iconic, [style*="--menu-image"], [menuright="true"]),
-.CopyCat-Popup menuitem:not(.menuitem-iconic, [style*="--menu-image"]):not([type="checkbox"], [type="radio"]) {
-    padding-inline-start: 36px !important;
+.CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"] {
+    position: relative;
 }
 .CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"])::before {
     content: "";
@@ -1141,6 +1132,8 @@
     height: 16px;
     margin-inline-end: 8px;
     background-image: var(--menu-image);
+    position: absolute;
+    left: 1em;
 }
 .CopyCat-Popup menu[menuright="true"]:not(.menu-iconic)::after {
     content: "";

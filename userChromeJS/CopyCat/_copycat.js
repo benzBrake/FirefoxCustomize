@@ -1,15 +1,25 @@
 css(`
-#CopyCat-Function-Group, #CopyCat-ChromeFolder-Sep, #CopyCat-InsertPoint, #toolbar-menubar, #toggle_toolbar-menubar, #TabsToolbar > .titlebar-spacer[type="pre-tabs"] {
-    display: none;
-}
-:root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"] + #TabsToolbar > .titlebar-buttonbox-container {
-    display: -moz-box !important;
-    display: flex !important;
-}
-#fullScreenItem:not([checked="true"]) {
-    list-style-image: url(chrome://browser/skin/fullscreen.svg);
-}
-`)
+    #CopyCat-InsertPoint, #toolbar-menubar, #toggle_toolbar-menubar, #TabsToolbar > .titlebar-spacer[type="pre-tabs"] {
+        display: none;
+    }
+    :root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"] + #TabsToolbar > .titlebar-buttonbox-container {
+        display: -moz-box !important;
+        display: flex !important;
+    }
+    #fullScreenItem:not([checked="true"]) {
+        position: relative;
+    }
+    #fullScreenItem:not([checked="true"])::before {
+        content: "";
+        width: 16px;
+        height: 16px;
+        display: -moz-box;
+        display: flex;
+        background-image: url(chrome://browser/skin/fullscreen.svg);
+        position: absolute;
+        left: 1em;
+    }
+    `)
 const isZh = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService).requestedLocale.includes("zh");
 menus([{
     command: 'file-menu',
@@ -296,14 +306,16 @@ menus([{
             }
         }
     }
-}, { insertBefore: 'Copycat-Config-Group' }, {
-    'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
-    'data-l10n-id': 'restart-button-label',
-    insertAfter: 'CopyCat-MoreTools-Item',
-    class: 'reload',
-    oncommand: `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-    onclick: `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`
-}, { command: 'fullScreenItem', clone: true, insertAfter: 'CopyCat-MoreTools-Item' }, {
+}, { insertBefore: 'Copycat-Config-Group' },
+// { insertBefore: 'Copycat-Config-Group' }, {
+//     'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
+//     'data-l10n-id': 'restart-button-label',
+//     insertAfter: 'CopyCat-MoreTools-Item',
+//     class: 'reload',
+//     oncommand: `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
+//     onclick: `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`
+// }, 
+{ command: 'fullScreenItem', clone: true, insertAfter: 'CopyCat-MoreTools-Item' }, {
     insertAfter: 'CopyCat-MoreTools-Item'
 }, {
     command: 'helpMenu',
