@@ -311,7 +311,7 @@
 
             if (tagName === "menuitem") {
                 classList.push("menuitem-iconic");
-            } else if(tagName === "menu") {
+            } else if (tagName === "menu") {
                 classList.push("menu-iconic");
             }
 
@@ -713,31 +713,22 @@
                 lineNumber: aLineNumber
             }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
         },
-        exec: function (path, arg) {
+        exec: function (path, arg = []) {
             let aFile = getFile(path);
-            if (!aFile) {
-                this.error("[exec] path is invalid" + path);
-                return;
-            }
-            var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+            if (!aFile) return this.error(`[exec] path is invalid: ${path}`);
+
+            const process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+
             try {
-                var a;
-                if (typeof arg == "undefined") arg = []; // fix slice error
-                if (typeof arg == 'string' || arg instanceof String) {
-                    if (arg === "") a = []
-                    else a = arg.split(/\s+/)
-                } else if (Array.isArray(arg)) {
-                    a = arg;
-                } else {
-                    a = [arg];
-                }
+                let a = Array.isArray(arg)
+                    ? arg
+                    : typeof arg === 'string' && arg.trim()
+                        ? arg.split(/\s+/)
+                        : [arg];
 
-                if (!aFile.exists()) {
-                    console.error("[exec] file not found", path);
-                    return;
-                }
+                if (!aFile.exists()) return console.error("[exec] file not found", path);
 
-                // Linux 下目录也是 executable
+                // 检查是否为可执行文件，非目录情况下初始化进程
                 if (!aFile.isDirectory() && aFile.isExecutable()) {
                     process.init(aFile);
                     process.runw(false, a, a.length);
@@ -772,20 +763,16 @@
             let d = await IOUtils.readUTF8(this.FILE.path);
             if (!d) return;
             let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
+
+            // 使用解构赋值来减少冗余声明
+            Object.assign(sandbox, {
+                Cc, Ci, Cr, Cu, Services, CustomizableUI, console,
+                CopyCat: this, _menus: [], _css: []
+            });
             sandbox.Components = Components;
-            sandbox.Cc = Cc;
-            sandbox.Ci = Ci;
-            sandbox.Cr = Cr;
-            sandbox.Cu = Cu;
-            sandbox.Services = Services;
-            sandbox.CustomizableUI = CustomizableUI;
-            sandbox.CopyCat = this;
-            sandbox.console = console;
-            sandbox['_menus'] = [];
-            sandbox['_css'] = [];
-            sandbox['menus'] = function (itemObj) {
-                ps(itemObj, sandbox['_menus']);
-            }
+
+            // 简化 menus 函数定义
+            sandbox.menus = itemObj => ps(itemObj, sandbox._menus);
             function ps (item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) : array.push(item);
             }
