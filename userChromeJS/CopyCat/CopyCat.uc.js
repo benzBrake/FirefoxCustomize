@@ -484,8 +484,11 @@
             return item;
         },
         setIcon: function (menu, obj) {
-            if (menu.getAttribute("type") === "checkbox") return;
-            if (menu.hasAttribute("src") || menu.hasAttribute("image") || menu.hasAttribute("icon")) return;
+            if (OPTION_TYPE.includes(menu.getAttribute("type") || "other")) return;
+            if (menu.hasAttribute("src") || menu.hasAttribute("icon")) return;
+            if (obj.image) {
+                return setMenuImage(menu, obj.image);
+            }
             if (obj.edit || obj.exec) {
                 var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
                 try {
@@ -499,10 +502,9 @@
                     menu.setAttribute("disabled", "true");
                 } else {
                     if (aFile.isFile()) {
-                        let fileURL = getURLSpecFromFile(aFile);
-                        menu.setAttribute("image", "moz-icon://" + fileURL + "?size=16");
+                        setMenuImage(menu, "moz-icon://" + getURLSpecFromFile(aFile) + "?size=16");
                     } else {
-                        menu.setAttribute("image", "chrome://global/skin/icons/folder.svg");
+                        setMenuImage(menu, "chrome://global/skin/icons/folder.svg");
                     }
                 }
                 return;
@@ -512,9 +514,15 @@
                 let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
                 if (engine) {
                     if (engine.iconURI) {
-                        menu.setAttribute("image", engine.iconURI.spec);
+                        engine.then(function (engine) {
+                            setMenuImage(menu, getIconURL(engine));
+                        });
                     }
                     return;
+                    function getIconURL (engine) {
+                        // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
+                        return (engine._iconURI || engine.iconURI)?.spec || "chrome://browser/skin/search-engine-placeholder.png";
+                    }
                 }
             }
             var setIconCallback = function (url) {
@@ -529,9 +537,11 @@
                     onComplete: function (aURI, aDataLen, aData, aMimeType) {
                         try {
                             // javascript: URI の host にアクセスするとエラー
-                            menu.setAttribute("image", aURI && aURI.spec ? "moz-anno:favicon:" + aURI.spec : "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-                        } catch (e) {
-                        }
+                            let iconURL = aURI && aURI.spec ?
+                                "page-icon:" + aURI.spec :
+                                "page-icon:" + uri.spec;
+                            setMenuImage(menu, iconURL);
+                        } catch (e) { }
                     }
                 });
             }
@@ -1051,12 +1061,34 @@
         }
     }
 
+    /**
+     * 插入样式
+     * @param {string} css 
+     * @returns 
+     */
     function addStyle (css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
         );
         return document.insertBefore(pi, document.documentElement);
+    }
+
+    /**
+     * 设置菜单图标
+     * 
+     * @param {MozMenuItem|MozMenu} menu 
+     * @param {string} imageUrl 
+     */
+    function setMenuImage (menu, imageUrl) {
+        if (imageUrl) {
+            if (menu.className.match(/-iconic/)) {
+                menu.setAttribute("image", imageUrl);
+            } else {
+                menu.classList.add('menu-pesudo-icon');
+                menu.style.setProperty("--menu-image", `url(${imageUrl})`);
+            }
+        }
     }
 
     window.CopyCat = CopyCat;
