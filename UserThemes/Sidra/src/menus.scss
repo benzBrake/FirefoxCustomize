@@ -683,7 +683,7 @@
   menupopup menuitem[_moz-menuactive]:not([disabled="true"]) {
     background-color: var(
       --uc-panel-item-hover,
-      var(--panel-item-hover-bgcolor, var(--toolbar-bgcolor))
+      var(--panel-item-hover-bgcolor, -moz-menuhover)
     ) !important;
     color: inherit !important;
   }

@@ -3097,7 +3097,7 @@
     menupopup menuitem:hover:not([disabled=true]),
     menupopup menu[_moz-menuactive]:not([disabled=true]),
     menupopup menuitem[_moz-menuactive]:not([disabled=true]) {
-      background-color: var(--uc-panel-item-hover, var(--panel-item-hover-bgcolor, var(--toolbar-bgcolor))) !important;
+      background-color: var(--uc-panel-item-hover, var(--panel-item-hover-bgcolor, -moz-menuhover)) !important;
       color: inherit !important;
     }
     menupopup menu[_moz-menuactive=true][disabled=true],
