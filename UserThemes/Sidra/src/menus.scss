@@ -430,6 +430,11 @@
     --uei-icon-size: 24px !important;
   }
 
+  /** 修正主菜单栏菜单偏移 */
+  #main-menubar > menu > menupopup {
+    transform: translateX(-12px);
+  }
+
   @include Option("userChromeJS.Sidra.Menupopup.Compact.Extensions.Menu") {
     :root {
       --uei-icon-size: 16px !important;

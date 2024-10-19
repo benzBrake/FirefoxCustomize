@@ -273,6 +273,9 @@
       right: 0;
       background-color: var(--toolbar-bgcolor);
       height: var(--navbar-height);
+      > .titlebar-buttonbox {
+        height: 100%;
+      }
     }
 
     #nav-bar {

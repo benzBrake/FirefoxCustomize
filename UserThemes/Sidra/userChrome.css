@@ -786,6 +786,9 @@
       background-color: var(--toolbar-bgcolor);
       height: var(--navbar-height);
     }
+    :root:is([sidra-tabstyle=default], [sidra-tabstyle="2"], [sidra-tabstyle="3"], [sidra-tabstyle="5"], [sidra-tabstyle="6"], [sidra-tabstyle="7"], [sidra-tabstyle="8"], [sidra-tabstyle="9"], [sidra-tabstyle="10"], [sidra-tabstyle="11"], [sidra-tabstyle="12"], [sidra-tabstyle="13"]) .titlebar-buttonbox-container > .titlebar-buttonbox {
+      height: 100%;
+    }
     :root:is([sidra-tabstyle=default], [sidra-tabstyle="2"], [sidra-tabstyle="3"], [sidra-tabstyle="5"], [sidra-tabstyle="6"], [sidra-tabstyle="7"], [sidra-tabstyle="8"], [sidra-tabstyle="9"], [sidra-tabstyle="10"], [sidra-tabstyle="11"], [sidra-tabstyle="12"], [sidra-tabstyle="13"]) #nav-bar {
       margin-inline-end: var(--control-width, var(--control-width-default));
     }
@@ -1007,7 +1010,6 @@
     }
     #TabsToolbar {
       --toolbarbutton-inner-padding: inherit !important;
-      position: relative !important;
     }
     #TabsToolbar::before {
       content: "";
@@ -2686,6 +2688,7 @@
     /* ::::: Extensions Pop-up ::::: */
     /* #region */
     /* Removes space above extensions items. */
+    /** 修正主菜单栏菜单偏移 */
     /* auto complete popup */
     /* Search bar suggestions */
     /* Context Menu */
@@ -2907,6 +2910,9 @@
     }
     :root {
       --uei-icon-size: 24px !important;
+    }
+    #main-menubar > menu > menupopup {
+      transform: translateX(-12px);
     }
   }
   @media (-moz-bool-pref: "userChromeJS.Sidra.MenuPopup.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Menupopup.Compact.Extensions.Menu") {
@@ -3554,64 +3560,55 @@
       .close-icon {
         list-style-image: var(--uc-close-icon) !important;
       }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") {
-      #navigator-toolbox {
-        --copycat-btn-width: 90px;
-        --copycat-btn-height: min(28px, var(--tab-min-height));
-        --copycat-btn-margin-inline-start: 8px;
-        --copycat-btn-margin-inline-end: 8px;
-        --copycat-btn-fix-margin: calc(
-          var(--copycat-btn-width) + var(--copycat-btn-margin-inline-start) +
-            var(--copycat-btn-margin-inline-end)
-        );
-        position: relative;
-        --copycat-btn-position: absolute;
-      }
-      #navigator-toolbox:not(:has(#CopyCat-Btn)) {
-        --copycat-btn-fix-margin: 0;
-        --copycat-btn-position: static;
-      }
-      #nav-bar:not([tabs-hidden=true]) {
-        position: static !important;
-      }
-      #CopyCat-Btn {
-        background-clip: padding-box !important;
-        fill: white;
-        width: var(--copycat-btn-width) !important;
-        padding-inline: 0.5em;
-        order: -1;
-        -moz-box-ordinal-group: 0;
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn {
+        width: 90px;
         border: none !important;
         border-radius: 6px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        padding-inline: 0.5em;
+        background-clip: padding-box !important;
+        margin-bottom: 4px !important;
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn {
+        transform: translateY(2px);
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (not (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled")) {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn {
+        border-radius: 0 0 6px 6px;
+      }
+    }
+    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn > .toolbarbutton-icon {
+        list-style-image: url("chrome://devtools/skin/images/browsers/firefox.svg") !important;
+        fill: white;
         --toolbarbutton-hover-background: transparent;
         --toolbarbutton-active-background: transparent;
+        padding: 0 !important;
+        height: 16px !important;
+        width: 16px !important;
+        appearance: none;
       }
-      #CopyCat-Btn > .toolbarbutton-icon {
-        list-style-image: url("chrome://devtools/skin/images/browsers/firefox.svg") !important;
-      }
-      #CopyCat-Btn:not([open=true]):not(:hover):not(:active) {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn:not([open=true]):not(:hover):not(:active) {
         background-image: linear-gradient(rgb(247, 182, 82), rgb(215, 98, 10) 95%);
         box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 0 0 1px rgba(255, 255, 255, 0.25) inset;
       }
-      #CopyCat-Btn:hover:not([open=true]):not(:active) {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn:hover:not([open=true]):not(:active) {
         background-image: radial-gradient(farthest-side at center bottom, rgba(252, 240, 89, 0.5) 10%, rgba(252, 240, 89, 0) 70%), radial-gradient(farthest-side at center bottom, rgb(236, 133, 0), rgba(255, 229, 172, 0)), linear-gradient(rgb(246, 170, 69), rgb(209, 74, 0) 95%);
         box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 0 2px 1px rgba(250, 234, 169, 0.7) inset, 0 -1px 0 rgba(250, 234, 169, 0.5) inset;
       }
-      #CopyCat-Btn:hover:active, #CopyCat-Btn[open] {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn:hover:active, #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn[open] {
         background-image: linear-gradient(rgb(246, 170, 69), rgb(209, 74, 0) 95%);
         box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4) inset, 0 1px 1px rgba(0, 0, 0, 0.2) inset;
       }
-      #CopyCat-Btn > .toolbarbutton-icon {
-        fill: white;
-      }
-      #CopyCat-Btn::after {
+      #navigator-toolbox:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) #CopyCat-Btn::after {
         display: flex !important;
         display: -moz-box !important;
         align-items: center;
         -moz-box-align: center;
-        padding-inline-end: 8px;
+        padding-inline: 4px 0;
         color: white !important;
         font-weight: bold !important;
         text-shadow: 0 0 1px rgba(0, 0, 0, 0.7), 0 1px 1.5px rgba(0, 0, 0, 0.5) !important;
@@ -3620,74 +3617,21 @@
         box-shadow: unset !important;
         height: 100% !important;
       }
-      :root[appname=Firefox][appchannel=release] #CopyCat-Btn::after {
+      :root:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child)[appname=Firefox][appchannel=release] #CopyCat-Btn::after {
         content: "Firefox" !important;
       }
-      :root[appname=Firefox][appchannel=esr] #CopyCat-Btn::after {
+      :root:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child)[appname=Firefox][appchannel=esr] #CopyCat-Btn::after {
         content: "ESRFox" !important;
       }
-      :root[appname=Firefox][appchannel=aurora] #CopyCat-Btn::after {
+      :root:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child)[appname=Firefox][appchannel=aurora] #CopyCat-Btn::after {
         content: "DevFox" !important;
       }
-      :root[appname=Firefox][appchannel=nightly] #CopyCat-Btn::after {
+      :root:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child)[appname=Firefox][appchannel=nightly] #CopyCat-Btn::after {
         content: "Nightly" !important;
       }
-      :root[appname=Floorp] #CopyCat-Btn::after {
+      :root:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child)[appname=Floorp] #CopyCat-Btn::after {
         content: "Floorp" !important;
       }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft")), (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled")) {
-      #CopyCat-Btn {
-        margin-block: 0;
-        position: var(--copycat-btn-position);
-        top: 0;
-        left: calc((var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding)) / 2);
-        border-radius: 0 0 6px 6px;
-      }
-      #TabsToolbar {
-        margin-inline-start: calc(var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding) + var(--copycat-btn-width));
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft")) and (not (-moz-bool-pref: "userChromeJS.Sidra.Titlebar.Horizontal.Enabled")), (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled")) and (not (-moz-bool-pref: "userChromeJS.Sidra.Titlebar.Horizontal.Enabled")) {
-      :root:has(#toolbar-menubar:not([inactive=true])) #toolbar-menubar {
-        margin-inline-start: calc(var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding) + var(--copycat-btn-width));
-      }
-      :root:has(#toolbar-menubar:not([inactive=true])) #TabsToolbar {
-        margin-inline-start: revert;
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (-moz-bool-pref: "userChromeJS.Sidra.ControlButton.ShowOnLeft"), (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (-moz-bool-pref: "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
-      #CopyCat-Btn {
-        --copycat-btn-position: relative;
-        left: unset;
-        top: unset;
-        border-radius: 6px;
-        height: calc(16px + 2 * var(--toolbarbutton-inner-padding));
-        margin: calc((var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding)) / 2) !important;
-      }
-      #TabsToolbar {
-        margin-inline-start: revert;
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (not (-moz-bool-pref: "userChromeJS.Sidra.Titlebar.Horizontal.Enabled")) {
-      #titlebar:has(#toolbar-menubar[autohide=true]:not([inactive=true])) + #nav-bar #CopyCat-Btn {
-        border-radius: 6px;
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") and (-moz-bool-pref: "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn") and (-moz-bool-pref: "userChromeJS.sidra.Tabs.VerticalOrient.Enabled") {
-      /** 仅显示 TST 侧边栏时 */
-      :root:has(#browser > #sidebar-box:is([sidebarcommand=treestyletab_piro_sakura_ne_jp-sidebar-action],
-      [sidebarcommand=_3c078156-979c-498b-8990-85f7987dd929_-sidebar-action]):not([hidden=true])) #CopyCat-Btn {
-        --copycat-btn-position: relative;
-        top: unset;
-        left: unset;
-        right: unset;
-        border-radius: 6px;
-        height: calc(16px + 2 * var(--toolbarbutton-inner-padding));
-        margin: calc((var(--navbar-height) - 16px - 2 * var(--toolbarbutton-inner-padding)) / 2) !important;
-      }
-    }
-    @media (-moz-bool-pref: "userChromeJS.Sidra.Icons.Compact") {
       #password-notification-icon,
       #PopupAutoComplete > richlistbox > richlistitem[originaltype=generatedPassword] > .two-line-wrapper > .ac-site-icon,
       #PopupAutoComplete > richlistbox > richlistitem[originaltype=loginWithOrigin] > .two-line-wrapper > .ac-site-icon,
@@ -5622,6 +5566,9 @@
     }
     #_copylinksplusplus-menuitem-_clpp-options > .menu-iconic-left {
       visibility: hidden;
+    }
+    #gitzip-firefox-addons_gitzip_org-menuitem-_gitzip-nested {
+      --menu-image: url("./images/extensions/gitzip/zip.svg");
     }
     #image-picka_eight04_blogspot_com-BAP {
       list-style-image: url("./images/extensions/gallery.svg") !important;

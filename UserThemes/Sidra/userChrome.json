@@ -248,10 +248,6 @@
             "group": "icons"
         },
         {
-            "pref": "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn",
-            "group": "icons"
-        },
-        {
             "pref": "userChromeJS.Sidra.Icons.BookmarkFolder.EdgeLike.Enabled",
             "group": "icons"
         },
@@ -413,7 +409,6 @@
             "userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled": "自动隐藏时原侧边栏增加模糊效果",
             "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled": "自动隐藏 Modoki 侧边栏",
             "userChromeJS.Sidra.Icons.Compact": "补全图标总开关",
-            "userChromeJS.Sidra.Icons.CopyCatBtn.Imitate.FirefoxAppBtn": "CopyCat 按钮仿 Firefox 经典按钮",
             "userChromeJS.Sidra.Icons.BookmarkFolder.EdgeLike.Enabled": "书签文件夹仿 Edge",
             "userChromeJS.Sidra.Icons.CopyIcon.EdgeLike.Enabled": "复制图标仿 Edge",
             "userChromeJS.Sidra.Icons.ContextMenu.Enabled": "右键菜单图标优化",
