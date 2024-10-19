@@ -79,9 +79,7 @@
 
       #identity-permission-box {
         border-radius: 99999px !important;
-        width: calc(
-          16px + 2 * var(--location-bar-icon-padding-inline)
-        ) !important;
+        --urlbar-icon-padding: calc((var(--urlbar-min-height) - 16px ) / 2);
         @include BoxPack("center");
         > .permissions-granted-icon {
           width: 16px !important;

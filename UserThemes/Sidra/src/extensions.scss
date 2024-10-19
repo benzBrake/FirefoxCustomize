@@ -650,7 +650,7 @@
   padding: var(--arrowpanel-menuitem-padding-block, 6px)
     var(--arrowpanel-menuitem-padding-inline, 10px) $important;
   border-radius: var(--arrowpanel-menuitem-border-radius, 4px) !important;
-  padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 12px);
+  padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 8px);
   overflow: hidden;
 
   &:hover,
@@ -696,7 +696,7 @@
       padding-inline: var(--menuitem-padding-start)
         var(--arrowpanel-menuitem-padding-inline, 10px) !important;
       border-radius: var(--arrowpanel-menuitem-border-radius, 4px) !important;
-      padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 12px);
+      padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 8px);
       overflow: hidden;
       background-repeat: no-repeat;
       background-position: calc(var(--arrowpanel-menuitem-padding-inline, 10px) / 2) center;
@@ -831,7 +831,7 @@
           padding: var(--arrowpanel-menuitem-padding-block, 6px)
             var(--arrowpanel-menuitem-padding-inline, 10px) !important;
           border-radius: var(--arrowpanel-menuitem-border-radius, 4px);
-          padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 12px);
+          padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 8px);
 
           @include Option("userChromeJS.Sidra.MenuPopup.Compact") {
             padding-inline-start: var(--menuitem-padding-start) !important;
@@ -998,9 +998,11 @@
       padding: var(--arrowpanel-menuitem-padding-block, 6px)
         var(--arrowpanel-menuitem-padding-inline, 10px) !important;
       border-radius: var(--arrowpanel-menuitem-border-radius, 4px);
-      padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 12px);
+      padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 8px);
       @include Option("userChromeJS.Sidra.MenuPopup.Compact") {
-        padding-inline-start: var(--menuitem-padding-start) !important;
+        padding-inline-start: calc(var(--menuitem-padding-start) + var(
+          --uc-contextmenu-menuicon-margin-inline, 8px
+        )) !important;
         background-image: var(--menu-image);
         background-position: var(--uc-contextmenu-menuitem-padding-inline)
           center;
@@ -1037,7 +1039,7 @@
       @include PanelItem(true);
       > .icon {
         margin-inline-end: var(
-          --uc-contextmenu-menuicon-margin-inline
+          --uc-contextmenu-menuicon-margin-inline, 8px
         ) !important;
       }
     }
