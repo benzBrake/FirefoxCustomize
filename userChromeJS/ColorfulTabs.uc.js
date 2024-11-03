@@ -5,20 +5,26 @@
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
-// @shutdown        window. ColorfulTabs.destroy()
+// @shutdown        window.ColorfulTabs.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            20230930 Bug 1849904 - Convert a bunch of psuedo-boolean tab strip attributes to be standard boolean attributes
 // ==/UserScript==
 (function (css) {
+    // 黑名单里的退保不获取颜色
     const BLACK_LIST = [
-        "chrome://global/skin/icons/info.svg"
+        "chrome://global/skin/icons/info.svg",
+        "chrome://branding/content/icon32.png"
     ];
+    const RENDER_ALL = true; // 是否渲染所有标签，如果设置为 false 只能渲染当前标签页
     class ColorfulTabs {
         constructor() {
             this.style = addStyle(css);
             gBrowser.tabContainer.addEventListener('TabAttrModified', this);
+            if (RENDER_ALL) {
+                document.getElementById('TabsToolbar').setAttribute('renderall', true);
+            }
         }
-        refreshColor(tab) {
+        refreshColor (tab) {
             if (tab.hasAttribute('image')) {
                 let imageSrc = tab.getAttribute('image');
                 if (BLACK_LIST.includes(imageSrc)) {
@@ -33,10 +39,13 @@
                 tab.style.setProperty("--colorful-tab-background", `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
             }
         }
-        handleEvent(event) {
+        handleEvent (event) {
             this.refreshColor(event.target);
+            setTimeout(() => {
+                this.refreshColor(event.target)
+            }, 500);
         }
-        getAverageRGB(imgEl) {
+        getAverageRGB (imgEl) {
             var blockSize = 5, // only visit every 5 pixels
                 defaultRGB = { r: 0, g: 0, b: 0 }, // for non-supporting envs
                 canvas = document.createElement('canvas'),
@@ -80,14 +89,15 @@
             return rgb;
 
         }
-        destroy() {
+        destroy () {
             if (this.style && this.style.parentNode)
                 this.style.parentNode.removeChild(this.style);
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
+            document.getElementById('TabsToolbar').removeAttribute('renderall');
         }
     }
 
-    function addStyle(css) {
+    function addStyle (css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
@@ -108,6 +118,9 @@
 
 })(`
 #TabsToolbar:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[visuallyselected][colorful] .tab-background {
-    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 50%, white), color-mix(in srgb, var(--colorful-tab-background) 70%, white)) !important;
+    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 30%, white), color-mix(in srgb, var(--colorful-tab-background) 50%, white)) !important;
+}
+#TabsToolbar[renderall]:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[colorful] .tab-background {
+    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 30%, white), color-mix(in srgb, var(--colorful-tab-background) 50%, white)) !important;
 }
 `);
