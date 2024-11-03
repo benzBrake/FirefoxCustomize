@@ -1,6 +1,11 @@
 // ==UserScript==
 // @name           ScreenshotTools.uc.js
-// @description    高级截图工具
+// @long-description
+// @description
+/* 高级截图工具
+
+软件包：https://pan.quark.cn/s/1d61f88f7a79
+*/
 // @namespace      https://github.com/benzBrake/FirefoxCustomize
 // @author         Ryan
 // @include        main
@@ -8,12 +13,13 @@
 // @compatibility  Firefox 127
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/ScreenshotTools.uc.js.
-// @version        0.0.1
+// @version        0.0.2
+// @note           0.0.2 修复无法打开系统画板
 // @note           0.0.1
 // ==/UserScript==
 (async function () {
     const CustomizableUI = imp('CustomizableUI');
-
+    const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
     window.ScreenshotTools = {
         ID_PREFIX: 'ScreenshotTools',
         MENUS: [
@@ -40,7 +46,7 @@
                 image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4yKSI+PHBhdGggZD0iTTMgM0wzIDVMMyA4TDUgOEw1IDVMOCA1TDggM0w1IDNMMyAzIHogTSAxNiAzTDE2IDVMMTkgNUwxOSA4TDIxIDhMMjEgM0wxNiAzIHogTSAxMiAxMSBBIDEgMSAwIDAgMCAxMSAxMiBBIDEgMSAwIDAgMCAxMiAxMyBBIDEgMSAwIDAgMCAxMyAxMiBBIDEgMSAwIDAgMCAxMiAxMSB6IE0gMyAxNkwzIDIxTDUgMjFMOCAyMUw4IDE5TDUgMTlMNSAxNkwzIDE2IHogTSAxOSAxNkwxOSAxOUwxNiAxOUwxNiAyMUwyMSAyMUwyMSAxOUwyMSAxNkwxOSAxNiB6Ii8+PC9zdmc+"
             }, {}, {
                 label: "颜色拾取工具",
-                exec: '\\UserTools\\Colors\\Colors.exe',
+                exec: '\\UserTools\\jcpicker4beta.exe',
                 image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4xKSI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGgyNHYyNEgweiIvPjxwYXRoIGQ9Ik0xMiAzLjFMNy4wNSA4LjA1YTcgNyAwIDEgMCA5LjkgMEwxMiAzLjF6bTAtMi44MjhsNi4zNjQgNi4zNjRhOSA5IDAgMSAxLTEyLjcyOCAwTDEyIC4yNzJ6Ii8+PC9zdmc+'
             }, {
                 label: "录制动态图片",
@@ -58,10 +64,29 @@
                         getService(Components.interfaces.nsIEnvironment);
 
                     var cmd = PathUtils.join(environment.get("SystemRoot"), "System32", "cmd.exe");
-                    CustomButtons.exec(cmd, "/c start /b mspaint.exe", { startHidden: true });
+                    ScreenshotTools.exec(cmd, "/c start /b mspaint.exe", { startHidden: true });
                 }
             }
         ],
+        HIDE_COMPONENT: {
+            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`#screenshots-component, #screenshotsPagePanel { visibility:hidden }`)),
+            type: 0,
+        },
+        get sss () {
+            delete this.sss;
+            return this.sss = sss;
+        },
+        get isCapturing () {
+            return !!this._isCapturing;
+        },
+        set isCapturing (val) {
+            if (val) {
+                addStyle(this.HIDE_COMPONENT);
+            } else {
+                removeStyle(this.HIDE_COMPONENT);
+            }
+            this._isCapturing = !!val;
+        },
         getId (suffix) {
             return this.ID_PREFIX + '-' + suffix;
         },
@@ -122,6 +147,7 @@
         async initScreenPopupUIHanler (win) {
             const { location, documentElement: doc } = win;
             if (location.href.startsWith("chrome://browser/content/screenshots/screenshots-preview.html?")) {
+                if (this.isCapturing) doc.style.display = "none";
                 let preview_area = await new Promise(resolve => {
                     let count = 0;
                     let timer = setInterval(() => {
@@ -159,6 +185,7 @@
                     return;
                 }
                 download_btn.click();
+                this.isCapturing = false;
             }
         },
         initPopupMenu (popup) {
@@ -270,12 +297,14 @@
             }
         },
         async takeWebpageScreenShot (doc, isFullPage) {
+            this.isCapturing = true;
             doc.getElementById('key_screenshot').doCommand();
             let btn = await this.getScreenSortButton(doc, isFullPage);
             if (btn) {
                 btn.click();
             } else {
                 this.alert("截图按钮未找到，请手动截图");
+                this.isCapturing = false;
             }
         },
         async getScreenSortButton (doc, isFullPage) {
@@ -345,5 +374,19 @@
             }
         }
         return e;
+    }
+
+    function addStyle (style) {
+        if (sss.sheetRegistered(style.url, style.type)) return false;
+        sss.loadAndRegisterSheet(style.url, style.type);
+        return true;
+    }
+
+    function removeStyle (style) {
+        if (sss.sheetRegistered(style.url, style.type)) {
+            sss.unregisterSheet(style.url, style.type);
+            return true;
+        }
+        return false;
     }
 })()
