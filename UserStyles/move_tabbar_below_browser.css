@@ -4,7 +4,6 @@ See the above repository for updates as well as full license text. */
     position: static;
     z-index: 999;
     --uc-control-width: 140px;
-    /** */
 }
 
 #toolbar-menubar {
@@ -17,8 +16,7 @@ See the above repository for updates as well as full license text. */
             right: 0;
 
             &>*:not(.titlebar-buttonbox-container) {
-                width: 0;
-                opacity: 0;
+                transform: translateY(-100%);
             }
 
             & .titlebar-buttonbox-container {
