@@ -1,0 +1,56 @@
+/* Source file https://github.com/benzBrake/FirefoxCustomize/tree/master/UserStyles/move_tabbar_below_browser.css made available under Mozilla Public License v. 2.0
+See the above repository for updates as well as full license text. */
+#navigator-toolbox {
+    position: static;
+    z-index: 999;
+    --uc-control-width: 140px;
+    /** */
+}
+
+#toolbar-menubar {
+    &[autohide="true"] {
+        &[inactive]:not([customizing]) {
+            height: auto !important;
+            overflow: visible;
+            position: absolute;
+            z-index: 1000;
+            right: 0;
+
+            &>*:not(.titlebar-buttonbox-container) {
+                width: 0;
+                opacity: 0;
+            }
+
+            & .titlebar-buttonbox-container {
+                display: flex;
+                height: calc(16px + 2 * var(--toolbarbutton-outer-padding) + 2 * var(--toolbarbutton-inner-padding));
+            }
+        }
+    }
+}
+
+#TabsToolbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ddd;
+
+    & :is(.titlebar-buttonbox-container, .titlebar-spacer) {
+        display: none;
+    }
+}
+@media not (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
+    #nav-bar {
+        padding-inline-end: var(--uc-control-width);
+    }
+}
+@media (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
+    #nav-bar {
+        padding-inline-start: var(--uc-control-width);
+    }
+}
+#browser {
+    margin-bottom: var(--tabstrip-min-height);
+}
