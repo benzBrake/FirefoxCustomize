@@ -369,8 +369,10 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                             }
                             if (last) {
                                 last.after(item);
-                            } else {
+                            } else if (firstItem) {
                                 firstItem.parentNode.insertBefore(item, firstItem);
+                            } else {
+                                target.appendChild(item);
                             }
                             last = item;
                         });
