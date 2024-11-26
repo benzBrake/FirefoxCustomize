@@ -4,22 +4,36 @@ See the above repository for updates as well as full license text. */
     position: static;
     z-index: 999;
     --uc-control-width: 140px;
+
+    &:has(#toolbar-menubar[autohide="true"][inactive]:not([customizing])) {
+        @media not (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
+            #nav-bar {
+                padding-inline-end: var(--uc-control-width);
+            }
+        }
+        @media (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
+            #nav-bar {
+                padding-inline-start: var(--uc-control-width);
+            }
+        }
+    }
 }
 
 #toolbar-menubar {
     &[autohide="true"] {
         &[inactive]:not([customizing]) {
-            height: auto !important;
             overflow: visible;
-            position: absolute;
-            z-index: 1000;
-            right: 0;
+            position: relative;
+            z-index: 999;
 
-            &>*:not(.titlebar-buttonbox-container) {
-                transform: translateY(-100%);
+            & > *:not(.titlebar-buttonbox-container) {
+                opacity: 0;
             }
 
             & .titlebar-buttonbox-container {
+                position: absolute;
+                top: 0;
+                right: 0;
                 display: flex;
                 height: calc(16px + 2 * var(--toolbarbutton-outer-padding) + 2 * var(--toolbarbutton-inner-padding));
             }
@@ -37,16 +51,6 @@ See the above repository for updates as well as full license text. */
 
     & :is(.titlebar-buttonbox-container, .titlebar-spacer) {
         display: none;
-    }
-}
-@media not (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
-    #nav-bar {
-        padding-inline-end: var(--uc-control-width);
-    }
-}
-@media (-moz-bool-pref: "layout.css.osx-font-smoothing.enabled") {
-    #nav-bar {
-        padding-inline-start: var(--uc-control-width);
     }
 }
 #browser {
