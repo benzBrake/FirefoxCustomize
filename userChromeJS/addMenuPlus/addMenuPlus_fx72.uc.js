@@ -268,7 +268,7 @@ if (typeof window === "undefined" || globalThis !== window) {
                         }
                         actor.sendAsyncMessage("AM:FaviconLink", { href: href, hash: data.hash });
                         function processRelLink (href) {
-                            if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.include("://")) || href.startsWith("data:")) {
+                            if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.indexOf("://")) || href.startsWith("data:")) {
                                 return href;
                             } else if (href.startsWith("//")) {
                                 href = doc.location.protocol + href;
