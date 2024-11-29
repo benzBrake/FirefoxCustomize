@@ -793,11 +793,14 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (content) return;
                     if (typeof tab === "undefined")
                         return;
-                    if (!(/^(f|ht)tps?:/.test(tab.linkedBrowser.currentURI.spec))) return;
+                    const browser = gBrowser.getBrowserForTab(tab);
+                    const URI = browser.currentURI || browser.documentURI;
+                    if (!URI) return;
+                    if (!(/^(f|ht)tps?:/.test(URI.spec))) return;
                     try {
-                        let hash = calculateHashFromStr(tab.linkedBrowser.currentURI.spec)
+                        let hash = calculateHashFromStr(URI.spec);
                         tab.faviconHash = hash;
-                        let actor = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor("AddMenu");
+                        let actor = browser.browsingContext.currentWindowGlobal.getActor("AddMenu");
                         actor.sendAsyncMessage("AM:GetFaviconLink", { hash: hash });
                     } catch (error) { }
                 }
