@@ -133,11 +133,11 @@
     window.CopyCatTheme = {
         PREF_LISTENER_LIST: {},
         CACHED_VIEWS: [],
-        get appVersion() {
+        get appVersion () {
             delete this.appVersion;
             return this.appVersion = Services.appinfo.version.split(".")[0];
         },
-        get locale() {
+        get locale () {
             delete this.locale;
             try {
                 this.locale = Services.prefs.getCharPref("general.useragent.locale");
@@ -148,30 +148,30 @@
             }
             return this.locale;
         },
-        get THEME_RELATED_PATH() {
+        get THEME_RELATED_PATH () {
             delete this.THEME_RELATED_PATH;
             return this.gPrefs("THEME_RELATED_PATH", "\\chrome\\UserThemes");
         },
-        get THEME_PATH() {
+        get THEME_PATH () {
             delete this.THEME_PATH;
             return this.THEME_PATH = this.handleRelativePath(this.THEME_RELATED_PATH);
         },
-        get THEME_URL_PREFIX() {
+        get THEME_URL_PREFIX () {
             delete this.THEME_URL_PREFIX;
             let URI = this.THEME_PATH.replace(Services.dirsvc.get('UChrm', Ci.nsIFile).path, "");
             URI = URI.replace(/(\w)\/\//g, "$1/").replaceAll("\\", "/");
             if (URI.charAt(0) == "/") URI = URI.substring(1);
             return this.THEME_URL_PREFIX = "resource://copycat-uchrm/" + URI;
         },
-        sPrefs(key, val) {
+        sPrefs (key, val) {
             cPref.set("userChromeJS.CopyCat." + key, val);
         },
-        gPrefs(key, defaultValue) {
+        gPrefs (key, defaultValue) {
             return cPref.get("userChromeJS.CopyCat." + key, defaultValue);
         },
-        get showInToolsMenu() { return this.gPrefs("showInToolsMenu", false) },
-        get debug() { return this.gPrefs("debug", false); },
-        set STYLE(css) {
+        get showInToolsMenu () { return this.gPrefs("showInToolsMenu", false) },
+        get debug () { return this.gPrefs("debug", false); },
+        set STYLE (css) {
             delete this.STYLE;
             this.STYLE = {
                 url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)),
@@ -179,17 +179,17 @@
             }
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
         },
-        get sss() {
+        get sss () {
             delete this.sss;
             return this.sss = sss;
         },
-        get reloadTarget() {
+        get reloadTarget () {
             delete this.reloadTarget;
             return this.reloadTarget = createEl(document, "menuitem", {
                 action: "ReloadAllThemes",
             })
         },
-        get reloadTargetWithNotice() {
+        get reloadTargetWithNotice () {
             delete this.reloadTargetWithNotice;
             return this.reloadTargetWithNotice = createEl(document, "menuitem", {
                 action: "ReloadAllThemes",
@@ -508,11 +508,11 @@
             const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
             alertsService.showAlertNotification(this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
         },
-        error(...args) {
+        error (...args) {
             if (this.debug)
                 TopWindow.console.error("[CopyCatTheme]", ...args);
         },
-        log(...args) {
+        log (...args) {
             if (this.debug)
                 TopWindow.console.log("[CopyCatTheme]", ...args);
         }
@@ -537,7 +537,7 @@
             }
         }
 
-        processFile(aFile) {
+        processFile (aFile) {
             if (aFile.isDirectory()) {
                 this.processDirectory(aFile);
             } else if (aFile.leafName.endsWith('.css')) {
@@ -545,7 +545,7 @@
             }
         }
 
-        processDirectory(aFile) {
+        processDirectory (aFile) {
             let themeConfig;
             let themeConfigFile = aFile.clone();
             themeConfigFile.append("userChrome.json");
@@ -630,7 +630,7 @@
             this.isEnabled = false;
         }
 
-        processOptions(options) {
+        processOptions (options) {
             options.forEach(obj => {
                 let name, type, pref, defaultValue, group;
                 if (typeof obj === "string") {
@@ -652,7 +652,7 @@
                         this._options.push({
                             name: name,
                             pref: pref,
-                            get value() {
+                            get value () {
                                 return cPref.get(pref, defaultValue)
                             },
                             toggle: function (value) {
@@ -665,10 +665,10 @@
                         this._options.push({
                             name: name,
                             pref: pref,
-                            get value() {
+                            get value () {
                                 return cPref.get(pref, defaultValue)
                             },
-                            set value(value) {
+                            set value (value) {
                                 cPref.set(key, value);
                             },
                             group: group
@@ -679,10 +679,10 @@
                             name: name,
                             pref: pref,
                             options: obj.options,
-                            get value() {
+                            get value () {
                                 return cPref.get(pref, defaultValue)
                             },
-                            set value(value) {
+                            set value (value) {
                                 cPref.set(key, value);
                             },
                             group: group
@@ -692,7 +692,7 @@
             });
         }
 
-        processMonitors(monitors) {
+        processMonitors (monitors) {
             if (typeof CopyCatTheme === "undefined") {
                 CopyCatTheme = TopWindow.CopyCatTheme;
             }
@@ -759,7 +759,7 @@
                             this.IntervalObservers.push({
                                 eval: item.eval,
                                 lastVal: null,
-                                start() {
+                                start () {
                                     CopyCatTheme.log("Starging IntervalObserver:", item);
                                     processFn(evil(item.eval));
                                     this.flag = setInterval(() => {
@@ -770,7 +770,7 @@
                                         }
                                     }, this.interval);
                                 },
-                                stop() {
+                                stop () {
                                     CopyCatTheme.log("Stopping IntervalObserver:", item);
                                     clearInterval(this.flag);
                                     restoreFn();
@@ -779,7 +779,7 @@
                         } else {
                             this.IntervalObservers.push({
                                 eval: item.eval,
-                                start() {
+                                start () {
                                     CopyCatTheme.log("Starting Job:", item);
                                     this.flag = setTimeout(() => {
                                         let val = evil(item.eval);
@@ -787,7 +787,7 @@
                                         delete this.flag;
                                     }, item.timeOut || 50);
                                 },
-                                stop() {
+                                stop () {
                                     CopyCatTheme.log("Stopping Job:", item);
                                     clearTimeout(this.flag);
                                     restoreFn();
@@ -835,7 +835,7 @@
             });
         }
 
-        processCSSFile(aFile) {
+        processCSSFile (aFile) {
             this.isTheme = true;
             TopWindow.CopyCatTheme.log("Processing CSS file: ", aFile);
             Object.entries(readStyleInfo(aFile)).forEach(([key, value]) => {
@@ -850,7 +850,7 @@
             TopWindow.CopyCatTheme.log("Added style: ", style);
         }
 
-        async register() {
+        async register () {
             const { CopyCatTheme } = TopWindow;
             if (this.isOperating) {
                 CopyCatTheme.alert(formatStr("Operation failed, please try again later"))
@@ -891,7 +891,7 @@
             this.isOperating = false;
         }
 
-        async unregister() {
+        async unregister () {
             const { CopyCatTheme } = TopWindow;
             if (this.isOperating) {
                 CopyCatTheme.alert(formatStr("Operation failed, please try again later"))
@@ -931,12 +931,12 @@
             this.isOperating = false;
         }
 
-        async reload() {
+        async reload () {
             await this.unregister();
             await this.register();
         }
 
-        async toggle() {
+        async toggle () {
             if (this.isEnabled)
                 await this.unregister();
             else
@@ -944,7 +944,7 @@
             this.isEnabled = !this.isEnabled;
         }
 
-        get options() {
+        get options () {
             if (!this._options) {
                 // 扫描 CSS 文件中的 PREF
                 this._options = [];
@@ -957,7 +957,7 @@
                             this._options.push({
                                 name: name,
                                 pref: key,
-                                get value() {
+                                get value () {
                                     return cPref.get(key, false, false)
                                 },
                                 toggle: function (value) {
@@ -972,15 +972,15 @@
             return this._options;
         }
 
-        get isOperating() {
+        get isOperating () {
             return this._isOperating;
         }
 
-        set isOperating(value) {
+        set isOperating (value) {
             this._isOperating = value;
         }
 
-        async collectCSSVariables() {
+        async collectCSSVariables () {
             const { CopyCatTheme } = TopWindow;
             CopyCatTheme.log('Collecting CSS variables');
             let addons = (await AddonManager.getActiveAddons()).addons;
@@ -1030,7 +1030,7 @@
 
         }
 
-        async removeCSSVariables() {
+        async removeCSSVariables () {
             const { CopyCatTheme } = TopWindow;
             CopyCatTheme.log('Removing CSS variables');
             if (typeof this.globalVariables === "object" && "url" in this.globalVariables && "type" in this.globalVariables) {
@@ -1040,23 +1040,23 @@
             }
         }
 
-        bindAddonEvent() {
+        bindAddonEvent () {
             const { AddonManager } = TopWindow;
             AddonManager.addAddonListener(this.addonEventListener);
         }
 
-        removeAddonEvent() {
+        removeAddonEvent () {
             const { AddonManager } = TopWindow;
             AddonManager.removeAddonListener(this.addonEventListener);
         }
 
-        async handleAddon(addon) {
+        async handleAddon (addon) {
             await this.removeCSSVariables();
             await this.collectCSSVariables();
         }
     }
 
-    function readStyleInfo(aFile) {
+    function readStyleInfo (aFile) {
         let content = readFile(aFile, true);
         let header = (content.match(/^\/\*\s*==UserStyle==\s*\n(?:.*\n)*?==\/UserStyle==\s*\*\/\s*\n/m) || [''])[0];
         let def = ['', ''];
@@ -1085,7 +1085,7 @@
         }
     }
 
-    function readFile(aFile, metaOnly) {
+    function readFile (aFile, metaOnly) {
         if (!aFile) {
             TopWindow.console.error(formatStr("param is invalid", "readFile", "aFile"));
             return;
@@ -1105,7 +1105,7 @@
         return content.replace(/\r\n?/g, '\n');
     }
 
-    function getStyleType(name) {
+    function getStyleType (name) {
         var type;
         if (/\.(?:au||ag||us)\.css$/i.test(name)) {
             var typePrefix = name.substring(name.length - 6, name.length - 4);
@@ -1126,7 +1126,7 @@
         return type;
     }
 
-    function getStyleTypeName(type) {
+    function getStyleTypeName (type) {
         switch (type) {
             case AUTHOR_SHEET:
                 return 'AUTHOR_SHEED';
@@ -1137,29 +1137,24 @@
         }
     }
 
-    function getPrefsFromFile(aFile) {
-        const regexImport = /@import url\("([^"]+)"\)/m;
+    function getPrefsFromFile (aFile) {
+        if (!aFile || !aFile.exists()) return [];
+        const regexImport = /@import\s*"([^"]+)"/m;
         let content = readFile(aFile, false);
-        let prefs = [];
-        prefs = matchPrefs(content);
+        let prefs = matchPrefs(content);
         let files = content.match(regexImport);
         if (files) {
-            files.filter(m => !m.startsWith("@import")).map(m => m.replaceAll(/\//g, "\\\\")).forEach(m => {
+            files.filter(m => !m.startsWith("@import")).map(m => m.replaceAll(/\//g, "\\")).forEach(m => {
                 let file = aFile.parent.clone();
                 file.appendRelativePath(m);
-                if (file.exists()) {
-                    let content = readFile(file, false);
-                    let ps = matchPrefs(content);
-                    ps.forEach(p => {
-                        if (!prefs.includes(p)) prefs.push(p);
-                    })
-                }
+                let pfs = getPrefsFromFile(file);
+                if (pfs.length > 0) prefs = prefs.concat(pfs);
             });
         }
-        return prefs;
+        return [...new Set(prefs)];
     }
 
-    function matchPrefs(content) {
+    function matchPrefs (content) {
         /**
          * @update 2024.02.04 兼容 @media / @support (not) -moz-bool-pref
          */
@@ -1189,15 +1184,15 @@
     }
 
 
-    function $(id, aDoc) {
+    function $ (id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
 
-    function getViewCache(aDoc) {
+    function getViewCache (aDoc) {
         return ($('appMenu-viewCache', aDoc) && $('appMenu-viewCache', aDoc).content) || $('appMenu-multiView', aDoc);
     }
 
-    function createEl(doc, tag, attrs, skipAttrs) {
+    function createEl (doc, tag, attrs, skipAttrs) {
         var el;
         if (!doc || !tag) return el;
         attrs = attrs || {};
@@ -1209,7 +1204,7 @@
         return applyAttrs(el, attrs, skipAttrs);
     }
 
-    function applyAttrs(el, attrs, skipAttrs) {
+    function applyAttrs (el, attrs, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (attrs) Object.keys(attrs).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
@@ -1222,7 +1217,7 @@
         return el;
     }
 
-    function removeEl(el) {
+    function removeEl (el) {
         if (el && el.parentNode) {
             try {
                 el.parentNode.removeChild(el);
@@ -1234,7 +1229,7 @@
         return false;
     }
 
-    function formatStr() {
+    function formatStr () {
         const LOCALE = LANG[Services.locale.appLocaleAsBCP47] ? Services.locale.appLocaleAsBCP47 : 'zh-CN';
         let str = arguments[0];
         if (str) {
@@ -1253,7 +1248,7 @@
      * @param {*} fn 
      * @returns 
      */
-    function evil(fn) {
+    function evil (fn) {
         let Fn = Function;
         try {
             let status = new Fn('return ' + fn)();
