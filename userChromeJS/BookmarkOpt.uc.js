@@ -21,10 +21,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.2
+// @version         1.4.3
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.3 修复 1.4.1 无效修复的问题
 // @note            1.4.2 Bug 1904909
 // @note            1.4.1 修复中键添加书签任何位置也会添加书签的 BUG，修复快速点击中键两次导致图标无法回复的 BUG
 // @note            1.4.0 重写，中键点击图标添加书签后当前书签图标显示为成功图标，1s后自动恢复，移除无用的 userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick 开关，增加 userChromeJS.BookmarkOpt.enableToggleButton 开关（用于控制 显示/隐藏书签工具栏按钮），去除中键单击地址栏复制当前地址
@@ -290,7 +291,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
             switch (type) {
                 case 'click':
                     if (button == 1 && isMouseDown) {
-                        let addBookmark = true;
+                        let addBookmark = false;
                         if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false)
                             && !target.hasAttribute("query") /* 排除最近访问 */
                         ) {
@@ -299,9 +300,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                             let icon = target.tagName.toLowerCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild;
                             let iconRect = icon.getBoundingClientRect();
                             let paddingLeft = iconRect.left - targetRect.left;
-                            if (x > paddingLeft + iconRect.width) {
+                            if (x < paddingLeft + iconRect.width) {
                                 // 点击的是标签，不覆盖默认的功能：打开全部
-                                addBookmark = false;
+                                addBookmark = true;
                             }
                         }
                         if (addBookmark) {
