@@ -329,7 +329,8 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                     }
                     if (target.id !== "BookmarkOpt-Toggle-PersonalToolbar") break;
                 case 'dblclick':
-                    if (Services.prefs.getBoolPref('userChromeJS.BookmarkOpt.doubleClickToShow', true) || target.id === "BookmarkOpt-Toggle-PersonalToolbar") {
+                    if (target.id !== "urlbar" && target.id !== "urlbar-input" && target.id !== "BookmarkOpt-Toggle-PersonalToolbar") return;
+                    if (Services.prefs.getBoolPref('userChromeJS.BookmarkOpt.doubleClickToShow', true)) {
                         target.diabled = true;
                         setTimeout(function () {
                             var bar = $("PersonalToolbar", doc);
