@@ -37,8 +37,8 @@
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const SidebarController = globalThis.SidebarController || globalThis.SidebarUI;
-
-    let config = {
+    const isZh = Services.locale.appLocaleAsLangTag.startsWith("zh");
+    const config = {
         "urlbar paste and go add accesskey": { // 地址栏右键粘贴并前往增加 AccessKey
             enabled: true, // true 是启用， false 是禁用
             key: 'S'
@@ -108,7 +108,7 @@
                 if (star) {
                     let callback = function () {
                         star.removeEventListener('mouseover', callback);
-                        star.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? "左键：将此页加入书签(CTRL+D)\n中键：显示/隐藏书签工具栏\n右键：打开书签管理器" : "Left click: show extensions options menu(CTRL+D)\nMiddle click: toggle places toolbar\nRight click: open addons management")
+                        star.setAttribute('tooltiptext', isZh ? "左键：将此页加入书签(CTRL+D)\n中键：显示/隐藏书签工具栏\n右键：打开书签管理器" : "Left click: show extensions options menu(CTRL+D)\nMiddle click: toggle places toolbar\nRight click: open addons management")
                         let clickFn = function (e) {
                             if (e.button === 0) {
                                 return;
@@ -132,7 +132,7 @@
                 if (reload) {
                     let callback = function () {
                         reload.removeEventListener('mouseover', callback);
-                        reload.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：刷新\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page');
+                        reload.setAttribute('tooltiptext', isZh ? '左键：刷新\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page');
                         let clickFn = function (event) {
                             if (event.button == 2) {
                                 const global = event.target.ownerGlobal;
@@ -166,7 +166,7 @@
                 let eom = CustomizableUI.getWidget('eom-button').forWindow(window).node;
                 let callback = function () {
                     eom.removeEventListener('mouseover', callback);
-                    eom.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
+                    eom.setAttribute('tooltiptext', isZh ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
                     let clickFn = function (event) {
                         if (event.button == 2 && event.target.localName == 'toolbarbutton') {
                             event.preventDefault();
@@ -180,14 +180,13 @@
             if (config["downloads button add middle and right click"]) {
                 let btn = CustomizableUI.getWidget('downloads-button').forWindow(window).node;
                 if (btn) {
-                    btn.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：拓展选项菜单\n右键：扩展管理' : 'Left click: show extensions options menu\nRight click: open addons management');
+                    btn.setAttribute('tooltiptext', isZh ? '左键：下载历史\n右键：我的足迹' : 'Left click: show downloads history\nRight click: show my footprints');
                     let clickFn = function (e) {
                         if (e.button == 1) {
                             e.preventDefault();
                             e.stopPropagation();
-
                             var input = { value: readFromClipboard() || "" };                  // default the edit field to Bob
-                            var result = Services.prompt.prompt(null, "保存 URL", "请输入 URL?", input, null, {});
+                            var result = Services.prompt.prompt(null, isZh ? "保存 URL" : "Save URL", isZh ? "请输入 URL?" : "Please enter URL?", input, null, {});
                             if (!result)
                                 return;
                             if (!(/(chrome|resource|ftp|http|https):\/\//i.test(input.value))) return;
@@ -226,7 +225,7 @@
             if (config["modify sidebar button behavior"]) {
                 let btn = CustomizableUI.getWidget('sidebar-button').forWindow(window).node;
                 if (btn) {
-                    btn.setAttribute('tooltiptext', Services.locale.appLocaleAsBCP47.includes("zh-") ? '左键：显示书签侧边栏\n中键：切换侧边栏方向\n右键：显示历史侧边栏' : 'Left click: show bookmarks sidebar\nMiddle click: toogle sidebar postion\nRight click: show history sidebar');
+                    btn.setAttribute('tooltiptext', isZh ? '左键：显示书签侧边栏\n中键：切换侧边栏方向\n右键：显示历史侧边栏' : 'Left click: show bookmarks sidebar\nMiddle click: toogle sidebar postion\nRight click: show history sidebar');
                     let clickFn = function (e) {
                         e.preventDefault();
                         e.stopPropagation();
