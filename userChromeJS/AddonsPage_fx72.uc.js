@@ -5,6 +5,7 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
+// @version         2025.01.31 Remove Cu.import, per Bug Bug 1881888 
 // @version         2023.07.12 Removed Services.jsm, per Bug 1780695
 // @version         2022.11.18 支持 fx-autoconfig
 // @version         2022.10.01 支持隐藏自身
@@ -30,15 +31,26 @@
 // ==/UserScript==
 (function () {
     "use strict";
-    
+
     const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
-    
+
     try {
-        Cu.import("resource://gre/modules/AddonManager.jsm");
-    } catch(e) {
-        Cu.import("resource://gre/modules/AddonManager.sys.mjs");
+        ChromeUtils.defineESModuleGetters(lazy, {
+            AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+            AddonManagerPrivate: "resource://gre/modules/AddonManager.sys.mjs",
+        });
+    } catch (e) {
+        XPCOMUtils.defineLazyModuleGetters(lazy, {
+            AddonManager: "resource://gre/modules/AddonManager.jsm",
+            AddonManagerPrivate: "resource://gre/modules/AddonManager.jsm",
+        });
     }
-    
+    if (!window.AddonManager) {
+        window.AddonManager = lazy.AddonManager;
+    }
+    if (!window.AddonManagerPrivate) {
+        window.AddonManagerPrivate = lazy.AddonManagerPrivate;
+    }
     const iconURL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";  // uc 脚本列表的图标
     const AM_FILENAME = Components.stack.filename.split("/").pop().split("?")[0];
     const APP_VERSION = parseFloat(Services.appinfo.version);
@@ -64,13 +76,13 @@
     }
 
     window.AM_Helper = {
-        init() {
+        init () {
             document.addEventListener("DOMContentLoaded", this, false);
         },
-        uninit() {
+        uninit () {
             document.removeEventListener("DOMContentLoaded", this, false);
         },
-        handleEvent(event) {
+        handleEvent (event) {
             switch (event.type) {
                 case "DOMContentLoaded":
                     this.onDOMContentLoaded(event);
@@ -85,7 +97,7 @@
             }
         },
 
-        onDOMContentLoaded(event) {
+        onDOMContentLoaded (event) {
             const doc = event.target;
             if (!["about:addons"].includes(doc.URL))
                 return;
@@ -121,7 +133,7 @@
             }
         },
 
-        browseDir(aAddon) {
+        browseDir (aAddon) {
             switch (aAddon.type) {
                 case "plugin":
                     var pathes = aAddon.pluginFullpath;
@@ -159,13 +171,13 @@
                 }
             }
         },
-        editScript(aAddon) {
+        editScript (aAddon) {
             if (aAddon.type == "userchromejs") {
                 var path = aAddon._script.file.path;
                 this.launchEditor(path);
             }
         },
-        launchEditor(path) {
+        launchEditor (path) {
             var editor = Services.prefs.getStringPref("view_source.editor.path");
             if (!editor) {
                 alert($L("set editor path"));
@@ -178,12 +190,12 @@
             process.init(appfile);
             process.runw(false, [path], 1, {});
         },
-        copyName(aAddon) {
+        copyName (aAddon) {
             this.copyToClipboard(aAddon.name);
         },
 
         // Fx78: ローカライズ出来ないと動作しない対策
-        replace_l10n_setAttributes(doc) {
+        replace_l10n_setAttributes (doc) {
             if (!doc.l10n) return;
 
             const tr1 = {
@@ -208,7 +220,7 @@
             }
         },
 
-        injectView(doc) {
+        injectView (doc) {
             const header = doc.getElementById("page-header");
             if (!header) return;
             doc.querySelectorAll("addon-card").forEach(card => {
@@ -270,7 +282,7 @@
             this.setUrlOrPath(doc);
         },
 
-        injectCategory(doc) {
+        injectCategory (doc) {
             // Fx76 about:addonsのサイドバーhtml化でカテゴリーが自動で挿入されなくなった対策
             const cat = doc.getElementById("categories");
             if (cat && !doc.querySelector('.category[name="userchromejs"]')) {
@@ -293,12 +305,12 @@
             }
         },
 
-        getTargetAddon(target) {
+        getTargetAddon (target) {
             const card = target.closest("[addon-id]");
             return (card && card.addon) ? card.addon : null;
         },
 
-        onClick(event) {
+        onClick (event) {
             event.stopPropagation();
             const target = event.target;
             const action = target.getAttribute("action");
@@ -330,7 +342,7 @@
             }
         },
 
-        onChange(event) {
+        onChange (event) {
             event.stopPropagation();
             const target = event.target;
             const addon = this.getTargetAddon(target);
@@ -343,7 +355,7 @@
             }
         },
 
-        getInstallURL(aAddon) {
+        getInstallURL (aAddon) {
             if (!aAddon) return null;
 
             var url = null;
@@ -364,7 +376,7 @@
             }
         },
 
-        getPath(aAddon) {
+        getPath (aAddon) {
             if (!aAddon) return false;
 
             let path = aAddon.pluginFullpath;
@@ -377,7 +389,7 @@
             return path || false;
         },
 
-        setUrlOrPath(doc) {
+        setUrlOrPath (doc) {
             let addon;
             const detail = doc.querySelector('#main [current-view="detail"]');
             if (detail) {
@@ -428,7 +440,7 @@
             }
         },
 
-        openUrl(url) {
+        openUrl (url) {
             if (/^https?:/.test(url)) {
                 openURL(url);
             } else {
@@ -436,13 +448,13 @@
             }
         },
 
-        revealPath(path) {
+        revealPath (path) {
             var file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             file.initWithPath(path);
             if (file.exists())
                 file.reveal();
         },
-        copyToClipboard(aString) {
+        copyToClipboard (aString) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].
                 getService(Ci.nsIClipboardHelper).copyString(aString);
         }
@@ -452,7 +464,7 @@
         scripts: [],
         unloads: [],
 
-        init() {
+        init () {
             if (AddonManager.hasAddonType && AddonManager.hasAddonType("userchromejs") ||
                 AddonManager.addonTypes && 'userchromejs' in AddonManager.addonTypes)
                 return;
@@ -461,10 +473,10 @@
             this.registerProvider();
             this.addStyle();
         },
-        uninit() {
+        uninit () {
             this.unloads.forEach(function (func) { func(); });
         },
-        initScripts() {
+        initScripts () {
             this.scripts = [];
             let scripts;
             if (window.userChrome_js) {
@@ -481,7 +493,7 @@
                         file: aFile
                     });
                 });
-                function resolveChromeURL(str) {
+                function resolveChromeURL (str) {
                     const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
                     try {
                         return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
@@ -502,20 +514,20 @@
                     this.scripts.push(new ScriptAddon(script));
             });
         },
-        getScriptById(aId) {
+        getScriptById (aId) {
             for (var i = 0; i < this.scripts.length; i++) {
                 if (this.scripts[i].id == aId)
                     return this.scripts[i];
             }
             return null;
         },
-        registerProvider() {
+        registerProvider () {
             const provider = {
-                async getAddonByID(aId) {
+                async getAddonByID (aId) {
                     return userChromeJSAddon.getScriptById(aId);
                 },
 
-                async getAddonsByTypes(aTypes) {
+                async getAddonsByTypes (aTypes) {
                     if (aTypes && !aTypes.includes("userchromejs")) {
                         return [];
                     } else {
@@ -541,7 +553,7 @@
                 AddonManagerPrivate.unregisterProvider(provider);
             });
         },
-        addStyle() {
+        addStyle () {
             let styleService = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
             if (APP_VERSION > 110) {
                 let toggleCss = `
@@ -638,7 +650,7 @@
         },
     };
 
-    function ScriptAddon(aScript) {
+    function ScriptAddon (aScript) {
         this._script = aScript;
 
         this.id = "ucjs:" + this._script.filename;  //this._script.url.replace(/\//g, "|");
@@ -675,18 +687,18 @@
         operationsRequiringRestart: AddonManager.OP_NEEDS_RESTART_ENABLE | AddonManager.OP_NEEDS_RESTART_DISABLE | AddonManager.OP_NEEDS_RESTART_UNINSTALL,
         // operationsRequiringRestart: AddonManager.OP_NEEDS_RESTART_DISABLE,
 
-        get optionsURL() {
+        get optionsURL () {
             if (this.isActive && this._script.optionsURL)
                 return this._script.optionsURL;
         },
 
-        get isActive() {
+        get isActive () {
             return !this.userDisabled ? true : false;
         },
-        get userDisabled() {
+        get userDisabled () {
             return !this.enabled ? true : false;
         },
-        set userDisabled(val) {
+        set userDisabled (val) {
             if (val == this.userDisabled) {
                 return val;
             }
@@ -720,7 +732,7 @@
 
             AddonManagerPrivate.callAddonListeners(val ? 'onEnabled' : 'onDisabled', this);
 
-            function restoreState(arr) {
+            function restoreState (arr) {
                 var disable = [];
                 for (var i = 0, len = arr.length; i < len; i++)
                     disable[arr[i]] = true;
@@ -728,7 +740,7 @@
             }
 
         },
-        get permissions() {
+        get permissions () {
             // var perms = AddonManager.PERM_CAN_UNINSTALL;
             // perms |= this.userDisabled ? AddonManager.PERM_CAN_ENABLE : AddonManager.PERM_CAN_DISABLE;
             var perms = this.userDisabled ? AddonManager.PERM_CAN_ENABLE : AddonManager.PERM_CAN_DISABLE;
@@ -736,20 +748,20 @@
             return perms;
         },
 
-        uninstall() {
+        uninstall () {
             AddonManagerPrivate.callAddonListeners("onUninstalling", this, false);
             this.needsUninstall = true;
             this.pendingOperations |= AddonManager.PENDING_UNINSTALL;
             AddonManagerPrivate.callAddonListeners("onUninstalled", this);
         },
-        cancelUninstall() {
+        cancelUninstall () {
             this.needsUninstall = false;
             this.pendingOperations ^= AddonManager.PENDING_UNINSTALL;
             AddonManagerPrivate.callAddonListeners("onOperationCancelled", this);
         },
 
         // Fx62.0-
-        async enable() {
+        async enable () {
             if (typeof _uc !== "undefined" && !_uc.isFaked) {
                 let script = _uc.scripts[this.name];
                 xPref.set(_uc.PREF_SCRIPTSDISABLED, xPref.get(_uc.PREF_SCRIPTSDISABLED).replace(new RegExp('^' + script.filename + ',|,' + script.filename), ''));
@@ -765,7 +777,7 @@
             }
             this.userDisabled = false;
         },
-        async disable() {
+        async disable () {
             if (typeof _uc !== "undefined" && !_uc.isFaked) {
                 let script = _uc.scripts[this.name];
                 xPref.set(_uc.PREF_SCRIPTSDISABLED, script.filename + ',' + xPref.get(_uc.PREF_SCRIPTSDISABLED));
@@ -788,7 +800,7 @@
         },
     };
 
-    function $C(doc, tag, attrs, parent, reference) {
+    function $C (doc, tag, attrs, parent, reference) {
         let node;
 
         if (tag instanceof Node) {
@@ -817,8 +829,8 @@
         }
         return node;
     }
-    
-    function $L(key, replace) {
+
+    function $L (key, replace) {
         const _LOCALE = getLocale() || "zh-CN";
         let str = arguments[0];
         if (str) {
@@ -831,7 +843,7 @@
         } else return "";
     }
 
-    function getLocale() {
+    function getLocale () {
         let LOCALE = Services.prefs.getCharPref("general.useragent.locale", "");
         if (!LOCALE) {
             let sLocales = Services.locale.appLocalesAsBCP47;
