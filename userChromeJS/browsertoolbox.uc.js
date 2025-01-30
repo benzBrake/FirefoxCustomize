@@ -6,13 +6,13 @@
 // @charset         UTF-8
 // @compatibility   Firefox 100
 // @homepage        https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js
+// @version         2025.01.31 Remove Cu.import, per Bug Bug 1881888
 // ==/UserScript==
 (function () {
-
     if (location != 'chrome://browser/content/browser.xhtml')
         return;
 
-    ChromeUtils.import("resource:///modules/CustomizableUI.jsm");
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
     try {
 
@@ -38,13 +38,12 @@
         });
     } catch (e) { };
 
-    function onCommand() {
+    function onCommand (event) {
         var document = event.target.ownerDocument;
         if (!document.getElementById('menu_browserToolbox')) {
-            let { require } = Cu.import("resource://devtools/shared/loader/Loader.jsm", {});
+            let { require } = "import" in Cu ? Cu.import("resource://devtools/shared/loader/Loader.jsm", {}) : ChromeUtils.importESModule("resource://devtools/shared/loader/base-loader.sys.mjs")
             require("devtools/client/framework/devtools-browser");
         };
         document.getElementById('menu_browserToolbox').click();
     };
-
 })();

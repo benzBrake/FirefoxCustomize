@@ -22,7 +22,7 @@
     const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
     window.ucjsUndoCloseTabButtonService = {
-        prepareMenu(event) {
+        prepareMenu (event) {
             const doc = (event.view && event.view.document) || document;
             const menu = event.originalTarget;
             this.removeChilds(menu);
@@ -87,7 +87,7 @@
             }
         },
 
-        createFaviconMenuitem(doc, label, icon, value, command) {
+        createFaviconMenuitem (doc, label, icon, value, command) {
             const attr = {
                 class: "menuitem-iconic bookmark-item menuitem-with-favicon",
                 label: label,
@@ -103,19 +103,19 @@
             return m;
         },
 
-        undoTab(event) {
+        undoTab (event) {
             undoCloseTab(event.originalTarget.getAttribute("value"));
         },
-        undoWindow(event) {
+        undoWindow (event) {
             undoCloseWindow(event.originalTarget.getAttribute("value"));
         },
-        removeChilds(element) {
+        removeChilds (element) {
             const range = document.createRange();
             range.selectNodeContents(element);
             range.deleteContents();
         },
 
-        onClick(event) {
+        onClick (event) {
             if (event.button === 0 && event.target.id === "ucjs-undo-close-tab-button") {
                 console.log(event.target.id)
                 event.preventDefault();
@@ -143,7 +143,7 @@
             }
         },
 
-        $C(doc, tag, attrs) {
+        $C (doc, tag, attrs) {
             const e = tag instanceof Node ? tag : doc.createElementNS(XULNS, tag);
             if (attrs) {
                 Object.entries(attrs).forEach(([key, value]) => e.setAttribute(key, value));
@@ -152,7 +152,7 @@
         },
     };
 
-    function run() {
+    function run () {
         if (useTabbarMiddleClick) {
             gBrowser.tabContainer.addEventListener("click", ucjsUndoCloseTabButtonService.onClick, true);
         }
@@ -164,7 +164,7 @@
         }
 
         try {
-            Cu.import("resource:///modules/CustomizableUI.jsm");
+            const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
             CustomizableUI.createWidget({
                 id: buttonId,
                 defaultArea: CustomizableUI.AREA_TABSTRIP,
