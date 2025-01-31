@@ -4,6 +4,7 @@
 // @version         1.2.6
 // @include         main
 // @charset         UTF-8
+// @note            2025/01/31 Fx136 fix Remove Cu.import, per Bug Bug 1881888, Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            2023/08/16 Fx117 fix this is undefined
 // @note            2023/06/08 Fx115 SessionStore.getClosedTabData → SessionStore.getClosedTabDataForWindow
 // @note            2022/11/12 修改左中右按键行为
@@ -146,7 +147,18 @@
         $C (doc, tag, attrs) {
             const e = tag instanceof Node ? tag : doc.createElementNS(XULNS, tag);
             if (attrs) {
-                Object.entries(attrs).forEach(([key, value]) => e.setAttribute(key, value));
+                Object.entries(attrs).forEach(([key, value]) => {
+                    if (key.startsWith('on')) {
+                        const eventName = key.slice(2).toLowerCase();
+                        if (typeof value === 'string') {
+                            e.addEventListener(eventName, new Function(value));
+                        } else if (typeof value === 'function') {
+                            e.addEventListener(eventName, value);
+                        }
+                    } else {
+                        e.setAttribute(key, value);
+                    }
+                });
             }
             return e;
         },

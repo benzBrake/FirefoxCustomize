@@ -13,7 +13,8 @@
 // @compatibility  Firefox 127
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/ScreenshotTools.uc.js.
-// @version        0.0.2
+// @version        0.0.3
+// @note           0.0.3 修复 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note           0.0.2 修复无法打开系统画板
 // @note           0.0.1
 // ==/UserScript==
@@ -367,8 +368,10 @@
         let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
-            if (typeof v === 'function') {
-                e.setAttribute(k, `(${v.toString()}).call(this, event);`);
+            if (k.startsWith('on')) {
+                const ev = k.replace(/^on/, '');
+                const fn = typeof v === 'function' ? v : new Function(v);
+                ev === 'wheel' ? e.addEventListener(ev, fn, { passive: true }) : e.addEventListener(ev, fn);
             } else {
                 e.setAttribute(k, v);
             }

@@ -248,7 +248,8 @@
 
             // 设置 command
             if (obj.oncommand || obj.command) return item;
-            item.setAttribute("oncommand", "TabPlus.onCommand(event);");
+            // item.setAttribute("oncommand", "TabPlus.onCommand(event);");
+            item.addEventListener("command", this.onCommand.bind(this), false);
             return item;
         },
         addPrefListener: function (pref, callback) {
@@ -429,8 +430,10 @@
         }, {}],
         replace (win) {
             win || (win = window);
-            win.document.getElementById('context-viewimage').setAttribute('oncommand', null);
-            win.document.getElementById('context-viewimage').addEventListener('command', this, false);
+            const m = win.document.getElementById('context-viewimage');
+            if (m.hasAttribute('oncommand'))
+                m.setAttribute('oncommand', null);
+            m.addEventListener('command', this, false);
         },
         handleEvent (e) {
             e.preventDefault();
@@ -814,8 +817,10 @@
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
-                if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                if (key.startsWith('on')) {
+                    const [e, f] = [key.slice(2), obj[key]];
+                    const fn = typeof f === 'function' ? f : new Function(f);
+                    el.addEventListener(e, fn, false)
                 } else {
                     el.setAttribute(key, obj[key]);
                 }

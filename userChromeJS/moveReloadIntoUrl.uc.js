@@ -6,7 +6,8 @@
 // @include        main
 // @shutdown       window.moveReloadIntoURL.unload();
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
-// @version        1.2.4
+// @version        1.2.5
+// @note           1.2.5 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note           1.2.4 Bug 1880914  Move Browser* helper functions used from global menubar and similar commands to a single object in a separate file, loaded as-needed and Bug 1820534 - Move front-end to modern flexbox
 // @note           1.2.3 修复在新窗口不生效，热插拔有事时候不能用
 // @note           1.2.2 修复 Firefox 103 兼容性
@@ -139,10 +140,16 @@
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
-                if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                let value = obj[key];
+                if (key.startsWith('on')) {
+                    const eventName = key.slice(2).toLowerCase();
+                    if (typeof value === 'string') {
+                        el.addEventListener(eventName, new Function(value));
+                    } else if (typeof value === 'function') {
+                        el.addEventListener(eventName, value);
+                    }
                 } else {
-                    el.setAttribute(key, obj[key]);
+                    el.setAttribute(key, value);
                 }
             }
         });

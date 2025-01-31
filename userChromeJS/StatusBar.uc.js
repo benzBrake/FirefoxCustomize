@@ -129,7 +129,7 @@
         }
     }
 
-    function $C(name, attr) {
+    function $C (name, attr) {
         const appVersion = Services.appinfo.version.split(".")[0];
         attr || (attr = {});
         var el;
@@ -139,12 +139,17 @@
             el = document.createElement(name);
         }
         if (attr) Object.keys(attr).forEach(function (n) {
-            el.setAttribute(n, attr[n])
+            if (n.startsWith("on")) {
+                const [e, fn] = [n.slice(2), attr[n]];
+                el.addEventListener(e, typeof fn === "string" ? new Function(fn) : fn);
+            } else {
+                el.setAttribute(n, attr[n])
+            }
         });
         return el;
     }
 
-    function addStyle(css) {
+    function addStyle (css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'

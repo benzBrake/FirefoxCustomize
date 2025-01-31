@@ -2,11 +2,12 @@
 // @name            CustomButtons.uc.js
 // @description     添加多个自定义按钮，UndoCloseTab、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
-// @version         0.1.9
+// @version         0.2.0
 // @compatibility   Firefox 70 +
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.0 修复 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            0.1.9 分离高级截图为 ScreenshotTools.uc.js
 // @note            0.1.8 画板改为调用系统自带，修改 openCommand 函数，exec 增加第三个参数，移除部分无用代码
 // @note            0.1.7 修改【我的足迹：下载】，【我的足迹：书签】图标
@@ -395,7 +396,8 @@
             if (obj.oncommand || obj.command)
                 return item;
 
-            item.setAttribute("oncommand", "CustomButtons.onCommand(event);");
+            // item.setAttribute("oncommand", "CustomButtons.onCommand(event);");
+            item.addEventListener("command", CustomButtons.onCommand, false);
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
@@ -606,7 +608,9 @@
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
                 if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                    el.addEventListener(key, obj[key], false);
+                } else if (key.startsWith("on")) {
+                    el.addEventListener(key.slice(2).toLowerCase(), new Function(obj[key]), false);
                 } else {
                     el.setAttribute(key, obj[key]);
                 }

@@ -3,8 +3,12 @@
 // @namespace      http://space.geocities.yahoo.co.jp/gl/alice0775
 // @description    Text Zoom Per Domain
 // @include        main
-// @compatibility  Firefox 100+
+// @compatibility  Firefox 135
 // @author         Alice0775
+// @version        2025/01/27 fix Bug
+// @version        2024/12/22 fix Bug 1936336 - Disallow inline event handlers
+// @version        2024/11/28 Keep open menu when middleclick
+// @version        2022/08/26 Bug 1695435 - Remove @@hasInstance for IDL interfaces in chrome context
 // @version        2022/04/01 remove nsIIOService
 // @version        2022/03/10 02:00 Bug 1746667 - PathUtils: Make `get{ProfileDir,LocalProfileDir,TempDir}` sync on main thread
 // @version        2022/01/20 06:00 Bug 1747461 Remove FileUtils.getFile from browser/
@@ -19,37 +23,39 @@
 
 var textZoomPerDomain = {
   // ==config==
-  defaultTextZoom: 110,    // default text zoom
-
+  defaultTextZoom: 130,    // default text zoom
+  
   // regular expression, or strings wild card * ? +
   SITEINFO: [
-    { url: /^https?:\/\/min\.size\.(com|co\.jp)./, textZoom: 120 }, // ex. regular expression
-    { url: "https?://min.size.(com|co.jp)*", textZoom: 120 },       // ex. strings wild card: * ? +
-    { url: "https?://docs.google.(com|co.jp)*", textZoom: 100 },
-    { url: "about:*", textZoom: 100 }, // maybe not change
+    {url: /^https?:\/\/min\.size\.(com|co\.jp)./ , textZoom: 120}, // ex. regular expression
+    {url: "https?://min.size.(com|co.jp)*" , textZoom: 120},       // ex. strings wild card: * ? +
+    {url: "https?://docs.google.(com|co.jp)*" , textZoom: 100},
+    {url: /.*\.svg/ , textZoom: 100}, // maybe not change
+    {url: /.*\.pdf/ , textZoom: 100}, // maybe not change
+    {url: /^about:.*/ , textZoom: 100}, // maybe not change
   ],
   // ==/config==
-
+  
 
   aUrlTextZoom: [],
-  getParam: function () {
+  getParam: function() {
     return textZoomPerDomain_storage.getAllTextZoomData();
   },
 
-  handleEvent: function (event) {
-    switch (event.type) {
+  handleEvent: function(event) {
+    switch(event.type) {
       case "unload":
         this.uninit();
         break;
     }
   },
 
-  init: async function () {
+  init: async function() {
     ZoomManager.setZoomForBrowser = function ZoomManager_setZoomForBrowser(aBrowser, aVal) {
       if (aVal < this.MIN || aVal > this.MAX)
-        throw Cr.NS_ERROR_INVALID_ARG;
+        throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
 
-      if (this.useFullZoom || aBrowser.isSyntheticDocument) {
+      if (this.useFullZoomForBrowser(aBrowser)) {
 
         let textZoom = textZoomPerDomain.getTextZoom(aBrowser.currentURI);
         if (textZoom == null)
@@ -78,7 +84,7 @@ var textZoomPerDomain = {
       let re = info.url;
       if (typeof re == "string") {
         re = new RegExp("^" + re.replace(/\./g, "\\.").replace(/\*/g, "."));
-        this.SITEINFO[i].url = re;
+      this.SITEINFO[i].url = re;
       }
     }
 
@@ -86,17 +92,17 @@ var textZoomPerDomain = {
     window.addEventListener("unload", this, false);
   },
 
-  uninit: function () {
+  uninit: function() {
     window.removeEventListener("unload", this, false);
     textZoomPerDomain_storage.closeDB();
   },
 
-  initCache: function () {
+  initCache: function() {
     this.aUrlTextZoom = this.getParam();
     this.defaultTextZoom = textZoomPerDomain_storage.getTextZoomByUrl("default_text_zoom") || this.defaultTextZoom;
   },
 
-  getDefaultSize: function () {
+  getDefaultSize: function() {
     return this.defaultTextZoom;
   },
 
@@ -105,12 +111,12 @@ var textZoomPerDomain = {
   return defaultTextZoom if url is not match DB/SITEINFO
   return textZoom
   */
-  getTextZoom: function (aURI) {
+  getTextZoom: function(aURI) {
     try {
       if (!/https?|ftp|file/.test(aURI.scheme)) {
         return null;
       }
-    } catch (e) {
+    } catch(e) {
       return null;
     }
 
@@ -124,17 +130,17 @@ var textZoomPerDomain = {
           url = this.ioService.newURI(url, null, null).spec;
         }
       }
-    } catch (e) {
+    } catch(e) {
       return null;
     }
 
     //userChrome_js.debug(encodeURIComponent(url));
     let textZoom = this.aUrlTextZoom[encodeURIComponent(url)];
     if (typeof textZoom != "undefined") {
-      //userChrome_js.debug(TextZoom);
-      return textZoom;
+       //userChrome_js.debug(TextZoom);
+       return textZoom;
     }
-
+    
     for (let i = 0; i < this.SITEINFO.length; i++) {
       let info = this.SITEINFO[i];
       let re = info.url;
@@ -148,7 +154,7 @@ var textZoomPerDomain = {
     return this.defaultTextZoom;
   },
 
-  setTextZoom: function (browser) {
+  setTextZoom: function(browser) {
     if (!browser.currentURI)
       return;
     if (!ZoomManager.useFullZoom)
@@ -175,9 +181,9 @@ var textZoomPerDomain = {
 
 var textZoomPerDomain_storage = {
   db: null,
-  initDB: async function () {
+  initDB: async function() {
     //let file = FileUtils.getFile("UChrm", ["textZoom.sqlite"]);
-    let targetPath = PathUtils.join(
+   let targetPath = PathUtils.join(
       PathUtils.profileDir,
       "chrome", "textZoom.sqlite"
     );
@@ -197,13 +203,13 @@ var textZoomPerDomain_storage = {
     }
   },
 
-  closeDB: function () {
+  closeDB: function() {
     try {
       this.db.close();
-    } catch (e) { }
+    } catch(e) {}
   },
 
-  getAllTextZoomData: function (url) {
+  getAllTextZoomData: function(url) {
     let aUrlTextZoom = [];
 
     let stmt = this.db.createStatement(
@@ -211,7 +217,7 @@ var textZoomPerDomain_storage = {
     );
     try {
       while (stmt.executeStep()) {
-        let url = stmt.row.url;
+        let url         = stmt.row.url;
         let textZoom = stmt.row.textZoom;
         if (!!url)
           aUrlTextZoom[url] = textZoom;
@@ -222,7 +228,7 @@ var textZoomPerDomain_storage = {
     return aUrlTextZoom;
   },
 
-  getTextZoomByUrl: function (url) {
+  getTextZoomByUrl: function(url) {
     let textZoom = null;
     let stmt = this.db.createStatement(
       "SELECT textZoom FROM TextZoom WHERE url = :url"
@@ -239,25 +245,25 @@ var textZoomPerDomain_storage = {
     return textZoom;
   },
 
-  setTextZoomByUrl: function (url, textZoom) {
-    //userChrome_js.debug("setTextZoomByUrl: " + url);
-    //userChrome_js.debug("setTextZoomByUrl: " + textZoom);
-    //userChrome_js.debug("this.getTextZoomByUrl(url): " + this.getTextZoomByUrl(url));
-    if (this.getTextZoomByUrl(url) == null) {
+  setTextZoomByUrl: function(url, textZoom) {
+//userChrome_js.debug("setTextZoomByUrl: " + url);
+//userChrome_js.debug("setTextZoomByUrl: " + textZoom);
+//userChrome_js.debug("this.getTextZoomByUrl(url): " + this.getTextZoomByUrl(url));
+    if(this.getTextZoomByUrl(url) == null) {
       this.insertTextZoomByUrl(url, textZoom);
     } else {
       this.updateTextZoomByUrl(url, textZoom);
     }
   },
 
-  insertTextZoomByUrl: function (url, textZoom) {
+  insertTextZoomByUrl: function(url, textZoom) {
     if (typeof url != "string" || !url)
       return;
     if (typeof textZoom != "number")
       return;
 
-    //userChrome_js.debug("insertTextZoomByUrl: " + url);
-    //userChrome_js.debug("insertTextZoomByUrl: " + textZoom);
+//userChrome_js.debug("insertTextZoomByUrl: " + url);
+//userChrome_js.debug("insertTextZoomByUrl: " + textZoom);
 
     let stmt = this.db.createStatement(
       "INSERT INTO TextZoom (url, textZoom) VALUES (:url, :textZoom)"
@@ -266,16 +272,16 @@ var textZoomPerDomain_storage = {
     stmt.params['textZoom'] = textZoom;
     try {
       stmt.execute();
-      //userChrome_js.debug("insertTextZoomByUrl: done");
-    } catch (ex) {
-      //userChrome_js.debug("insertTextZoomByUrl: error" + ex);
+//userChrome_js.debug("insertTextZoomByUrl: done");
+    } catch(ex) {
+//userChrome_js.debug("insertTextZoomByUrl: error" + ex);
     } finally {
       stmt.finalize();
     }
 
   },
 
-  updateTextZoomByUrl: function (url, textZoom) {
+  updateTextZoomByUrl: function(url, textZoom) {
     if (typeof url != "string" || !url)
       return;
     if (typeof textZoom != "number")
@@ -293,7 +299,7 @@ var textZoomPerDomain_storage = {
     }
   },
 
-  deleteByUrl: function (url) {
+  deleteByUrl: function(url) {
     if (typeof url != "string" || !url)
       return;
 
@@ -313,16 +319,16 @@ var textZoomPerDomain_storage = {
 
 var textZoomPerDomain_menu = {
 
-  jsonToDOM: function (jsonTemplate, doc, nodes) {
+  jsonToDOM: function(jsonTemplate, doc, nodes) {
     jsonToDOM.namespaces = {
-      html: "http://www.w3.org/1999/xhtml",
-      xul: "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    html: "http://www.w3.org/1999/xhtml",
+    xul: "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
     };
     jsonToDOM.defaultNamespace = jsonToDOM.namespaces.xul;
     function jsonToDOM(jsonTemplate, doc, nodes) {
       function namespace(name) {
-        var reElemNameParts = /^(?:(.*):)?(.*)$/.exec(name);
-        return { namespace: jsonToDOM.namespaces[reElemNameParts[1]], shortName: reElemNameParts[2] };
+          var reElemNameParts = /^(?:(.*):)?(.*)$/.exec(name);
+          return { namespace: jsonToDOM.namespaces[reElemNameParts[1]], shortName: reElemNameParts[2] };
       }
 
       // Note that 'elemNameOrArray' is: either the full element name (eg. [html:]div) or an array of elements in JSON notation
@@ -330,7 +336,7 @@ var textZoomPerDomain_menu = {
         // Array of elements?  Parse each one...
         if (Array.isArray(elemNameOrArray)) {
           var frag = doc.createDocumentFragment();
-          Array.prototype.forEach.call(arguments, function (thisElem) {
+          Array.prototype.forEach.call(arguments, function(thisElem) {
             frag.appendChild(tag.apply(null, thisElem));
           });
           return frag;
@@ -344,8 +350,8 @@ var textZoomPerDomain_menu = {
         for (var key in elemAttr) {
           var val = elemAttr[key];
           if (nodes && key == "key") {
-            nodes[val] = elem;
-            continue;
+              nodes[val] = elem;
+              continue;
           }
 
           var attrNs = namespace(key);
@@ -360,12 +366,13 @@ var textZoomPerDomain_menu = {
 
         // Create and append this element's children
         var childElems = Array.prototype.slice.call(arguments, 2);
-        childElems.forEach(function (childElem) {
+        childElems.forEach(function(childElem) {
           if (childElem != null) {
             elem.appendChild(
-              childElem instanceof doc.defaultView.Node ? childElem :
-                Array.isArray(childElem) ? tag.apply(null, childElem) :
-                  doc.createTextNode(childElem));
+                doc.defaultView.Node.isInstance(childElem)
+                /*childElem instanceof doc.defaultView.Node*/ ? childElem :
+                    Array.isArray(childElem) ? tag.apply(null, childElem) :
+                        doc.createTextNode(childElem));
           }
         });
         return elem;
@@ -375,41 +382,39 @@ var textZoomPerDomain_menu = {
 
     return jsonToDOM(jsonTemplate, doc, nodes);
   },
-
-  zoomFactor: [200, 190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30],
-  zoomAaccesskey: ["-", "9", "8", "7", "6", "5", "4", "3", "2", "1", "0", "a", "b", "c", "d", "e", "f", "g"],
+  
+  zoomFactor:     [ 300, 280, 260, 240, 220, 200, 190, 180, 170, 160, 150, 140, 130, 120, 110, 100,  90,  80,  70,  60,  50,  40,  30],
+  zoomAaccesskey: [ "@", "[", ":", "]", "/", "-", "9", "8", "7", "6", "5", "4", "3", "2", "1", "0", "a", "b", "c", "d", "e", "f", "g"],
   menuinit: false,
-
-  init: function () {
+  
+  init :function() {
     textZoomPerDomain.init();
     this.ioService = Services.io;
 
-    let template =
-      ["menu", { id: "textZoomPerDomain", label: "文本缩放", accesskey: "Z" },
-        ["menupopup", {
-          id: "textZoomPerDomainMenupopup",
-          onpopupshowing: "textZoomPerDomain_menu.onpopupshowing();"
-        },
-          ["menuseparator", { id: "textZoomPerDomainMenuseparator2" }],
-          ["menuitem", {
-            type: "radio", name: "textZoomPerDomain",
-            id: "textZoomPerDomainnDefault", label: "默认",
-            oncommand: "textZoomPerDomain_menu.setTextZoom(textZoomPerDomain.defaultTextZoom);",
-            accesskey: "u"
-          }],
-          ["menuitem", {
-            id: "textZoomPerDomainChangeDefault", label: "修改默认比例",
-            oncommand: "textZoomPerDomain_menu.changeDefaultSize();",
-            accesskey: "t"
-          }]
-        ]
-      ];
+    let template = 
+        ["menu", {id: "textZoomPerDomain", label: "文本缩放", accesskey:"Z"},
+          ["menupopup", {id :"textZoomPerDomainMenupopup"/*,
+                         onpopupshowing: "textZoomPerDomain_menu.onpopupshowing();"*/},
+            ["menuseparator",  {id: "textZoomPerDomainMenuseparator2"}],
+            ["menuitem", {type: "radio", name: "textZoomPerDomain",
+                          id: "textZoomPerDomainnDefault", label: "默认",
+                          /*oncommand: "textZoomPerDomain_menu.setTextZoom(textZoomPerDomain.defaultTextZoom);",*/
+                          accesskey:"u"}],
+            ["menuitem", {id:"textZoomPerDomainChangeDefault", label:"修改默认比例",
+                          /*oncommand: "textZoomPerDomain_menu.changeDefaultSize();",*/
+                          accesskey: "t"}]
+          ]
+        ];
     let contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
     contentAreaContextMenu.appendChild(this.jsonToDOM(template, document, {}));
-    contentAreaContextMenu.addEventListener("popupshowing", (event) => { document.getElementById("textZoomPerDomain").hidden = !ZoomManager.useFullZoom; }, true);
+    contentAreaContextMenu.addEventListener("popupshowing", (event) => {document.getElementById("textZoomPerDomain").hidden = !ZoomManager.useFullZoom;}, true);
+    
+    document.getElementById("textZoomPerDomainMenupopup").addEventListener("popupshowing", (event) => {textZoomPerDomain_menu.onpopupshowing()});
+    document.getElementById("textZoomPerDomainnDefault").addEventListener("command", (event) => {textZoomPerDomain_menu.setTextZoom(textZoomPerDomain.defaultTextZoom)});
+    document.getElementById("textZoomPerDomainChangeDefault").addEventListener("command", (event) => {textZoomPerDomain_menu.changeDefaultSize()});
   },
 
-  onpopupshowing: function () {
+  onpopupshowing: function() {
     if (!this.menuinit) {
       this.menuinit = true;
       let ref = document.getElementById("textZoomPerDomainMenuseparator2");
@@ -419,40 +424,66 @@ var textZoomPerDomain_menu = {
         menuitem.setAttribute("name", "textZoomPerDomain");
         menuitem.setAttribute("id", "textZoomPerDomain" + this.zoomFactor[i]);
         menuitem.setAttribute("label", this.zoomFactor[i].toString());
-        menuitem.setAttribute("oncommand", "textZoomPerDomain_menu.setTextZoom(" + this.zoomFactor[i] + ")");
+        menuitem.addEventListener("command", () => textZoomPerDomain_menu.setTextZoom(this.zoomFactor[i]));
+        //menuitem.setAttribute("oncommand", "textZoomPerDomain_menu.setTextZoom(" + this.zoomFactor[i] + ")");
         menuitem.setAttribute("accesskey", this.zoomAaccesskey[i]);
+        menuitem.addEventListener("mouseup", (event) => textZoomPerDomain_menu.shouldPreventHide(event));
+        //menuitem.setAttribute("onmouseup", "textZoomPerDomain_menu.shouldPreventHide(event);");
         ref.parentNode.insertBefore(menuitem, ref);
       }
     }
     let textZoom = textZoomPerDomain.getTextZoom(gBrowser.currentURI) || 0;
     let menuitem = document.getElementById("textZoomPerDomain" + textZoom);
-    if (menuitem)
-      menuitem.setAttribute('checked', true);
+    if(menuitem)
+      menuitem.setAttribute('checked',true);
   },
 
-  enlargeTextZoom: function () {
+  enlargeTextZoom: function() {
     let textZoom = textZoomPerDomain.getTextZoom(gBrowser.currentURI) || 0;
     let index = this.zoomFactor.indexOf(textZoom);
     index++;
     if (index < this.zoomFactor.length) {
       textZoomPerDomain_menu.setTextZoom(this.zoomFactor[index]);
     }
+    this.updateMenu();
   },
 
-  reduceTextZoom: function () {
+  reduceTextZoom: function() {
     let textZoom = textZoomPerDomain.getTextZoom(gBrowser.currentURI) || 0;
     let index = this.zoomFactor.indexOf(textZoom);
     index--;
     if (index >= 0) {
       textZoomPerDomain_menu.setTextZoom(this.zoomFactor[index]);
     }
+    this.updateMenu();
   },
 
-  resetTextZoom: function () {
+  resetTextZoom: function() {
     textZoomPerDomain_menu.setTextZoom(textZoomPerDomain.defaultTextZoom);
+    this.updateMenu();
   },
 
-  setTextZoom: function (val) {
+  updateMenu: function() {
+    let textZoom = textZoomPerDomain.getTextZoom(gBrowser.currentURI) || 0;
+    let menuitem = document.getElementById("textZoomPerDomain" + textZoom);
+    if(menuitem)
+      menuitem.setAttribute('checked',true);
+  },
+
+  shouldPreventHide: function(event) {
+		const menuitem = event.target;
+		if (event.button == 1) 
+		{
+			menuitem.setAttribute('closemenu', 'none');
+			menuitem.parentNode.addEventListener('popuphidden', () => {
+				menuitem.removeAttribute('closemenu');
+			}, { once: true });
+			if (event.ctrlKey)
+		  	menuitem.parentNode.hidePopup();
+		}
+  },
+
+  setTextZoom: function(val) {
     try {
       var url = encodeURIComponent(gBrowser.currentURI.host);
       if (!url) {
@@ -463,7 +494,7 @@ var textZoomPerDomain_menu = {
           url = encodeURIComponent(this.ioService.newURI(url, null, null).spec);
         }
       }
-    } catch (e) {
+    } catch(e) {
       return;
     }
 
@@ -479,27 +510,27 @@ var textZoomPerDomain_menu = {
     this.broadcast(false);
   },
 
-  changeDefaultSize: function () {
+  changeDefaultSize: function() {
     let textZoom = textZoomPerDomain.defaultTextZoom;
-
+    
     let prompts = Services.prompt;
-    let check = { value: false };                 // default the checkbox to false
-    let input = { value: textZoom };                  // default the edit field to size
-    let result = prompts.prompt(null, "最小字号", "默认文本缩放?", input, null, check);
+    let check = {value: false};                 // default the checkbox to false
+    let input = {value: textZoom};                  // default the edit field to size
+    let result = prompts.prompt(null, "Min Font Size", "Default Text Zoom?", input, null, check);
     // result is true if OK is pressed, false if Cancel. input.value holds the value of the edit field if "OK" was pressed.
-    //userChrome_js.debug(result);
-    //userChrome_js.debug(input.value >= 0);
+//userChrome_js.debug(result);
+//userChrome_js.debug(input.value >= 0);
     if (result && input.value >= 0) {
       textZoomPerDomain.defaultTextZoom = parseInt(input.value);
       textZoomPerDomain_storage.setTextZoomByUrl("default_text_zoom", textZoomPerDomain.defaultTextZoom);
       this.broadcast(true);
     }
   },
-
-  broadcast: function (allwindow) {
+  
+  broadcast: function(allwindow) {
     let wm = Services.wm;
     let enumerator = wm.getEnumerator("navigator:browser");
-    while (enumerator.hasMoreElements()) {
+    while(enumerator.hasMoreElements()) {
       let win = enumerator.getNext();
       // win is [Object ChromeWindow] (just like window), do something with it
       if (allwindow || win != window) {

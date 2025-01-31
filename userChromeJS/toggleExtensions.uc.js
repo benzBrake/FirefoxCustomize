@@ -58,7 +58,7 @@
             menu && menu.parentNode.removeChild(menu);
             delete window.toggleExtensions;
         },
-        get prefs() {
+        get prefs () {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("userChrome.toggleExtensions.")
         },
@@ -75,19 +75,25 @@
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 
-    function $(sel, aDoc) {
+    function $ (sel, aDoc) {
         return (aDoc || document).getElementById(sel);
     }
 
-    function $C(name, attr) {
-        let el = document.createXULElement(name);
-        if (attr) Object.keys(attr).forEach(function (n) {
-            el.setAttribute(n, attr[n])
-        });
-        return el;
+    function $C (name, attr) {
+        let e = document.createXULElement(name);
+        if (attr) for (let [k, v] of Object.entries(attr)) {
+            if (k.startsWith('on')) {
+                const ev = k.replace(/^on/, '');
+                const fn = typeof v === 'function' ? v : new Function(v);
+                ev === 'wheel' ? e.addEventListener(ev, fn, { passive: true }) : e.addEventListener(ev, fn);
+            } else {
+                e.setAttribute(k, v);
+            }
+        }
+        return e;
     }
 
-    function log(e) {
+    function log (e) {
         Cu.reportError(e);
     }
 

@@ -106,19 +106,21 @@
         }
     }
 
-    function createXULElement(aDoc, tag, attrs, skipAttrs) {
+    function createXULElement (aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
         var el = (aDoc || document).createXULElement(tag);
         return setAttributes(el, attrs, skipAttrs);
     }
 
-    function setAttributes(el, obj, skipAttrs) {
+    function setAttributes (el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
-                if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                if (key.startsWith('on')) {
+                    const [e, f] = [key.slice(2), obj[key]];
+                    const fn = typeof f === 'function' ? f : new Function(f);
+                    el.addEventListener(e, fn, false)
                 } else {
                     el.setAttribute(key, obj[key]);
                 }
@@ -127,7 +129,7 @@
         return el;
     }
 
-    function removeElement(el) {
+    function removeElement (el) {
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
     }

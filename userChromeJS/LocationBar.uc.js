@@ -3,11 +3,12 @@
 // @description     地址栏内工具栏
 // @license         MIT License
 // @compatibility   Firefox 107
-// @version         0.0.2
+// @version         0.0.3
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.0.3 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
 (function (css) {
@@ -115,7 +116,15 @@
             el = document.createElement(name);
         }
         if (attr) Object.keys(attr).forEach(function (n) {
-            el.setAttribute(n, attr[n])
+            if (n.startsWith('on')) {
+                if (typeof attr[n] == 'string') {
+                    el.addEventListener(n.substring(2), new Function(attr[n]));
+                } else {
+                    el.addEventListener(n.substring(2), attr[n]);
+                }
+            } else {
+                el.setAttribute(n, attr[n]);
+            }
         });
         return el;
     }

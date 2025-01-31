@@ -21,12 +21,13 @@
 */
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20240806
+// @version         20250131
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note            20240806 修复 Ctrl + F 右键级太高，新增中键 SidebarModoki 按钮切换侧边栏方向
+// @note            20250131 修复 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
+// @note            20240806 修复 Ctrl + F 优先级太高，新增中键 SidebarModoki 按钮切换侧边栏方向
 // @note            20240710 修复中键地址栏复制地址，修复中键下载按钮提示保存 URL
 // @note            20240614 移除 Styloaix 按钮功能，继续修复 Bug 1880914
 // @note            20240602 Bug 1892965 - Rename SidebarUI and SidebarLauncher
@@ -310,12 +311,17 @@
                 }
             }
             if (config["ctrl f to toggle findbar"]) {
-                let cmd = document.getElementById('cmd_find');
-                if (cmd) {
-                    let parentNode = cmd.parentNode;
-                    parentNode.removeChild(cmd);
-                    parentNode.appendChild(window.MozXULElement.parseXULToFragment(`<command id="cmd_find" oncommand="if (!gFindBar || gFindBar.hidden) { gLazyFindCommand('onFindCommand') } else { gFindBar.close() }"/>`));
-                }
+                document.addEventListener("keydown", function (e) {
+                    if (e.ctrlKey && e.key == "f") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!gFindBar || gFindBar.hidden) {
+                            gLazyFindCommand('onFindCommand');
+                        } else {
+                            gFindBar.close();
+                        }
+                    }
+                })
             }
         }
     }
