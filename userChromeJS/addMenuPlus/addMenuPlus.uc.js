@@ -155,7 +155,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     var onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     var enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    var enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+    var enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     var enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
     let {
