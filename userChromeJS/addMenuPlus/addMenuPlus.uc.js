@@ -1465,19 +1465,21 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (obj.keyword) {
                 let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
                 if (engine) {
-                    if (isPromise(engine)) {
-                        engine.then(function (engine) {
-                            setImage(menu, getIconURL(engine));
-                        });
-                    } else if (engine.iconURI) {
-                        // 非异步只能从 iconURI 获取
-                        setImage(menu, engine.iconURI.spec);
-                    }
+                    (async function () {
+                        if (isPromise(engine))
+                            engine = await engine;
+
+                        const image = await getIconURL(engine);
+                        setImage(menu, image);
+                    })();
                     return;
                 }
-                function getIconURL (engine) {
+                async function getIconURL (engine) {
                     // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
-                    return (engine._iconURI || engine.iconURI)?.spec || "chrome://browser/skin/search-engine-placeholder.png";
+                    if ("getIconURL" in engine) {
+                        return await engine.getIconURL(16);
+                    }
+                    return engine.iconURI?.spec || "chrome://browser/skin/search-engine-placeholder.png";
                 }
             }
             var setIconCallback = function (url) {
