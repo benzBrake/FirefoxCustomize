@@ -3,7 +3,7 @@
 // @description     一键切换扩展状态，用于修复便携版扩展图标问题
 // @license         MIT License
 // @startup         window.toggleExtensions.init();
-// @shutdown        window.toggleExtensions.unload();
+// @shutdown        window.toggleExtensions.unload(win);
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
@@ -11,8 +11,6 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // ==/UserScript==
 (function () {
-    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
     if (window.toggleExtensions) {
         window.toggleExtensions.unload();
         delete window.toggleExtensions;
@@ -20,6 +18,7 @@
 
     window.toggleExtensions = {
         init: function () {
+            if ($('toggle-extensions')) return;
             let ins = $("prefSep") || $("webDeveloperMenu") || $("browserToolsMenu");
 
             ins.parentNode.insertBefore($C('menuitem', {
@@ -54,7 +53,7 @@
             }))
         },
         unload: function () {
-            let menu = $("toggle-extensions");
+            let menu = $("toggle-extensions", (win || window).document);
             menu && menu.parentNode.removeChild(menu);
             delete window.toggleExtensions;
         },
@@ -85,17 +84,12 @@
             if (k.startsWith('on')) {
                 const ev = k.replace(/^on/, '');
                 const fn = typeof v === 'function' ? v : new Function(v);
-                ev === 'wheel' ? e.addEventListener(ev, fn, { passive: true }) : e.addEventListener(ev, fn);
+                ev === 'wheel' ? e.addEventListener(ev, fn, { passive: true }) : e.addEventListener(ev, fn.bind(window));
             } else {
                 e.setAttribute(k, v);
             }
         }
         return e;
     }
-
-    function log (e) {
-        Cu.reportError(e);
-    }
-
 
 })();
