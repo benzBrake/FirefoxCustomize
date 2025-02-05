@@ -1032,7 +1032,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "_group") return;
                 if (key.startsWith('on')) {
                     if (typeof val !== "function") val = new Function(val);
-                    group.addEventListener(key.slice(2).toLocaleLowerCase(), val, false);
+                    group.addEventListener(key.slice(2).toLocaleLowerCase(), val.bind(this), false);
                 } else {
                     group.setAttribute(key, val);
                 }
@@ -1239,7 +1239,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "command") continue;
                 if (key.startsWith('on')) {
                     if (typeof val !== "function") val = new Function(val);
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val, false);
+                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val.bind(this), false);
                 } else {
                     menuitem.setAttribute(key, val);
                 }
@@ -1308,7 +1308,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             // 如果没有 command 和 oncommand 则增加 oncommand
             if (!(obj.oncommand || obj.command)) {
                 // menuitem.setAttribute("oncommand", "(event);");
-                menuitem.addEventListener("command", addMenu.onCommand, false);
+                menuitem.addEventListener("command", (event) => {
+                    addMenu.onCommand(event);
+                }, false);
             }
 
             // 可能ならばアイコンを付ける
@@ -1352,7 +1354,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         let val = obj[key];
                         if (key.startsWith('on')) {
                             if (typeof val !== "function") val = new Function(val);
-                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val, false);
+                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val.bind(this), false);
                             continue;
                         }
                         dupMenuitem.setAttribute(key, val);
