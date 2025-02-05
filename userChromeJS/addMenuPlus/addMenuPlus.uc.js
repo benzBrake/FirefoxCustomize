@@ -566,14 +566,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     event.target.querySelectorAll(`.addMenu`).forEach(m => {
                         // 强制去除隐藏属性
                         m.removeAttribute("hidden");
-                        // 显示时自动更新标签
-                        if (m.hasAttribute('onshowinglabel')) {
-                            onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
-                            var sel = addMenu.convertText(m.getAttribute('onshowinglabel'))
-                            if (sel && sel.length > 15)
-                                sel = sel.substr(0, 15) + "...";
-                            m.setAttribute('label', sel);
-                        }
                     });
 
                     let insertPoint = "";
@@ -639,7 +631,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         try {
                             eval('(' + obj.fnSource + ').call(curItem, curItem)');
                         } catch (ex) {
-                            console.console.error($L('custom showing method error'), obj.fnSource, ex);
+                            console.error($L('custom showing method error'), obj.fnSource, ex);
                         }
                     });
 
@@ -1027,24 +1019,22 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var group = $C('menugroup');
 
             // 增加 onshowing 事件
-            if (menuObj.onshowing) {
-                this.customShowings.push({
-                    item: group,
-                    insertPoint: opt.insertPoint.id,
-                    fnSource: menuObj.onshowing
-                });
-                delete menuObj.onshowing;
+            processOnShowing.call(this, group, menuObj, opt.insertPoint);
+
+            if (menuObj.framescript) {
+                // to be reimplemented
+                delete menuObj.framescript;
             }
 
             Object.keys(menuObj).map(function (key) {
                 var val = menuObj[key];
                 if (key === "_items") return;
                 if (key === "_group") return;
-                if (key === "framescript") {
-                    if (typeof val !== "string")
-                        val = val.toString();
-
-                    menuObj[key] = val = btoa(encodeURIComponent(val));
+                if (key.startsWith('on')) {
+                    if (typeof val !== "function") val = new Function(val);
+                    group.addEventListener(key.slice(2).toLocaleLowerCase(), val, false);
+                } else {
+                    group.setAttribute(key, val);
                 }
             }, this);
             let cls = group.classList;
@@ -1095,25 +1085,17 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 popup = menu.appendChild($C("menupopup"));
             }
 
+            // 增加 onshowing 事件
+            processOnShowing.call(this, menu, menuObj, opt.insertPoint);
+
+            if (menuObj.framescript) {
+                // to be reimplemented
+                delete menuObj.framescript;
+            }
+
             for (let key in menuObj) {
                 let val = menuObj[key];
                 if (key === "_items") continue;
-
-                if (!isAppMenu && key === 'onshowing') {
-                    this.customShowings.push({
-                        item: menu,
-                        insertPoint: opt.insertPoint.id,
-                        fnSource: menuObj.onshowing.toString()
-                    });
-                    delete menuObj.onshowing;
-                    continue;
-                }
-                if (key === "framescript") {
-                    if (typeof val !== "string")
-                        val = val.toString();
-
-                    menuObj[key] = val = btoa(encodeURIComponent(val));
-                }
                 if (key.startsWith('on')) {
                     if (typeof val !== "function") val = new Function(val);
                     menu.addEventListener(key.slice(2).toLowerCase(), val);
@@ -1131,7 +1113,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             } else {
                 cls.add("menu-iconic");
             }
-
 
             // 表示 / 非表示の設定
             this.setCondition(menu, menuObj, opt);
@@ -1244,28 +1225,21 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
 
             // 右键第一层菜单添加 onpopupshowing 事件
-            if (opt.isTopMenuitem && obj.onshowing) {
-                this.customShowings.push({
-                    item: menuitem,
-                    insertPoint: opt.insertPoint.id,
-                    fnSource: obj.onshowing.toString()
-                });
-                delete obj.onshowing;
+            if (opt.isTopMenuitem) {
+                processOnShowing.call(this, menuitem, obj, opt.insertPoint);
             }
 
+            if (obj.framescript) {
+                // to be reimplemented
+                delete obj.framescript;
+            }
 
             for (let key in obj) {
                 let val = obj[key];
                 if (key === "command") continue;
-                if (key === "framescript") {
-                    if (typeof val !== "string")
-                        val = val.toString();
-
-                    obj[key] = val = btoa(encodeURIComponent(val));
-                }
                 if (key.startsWith('on')) {
-                    const fn = typeof val === "function" ? val : new Function(val);
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
+                    if (typeof val !== "function") val = new Function(val);
+                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val, false);
                 } else {
                     menuitem.setAttribute(key, val);
                 }
@@ -1368,18 +1342,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                                 class: 'addMenuOriginal',
                             }), dupMenuitem);
                     }
+
+                    if (obj.framescript) {
+                        // to be reimplemented
+                        delete obj.framescript;
+                    }
+
                     for (let key in obj) {
                         let val = obj[key];
-                        if (key === "framescript") {
-                            if (typeof val !== "string")
-                                val = val.toString();
-
-                            obj[key] = val = btoa(encodeURIComponent(val));
-                        }
-
                         if (key.startsWith('on')) {
-                            if (typeof val !== "function")
-                                val = new Function(val);
+                            if (typeof val !== "function") val = new Function(val);
                             dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val, false);
                             continue;
                         }
@@ -1979,7 +1951,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }
     }
 
-
     function isDef (v) {
         return v !== undefined && v !== null
     }
@@ -1991,6 +1962,32 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             typeof val.then === 'function' &&
             typeof val.catch === 'function'
         );
+    }
+
+    function processOnShowing (menu, menuObj, insertPoint) {
+        if (menuObj.onshowing) {
+            this.customShowings.push({
+                item: menu,
+                insertPoint: insertPoint.id,
+                fnSource: menuObj.onshowing.toString()
+            });
+            delete menuObj.onshowing;
+        }
+
+        if (menuObj.onshowinglabel) {
+            menu.dataset.onshowinglabel = menuObj.onshowinglabel;
+            this.customShowings.push({
+                item: menu,
+                insertPoint: insertPoint.id,
+                fnSource: function () {
+                    let t = addMenu.convertText(this.dataset.onshowinglabel);
+                    if (t && t.length > onshowinglabelMaxLength)
+                        t = t.substr(0, onshowinglabelMaxLength) + "...";
+                    this.setAttribute('label', t);
+                }.toString()
+            });
+            delete menuObj.onshowinglabel;
+        }
     }
 
 
@@ -2206,7 +2203,7 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     var uri;
     try {
         uri = url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null);
-    } catch (e) { console.console.error(e); }
+    } catch (e) { console.error(e); }
     if (!uri) return "";
     var isCompleted = false, iconURL;
     PlacesUtils.favicons.getFaviconDataForPage(uri, {
