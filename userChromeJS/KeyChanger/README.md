@@ -10,7 +10,7 @@ Firefox 下超强自定义快捷键脚本。
 
 [点击这里](KeyChanger.uc.js)下载脚本，保存到`profiledir\chrome`下，然后[点击这里](_keychanger.js)下载示例配置
 
-`KeyChanger_fx70.uc.js`是 JSActor 版本，将来使用可视化配置（目前没时间实现）必须使用这个版本。
+`KeyChanger_fx70.uc.js`是 JSActor 版本，将来使用可视化配置（目前没时间实现）必须使用这个版本（136+暂时无法使用，还没找到修复的办法）。
 
 ## 配置格式
 

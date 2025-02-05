@@ -25,10 +25,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
     var useScraptchpad = true;  // If the editor does not exist, use the code snippet shorthand, otherwise set the editor path
 
     window.KeyChanger = {
-        get appVersion() {
+        get appVersion () {
             return Services.appinfo.version.split(".")[0];
         },
-        get FILE() {
+        get FILE () {
             delete this.FILE;
             let path;
             try {
@@ -44,7 +44,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             }
             return this.FILE = aFile;
         },
-        get prefs() {
+        get prefs () {
             delete this.prefs;
             return this.prefs = Services.prefs.getBranch("keyChanger.")
         },
@@ -206,18 +206,23 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
 
                 let cmd = keys[n];
                 switch (typeof cmd) {
-                    case 'function':
-                        elem.setAttribute('oncommand', '(' + cmd.toString() + ').call(this, event);');
-                        break;
                     case 'object':
                         Object.keys(cmd).forEach(function (a) {
-                            if (a === 'oncommand' && cmd[a] === "internal")
-                                cmd[a] = "KeyChanger.internalCommand(event);";
-                            elem.setAttribute(a, cmd[a]);
+                            if (a === 'oncommand' && cmd[a] === "internal") {
+                                elem.addEventListener('command', (event) => {
+                                    KeyChanger.internalCommand(event);
+                                });
+                                delete cmd[a];
+                            } else {
+                                elem.setAttribute(a, cmd[a]);
+                            }
                         }, this);
                         break;
                     default:
-                        elem.setAttribute('oncommand', cmd);
+                        elem.dataset.oncommand = typeof cmd === "function" ? cmd.toString() : cmd;
+                        elem.addEventListener('command', (event) => {
+                            eval('(' + event.target.dataset.oncommand + ')(window, event)');
+                        });
                 }
                 dFrag.appendChild(elem);
             }, this);
@@ -228,8 +233,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             menuitem.setAttribute('id', 'toolsbar_KeyChanger_rebuild');
             menuitem.setAttribute('label', 'KeyChanger');
             menuitem.setAttribute('tooltiptext', '左键：重载配置\n右键：编辑配置');
-            menuitem.setAttribute('oncommand', 'setTimeout(function(){ KeyChanger.makeKeyset(true); }, 10);');
-            menuitem.setAttribute('onclick', 'if (event.button == 2) { event.preventDefault();KeyChanger.edit(KeyChanger.FILE); }');
+            menuitem.addEventListener('command', () => {
+                setTimeout(function () { KeyChanger.makeKeyset(true); }, 10);
+            });
+            menuitem.addEventListener('click', function (event) {
+                if (event.button == 2) {
+                    event.preventDefault();
+                    KeyChanger.edit(KeyChanger.FILE);
+                }
+            })
             var insPos = document.getElementById('devToolsSeparator');
             insPos.parentNode.insertBefore(menuitem, insPos);
         },
@@ -316,7 +328,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                     this.openScriptInScratchpad(window, aFile);
                     return;
                 } else {
-                    function setPath() {
+                    function setPath () {
                         var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
                         // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
                         fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
@@ -360,7 +372,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             let spWin = window.openDialog("chrome://devtools/content/scratchpad/index.xul", "Toolkit:Scratchpad", "chrome,dialog,centerscreen,dependent");
             spWin.top.moveTo(0, 0);
             spWin.top.resizeTo(screen.availWidth, screen.availHeight);
-            spWin.addEventListener("load", function spWinLoaded() {
+            spWin.addEventListener("load", function spWinLoaded () {
                 spWin.removeEventListener("load", spWinLoaded, false);
 
                 let Scratchpad = spWin.Scratchpad;
@@ -408,7 +420,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         }
     };
 
-    function saveFile(fileOrName, data) {
+    function saveFile (fileOrName, data) {
         var file;
         if (typeof fileOrName == "string") {
             file = Services.dirsvc.get('UChrm', Ci.nsIFile);
@@ -427,7 +439,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         foStream.close();
     }
 
-    function loadText(aFile) {
+    function loadText (aFile) {
         var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
         var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
         fstream.init(aFile, -1, 0, 0);
@@ -443,19 +455,23 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         return data;
     }
 
-    function $C(aDoc, tag, attrs, skipAttrs) {
+    function $C (aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
         var el = (aDoc || document).createXULElement(tag);
         return $A(el, attrs, skipAttrs);
     }
 
-    function $A(el, obj, skipAttrs) {
+    function $A (el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
-                if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                if (key.startsWith('on')) {
+                    let fn = obj[key];
+                    if (typeof fn !== 'function') {
+                        fn = (new Function(fn)).bind(window);
+                    }
+                    el.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
                 } else {
                     el.setAttribute(key, obj[key]);
                 }
@@ -464,7 +480,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         return el;
     }
 
-    function $R(el) {
+    function $R (el) {
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
     }
