@@ -30,5 +30,5 @@ dont-do-that = 不要酱紫嘛！
 move-up = ⬆️
 move-down = ⬇️
 delete-application = ❌
-save = Save
+save = 保存
 call-params-description-label = 参数说明（%号参数会被替换为实际内容）
