@@ -13,6 +13,7 @@
       <table id="applications-list">
         <thead>
           <tr class="table-title">
+            <th class="application-drag title" style="width: 24px"></th>
             <th class="application-icon title" style="width: 40px">
               <label class="whitespace-nowrap" data-l10n-id="application-icon"
                 >Application Icon</label
@@ -52,7 +53,16 @@
           </tr>
         </thead>
         <tbody class="table">
-          <tr id="demo-row" class="table-row">
+          <tr id="demo-row" class="table-row" draggable="false">
+            <td class="application-drag item" style="width: 24px">
+              <div
+                class="drag-handle"
+                title="拖拽排序"
+                onmousedown="gApplicationList.enableDrag(event)"
+              >
+                <div class="drag-handle-icon"></div>
+              </div>
+            </td>
             <td class="application-icon item" style="width: 40px">
               <div class="application-icon-wrapper">
                 <img
@@ -96,21 +106,7 @@
             </td>
             <td class="application-operate item text-center">
               <button
-                class="btn-flat"
-                data-l10n-id="move-up"
-                onclick="gApplicationList.moveUp(event);"
-              >
-                Move Up
-              </button>
-              <button
-                class="btn-flat"
-                data-l10n-id="move-down"
-                onclick="gApplicationList.moveDown(event);"
-              >
-                Move Down
-              </button>
-              <button
-                class="btn-flat"
+                class="btn-flat btn-delete"
                 data-l10n-id="delete-application"
                 onclick="gApplicationList.removeBrowser(event);"
               >
@@ -245,6 +241,9 @@
         border-collapse: collapse;
         width: 100%;
       }
+      #applications-list th {
+        user-select: none;
+      }
       #applications-list .title {
         background-color: #f1f1f1;
         border: 1px solid #ccc;
@@ -277,9 +276,20 @@
         padding: 0;
         margin: 0;
       }
+      #applications-list .drag-handle-icon {
+        display: block;
+        width: 24px;
+        height: 24px;
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij4NCiAgPHBhdGggZD0iTTIzLjk3ODUxNiA0IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIyLjkzOTQ1MyA0LjQzOTQ1MzFMMTcuOTM5NDUzIDkuNDM5NDUzMSBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCAyMC4wNjA1NDcgMTEuNTYwNTQ3TDI0IDcuNjIxMDkzOEwyNy45Mzk0NTMgMTEuNTYwNTQ3IEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDMwLjA2MDU0NyA5LjQzOTQ1MzFMMjUuMDYwNTQ3IDQuNDM5NDUzMSBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyMy45Nzg1MTYgNCB6IE0gNS41IDE2IEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDUuNSAxOUw0Mi41IDE5IEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDQyLjUgMTZMNS41IDE2IHogTSA1LjUgMjMgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNS41IDI2TDQyLjUgMjYgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNDIuNSAyM0w1LjUgMjMgeiBNIDUuNSAzMCBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA1LjUgMzNMNDIuNSAzMyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA0Mi41IDMwTDUuNSAzMCB6IE0gMjguOTg2MzI4IDM2Ljk3ODUxNiBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyNy45Mzk0NTMgMzcuNDM5NDUzTDI0IDQxLjM3ODkwNkwyMC4wNjA1NDcgMzcuNDM5NDUzIEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDE4Ljk4NDM3NSAzNi45ODQzNzUgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMTcuOTM5NDUzIDM5LjU2MDU0N0wyMi45Mzk0NTMgNDQuNTYwNTQ3IEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDI1LjA2MDU0NyA0NC41NjA1NDdMMzAuMDYwNTQ3IDM5LjU2MDU0NyBBIDEuNTAwMTUgMS41MDAxNSAwIDAgMCAyOC45ODYzMjggMzYuOTc4NTE2IHoiLz4NCjwvc3ZnPg==");
+        background-size: 16px;
+        background-repeat: no-repeat;
+        background-position: center;
+        cursor: pointer;
+      }
       #applications-list .application-icon {
         cursor: pointer;
         overflow: hidden;
+        user-select: none;
       }
       #applications-list .application-icon-wrapper {
         width: 16px;
@@ -348,32 +358,12 @@
         background-color: #faafaa88;
         animation: shake 800ms ease-in-out;
       }
-      #applications-list .application-operate {
-        width: 100px;
-      }
-      @media (min-width: 960px) {
-        #applications-list .application-operate {
-          width: 130px;
-        }
-      }
       #applications-list #demo-row {
         display: none;
       }
-      #applications-list .table-row:first-child button[data-l10n-id="move-up"] {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      #applications-list
-        .table-row:nth-last-child(2)
-        button[data-l10n-id="move-down"] {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
       .separator[class~="table-row"] .application-path-change {
         display: none !important;
       }
-
       #params-description,
       #operate-toolbar {
         margin-top: 1em;
@@ -401,31 +391,34 @@
       #params-description > div > ul:last-child {
         border-bottom: unset;
       }
-
       @media (min-width: 768px) {
         ul.cols-3 {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
         }
       }
-
       .btn-flat {
         background-color: #4a90e2; /* Light blue color */
         color: #fff; /* White text color */
-        border: none; /* Remove border */
+        border: 1px solid #4a90e2;
         cursor: pointer; /* Add pointer cursor */
         transition: background-color 0.3s; /* Add transition for smooth hover effect */
         border-radius: 2px; /* Add rounded corners */
       }
-
+      .btn-delete {
+        color: #f44336;
+        border-color: #f44336;
+        background-color: transparent;
+      }
       .btn-margin {
         padding: 0.5em 1em; /* Adjust padding as needed */
       }
-
       .btn-flat:hover {
         background-color: #357ae8; /* Darker blue color on hover */
       }
-
+      .btn-flat.btn-delete:hover {
+        background-color: rgba(244, 67, 54, 0.1);
+      }
       @keyframes shake {
         10%,
         90% {
@@ -446,6 +439,14 @@
         50% {
           transform: translate3d(-4px, 0, 0);
         }
+      }
+      /* 拖拽时效果 */
+      .dragging {
+        opacity: 0.5;
+        background: #f0f0f0;
+      }
+      .drop-target {
+        background: #90bbff;
       }
     </style>
     <script>
@@ -621,30 +622,6 @@
               });
             }
           },
-          moveUp(event) {
-            const row = event.target.closest(".table-row");
-            if (!row.previousElementSibling) return;
-            event.ctrlKey
-              ? row.parentNode.insertBefore(
-                  row,
-                  row.parentNode.firstElementChild
-                )
-              : row.previousElementSibling.before(row);
-          },
-          moveDown(event) {
-            const row = event.target.closest(".table-row");
-            if (
-              !row.nextElementSibling ||
-              row.nextElementSibling.id == "demo-row"
-            )
-              return;
-            event.ctrlKey
-              ? row.parentNode.insertBefore(
-                  row,
-                  row.parentNode.querySelector("#demo-row")
-                )
-              : row.nextElementSibling.after(row);
-          },
           removeBrowser(event) {
             removeEl(event.target.closest(".table-row"));
           },
@@ -753,6 +730,86 @@
               } else {
                 gApplicationList.addSeparator();
               }
+            });
+            this.initDragAndDrop();
+          },
+          enableDrag(event) {
+            event.target.closest("tr")?.setAttribute("draggable", true);
+          },
+          initDragAndDrop() {
+            const tbody = document.querySelector("#applications-list tbody");
+            let dragRow = null;
+            // 处理拖拽开始
+            tbody.addEventListener("dragstart", (e) => {
+              dragRow = e.target.closest("tr");
+              dragRow.classList.add("dragging");
+              e.dataTransfer.effectAllowed = "move";
+            });
+
+            // 处理拖拽结束
+            tbody.addEventListener("dragend", (e) => {
+              if (dragRow) {
+                dragRow.classList.remove("dragging");
+                dragRow = null;
+              }
+            });
+
+            // 处理拖拽悬停
+            tbody.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              if (!dragRow) return;
+
+              const targetRow = e.target.closest("tr:not(.dragging)");
+              if (!targetRow || targetRow.id === "demo-row") return;
+
+              const rect = targetRow.getBoundingClientRect();
+              const offset = e.clientY - rect.top;
+              const insertPosition =
+                offset < rect.height / 2 ? "before" : "after";
+
+              // 清除旧的目标指示
+              tbody.querySelectorAll(".drop-target").forEach((el) => {
+                el.classList.remove("drop-target");
+              });
+
+              // 添加新的目标指示
+              if (insertPosition === "before") {
+                targetRow.classList.add("drop-target");
+              } else {
+                const nextRow = targetRow.nextElementSibling;
+                if (nextRow && nextRow !== dragRow) {
+                  nextRow.classList.add("drop-target");
+                }
+              }
+            });
+
+            // 处理放置
+            tbody.addEventListener("drop", (e) => {
+              e.preventDefault();
+              if (!dragRow) return;
+
+              const target = e.target.closest("tr");
+              if (!target || target === dragRow) return;
+
+              const rect = target.getBoundingClientRect();
+              const insertPosition =
+                e.clientY - rect.top < rect.height / 2 ? "before" : "after";
+
+              // 移除目标指示
+              tbody.querySelectorAll(".drop-target").forEach((el) => {
+                el.classList.remove("drop-target");
+              });
+
+              // 执行移动操作
+              if (insertPosition === "before") {
+                target.before(dragRow);
+              } else {
+                target.after(dragRow);
+              }
+
+              tbody
+                .querySelectorAll(".table-row[draggable=true]")
+                .forEach((el) => el.setAttribute("draggable", false));
             });
           },
         };
