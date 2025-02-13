@@ -1,17 +1,18 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.0a2
+// @version        1.0.1
 // @author         Ryan
 // @include        main
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.1 修复
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
     (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
         window.OpenWithHelper = {
-            get saveDir() {
+            get saveDir () {
                 let dir = Services.prefs.getStringPref("userChromeJS.OpenWithHelper.SAVE_DIR", DEFAULT_SAVE_DIR);
                 if (dir.startsWith("{") && dir.endsWith("}")) {
                     let matched = (dir.match(/^\{[^\}]+\}$/) || ["", ""])[1]
@@ -21,7 +22,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 return dir;
             },
-            set saveDir(dir) {
+            set saveDir (dir) {
                 dir = dir.replace(/[\\\/]*$/g, ""); // 处理 Windows 下反斜杠的问题
                 for (let [key, value] of Object.entries(DEFINED_DIRS)) {
                     if (dir === value) {
@@ -45,20 +46,20 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 return APPS_LIST;
             },
-            openSaveDir() {
+            openSaveDir () {
                 this.exec(this.saveDir);
             },
-            async changeSaveDir(event) {
+            async changeSaveDir (event) {
                 const mode = Ci.nsIFilePicker.modeGetFolder, title = await OpenWithHelper.l10n.formatValue("change-download-dir"), textIfCanceled = await OpenWithHelper.l10n.formatValue("operation-canceled"), textIfOK = await OpenWithHelper.l10n.formatValue("opertaion-succeeded");
-                async function openFilePickerDialog() {
+                async function openFilePickerDialog () {
                     return new Promise(resolve => {
                         // 使用 Promise 让回调看起来不那么难受
                         const fp = makeFilePicker();
-                        try {
-                            fp.init(window.browsingContext, dialogTitle, mode);
-                        } catch (e) {
-                            fp.init(window, title, mode);
-                        }
+                        // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                        fp.init(("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                            ? window.browsingContext
+                            : window, dialogTitle, mode);
+
                         fp.open(async result => {
                             if (result === Ci.nsIFilePicker.returnOK) {
                                 resolve({ result, path: fp.file.path });
@@ -85,15 +86,14 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 );
                 this.style = document.insertBefore(pi, document.documentElement);
 
-
                 if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
                     this.l10n = new DOMLocalization(["OpenWithHelper.ftl"], false, userChrome_js.L10nRegistry);
                 } else {
                     this.l10n = {
-                        formatValue: async function() {
+                        formatValue: async function () {
                             return "";
                         },
-                        formatMessages: async function() {
+                        formatMessages: async function () {
                             return "";
                         }
                     }
@@ -166,7 +166,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 [this.btn, this.CTX_MENU, this.TAB_MENU].forEach(node => {
                     setText(node);
                     $$('[data-l10n-id]', node, async el => setText(el));
-                    async function setText(el) {
+                    async function setText (el) {
                         if (!el) return;
                         const l10nId = el.getAttribute("data-l10n-id");
                         const l10nArgs = el.getAttribute("data-l10n-args");
@@ -245,7 +245,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
                 return menupopup;
             },
-            reload(isAlert = false) {
+            reload (isAlert = false) {
                 if (this.BTN_POPUP)
                     this.BTN_POPUP.setAttribute("need-reload", "true");
                 if (this.CTX_POPUP)
@@ -307,7 +307,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 });
                 CustomizableUI.destroyWidget('OpenWithHelper-Btn');
             },
-            handleEvent: function (event) {
+            handleEvent: async function (event) {
                 let isSelectKeyDown = false;
                 switch (event.type) {
                     case "keydown":
@@ -329,8 +329,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         break;
                     case "popupshowing":
                         if (event.target != event.currentTarget) return;
+                        event.stopPropagation();
                         if (event.target.getAttribute("need-reload") === "true") {
-                            this.reloadApps(event.target);
+                            await this.reloadApps(event.target);
                         }
                         if (event.target.id == 'contentAreaContextMenu') {
                             var state = [];
@@ -353,11 +354,20 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                             $("OpenWithHelper-Ctx-Menu").setAttribute("openWith", state.join(" "));
                         } else if (event.target.id === "tabContextMenu") {
 
+                        } else if (event.target.id === "OpenWithHelper-Ctx-Popup") {
+                            const CTX_POPUP = event.target;
+                            CTX_POPUP.querySelectorAll(" [dynamic=true]").forEach(el => {
+                                el.removeAttribute("hidden");
+                            });
+                            const ms = CTX_POPUP.querySelectorAll("menuitem[dynamic=true]:not([hidden=true])");
+                            if (ms.length) {
+                                CTX_POPUP.querySelector("menuitem[dynamic=true] ~ menuseparator").removeAttribute("hidden");
+                            }
                         }
                         break;
                 }
             },
-            convertText(text) {
+            convertText (text) {
                 var context = gContextMenu || { // とりあえずエラーにならないようにオブジェクトをでっち上げる
                     link: {
                         href: "",
@@ -395,7 +405,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return convert(str);
                 });
 
-                function convert(str) {
+                function convert (str) {
                     switch (str) {
                         case "%T":
                             return bw.contentTitle;
@@ -482,7 +492,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return str;
                 }
 
-                function htmlEscape(s) {
+                function htmlEscape (s) {
                     return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
                 }
 
@@ -681,11 +691,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
              * @param {Document|null} d 指定 document，不提供就是全局 document
              * @returns 
              */
-        function $(s, d) {
+        function $ (s, d) {
             return /[#\.[:]/i.test(s.trim()) ? (d || document).querySelector(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementById(s);
         }
 
-        function $$(s, d, fn) {
+        function $$ (s, d, fn) {
             let elems = /[#\.[:]/i.test(s.trim()) ? (d || document).querySelectorAll(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementsByTagName(s);
             if (typeof fn === "function") {
                 for (let el of [...elems]) { fn.call(el, el) };
@@ -701,7 +711,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          * @param {Array} s 跳过属性
          * @returns 
          */
-        function createElement(d, t, o = {}, s = []) {
+        function createElement (d, t, o = {}, s = []) {
             if (!d) return;
             let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
             e = applyAttr(e, o, s);
@@ -720,12 +730,14 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          * @param {Object|null} s 跳过属性
          * @returns 
          */
-        function applyAttr(e, o = {}, s = []) {
+        function applyAttr (e, o = {}, s = []) {
             for (let [k, v] of Object.entries(o)) {
                 if (s.includes(k)) continue;
-                if (typeof v == "function") {
-                    e.addEventListener(k.replace(/^on/, ""), v, false);
-                    // e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+                if (k.startsWith('on')) {
+                    const fn = typeof v === "function" ? v : function (event) {
+                        eval(v)
+                    };
+                    e.addEventListener(k.slice(2), fn, false);
                 } else {
                     e.setAttribute(k, v);
                 }
@@ -733,22 +745,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return e;
         }
 
-        /**
-         * 删除 HTML 元素
-         * 
-         * @param {HTMLElement} e HTML 元素
-         * @returns 
-         */
-        function removeElement(e) {
-            return e && e.parentNode && e.parentNode.removeChild(e);
-        }
-
-        function capitalize(s) {
-            return s && s[0].toUpperCase() + s.slice(1);
-        }
-
-
-        function handleRelativePath(path, parentPath) {
+        function handleRelativePath (path, parentPath) {
             if (path) {
                 var ffdir = parentPath ? parentPath : Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
                 // windows 的目录分隔符不一样
@@ -768,11 +765,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         }
 
         const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-        function getURLSpecFromFile(f) {
+        function getURLSpecFromFile (f) {
             return fph.getURLSpecFromActualFile(f);
         }
 
-        function saveFile(path, data) {
+        function saveFile (path, data) {
             let isCompleted = false, fileExists = false, isError = false;
             IOUtils.exists(path).then(() => {
                 isCompleted = true;
@@ -818,7 +815,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
         }
 
-        function collectCookies(url, NetscapeStyle) {
+        function collectCookies (url, NetscapeStyle) {
             let uri;
             try {
                 uri = Services.io.newURI(url, null, null);
@@ -832,11 +829,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 return cookies.map(formatCookie).join("; ");
             }
 
-            function formatCookie(cookiePair) {
+            function formatCookie (cookiePair) {
                 return cookiePair.name + "=" + cookiePair.value;
             }
 
-            function formatCookieNetscapeStyle(cookiePair) {
+            function formatCookieNetscapeStyle (cookiePair) {
                 return [
                     [
                         cookiePair.isHttpOnly ? '#HttpOnly_' : '',
@@ -852,7 +849,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
         }
 
-        function randomString(e) {
+        function randomString (e) {
             e = e || 32;
             var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
                 a = t.length,
@@ -861,7 +858,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return n
         }
 
-        function escapeCommandLineArg(arg) {
+        function escapeCommandLineArg (arg) {
             // 需要转义的字符
             const specialChars = ['\\', '"', '\'', '&', '|', '>', '<', '^', '~', '*', '?', '[', ']', '(', ')', '{', '}', '$', ';', '#'];
 
@@ -879,7 +876,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return escapedArg;
         }
 
-        function alerts(aMsg, aTitle, aCallback) {
+        function alerts (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
                 observe: function (subject, topic, data) {
                     if ("alertclickcallback" != topic)
