@@ -582,9 +582,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             state.push("canvas image");
                         if (gContextMenu.onImage)
                             state.push("image");
+                        if (/\.(?:jpe?g|png|gif|bmp|webp|svg|ico|jxl)$/i.test(gContextMenu.browser.currentURI.spec))
+                            state.push("imageviewer");
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
-                        if (this.ContextMenu.onSvg)
+                        if (addMenu.ContextMenu.onSvg)
                             state.push("svg");
                         event.currentTarget.setAttribute("addMenu", state.join(" "));
 
@@ -1031,13 +1033,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "_items") return;
                 if (key === "_group") return;
                 if (key.startsWith('on')) {
-                    group.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                    const fn = typeof val === "string" ? function (event) {
                         if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
                             eval("(" + val + ").call(this, event)");
                         } else {
                             eval(val);
                         }
-                    });
+                    } : val;
+                    group.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
                 } else {
                     group.setAttribute(key, val);
                 }
@@ -1102,13 +1105,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = menuObj[key];
                 if (key === "_items") continue;
                 if (key.startsWith('on')) {
-                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                    const fn = typeof val === "string" ? function (event) {
                         if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
                             eval("(" + val + ").call(this, event)");
                         } else {
                             eval(val);
                         }
-                    });
+                    } : val;
+                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
                     continue;
                 }
                 menu.setAttribute(key, val);
@@ -1248,14 +1252,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = obj[key];
                 if (key === "command") continue;
                 if (key.startsWith('on')) {
-                    val = typeof val == "function" ? val.toString() : val;
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                    const fn = typeof val === "string" ? function (event) {
                         if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
                             eval("(" + val + ").call(this, event)");
                         } else {
                             eval(val);
                         }
-                    });
+                    } : val;
+                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
                 } else {
                     menuitem.setAttribute(key, val);
                 }
@@ -1369,13 +1373,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     for (let key in obj) {
                         let val = obj[key];
                         if (key.startsWith('on')) {
-                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                            const fn = typeof val === "string" ? function (event) {
                                 if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
                                     eval("(" + val + ").call(this, event)");
                                 } else {
                                     eval(val);
                                 }
-                            });
+                            } : val;
+                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
                             continue;
                         }
                         dupMenuitem.setAttribute(key, val);
@@ -2089,6 +2094,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"],
 #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"],
 #contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="image"],
+#contentAreaContextMenu[addMenu~="imageviewer"]  .addMenu[condition~="imageviewer"],
 #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"],
 #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"],
 #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="input"],
@@ -2098,6 +2104,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"],
 #contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="nomailto"],
 #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"],
+#contentAreaContextMenu:not([addMenu~="imageviewer"])  .addMenu[condition~="noimageviewer"],
 #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"],
 #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"],
 #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
