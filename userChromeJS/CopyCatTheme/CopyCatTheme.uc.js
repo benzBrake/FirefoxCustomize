@@ -14,6 +14,7 @@
     if (!globalThis.fetch) Cu.importGlobalProperties(["fetch"]);
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const showInAppMenu = Services.prefs.getBoolPref('userChromeJS.CopyCat.buildPanel', false);
     const showMenuIcon = parseInt(Services.appinfo.version) < 90;
 
@@ -137,6 +138,10 @@
             delete this.appVersion;
             return this.appVersion = Services.appinfo.version.split(".")[0];
         },
+        get platform () {
+            delete this.platform;
+            return this.platform = AppConstants.platform;
+        },
         get locale () {
             delete this.locale;
             try {
@@ -150,7 +155,7 @@
         },
         get THEME_RELATED_PATH () {
             delete this.THEME_RELATED_PATH;
-            return this.gPrefs("THEME_RELATED_PATH", "\\chrome\\UserThemes");
+            return this.THEME_RELATED_PATH = this.gPrefs("THEME_RELATED_PATH", "/chrome/UserThemes");
         },
         get THEME_PATH () {
             delete this.THEME_PATH;
@@ -276,6 +281,7 @@
                                     style: "list-style-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4xNSkiPg0KICA8cGF0aCBkPSJNMTUuNTkzNzUgMi45Njg3NUMxNS4wNjI1IDIuOTg0Mzc1IDE0LjUxNTYyNSAzLjA0Mjk2OSAxMy45Njg3NSAzLjEyNUwxMy45Mzc1IDMuMTI1QzguNjEzMjgxIDMuOTk2MDk0IDQuMzAwNzgxIDguMTkxNDA2IDMuMjE4NzUgMTMuNUMyLjg5NDUzMSAxNS4wMTE3MTkgMi45MTQwNjMgMTYuNDIxODc1IDMuMTI1IDE3LjgxMjVDMy4xMzI4MTMgMTcuODE2NDA2IDMuMTI1IDE3LjgzNTkzOCAzLjEyNSAxNy44NDM3NUMzLjQ1MzEyNSAyMC4xOTE0MDYgNi41IDIxLjIxODc1IDguMjE4NzUgMTkuNUM5LjQ0OTIxOSAxOC4yNjk1MzEgMTEuMjY5NTMxIDE4LjI2OTUzMSAxMi41IDE5LjVDMTMuNzMwNDY5IDIwLjczMDQ2OSAxMy43MzA0NjkgMjIuNTUwNzgxIDEyLjUgMjMuNzgxMjVDMTAuNzgxMjUgMjUuNSAxMS44MDg1OTQgMjguNTQ2ODc1IDE0LjE1NjI1IDI4Ljg3NUMxNC4xNjQwNjMgMjguODc1IDE0LjE4MzU5NCAyOC44NjcxODggMTQuMTg3NSAyOC44NzVDMTUuNTY2NDA2IDI5LjA4NTkzOCAxNi45Njg3NSAyOS4wOTc2NTYgMTguNDY4NzUgMjguNzgxMjVDMTguNDgwNDY5IDI4Ljc4MTI1IDE4LjQ4ODI4MSAyOC43ODEyNSAxOC41IDI4Ljc4MTI1QzIzLjgyNDIxOSAyNy43ODkwNjMgMjguMDA3ODEzIDIzLjM3NSAyOC44NzUgMTguMDYyNUwyOC44NzUgMTguMDMxMjVDMzAuMDA3ODEzIDEwLjM5MDYyNSAyNC40MjE4NzUgMy43MTg3NSAxNy4xNTYyNSAzLjAzMTI1QzE2LjYzNjcxOSAyLjk4MDQ2OSAxNi4xMjUgMi45NTMxMjUgMTUuNTkzNzUgMi45Njg3NSBaIE0gMTUuNjI1IDQuOTY4NzVDMTYuMDc4MTI1IDQuOTUzMTI1IDE2LjUyNzM0NCA0Ljk2MDkzOCAxNi45Njg3NSA1QzIzLjE2NDA2MyA1LjU2NjQwNiAyNy44NzUgMTEuMjE0ODQ0IDI2LjkwNjI1IDE3Ljc1QzI2LjE3NTc4MSAyMi4yMjY1NjMgMjIuNTg1OTM4IDI1Ljk5MjE4OCAxOC4xMjUgMjYuODEyNUwxOC4wOTM3NSAyNi44MTI1QzE2LjgxNjQwNiAyNy4wODU5MzggMTUuNjM2NzE5IDI3LjA4OTg0NCAxNC40Mzc1IDI2LjkwNjI1QzEzLjYxNzE4OCAyNi44MDQ2ODggMTMuMjM4MjgxIDI1Ljg4NjcxOSAxMy45MDYyNSAyNS4yMTg3NUMxNS44NzUgMjMuMjUgMTUuODc1IDIwLjA2MjUgMTMuOTA2MjUgMTguMDkzNzVDMTEuOTM3NSAxNi4xMjUgOC43NSAxNi4xMjUgNi43ODEyNSAxOC4wOTM3NUM2LjExMzI4MSAxOC43NjE3MTkgNS4xOTUzMTMgMTguMzgyODEzIDUuMDkzNzUgMTcuNTYyNUM0LjkxMDE1NiAxNi4zNjMyODEgNC45MTQwNjMgMTUuMTgzNTk0IDUuMTg3NSAxMy45MDYyNUM2LjEwNTQ2OSA5LjQxNzk2OSA5Ljc3MzQzOCA1LjgyNDIxOSAxNC4yNSA1LjA5Mzc1QzE0LjcxODc1IDUuMDIzNDM4IDE1LjE3MTg3NSA0Ljk4NDM3NSAxNS42MjUgNC45Njg3NSBaIE0gMTQgN0MxMi44OTQ1MzEgNyAxMiA3Ljg5NDUzMSAxMiA5QzEyIDEwLjEwNTQ2OSAxMi44OTQ1MzEgMTEgMTQgMTFDMTUuMTA1NDY5IDExIDE2IDEwLjEwNTQ2OSAxNiA5QzE2IDcuODk0NTMxIDE1LjEwNTQ2OSA3IDE0IDcgWiBNIDIxIDlDMTkuODk0NTMxIDkgMTkgOS44OTQ1MzEgMTkgMTFDMTkgMTIuMTA1NDY5IDE5Ljg5NDUzMSAxMyAyMSAxM0MyMi4xMDU0NjkgMTMgMjMgMTIuMTA1NDY5IDIzIDExQzIzIDkuODk0NTMxIDIyLjEwNTQ2OSA5IDIxIDkgWiBNIDkgMTFDNy44OTQ1MzEgMTEgNyAxMS44OTQ1MzEgNyAxM0M3IDE0LjEwNTQ2OSA3Ljg5NDUzMSAxNSA5IDE1QzEwLjEwNTQ2OSAxNSAxMSAxNC4xMDU0NjkgMTEgMTNDMTEgMTEuODk0NTMxIDEwLjEwNTQ2OSAxMSA5IDExIFogTSAyMyAxNkMyMS44OTQ1MzEgMTYgMjEgMTYuODk0NTMxIDIxIDE4QzIxIDE5LjEwNTQ2OSAyMS44OTQ1MzEgMjAgMjMgMjBDMjQuMTA1NDY5IDIwIDI1IDE5LjEwNTQ2OSAyNSAxOEMyNSAxNi44OTQ1MzEgMjQuMTA1NDY5IDE2IDIzIDE2IFogTSAxOSAyMUMxNy44OTQ1MzEgMjEgMTcgMjEuODk0NTMxIDE3IDIzQzE3IDI0LjEwNTQ2OSAxNy44OTQ1MzEgMjUgMTkgMjVDMjAuMTA1NDY5IDI1IDIxIDI0LjEwNTQ2OSAyMSAyM0MyMSAyMS44OTQ1MzEgMjAuMTA1NDY5IDIxIDE5IDIxWiIvPg0KPC9zdmc+);",
                                     contextmenu: false,
                                     onclick: function (event) {
+                                        if (event.target.tagName.toLowerCase() !== "toolbarbutton") return;
                                         switch (event.button) {
                                             case 0:
                                                 if (event.target.getAttribute("open") === "true") {
@@ -385,9 +391,13 @@
         },
         handleRelativePath: function (path) {
             if (path) {
-                path = path.replace(/\//g, '\\');
+                if (this.platform == "win") {
+                    path = path.replace(/\//g, '\\');
+                } else {
+                    path = path.replace(/\\/g, '//');
+                }
                 var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
-                if (/^(\\)/.test(path)) {
+                if (/^(\/|\\)/.test(path)) {
                     return ffdir + path;
                 } else {
                     return path;
@@ -398,6 +408,9 @@
             // load themes
             this.themes = {};
             let file = this.getFile(this.THEME_PATH);
+            if (!file.exists()) {
+                file.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+            }
             let files = file.directoryEntries.QueryInterface(Ci.nsISimpleEnumerator);
             while (files.hasMoreElements()) {
                 let file = files.getNext().QueryInterface(Ci.nsIFile);
@@ -444,7 +457,8 @@
                     return;
                 }
 
-                if (aFile.isExecutable()) {
+                // Linux 下目录也是 executable
+                if (!aFile.isDirectory() && aFile.isExecutable()) {
                     process.init(aFile);
                     process.runw(false, a, a.length);
                 } else {
@@ -460,6 +474,11 @@
                 aFile = pathOrFile;
             } else if (typeof pathOrFile === "string") {
                 aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
+                if (this.platform == "win") {
+                    pathOrFile = pathOrFile.replace(/\//g, '\\');
+                } else {
+                    pathOrFile = pathOrFile.replace(/\\/g, '//');
+                }
                 aFile.initWithPath(pathOrFile);
             } else {
                 this.error(formatStr("param is invalid", "CopyCatTheme.getFile", "pathOrFile", pathOrFile));
@@ -696,6 +715,7 @@
             if (typeof CopyCatTheme === "undefined") {
                 CopyCatTheme = TopWindow.CopyCatTheme;
             }
+            if (typeof monitors === "undefined" || typeof monitors.forEach !== "function") return;
             monitors.forEach(item => {
                 if ("isAvailable" in item && !evil(item.isAvailable)) {
                     return;
@@ -1204,16 +1224,26 @@
         return applyAttrs(el, attrs, skipAttrs);
     }
 
-    function applyAttrs (el, attrs, skipAttrs) {
-        skipAttrs = skipAttrs || [];
-        if (attrs) Object.keys(attrs).forEach(function (key) {
-            if (!skipAttrs.includes(key)) {
-                if (typeof attrs[key] === 'function')
-                    el.setAttribute(key, "(" + attrs[key].toString() + ").call(this, event);");
-                else
-                    el.setAttribute(key, attrs[key]);
-            }
-        });
+    function applyAttrs (el, attrs, skipAttrs = []) {
+        if (attrs) {
+            Object.entries(attrs).forEach(([key, val]) => {
+                if (!skipAttrs.includes(key)) {
+                    if (key.startsWith('on')) {
+                        const eventName = key.slice(2).toLowerCase();
+                        const handler = typeof val === 'function' ? val : (event) => {
+                            try {
+                                eval(val);
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        };
+                        el.addEventListener(eventName, handler, false);
+                    } else {
+                        el.setAttribute(key, val);
+                    }
+                }
+            });
+        }
         return el;
     }
 
