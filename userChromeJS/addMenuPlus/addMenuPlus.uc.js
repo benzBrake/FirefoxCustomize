@@ -1031,8 +1031,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "_items") return;
                 if (key === "_group") return;
                 if (key.startsWith('on')) {
-                    if (typeof val !== "function") val = new Function(val);
-                    group.addEventListener(key.slice(2).toLocaleLowerCase(), val.bind(this), false);
+                    group.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
+                            eval("(" + val + ").call(this, event)");
+                        } else {
+                            eval(val);
+                        }
+                    });
                 } else {
                     group.setAttribute(key, val);
                 }
@@ -1097,8 +1102,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = menuObj[key];
                 if (key === "_items") continue;
                 if (key.startsWith('on')) {
-                    if (typeof val !== "function") val = new Function(val);
-                    menu.addEventListener(key.slice(2).toLowerCase(), val.bind(this), false);
+                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
+                            eval("(" + val + ").call(this, event)");
+                        } else {
+                            eval(val);
+                        }
+                    });
                     continue;
                 }
                 menu.setAttribute(key, val);
@@ -1238,8 +1248,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = obj[key];
                 if (key === "command") continue;
                 if (key.startsWith('on')) {
-                    if (typeof val !== "function") val = new Function(val);
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val.bind(this), false);
+                    val = typeof val == "function" ? val.toString() : val;
+                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
+                            eval("(" + val + ").call(this, event)");
+                        } else {
+                            eval(val);
+                        }
+                    });
                 } else {
                     menuitem.setAttribute(key, val);
                 }
@@ -1353,8 +1369,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     for (let key in obj) {
                         let val = obj[key];
                         if (key.startsWith('on')) {
-                            if (typeof val !== "function") val = new Function(val);
-                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), val.bind(this), false);
+                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), function (event) {
+                                if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
+                                    eval("(" + val + ").call(this, event)");
+                                } else {
+                                    eval(val);
+                                }
+                            });
                             continue;
                         }
                         dupMenuitem.setAttribute(key, val);
@@ -1899,11 +1920,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }
         if (attr) Object.keys(attr).forEach(function (n) {
             if (n.startsWith('on')) {
-                const fn = attr[n];
-                if (typeof fn === 'function') {
-                    el.addEventListener(n.slice(2).toLocaleLowerCase(), fn);
+                const en = n.slice(2).toLocaleLowerCase();
+                if (typeof attr[n] === "string") {
+                    el.addEventListener(en, new Function('event', attr[n]));
                 } else {
-                    el.addEventListener(n.slice(2).toLocaleLowerCase(), new Function(fn));
+                    el.addEventListener(en, attr[n]);
                 }
             } else {
                 el.setAttribute(n, attr[n]);
@@ -1994,7 +2015,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             delete menuObj.onshowinglabel;
         }
     }
-
 
     function setImage (menu, imageUrl) {
         if (imageUrl) {
