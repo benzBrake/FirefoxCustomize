@@ -1098,7 +1098,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "_items") continue;
                 if (key.startsWith('on')) {
                     if (typeof val !== "function") val = new Function(val);
-                    menu.addEventListener(key.slice(2).toLowerCase(), val);
+                    menu.addEventListener(key.slice(2).toLowerCase(), val.bind(this), false);
                     continue;
                 }
                 menu.setAttribute(key, val);
@@ -1738,54 +1738,61 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         getURLSpecFromFile: getURLSpecFromFile,
         edit: function (aFile, aLineNumber) {
-            if (!aFile || !aFile.exists() || !aFile.isFile()) return;
+            (async () => {
+                if (!aFile || !aFile.exists() || !aFile.isFile()) return;
 
-            var editor;
-            try {
-                editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
-            } catch (e) { }
+                var editor;
+                try {
+                    editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
+                } catch (e) { }
 
-            if (!editor || !editor.exists()) {
-                if (!useScraptchpad && versionGE("72a1")) {
-                    alert($L('please set editor path'));
-                    var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-                    // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
-                    fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
-                        ? window.browsingContext
-                        : window, $L('set global editor'), fp.modeOpen);
-                    fp.appendFilter(Ci.nsIFilePicker.filterApps);
-
-                    if (typeof fp.show !== 'undefined') {
-                        if (fp.show() == fp.returnCancel || !fp.file)
-                            return;
-                        else {
-                            editor = fp.file;
-                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                        }
-                    } else {
-                        fp.open(res => {
-                            if (res != Ci.nsIFilePicker.returnOK) return;
-                            editor = fp.file;
-                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                        });
-                    }
-                } else if (useScraptchpad) {
+                if (!editor || !editor.exists()) {
                     if (versionGE("72a1")) {
-                        return this.alert("addMenuPlus.uc.js: useScraptchpad is not supported in Firefox 72+");
-                    }
-                    this.openScriptInScratchpad(window, aFile);
-                    return;
-                }
-            }
+                        alert($L('please set editor path'));
+                        var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
 
-            var aURL = this.getURLSpecFromFile(aFile);
-            var aDocument = null;
-            var aCallBack = null;
-            var aPageDescriptor = null;
-            gViewSourceUtils.openInExternalEditor({
-                URL: aURL,
-                lineNumber: aLineNumber
-            }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
+                        // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                        fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                            ? window.browsingContext
+                            : window, $L('set global editor'), fp.modeOpen);
+
+                        fp.appendFilters(Ci.nsIFilePicker.filterApps);
+
+                        if (typeof fp.show !== 'undefined') {
+                            if (fp.show() == fp.returnCancel || !fp.file)
+                                return;
+                            else {
+                                editor = fp.file;
+                                Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                            }
+                        } else {
+                            await new Promise(resolve => {
+                                fp.open(res => {
+                                    if (res != Ci.nsIFilePicker.returnOK) return;
+                                    editor = fp.file;
+                                    Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                                    resolve();
+                                });
+                            });
+                        }
+                    } else if (useScraptchpad) {
+                        if (versionGE("72a1")) {
+                            return this.alert("addMenuPlus.uc.js: useScraptchpad is not supported in Firefox 72+");
+                        }
+                        this.openScriptInScratchpad(window, aFile);
+                        return;
+                    }
+                }
+
+                var aURL = this.getURLSpecFromFile(aFile);
+                var aDocument = null;
+                var aCallBack = null;
+                var aPageDescriptor = null;
+                gViewSourceUtils.openInExternalEditor({
+                    URL: aURL,
+                    lineNumber: aLineNumber
+                }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
+            })()
         },
         /**
          * 使用 Scratchpad 编辑
