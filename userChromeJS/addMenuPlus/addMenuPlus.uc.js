@@ -15,7 +15,7 @@
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
-// @note           0.1.6r1 增强在SVG上右键检测的能力，Bug 1937080 Block inline event handlers in Nightly and collect telemetry，Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init, 修正标签页右键 URL 获取错误，修复 Favicon 获取，标签右键菜单支持 photoncompact
+// @note           0.1.6r1 增强在SVG上右键检测的能力，Bug 1937080 Block inline event handlers in Nightly and collect telemetry，Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init, 修正标签页右键 URL 获取错误，修复 Favicon 获取，标签右键菜单支持 photoncompact，修复 Favicon 获取
 // @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行），修复获取 Favicon 链接无效，Favicon 协议改用 page-icon
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
 // @note           0.1.3 修正 Firefox 78 (?应该是吧) openUILinkIn 参数变更；Firefox 92 getURLSpecFromFile 废止，切换到 getURLSpecFromActualFile；添加到文件菜单的 app/appmenu 菜单自动移动到汉堡菜单, 修复 keyword 调用搜索引擎失效的问题，没有 label 并使用 keyword 调用搜索引擎时设置 label 为搜素引擎名称；增加 onshowinglabel 属性，增加本地化属性 data-l10n-href 以及 data-l10n-id；修正右键未显示时无法获取选中文本，增加菜单类型 nav （navigator-toolbox的右键菜单），兼容 textLink_e10s.uc.js，增加移动的菜单无需重启浏览器即可还原，增加 identity-box 右键菜单, getSelectionText 完美修复，支持内置页面，修复右键菜单获取选中文本不完整
@@ -149,7 +149,7 @@
 
  */
 
-location.href.startsWith('chrome://browser/content/browser.x') && (function (css, getURLSpecFromFile, loadText, _openTrustedLinkIn, getFavicon, versionGE) {
+location.href.startsWith('chrome://browser/content/browser.x') && (function (css, getURLSpecFromFile, loadText, _openTrustedLinkIn, versionGE) {
 
     var useScraptchpad = true; // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
     var enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
@@ -1629,17 +1629,11 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%CLIPBOARD%":
                         return readFromClipboard() || "";
                     case "%FAVICON%":
-                        var noBase64 = true;
+                        return tab.faviconUrl || gBrowser.getIcon(tab ? tab : null) || "";
                     case "%FAVICON_BASE64%":
-                        let uri = tab.linkedBrowser.currentURI;
-                        let iconURL = getFavicon(uri);
-                        if (!iconURL && (uri.schemeIs("about") || uri.schemeIs("chrome"))) {
-                            let image = tab.querySelector(".tab-icon-image");
-                            let content = getComputedStyle(image).getPropertyValue("content");
-                            if (content) iconURL = content.slice(5, -2);
-                            else iconURL = image.src;
-                        }
-                        return iconURL ? (noBase64 && !iconURL.startsWith("data:image") ? iconURL : img2base64(iconURL)) : "";
+                        let image = tab.faviconUrl || gBrowser.getIcon(tab ? tab : null);
+                        if (image && image.startsWith("data:image")) return image;
+                        return img2base64(image);
                     case "%EMAIL%":
                         return getEmailAddress() || "";
                     case "%EOL%":
@@ -2210,35 +2204,6 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     } : function (url, where, params) {
         return openUILinkIn(url, where, params);
     }
-})(), function (url, callback) {
-    var uri;
-    try {
-        uri = url instanceof Ci.nsIURI ? url : Services.io.newURI(url, null, null);
-    } catch (e) { console.error(e); }
-    if (!uri) return "";
-    var isCompleted = false, iconURL;
-    PlacesUtils.favicons.getFaviconDataForPage(uri, {
-        onComplete: function (aURI, aDataLen, aData, aMimeType) {
-            try {
-                iconURL = aURI && aURI.spec ?
-                    aURI.spec :
-                    uri.scheme + "://" + uri.host + "/favicon.ico";
-                if (typeof callback == "function") {
-                    callback(iconURL);
-                }
-            } catch (e) {
-            } finally {
-                isCompleted = true
-            }
-        }
-    });
-    if (typeof callback !== "function") {
-        var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-        while (!isCompleted) {
-            thread.processNextEvent(true);
-        }
-    }
-    return iconURL;
-}, function (v) {
+})(), function (v) {
     return Services.vc.compare(Services.appinfo.version, v) >= 0;
 });
