@@ -1033,14 +1033,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "_items") return;
                 if (key === "_group") return;
                 if (key.startsWith('on')) {
-                    const fn = typeof val === "string" ? function (event) {
+                    const fn = typeof val === "string" ? (() => {
                         if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            eval("(" + val + ").call(this, event)");
-                        } else {
-                            eval(val);
+                            return "(" + val + ").call(this, event)";
                         }
-                    } : val;
-                    group.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
+                        return val;
+                    })() : "(" + val + ").call(this, event)";
+                    group.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
+                        eval(fn);
+                    }, false);
                 } else {
                     group.setAttribute(key, val);
                 }
@@ -1105,14 +1106,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = menuObj[key];
                 if (key === "_items") continue;
                 if (key.startsWith('on')) {
-                    const fn = typeof val === "string" ? function (event) {
+                    const fn = typeof val === "string" ? (() => {
                         if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            eval("(" + val + ").call(this, event)");
-                        } else {
-                            eval(val);
+                            return "(" + val + ").call(this, event)";
                         }
-                    } : val;
-                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
+                        return val;
+                    })() : "(" + val + ").call(this, event)";
+                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
+                        eval(fn);
+                    }, false);
                     continue;
                 }
                 menu.setAttribute(key, val);
@@ -1252,14 +1254,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = obj[key];
                 if (key === "command") continue;
                 if (key.startsWith('on')) {
-                    const fn = typeof val === "string" ? function (event) {
+                    const fn = typeof val === "string" ? (() => {
                         if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            eval("(" + val + ").call(this, event)");
-                        } else {
-                            eval(val);
+                            return "(" + val + ").call(this, event)";
                         }
-                    } : val;
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
+                        return val;
+                    })() : "(" + val + ").call(this, event)";
+                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
+                        eval(fn);
+                    }, false);
                 } else {
                     menuitem.setAttribute(key, val);
                 }
