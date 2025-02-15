@@ -583,7 +583,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         if (gContextMenu.onImage)
                             state.push("image");
                         if (/\.(?:jpe?g|png|gif|bmp|webp|svg|ico|jxl)$/i.test(gContextMenu.browser.currentURI.spec))
-                            state.push("imageviewer");
+                            state.push("completed-image");
                         if (gContextMenu.onVideo || gContextMenu.onAudio)
                             state.push("media");
                         if (addMenu.ContextMenu.onSvg)
@@ -2097,7 +2097,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"],
 #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"],
 #contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="image"],
-#contentAreaContextMenu[addMenu~="imageviewer"]  .addMenu[condition~="imageviewer"],
+#contentAreaContextMenu[addMenu~="completed-image"]  .addMenu[condition~="completed-image"],
 #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"],
 #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"],
 #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="input"],
@@ -2107,7 +2107,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"],
 #contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="nomailto"],
 #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"],
-#contentAreaContextMenu:not([addMenu~="imageviewer"])  .addMenu[condition~="noimageviewer"],
+#contentAreaContextMenu:not([addMenu~="completed-image"])  .addMenu[condition~="nocompleted-image"],
 #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"],
 #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"],
 #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
