@@ -4,9 +4,10 @@
 // @author          Ryan
 // @include         main
 // @version         0.2.5
-// @compatibility   Firefox 115
+// @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.6 适配 Firefox 135
 // @note            0.2.5 BrowserOpenAddonsMgr改名，适配 userChrome.js Loader 的调整
 // @note            0.2.4 给工具栏扩展图标右键菜单增加禁用扩展功能
 // @note            0.2.3 给工具栏扩展图标右键菜单增加复制 ID 功能
@@ -28,6 +29,8 @@
     if (window.unifiedExtensionsEnhance) {
         window.unifiedExtensionsEnhance.destroy();
     }
+
+    const COMPACT_LIST = true;
 
     const BUTTONS = {
         MOVE_UP: {
@@ -82,12 +85,14 @@
             id: 'unified-extensions-enable-all',
             class: "subviewbutton",
             "uni-action": "enable-all",
+            "no-icon": true,
             label: "启用所有扩展",
         },
         DISABLE_ALL_ADDONS: {
             id: 'unified-extensions-disable-all',
             class: "subviewbutton",
             "uni-action": "disable-all",
+            "no-icon": true,
             label: "禁用所有扩展",
         },
     }
@@ -106,20 +111,20 @@
     const createElWithClickEvent = (document, tag, attrs, skipAttrs) => {
         let el = $C(document, tag, attrs, skipAttrs);
         el.classList.add("ue-btn");
-        el.setAttribute("onclick", "unifiedExtensionsEnhance.handleEvent(event);");
+        el.addEventListener("click", unifiedExtensionsEnhance, false);
         return el;
     }
 
     window.unifiedExtensionsEnhance = {
-        get appVersion() {
+        get appVersion () {
             delete this.appVersion;
             return this.appVersion = Services.appinfo.version.split(".")[0];
         },
-        get sss() {
+        get sss () {
             delete this.sss;
             return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
         },
-        get showDisabled() {
+        get showDisabled () {
             return Services.prefs.getBoolPref("extensions.unifiedExtensions.showDisabled", true);
         },
         STYLE: {
@@ -135,7 +140,7 @@
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons {
                 display: flex;
-                align-items: center;
+                /* align-items: center; */
                 margin-inline: 0;
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton {
@@ -216,18 +221,27 @@
             unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin {
                 display: none;
             }
-            .toolbaritem-combined-buttons.unified-extensions-item > *:not(.unified-extensions-item-action-button) {
-                padding: 0;
+            toolbarbutton.ue-btn:not([no-icon=true]) {
+                padding: calc(var(--arrowpanel-menuitem-margin-inline) - 1px) var(--arrowpanel-menuitem-margin-inline);
                 padding-inline-end: 0;
-                flex: 0;
-                border: 1px solid transparent;
+                box-shadow: none !important;
+                outline: none !important;
+                background-color: transparent;
             }
-            .toolbaritem-combined-buttons.unified-extensions-item > *:not(.unified-extensions-item-action-button) > .toolbarbutton-icon {
+            toolbarbutton.ue-btn:not([no-icon=true]):hover {
+                background-color: transparent !important;
+            }
+            toolbarbutton.ue-btn:not([no-icon=true]) > .toolbarbutton-icon {
                 box-sizing: content-box;
-                padding-inline: var(--arrowpanel-menuitem-padding-inline) !important;
-                padding-block: var(--arrowpanel-menuitem-padding-block) !important;
+                padding: var(--arrowpanel-menuitem-padding-inline);
                 border: 1px solid transparent;
                 border-radius: var(--arrowpanel-menuitem-border-radius);
+            }
+            toolbarbutton.ue-btn:not([no-icon=true]):hover > .toolbarbutton-icon {
+                background-color: var(--uei-button-hover-bgcolor);
+            }
+            toolbarbutton.ue-btn:not([no-icon=true]):active > .toolbarbutton-icon {
+                background-color: var(--uei-button-active-bgcolor);
             }
             .unified-extensions-list unified-extensions-item > .unified-extensions-item-action-button {
                 margin: var(--arrowpanel-menuitem-margin);
@@ -238,6 +252,27 @@
                 opacity: .2;
                 cursor: not-allowed;
             }
+            ${COMPACT_LIST ? `
+            :root {
+                --uei-icon-size: 16px !important;
+            }
+            :is(#unified-extensions-area,.unified-extensions-list) .unified-extensions-item-message-deck {
+                display: none;
+            }
+            :is(#unified-extensions-area,.unified-extensions-list) .unified-extensions-item-name {
+                white-space: nowrap;
+            }
+            #unified-extensions-messages-container {
+                margin-block: 0 !important;
+            }
+            toolbaritem:is([overflowedItem="true"], [cui-areatype="panel"])
+            > .webextension-browser-action {
+                list-style-image: var(
+                    --webextension-toolbar-image,
+                    var(--webextension-menupanel-image, inherit)
+                ) !important;
+            }
+            ` : ""}
             `)),
             type: 2
         },
@@ -296,7 +331,7 @@
 
             $('toolbar-context-menu').addEventListener('popupshowing', this);
         },
-        onPinToolbarChange(menu, event) {
+        onPinToolbarChange (menu, event) {
             let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
             let widgetId = gUnifiedExtensions._getWidgetId(menu);
             if (!widgetId) return;
@@ -308,14 +343,14 @@
                 this.removeAdditionalButtons(node);
             }
         },
-        openAddonsMgr(event) {
+        openAddonsMgr (event) {
             if (event.button == 2 && event.target.localName == 'toolbarbutton') {
                 event.preventDefault();
                 const addonMgr = "BrowserOpenAddonsMgr" in window ? event.target.ownerGlobal.BrowserOpenAddonsMgr : event.target.ownerGlobal.BrowserAddonUI.openAddonsMgr;
                 addonMgr('addons://list/extension');
             }
         },
-        createAdditionalButtons(node) {
+        createAdditionalButtons (node) {
             let ins = $Q(".webextension-browser-action,.unified-extensions-item-action-button", node);
             if (ins) {
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.MOVE_DOWN));
@@ -327,10 +362,10 @@
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.PLUGIN_OPTION));
             }
         },
-        removeAdditionalButtons(node) {
+        removeAdditionalButtons (node) {
             $QA(".ue-btn", node).forEach(el => $R(el));
         },
-        convertSrcToStyle(node) {
+        convertSrcToStyle (node) {
             if (node.tagName.toLowerCase() === "unified-extensions-item") {
                 ;
                 let btn = node.firstElementChild;
@@ -390,11 +425,13 @@
                         this.refreshAddonsList(panelview);
                         break;
                     case "option":
-                        let { parentNode } = triggerItem, addon;
-                        if (parentNode.localName === "unified-extensions-item") {
-                            addon = "addon" in parentNode ? parentNode.addon : parentNode.extension;
-                        } else {
-                            addon = await AddonManager.getAddonByID(parentNode.getAttribute("data-extensionid"));
+                        let addon;
+                        if (triggerItem.closest('unified-extensions-item')) {
+                            const uei = triggerItem.closest('unified-extensions-item');
+                            addon = "addon" in uei ? uei.addon : uei.extension;
+                        } else if (triggerItem.closest('[data-extensionid]')) {
+                            const dei = triggerItem.closest('[data-extensionid]');
+                            addon = await AddonManager.getAddonByID(dei.getAttribute("data-extensionid"));
                         }
                         this.openAddonOptions(addon, triggerItem.ownerGlobal);
                         break;
@@ -565,31 +602,40 @@
         }
     }
 
-    function $(id, aDoc) {
+    function $ (id, aDoc) {
         return (aDoc || document).getElementById(id);
     }
 
-    function $Q(sel, aDoc) {
+    function $Q (sel, aDoc) {
         return (aDoc || document).querySelector(sel);
     }
 
-    function $QA(sel, aDoc) {
+    function $QA (sel, aDoc) {
         return (aDoc || document).querySelectorAll(sel);
     }
 
-    function $C(aDoc, tag, attrs, skipAttrs) {
+    function $C (aDoc, tag, attrs, skipAttrs) {
         attrs = attrs || {};
         skipAttrs = skipAttrs || [];
         var el = (aDoc || document).createXULElement(tag);
         return $A(el, attrs, skipAttrs);
     }
 
-    function $A(el, obj, skipAttrs) {
+    function $A (el, obj, skipAttrs) {
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
-                if (typeof obj[key] === 'function') {
-                    el.setAttribute(key, "(" + obj[key].toString() + ").call(this, event);");
+                const val = obj[key];
+                if (key.startsWith('on')) {
+                    const fn = typeof val === "string" ? (() => {
+                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
+                            return "(" + val + ").call(this, event)";
+                        }
+                        return val;
+                    })() : "(" + val.toString() + ").call(this, event)";
+                    el.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
+                        eval(fn)
+                    }, false);
                 } else {
                     el.setAttribute(key, obj[key]);
                 }
@@ -598,7 +644,7 @@
         return el;
     }
 
-    function $R(el) {
+    function $R (el) {
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
     }
