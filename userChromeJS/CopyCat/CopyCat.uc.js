@@ -359,7 +359,9 @@
                                     if (command_id && !dest.getAttribute('command')) {
                                         item.setAttribute('id', command_id + '_clone');
                                         item.setAttribute('command', command_id);
-                                        item.setAttribute("oncommand", "CopyCat.onCommand(event);");
+                                        item.addEventListener("command", (event) => {
+                                            CopyCat.onCommand(event);
+                                        });
                                     }
                                 }
                             }
@@ -474,7 +476,9 @@
 
             if (obj.oncommand || obj.command) return item;
 
-            item.setAttribute("oncommand", "CopyCat.onCommand(event);");
+            item.addEventListener("command", (event) => {
+                CopyCat.onCommand(event);
+            });
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
@@ -955,8 +959,16 @@
     function applyAttr (e, o = {}, s = []) {
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
-            if (typeof v == "function") {
-                e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+            if (k.startsWith('on')) {
+                const fn = typeof v === "string" ? (() => {
+                    if (v.trim().startsWith("function") || v.trim().startsWith("async function")) {
+                        return "(" + v + ").call(this, event)";
+                    }
+                    return v;
+                })() : "(" + v + ").call(this, event)";
+                e.addEventListener(k.slice(2).toLocaleLowerCase(), (event) => {
+                    eval(fn);
+                }, false);
             } else {
                 e.setAttribute(k, v);
             }
