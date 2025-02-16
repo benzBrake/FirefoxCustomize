@@ -139,11 +139,15 @@
 ), `
 #unified-extensions-search-input-container {
     min-height: 20px;
-    margin:5px 10px;
-    border: 1px solid var(--panel-border-color);
+    margin: 5px 10px;
     display: flex;
     flex-direction: row;
     overflow: hidden;
+    appearance: none !important;
+    background-color: var(--toolbar-field-background-color) !important;
+    color: inherit !important;
+    border: 1px solid var(--input-border-color) !important;
+    border-radius: 4px !important;
 }
 #unified-extensions-search-input {
     flex-grow: 1;
