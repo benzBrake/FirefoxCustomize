@@ -1068,7 +1068,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             return "(" + val + ").call(this, event)";
                         }
                         return val;
-                    })() : "(" + val + ").call(this, event)";
+                    })() : "(" + val.toString() + ").call(this, event)";
                     group.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
                         eval(fn);
                     }, false);
@@ -1136,7 +1136,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             return "(" + val + ").call(this, event)";
                         }
                         return val;
-                    })() : "(" + val + ").call(this, event)";
+                    })() : "(" + val.toString() + ").call(this, event)";
                     menu.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
                         eval(fn);
                     }, false);
@@ -1279,7 +1279,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             return "(" + val + ").call(this, event)";
                         }
                         return val;
-                    })() : "(" + val + ").call(this, event)";
+                    })() : "(" + val.toString() + ").call(this, event)";
                     menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
                         eval(fn);
                     }, false);
