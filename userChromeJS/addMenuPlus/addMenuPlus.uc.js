@@ -1580,7 +1580,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     let c = beforeProcessConditons[i] || "";
                     if (c === "normal") {
                         conditions.push("normal");
-                    } else if (["select", "link", "mailto", "image", "canvas", "media", "input"].includes(c.replace(/^no/, ""))) {
+                    } else if (["select", "link", "mailto", "image", "canvas", "media", "input", "completed-image"].includes(c.replace(/^no/, ""))) {
                         conditions.push(c);
                     }
                 }
