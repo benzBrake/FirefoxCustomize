@@ -26,6 +26,7 @@
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20250218 修复 Fx135+ Ctrl + F 失效 
 // @note            20240806 修复 Ctrl + F 右键级太高，新增中键 SidebarModoki 按钮切换侧边栏方向
 // @note            20240710 修复中键地址栏复制地址，修复中键下载按钮提示保存 URL
 // @note            20240614 移除 Styloaix 按钮功能，继续修复 Bug 1880914
@@ -313,12 +314,22 @@
                 }
             }
             if (config["ctrl f to toggle findbar"]) {
-                let cmd = document.getElementById('cmd_find');
-                if (cmd) {
-                    let parentNode = cmd.parentNode;
-                    parentNode.removeChild(cmd);
-                    parentNode.appendChild(window.MozXULElement.parseXULToFragment(`<command id="cmd_find" oncommand="if (!gFindBar || gFindBar.hidden) { gLazyFindCommand('onFindCommand') } else { gFindBar.close() }"/>`));
-                }
+                const toggleFindbar = function () {
+                    if (gFindBar) {
+                        gFindBar.hidden ? gFindBar.onFindCommand() : gFindBar.close();
+                    } else {
+                        gLazyFindCommand("onFindCommand");
+                    }
+                };
+
+                document.getElementById("mainCommandSet").addEventListener("command", event => {
+                    switch (event.target.id) {
+                        case "cmd_find":
+                            event.stopPropagation();
+                            event.preventDefault();
+                            toggleFindbar();
+                    }
+                }, true);
             }
         }
     }
