@@ -13,75 +13,15 @@
 			"group": "重定向"
 		},
 		{
-			"enable": false,
-			"name": "Google字体库 >> 极客族",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/fonts\\.googleapis\\.com\\/(.*)$",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://fonts.geekzu.org/$1",
-			"group": "重定向"
-		},
-		{
-			"enable": false,
-			"name": "Google前端库 >> 极客族",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/ajax\\.googleapis\\.com\\/(.*)$",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://gapis.geekzu.org/ajax/$1",
-			"group": "重定向"
-		},
-		{
-			"enable": false,
-			"name": "Google字体文件-1 >> 极客族",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/fonts\\.gstatic\\.com\\/(.*)$",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://gapis.geekzu.org/g-fonts/$1",
-			"group": "重定向"
-		},
-		{
-			"enable": false,
-			"name": "Google字体文件-2 >> 极客族",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/themes\\.googleusercontent\\.com\\/(.*)$",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://gapis.geekzu.org/g-themes/$1",
-			"group": "重定向"
-		},
-		{
-			"enable": false,
-			"name": "Gravatar全球头像 >>极客族",
-			"ruleType": "redirect",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/.*\\.gravatar\\.com\\/avatar\\/(.*)$",
-			"exclude": "",
-			"isFunction": false,
-			"action": "redirect",
-			"to": "https://sdn.geekzu.org/avatar/$1",
-			"group": "重定向"
-		},
-		{
-			"enable": false,
-			"name": "jsdelivr cdn >> 渺软公益",
+			"enable": true,
+			"name": "jsdelivr cdn >> JSDMirror",
 			"ruleType": "redirect",
 			"matchType": "regexp",
 			"pattern": "https://cdn.jsdelivr.net/(.*)$",
 			"exclude": "",
 			"isFunction": false,
 			"action": "redirect",
-			"to": "https://jsd.onmicrosoft.cn/$1",
+			"to": "https://cdn.jsdmirror.com/$1",
 			"group": "重定向"
 		},
 		{
@@ -110,18 +50,18 @@
 		},
 		{
 			"enable": true,
-			"name": "Google APIs",
+			"name": "Google 前端公共库 >> loli.net",
 			"ruleType": "redirect",
 			"matchType": "regexp",
 			"pattern": "^http(s?)://ajax\\.googleapis\\.com/(.*)",
 			"exclude": "",
 			"isFunction": false,
 			"action": "redirect",
-			"to": "https://gapis.geekzu.org/ajax/$2",
+			"to": "https://ajax.loli.net/$2",
 			"group": "重定向"
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "reCaptcha",
 			"ruleType": "redirect",
 			"matchType": "regexp",
@@ -131,6 +71,53 @@
 			"action": "redirect",
 			"to": "https://recaptcha.net/recaptcha/$2",
 			"group": "重定向"
+		},
+		{
+			"enable": true,
+			"name": "QQ聊天链接直达",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https:\\/\\/(?:[^.]+\\.)?c\\.pc\\.qq\\.com\\/ios\\.html\\?.*",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": true,
+			"action": "redirect",
+			"to": "$1",
+			"code": "return new URL(detail.url).searchParams.get(\"url\");"
+		},
+		{
+			"enable": true,
+			"name": "知乎外部链接直达",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https?:\\/\\/link\\.zhihu\\.com\\/\\?target=(.*)",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "$1"
+		},
+		{
+			"enable": true,
+			"name": "腾讯文档链接直达",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https?:\\/\\/docs\\.qq\\.com\\/.*\\?url=(.*)",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": true,
+			"code": "return new URL(detail.url).searchParams.get(\"url\")"
+		},
+		{
+			"enable": true,
+			"name": "CSDN外部链接直达",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https?:\\/\\/link\\.csdn\\.net\\/\\?.*target=(.*)",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": true,
+			"code": "return new URL(detail.url).searchParams.get(\"target\")"
 		}
 	],
 	"sendHeader": [
@@ -795,7 +782,7 @@
 			}
 		},
 		{
-			"enable": true,
+			"enable": false,
 			"name": "Content Security Policy Header Modification",
 			"ruleType": "modifyReceiveHeader",
 			"matchType": "all",
@@ -804,6 +791,20 @@
 			"isFunction": true,
 			"code": "let rt = detail.type;\nif (rt === 'script' || rt === 'stylesheet' || rt === 'main_frame' || rt === 'sub_frame') {\n  for (let i in val) {\n    if (val[i].name.toLowerCase() === 'content-security-policy') {\n      let s = val[i].value;\n      s = s.replace(/googleapis\\.com/g, '$& https://gapis.geekzu.org');\n      s = s.replace(/recaptcha\\.google\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/google\\.com/g, '$& https://recaptcha.net');\n      s = s.replace(/gstatic\\.com/g, '$& https://*.gstatic.cn');\n      val[i].value = s;\n    }\n  }\n}",
 			"group": "修改响应"
+		},
+		{
+			"enable": true,
+			"name": "修复w3s.link无法被iframe",
+			"ruleType": "modifyReceiveHeader",
+			"matchType": "domain",
+			"pattern": "w3s.link",
+			"exclude": "",
+			"group": "修改响应",
+			"isFunction": false,
+			"action": {
+				"name": "x-frame-options",
+				"value": "ALLOW-FROM"
+			}
 		}
 	],
 	"receiveBody": []
