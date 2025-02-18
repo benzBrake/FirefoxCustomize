@@ -118,6 +118,18 @@
 			"group": "重定向",
 			"isFunction": true,
 			"code": "return new URL(detail.url).searchParams.get(\"target\")"
+		},
+		{
+			"enable": true,
+			"name": "51CTO外部链接直达",
+			"ruleType": "redirect",
+			"matchType": "regexp",
+			"pattern": "^https?:\\/\\/blog\\.51cto\\.com\\/transfer\\?(.*)",
+			"exclude": "",
+			"group": "重定向",
+			"isFunction": false,
+			"action": "redirect",
+			"to": "$1"
 		}
 	],
 	"sendHeader": [
@@ -258,20 +270,6 @@
 			"action": {
 				"name": "referer",
 				"value": ""
-			},
-			"group": "修改请求"
-		},
-		{
-			"enable": true,
-			"name": "tianya图片盗链",
-			"ruleType": "modifySendHeader",
-			"matchType": "regexp",
-			"pattern": "^https?:\\/\\/.*\\.(laibafile|tianya|tianyablog)\\.(cn|com).*",
-			"exclude": "",
-			"isFunction": false,
-			"action": {
-				"name": "referer",
-				"value": "http://www.tianya.cn/"
 			},
 			"group": "修改请求"
 		},
@@ -711,20 +709,6 @@
 		},
 		{
 			"enable": true,
-			"name": "土豆视频播放页改UA",
-			"ruleType": "modifySendHeader",
-			"matchType": "prefix",
-			"pattern": "http://video.tudou.com/v/",
-			"exclude": "",
-			"isFunction": false,
-			"action": {
-				"name": "user-agent",
-				"value": "Mozilla/5.0 (Linux; U; Android 4.0.4) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
-			},
-			"group": "用户代理"
-		},
-		{
-			"enable": true,
 			"name": "工商银行 UA",
 			"ruleType": "modifySendHeader",
 			"matchType": "regexp",
@@ -763,6 +747,34 @@
 			"action": {
 				"name": "user-agent",
 				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+			}
+		},
+		{
+			"enable": true,
+			"name": "bangumi.tv 改 UA 防止掉登录",
+			"ruleType": "modifySendHeader",
+			"matchType": "regexp",
+			"pattern": "bgm\\.tv|bangumi\\.tv|chii\\.in",
+			"exclude": "",
+			"group": "用户代理",
+			"isFunction": false,
+			"action": {
+				"name": "user-agent",
+				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.164 Safari/537.36"
+			}
+		},
+		{
+			"enable": false,
+			"name": "视频网站改用 Safari UA",
+			"ruleType": "modifySendHeader",
+			"matchType": "regexp",
+			"pattern": "^http(s?)://www\\\\.(douyu|yy|panda|iqiyi|huya|meipai|bilibili|youtube)(\\\\.com|\\\\.tv)/(.*)",
+			"exclude": "",
+			"group": "用户代理",
+			"isFunction": false,
+			"action": {
+				"name": "user-agent",
+				"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
 			}
 		}
 	],
