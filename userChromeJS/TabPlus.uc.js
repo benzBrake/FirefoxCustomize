@@ -1,19 +1,21 @@
 // ==UserScript==
 // @name            TabPlus.uc.js
 // @description     设置标签的打开方式
-// @version         1.0.6
+// @version         1.0.7
 // @license         MIT License
+// @async
 // @shutdown        window.TabPlus.destroy();
 // @compatibility   Firefox 90
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.0.7 适配新版 userChrome.js @async 注解，去除无用的 CSS 加载代码
 // @note            1.0.6 修正菜单样式问题
 // @note            1.0.5 移除 BuildPanel 支持
 // @note            1.0.4 修复右键新标签页按钮不能兼容data:image 链接的bug
 // @note            1.0.3 兼容 TST 扩展 Switch Tab On Hover，依赖扩展 TST Hoverswitch
 // ==/UserScript==
-(async function (css) {
+(async function () {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
     let addon = await AddonManager.getAddonByID("{dc572301-7619-498c-a57d-39143191b318}");
@@ -135,7 +137,6 @@
                 }
             });
             this.createOptionsMenu(win.document, this.menus);
-            this.style = addStyle(this.sss, css, 0);
         },
         destroy () {
             let menu = $("TabPlus-menu");
@@ -147,8 +148,6 @@
                     module.init(win);
                 module.destroy(window);
             });
-            if (this.style)
-                removeStyle(this.sss, this.style, 0);
         },
         createOptionsMenu (doc, obj) {
             let ins = $("devToolsSeparator", doc);
@@ -845,40 +844,6 @@
         return str || "";
     }
 
-    function addStyle (sss, css, type = 0) {
-        if (sss instanceof Ci.nsIStyleSheetService && typeof css === "string") {
-            let STYLE = {
-                url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)), type: type
-            }
-            sss.loadAndRegisterSheet(STYLE.url, STYLE.type);
-            return STYLE;
-        }
-    }
-
-    function removeStyle (sss, style) {
-        if (sss instanceof Ci.nsIStyleSheetService && style && style.url && style.type) {
-            sss.unregisterSheet(style.url, style.type, 2);
-            return true;
-        }
-        return false;
-    }
-
     window.TabPlus = TabPlus;
-    // 延时启动
-    if (gBrowserInit.delayedStartupFinished) window.TabPlus.init(window);
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.TabPlus.init(subject);
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
-})(`
-@-moz-document url-prefix("chrome://browser/content/browser.x") {
-    #TabPlus-menupopup menuitem:is([type="checkbox"], [type="radio"]):not([checked="true"]) > .menu-iconic-left > .menu-iconic-icon {
-        display: -moz-box !important;
-        display: inline-flex !important;
-    }
-}`);
+    window.TabPlus.init(window);
+})();

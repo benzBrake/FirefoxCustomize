@@ -7,7 +7,8 @@
 // @license        MIT License
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r1 
+// @version        0.1.6r2
+// @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
@@ -15,6 +16,7 @@
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           0.1.6r2 使用 @async 注解
 // @note           0.1.6r1 增强在SVG上右键检测的能力，Bug 1937080 Block inline event handlers in Nightly and collect telemetry，Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init, 修正标签页右键 URL 获取错误，修复 Favicon 获取，标签右键菜单支持 photoncompact，修复 Favicon 获取， 实现 executeInChrome，支持 onshowinglabel 属性
 // @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行），修复获取 Favicon 链接无效，Favicon 协议改用 page-icon
 // @note           0.1.4 onshowing/onshowinglabel 在所有右键菜单生效, 更换语言读取方式，修正 Linux 下 exec 的兼容性
@@ -2059,42 +2061,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }
     }
 
-    if (typeof _uc !== "undefined" && !_uc.isFaked) {
-        function addMenuNewWin () {
-            Services.obs.addObserver(this, 'domwindowopened', false);
-
-        }
-
-        addMenuNewWin.prototype = {
-            observe: function (aSubject, aTopic, aData) {
-                aSubject.addEventListener('load', this, true);
-            },
-            handleEvent: function (aEvent) {
-                if (aEvent.type === "load") {
-                    let document = aEvent.originalTarget,
-                        win = document.ownerGlobal;
-                    if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
-                        setTimeout(function () {
-                            document.ownerGlobal.addMenu.rebuild();
-                        }, 1000);
-                    }
-                }
-            },
-        }
-
-        new addMenuNewWin();
-    }
-
-    if (gBrowserInit.delayedStartupFinished) window.addMenu.init();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.addMenu.init();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
+    window.addMenu.init();
 
     /** 防止 data-l10n 无法读取 , 用不到可以注释下面这几行 */
     setTimeout(function () {
