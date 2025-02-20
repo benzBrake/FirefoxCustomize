@@ -359,9 +359,7 @@
                                     if (command_id && !dest.getAttribute('command')) {
                                         item.setAttribute('id', command_id + '_clone');
                                         item.setAttribute('command', command_id);
-                                        item.addEventListener("command", (event) => {
-                                            CopyCat.onCommand(event);
-                                        });
+                                        item.setAttribute("oncommand", "CopyCat.onCommand(event);");
                                     }
                                 }
                             }
@@ -476,9 +474,7 @@
 
             if (obj.oncommand || obj.command) return item;
 
-            item.addEventListener("command", (event) => {
-                CopyCat.onCommand(event);
-            });
+            item.setAttribute("oncommand", "CopyCat.onCommand(event);");
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
@@ -970,6 +966,7 @@
                     eval(fn);
                 }, false);
             } else {
+                if (typeof v === "function") v = '(' + v.toString() + ').call(this, event)';
                 e.setAttribute(k, v);
             }
         }
