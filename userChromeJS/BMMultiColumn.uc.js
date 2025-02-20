@@ -4,9 +4,11 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2024.10.18
+// @version         2025.02.19
+// @async
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2025.02.19 使用 @async 注解
 // @note            2024.10.18 fx131
 // @note            2024.10.07 fx131
 // @note            2024.04.20 修复在【不支持 @include main注释】的UC环境里的一处报错
@@ -20,10 +22,6 @@
 // @ignorecache
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
-    const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
-    const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
-
-
     if (window.BMMultiColumn) {
         window.BMMultiColumn.destroy();
         delete window.BMMultiColumn;
@@ -45,19 +43,22 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             window.addEventListener("aftercustomization", this, false);
             this.delayedStartup();
         },
-        delayedStartup: function () {
+        delayedStartup: function (elm) {
             //wait till construction of bookmarksBarContent is completed.
-            for (var i = 0; i < this.menupopup.length; i++) {
-                this.count[i] = 0;
-                this.timer[i] = setInterval(function (self, i) {
-                    if (++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
-                        clearInterval(self.timer[i]);
-                        var menupopup = document.getElementById(self.menupopup[i]);
-                        if (menupopup) {
-                            menupopup.addEventListener('popupshowing', self, false);
+            if (typeof elm == "undefined") {
+                for (var i = 0; i < this.menupopup.length; i++) {
+                    this.count[i] = 0;
+                    this.timer[i] = setInterval(function (self, i) {
+                        if (++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
+                            clearInterval(self.timer[i]);
+                            var menupopup = document.getElementById(self.menupopup[i]);
+                            if (menupopup) {
+                                menupopup.addEventListener('popupshowing', self, false);
+                                menupopup.addEventListener('DOMMenuItemActive', self, false);
+                            }
                         }
-                    }
-                }, 250, this, i);
+                    }, 250, this, i);
+                }
             }
         },
         uninit: function () {
@@ -70,18 +71,19 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         self.resetPopup(menupopup);
                         if (menupopup) {
                             menupopup.removeEventListener('popupshowing', self, false);
+                            menupopup.removeEventListener('DOMMenuItemActive', self, false);
                         }
                     }
                 }, 250, this, i);
             }
         },
-        destroy() {
+        destroy () {
             window.removeEventListener('unload', this, false);
             window.removeEventListener("aftercustomization", this, false);
             this.uninit();
             this.sss.unregisterSheet(this.style, 2);
         },
-        handleEvent(event) {
+        handleEvent (event) {
             switch (event.type) {
                 case 'popupshowing':
                     let menupopup;
@@ -90,7 +92,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     } else if (event.target.tagName == 'menupopup') {
                         menupopup = event.target;
                     } else return;
-                    this.initPopup(menupopup, event);
+                    this.initHorizontalScroll(event);
+                    this.initMultiColumn(menupopup, event);
                     break;
                 case 'aftercustomization':
                     setTimeout(function (self) { self.delayedStartup(self); }, 0, this);
@@ -100,66 +103,90 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     break;
             }
         },
-        initPopup(menupopup, event) {
+        initHorizontalScroll (event) {
+            let scrollBox = event.originalTarget.scrollBox;
+            scrollBox.scrollbox.style.setProperty("overflow-y", "auto", "important");
+
+            scrollBox.scrollbox.style.setProperty("margin-top", "0", "important");
+            scrollBox.scrollbox.style.setProperty("margin-bottom", "0", "important");
+            scrollBox.scrollbox.style.setProperty("padding-top", "0", "important");
+            scrollBox.scrollbox.style.setProperty("padding-bottom", "0", "important");
+
+            // 上下のスクロールボタン
+            event.originalTarget.on_DOMMenuItemActive = function (event) {
+                /*
+                if (super.on_DOMMenuItemActive) {
+                  super.on_DOMMenuItemActive(event);
+                }
+                */
+                let elt = event.target;
+                if (elt.parentNode != this) {
+                    return;
+                }
+
+                if (window.XULBrowserWindow) {
+                    let placesNode = elt._placesNode;
+
+                    var linkURI;
+                    if (placesNode && PlacesUtils.nodeIsURI(placesNode)) {
+                        linkURI = placesNode.uri;
+                    } else if (elt.hasAttribute("targetURI")) {
+                        linkURI = elt.getAttribute("targetURI");
+                    }
+
+                    if (linkURI) {
+                        window.XULBrowserWindow.setOverLink(linkURI);
+                    }
+                }
+            }.bind(event.originalTarget);
+            scrollBox._scrollButtonUp.style.display = "none";
+            scrollBox._scrollButtonDown.style.display = "none";
+        },
+        initMultiColumn (menupopup, event) {
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
             let inited = false;
             if (scrollbox) {
                 inited = true;
-                scrollbox.style.minHeight = "21px";
-                scrollbox.style.height = "auto";
-                scrollbox.style.display = "flex";
-                scrollbox.style.flexFlow = "column wrap";
-                scrollbox.style.overflow = "-moz-hidden-unscrollable";
-                scrollbox.style.width = "unset";
+                Object.assign(scrollbox.style, {
+                    minHeight: "21px",
+                    height: "auto",
+                    display: "flex",
+                    flexFlow: "column wrap",
+                    overflow: "-moz-hidden-unscrollable",
+                    width: "unset"
+                });
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
                 let slot = scrollbox.querySelector('slot');
                 slot.style.display = "contents";
             }
             menupopup.style.maxWidth = "calc(100vw - 20px)";
-
             if (inited) {
-                let maxWidth = parseInt(getComputedStyle(menupopup)['max-width']);
-                scrollbox.style.width = Math.min(maxWidth, scrollbox.scrollWidth) + "px";
+                let maxWidth = calcWidth(-129);
                 if (maxWidth < scrollbox.scrollWidth) {
                     scrollbox.style.setProperty("overflow-x", "auto", "important");
-                    scrollbox.style.setProperty("margin-top", "0", "important");
-                    scrollbox.style.setProperty("margin-bottom", "0", "important");
-                    // 上下のスクロールボタン
-                    event.originalTarget.on_DOMMenuItemActive = function (event) { };
-                    arrowscrollbox._scrollButtonUp.style.display = "none";
-                    arrowscrollbox._scrollButtonDown.style.display = "none";
-                }
-                let lastmenu = menupopup.lastChild;
-                while (lastmenu) {
-                    if (lastmenu.scrollWidth >= 90) break;
-                    lastmenu = lastmenu.previousSibling;
-                }
-
-                if (lastmenu && lastmenu.scrollWidth >= 90) {
-                    let pos1 = lastmenu.x - 0 + lastmenu.clientWidth;
-                    let pos2 = scrollbox.x - 0 + arrowscrollbox.clientWidth;
-                    if (pos2 - pos1 > 30) {
-                        arrowscrollbox.width = "";
-                        arrowscrollbox.width = scrollbox.scrollWidth;
-                    }
+                    scrollbox.style.setProperty("width", maxWidth + "px");
+                } else {
+                    scrollbox.style.setProperty("width", scrollbox.scrollWidth + "px");
                 }
             }
         },
-        resetPopup(menupopup) {
+        resetPopup (menupopup) {
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             if (!arrowscrollbox) return;
             arrowscrollbox.style.maxHeight = "";
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
 
             if (!scrollbox) return;
-            scrollbox.style.minHeight = "";
-            scrollbox.style.height = "";
-            scrollbox.style.display = "";
-            scrollbox.style.flexFlow = "";
-            scrollbox.style.overflow = "";
-            scrollbox.style.maxHeight = "";
-            scrollbox.style.width = "";
+            Object.assign(scrollbox.style, {
+                minHeight: "",
+                height: "",
+                display: "",
+                flexFlow: "",
+                overflow: "",
+                maxHeight: "",
+                width: ""
+            });
 
             let menuitem = menupopup.lastChild;
             while (menuitem) {
@@ -169,34 +196,21 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         }
     }
 
-
-    function $(id, aDoc) {
-        id = id || "";
-        let doc = aDoc || document;
-        if (id.startsWith('#')) id = id.substring(1, id.length);
-        return doc.getElementById(id);
-    }
-
-    if (typeof _ucUtils !== 'undefined') {
-        _ucUtils.startupFinished()
-            .then(() => {
-                window.BMMultiColumn.init();
-            });
-    } else {
-        if (gBrowserInit.delayedStartupFinished) window.BMMultiColumn.init();
-        else {
-            let delayedListener = (subject, topic) => {
-                if (topic == "browser-delayed-startup-finished" && subject == window) {
-                    Services.obs.removeObserver(delayedListener, topic);
-                    window.BMMultiColumn.init();
-                }
-            };
-            Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
+    function calcWidth (offset) {
+        if (typeof offset == 'number') {
+            return window.innerHeight + offset;
+        } else if (typeof offset == 'string') {
+            if (/^-?\d+px$/.test(offset.trim())) {
+                return window.innerHeight + parseInt(offset.trim().match(/^-?(\d+)px$/)[1]);
+            }
         }
+        throw new Error('Invalid offset value');
     }
+
+    window.BMMultiColumn.init();
 })(`
 #PlacesToolbarItems menupopup {
     max-width: calc(100vw - 20px);
     max-height: calc(100vh - 129px);
-  }
+}
 `)
