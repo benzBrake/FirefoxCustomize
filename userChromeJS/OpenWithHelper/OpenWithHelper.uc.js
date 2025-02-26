@@ -341,7 +341,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                                 state.push("select");
                             if (gContextMenu.onLink || event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden") !== "true" /* 兼容 textLink.uc.js */) {
                                 state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
-                                if (/^https?:/.test(gContextMenu.link.href)) {
+                                if (/^https?:/.test(gContextMenu.linkURL)) {
                                     state.push("http");
                                 }
                             }
@@ -651,7 +651,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }).catch(e => { });
             },
             setCondition: function (menu, condition) {
-                condition || (condition = "button tab normal");
+                condition || (condition = "button tab normal link");
                 let beforeProcessConditons = condition.split(' ');
                 let conditions = [];
                 for (let i = 0; i < beforeProcessConditons.length; i++) {
@@ -676,7 +676,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     conditions.push("button");
                 }
                 if (conditions.length) {
-                    menu.setAttribute("condition", conditions.join(" "));
+                    menu.setAttribute("condition", uniqueArray(conditions).join(" "));
                 }
             },
             log: console.log,
@@ -889,6 +889,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 "chrome://devtools/skin/images/browsers/firefox.svg", aTitle || "Open With Helper",
                 aMsg + "", !!callback, "", callback);
         }
+
+        function uniqueArray (arr) {
+            return arr.filter(function (value, index, self) {
+                return self.indexOf(value) === index;
+            });
+        }
     })(`
 #OpenWithHelper-Btn,
 #OpenWithHelper-Ctx-Menu,
@@ -942,7 +948,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 #OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="notab"],
 #OpenWithHelper-Ctx-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition],
 #OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]:not([condition~="button"]),
-#OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="nobutton"] {
+#OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="nobutton"],
+#OpenWithHelper-Ctx-Menu[openWith="input"],
+#frame-sep ~ #OpenWithHelper-Ctx-Menu[openWith="input"] + menuseparator {
     display: none;
 }
 #OpenWithHelper-Ctx-Menu[openWith=""] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="normal"],
