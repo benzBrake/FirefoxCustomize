@@ -3,10 +3,12 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.5
+// @version         0.2.7
+// @async           true
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.7 修复上移功能，去除一部分无用代码
 // @note            0.2.6 适配 Firefox 135
 // @note            0.2.5 BrowserOpenAddonsMgr改名，适配 userChrome.js Loader 的调整
 // @note            0.2.4 给工具栏扩展图标右键菜单增加禁用扩展功能
@@ -33,87 +35,30 @@
     const COMPACT_LIST = true;
 
     const BUTTONS = {
-        MOVE_UP: {
-            label: "上移",
-            tooltiptext: "上移",
-            "uni-action": "up",
-            closemenu: "none",
-            class: "unified-extensions-item-up subviewbutton subviewbutton-iconic",
-        },
-        MOVE_DOWN: {
-            label: "下移",
-            tooltiptext: "下移",
-            "uni-action": "down",
-            closemenu: "none",
-            class: "unified-extensions-item-down subviewbutton subviewbutton-iconic",
-        },
-        PIN_TO_TOOLBAR: {
-            label: "在工具栏中显示",
-            tooltiptext: "在工具栏中显示",
-            "uni-action": "pin",
-            class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
-        },
-        UNPIN_FROM_TOOLBAR: {
-            label: "从工具栏移除",
-            tooltiptext: "从工具栏移除",
-            "uni-action": "unpin",
-            class: "unified-extensions-item-unpin subviewbutton subviewbutton-iconic",
-            onclick: "unifiedExtensionsEnhance.handleEvent(event); "
-        },
-        PLUGIN_OPTION: {
-            label: "选项",
-            tooltiptext: "扩展选项",
-            "uni-action": "option",
-            class: "unified-extensions-item-option subviewbutton subviewbutton-iconic",
-        },
-        ENABLE_ADDON: {
-            label: "启用",
-            tooltiptext: "启用扩展",
-            "uni-action": "enable",
-            closemenu: "none",
-            class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic",
-        },
-        DISABLE_ADDON: {
-            label: "禁用",
-            tooltiptext: "禁用扩展",
-            closemenu: "none",
-            "uni-action": "disable",
-            class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic",
-        },
-        ENABLE_ALL_ADDONS: {
-            id: 'unified-extensions-enable-all',
-            class: "subviewbutton",
-            "uni-action": "enable-all",
-            "no-icon": true,
-            label: "启用所有扩展",
-        },
-        DISABLE_ALL_ADDONS: {
-            id: 'unified-extensions-disable-all',
-            class: "subviewbutton",
-            "uni-action": "disable-all",
-            "no-icon": true,
-            label: "禁用所有扩展",
-        },
-    }
+        MOVE_UP: { label: "上移", tooltiptext: "上移", "uni-action": "up", closemenu: "none", class: "unified-extensions-item-up subviewbutton subviewbutton-iconic" },
+        MOVE_DOWN: { label: "下移", tooltiptext: "下移", "uni-action": "down", closemenu: "none", class: "unified-extensions-item-down subviewbutton subviewbutton-iconic" },
+        PIN_TO_TOOLBAR: { label: "在工具栏中显示", tooltiptext: "在工具栏中显示", "uni-action": "pin", class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic", onclick: "unifiedExtensionsEnhance.handleEvent(event);" },
+        UNPIN_FROM_TOOLBAR: { label: "从工具栏移除", tooltiptext: "从工具栏移除", "uni-action": "unpin", class: "unified-extensions-item-unpin subviewbutton subviewbutton-iconic", onclick: "unifiedExtensionsEnhance.handleEvent(event);" },
+        PLUGIN_OPTION: { label: "选项", tooltiptext: "扩展选项", "uni-action": "option", class: "unified-extensions-item-option subviewbutton subviewbutton-iconic" },
+        ENABLE_ADDON: { label: "启用", tooltiptext: "启用扩展", "uni-action": "enable", closemenu: "none", class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic" },
+        DISABLE_ADDON: { label: "禁用", tooltiptext: "禁用扩展", closemenu: "none", "uni-action": "disable", class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic" },
+        ENABLE_ALL_ADDONS: { id: 'unified-extensions-enable-all', class: "subviewbutton", "uni-action": "enable-all", "no-icon": true, label: "启用所有扩展" },
+        DISABLE_ALL_ADDONS: { id: 'unified-extensions-disable-all', class: "subviewbutton", "uni-action": "disable-all", "no-icon": true, label: "禁用所有扩展" },
+    };
+
 
     const MENUS = {
-        COPY_ID: {
-            "uni-action": "copy-id",
-            label: "复制 ID",
-        },
-        DISABLE_ADDON: {
-            "uni-action": "disable",
-            label: "禁用扩展",
-        }
-    }
+        COPY_ID: { "uni-action": "copy-id", label: "复制 ID" },
+        DISABLE_ADDON: { "uni-action": "disable", label: "禁用扩展" }
+    };
 
-    const createElWithClickEvent = (document, tag, attrs, skipAttrs) => {
-        let el = $C(document, tag, attrs, skipAttrs);
+    const createElWithClickEvent = (doc, tag, attrs) => {
+        const el = doc.createXULElement(tag);
+        Object.entries(attrs).forEach(([key, val]) => el.setAttribute(key, val));
         el.classList.add("ue-btn");
-        el.addEventListener("click", unifiedExtensionsEnhance, false);
+        el.addEventListener("click", window.unifiedExtensionsEnhance, false);
         return el;
-    }
+    };
 
     window.unifiedExtensionsEnhance = {
         get appVersion () {
@@ -277,7 +222,8 @@
             type: 2
         },
         init: function () {
-            if (this.appVersion < 111) {
+            if (this.appVersion < 135) {
+                console.log("Unified Extensions Enhance: 仅支持Firefox 135+");
                 // 限定版本号
                 return;
             }
@@ -285,12 +231,8 @@
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
 
             gUnifiedExtensions.panel;
-            let view = PanelMultiView.getViewNode(
-                document,
-                "unified-extensions-view"
-            );
-
-            let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
+            const view = PanelMultiView.getViewNode(document, "unified-extensions-view");
+            const origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             if (origBtn) origBtn.addEventListener('click', this.openAddonsMgr);
 
             this.togglePanel = gUnifiedExtensions.togglePanel.toString();
@@ -308,27 +250,17 @@
             view.addEventListener('ViewShowing', this);
 
             if ("COPY_ID" in MENUS) {
-                // 复制 ID
-                if (!$Q("#unified-extensions-context-menu .unified-extensions-context-menu-copy-id")) {
-                    let menuitem = $('unified-extensions-context-menu').insertBefore(createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID), $Q('.unified-extensions-context-menu-manage-extension'));
-                    menuitem.classList.add('unified-extensions-context-menu-copy-id');
-                }
-
-                if (!$Q("#toolbar-context-menu .customize-context-copyExtensionId")) {
-                    let menuitem = createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID);
-                    menuitem.classList.add('customize-context-copyExtensionId');
-                    $Q('#toolbar-context-menu .customize-context-manageExtension').before(menuitem);
-                }
+                const menuitem = createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID);
+                menuitem.classList.add('unified-extensions-context-menu-copy-id');
+                $('unified-extensions-context-menu').insertBefore(menuitem, $Q('.unified-extensions-context-menu-manage-extension'));
             }
 
             if ("DISABLE_ADDON" in MENUS) {
-                if (!$Q("#toolbar-context-menu .customize-context-disableExtension")) {
-                    let menuitem = createElWithClickEvent(document, 'menuitem', MENUS.DISABLE_ADDON);
-                    menuitem.classList.add('customize-context-disableExtension');
-                    $Q('#toolbar-context-menu .customize-context-removeExtension').before(menuitem);
-                }
+                const menuitem = createElWithClickEvent(document, 'menuitem', MENUS.DISABLE_ADDON);
+                menuitem.classList.add('customize-context-disableExtension');
+                $Q('#toolbar-context-menu .customize-context-removeExtension').before(menuitem);
             }
-
+            
             $('toolbar-context-menu').addEventListener('popupshowing', this);
         },
         onPinToolbarChange (menu, event) {
@@ -453,20 +385,8 @@
                         }
                         break;
                     case "up":
-                        // if triggerItem's parent element (addon button) is first child then return
-                        if (triggerItem.parentElement.previousElementSibling === null) {
-                            return;
-                        }
                     case "down":
-                        // if triggerItem's parent element (addon button) is last child then return
-                        if (uniAction === "down" && triggerItem.parentElement.nextElementSibling === null) {
-                            return;
-                        }
-                        if (triggerItem.parentElement.tagName.toLowerCase() === "unified-extensions-item") {
-                            return;
-                        }
-                        let moveWidget;
-                        eval('moveWidget = ' + gUnifiedExtensions.moveWidget.toString("").replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "async function moveWidget"));
+                        let moveWidget = eval('(' + gUnifiedExtensions.moveWidget.toString().replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "function moveWidget") + ')');
                         moveWidget(event.target, uniAction);
                         break;
                     case "copy-id":
@@ -614,49 +534,11 @@
         return (aDoc || document).querySelectorAll(sel);
     }
 
-    function $C (aDoc, tag, attrs, skipAttrs) {
-        attrs = attrs || {};
-        skipAttrs = skipAttrs || [];
-        var el = (aDoc || document).createXULElement(tag);
-        return $A(el, attrs, skipAttrs);
-    }
-
-    function $A (el, obj, skipAttrs) {
-        skipAttrs = skipAttrs || [];
-        if (obj) Object.keys(obj).forEach(function (key) {
-            if (!skipAttrs.includes(key)) {
-                const val = obj[key];
-                if (key.startsWith('on')) {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    el.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn)
-                    }, false);
-                } else {
-                    el.setAttribute(key, obj[key]);
-                }
-            }
-        });
-        return el;
-    }
 
     function $R (el) {
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
     }
 
-    if (gBrowserInit.delayedStartupFinished) window.unifiedExtensionsEnhance.init();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.unifiedExtensionsEnhance.init();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
+    window.unifiedExtensionsEnhance.init();
 })()
