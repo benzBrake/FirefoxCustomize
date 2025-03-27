@@ -4,11 +4,12 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2025.02.19
+// @version         2025.03.27
 // @async
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
-// @note            2025.02.19 使用 @async 注解
+// @note            2025.03.27 修复 Height Width 弄混导致宽度异常，支持纵向滚轮
+// @note            2025.02.19 fx133
 // @note            2024.10.18 fx131
 // @note            2024.10.07 fx131
 // @note            2024.04.20 修复在【不支持 @include main注释】的UC环境里的一处报错
@@ -143,11 +144,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             scrollBox._scrollButtonDown.style.display = "none";
         },
         initMultiColumn (menupopup, event) {
+            menupopup.style.maxWidth = "calc(100vw - 20px)";
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
-            let inited = false;
             if (scrollbox) {
-                inited = true;
                 Object.assign(scrollbox.style, {
                     minHeight: "21px",
                     height: "auto",
@@ -156,19 +156,29 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     overflow: "-moz-hidden-unscrollable",
                     width: "unset"
                 });
+                arrowscrollbox.style.width = "auto";
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
                 let slot = scrollbox.querySelector('slot');
                 slot.style.display = "contents";
-            }
-            menupopup.style.maxWidth = "calc(100vw - 20px)";
-            if (inited) {
                 let maxWidth = calcWidth(-129);
                 if (maxWidth < scrollbox.scrollWidth) {
                     scrollbox.style.setProperty("overflow-x", "auto", "important");
                     scrollbox.style.setProperty("width", maxWidth + "px");
                 } else {
-                    scrollbox.style.setProperty("width", scrollbox.scrollWidth + "px");
+                    scrollbox.style.setProperty("width", scrollbox.scrollWidth + "px", "important");
+                    scrollbox.clientWidth = scrollbox.scrollWidth;
                 }
+                bindWheelEvent(scrollbox);
+            }
+            function bindWheelEvent (item) {
+                if (item._bmMultiColumnWheelHandler) return;
+                const wheelHandler = (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY || e.detail || e.wheelDelta;
+                    item.scrollLeft += delta * 2;
+                };
+                item.addEventListener('wheel', wheelHandler, { passive: false });
+                item._bmMultiColumnWheelHandler = wheelHandler;
             }
         },
         resetPopup (menupopup) {
@@ -178,6 +188,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
 
             if (!scrollbox) return;
+            if (!scrollbox._bmMultiColumnWheelHandler) {
+                scrollbox.removeEventListener('wheel', scrollbox._bmMultiColumnWheelHandler);
+                delete scrollbox._bmMultiColumnWheelHandler;
+            }
             Object.assign(scrollbox.style, {
                 minHeight: "",
                 height: "",
@@ -198,10 +212,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
 
     function calcWidth (offset) {
         if (typeof offset == 'number') {
-            return window.innerHeight + offset;
+            return window.innerWidth + offset;
         } else if (typeof offset == 'string') {
             if (/^-?\d+px$/.test(offset.trim())) {
-                return window.innerHeight + parseInt(offset.trim().match(/^-?(\d+)px$/)[1]);
+                return window.innerWidth + parseInt(offset.trim().match(/^-?(\d+)px$/)[1]);
             }
         }
         throw new Error('Invalid offset value');
