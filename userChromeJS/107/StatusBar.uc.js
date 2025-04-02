@@ -2,13 +2,12 @@
 // @name            StatusBar.uc.js
 // @description     状态栏
 // @license         MIT License
-// @compatibility   Firefox 137
-// @version         0.0.3
+// @compatibility   Firefox 107
+// @version         0.0.2
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note            0.0.3 fx137
 // @note            0.0.2 修正启用 TabMixPlus 扩展后看不见状态栏
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
@@ -55,6 +54,7 @@
 
             CustomizableUI.registerToolbarNode(document.getElementById("status-bar"));
 
+
             //move elem to bottom of window
             document.body.appendChild(document.getElementById("status-bar"));
 
@@ -67,18 +67,10 @@
                 checked: String(Services.prefs.getBoolPref("browser.display.statusbar", false)),
                 oncommand: "StatusBar.togglePref();",
             });
-
-            toggleItem.addEventListener("click", function () {
-                StatusBar.togglePref();
-            });
-
-            document.getElementById('toolbar-context-menu').addEventListener('popupshowing', function () {
-                if (window.LocationBar) {
-                    this.insertBefore(toggleItem, this.querySelector("#viewToolbarsMenuSeparator"));
-                }
-            }, { once: true });
+            document.getElementById("toolbarItemsMenuSeparator").after(toggleItem);
 
             let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
+            document.getElementById("toggle_status-bar").setAttribute("checked", String(checked));
             if (checked) {
                 this.show();
             } else {
