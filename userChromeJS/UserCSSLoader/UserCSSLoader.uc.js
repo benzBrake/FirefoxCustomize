@@ -7,10 +7,11 @@
 // @license        MIT License
 // @compatibility  Firefox 80
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader.uc.js
+// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.5r4
+// @version        0.0.5r5
 // @charset        UTF-8
+// @note           0.0.5r5 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note           0.0.5r4 新增 Alt+R 重载所有样式
 // @note           0.0.5r3 修正翻译问题
 // @note           0.0.5r2 修复多个窗口的时候关闭一个窗口 CSS 就失效，以及有一个菜单没有翻译的问题
@@ -75,23 +76,23 @@ about:config
     CSSEntries: [],
     customShowings: [],
 
-    get allDisabled() {
+    get allDisabled () {
       return this.prefs.getBoolPref(this.KEY_ALL_DISABLED, false);
     },
 
-    set allDisabled(val) {
+    set allDisabled (val) {
       this.prefs.setBoolPref(this.KEY_ALL_DISABLED, val);
     },
 
-    get showInToolsMenu() {
+    get showInToolsMenu () {
       return this.prefs.getBoolPref(this.KEY_SHOW_IN_TOOLS_MENU, false);
     },
 
-    get reloadOnEdit() {
+    get reloadOnEdit () {
       return this.prefs.getBoolPref(this.KEY_RELOAD_ON_EDIT, true);
     },
 
-    get STYLE() {
+    get STYLE () {
       delete this.STYLE;
       return this.STYLE = {
         url: makeURI("data:text/css;charset=utf-8," + encodeURIComponent(css.replaceAll("{BTN_ID}", this.BTN_ID))),
@@ -99,12 +100,12 @@ about:config
       }
     },
 
-    get prefs() {
+    get prefs () {
       delete this.prefs;
       return this.prefs = Services.prefs.getBranch(this.KEY_PREFIX);
     },
 
-    get FOLDER() {
+    get FOLDER () {
       delete this.FOLDER;
       var path = this.prefs.getStringPref(this.KEY_FOLDER, this.DEFAULT_FOLDER)
       var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
@@ -119,7 +120,7 @@ about:config
       return this.FOLDER = aFile;
     },
 
-    async init() {
+    async init () {
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
         let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled"]
@@ -139,8 +140,8 @@ about:config
           formatMessages: async function () {
             return "";
           },
-          translateRoots() { },
-          connectRoot() { }
+          translateRoots () { },
+          connectRoot () { }
         }
         this.MESSAGES = {
           "ucl-style-type-not-exists": "Style type not exists",
@@ -202,11 +203,13 @@ about:config
           });
         }
 
-        document.getElementById("mainKeyset").appendChild(
-          window.MozXULElement.parseXULToFragment(`
-          <key id="ucl-rebuild-key" oncommand="window.UserCSSLoader.rebuild();" key="R" modifiers="alt"/>
-          `),
-        );
+        let reloadKeyItem = window.MozXULElement.parseXULToFragment(`
+          <key id="ucl-rebuild-key" key="R" modifiers="alt"/>
+          `);
+        reloadKeyItem.addEventListener('command', () => {
+          window.UserCSSLoader.rebuild();
+        })
+        document.getElementById("mainKeyset").appendChild(reloadKeyItem);
 
         this.BTN = CustomizableUI.getWidget(this.BTN_ID).forWindow(window).node;
         this.BTN.addEventListener("mouseover", this, false);
@@ -214,6 +217,7 @@ about:config
         this.menupopup = this.BTN.querySelector("#" + this.BTN_ID + "-popup");
         this.l10n.connectRoot(this.BTN);
       }
+      
       this.menupopup.addEventListener("popupshowing", this, false);
 
       this.rebuild();
@@ -221,7 +225,7 @@ about:config
       Services.prefs.addObserver(this.KEY_PREFIX, this);
       window.addEventListener("unload", this);
     },
-    createButton(doc) {
+    createButton (doc) {
       let btn = createElement(doc, 'toolbarbutton', {
         id: this.BTN_ID,
         label: "User CSS Loader",
@@ -238,7 +242,7 @@ about:config
       btn.appendChild(menupopup);
       return btn;
     },
-    initMenu(popup) {
+    initMenu (popup) {
       let popup_ = popup || this.menupopup || document.getElementById(this.BTN_ID + "-popup"), that = this;
       if (!popup) return;
       let doc = popup.ownerDocument;
@@ -338,7 +342,7 @@ about:config
 
       popup.setAttribute("initalized", true);
 
-      function createMenu(doc, menuObj) {
+      function createMenu (doc, menuObj) {
         if ((!menuObj.label && !menuObj['data-l10n-id']) && !menuObj.type || menuObj.type?.endsWith("separator")) {
           return createElement(doc, "menuseparator");
         }
@@ -360,7 +364,7 @@ about:config
         return menu;
       }
     },
-    refreshCSSEntries(popup) {
+    refreshCSSEntries (popup) {
       if (!popup) return;
       if (popup.getAttribute("css-initalized") === "true") return;
 
@@ -429,7 +433,7 @@ about:config
       });
       popup.setAttribute("css-initalized", true);
     },
-    refreshMenuItemStatus(popup) {
+    refreshMenuItemStatus (popup) {
       if (!popup) return;
       this.customShowings.forEach(function (obj) {
         var curItem = obj.item;
@@ -445,7 +449,7 @@ about:config
         item.setAttribute("checked", !entry.disabled);
       });
     },
-    uninit(force = false) {
+    uninit (force = false) {
       let windows = Services.wm.getEnumerator(null), i = 0;
       while (windows.hasMoreElements()) {
         let win = windows.getNext();
@@ -458,7 +462,7 @@ about:config
       }
       window.removeEventListener("unload", this);
     },
-    destroy(force = false) {
+    destroy (force = false) {
       if (doc.getElementById("ucl-change-style-popup")) {
         doc.getElementById("ucl-change-style-popup").parentNode.removeChild(doc.getElementById("ucl-change-style-popup"));
       }
@@ -474,7 +478,7 @@ about:config
       this.uninit(force);
       delete this;
     },
-    handleEvent(event) {
+    handleEvent (event) {
       switch (event.type) {
         case "mouseover":
           if (event.target.id !== this.BTN_ID) return;
@@ -508,7 +512,7 @@ about:config
           break;
       }
     },
-    observe(aSubject, aTopic, aData) {
+    observe (aSubject, aTopic, aData) {
       switch (aTopic) {
         case "nsPref:changed":
           switch (aData) {
@@ -523,7 +527,7 @@ about:config
           break;
       }
     },
-    async rebuild() {
+    async rebuild () {
       if (this.initalizing) return;
       this.initalizing = true;
       this.CSSEntries.forEach(css => css.unregister());
@@ -541,10 +545,10 @@ about:config
       this.initalizing = false;
       this.menupopup?.setAttribute("css-initalized", false);
     },
-    openFolder() {
+    openFolder () {
       this.FOLDER.launch();
     },
-    async createStyle(type) {
+    async createStyle (type) {
       const { MESSAGES } = this;
       if (STYLES_NAME_MAP[type] === undefined) {
         console.error(MESSAGES.format('ucl-style-type-not-exists', type));
@@ -570,7 +574,7 @@ about:config
         });
       }
     },
-    _createStyle(fileName) {
+    _createStyle (fileName) {
       const path = this.FOLDER.path + DIRECTORY_SEPARATOR + fileName;
       return new Promise(async (resolve, reject) => {
         if (await IOUtils.exists(path)) {
@@ -584,7 +588,7 @@ about:config
         }
       });
     },
-    toggleStyle(event, fullName) {
+    toggleStyle (event, fullName) {
       let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
       if (entry instanceof CSSEntry) {
         entry.toggleStyle();
@@ -593,7 +597,7 @@ about:config
         }
       }
     },
-    editStyle(fullName) {
+    editStyle (fullName) {
       let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
       if (entry instanceof CSSEntry) {
         if (this.reloadOnEdit) {
@@ -606,7 +610,7 @@ about:config
       }
 
     },
-    async _editCSSEntry(entry) {
+    async _editCSSEntry (entry) {
       let editor;
       try {
         editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
@@ -652,12 +656,12 @@ about:config
         }
       }
     },
-    openHomePage(e, url) {
+    openHomePage (e, url) {
       openTrustedLinkIn(url, "tab");
     },
-    _processObserver(resolve, reject) {
+    _processObserver (resolve, reject) {
       return {
-        observe(subject, topic) {
+        observe (subject, topic) {
           switch (topic) {
             case "process-finished":
               try {
@@ -674,7 +678,7 @@ about:config
         },
       };
     },
-    changeTypePopup(event) {
+    changeTypePopup (event) {
       if (document.getElementById("ucl-change-style-popup")) {
         let popup = document.getElementById("ucl-change-style-popup");
         popup.querySelectorAll('[disabled="true"]').forEach(el => el.removeAttribute("disabled"));
@@ -686,7 +690,7 @@ about:config
         popup.openPopup(event.target, "after_end", 0, 0, false, false)
       }
     },
-    changeStyleType(event, type) {
+    changeStyleType (event, type) {
       if (STYLES_NAME_MAP[type] === undefined) {
         console.error(this.MESSAGES.format('ucl-style-type-not-exists', type));
         return;
@@ -717,7 +721,7 @@ about:config
         }
       }
     },
-    async deleteStyle(fullName) {
+    async deleteStyle (fullName) {
       const { MESSAGES } = this;
       let aTitle = MESSAGES.format('ucl-delete-style'), aMsg = MESSAGES.format('ucl-delete-style-prompt-message', fullName);
       if (Services.prompt.confirm(window, aTitle, aMsg, false)) {
@@ -750,20 +754,20 @@ about:config
       super(iterable);
     }
 
-    add(item) {
+    add (item) {
       let cache_add = Set.prototype.add.call(this, item);
       UserCSSLoader.prefs.setStringPref(UserCSSLoader.KEY_DISABLED_STYLES, JSON.stringify([...this]));
       return cache_add;
     }
 
-    delete(item) {
+    delete (item) {
       let cache_delete = Set.prototype.delete.call(this, item);
       UserCSSLoader.prefs.setStringPref(UserCSSLoader.KEY_DISABLED_STYLES, JSON.stringify([...this]));
       return cache_delete;
     }
   }
 
-  function CSSEntry(aFile) {
+  function CSSEntry (aFile) {
     this.type = (aFile.leafName.endsWith('.us.css') || aFile.leafName.endsWith('.user.css')) ?
       sss.USER_SHEET :
       (aFile.leafName.endsWith('.as.css') || aFile.leafName.endsWith('.ag.css')) ?
@@ -780,10 +784,10 @@ about:config
   }
 
   CSSEntry.prototype = {
-    get disabled() {
+    get disabled () {
       return UserCSSLoader.disabledStyles.has(this.fullName);
     },
-    set disabled(bool) {
+    set disabled (bool) {
       if (bool) {
         UserCSSLoader.disabledStyles.add(this.fullName);
         this.unregister();
@@ -792,7 +796,7 @@ about:config
         this.register();
       }
     },
-    readStyleInfo() {
+    readStyleInfo () {
       if (this.file.exists()) {
         let css_content = readFile(this.path);
         const def = ['', '', '', ''];
@@ -807,14 +811,14 @@ about:config
         }
       }
     },
-    toggleStyle() {
+    toggleStyle () {
       this.disabled = !this.disabled;
     },
-    reloadStyle() {
+    reloadStyle () {
       this.unregister();
       this.register();
     },
-    startObserver() {
+    startObserver () {
       this.timer = setInterval(() => {
         if (this.lastModifiedTime !== this.file.lastModifiedTime) {
           this.lastModifiedTime = this.file.lastModifiedTime;
@@ -822,11 +826,11 @@ about:config
         }
       }, 500);
     },
-    stopObserver() {
+    stopObserver () {
       clearInterval(this.timer);
     },
     isRunning: false,
-    register() {
+    register () {
       if (!this.disabled) {
         IOUtils.stat(this.path).then((value) => {
           if (sss.sheetRegistered(this.url, this.type)) {
@@ -842,7 +846,7 @@ about:config
         });
       }
     },
-    unregister() {
+    unregister () {
       if (sss.sheetRegistered(this.url, this.type)) {
         sss.unregisterSheet(this.url, this.type);
       }
@@ -859,7 +863,7 @@ about:config
    * @param {Array} s 跳过属性
    * @returns 
    */
-  function createElement(d, t, o = {}, s = []) {
+  function createElement (d, t, o = {}, s = []) {
     if (!d) return;
     let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
     return applyAttr(e, o, s);
@@ -873,15 +877,23 @@ about:config
    * @param {Object|null} s 跳过属性
    * @returns 
    */
-  function applyAttr(e, o = {}, s = []) {
+  function applyAttr (e, o = {}, s = []) {
     for (let [k, v] of Object.entries(o)) {
       if (s.includes(k)) continue;
       if (k == "content") {
         e.innerHTML = v;
         continue;
       }
-      if (typeof v == "function") {
-        e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+      if (k.startsWith('on')) {
+        const fn = typeof val === "string" ? (() => {
+          if (v.trim().startsWith("function") || v.trim().startsWith("async function")) {
+            return "(" + v + ").call(this, event)";
+          }
+          return v;
+        })() : "(" + v.toString() + ").call(this, event)";
+        e.addEventListener(k.slice(2).toLocaleLowerCase(), (event) => {
+          eval(fn);
+        });
       } else {
         e.setAttribute(k, v);
       }
@@ -895,7 +907,7 @@ about:config
    * @param {string} path 
    * @returns 
    */
-  function readFile(path) {
+  function readFile (path) {
     let isCompleted = false, content = '';
     IOUtils.readUTF8(path).then(data => {
       isCompleted = true;
