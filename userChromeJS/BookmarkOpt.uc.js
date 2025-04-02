@@ -21,10 +21,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.3
+// @version         1.4.4
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.4 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            1.4.3 修复 1.4.1 无效修复的问题
 // @note            1.4.2 Bug 1904909
 // @note            1.4.1 修复中键添加书签任何位置也会添加书签的 BUG，修复快速点击中键两次导致图标无法回复的 BUG
@@ -613,7 +614,19 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 }, (type, props = {}, aDoc) => {
     const el = aDoc.createXULElement(type);
     for (let [key, value] of Object.entries(props)) {
-        el.setAttribute(key, value);
+        if (key.startsWith('on')) {
+            const fn = typeof val === "string" ? (() => {
+                if (value.trim().startsWith("function") || value.trim().startsWith("async function")) {
+                    return "(" + value + ").call(this, event)";
+                }
+                return value;
+            })() : "(" + value.toString() + ").call(this, event)";
+            el.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
+                eval(fn);
+            });
+        } else {
+            el.setAttribute(key, value);
+        }
     }
     el.classList.add('bmopt');
     if (type === "menu" || type === "menuitem") {
