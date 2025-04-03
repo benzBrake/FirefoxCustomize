@@ -130,28 +130,24 @@
         removeListener: (a) => (Services.prefs.removeObserver(a.pref, a.observer))
     };
 
-
     window.CopyCatTheme = {
         PREF_LISTENER_LIST: {},
         CACHED_VIEWS: [],
-        get appVersion () {
-            delete this.appVersion;
-            return this.appVersion = Services.appinfo.version.split(".")[0];
+        get APP_VERSION () {
+            delete this.APP_VERSION;
+            return this.APP_VERSION = Services.appinfo.version.split(".")[0];
         },
-        get platform () {
-            delete this.platform;
-            return this.platform = AppConstants.platform;
+        get PLATFORM () {
+            delete this.PLATFORM;
+            return this.PLATFORM = AppConstants.platform;
         },
-        get locale () {
-            delete this.locale;
+        get LOCALE () {
+            delete this.LOCALE;
             try {
-                this.locale = Services.prefs.getCharPref("general.useragent.locale");
+                this.LOCALE = Services.prefs.getStringPref("general.useragent.locale");
             } catch (e) { }
 
-            if (!this.locale) {
-                this.locale = Services.locale.appLocaleAsBCP47 || "en-US";
-            }
-            return this.locale;
+            return this.LOCALE = Services.locale.appLocaleAsBCP47 || "en-US";
         },
         get THEME_RELATED_PATH () {
             delete this.THEME_RELATED_PATH;
@@ -391,7 +387,7 @@
         },
         handleRelativePath: function (path) {
             if (path) {
-                if (this.platform == "win") {
+                if (this.PLATFORM == "win") {
                     path = path.replace(/\//g, '\\');
                 } else {
                     path = path.replace(/\\/g, '//');
@@ -474,7 +470,7 @@
                 aFile = pathOrFile;
             } else if (typeof pathOrFile === "string") {
                 aFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
-                if (this.platform == "win") {
+                if (this.PLATFORM == "win") {
                     pathOrFile = pathOrFile.replace(/\//g, '\\');
                 } else {
                     pathOrFile = pathOrFile.replace(/\\/g, '//');
@@ -525,7 +521,7 @@
                 }
             } : null;
             const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(this.appVersion >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
+            alertsService.showAlertNotification(this.APP_VERSION >= 78 ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=" : "chrome://global/skin/icons/information-32.png", aTitle || "CopyCat", aMsg + "", !!callback, "", callback);
         },
         error (...args) {
             if (this.debug)
@@ -625,7 +621,7 @@
 
                 if (themeConfig.locales) {
                     let arr = Object.keys(themeConfig.locales);
-                    this.lang = arr.includes(window.CopyCatTheme.locale) ? themeConfig.locales[window.CopyCatTheme.locale] : themeConfig.locales[arr[0]];
+                    this.lang = arr.includes(window.CopyCatTheme.LOCALE) ? themeConfig.locales[window.CopyCatTheme.LOCALE] : themeConfig.locales[arr[0]];
                 }
 
                 if (themeConfig.options) {
@@ -1157,20 +1153,38 @@
         }
     }
 
-    function getPrefsFromFile (aFile) {
+    function getPrefsFromFile(aFile) {
         if (!aFile || !aFile.exists()) return [];
-        const regexImport = /@import\s*"([^"]+)"/m;
+        
+        // 修改正则表达式以匹配 @import url(...) 和 @import "..." 两种格式
+        const regexImport = /@import\s+(?:url\((['"]?)(.*?)\1\)|(['"])(.*?)\3)/gmi;
+        
         let content = readFile(aFile, false);
         let prefs = matchPrefs(content);
-        let files = content.match(regexImport);
-        if (files) {
-            files.filter(m => !m.startsWith("@import")).map(m => m.replaceAll(/\//g, "\\")).forEach(m => {
+        let files = [];
+        let match;
+        
+        // 使用 while 循环来匹配所有符合条件的 @import 语句
+        while ((match = regexImport.exec(content)) !== null) {
+            let importPath = match[2] || match[4];
+            if (importPath) {
+                files.push(importPath);
+            }
+        }
+        
+        if (files.length > 0) {
+            if (AppConstants.platform === "win") {
+                files = files.map(m => m.replaceAll(/\//g, "\\"));
+            }
+            
+            files.forEach(importPath => {
                 let file = aFile.parent.clone();
-                file.appendRelativePath(m);
+                file.appendRelativePath(importPath);
                 let pfs = getPrefsFromFile(file);
                 if (pfs.length > 0) prefs = prefs.concat(pfs);
             });
         }
+        
         return [...new Set(prefs)];
     }
 
@@ -1178,7 +1192,7 @@
         /**
          * @update 2024.02.04 兼容 @media / @support (not) -moz-bool-pref
          */
-        const regexPref = /-moz-bool-pref[:\s\(]*"([\w\d\.\-])+"\)/gm;
+        const regexPref = /-moz-(?:bool-)?pref[:\s\(]*["\(\)]([\w\d\.\-]+)["\)\)]/gm;
         let matches = content.match(regexPref);
         let options = [];
         if (matches) {
