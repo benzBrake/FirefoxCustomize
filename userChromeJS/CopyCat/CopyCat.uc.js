@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.3.1
+// @version         0.3.2
 // @compatibility   Firefox 80
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.3.2 修复 precommand / postcommand 触发，修复 pref 菜单 defaultValue 无效，修复 onCommand 兜底失效
 // @note            0.3.1 修复重复绑定事件
 // @note            0.3.0 整理代码，移除 tool 属性支持，减小 css 影响范围，修复移动主菜单栏项目事件失效，增加多语言支持
 // ==/UserScript==
@@ -429,7 +430,7 @@
 
                 return dest;
             } else {
-                item = createElement(doc, tagName, obj, ['popup', 'class', 'group', 'onBuild']);
+                item = createElement(doc, tagName, obj, ['popup', 'class', 'group', 'onBuild', 'precommand', 'postcommand']);
                 if (classList.length) item.setAttribute('class', classList.join(' '));
                 let label = obj.label || obj.command || obj.oncommand || obj.url || "";
                 if (label)
@@ -448,7 +449,7 @@
                     item.setAttribute('type', type);
 
                     // 设置默认值
-                    if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
+                    if (!("defaultValue" in obj)) item.setAttribute('defaultValue', defaultVal[type]);
                     if (type === 'checkbox') {
                         item.setAttribute('checked', !!xPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
                     } else {
@@ -474,7 +475,9 @@
 
             if (obj.oncommand || obj.command) return item;
 
-            item.setAttribute("oncommand", "CopyCat.onCommand(event);");
+            applyAttr(item, {
+                'oncommand': 'CopyCat.onCommand(event);',
+            });
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
@@ -562,15 +565,19 @@
         onCommand: function (event) {
             event.stopPropagation();
             let item = event.target;
-            let precommand = item.getAttribute('precommand') || "",
-                postcommand = item.getAttribute("postcommand") || "",
-                pref = item.getAttribute("pref") || "",
+            pref = item.getAttribute("pref") || "",
                 text = item.getAttribute("text") || "",
                 exec = item.getAttribute("exec") || "",
                 edit = item.getAttribute("edit") || "",
                 url = item.getAttribute("url") || "",
                 where = item.getAttribute("where") || "";
-            if (precommand) eval(precommand);
+
+            const preCommandEvent = new Event('precommand', {
+                bubbles: true,
+                cancelable: true
+            });
+            item.dispatchEvent(preCommandEvent);
+
             if (pref)
                 this.handlePref(event, pref);
             else if (edit)
@@ -579,7 +586,12 @@
                 this.exec(exec, text);
             else if (url)
                 this.openCommand(event, url, where);
-            if (postcommand) eval(postcommand);
+
+            const postCommandEvent = new Event('postcommand', {
+                bubbles: true,
+                cancelable: true
+            });
+            item.dispatchEvent(postCommandEvent);
 
             if (event.button !== 2 && event.target.getAttribute("closemenu") !== "none") {
                 closeMenus(event.target.closest("menupopup"));
