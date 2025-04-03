@@ -44,135 +44,6 @@
     list-style-image: var(--uc-close-icon) !important;
   }
 
-  #navigator-toolbox {
-    &:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) {
-      #CopyCat-Btn {
-        width: 90px;
-        border: none !important;
-        border-radius: 6px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        padding-inline: 0.5em;
-        background-clip: padding-box !important;
-        margin-bottom: 4px !important;
-
-        @include Option("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
-          transform: translateY(2px);
-        }
-
-        @include NotOption("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
-          border-radius: 0 0 6px 6px;
-        }
-
-        > .toolbarbutton-icon {
-          list-style-image: url("chrome://devtools/skin/images/browsers/firefox.svg") !important;
-          fill: white;
-          --toolbarbutton-hover-background: transparent;
-          --toolbarbutton-active-background: transparent;
-          padding: 0 !important;
-          height: 16px !important;
-          width: 16px !important;
-          appearance: none;
-        }
-
-        &:not([open="true"]):not(:hover):not(:active) {
-          background-image: linear-gradient(
-            rgb(247, 182, 82),
-            rgb(215, 98, 10) 95%
-          );
-          box-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.25) inset,
-            0 0 0 1px rgba(255, 255, 255, 0.25) inset;
-        }
-
-        &:hover:not([open="true"]):not(:active) {
-          background-image: radial-gradient(
-              farthest-side at center bottom,
-              rgba(252, 240, 89, 0.5) 10%,
-              rgba(252, 240, 89, 0) 70%
-            ),
-            radial-gradient(
-              farthest-side at center bottom,
-              rgb(236, 133, 0),
-              rgba(255, 229, 172, 0)
-            ),
-            linear-gradient(rgb(246, 170, 69), rgb(209, 74, 0) 95%);
-          box-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.1) inset,
-            0 0 2px 1px rgba(250, 234, 169, 0.7) inset,
-            0 -1px 0 rgba(250, 234, 169, 0.5) inset;
-        }
-
-        &:hover:active,
-        &[open] {
-          background-image: linear-gradient(
-            rgb(246, 170, 69),
-            rgb(209, 74, 0) 95%
-          );
-          box-shadow:
-            0 2px 3px rgba(0, 0, 0, 0.4) inset,
-            0 1px 1px rgba(0, 0, 0, 0.2) inset;
-        }
-
-        &::after {
-          @include Box(true);
-          @include BoxAlign("center");
-          padding-inline: 4px 0;
-          color: white !important;
-          font-weight: bold !important;
-          text-shadow:
-            0 0 1px rgba(0, 0, 0, 0.7),
-            0 1px 1.5px rgba(0, 0, 0, 0.5) !important;
-          margin-block: 0px !important;
-          border: unset !important;
-          box-shadow: unset !important;
-          height: 100% !important;
-        }
-      }
-    }
-  }
-
-  :root:has(#TabsToolbar-customization-target > #CopyCat-Btn:first-child) {
-    &[appname="Firefox"][appchannel="release"] {
-      #CopyCat-Btn {
-        &::after {
-          content: "Firefox" !important;
-        }
-      }
-    }
-
-    &[appname="Firefox"][appchannel="esr"] {
-      #CopyCat-Btn {
-        &::after {
-          content: "ESRFox" !important;
-        }
-      }
-    }
-
-    &[appname="Firefox"][appchannel="aurora"] {
-      #CopyCat-Btn {
-        &::after {
-          content: "DevFox" !important;
-        }
-      }
-    }
-
-    &[appname="Firefox"][appchannel="nightly"] {
-      #CopyCat-Btn {
-        &::after {
-          content: "Nightly" !important;
-        }
-      }
-    }
-
-    &[appname="Floorp"] {
-      #CopyCat-Btn {
-        &::after {
-          content: "Floorp" !important;
-        }
-      }
-    }
-  }
-
   // 密码图标
   #password-notification-icon,
   #PopupAutoComplete
@@ -243,6 +114,9 @@
   }
   #sidebar-switcher-tabs {
     --menu-image: url("./images/icons/devices.svg");
+  }
+  #sidebar-switcher-genai-chat {
+    --menu-image: url("./images/icons/intelligence.svg");
   }
   #sidebar-box[sidebarcommand="viewTabsSidebar"]
     #sidebar-header
@@ -661,6 +535,9 @@
         background-repeat: no-repeat !important;
         -moz-context-properties: fill, fill-opacity !important;
         fill: currentColor !important;
+        &:before {
+          display: none !important;
+        }
       }
 
       @include OS($mac) {
@@ -885,6 +762,10 @@
 
       #context-translate-selection {
         --menu-image: url("./images/icons/translate.svg");
+      }
+
+      #context-ask-chat {
+        --menu-image: url("./images/icons/intelligence.svg");
       }
 
       #context-viewimage {
@@ -1130,8 +1011,12 @@
         --menu-image: url("./images/icons/column.svg");
       }
 
+      #context_closeTab,
       #context_closeDuplicateTabs,
-      #context_closeTab {
+      #context_closeTabOptions,
+      #context_closeTabsToTheStart,
+      #context_closeTabsToTheEnd,
+      #context_closeOtherTabs {
         --menu-image: var(--uc-close-icon);
       }
 

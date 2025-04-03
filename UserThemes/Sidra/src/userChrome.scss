@@ -7,7 +7,7 @@
  * @notes utils 来自 black7375/Firefox-UI-Fix，很多样式来自 bmFtZQ/edge-frfox、aminomancer/uc.css.js、Aris-t2/CustomCSSforFx、MrOtherGuy/firefox-csshacks
 ==/UserStyle== */
 @use "utils/option" as *;
-@use "utils/mozbox" as *;
+@use "utils/moz_box" as *;
 @use "utils/selector" as *;
 @use "utils/mode";
 @use "utils/theme";
@@ -16,16 +16,22 @@
 @include mode.MEDIA_PREF;
 $urlPrefix: "resource://copycat-uchrm/UserThemes/Sidra/";
 @layer LowPriority, HighPriority;
-@import "special/windows.css" layer(HighPriority) /* supports() */ (-moz-platform: windows);
+@import "special/windows.css" layer(HighPriority) /* supports() */
+  (-moz-platform: windows);
 @-moz-document url-prefix("chrome://"),
   url-prefix("moz-extension://"),
   url("about:downloads") {
+  /* Edge-Frfox - colors.css
+ * https://github.com/bmFtZQ/edge-frfox */
+
+  /*
+  MARK: Default colours
+*/
   :root:not([lwtheme]),
-  :root[lwtheme][style*="--lwt-accent-color: rgb(240, 240, 244)"],
-    /* `--newtab-background-color-secondary used` to differentiate between a dark
-     * private window and private window with the 'Dark' theme enabled.
-     * May not be the most reliable method, but works for now up to FF 123. */
-    :root[privatebrowsingmode="temporary"]:where([style*="--lwt-accent-color: rgb(28, 27, 34)"]:not([style*="--newtab-background-color-secondary: rgb(66, 65, 77)"])) {
+/* `--newtab-background-color-secondary used` to differentiate between a dark
+ * private window and private window with the 'Dark' theme enabled.
+ * May not be the most reliable method, but works for now up to FF 123. */
+:root[privatebrowsingmode="temporary"]:where([style*="--lwt-accent-color: rgb(28, 27, 34)"]:not([style*="--newtab-background-color-secondary: rgb(66, 65, 77)"])) {
     /* Toolbars */
     --lwt-accent-color: light-dark(#cecece, #1c1c1c) !important;
     --lwt-accent-color-inactive: light-dark(#e8e8e8, #2e2e2e) !important;
@@ -175,18 +181,11 @@ $urlPrefix: "resource://copycat-uchrm/UserThemes/Sidra/";
       --in-content-box-border-color: var(--input-border-color) !important;
     }
 
-    #navigator-toolbox,
-    #TabsToolbar {
-      background-color: color-mix(
-        in srgb,
-        var(--toolbar-bgcolor) 80%,
-        black 20%
-      ) !important;
-    }
+    accent-color: var(--button-primary-bgcolor) !important;
   }
 
   /* Ensure that dark mode is enabled completely in private browsing mode. */
-  @media (-moz-bool-pref: "browser.theme.dark-private-windows") {
+  @include Option("browser.theme.dark-private-windows") {
     :root[privatebrowsingmode="temporary"],
     :root[privatebrowsingmode="temporary"] #nav-bar,
     :root[privatebrowsingmode="temporary"] #PersonalToolbar {
@@ -196,31 +195,367 @@ $urlPrefix: "resource://copycat-uchrm/UserThemes/Sidra/";
     }
   }
 
-  /** 参数 */
-  :root{
-    --navbar-height: 40px;
+  /* Apply colours to the default 'Auto' theme. */
+  @include NotOption("widget.windows.mica") {
+    :root:not([lwtheme]) #navigator-toolbox {
+      background-color: var(--lwt-accent-color) !important;
+      color: var(--lwt-text-color) !important;
+
+      /* Inactive window background colours. */
+      &:-moz-window-inactive {
+        background-color: var(
+          --lwt-accent-color-inactive,
+          var(--lwt-accent-color)
+        ) !important;
+        color: var(--lwt-text-color-inactive, var(--lwt-text-color)) !important;
+      }
+    }
   }
 
-  :root[uidensity="compact"] {
-    --navbar-height: 36px;
+  /* Make sure that the tab toolbar opacity is always 1, inactive window colours
+ * are already supplied by this theme. */
+  :root[customtitlebar] #titlebar:-moz-window-inactive {
+    opacity: 1 !important;
   }
 
-  :root[uidensity="touch"] {
-    --navbar-height: 44px;
+  /* Make the titlebar buttons black/white on default themes */
+  :root:not([lwtheme])[customtitlebar] .titlebar-buttonbox {
+    color: var(--lwt-text-color) !important;
+  }
+
+  /* Status/link preview panel */
+  #statuspanel-label {
+    background-color: var(--toolbar-field-focus-background-color) !important;
+    color: var(--toolbar-field-focus-color) !important;
+    border-color: transparent !important;
+    box-shadow:
+      0 2px 5px #0002,
+      0 0 0 1px light-dark(#0001, #0002) !important;
+    border-radius: 0 4px 0 0 !important;
+
+    #statuspanel[mirror] & {
+      border-radius: 4px 0 0 0 !important;
+    }
+  }
+
+  /*
+  MARK: Windows
+*/
+  @media (-moz-platform: windows) {
+    /* Colour the text selection background and foreground. */
+    ::selection {
+      background-color: light-dark(#0078d4, #93b8e7) !important;
+      color: light-dark(#fff, #000) !important;
+    }
+
+    tooltip {
+      background-color: var(--arrowpanel-background) !important;
+      color: var(--arrowpanel-color) !important;
+      border-color: var(--arrowpanel-border-color) !important;
+    }
+
+    /* Use accent colour in titlebar when Windows option is enabled. */
+    @media (-moz-windows-accent-color-in-titlebar) {
+      @include Option("browser.theme.windows.accent-color-in-tabs.enabled") {
+        /* Uses :root:root to beat specificity of floating tabs adjustments. */
+        :root:root:not([lwtheme]) {
+          --lwt-accent-color: ActiveCaption !important;
+          --lwt-text-color: CaptionText !important;
+          --lwt-accent-color-inactive: InActiveCaption !important;
+          --lwt-text-color-inactive: InActiveCaptionText !important;
+        }
+      }
+    }
+
+    .titlebar-button:not(.titlebar-close):hover {
+      background-color: color-mix(
+        in srgb,
+        currentColor 11%,
+        transparent
+      ) !important;
+
+      &:active {
+        background-color: color-mix(
+          in srgb,
+          currentColor 20%,
+          transparent
+        ) !important;
+      }
+    }
+
+    .titlebar-close:hover {
+      stroke: white !important;
+      background-color: #e81123 !important;
+
+      &:active {
+        background-color: #dc5c66 !important;
+      }
+
+      toolbar[brighttext] &:active {
+        background-color: #971821 !important;
+      }
+    }
+
+    /* Library window colour theme. */
+    window#places {
+      --organizer-color: light-dark(#000, #fff) !important;
+      --organizer-deemphasized-color: light-dark(#666, #bbb) !important;
+      --organizer-toolbar-background: light-dark(#f7f7f7, #3b3b3b) !important;
+      --organizer-pane-background: light-dark(#f7f7f7, #2b2b2b) !important;
+      --organizer-content-background: light-dark(#f7f7f7, #1c1c1c) !important;
+      --organizer-hover-background: light-dark(#00000025, #ffffff25) !important;
+      --organizer-selected-background: light-dark(
+        #006cbe80,
+        #006cbe80
+      ) !important;
+      --organizer-outline-color: light-dark(#0055d7a0, #63ade5) !important;
+      --organizer-toolbar-field-background: light-dark(
+        #fff,
+        #2b2b2b
+      ) !important;
+      --organizer-toolbar-field-background-focused: light-dark(
+        #fff,
+        #2b2b2b
+      ) !important;
+      --organizer-border-color: light-dark(#bfbfbf, #686868) !important;
+      scrollbar-color: light-dark(#0006, #fff6) light-dark(#f7f7f740, #2b2b2b40) !important;
+    }
+
+    #placesViewsBox #downloadsListBox richlistitem[selected="true"] {
+      background-color: light-dark(#006cbe, #006cbe) !important;
+      color: light-dark(#fff, #fff) !important;
+    }
+
+    #placeContentColumns :is(treecol, treecolpicker) {
+      background-color: light-dark(#f7f7f7, #3b3b3b) !important;
+      color: light-dark(#000, #fff) !important;
+      border-inline-start: 1px solid light-dark(#bfbfbf, #686868) !important;
+      box-shadow: inset 0 -1px light-dark(#bfbfbf, #686868) !important;
+      appearance: none !important;
+    }
+
+    #placeContentColumns :is(treecol, treecolpicker):where(:hover) {
+      background-color: light-dark(#cecece, #4a4a4a) !important;
+      color: light-dark(#000, #fff) !important;
+    }
+  }
+
+  /* Prevent macOS vibrancy appearance, instead using a solid background. */
+  #sidebar-box {
+    appearance: none !important;
+  }
+
+  .sidebar-panel:not([lwt-sidebar]) {
+    color: light-dark(#000, #fff) !important;
+    scrollbar-color: light-dark(#0006, #fff6) light-dark(#f7f7f740, #3b3b3b40) !important;
+
+    /* Sidebar search box (Windows) */
+    @media (-moz-platform: windows) {
+      & #sidebar-search-container > #search-box,
+      & #viewButton {
+        appearance: none !important;
+        background-color: var(--toolbar-field-background-color) !important;
+        color: inherit !important;
+        border: 1px solid var(--input-border-color) !important;
+        border-radius: 4px !important;
+        padding: 6px 8px !important;
+
+        &:focus {
+          outline: 2px solid var(--input-border-color) !important;
+          outline-offset: -2px !important;
+          border-color: transparent !important;
+        }
+      }
+    }
+  }
+
+  @-moz-document url(chrome://browser/content/syncedtabs/sidebar.xhtml)
+  {
+    body {
+      background: transparent !important;
+    }
+  }
+
+  /*
+  MARK: Linux / GTK csd
+*/
+  @media (-moz-gtk-csd-available) {
+    :root:not([lwtheme]),
+  /* `--newtab-background-color-secondary used` to differentiate between a dark
+   * private window and private window with the 'Dark' theme enabled.
+   * May not be the most reliable method, but works for now up to FF 123. */
+  :root[privatebrowsingmode="temporary"]:where([style*="--lwt-accent-color: rgb(28, 27, 34)"]:not([style*="--newtab-background-color-secondary: rgb(66, 65, 77)"])) {
+      /* Used for mixing colours differently in light/dark themes. */
+      --uc-tint: light-dark(black, white);
+      /* Colour adjusted for readability. */
+      --uc-accent-adjusted: light-dark(
+        color-mix(in oklch, AccentColor 92%, black),
+        color-mix(in oklch, AccentColor 60%, white)
+      );
+      /* Toolbars */
+      --lwt-accent-color: light-dark(
+        color-mix(in srgb, ActiveCaption 90%, black),
+        ActiveCaption
+      ) !important;
+      --lwt-accent-color-inactive: light-dark(
+        color-mix(in srgb, InactiveCaption 94%, black),
+        InactiveCaption
+      ) !important;
+      --lwt-text-color: CaptionText !important;
+      --lwt-text-color-inactive: color-mix(
+        in srgb,
+        CaptionText 65%,
+        transparent
+      ) !important;
+      --tab-selected-textcolor: var(--toolbar-color) !important;
+      --tab-selected-textcolor-inactive: color-mix(
+        in srgb,
+        var(--toolbar-color) 65%,
+        transparent
+      ) !important;
+      --tab-selected-bgcolor: var(--toolbar-bgcolor) !important;
+      --tab-attention-icon-color: var(--uc-accent-adjusted) !important;
+      --toolbar-bgcolor: light-dark(
+        -moz-dialog,
+        color-mix(in srgb, -moz-dialog 92%, white)
+      ) !important;
+      --toolbar-color: -moz-dialogtext !important;
+      --toolbarbutton-icon-fill-attention: var(--uc-accent-adjusted) !important;
+      --chrome-content-separator-color: color-mix(
+        in srgb,
+        currentColor 17%,
+        var(--toolbar-bgcolor)
+      ) !important;
+      --newtab-background-color: light-dark(
+        -moz-dialog,
+        color-mix(in srgb, -moz-dialog 82%, black)
+      ) !important;
+      /* URL bar */
+      --toolbar-field-background-color: light-dark(
+        Field,
+        color-mix(in srgb, Field 96%, -moz-dialogtext)
+      ) !important;
+      --toolbar-field-color: FieldText !important;
+      --toolbar-field-focus-border-color: light-dark(
+        color-mix(in srgb, var(--focus-outline-color) 50%, transparent),
+        var(--focus-outline-color)
+      ) !important;
+      --urlbar-box-bgcolor: var(--button-bgcolor) !important;
+      --urlbar-box-hover-bgcolor: var(--button-hover-bgcolor) !important;
+      --urlbar-box-active-bgcolor: var(--button-active-bgcolor) !important;
+      /* URL bar suggestions. */
+      --link-color: var(--uc-accent-adjusted) !important;
+      --uc-urlbarView-accent-color: var(--uc-accent-adjusted) !important;
+      --urlbarView-highlight-background: var(
+        --panel-item-hover-bgcolor
+      ) !important;
+      --urlbarView-highlight-color: var(--toolbar-field-color) !important;
+      --urlbarView-hover-background: var(
+        --panel-item-active-bgcolor
+      ) !important;
+      --urlbarView-separator-color: var(--panel-separator-color) !important;
+      /* Menus/panels */
+      --arrowpanel-background: Field !important;
+      --arrowpanel-color: FieldText !important;
+      --arrowpanel-border-color: light-dark(
+        transparent,
+        var(--panel-separator-color)
+      ) !important;
+      --arrowpanel-dimmed: color-mix(
+        in srgb,
+        currentColor 17%,
+        transparent
+      ) !important;
+      --arrowpanel-dimmed-further: color-mix(
+        in srgb,
+        currentColor 30%,
+        transparent
+      ) !important;
+      --panel-separator-color: color-mix(
+        in srgb,
+        currentColor 17%,
+        var(--arrowpanel-background)
+      ) !important;
+      --panel-description-color: GrayText !important;
+      --panel-disabled-color: GrayText !important;
+      --panel-item-hover-bgcolor: color-mix(
+        in srgb,
+        currentColor 8%,
+        transparent
+      ) !important;
+      --panel-item-active-bgcolor: color-mix(
+        in srgb,
+        currentColor 13%,
+        transparent
+      ) !important;
+      /* Primary button */
+      --button-primary-bgcolor: AccentColor !important;
+      --button-primary-color: AccentColorText !important;
+      --button-primary-hover-bgcolor: color-mix(
+        in srgb,
+        var(--uc-tint) 10%,
+        var(--button-primary-bgcolor)
+      ) !important;
+      --button-primary-active-bgcolor: color-mix(
+        in srgb,
+        var(--uc-tint) 20%,
+        var(--button-primary-bgcolor)
+      ) !important;
+      /* Secondary button */
+      --button-bgcolor: color-mix(
+        in srgb,
+        currentColor 10%,
+        transparent
+      ) !important;
+      --button-color: currentColor !important;
+      --button-hover-bgcolor: color-mix(
+        in srgb,
+        currentColor 14%,
+        transparent
+      ) !important;
+      --button-active-bgcolor: color-mix(
+        in srgb,
+        currentColor 20%,
+        transparent
+      ) !important;
+      /* Text input field, e.g. bookmarks editor. */
+      --focus-outline-color: var(--uc-accent-adjusted) !important;
+      --input-bgcolor: var(--arrowpanel-background) !important;
+      --input-color: var(--arrowpanel-color) !important;
+      --input-border-color: color-mix(
+        in srgb,
+        currentColor 35%,
+        var(--arrowpanel-background)
+      ) !important;
+      /* Sidebar */
+      --sidebar-background-color: var(--toolbar-bgcolor) !important;
+      --sidebar-text-color: var(--toolbar-color) !important;
+      --sidebar-border-color: var(--chrome-content-separator-color) !important;
+    }
+
+    /* Use the same sidebar splitter style as other platforms. */
+    .sidebar-splitter {
+      border: 0 solid var(--sidebar-border-color) !important;
+      border-inline-end-width: 1px !important;
+      width: 4px !important;
+      background-color: transparent !important;
+      margin-inline-start: -4px !important;
+    }
   }
 
   /* Apply colours to the default 'Auto' theme. */
   :root:not([lwtheme]) #navigator-toolbox {
-    background-color: var(--lwt-accent-color) !important;
-    color: var(--lwt-text-color) !important;
-
-    /* Inactive window background colours. */
-    &:-moz-window-inactive {
-      background-color: var(
-        --lwt-accent-color-inactive,
-        var(--lwt-accent-color)
-      ) !important;
-      color: var(--lwt-text-color-inactive, var(--lwt-text-color)) !important;
+    @include NotOption("widget.windows.mica") {
+      background-color: var(--lwt-accent-color) !important;
+      color: var(--lwt-text-color) !important;
+      /* Inactive window background colours. */
+      &:-moz-window-inactive {
+        background-color: var(
+          --lwt-accent-color-inactive,
+          var(--lwt-accent-color)
+        ) !important;
+        color: var(--lwt-text-color-inactive, var(--lwt-text-color)) !important;
+      }
     }
   }
 

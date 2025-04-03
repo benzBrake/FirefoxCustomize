@@ -4,196 +4,60 @@
   @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
     padding-inline: var(--contorl-padding-start-end, 0px) 0px;
   }
+  /** 强制控制按钮与标签栏和导航栏对其 */
+  :is(#nav-bar, #TabsToolbar) > & > .titlebar-buttonbox {
+    height: 100%;
+  }
 }
 @include OS($win) {
-  @include ControlStyle("default", ",:root:not([sidra-controlstyle])") {
-    .titlebar-min {
-      list-style-image: url("./images/icons/win11-minimize.svg") !important;
+  .titlebar-min {
+    list-style-image: url("./images/icons/win11-minimize.svg") !important;
 
-      @media (resolution > 1.25dppx) {
-        list-style-image: url("./images/icons/win11-minimize.svg#high-dpi") !important;
-      }
+    @media (resolution > 1.25dppx) {
+      list-style-image: url("./images/icons/win11-minimize.svg#high-dpi") !important;
     }
-    .titlebar-max {
-      list-style-image: url("./images/icons/win11-maximize.svg") !important;
-    }
+  }
+  .titlebar-max {
+    list-style-image: url("./images/icons/win11-maximize.svg") !important;
+  }
 
-    .titlebar-restore {
-      list-style-image: url("./images/icons/win11-restore.svg") !important;
-    }
+  .titlebar-restore {
+    list-style-image: url("./images/icons/win11-restore.svg") !important;
+  }
 
-    .titlebar-close {
-      list-style-image: url("./images/icons/win11-close.svg") !important;
+  .titlebar-close {
+    list-style-image: url("./images/icons/win11-close.svg") !important;
 
-      /* Alternative icon that uses a thicker stroke, making it easier to see when
+    /* Alternative icon that uses a thicker stroke, making it easier to see when
        * displayed on a dark background, only needed at 100% UI scale.
        */
-      @media (resolution = 1dppx) {
-        toolbar[brighttext] &,
-        &:hover {
-          list-style-image: url("./images/icons/win11-close-dark.svg") !important;
-        }
+    @media (resolution = 1dppx) {
+      toolbar[brighttext] &,
+      &:hover {
+        list-style-image: url("./images/icons/win11-close-dark.svg") !important;
       }
     }
   }
 }
-@include ControlStyle("osx") {
-  --contorl-padding-start-end: 2px;
-  --control-width: calc(87.9px + var(--contorl-padding-start-end, 0px));
-  .titlebar-button {
-    @include Box;
-    border: none;
-    margin: 0 !important;
-    padding: 8px 17px;
-    -moz-context-properties: fill, stroke !important;
-    stroke: none !important;
-    fill: none !important;
-  }
 
-  &:not([sizemode="maximized"], [inFullscreen]) {
-    :is(.titlebar-restore, .uc-titlebar-restore) {
-      display: none !important;
-    }
-  }
-
-  &:is([sizemode="maximized"], [inFullscreen])
-    :is(.titlebar-max, .uc-titlebar-max) {
-    display: none !important;
-  }
-
-  &:-moz-window-inactive:not([customizing])
-    .titlebar-buttonbox
-    > toolbarbutton:not(:hover) {
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCgyMjcsIDE5JSwgNDglKSIgcj0iNTciIC8+Cjwvc3ZnPg==) !important;
-  }
-
-  .titlebar-button {
-    &box {
-      appearance: none !important;
-      @include Box();
-      @include BoxAlign("center");
-      &-container {
-        @include BoxAlign("center");
-      }
-
-      .toolbarbutton-icon {
-        opacity: 1 !important;
-      }
-    }
-    > .toolbarbutton-icon {
-      appearance: none !important;
-      width: 15.3px !important;
-      height: 15.3px !important;
-      stroke: inherit !important;
-    }
-  }
-
-  :is(
-      .titlebar-max,
-      .uc-titlebar-max,
-      .titlebar-restore,
-      .uc-titlebar-restore
-    ) {
-    /** 最大化/还原 */
-    appearance: none !important;
-    padding: 0px !important;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
-    margin-left: 0px !important;
-    margin-right: 0px !important;
-    margin-top: 0px !important;
-    margin-bottom: 0px !important;
-    background-color: transparent !important;
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
-    grid-column: 0 !important;
-    @include BoxOrder(1);
-  }
-
-  :is(.titlebar-max, .uc-titlebar-max):hover {
-    /** 最大化 鼠标悬浮 */
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNMjcuNyA0N3YzMC45YzAgNC43IDMuOSA4LjYgOC42IDguNmgzMC45YzEuOCAwIDIuNy0yLjIgMS40LTMuNEwzMS4xIDQ1LjZjLTEuMi0xLjMtMy40LS40LTMuNCAxLjR6bTUwLjQtMTguNEg0Ny4zYy0xLjggMC0yLjcgMi4yLTEuNCAzLjRsMzcuNCAzNy40YzEuMyAxLjMgMy40LjQgMy40LTEuNFYzNy4yYzAtNC44LTMuOS04LjYtOC42LTguNnoiIC8+Cjwvc3ZnPg==) !important;
-
-    &:hover {
-      /** 最大化 鼠标悬浮 */
-      list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNNzcuNSAyNy4xSDM3LjRjLTYuMyAwLTExLjQgNS4xLTExLjQgMTEuNHYzOWMwIDYuMyA1LjEgMTEuNCAxMS40IDExLjRoNDAuMWM2LjMgMCAxMS40LTUuMSAxMS40LTExLjR2LTM5YzAtNi4zLTUuMS0xMS40LTExLjQtMTEuNHptLTUuNCA0OC40SDQyLjljLTEuNiAwLTIuOS0xLjMtMi45LTIuOVY0My40YzAtMS42IDEuMy0yLjkgMi45LTIuOWgyOS4yYzEuNiAwIDIuOSAxLjMgMi45IDIuOXYyOS4yYzAgMS42LTEuMyAyLjktMi45IDIuOXoiIC8+Cjwvc3ZnPg==) !important;
-    }
-  }
-
-  :is([sizemode="maximized"], [inFullscreen])
-    :is(.titlebar-max, .uc-titlebar-max):hover,
-  :is(.titlebar-restore, .uc-titlebar-restore):hover {
-    /** 还原 鼠标悬浮 */
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICMzOWVhNDkiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzBiNzQwNyIKICAgICAgICBkPSJNNzcuNSAyNy4xSDM3LjRjLTYuMyAwLTExLjQgNS4xLTExLjQgMTEuNHYzOWMwIDYuMyA1LjEgMTEuNCAxMS40IDExLjRoNDAuMWM2LjMgMCAxMS40LTUuMSAxMS40LTExLjR2LTM5YzAtNi4zLTUuMS0xMS40LTExLjQtMTEuNHptLTUuNCA0OC40SDQyLjljLTEuNiAwLTIuOS0xLjMtMi45LTIuOVY0My40YzAtMS42IDEuMy0yLjkgMi45LTIuOWgyOS4yYzEuNiAwIDIuOSAxLjMgMi45IDIuOXYyOS4yYzAgMS42LTEuMyAyLjktMi45IDIuOXoiIC8+Cjwvc3ZnPg==) !important;
-  }
-
-  :is(.titlebar-min, .uc-titlebar-min) {
-    /** 最小化 */
-    appearance: none !important;
-    padding: 0px !important;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
-    margin-left: 0px !important;
-    margin-right: 0px !important;
-    margin-top: 0px !important;
-    margin-bottom: 0px !important;
-    background-color: transparent !important;
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KPC9zdmc+) !important;
-    @include BoxOrder(0);
-
-    &:hover {
-      /** 最小化 鼠标悬浮 */
-      list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsIGhzbCg0NCwgOTUlLCA2MyUpIiByPSI1NyIgLz4KICAgIDxwYXRoIGQ9Ik04OC4yIDUwLjJIMjUuOGMtMy43IDAtNi44IDMtNi44IDYuOCAwIDMuNyAzIDYuOCA2LjggNi44aDYyLjRjMy43IDAgNi44LTMgNi44LTYuOC0uMS0zLjctMy4xLTYuOC02LjgtNi44eiIKICAgICAgICBmaWxsPSJjb250ZXh0LXN0cm9rZSBoc2woMzIsIDYyJSwgMzglKSIgLz4KPC9zdmc+) !important;
-    }
-  }
-
-  :is(.titlebar-close, .uc-titlebar-close) {
-    /** 关闭 */
-    appearance: none !important;
-    padding: 0px !important;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
-    margin-left: 0px !important;
-    margin-right: 0px !important;
-    margin-top: 0px !important;
-    margin-bottom: 0px !important;
-    background-color: transparent !important;
-    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgo8L3N2Zz4=) !important;
-    @include BoxOrder(2);
-    &:hover {
-      /** 关闭 鼠标悬浮 */
-      list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMTQgMTE0IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPgogICAgPGNpcmNsZSBjeD0iNTciIGN5PSI1NyIgZmlsbD0iY29udGV4dC1maWxsICNmMjUwNTYiIHI9IjU3IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNODMuOCA3NC4zTDM5LjcgMzAuMmMtMi42LTIuNi02LjktMi42LTkuNiAwLTIuNiAyLjYtMi42IDYuOSAwIDkuNmw0NC4xIDQ0LjFjMi42IDIuNiA2LjkgMi42IDkuNiAwIDIuNy0yLjcgMi43LTcgMC05LjZ6IiAvPgogICAgPHBhdGggZmlsbD0iY29udGV4dC1zdHJva2UgIzlmMWQyYiIKICAgICAgICBkPSJNMzkuNyA4My44bDQ0LjEtNDQuMWMyLjYtMi42IDIuNi02LjkgMC05LjYtMi42LTIuNi02LjktMi42LTkuNiAwbC00NCA0NC4yYy0yLjYgMi42LTIuNiA2LjkgMCA5LjYgMi42IDIuNiA2LjkgMi42IDkuNS0uMXoiIC8+Cjwvc3ZnPg==) !important;
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
-    .titlebar-min,
-    .uc-titlebar-min {
-      @include BoxOrder(2);
-    }
-
-    .titlebar-max,
-    .uc-titlebar-max,
-    .titlebar-restore,
-    .uc-titlebar-restore {
+@include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
+  :is(#toolbar-menubar, #nav-bar, #TabsToolbar) {
+    &
+      > *:not(#private-mask):not(#private-browsing-indicator-with-label):not(
+        .titlebar-buttonbox-container
+      ) {
       @include BoxOrder(3);
     }
 
-    .titlebar-close,
-    .uc-titlebar-close {
-      @include BoxOrder(1);
+    & > #private-mask,
+    & > #private-browsing-indicator-with-label {
+      @include BoxOrder(2);
     }
 
-    #TabsToolbar,
-    #toolbar-menubar[inactive="true"] ~ #TabsToolbar {
-      padding-inline: 4px 3px !important;
-    }
-
-    #toolbar-menubar:not([inactive="true"]) {
-      padding-inline: 4px !important;
+    & > .titlebar-buttonbox-container {
+      @include BoxOrder(1, true);
     }
   }
-}
-@include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
   @include ControlStyle("default") {
     .titlebar-close,
     .uc-titlebar-close {
@@ -211,54 +75,6 @@
       @include BoxOrder(3);
     }
   }
-
-  #toolbar-menubar {
-    height: 27.5px;
-    @include Box;
-    @include BoxAlign("center");
-    .titlebar-buttonbox {
-      height: 100%;
-      @include Box;
-    }
-  }
-
-  #toolbar-menubar,
-  #TabsToolbar {
-    > *:not(#private-mask):not(#private-browsing-indicator-with-label):not(
-        .titlebar-buttonbox-container
-      ) {
-      @include BoxOrder(3);
-    }
-
-    > #private-mask,
-    > #private-browsing-indicator-with-label {
-      @include BoxOrder(2);
-    }
-
-    > .titlebar-buttonbox-container {
-      @include BoxOrder(1, true);
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-    #toolbar-menubar {
-      @include BoxOrder(1);
-      height: 100%;
-      > .titlebar-buttonbox-container {
-        @include Box(true);
-        @include BoxOrder(0, true);
-      }
-    }
-    #TabsToolbar {
-      @include BoxOrder(2);
-      > :not(.titlebar-buttonbox-container) {
-        @include BoxOrder(2);
-      }
-      .titlebar-buttonbox-container {
-        @include BoxOrder(1, true);
-      }
-    }
-  }
 }
 
 @include Option("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
@@ -267,29 +83,10 @@
   }
 
   @include TabStyle("default,2,3,5,6,7,8,9,10,11,12,13") {
-    .titlebar-buttonbox-container {
-      position: absolute;
-      top: 0;
-      right: 0;
-      background-color: var(--toolbar-bgcolor);
-      height: var(--navbar-height);
-      > .titlebar-buttonbox {
-        height: 100%;
-      }
-    }
-
-    #nav-bar {
-      margin-inline-end: var(--control-width, var(--control-width-default));
-    }
-
     @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
       .titlebar-buttonbox-container {
         left: 0;
         right: auto;
-      }
-
-      #nav-bar {
-        margin-inline: var(--control-width, var(--control-width-default)) 0;
       }
     }
   }

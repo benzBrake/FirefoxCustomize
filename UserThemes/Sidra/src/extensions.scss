@@ -140,11 +140,6 @@
       }
     }
 
-    // GitZip
-    #gitzip-firefox-addons_gitzip_org-menuitem-_gitzip-nested {
-      --menu-image: url("./images/extensions/gitzip/zip.svg");
-    }
-
     // Image Picka
     #image-picka_eight04_blogspot_com-BAP {
       list-style-image: url("./images/extensions/gallery.svg") !important;
@@ -612,9 +607,9 @@
 
     // X-Nofifier / X-Notififer Neo
     :is(
-        #_37fa1426-b82d-11db-8314-0800200c9a66_-BAP,
-        #_c98e042b-917d-4bdb-b125-dd3ace21ab71_-BAP
-      ),
+      #_37fa1426-b82d-11db-8314-0800200c9a66_-BAP,
+      #_c98e042b-917d-4bdb-b125-dd3ace21ab71_-BAP
+    ),
     .unified-extensions-item-action-button:is(
         [data-extensionid="{37fa1426-b82d-11db-8314-0800200c9a66}"],
         [data-extensionid="{c98e042b-917d-4bdb-b125-dd3ace21ab71}"]
@@ -623,9 +618,9 @@
     }
 
     :is(
-        #_37fa1426-b82d-11db-8314-0800200c9a66_-BAP,
-        #_c98e042b-917d-4bdb-b125-dd3ace21ab71_-BAP
-      ) {
+      #_37fa1426-b82d-11db-8314-0800200c9a66_-BAP,
+      #_c98e042b-917d-4bdb-b125-dd3ace21ab71_-BAP
+    ) {
       &:not([badge]),
       &[badge=""],
       &[badge="0"] {
@@ -704,7 +699,10 @@
       padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 8px);
       overflow: hidden;
       background-repeat: no-repeat;
-      background-position: calc(var(--arrowpanel-menuitem-padding-inline, 10px) / 2) center;
+      background-position: calc(
+          var(--arrowpanel-menuitem-padding-inline, 10px) / 2
+        )
+        center;
       background-image: var(--menu-image);
       background-size: 16px !important;
 
@@ -906,10 +904,10 @@
   }
 
   :where(
-      #newtab-action-selector,
-      ul#newTabButtonContextMenu,
-      ul#tabContextMenu
-    ) {
+    #newtab-action-selector,
+    ul#newTabButtonContextMenu,
+    ul#tabContextMenu
+  ) {
     border-radius: var(--arrowpanel-border-radius);
     > li.separator {
       min-height: 0;
@@ -1005,9 +1003,10 @@
       border-radius: var(--arrowpanel-menuitem-border-radius, 4px);
       padding-inline: var(--uc-contextmenu-menuicon-margin-inline, 8px);
       @include Option("userChromeJS.Sidra.MenuPopup.Compact") {
-        padding-inline-start: calc(var(--menuitem-padding-start) + var(
-          --uc-contextmenu-menuicon-margin-inline, 8px
-        )) !important;
+        padding-inline-start: calc(
+          var(--menuitem-padding-start) +
+            var(--uc-contextmenu-menuicon-margin-inline, 8px)
+        ) !important;
         background-image: var(--menu-image);
         background-position: var(--uc-contextmenu-menuitem-padding-inline)
           center;
@@ -1044,7 +1043,8 @@
       @include PanelItem(true);
       > .icon {
         margin-inline-end: var(
-          --uc-contextmenu-menuicon-margin-inline, 8px
+          --uc-contextmenu-menuicon-margin-inline,
+          8px
         ) !important;
       }
     }

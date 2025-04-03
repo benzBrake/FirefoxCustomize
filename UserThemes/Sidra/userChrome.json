@@ -16,21 +16,6 @@
     "options": [
         "userChromeJS.CopyCat.debug",
         {
-            "pref": "userChromeJS.Sidra.ControlButton.Style",
-            "type": "select",
-            "defaultValue": "default",
-            "options": [
-                {
-                    "data-l10n-id": "default-style",
-                    "value": "default"
-                },
-                {
-                    "data-l10n-id": "sidra-controlbutton-style-osx",
-                    "value": "osx"
-                }
-            ]
-        },
-        {
             "pref": "userChromeJS.Sidra.ControlButton.ShowOnLeft",
             "defaultValue": false
         },
@@ -128,10 +113,6 @@
             "group": "tabs-bar"
         },
         {
-            "pref": "userChromeJS.sidra.Tabs.VerticalOrient.Enabled",
-            "group": "tabs-bar"
-        },
-        {
             "pref": "userChromeJS.Sidra.Tabs.SelectedTabIndicator.Enabled",
             "group": "tabs-bar"
         },
@@ -168,10 +149,6 @@
             "group": "tabs-bar"
         },
         {
-            "pref": "userChromeJS.Sidra.Titlebar.Horizontal.Enabled",
-            "group": "tabs-bar"
-        },
-        {
             "pref": "userChromeJS.Sidra.Tabs.Separators.Enabled",
             "group": "tabs-bar"
         },
@@ -181,6 +158,14 @@
         },
         {
             "pref": "userChromeJS.Sidra.MenuPopup.Compact",
+            "group": "menus"
+        },
+        {
+            "pref": "userChromeJS.Sidra.MenuPopup.DisabledMenu.Disabled",
+            "group": "menus"
+        },
+        {
+            "pref": "userChromeJS.Sidra.MenuPopup.DisabledMenu.Icon.Disabled",
             "group": "menus"
         },
         {
@@ -208,27 +193,11 @@
             "group": "urlbar"
         },
         {
-            "pref": "userChromeJS.Sidra.Urlbar.Rounded.Enabled",
-            "group": "urlbar"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Urlbar.Button.Rounded.Enabled",
-            "group": "urlbar"
-        },
-        {
             "pref": "userChromeJS.Sidra.Urlbar.Megarbar.Disabled",
             "group": "urlbar"
         },
         {
             "pref": "userChromeJS.Sidra.Urlbar.Popup.Compact",
-            "group": "urlbar"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Urlbar.PageActionButtons.HoverToShow.Enabled",
-            "group": "urlbar"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled",
             "group": "urlbar"
         },
         {
@@ -262,22 +231,6 @@
         {
             "pref": "userChromeJS.Sidra.Icons.Extensions.Mods.Enabled",
             "group": "icons"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Sidebar.Compact",
-            "group": "sidebar"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Sidebar.AutoHide.Enabled",
-            "group": "sidebar"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Sidebar.AutoHide.Blur.Enabled",
-            "group": "sidebar"
-        },
-        {
-            "pref": "userChromeJS.Sidra.Sidebar.Modoki.AutoHide.Enabled",
-            "group": "sidebar"
         }
     ],
     "monitors": [
@@ -292,11 +245,6 @@
         {
             "eval": "Services.appinfo.defaultUpdateChannel",
             "targetAttr": "appchannel"
-        },
-        {
-            "pref": "userChromeJS.Sidra.ControlButton.Style",
-            "targetAttr": "sidra-controlstyle",
-            "defaultValue": "default"
         },
         {
             "pref": "userChromeJS.Sidra.Tabs.Style",
@@ -330,20 +278,6 @@
             "eval": "!Services.prefs.getBoolPref('userChromeJS.Sidra.MenuPopup.Compact', false)",
             "target": "#tabContextMenu",
             "targetAttr": "photoncompact"
-        },
-        {
-            "eval": "getComputedStyle(document.getElementById('TabsToolbar')).height",
-            "target": "#navigator-toolbox",
-            "targetStyle": "--tabs-height"
-        },
-        {
-            "start": "document.getElementById('navigator-toolbox').style.setProperty('--control-width-default', getComputedStyle(document.querySelector('.titlebar-buttonbox-container')).width)",
-            "stop": "document.getElementById('navigator-toolbox').style.removeProperty('--control-width-default')"
-        },
-        {
-            "from": "#toolbar-menubar",
-            "attr": "inactive",
-            "targetAttr": "menubarInactive"
         }
     ],
     "locales": {
@@ -352,7 +286,6 @@
             "auto": "自动",
             "always-visible": "总是显示",
             "always-hidden": "总是隐藏",
-            "userChromeJS.Sidra.ControlButton.Style": "控制按钮样式",
             "default-style": "默认样式",
             "extensions.pocket.enabled": "启用 Pocket",
             "userChromeJS.Sidra.AppContent.Rounded.Enabled": "内容区域圆角",
@@ -379,28 +312,24 @@
             "style-11": "样式 11",
             "style-12": "样式 12",
             "style-13": "样式 13",
-            "userChromeJS.sidra.Tabs.VerticalOrient.Enabled": "显示垂直标签栏后隐藏横向标签栏",
             "userChromeJS.Sidra.Tabs.SelectedTab.FillWithToolbarBg.Enabled": "选中标签页跟随工具栏背景色",
             "userChromeJS.Sidra.Tabs.SelectedTabIndicator.Enabled": "显示选中标签页指示条",
             "userChromeJS.Sidra.Tabs.NewtabBtn.Pinned": "固定新建标签按钮",
             "userChromeJS.Sidra.Tabs.AllTabsBtn.Visibility": "显示所有标签按钮",
             "userChromeJS.Sidra.Tabs.TabCounter.Enabled": "在所有标签按钮旁显示标签计数",
-            "userChromeJS.Sidra.Titlebar.Horizontal.Enabled": "菜单栏与标签栏同一行",
             "userChromeJS.Sidra.Tabs.Separators.Enabled": "显示标签分隔符",
             "userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled": "标签栏显示在书签工具栏下方",
             "userChromeJS.Sidra.MenuPopup.Compact": "弹出菜单样式总开关",
+            "userChromeJS.Sidra.MenuPopup.DisabledMenu.Disabled": "隐藏菜单中已禁用菜单",
+            "userChromeJS.Sidra.MenuPopup.DisabledMenu.Icon.Disabled": "隐藏菜单中已禁用菜单的图标",
             "userChromeJS.Sidra.ContextMenu.Navigation.Disabled": "隐藏右键菜单导航按钮",
             "userChromeJS.Sidra.Menupopup.Compact.Extensions.Menu": "优化扩展统一管理菜单",
             "userChromeJS.Sidra.Menupopup.Use.Smaller.Text": "恢复菜单文字默认大小🪟",
             "userChromeJS.Sidra.MenuPopup.SubMenuPopup.Compact": "二级菜单缩进",
             "userChromeJS.Sidra.Urlbar.Compact": "优化地址栏样式",
             "userChromeJS.Sidra.Urlbar.Focus.Border.Enabled": "地址栏聚焦时显示边框",
-            "userChromeJS.Sidra.Urlbar.Rounded.Enabled": "地址栏圆角",
-            "userChromeJS.Sidra.Urlbar.Button.Rounded.Enabled": "地址栏按钮圆角",
             "userChromeJS.Sidra.Urlbar.Megarbar.Disabled": "禁用地址栏放大效果",
             "userChromeJS.Sidra.Urlbar.Popup.Compact": "缩小地址栏弹出结果的间距",
-            "userChromeJS.Sidra.Urlbar.PageActionButtons.HoverToShow.Enabled": "鼠标经过才显示地址栏快捷工具",
-            "userChromeJS.Sidra.Urlbar.Combine.Reload.Button.Enabled": "合并刷新按钮到地址栏内",
             "userChromeJS.Sidra.PlacesToolbar.Align.Center": "书签工具栏居中显示",
             "userChromeJS.Sidra.PlacesToolbar.IconsOnly.Enabled": "书签工具栏仅显示图标",
             "userChromeJS.Sidra.PlacesToolbar.Compact.Minimum.Enabled": "书签工具栏极限紧凑",

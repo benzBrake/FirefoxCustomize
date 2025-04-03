@@ -8,21 +8,7 @@
   .tab-close-button {
     list-style-image: url("./images/icons/close-9px.svg") !important;
   }
-  @include Option(
-    "userChromeJS.Sidra.Tabs.SelectedTab.FillWithToolbarBg.Enabled"
-  ) {
-    .tabbrowser-tab[visuallyselected] {
-      --tab-loading-fill: var(--toolbar-field-focus-border-color) !important;
-      color: var(--lwt-tab-text, var(--toolbar-color)) !important;
-    }
 
-    .tabbrowser-tab[visuallyselected] .tab-background {
-      background-color: var(--toolbar-bgcolor) !important;
-      background-image: var(--toolbar-bgimage) !important;
-      filter: var(--special-main-outer-shadow)
-        var(--special-additional-outer-shadow) !important;
-    }
-  }
   /* ---------------------------------------- Tabs (SVG) ---------------------------------------- */
   @include TabStyle("1") {
     --left-svg: #{image("tabs/option_1/left_corners.svg")};
@@ -105,11 +91,17 @@
     --outer-drop-border-offset: 1px;
   }
 
+  @include TabStyle("6,7,8,10,11,12,13") {
+    --tab-first-last-inline-margin: calc(var(--tab-min-height) / 4);
+  }
+
+  @include TabStyle("9") {
+    --tab-first-last-inline-margin: calc(var(--tab-min-height) / 2 - 6px);
+  }
+
+  /* -------------------- Floating Tabs -------------------- */
   @include TabStyle("1,2,3,4,5") {
-    /* -------------------- Floating Tabs -------------------- */
     --tab-first-last-inline-margin: calc(var(--tab-block-margin) / 2);
-    --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
-    --tab-inset-clip-path: 0px calc(-1 * var(--tab-first-last-inline-margin));
     --tab-scroll-animation-inline-margin: calc(
       -1 * var(--tab-first-last-inline-margin)
     );
@@ -117,107 +109,20 @@
       var(--tab-first-last-inline-margin) * 2
     );
     --tab-bg-block-margin: var(--tab-block-margin);
-    --tab-inline-padding: var(--tab-first-last-inline-margin);
+    --my-tab-inline-padding: var(--tab-first-last-inline-margin);
     --tab-separator-offset: var(--tab-first-last-inline-margin);
   }
 
-  @include TabStyle("2,3,4,5") {
-    /** 修正 Floating Tabs 的边距 */
-    --tab-bg-block-margin: 4px;
-  }
-
+  /* -------------------- Attached Tabs -------------------- */
   @include TabStyle("6,7,8,9,10,11,12,13") {
-    /* -------------------- Attached Tabs -------------------- */
-    --tab-overflow-clip-margin: var(--tab-first-last-inline-margin);
-    --tab-inset-clip-path: -4px calc(-1 * var(--tab-first-last-inline-margin))
-      0px;
     --tab-scroll-animation-inline-margin: calc(
       -1 * var(--tab-first-last-inline-margin)
     );
     --tab-scroll-animation-inline-padding: var(--tab-first-last-inline-margin);
     --tab-bg-block-margin: 0px;
-    --tab-inline-padding: 0px;
+    --my-tab-inline-padding: 0px;
     --tab-separator-offset: 0px;
-  }
-  /* ---------------------------------------- System Theme ---------------------------------------- */
-  @media not (prefers-contrast) {
-    :root:not([lwtheme]) {
-      .titlebar-color {
-        --toolbarbutton-hover-background: color-mix(
-          in srgb,
-          currentColor 17%,
-          transparent
-        ) !important;
-        --toolbarbutton-active-background: color-mix(
-          in srgb,
-          currentColor 30%,
-          transparent
-        ) !important;
-      }
-
-      .tabbrowser-tab[visuallyselected] {
-        color: var(--toolbar-color) !important;
-
-        .tab-background {
-          background-color: var(--toolbar-bgcolor) !important;
-        }
-      }
-    }
-  }
-  /* ---------------------------------------- Light Theme / Dark Theme ---------------------------------------- */
-
-  :root:is(
-      [style*="--lwt-accent-color: rgb(240, 240, 244); --lwt-text-color: rgba(21, 20, 26)"],
-      [style*="--lwt-accent-color: rgb(28, 27, 34); --lwt-text-color: rgba(251, 251, 254)"]
-    ) {
-    .titlebar-color {
-      --toolbarbutton-hover-background: color-mix(
-        in srgb,
-        currentColor 17%,
-        transparent
-      ) !important;
-      --toolbarbutton-active-background: color-mix(
-        in srgb,
-        currentColor 30%,
-        transparent
-      ) !important;
-    }
-
-    .tabbrowser-tab[visuallyselected] {
-      color: var(--toolbar-color) !important;
-
-      .tab-background {
-        background-color: var(--toolbar-bgcolor) !important;
-      }
-    }
-  }
-
-  /* ---------------------------------------- Pinned Tabs Width ---------------------------------------- */
-  :root {
     --pinned-tabs-width-offset: 2px;
-  }
-
-  /* ---------------------------------------- Firefox View ---------------------------------------- */
-
-  :where(toolbarbutton, toolbarpaletteitem) + #tabbrowser-tabs {
-    border-inline-start: none !important;
-    padding-inline-start: var(--tab-overflow-pinned-tabs-width) !important;
-    margin-inline-start: 0px !important;
-  }
-
-  #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon {
-    background-color: var(--toolbarbutton-active-background) !important;
-    color: inherit !important;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-
-  #TabsToolbar #firefox-view-button:hover:not([open]) > .toolbarbutton-icon {
-    background-color: var(--toolbarbutton-hover-background) !important;
-  }
-
-  #TabsToolbar #firefox-view-button[attention] {
-    background-position: var(--tab-attention-indicator-position) !important;
   }
 
   /* ---------------------------------------- Main Window ---------------------------------------- */
@@ -225,6 +130,7 @@
   :root {
     --tab-shadow-max-size: 0px !important;
     --tab-attention-indicator-position: 50% calc(50% + 12px);
+    --tabstrip-min-height: auto !important;
   }
 
   /* ---------------------------------------- Nav Bar ---------------------------------------- */
@@ -236,61 +142,84 @@
   /* ---------------------------------------- Titlebar ---------------------------------------- */
 
   :root[tabsintitlebar] {
-    #titlebar {
-      will-change: auto !important;
-      transition: none !important;
-      opacity: 1 !important;
-    }
-
-    .titlebar-color {
+    .browser-titlebar {
       will-change: auto !important;
       transition: color var(--inactive-window-transition) !important;
-    }
 
-    &:-moz-window-inactive .titlebar-color {
-      color: color-mix(
-        in srgb,
-        currentColor calc(var(--inactive-titlebar-opacity) * 100%),
-        transparent
-      ) !important;
+      &:-moz-window-inactive {
+        color: color-mix(
+          in srgb,
+          currentColor calc(var(--inactive-titlebar-opacity) * 100%),
+          transparent
+        ) !important;
+        opacity: 1 !important;
+      }
     }
   }
 
   /* ---------------------------------------- Density ---------------------------------------- */
   :root {
-    --tab-min-height: 36px !important;
-  }
-
-  :root[uidensity="compact"] {
-    --tab-min-height: 32px !important;
-  }
-
-  :root[onload="TMP_TBP_Startup();"][uidensity="compact"] {
-    --tab-min-height: 24px !important;
-  }
-
-  :root[uidensity="touch"] {
-    --tab-min-height: 40px !important;
+    &[uidensity="compact"] {
+      --tab-min-height: 32px !important;
+    }
+    &[onload="TMP_TBP_Startup();"][uidensity="compact"] {
+      --tab-min-height: 24px !important;
+    }
+    &[uidensity="touch"] {
+      --tab-min-height: 40px !important;
+    }
   }
 
   /* ---------------------------------------- Tabs ---------------------------------------- */
 
   .tabbrowser-tab {
     --tab-label-mask-size: 0px !important;
-    overflow-x: clip !important;
-    overflow-y: visible !important;
-    overflow-clip-margin: var(--tab-overflow-clip-margin) !important;
-    clip-path: inset(var(--tab-inset-clip-path)) !important;
-    padding-inline: var(--tab-inline-padding) !important;
+    overflow-clip-margin: var(--tab-min-height) !important;
+    padding-inline: var(--my-tab-inline-padding) !important;
 
     &[visuallyselected] {
+      color: var(--toolbar-color) !important;
       position: relative;
       z-index: 2 !important;
-      filter: var(
-          --additional-outer-drop-shadow,
-          drop-shadow(0 0 0 transparent)
-        )
-        var(--outer-drop-shadow, drop-shadow(0 0 0 transparent));
+      @include Option(
+        "userChromeJS.Sidra.Tabs.SelectedTab.FillWithToolbarBg.Enabled"
+      ) {
+        .tab-background {
+          --gradient-background-image: linear-gradient(
+            var(--toolbar-bgcolor),
+            var(--toolbar-bgcolor)
+          );
+          --gradient-background-attachment: fixed;
+          --gradient-background-size: auto auto;
+          --gradient-background-position: left top;
+          --gradient-background-repeat: no-repeat;
+
+          --amo-background-image-1: var(--lwt-header-image, none);
+          --amo-background-attachment-1: fixed;
+          --amo-background-size-1: auto auto;
+          --amo-background-position-1: right top;
+          --amo-background-repeat-1: no-repeat;
+
+          --amo-background-image-2: var(--lwt-additional-images, none);
+          --amo-background-attachment-2: fixed, fixed, fixed;
+          --amo-background-size-2: auto auto, auto auto, auto auto;
+          --amo-background-position-2: var(--lwt-background-alignment);
+          --amo-background-repeat-2: var(--lwt-background-tiling);
+
+          background-color: transparent !important;
+          background-image: var(--gradient-background-image),
+            var(--amo-background-image-1), var(--amo-background-image-2) !important;
+          background-attachment: var(--gradient-background-attachment),
+            var(--amo-background-attachment-1),
+            var(--amo-background-attachment-2) !important;
+          background-size: var(--gradient-background-size),
+            var(--amo-background-size-1), var(--amo-background-size-2) !important;
+          background-position: var(--gradient-background-position),
+            var(--amo-background-position-1), var(--amo-background-position-2) !important;
+          background-repeat: var(--gradient-background-repeat),
+            var(--amo-background-repeat-1), var(--amo-background-repeat-2) !important;
+        }
+      }
     }
 
     &:not([visuallyselected]) {
@@ -302,6 +231,10 @@
 
       &[multiselected] .tab-background {
         background-color: var(--toolbarbutton-active-background) !important;
+      }
+
+      #tabbrowser-tabs[movingtab] & {
+        z-index: 0 !important;
       }
     }
 
@@ -336,12 +269,8 @@
     }
   }
 
-  .tab-drop-indicator {
-    opacity: 0 !important;
-  }
-
-  #tabbrowser-tabs[movingtab] .tabbrowser-tab:not([visuallyselected]) {
-    z-index: auto !important;
+  #tabbrowser-tabs[overflow] .tab-drop-indicator {
+    inset-inline-start: var(--tab-first-last-inline-margin) !important;
   }
 
   .tabbrowser-tab[pending] .tab-icon-image {
@@ -364,15 +293,69 @@
     background-color: var(--toolbarbutton-active-background) !important;
   }
 
-  /* -------------------- Selected Tab Indicator -------------------- */
-  @include Option("userChromeJS.Sidra.Tabs.SelectedTabIndicator.Enabled") {
-    .tabbrowser-tab[visuallyselected][usercontextid] .tab-background {
-      box-shadow: inset 0 -2px 0 var(--tab-loading-fill) !important;
-    }
+  /* -------------------- Container Indicators -------------------- */
+  .tab-context-line {
+    margin: 0px !important;
+  }
 
-    .tabbrowser-tab[visuallyselected]:not([usercontextid]) .tab-background {
-      box-shadow: inset 0 2px 0 var(--tab-loading-fill) !important;
-    }
+  /* -------------------- Tab Icon Indicators -------------------- */
+  .tabbrowser-tab:is([image], [pinned]) .tab-content[attention]:not([selected]),
+  .tab-content[pinned][titlechanged]:not([selected]) {
+    background-position: var(--tab-attention-indicator-position) !important;
+  }
+
+  /* ---------------------------------------- Tab Bar ---------------------------------------- */
+  #TabsToolbar #search-container {
+    padding-block: 0 !important;
+  }
+
+  /* ---------------------------------------- Indents ---------------------------------------- */
+
+  #tabbrowser-tabs:not([overflow])
+    .tabbrowser-tab:nth-child(1 of .tabbrowser-tab:not([pinned], [hidden])) {
+    margin-inline-start: 0px !important;
+  }
+
+  #tabbrowser-tabs:not([overflow])
+    .tabbrowser-tab:nth-child(1 of .tabbrowser-tab:not([hidden])),
+  #tabbrowser-tabs[overflow]
+    .tabbrowser-tab:nth-child(1 of .tabbrowser-tab:not([pinned], [hidden])),
+  #tabbrowser-tabs[overflow][haspinnedtabs] {
+    margin-inline-start: var(--tab-first-last-inline-margin) !important;
+  }
+
+  .tabbrowser-tab:nth-last-child(1 of .tabbrowser-tab:not([hidden])) {
+    margin-inline-end: var(--tab-first-last-inline-margin) !important;
+  }
+
+  /* ---------------------------------------- Tab Scroll Animation ---------------------------------------- */
+
+  #tabbrowser-tabs[overflow] .tabbrowser-tab:not([pinned]) {
+    box-sizing: content-box !important;
+  }
+
+  #tabbrowser-tabs[overflow]:not([movingtab]) .tabbrowser-tab:not([pinned]) {
+    pointer-events: none !important;
+    box-sizing: content-box !important;
+    padding-inline: var(--tab-scroll-animation-inline-padding) !important;
+    margin-inline: var(--tab-scroll-animation-inline-margin) !important;
+    overflow-clip-margin: 0px !important;
+  }
+
+  #tabbrowser-tabs[overflow]:not([movingtab])
+    .tabbrowser-tab:not([pinned])
+    .tab-stack {
+    pointer-events: auto !important;
+  }
+
+  #tabbrowser-tabs[overflow]:not([movingtab])
+    .tabbrowser-tab:nth-child(1 of .tabbrowser-tab:not([pinned], [hidden])) {
+    margin-inline-start: 0px !important;
+  }
+
+  #tabbrowser-tabs[overflow]:not([movingtab])
+    .tabbrowser-tab:nth-last-child(1 of .tabbrowser-tab:not([hidden])) {
+    margin-inline-end: 0px !important;
   }
 
   @include Option("userChromeJS.Sidra.Tabs.TabCounter.Enabled") {
@@ -390,163 +373,14 @@
     }
   }
 
-  /* -------------------- Container Indicators -------------------- */
-  .tab-context-line {
-    margin: 0px !important;
-  }
+  /* -------------------- Selected Tab Indicator -------------------- */
+  @include Option("userChromeJS.Sidra.Tabs.SelectedTabIndicator.Enabled") {
+    .tabbrowser-tab[visuallyselected][usercontextid] .tab-background {
+      box-shadow: inset 0 -2px 0 var(--tab-loading-fill) !important;
+    }
 
-  /* -------------------- Tab Icon Indicators -------------------- */
-  .tabbrowser-tab:is([image], [pinned]) .tab-content[attention]:not([selected]),
-  .tab-content[pinned][titlechanged]:not([selected]) {
-    background-position: var(--tab-attention-indicator-position) !important;
-  }
-
-  /* -------------------- Media Icons -------------------- */
-  .tab-icon-overlay:not([crashed]) {
-    stroke: transparent !important;
-    background-color: transparent !important;
-    border-radius: 50% !important;
-    color: inherit !important;
-    fill: currentColor !important;
-    fill-opacity: 1 !important;
-    z-index: 1 !important;
-  }
-
-  .tab-icon-overlay:not([crashed]):hover {
-    background-color: var(--toolbarbutton-hover-background) !important;
-  }
-
-  .tab-icon-overlay:not([crashed]):hover:active {
-    background-color: var(--toolbarbutton-active-background) !important;
-  }
-
-  .tabbrowser-tab:is([pinned], [image], [sharing], [pictureinpicture]):not(
-      [crashed]
-    )
-    .tab-icon-overlay {
-    top: -8px !important;
-    inset-inline-end: -8px !important;
-  }
-
-  .tab-icon-overlay[indicator-replaces-favicon],
-  .tab-icon-stack[indicator-replaces-favicon] > :not(.tab-icon-overlay) {
-    opacity: 1 !important;
-  }
-
-  .tabbrowser-tab:not([pinned]) .tab-icon-stack > * {
-    margin-inline-end: 10px !important;
-  }
-
-  .tabbrowser-tab[busy] .tab-icon-overlay {
-    display: none !important;
-  }
-
-  .tabbrowser-tab:is([pinned], [image], [sharing], [pictureinpicture]):is(
-      [soundplaying],
-      [muted],
-      [activemedia-blocked]
-    ):not([busy], [crashed])
-    .tab-icon-stack
-    > :not(.tab-icon-overlay) {
-    mask-image: #{image("skin/Media.svg")};
-    mask-size: 16px 16px;
-  }
-
-  :root:-moz-locale-dir(rtl)
-    .tabbrowser-tab:is([pinned], [image], [sharing], [pictureinpicture]):is(
-      [soundplaying],
-      [muted],
-      [activemedia-blocked]
-    ):not([busy], [crashed])
-    .tab-icon-stack
-    > :not(.tab-icon-overlay) {
-    mask-image: #{image("skin/Media_rtl.svg")};
-  }
-
-  /* ---------- Picture-In-Picture ---------- */
-
-  .tabbrowser-tab[pictureinpicture]:not([busy], [crashed])
-    .tab-icon-stack::before {
-    content: "";
-    display: block;
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background-color: currentColor;
-    mask-size: 16px 16px;
-    mask-position: center center;
-    mask-repeat: no-repeat;
-  }
-
-  :root:-moz-locale-dir(rtl)
-    .tabbrowser-tab[pictureinpicture]:not([busy], [crashed])
-    .tab-icon-stack::before {
-    transform: rotateY(180deg);
-  }
-
-  .tabbrowser-tab[pictureinpicture]:not([busy], [crashed])
-    .tab-icon-stack
-    > :not(.tab-icon-overlay) {
-    position: relative !important;
-    padding: 2px !important;
-    inset-inline-start: 8px !important;
-    top: 8px !important;
-    mask-image: none !important;
-    box-sizing: border-box !important;
-    z-index: 1 !important;
-  }
-
-  .tabbrowser-tab[pictureinpicture]:not([busy], [crashed]):not(
-      [soundplaying],
-      [muted],
-      [activemedia-blocked]
-    )
-    .tab-icon-stack::before {
-    mask-image: #{image("skin/PIP.svg")};
-  }
-
-  .tabbrowser-tab[pictureinpicture]:not([busy], [crashed]):is(
-      [soundplaying],
-      [muted],
-      [activemedia-blocked]
-    )
-    .tab-icon-stack::before {
-    mask-image: #{image("skin/PIP_Sound.svg")};
-  }
-
-  /* -------------------- Tab Text -------------------- */
-
-  .tab-label-container {
-    height: var(--tab-min-height) !important;
-  }
-
-  .tab-label {
-    width: 100% !important;
-    height: 16px !important;
-    line-height: 16px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    margin-block: 0px !important;
-  }
-
-  #tabbrowser-tabs[secondarytext-unsupported] .tab-label {
-    height: var(--tab-min-height) !important;
-    line-height: var(--tab-min-height) !important;
-  }
-
-  .tab-secondary-label {
-    width: 100% !important;
-    height: 16px !important;
-    line-height: 16px !important;
-    margin-block: 0px !important;
-    order: -1 !important;
-  }
-
-  .tab-secondary-label > * {
-    width: 100% !important;
-    height: 16px !important;
-    line-height: 16px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    .tabbrowser-tab[visuallyselected]:not([usercontextid]) .tab-background {
+      box-shadow: inset 0 2px 0 var(--tab-loading-fill) !important;
+    }
   }
 }

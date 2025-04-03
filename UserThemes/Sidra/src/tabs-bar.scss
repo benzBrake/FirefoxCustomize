@@ -1,10 +1,6 @@
 /** Mostly copy from WaveFox */
 @include Option("userChromeJS.Sidra.Tabs.Compact") {
-  @property --drag-space {
-    syntax: "<length>";
-    inherits: true;
-    initial-value: 0px;
-  }
+  @import "drag-space";
   #TabsToolbar {
     --toolbarbutton-inner-padding: inherit !important;
     &::before {
@@ -23,122 +19,6 @@
     #search-container {
       padding-block: 0 !important;
     }
-  }
-
-  @include Option("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-    #titlebar {
-      background: var(--titlebar-background);
-
-      :root[tabsintitlebar] & {
-        will-change: revert !important;
-        transition: revert !important;
-      }
-    }
-
-    #toolbar-menubar:not([inactive="true"]) /* split the width in half to center the menubar between the tabs and the titlebar buttons */ {
-      > spacer,
-      + #TabsToolbar .titlebar-spacer {
-        width: calc(var(--titlebar-spacer-width, 32px) / 2) !important;
-      }
-
-      &[autohide="true"] + #TabsToolbar > .titlebar-buttonbox-container {
-        visibility: collapse !important;
-      }
-
-      &:not([autohide="true"]) {
-        .titlebar-buttonbox-container {
-          @include Box(true);
-        }
-        + #TabsToolbar > .titlebar-buttonbox-container {
-          visibility: collapse !important;
-        }
-      }
-    }
-
-    @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
-      #toolbar-menubar:not([inactive="true"]) /* split the width in half to center the menubar between the tabs and the titlebar buttons */ {
-        &[autohide="true"] + #TabsToolbar > .titlebar-buttonbox-container {
-          @include Box(true);
-        }
-
-        &:not([autohide="true"]) {
-          .titlebar-buttonbox-container {
-            @include Box(true);
-            visibility: unset;
-          }
-          + #TabsToolbar > .titlebar-buttonbox-container {
-            visibility: collapse;
-          }
-        }
-      }
-    }
-
-    @include OS($win) {
-      :root:not([chromehidden~="menubar"])
-        #toolbar-menubar:not([inactive])
-        + #TabsToolbar
-        .titlebar-spacer {
-        display: none;
-      }
-    }
-
-    #titlebar {
-      flex-flow: row nowrap !important;
-    }
-
-    // menubar next to tabs (merge tabs bar with titlebar menubar and flow them horizontally)
-    #toolbar-menubar {
-      @include BoxOrder(2);
-      &[autohide="true"][inactive="true"]:not([customizing="true"]) {
-        max-width: 0 !important;
-        min-width: 0 !important;
-        width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        opacity: 0 !important;
-      }
-    }
-
-    :root[inFullscreen] {
-      #toolbar-menubar {
-        visibility: visible !important;
-      }
-    }
-
-    // menubar buttons
-    #main-menubar {
-      @include BoxFlex(1);
-
-      > menu > menupopup {
-        margin-block: calc(
-          0px - var(--menupopup-inner-box-margin) -
-            ((var(--tab-min-height) - 16px - 4px - 5px) / 2)
-        ) !important;
-        margin-inline: calc(
-          0px - var(--menupopup-inner-box-margin) + 2px
-        ) !important;
-      }
-    }
-
-    :root[tabsintitlebar] #toolbar-menubar[autohide="true"] {
-      /** 菜单栏上下垂直居中 */
-      height: 100% !important;
-    }
-  }
-
-  @include NotOption("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-    :root[tabsintitlebar] #toolbar-menubar[autohide="true"]:not([inactive]),
-    :root[tabsintitlebar] #toolbar-menubar:not([autohide="true"]) {
-      /** 菜单栏上下垂直居中 */
-      min-height: calc(
-        12px + 2 * var(--toolbarbutton-inner-padding)
-      ) !important;
-      @include Box;
-      @include BoxAlign("center");
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
   }
 
   @include Option("userChromeJS.Sidra.Tabs.NewtabBtn.Pinned") {
@@ -260,6 +140,7 @@
 
   #TabsToolbar {
     --toolbarbutton-inner-padding: inherit !important;
+    position: relative !important;
   }
 
   #TabsToolbar::before {
@@ -353,37 +234,6 @@
     #TabsToolbar {
       --tab-first-last-inline-margin: 0;
       --tab-first-last-inline-margin: 0;
-    }
-  }
-
-  // ---------------------------------------- Drag Space ----------------------------------------
-  @include Option("userChromeJS.Sidra.Tabs.DragSpace.Left.Disabled") {
-    .titlebar-spacer[type="pre-tabs"] {
-      display: none !important;
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.Tabs.DragSpace.Right.Disabled") {
-    .titlebar-spacer[type="post-tabs"] {
-      display: none !important;
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.Tabs.DragSpace.Top.Windowed.Enabled") {
-    :root[sizemode="normal"]:not([tabposition="3"], [tabbarstyle="2"]) {
-      --drag-space: 8px;
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.Tabs.DragSpace.Top.Maximized.Enabled") {
-    :root[sizemode="maximized"] {
-      --drag-space: 8px;
-    }
-  }
-
-  @include Option("userChromeJS.Sidra.Tabs.DragSpace.Top.Fullscreen.Enabled") {
-    :root[sizemode="fullscreen"] {
-      --drag-space: 8px;
     }
   }
 
@@ -546,147 +396,55 @@
   }
 
   @include Option("userChromeJS.Sidra.Tabs.TabsOnBottom.Enabled") {
-    :root {
-      --outer-drop-border-offset: -1px;
-    }
-
-    #titlebar {
-      @include BoxOrder(2, true);
-    }
-
-    #toolbar-menubar
-    {
-        --toolbarbutton-icon-fill: inherit !important;
-        background-color: var(--toolbar-bgcolor) !important;
-        color: var(--toolbar-color) !important;
-        appearance: none !important;
-    }
+    /* -------------------- Title Bar -------------------- */
 
     #TabsToolbar {
-      &::before {
-        transform: rotateX(180deg);
-      }
+      order: 3 !important;
     }
+
+    #toolbar-menubar {
+      order: 0 !important;
+      background-color: var(--toolbar-bgcolor) !important;
+      color: var(--toolbar-color) !important;
+      --toolbarbutton-icon-fill: inherit !important;
+      --toolbarbutton-hover-background: inherit !important;
+      --toolbarbutton-active-background: inherit !important;
+    }
+
+    #TabsToolbar::before {
+      transform: rotateX(180deg);
+    }
+
+    /* -------------------- Nav Bar -------------------- */
 
     #nav-bar {
-      @include BoxOrder(0, true);
+      order: 1 !important;
     }
 
+    /* -------------------- Personal Bar -------------------- */
+
     #PersonalToolbar {
-      @include BoxOrder(1, true);
+      order: 2 !important;
     }
+
+    /* -------------------- Tabs -------------------- */
 
     :root {
       --drag-space: 0px !important;
     }
 
-    .tabbrowser-tab {
-      --tab-inset-clip-path: 0px calc(-1 * var(--tab-first-last-inline-margin));
-    }
-
     .tab-background {
       transform: rotateX(180deg);
     }
-  }
 
-  @include NotOption("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-    #toolbar-menubar {
-      padding-inline-start: calc(
-        var(--toolbar-start-end-padding) - var(--toolbarbutton-outer-padding)
-      ) !important;
+    /* -------------------- Window Control Buttons -------------------- */
+
+    #TabsToolbar > :is(.titlebar-buttonbox-container, .titlebar-spacer) {
+      display: none !important;
     }
-  }
 
-  @include Option("userChromeJS.Sidra.Titlebar.Horizontal.Enabled") {
-    #toolbar-menubar {
-      background-color: transparent !important;
-    }
-  }
-
-  @include Option("userChromeJS.sidra.Tabs.VerticalOrient.Enabled") {
-    :root:has(
-        #browser
-          > #sidebar-box:is(
-            [sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"],
-            [sidebarcommand="_3c078156-979c-498b-8990-85f7987dd929_-sidebar-action"]
-          ):not([hidden="true"])
-      ) {
-      &[tabsintitlebar][sizemode="normal"] {
-        --drag-size: 24px;
-      }
-
-      // Modify these to change relative widths or default height
-      #navigator-toolbox {
-        position: relative;
-        --uc-urlbar-min-width: 50vw; /* minimum width for opened urlbar */
-      }
-
-      // prevent urlbar overflow on narrow windows
-      // Dependent on how many items are in navigation toolbar ADJUST AS NEEDED
-      @media screen and (max-width: 1500px) {
-        #urlbar-container {
-          min-width: 300px !important;
-          flex-shrink: 1 !important;
-        }
-      }
-
-      &[tabsintitlebar] {
-        #titlebar:has(#toolbar-menubar[inactive="true"]) {
-          height: 0;
-          .titlebar-buttonbox-container {
-            height: var(--navbar-height);
-            background-color: var(--toolbar-bgcolor);
-          }
-        }
-
-        #titlebar {
-          height: calc(12px + 2 * var(--toolbarbutton-inner-padding));
-        }
-
-        .titlebar-buttonbox-container {
-          position: absolute;
-          top: 0;
-          right: 0;
-          height: calc(12px + 2 * var(--toolbarbutton-inner-padding));
-        }
-
-        @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
-          .titlebar-buttonbox-container {
-            left: 0;
-            right: auto;
-          }
-        }
-
-        #toolbar-menubar > #menubar-items {
-          padding-inline: calc(var(--toolbar-start-end-padding) - 2px)
-            calc(var(--toolbar-start-end-padding) + 4px) !important;
-        }
-      }
-
-      #TabsToolbar {
-        --tabs-navbar-shadow-size: 0px;
-        > *:not(.titlebar-buttonbox-container) {
-          display: none;
-        }
-      }
-
-      #navigator-toolbox:has(#toolbar-menubar[inactive="true"]) > #nav-bar {
-        margin-inline: 0 var(--control-width, var(--control-width-default));
-
-        @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
-          margin-inline: var(--control-width, var(--control-width-default)) 0;
-        }
-      }
-
-      #toolbar-menubar {
-        @include BoxOrder(0); // 修正菜单显示位置
-        @include Option("userChromeJS.Sidra.ControlButton.ShowOnLeft") {
-          margin-inline-start: var(
-            --control-width,
-            var(--control-width-default)
-          );
-        }
-      }
+    #toolbar-menubar[inactive] ~ #nav-bar > .titlebar-buttonbox-container {
+      display: block !important;
     }
   }
 }

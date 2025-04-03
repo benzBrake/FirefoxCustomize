@@ -1,3 +1,7 @@
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1820534
+// https://groups.google.com/a/mozilla.org/g/firefox-dev/c/9sGpF1TNbLk/m/QpU3oTUuAgAJ
+// https://github.com/MrOtherGuy/firefox-csshacks/commit/0ff12e01fe18bc86ca68291c88c6dcf027cb9d83
+
 @function _important($important) {
   @if $important {
     @return !important;
@@ -18,7 +22,8 @@
   // -moz-box-ordinal-group is always positive
   @if $num == 0 {
     order: -1 $important;
-  } @else {
+  }
+  @else {
     order: $num $important;
   }
   -moz-box-ordinal-group: $num $important;
