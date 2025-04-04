@@ -3,12 +3,13 @@
 // @description     状态栏
 // @license         MIT License
 // @compatibility   Firefox 137
-// @version         0.0.3
+// @version         0.0.4
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note            0.0.3 fx137
+// @note            0.0.4 Fx139
+// @note            0.0.3 Fx137
 // @note            0.0.2 修正启用 TabMixPlus 扩展后看不见状态栏
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
@@ -65,18 +66,18 @@
                 type: "checkbox",
                 accesskey: "S",
                 checked: String(Services.prefs.getBoolPref("browser.display.statusbar", false)),
-                oncommand: "StatusBar.togglePref();",
             });
 
-            toggleItem.addEventListener("click", function () {
+            toggleItem.addEventListener("command", function () {
                 StatusBar.togglePref();
             });
 
-            document.getElementById('toolbar-context-menu').addEventListener('popupshowing', function () {
-                if (window.LocationBar) {
+            document.getElementById('toolbar-context-menu').addEventListener('popupshowing', function (event) {
+                if (!event.currentTarget.querySelector("#toggle_status-bar")) {
                     this.insertBefore(toggleItem, this.querySelector("#viewToolbarsMenuSeparator"));
                 }
-            }, { once: true });
+                event.currentTarget.querySelector("#toggle_status-bar").setAttribute("checked", String(Services.prefs.getBoolPref("browser.display.statusbar", false)));
+            });
 
             let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
             if (checked) {
@@ -87,7 +88,7 @@
 
             Services.prefs.addObserver("browser.display.statusbar", function () {
                 let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
-                document.getElementById("toggle_status-bar").setAttribute("checked", String(checked));
+                // document.getElementById("toggle_status-bar").setAttribute("checked", String(checked));
                 if (checked) {
                     StatusBar.show();
                 } else {
@@ -165,16 +166,7 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
-    if (gBrowserInit.delayedStartupFinished) window.StatusBar.delayedInit();
-    else {
-        let delayedListener = (subject, topic) => {
-            if (topic == "browser-delayed-startup-finished" && subject == window) {
-                Services.obs.removeObserver(delayedListener, topic);
-                window.StatusBar.delayedInit();
-            }
-        };
-        Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
-    }
+    window.StatusBar.delayedInit();
 })(`
 #status-text-inner[inactive="true"] {
     display: none;
