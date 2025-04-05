@@ -5,21 +5,24 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
-// @version         2025.01.31 Remove Cu.import, per Bug Bug 1881888 
-// @version         2023.07.12 Removed Services.jsm, per Bug 1780695
-// @version         2022.11.18 支持 fx-autoconfig
-// @version         2022.10.01 支持隐藏自身
-// @version         2022.09.27 Fx106
-// @version         2022.02.04 Fx98
-// @version         2021.03.31 Fx89
-// @version         2021.02.05 Fx87
-// @version         2021.01.30 Fx85
-// @version         2020.06.28 Fx78
-// @version         2019.12.07
+// @version         2025.04.04
 // @downloadURL     https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            2025.04.04 Fx137 fix lazy is undefined
+// @note            2025.03.08 Add English / Japanese String
+// @note            2025.01.31 Remove Cu.import, per Bug 1881888 
+// @note            2023.07.12 Removed Services.jsm, per Bug 1780695
+// @note            2022.11.18 支持 fx-autoconfig
+// @note            2022.10.01 支持隐藏自身
+// @note            2022.09.27 Fx106
+// @note            2022.02.04 Fx98
+// @note            2021.03.31 Fx89
+// @note            2021.02.05 Fx87
+// @note            2021.01.30 Fx85
+// @note            2020.06.28 Fx78
+// @note            2019.12.07
 // @note            - 附件组件页面右键新增查看所在目录（支持扩展、主题、插件）、复制名字。Greasemonkey、Scriptish 自带已经存在
 // @note            - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制
 // @note            - 新增 uc脚本管理页面
@@ -33,23 +36,23 @@
     "use strict";
 
     const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
-
+    const apLazy = {};
     try {
-        ChromeUtils.defineESModuleGetters(lazy, {
+        ChromeUtils.defineESModuleGetters(apLazy, {
             AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
             AddonManagerPrivate: "resource://gre/modules/AddonManager.sys.mjs",
         });
     } catch (e) {
-        XPCOMUtils.defineLazyModuleGetters(lazy, {
+        XPCOMUtils.defineLazyModuleGetters(apLazy, {
             AddonManager: "resource://gre/modules/AddonManager.jsm",
             AddonManagerPrivate: "resource://gre/modules/AddonManager.jsm",
         });
     }
     if (!window.AddonManager) {
-        window.AddonManager = lazy.AddonManager;
+        window.AddonManager = apLazy.AddonManager;
     }
     if (!window.AddonManagerPrivate) {
-        window.AddonManagerPrivate = lazy.AddonManagerPrivate;
+        window.AddonManagerPrivate = apLazy.AddonManagerPrivate;
     }
     const iconURL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";  // uc 脚本列表的图标
     const AM_FILENAME = Components.stack.filename.split("/").pop().split("?")[0];
@@ -66,6 +69,20 @@
     }
 
     const LANG = {
+        "en-US": {
+            "set editor path": 'Set the editor path to "view_source.editor.path" in about:config',
+            "edit": "Edit",
+            "browse directory": "Browse Directory",
+            "open url": "Open Install URL",
+            "copy name": "Copy Name"
+        },
+        "ja": {
+            "set editor path": "about:configでview_source.editor.pathにエディターのパスを設定してください",
+            "edit": "編集",
+            "browse directory": "ディレクトリを開く",
+            "open url": "インストール元URLを開く",
+            "copy name": "名前をコピー"
+        },
         'zh-CN': {
             "set editor path": "请打开 about:config 页面并设置 view_source.editor.path 的值为编辑器路径。",
             "edit": "编辑",
@@ -73,7 +90,7 @@
             "open url": "打开安装网址",
             "copy name": "复制名称"
         }
-    }
+    };
 
     window.AM_Helper = {
         init () {
@@ -830,7 +847,100 @@
         return node;
     }
 
-    function $L (key, replace) {
+    if (!window.xPref) {
+        window.xPref = {
+            // Retorna o valor da preferência, seja qual for o tipo, mas não
+            // testei com tipos complexos como nsIFile, não sei como detectar
+            // uma preferência assim, na verdade nunca vi uma
+            get: function (prefPath, def = false, valueIfUndefined, setDefault = true) {
+                let sPrefs = def ?
+                    Services.prefs.getDefaultBranch(null) :
+                    Services.prefs;
+
+                try {
+                    switch (sPrefs.getPrefType(prefPath)) {
+                        case 0:
+                            if (valueIfUndefined != undefined)
+                                return this.set(prefPath, valueIfUndefined, setDefault);
+                            else
+                                return undefined;
+                        case 32:
+                            return sPrefs.getStringPref(prefPath);
+                        case 64:
+                            return sPrefs.getIntPref(prefPath);
+                        case 128:
+                            return sPrefs.getBoolPref(prefPath);
+                    }
+                } catch (ex) {
+                    return undefined;
+                }
+                return;
+            },
+
+            set: function (prefPath, value, def = false) {
+                let sPrefs = def ?
+                    Services.prefs.getDefaultBranch(null) :
+                    Services.prefs;
+
+                switch (typeof value) {
+                    case 'string':
+                        return sPrefs.setStringPref(prefPath, value) || value;
+                    case 'number':
+                        return sPrefs.setIntPref(prefPath, value) || value;
+                    case 'boolean':
+                        return sPrefs.setBoolPref(prefPath, value) || value;
+                }
+                return;
+            },
+
+            lock: function (prefPath, value) {
+                let sPrefs = Services.prefs;
+                this.lockedBackupDef[prefPath] = this.get(prefPath, true);
+                if (sPrefs.prefIsLocked(prefPath))
+                    sPrefs.unlockPref(prefPath);
+
+                this.set(prefPath, value, true);
+                sPrefs.lockPref(prefPath);
+            },
+
+            lockedBackupDef: {},
+
+            unlock: function (prefPath) {
+                Services.prefs.unlockPref(prefPath);
+                let bkp = this.lockedBackupDef[prefPath];
+                if (bkp == undefined)
+                    Services.prefs.deleteBranch(prefPath);
+                else
+                    this.set(prefPath, bkp, true);
+            },
+
+            clear: Services.prefs.clearUserPref,
+
+            // Detecta mudanças na preferência e retorna:
+            // return[0]: valor da preferência alterada
+            // return[1]: nome da preferência alterada
+            // Guardar chamada numa var se quiser interrompê-la depois
+            addListener: function (prefPath, trat) {
+                this.observer = function (aSubject, aTopic, prefPath) {
+                    return trat(xPref.get(prefPath), prefPath);
+                }
+
+                Services.prefs.addObserver(prefPath, this.observer);
+                return {
+                    prefPath: prefPath,
+                    observer: this.observer
+                };
+            },
+
+            // Encerra pref observer
+            // Só precisa passar a var definida quando adicionou
+            removeListener: function (obs) {
+                Services.prefs.removeObserver(obs.prefPath, obs.observer);
+            }
+        }
+    }
+
+    function $L () {
         const _LOCALE = getLocale() || "zh-CN";
         let str = arguments[0];
         if (str) {
