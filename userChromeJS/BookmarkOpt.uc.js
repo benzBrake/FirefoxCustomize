@@ -21,10 +21,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.4
+// @version         1.4.5
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.5 修复 1.4.4 导致 this.parentNode is undefined
 // @note            1.4.4 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            1.4.3 修复 1.4.1 无效修复的问题
 // @note            1.4.2 Bug 1904909
@@ -90,7 +91,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         accesskey: "h",
         insertBefore: "placesContext_show_bookmark:info",
         condition: "toolbar folder bookmark",
-        oncommand: "window.BookmarkOpt.operate(event, 'add', this.parentNode.triggerNode)"
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, 'add', event.target.parentNode.triggerNode)
+        }
     }, {
         id: "placesContext_update_bookmark:info",
         label: $L("update current bookmark"),
@@ -98,14 +101,18 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         accesskey: "u",
         insertBefore: "placesContext_show_bookmark:info",
         condition: "bookmark",
-        oncommand: "window.BookmarkOpt.operate(event, 'update', this.parentNode.triggerNode)",
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, 'update', event.target.parentNode.triggerNode)
+        }
     }, {
         id: "placesContext_copyTitle",
         label: $L("copy bookmark title"),
         insertBefore: "placesContext_paste_group",
         condition: "container uri",
         accesskey: "A",
-        oncommand: "window.BookmarkOpt.operate(event, 'copyTitle', this.parentNode.triggerNode)",
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, 'copyTitle', event.target.parentNode.triggerNode)
+        }
     }, {
         id: "placesContext_copyLink",
         label: $L("copy bookmark link"),
@@ -113,20 +120,26 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         condition: "container uri",
         accesskey: "L",
         text: "[%TITLE%](%URL%)",
-        oncommand: "window.BookmarkOpt.operate(event, 'copyUrl', this.parentNode.triggerNode)",
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, 'copyUrl', event.target.parentNode.triggerNode)
+        },
         accesskey: "L"
     }, {
         class: 'placesContext_showNodeInfo',
         label: $L("show node type"),
         condition: 'shift',
-        oncommand: 'window.BookmarkOpt.operate(event, "nodeType")',
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, "nodeType")
+        },
         insertBefore: 'placesContext_openSeparator',
         style: 'list-style-image: url(chrome://global/skin/icons/info.svg)',
     }, {
         class: 'placesContext_showNodeInfo',
         label: $L("show node guid"),
         condition: 'shift',
-        oncommand: 'window.BookmarkOpt.operate(event, "nodeGuid")',
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, "nodeGuid")
+        },
         insertBefore: 'placesContext_openSeparator',
         style: 'list-style-image: url(chrome://global/skin/icons/info.svg)',
     }];
@@ -136,7 +149,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         'label': $L("add bookmark here"),
         'tooltiptext': $L("add bookmark here tooltip"),
         'image': "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNOC44MDgwMiAyLjEwMTc5QzguNDc3ODkgMS40MzI4NyA3LjUyNDAzIDEuNDMyODcgNy4xOTM5IDIuMTAxNzlMNS42NzI4MSA1LjE4Mzg0TDIuMjcxNTYgNS42NzgwN0MxLjUzMzM2IDUuNzg1MzQgMS4yMzg2MSA2LjY5MjUxIDEuNzcyNzcgNy4yMTMyTDQuMjMzOTQgOS42MTIyNEwzLjY1Mjk0IDEyLjk5OTdDMy41MjY4NCAxMy43MzUgNC4yOTg1MyAxNC4yOTU2IDQuOTU4NzkgMTMuOTQ4NUw4LjAwMDk2IDEyLjM0OTFMOC40ODI5IDEyLjYwMjVDOC4xODU5NyAxMi4zMjg0IDggMTEuOTM1OSA4IDExLjVDOCAxMS40NDQ2IDguMDAzIDExLjM5IDguMDA4ODQgMTEuMzM2MkM3Ljg2MjM2IDExLjMzNDkgNy43MTU2NCAxMS4zNjk0IDcuNTgyMTUgMTEuNDM5NUw0LjY3MjggMTIuOTY5MUw1LjIyODQzIDkuNzI5NDdDNS4yNzg1MSA5LjQzNzUxIDUuMTgxNzEgOS4xMzk2MSA0Ljk2OTYgOC45MzI4NUwyLjYxNTg4IDYuNjM4NTRMNS44Njg2NCA2LjE2NTg5QzYuMTYxNzggNi4xMjMyOSA2LjQxNTE5IDUuOTM5MTggNi41NDYyOCA1LjY3MzU1TDguMDAwOTYgMi43MjYwNUw4LjczMzUxIDQuMjEwMzZDOC45NTc4MiA0LjA3Njc1IDkuMjE5OTUgNCA5LjUgNEg5Ljc0NDg1TDguODA4MDIgMi4xMDE3OVpNOS41IDVDOS4yMjM4NiA1IDkgNS4yMjM4NiA5IDUuNUM5IDUuNzc2MTQgOS4yMjM4NiA2IDkuNSA2SDE0LjVDMTQuNzc2MSA2IDE1IDUuNzc2MTQgMTUgNS41QzE1IDUuMjIzODYgMTQuNzc2MSA1IDE0LjUgNUg5LjVaTTkuNSA4QzkuMjIzODYgOCA5IDguMjIzODYgOSA4LjVDOSA4Ljc3NjE0IDkuMjIzODYgOSA5LjUgOUgxNC41QzE0Ljc3NjEgOSAxNSA4Ljc3NjE0IDE1IDguNUMxNSA4LjIyMzg2IDE0Ljc3NjEgOCAxNC41IDhIOS41Wk05LjUgMTFDOS4yMjM4NiAxMSA5IDExLjIyMzkgOSAxMS41QzkgMTEuNzc2MSA5LjIyMzg2IDEyIDkuNSAxMkgxNC41QzE0Ljc3NjEgMTIgMTUgMTEuNzc2MSAxNSAxMS41QzE1IDExLjIyMzkgMTQuNzc2MSAxMSAxNC41IDExSDkuNVoiLz4KPC9zdmc+Cg==",
-        oncommand: "window.BookmarkOpt.operate(event, 'panelAdd', this.parentNode)"
+        oncommand: function (event) {
+            window.BookmarkOpt.operate(event, 'add', event.target.parentNode)
+        }
     }, {
 
     }];
@@ -429,8 +444,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
             if (!popupNode) return;
             let view = PlacesUIUtils.getViewForNode(popupNode),
                 aNode;
-
-            if (view && view.selectedNode) {
+            if (popupNode._placesNode) {
+                aNode = popupNode._placesNode;
+            } else if (view && view.selectedNode) {
                 aNode = view.selectedNode;
             } else {
                 aNode = popupNode._placesNode;
@@ -614,16 +630,8 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 }, (type, props = {}, aDoc) => {
     const el = aDoc.createXULElement(type);
     for (let [key, value] of Object.entries(props)) {
-        if (key.startsWith('on')) {
-            const fn = typeof val === "string" ? (() => {
-                if (value.trim().startsWith("function") || value.trim().startsWith("async function")) {
-                    return "(" + value + ").call(this, event)";
-                }
-                return value;
-            })() : "(" + value.toString() + ").call(this, event)";
-            el.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                eval(fn);
-            });
+        if (key.startsWith('on') && typeof value === 'function') {
+            el.addEventListener(key.slice(2).toLocaleLowerCase(), value);
         } else {
             el.setAttribute(key, value);
         }
