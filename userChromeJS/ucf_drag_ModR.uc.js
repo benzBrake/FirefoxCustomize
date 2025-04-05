@@ -3,9 +3,11 @@
 // @description     鼠标拖拽 Drag & Go，来自于 Mozilla-Russia 论坛，Ryan 修改自用
 // @author          Ryan, Dumby
 // @include         main
-// @version         2024.03.06
+// @version         2025.04.05
+// @compatibility   Firefox 80
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @referenceURL    https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234
+// @note            2025.04.05 修复保存非英文文本乱码
 // @note            2024.03.06 增加复制链接文本
 // @note            2024.02.29 修复站内搜索失效
 // @onlyonce
@@ -365,22 +367,7 @@
                 default:
                     return null;
             }
-            var strm = Cc["@mozilla.org/network/file-output-stream;1"]
-                .createInstance(Ci.nsIFileOutputStream);
-            var convert = Cc['@mozilla.org/intl/scriptableunicodeconverter']
-                .getService(Ci.nsIScriptableUnicodeConverter);
-            convert.charset = "UTF-8";
-            ext = convert.ConvertFromUnicode(text);
-            try {
-                strm.init(file, 0x02 | 0x08 | 0x20, parseInt(664, 8), 0); // write, create, truncate
-                strm.write(text, text.length);
-                strm.flush();
-            } catch (ex) {
-                alert('failed:\n' + ex);
-                file = null;
-            }
-            strm.close();
-
+            await IOUtils.writeUTF8(file.path, text);
             return file;
         },
         getDroppedURL_Fixup: function getDroppedURL_Fixup(url) {
