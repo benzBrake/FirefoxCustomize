@@ -2,12 +2,13 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.3.2
+// @version         0.3.3
 // @compatibility   Firefox 80
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.3.3 fix unsave eval 使用 sandbox 替代 eval
 // @note            0.3.2 修复 precommand / postcommand 触发，修复 pref 菜单 defaultValue 无效，修复 onCommand 兜底失效
 // @note            0.3.1 修复重复绑定事件
 // @note            0.3.0 整理代码，移除 tool 属性支持，减小 css 影响范围，修复移动主菜单栏项目事件失效，增加多语言支持
@@ -17,6 +18,17 @@
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const alt = (aMsg, aTitle) => Services.prompt.alert(window, aTitle ?? Services.appinfo.name, aMsg)
+
+    const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
+    Object.assign(sandbox, {
+        window,
+        document,
+        Cc,
+        Cu,
+        Cr,
+        Ci,
+        Services
+    });
 
     const xPref = {
         get: function (prefPath, defaultValue) {
@@ -100,6 +112,7 @@
             type: Services.vc.compare(Services.appinfo.version, "118.0.2") ? SS_SERVICE.USER_SHEET : SS_SERVICE.AUTHOR_SHEET
         },
         init: async function () {
+            sandbox.CopyCat = this;
             // 载入样式
             if (!SS_SERVICE.sheetRegistered(this.STYLE.url, this.STYLE.type)) {
                 SS_SERVICE.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
@@ -820,11 +833,12 @@
             }
 
             if (this.EXEC_BMS && $('#main-menubar > script')) {
+                let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
                 const CCjs = {};
                 CCjs.res = await fetch($('#main-menubar > script').src);
                 CCjs.text = (await CCjs.res.text()).replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace('.getElementById("historyMenuPopup")', '.querySelector("#CopyCat-Popup #historyMenuPopup")').replaceAll('getElementById("history-menu")', 'querySelector("#CopyCat-Popup #history-menu")').replace('.getElementById("menu_EditPopup")', '.querySelector("#CopyCat-Popup #menu_EditPopup")');
                 try {
-                    eval(CCjs.text);
+                    Cu.evalInSandbox(CCjs.text, sandbox, "1.8");
                 } catch (e) { }
                 this.EXEC_BMS = false;
             }
@@ -968,17 +982,9 @@
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
             if (k.startsWith('on')) {
-                const fn = typeof v === "string" ? (() => {
-                    if (v.trim().startsWith("function") || v.trim().startsWith("async function")) {
-                        return "(" + v + ").call(this, event)";
-                    }
-                    return v;
-                })() : "(" + v + ").call(this, event)";
-                e.addEventListener(k.slice(2).toLocaleLowerCase(), (event) => {
-                    eval(fn);
-                }, false);
+                let fn = (typeof v === "function") ? v : new Function('event', v);
+                e.addEventListener(k.slice(2).toLocaleLowerCase(), fn, false);
             } else {
-                if (typeof v === "function") v = '(' + v.toString() + ').call(this, event)';
                 e.setAttribute(k, v);
             }
         }
@@ -1115,7 +1121,9 @@
     window.CopyCat = CopyCat;
     CopyCat.init();
 
-    setTimeout("CopyCat.rebuild()", 3000);
+    setTimeout(() => {
+        CopyCat.rebuild();
+    }, 3000);
 })(`
 @-moz-document url-prefix("chrome://browser/content/browser.x") {
 #CopyCat-Btn > .toolbarbutton-icon {
