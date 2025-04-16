@@ -10,6 +10,7 @@
 开关：
 userChromeJS.BookmarkOpt.enableToggleButton: 显示/隐藏书签工具栏按钮
 userChromeJS.BookmarkOpt.doubleClickToShow: 双击地址栏切换书签工具栏
+userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick: 中按点击书签工具栏文件夹收藏当前页面到该文件夹下
 userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签工具栏的图标（书签，文件夹均可）添加书签
 */
 // @author          Ryan
@@ -21,10 +22,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.5
+// @version         1.4.6
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.6 加回被删掉的 中按点击书签工具栏文件夹收藏当前页面到该文件夹下
 // @note            1.4.5 修复 1.4.4 导致 this.parentNode is undefined
 // @note            1.4.4 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            1.4.3 修复 1.4.1 无效修复的问题
@@ -162,6 +164,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
 
     var isMouseDown = false;
+    eval('PlacesUIUtils.openNodeWithEvent = ' +
+        PlacesUIUtils.openNodeWithEvent.toString().replace(/this./g, 'PlacesUIUtils.')
+        .replace(/let window/g, "if (BookmarkOpt.isTriggered) return;\n    let window")
+    );
+
 
     window.BookmarkOpt = {
         items: [],
@@ -307,10 +314,10 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
             switch (type) {
                 case 'click':
                     if (button == 1 && isMouseDown) {
+                        if (!Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) return;
+                        if (target.hasAttribute("query")) return;
                         let addBookmark = false;
-                        if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false)
-                            && !target.hasAttribute("query") /* 排除最近访问 */
-                        ) {
+                        if (Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly", false)) {
                             let targetRect = target.getBoundingClientRect();
                             let x = event.clientX - target.getBoundingClientRect().left; // 鼠标点击位置相对于当前书签
                             let icon = target.tagName.toLowerCase() === "toolbarbutton" ? target.querySelector(":scope>image") : target.firstChild;
@@ -320,8 +327,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                                 // 点击的是标签，不覆盖默认的功能：打开全部
                                 addBookmark = true;
                             }
+                        } else {
+                            addBookmark = true;
                         }
                         if (addBookmark) {
+                            this.isTriggered = true;
                             event.preventDefault();
                             event.stopPropagation();
                             this.operate(event, 'add', target, (...args) => {
@@ -414,6 +424,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                 case 'mouseup':
                     setTimeout(() => {
                         isMouseDown = false;
+                        this.isTriggered = false;
                     }, 50);
                     break;
                 case 'mouseover':
