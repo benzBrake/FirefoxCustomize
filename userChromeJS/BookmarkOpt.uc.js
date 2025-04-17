@@ -164,10 +164,14 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
 
     var isMouseDown = false;
-    eval('PlacesUIUtils.openNodeWithEvent = ' +
-        PlacesUIUtils.openNodeWithEvent.toString().replace(/this./g, 'PlacesUIUtils.')
-        .replace(/let window/g, "if (BookmarkOpt.isTriggered) return;\n    let window")
-    );
+    PlacesUIUtils.o_openNodeWithEvent = PlacesUIUtils.openNodeWithEvent;
+    PlacesUIUtils.openNodeWithEvent = function(...args) {
+        if (BookmarkOpt.isTriggered) {
+            BookmarkOpt.isTriggered = false;
+            return;
+        }
+        PlacesUIUtils.o_openNodeWithEvent.apply(this, args);
+    }
 
 
     window.BookmarkOpt = {
@@ -424,7 +428,6 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                 case 'mouseup':
                     setTimeout(() => {
                         isMouseDown = false;
-                        this.isTriggered = false;
                     }, 50);
                     break;
                 case 'mouseover':
