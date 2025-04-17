@@ -428,6 +428,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                 case 'mouseup':
                     setTimeout(() => {
                         isMouseDown = false;
+                        this.isTriggered = false;
                     }, 50);
                     break;
                 case 'mouseover':
