@@ -3,11 +3,12 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.7
+// @version         0.2.8
 // @async           true
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.2.8 修复样式问题
 // @note            0.2.7 修复上移功能，去除一部分无用代码
 // @note            0.2.6 适配 Firefox 135
 // @note            0.2.5 BrowserOpenAddonsMgr改名，适配 userChrome.js Loader 的调整
@@ -37,8 +38,8 @@
     const BUTTONS = {
         MOVE_UP: { label: "上移", tooltiptext: "上移", "uni-action": "up", closemenu: "none", class: "unified-extensions-item-up subviewbutton subviewbutton-iconic" },
         MOVE_DOWN: { label: "下移", tooltiptext: "下移", "uni-action": "down", closemenu: "none", class: "unified-extensions-item-down subviewbutton subviewbutton-iconic" },
-        PIN_TO_TOOLBAR: { label: "在工具栏中显示", tooltiptext: "在工具栏中显示", "uni-action": "pin", class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic", onclick: "unifiedExtensionsEnhance.handleEvent(event);" },
-        UNPIN_FROM_TOOLBAR: { label: "从工具栏移除", tooltiptext: "从工具栏移除", "uni-action": "unpin", class: "unified-extensions-item-unpin subviewbutton subviewbutton-iconic", onclick: "unifiedExtensionsEnhance.handleEvent(event);" },
+        PIN_TO_TOOLBAR: { label: "在工具栏中显示", tooltiptext: "在工具栏中显示", "uni-action": "pin", class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic" },
+        UNPIN_FROM_TOOLBAR: { label: "从工具栏移除", tooltiptext: "从工具栏移除", "uni-action": "unpin", class: "unified-extensions-item-unpin subviewbutton subviewbutton-iconic" },
         PLUGIN_OPTION: { label: "选项", tooltiptext: "扩展选项", "uni-action": "option", class: "unified-extensions-item-option subviewbutton subviewbutton-iconic" },
         ENABLE_ADDON: { label: "启用", tooltiptext: "启用扩展", "uni-action": "enable", closemenu: "none", class: "unified-extensions-item-enable subviewbutton subviewbutton-iconic" },
         DISABLE_ADDON: { label: "禁用", tooltiptext: "禁用扩展", closemenu: "none", "uni-action": "disable", class: "unified-extensions-item-disable subviewbutton subviewbutton-iconic" },
@@ -85,8 +86,6 @@
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons {
                 display: flex;
-                /* align-items: center; */
-                margin-inline: 0;
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton {
                 -moz-box-pack: start;
@@ -124,7 +123,7 @@
                 visibility: hidden;
             }
             #unified-extensions-view .unified-extensions-item-menu-button {
-                margin-inline-end: var(--arrowpanel-menuitem-margin-inline);
+                margin-inline-end: 0;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
             #unified-extensions-view .unified-extensions-item-up {
@@ -160,11 +159,16 @@
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-enable,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable,
             unified-extensions-item.addon-disabled .unified-extensions-item-option,
+            unified-extensions-item:not(.addon-disabled) .unified-extensions-item-pin
             unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
             unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
-            unified-extensions-item .unified-extensions-item-pin,
             unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin {
                 display: none;
+            }
+            unified-extensions-item.addon-disabled .unified-extensions-item-pin,
+            .unified-extensions-list :is(.unified-extensions-item-up, .unified-extensions-item-down) {
+                opacity: .2;
+                pointer-events: none;
             }
             toolbarbutton.ue-btn:not([no-icon=true]) {
                 padding: calc(var(--arrowpanel-menuitem-margin-inline) - 1px) var(--arrowpanel-menuitem-margin-inline);
@@ -197,25 +201,49 @@
                 opacity: .2;
                 cursor: not-allowed;
             }
+            .unified-extensions-list .addon-disabled {
+                order: 99;
+            }
             ${COMPACT_LIST ? `
             :root {
                 --uei-icon-size: 16px !important;
             }
-            :is(#unified-extensions-area,.unified-extensions-list) .unified-extensions-item-message-deck {
-                display: none;
-            }
-            :is(#unified-extensions-area,.unified-extensions-list) .unified-extensions-item-name {
-                white-space: nowrap;
-            }
             #unified-extensions-messages-container {
                 margin-block: 0 !important;
             }
-            toolbaritem:is([overflowedItem="true"], [cui-areatype="panel"])
-            > .webextension-browser-action {
+            .unified-extensions-item-message-deck {
+                display: none !important;
+            }
+            toolbaritem:is([overflowedItem="true"], [cui-areatype="panel"]) > .webextension-browser-action {
                 list-style-image: var(
                     --webextension-toolbar-image,
                     var(--webextension-menupanel-image, inherit)
                 ) !important;
+            }
+            @media (-moz-platform: windows) {
+                #unified-extensions-panel .toolbarbutton-text {
+                    font: menu !important;
+                    font-family: inherit !important;
+                }
+            }
+            .unified-extensions-item-contents {
+                flex: 1 !important;
+
+                & > .unified-extensions-item-name,
+                & > .unified-extensions-item-message-deck
+                > .unified-extensions-item-message {
+                    max-width: calc(100% - 4px) !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    white-space: nowrap !important;
+                }
+            }
+            .unified-extensions-item-row-wrapper > [class^="unified-extensions-item"] {
+                padding: 0 !important;
+
+                & > .toolbarbutton-icon {
+                    border: none !important;
+                }
             }
             ` : ""}
             `)),
@@ -260,7 +288,7 @@
                 menuitem.classList.add('customize-context-disableExtension');
                 $Q('#toolbar-context-menu .customize-context-removeExtension').before(menuitem);
             }
-            
+
             $('toolbar-context-menu').addEventListener('popupshowing', this);
         },
         onPinToolbarChange (menu, event) {
