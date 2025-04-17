@@ -801,10 +801,21 @@
 
             // 使用解构赋值来减少冗余声明
             Object.assign(sandbox, {
-                Cc, Ci, Cr, Cu, Services, CustomizableUI, console,
+                window, document,
+                Cu, Ci, Cr, Cc, Services, XPCOMUtils, ChromeUtils, AppConstants,
+                gBrowser, updateEditUIVisibility, SessionStore,
                 CopyCat: this, _menus: [], _css: []
             });
+
             sandbox.Components = Components;
+
+            ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js"].forEach(scriptUrl => {
+                ChromeUtils.compileScript(scriptUrl).then((r) => {
+                    if (r) {
+                        r.executeInGlobal(sandbox, { reportExceptions: true });
+                    }
+                }).catch(ex => console.error);
+            });
 
             // 简化 menus 函数定义
             sandbox.menus = itemObj => ps(itemObj, sandbox._menus);
@@ -814,7 +825,7 @@
 
             try {
                 var lineFinder = new Error();
-                Cu.evalInSandbox("function css(code){ this._css.push(code+'') };\nfunction lang(obj) { Object.assign(this._lang, obj); }" + d, sandbox, "1.8");
+                Cu.evalInSandbox("function css(code){ this._css.push(code+'') };\nfunction lang(obj) { Object.assign(this._lang, obj); }" + d, sandbox, "1.8"); 3
             } catch (e) {
                 let line = e.lineNumber - lineFinder.lineNumber - 1;
                 alerts(e + this.MESSAGES.format("copycat-config-error-message", line), null, function () {
@@ -833,13 +844,14 @@
             }
 
             if (this.EXEC_BMS && $('#main-menubar > script')) {
-                let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
                 const CCjs = {};
                 CCjs.res = await fetch($('#main-menubar > script').src);
-                CCjs.text = (await CCjs.res.text()).replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace('.getElementById("historyMenuPopup")', '.querySelector("#CopyCat-Popup #historyMenuPopup")').replaceAll('getElementById("history-menu")', 'querySelector("#CopyCat-Popup #history-menu")').replace('.getElementById("menu_EditPopup")', '.querySelector("#CopyCat-Popup #menu_EditPopup")');
+                CCjs.text = (await CCjs.res.text()).replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace(/\.getElementById\("historyMenuPopup"\)\s*\./gm, '.querySelector("#CopyCat-Popup #historyMenuPopup")?.').replaceAll(/getElementById\("history-menu"\)\s*\./gm, 'querySelector("#CopyCat-Popup #history-menu")?.').replace(/.getElementById\("menu_EditPopup"\)\s*\./gm, '.querySelector("#CopyCat-Popup #menu_EditPopup")?.').replaceAll('?;', ';');
                 try {
-                    Cu.evalInSandbox(CCjs.text, sandbox, "1.8");
-                } catch (e) { }
+                    Cu.evalInSandbox(CCjs.text, sandbox);
+                } catch (e) {
+                    console.log(e);
+                }
                 this.EXEC_BMS = false;
             }
             return true;
@@ -1196,7 +1208,7 @@
     position: absolute;
     left: 1em;
 }
-.CopyCat-Popup menu[menuright="true"]:not(.menu-iconic)::after {
+.CopyCat-Popup menu[menuright="true"]:not(:has(>.menu-right)):not(.menu-iconic)::after {
     content: "";
     display: block;
     width: 16px;
