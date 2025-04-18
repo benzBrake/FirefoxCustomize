@@ -19,17 +19,6 @@
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const alt = (aMsg, aTitle) => Services.prompt.alert(window, aTitle ?? Services.appinfo.name, aMsg)
 
-    const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
-    Object.assign(sandbox, {
-        window,
-        document,
-        Cc,
-        Cu,
-        Cr,
-        Ci,
-        Services
-    });
-
     const xPref = {
         get: function (prefPath, defaultValue) {
             const sPrefs = Services.prefs;
@@ -112,7 +101,6 @@
             type: Services.vc.compare(Services.appinfo.version, "118.0.2") ? SS_SERVICE.USER_SHEET : SS_SERVICE.AUTHOR_SHEET
         },
         init: async function () {
-            sandbox.CopyCat = this;
             // 载入样式
             if (!SS_SERVICE.sheetRegistered(this.STYLE.url, this.STYLE.type)) {
                 SS_SERVICE.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
@@ -374,7 +362,9 @@
                                     if (command_id && !dest.getAttribute('command')) {
                                         item.setAttribute('id', command_id + '_clone');
                                         item.setAttribute('command', command_id);
-                                        item.setAttribute("oncommand", "CopyCat.onCommand(event);");
+                                        item.addEventListener("command", function (e) {
+                                            window.CopyCat.onCommand(e);
+                                        }, false);
                                     }
                                 }
                             }
@@ -488,9 +478,9 @@
 
             if (obj.oncommand || obj.command) return item;
 
-            applyAttr(item, {
-                'oncommand': 'CopyCat.onCommand(event);',
-            });
+            item.addEventListener('command', function (e) {
+                window.CopyCat.onCommand(e);
+            }, false);
 
             // 可能ならばアイコンを付ける
             this.setIcon(item, obj);
@@ -801,13 +791,74 @@
 
             // 使用解构赋值来减少冗余声明
             Object.assign(sandbox, {
-                window, document,
+                window, document, console, alert, prompt, confirm,
                 Cu, Ci, Cr, Cc, Services, XPCOMUtils, ChromeUtils, AppConstants,
-                gBrowser, updateEditUIVisibility, SessionStore,
+                gBrowser, updateEditUIVisibility, SessionStore, customElements,
                 CopyCat: this, _menus: [], _css: []
             });
 
             sandbox.Components = Components;
+
+            let gFileMenu = {
+                /**
+                 * Updates User Context Menu Item UI visibility depending on
+                 * privacy.userContext.enabled pref state.
+                 */
+                updateUserContextUIVisibility () {
+                    let menu = document.getElementById("menu_newUserContext");
+                    menu.hidden = !Services.prefs.getBoolPref(
+                        "privacy.userContext.enabled",
+                        false
+                    );
+                    // Visibility of File menu item shouldn't change frequently.
+                    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+                        menu.setAttribute("disabled", "true");
+                    }
+                },
+
+                /**
+                 * Updates the enabled state of the "Import From Another Browser" command
+                 * depending on the DisableProfileImport policy.
+                 */
+                updateImportCommandEnabledState () {
+                    if (!Services.policies.isAllowed("profileImport")) {
+                        document
+                            .getElementById("cmd_file_importFromAnotherBrowser")
+                            .setAttribute("disabled", "true");
+                    }
+                },
+
+                /**
+                 * Updates the "Close tab" command to reflect the number of selected tabs,
+                 * when applicable.
+                 */
+                updateTabCloseCountState () {
+                    document.l10n.setAttributes(
+                        document.getElementById("menu_close"),
+                        "menu-file-close-tab",
+                        { tabCount: gBrowser.selectedTabs.length }
+                    );
+                },
+
+                onPopupShowing (event) {
+                    // We don't care about submenus:
+                    if (event.target.id != "menu_FilePopup") {
+                        return;
+                    }
+                    this.updateUserContextUIVisibility();
+                    this.updateImportCommandEnabledState();
+                    this.updateTabCloseCountState();
+                    if (AppConstants.platform == "macosx") {
+                        SharingUtils.updateShareURLMenuItem(
+                            gBrowser.selectedBrowser,
+                            document.getElementById("menu_savePage")
+                        );
+                    }
+                    PrintUtils.updatePrintSetupMenuHiddenState();
+                },
+            };
+
+            sandbox.gFileMenu = gFileMenu;
 
             ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js"].forEach(scriptUrl => {
                 ChromeUtils.compileScript(scriptUrl).then((r) => {
@@ -993,9 +1044,8 @@
     function applyAttr (e, o = {}, s = []) {
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
-            if (k.startsWith('on')) {
-                let fn = (typeof v === "function") ? v : new Function('event', v);
-                e.addEventListener(k.slice(2).toLocaleLowerCase(), fn, false);
+            if (typeof v === 'function') {
+                e.addEventListener(k.startsWith('on') ? k.slice(2).toLocaleLowerCase() : k, v, false);
             } else {
                 e.setAttribute(k, v);
             }
@@ -1250,7 +1300,9 @@
             tooltiptext: 'Restart Firefox',
             'data-l10n-id': 'copycat-menu-restart',
             class: 'reload',
-            oncommand: 'Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);',
+            oncommand: function () {
+                Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);
+            },
         }]
     }, {
         id: 'CopyCat-ChromeFolder-Sep'
@@ -1267,13 +1319,17 @@
                 label: 'Modify CopyCat config',
                 'data-l10n-id': 'copycat-edit-config',
                 image: 'chrome://browser/skin/preferences/category-general.svg',
-                oncommand: 'CopyCat.editConfig();'
+                oncommand: function () {
+                    window.CopyCat.editConfig();
+                },
             }, {
                 label: 'Reload CopyCat config',
                 tooltiptext: 'Reload CopyCat config',
                 'data-l10n-id': 'copycat-reload-config',
-                style: 'list-style-image: url(chrome://browser/skin/preferences/category-sync.svg);',
-                oncommand: 'CopyCat.rebuild(true);'
+                image: 'chrome://browser/skin/preferences/category-sync.svg',
+                oncommand: function () {
+                    window.CopyCat.rebuild(true);
+                }
             }]
         }, {
             label: 'About CopyCat',
@@ -1286,6 +1342,8 @@
     }, {
         id: 'CopyCat-Exit-Item',
         'data-l10n-id': 'appmenuitem-exit2',
-        oncommand: "goQuitApplication(event);",
+        oncommand: function (event) {
+            window.goQuitApplication(event);
+        },
         image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M5.561 3.112c-.132-.32-.5-.474-.807-.314a7 7 0 1 0 6.492 0c-.306-.16-.675-.006-.807.314s.021.683.325.85a5.747 5.747 0 1 1-5.528 0c.303-.167.457-.53.325-.85Z"/><path fill-rule="evenodd" d="M8 1.375c.345 0 .625.28.625.625v6a.625.625 0 1 1-1.25 0V2c0-.345.28-.625.625-.625Z" clip-rule="evenodd"/></svg>'
     }], ["separator", "menuseparator"], ['checkbox', 'radio'], ['exec', 'edit'])

@@ -1,10 +1,6 @@
 css(`
-    #CopyCat-InsertPoint, #toolbar-menubar, #toggle_toolbar-menubar, #TabsToolbar > .titlebar-spacer[type="pre-tabs"] {
+    #CopyCat-InsertPoint, #TabsToolbar > .titlebar-spacer[type="pre-tabs"] {
         display: none;
-    }
-    :root:not([chromehidden~="menubar"], [inFullscreen]) #toolbar-menubar[autohide="false"] + #TabsToolbar > .titlebar-buttonbox-container {
-        display: -moz-box !important;
-        display: flex !important;
     }
     #fullScreenItem:not([checked="true"]) {
         position: relative;
@@ -69,23 +65,29 @@ css(`
 const isZh = Cc["@mozilla.org/intl/localeservice;1"].getService(Ci.mozILocaleService).requestedLocale.includes("zh");
 menus([{
     command: 'file-menu',
-    image: 'chrome://devtools/content/debugger/images/folder.svg'
+    image: 'chrome://devtools/content/debugger/images/folder.svg',
+    clone: true
 }, {
     command: 'edit-menu',
-    image: 'chrome://global/skin/icons/edit.svg'
+    image: 'chrome://global/skin/icons/edit.svg',
+    clone: true
 }, {
     command: 'view-menu',
     image: 'chrome://devtools/skin/images/command-frames.svg',
-    style: 'fill-opacity: 0;'
+    style: 'fill-opacity: 0;',
+    clone: true
 }, {
     command: 'history-menu',
-    image: 'chrome://browser/skin/history.svg'
+    image: 'chrome://browser/skin/history.svg',
+    clone: true
 }, {
     command: 'bookmarksMenu',
-    image: 'chrome://browser/skin/bookmark.svg'
+    image: 'chrome://browser/skin/bookmark.svg',
+    clone: true
 }, {
     command: 'tools-menu',
-    image: 'chrome://devtools/skin/images/tool-application.svg'
+    image: 'chrome://devtools/skin/images/tool-application.svg',
+    clone: true
 }, {}, {
     label: isZh ? "修改配置文件" : "Edit Config File",
     image: 'chrome://browser/skin/preferences/category-general.svg',
@@ -147,7 +149,9 @@ menus([{
         }]
     }, {
         'data-l10n-id': 'appmenuitem-passwords',
-        oncommand: "LoginHelper.openPasswordManager(window, { entryPoint: 'mainmenu' })",
+        oncommand: function () {
+            window.LoginHelper.openPasswordManager(window, { entryPoint: 'mainmenu' })
+        },
         image: 'chrome://browser/skin/login.svg'
     }]
 }, {
@@ -353,20 +357,13 @@ menus([{
         }
     }
 }, { insertBefore: 'Copycat-Config-Group' },
-// { insertBefore: 'Copycat-Config-Group' }, {
-//     'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
-//     'data-l10n-id': 'restart-button-label',
-//     insertAfter: 'CopyCat-MoreTools-Item',
-//     class: 'reload',
-//     oncommand: `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-//     onclick: `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`
-// }, 
 { command: 'fullScreenItem', clone: true, insertAfter: 'CopyCat-MoreTools-Item' }, {
     insertAfter: 'CopyCat-MoreTools-Item'
 }, {
     command: 'helpMenu',
     insertAfter: 'CopyCat-MoreTools-Item',
-    image: 'chrome://global/skin/icons/help.svg'
+    image: 'chrome://global/skin/icons/help.svg',
+    clone: true
 }, {
     insertAfter: 'CopyCat-MoreTools-Item'
 }])
