@@ -165,13 +165,15 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
 
     var isMouseDown = false;
-    PlacesUIUtils.o_openNodeWithEvent = PlacesUIUtils.openNodeWithEvent;
-    PlacesUIUtils.openNodeWithEvent = function(...args) {
-        if (BookmarkOpt.isTriggered) {
-            BookmarkOpt.isTriggered = false;
-            return;
+    if (!("o_openNodeWithEvent" in PlacesUIUtils)) {
+        PlacesUIUtils.o_openNodeWithEvent = PlacesUIUtils.openNodeWithEvent;
+        PlacesUIUtils.openNodeWithEvent = function (...args) {
+            if (BookmarkOpt.isTriggered) {
+                BookmarkOpt.isTriggered = false;
+                return;
+            }
+            PlacesUIUtils.o_openNodeWithEvent.apply(this, args);
         }
-        PlacesUIUtils.o_openNodeWithEvent.apply(this, args);
     }
 
 
@@ -636,7 +638,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
     sss.loadAndRegisterSheet(s.url, s.type);
     return s;
-    
+
 }, (aText) => {
     const cHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
     cHelper.copyString(aText);
