@@ -5,7 +5,7 @@
 // @license         MIT License
 // @async
 // @shutdown        window.TabPlus.destroy();
-// @compatibility   Firefox 90
+// @compatibility   Firefox 135
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
@@ -328,20 +328,37 @@
         }],
         replace (win) {
             window || (window = win);
-            this.ORIG_FUNC = PlacesUIUtils.openNodeWithEvent.toString();
-            eval('PlacesUIUtils.openNodeWithEvent = ' + PlacesUIUtils.openNodeWithEvent.toString()
-                .replace(' && lazy.PlacesUtils.nodeIsBookmark(aNode)', '')
-                .replace(' && PlacesUtils.nodeIsBookmark(aNode)', '')
-                .replace('getBrowserWindow(window)', '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
-                .replace('lazy.', ''));
+            const bu = BrowserUtils, { whereToOpenLink: w } = bu;
+            if (!bu.o_whereToOpenLink) {
+                const trees = ["places", "historySidebar"];
+                const sel = "#historyMenuPopup,#PanelUI-history";
+                bu.o_whereToOpenLink = bu.whereToOpenLink;
+                bu.whereToOpenLink = function (e) {
+                    var res = w.apply(BrowserUtils, arguments);
+                    if (!cPref.get("browser.tabs.loadHistoryInTabs", false)) return res;
+                    if (res != "current" || !Event.isInstance(e)) return res;
+                    try {
+                        var skip = true, trg = e.composedTarget, win = trg.ownerGlobal;
+                        var name = win.document.documentURIObject
+                            .QueryInterface(Ci.nsIURL).fileName.slice(0, -6);
+                        if (name == "browser") {
+                            skip = win.gBrowser.selectedTab.isEmpty || !trg.closest(sel);
+                        } else if (trees.includes(name)) {
+                            skip = (win.opener || win.windowRoot.ownerGlobal).gBrowser.selectedTab.isEmpty
+                                || trg.closest("tree").selectedNode.itemId != -1;
+                        }
+                        return skip ? res : "tab";
+                    }
+                    catch { return res; }
+                }
+            }
         },
         restore (win) {
             window || (window = win);
-            if (this.ORIG_FUNC) {
-                eval('PlacesUIUtils.openNodeWithEvent = ' + this.ORIG_FUNC
-                    .replace('getBrowserWindow(window)', '(window && window.document.documentElement.getAttribute("windowtype") == "navigator:browser") ? window : BrowserWindowTracker.getTopWindow()')
-                    .replace('lazy.', ''));
-                delete this.ORIG_FUNC;
+            let bu = BrowserUtils;
+            if (bu.o_whereToOpenLink) {
+                bu.whereToOpenLink = bu.o_whereToOpenLink;
+                bu.o_whereToOpenLink = null;
             }
         },
         init (win) {
