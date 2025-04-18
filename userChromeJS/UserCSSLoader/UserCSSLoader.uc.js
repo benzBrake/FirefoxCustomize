@@ -410,7 +410,9 @@ about:config
           flag: STYLES_NAME_MAP[entry.type]['name'],
           fullName: entry.fullName,
           closemenu: 'none',
-          oncommand: `window.UserCSSLoader.changeTypePopup(event, "${entry.fullName}");`
+          oncommand: function(event) {
+            UserCSSLoader.changeStyleType(event, entry.fullName);
+          }
         });
         group.appendChild(type);
         let edit = createElement(popup.ownerDocument, 'menuitem', {
@@ -418,7 +420,9 @@ about:config
           tooltiptext: "Edit style",
           'data-l10n-id': 'ucl-edit-style-btn',
           class: "menuitem menuitem-iconic edit",
-          oncommand: `window.UserCSSLoader.editStyle("${entry.fullName}");`
+          oncommand: function(event) {
+            UserCSSLoader.editStyle(entry.fullName);
+          }
         });
         group.appendChild(edit);
         let del = createElement(popup.ownerDocument, 'menuitem', {
@@ -426,7 +430,9 @@ about:config
           tooltiptext: "Delete style",
           'data-l10n-id': 'ucl-delete-style-btn',
           class: "menuitem menuitem-iconic delete",
-          oncommand: `window.UserCSSLoader.deleteStyle("${entry.fullName}");`
+          oncommand: function(event) {
+            UserCSSLoader.deleteStyle(entry.fullName);
+          }
         });
         group.appendChild(del);
         popup.appendChild(group);
@@ -884,16 +890,8 @@ about:config
         e.innerHTML = v;
         continue;
       }
-      if (k.startsWith('on')) {
-        const fn = typeof val === "string" ? (() => {
-          if (v.trim().startsWith("function") || v.trim().startsWith("async function")) {
-            return "(" + v + ").call(this, event)";
-          }
-          return v;
-        })() : "(" + v.toString() + ").call(this, event)";
-        e.addEventListener(k.slice(2).toLocaleLowerCase(), (event) => {
-          eval(fn);
-        });
+      if (k.startsWith('on') && typeof v == 'function') {
+        e.addEventListener(k.slice(2).toLocaleLowerCase(), v);
       } else {
         e.setAttribute(k, v);
       }
