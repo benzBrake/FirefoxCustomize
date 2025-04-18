@@ -1186,7 +1186,9 @@
     margin-inline-end: 8px;
 }
 .CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"]) {
-    padding-inline-start: 1em;
+    --cc-icon-size: 16px;
+    --cc-icon-gap: 8px;
+    padding-inline-start: calc(1em + var(--cc-icon-size) + var(--cc-icon-gap)) !important; 
 }
 .subviewbutton.reload,
 .CopyCat-Popup .menuitem-iconic.reload {
@@ -1195,18 +1197,19 @@
 .CopyCat-Popup .menuitem-iconic.option {
     list-style-image: url(chrome://global/skin/icons/settings.svg) !important;
 }
-.CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"] {
-    position: relative;
-}
-.CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"]:not([class*="iconic"])::before {
+.CopyCat-Popup .menuitem-iconic[type="checkbox"] > .menu-iconic-left[aria-hidden="true"]::before {
+    display: flex;
     content: "";
-    display: block;
     width: 16px;
     height: 16px;
-    margin-inline-end: 8px;
+}
+
+.CopyCat-Popup :is(menu, menuitem)[style*="--menu-image"] {
+    position: relative;
     background-image: var(--menu-image);
-    position: absolute;
-    left: 1em;
+    background-size: var(--cc-icon-size) var(--cc-icon-size);
+    background-repeat: no-repeat;
+    background-position: 1em center;
 }
 .CopyCat-Popup menu[menuright="true"]:not(:has(>.menu-right)):not(.menu-iconic)::after {
     content: "";
