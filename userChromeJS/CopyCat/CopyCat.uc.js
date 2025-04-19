@@ -187,9 +187,11 @@
                             event.preventDefault();
                             event.stopPropagation();
                             const b = 'openAddonsMgr';
-                            eval(`${parseInt(Services.appinfo.version) < 126
-                                ? "Browser" + b[0].toUpperCase() + b.slice(1)
-                                : "BrowserAddonUI." + b}("addons://list/userchromejs")`);
+                            if (parseInt(Services.appinfo.version) < 126) {
+                                BrowserOpenAddonsMgr("addons://list/userchromejs");
+                            } else{
+                                BrowserAddonUI.openAddonsMgr("addons://list/userchromejs");
+                            }
                         }
                     }
                 }
@@ -250,7 +252,8 @@
             this.CUSTOM_SHOWINGS.filter(o => !o.disabled).forEach(function (obj) {
                 var curItem = obj.item;
                 try {
-                    eval('(' + obj.fnSource + ').call(obj, curItem)');
+                    let fn = createFunction(obj.fnSource, 'curItem');
+                    fn.call(obj, curItem);
                 } catch (ex) {
                     console.error('Custom showing method error', obj.fnSource, ex);
                 }
@@ -280,11 +283,8 @@
             let menupopup = aItem.appendChild(createElement(doc, "menupopup"));
             obj.popup.forEach(mObj => menupopup.appendChild(this.newMenuitem(doc, mObj)));
             if (obj.onbuild) {
-                if (typeof obj.onbuild === "function") {
-                    obj.onbuild(doc, item);
-                } else {
-                    eval("(" + obj.onbuild + ").call(item, doc, item)")
-                }
+                let fn = createFunction(obj.onBuild, 'doc', 'aItem');
+                fn.call(window, doc, aItem);
             }
             return aItem;
         },
@@ -424,11 +424,8 @@
                 }
 
                 if ('onBuild' in obj && typeof dest !== 'undefined') {
-                    if (typeof obj.onBuild === "function") {
-                        obj.onBuild.call(org, doc, dest);
-                    } else {
-                        eval("(" + obj.onBuild + ").call(org, doc, dest)");
-                    }
+                    let fn = createFunction(obj.onBuild, 'doc', 'aItem');
+                    fn.call(window, doc, dest);
                 }
 
                 return dest;
@@ -792,81 +789,17 @@
             // 使用解构赋值来减少冗余声明
             Object.assign(sandbox, {
                 window, document, console, alert, prompt, confirm,
-                Cu, Ci, Cr, Cc, Services, XPCOMUtils, ChromeUtils, AppConstants,
-                gBrowser, updateEditUIVisibility, SessionStore, customElements,
+                Cu, Ci, Cr, Cc, Services, ChromeUtils, XPCOMUtils,
                 CopyCat: this, _menus: [], _css: []
             });
 
             sandbox.Components = Components;
 
-            let gFileMenu = {
-                /**
-                 * Updates User Context Menu Item UI visibility depending on
-                 * privacy.userContext.enabled pref state.
-                 */
-                updateUserContextUIVisibility () {
-                    let menu = document.getElementById("menu_newUserContext");
-                    menu.hidden = !Services.prefs.getBoolPref(
-                        "privacy.userContext.enabled",
-                        false
-                    );
-                    // Visibility of File menu item shouldn't change frequently.
-                    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-                        menu.setAttribute("disabled", "true");
-                    }
-                },
-
-                /**
-                 * Updates the enabled state of the "Import From Another Browser" command
-                 * depending on the DisableProfileImport policy.
-                 */
-                updateImportCommandEnabledState () {
-                    if (!Services.policies.isAllowed("profileImport")) {
-                        document
-                            .getElementById("cmd_file_importFromAnotherBrowser")
-                            .setAttribute("disabled", "true");
-                    }
-                },
-
-                /**
-                 * Updates the "Close tab" command to reflect the number of selected tabs,
-                 * when applicable.
-                 */
-                updateTabCloseCountState () {
-                    document.l10n.setAttributes(
-                        document.getElementById("menu_close"),
-                        "menu-file-close-tab",
-                        { tabCount: gBrowser.selectedTabs.length }
-                    );
-                },
-
-                onPopupShowing (event) {
-                    // We don't care about submenus:
-                    if (event.target.id != "menu_FilePopup") {
-                        return;
-                    }
-                    this.updateUserContextUIVisibility();
-                    this.updateImportCommandEnabledState();
-                    this.updateTabCloseCountState();
-                    if (AppConstants.platform == "macosx") {
-                        SharingUtils.updateShareURLMenuItem(
-                            gBrowser.selectedBrowser,
-                            document.getElementById("menu_savePage")
-                        );
-                    }
-                    PrintUtils.updatePrintSetupMenuHiddenState();
-                },
-            };
-
-            sandbox.gFileMenu = gFileMenu;
-
-            ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js"].forEach(scriptUrl => {
-                ChromeUtils.compileScript(scriptUrl).then((r) => {
-                    if (r) {
-                        r.executeInGlobal(sandbox, { reportExceptions: true });
-                    }
-                }).catch(ex => console.error);
-            });
+            if (SidebarController) {
+                sandbox.SidebarController = SidebarController;
+            } else if (SidebarUI) {
+                sandbox.SidebarUI = SidebarUI;
+            }
 
             // 简化 menus 函数定义
             sandbox.menus = itemObj => ps(itemObj, sandbox._menus);
@@ -893,15 +826,127 @@
             if (sandbox._css.length) {
                 this.MENU_STYLE = addStyle(sandbox._css.join('\n'));
             }
-
             if (this.EXEC_BMS && $('#main-menubar > script')) {
-                const CCjs = {};
-                CCjs.res = await fetch($('#main-menubar > script').src);
-                CCjs.text = (await CCjs.res.text()).replace(/.*let mainMenuBar/is, 'let mainMenuBar').replace(/},\n\s+{ once: true }.*/is, '').replace("main-menubar", "CopyCat-Popup").replace(/\.getElementById\("historyMenuPopup"\)\s*\./gm, '.querySelector("#CopyCat-Popup #historyMenuPopup")?.').replaceAll(/getElementById\("history-menu"\)\s*\./gm, 'querySelector("#CopyCat-Popup #history-menu")?.').replace(/.getElementById\("menu_EditPopup"\)\s*\./gm, '.querySelector("#CopyCat-Popup #menu_EditPopup")?.').replaceAll('?;', ';');
-                try {
-                    Cu.evalInSandbox(CCjs.text, sandbox);
-                } catch (e) {
-                    console.log(e);
+                Object.assign(sandbox, {
+                    AppConstants, gBrowser, SessionStore
+                });
+                ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js"].forEach(url => {
+                    try {
+                        Services.scriptloader.loadSubScript(url, globalThis);
+                    } catch (e) { }
+                })
+                let hisPop = document.querySelector("#CopyCat-Popup #historyMenuPopup");
+                if (hisPop) {
+                    hisPop.addEventListener('popupshowing', (event) => {
+                        if (!event.target.parentNode._placesView) {
+                            new HistoryMenu(event);
+                        }
+                    });
+                    hisPop.addEventListener('command', function (event) {
+                        // Handle commands/clicks on the descending menuitems that are
+                        // history entries.
+                        let historyMenu = document.querySelector("#CopyCat-Popup #history-menu");
+                        historyMenu._placesView._onCommand(event);
+                    });
+                }
+
+                document.querySelector("#CopyCat-Popup").addEventListener('command', (event) => bm_command(event));
+                function bm_command (event) {
+                    if (event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        switch (event.target.id) {
+                            // == edit-menu ==
+                            case "menu_preferences":
+                                openPreferences(undefined);
+                                break;
+
+                            // == view-menu ==
+                            case "menu_pageStyleNoStyle":
+                                gPageStyleMenu.disableStyle();
+                                break;
+                            case "menu_pageStylePersistentOnly":
+                                gPageStyleMenu.switchStyleSheet(null);
+                                break;
+                            case "repair-text-encoding":
+                                BrowserCommands.forceEncodingDetection();
+                                break;
+                            case "documentDirection-swap":
+                                gBrowser.selectedBrowser.sendMessageToActor(
+                                    "SwitchDocumentDirection",
+                                    {},
+                                    "SwitchDocumentDirection",
+                                    "roots"
+                                );
+                                break;
+
+                            // == history-menu ==
+                            case "sync-tabs-menuitem":
+                                gSync.openSyncedTabsPanel();
+                                break;
+                            case "hiddenTabsMenu":
+                                gTabsPanel.showHiddenTabsPanel(event, "hidden-tabs-menuitem");
+                                break;
+                            case "sync-setup":
+                                gSync.openPrefs("menubar");
+                                break;
+                            case "sync-enable":
+                                gSync.openPrefs("menubar");
+                                break;
+                            case "sync-unverifieditem":
+                                gSync.openPrefs("menubar");
+                                break;
+                            case "sync-syncnowitem":
+                                gSync.doSync(event);
+                                break;
+                            case "sync-reauthitem":
+                                gSync.openSignInAgainPage("menubar");
+                                break;
+                            case "menu_openFirefoxView":
+                                FirefoxViewHandler.openTab();
+                                break;
+                            case "hiddenUndoCloseWindow":
+                                undoCloseWindow(0);
+                                break;
+
+                            // == menu_HelpPopup ==
+                            // (Duplicated in PanelUI._onHelpCommand)
+                            case "menu_openHelp":
+                                openHelpLink("firefox-help");
+                                break;
+                            case "menu_layout_debugger":
+                                toOpenWindowByType(
+                                    "mozapp:layoutdebug",
+                                    "chrome://layoutdebug/content/layoutdebug.xhtml"
+                                );
+                                break;
+                            case "feedbackPage":
+                                openFeedbackPage();
+                                break;
+                            case "helpSafeMode":
+                                safeModeRestart();
+                                break;
+                            case "troubleShooting":
+                                openTroubleshootingPage();
+                                break;
+                            case "menu_HelpPopup_reportPhishingtoolmenu":
+                                openUILink(gSafeBrowsing.getReportURL("Phish"), event, {
+                                    triggeringPrincipal:
+                                        Services.scriptSecurityManager.createNullPrincipal({}),
+                                });
+                                break;
+                            case "menu_HelpPopup_reportPhishingErrortoolmenu":
+                                gSafeBrowsing.reportFalseDeceptiveSite();
+                                break;
+                            case "helpSwitchDevice":
+                                openSwitchingDevicesPage();
+                                break;
+                            case "aboutName":
+                                openAboutDialog();
+                                break;
+                            case "helpPolicySupport":
+                                openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
+                                break;
+                        }
+                    }
                 }
                 this.EXEC_BMS = false;
             }
@@ -1044,13 +1089,49 @@
     function applyAttr (e, o = {}, s = []) {
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
-            if (typeof v === 'function') {
-                e.addEventListener(k.startsWith('on') ? k.slice(2).toLocaleLowerCase() : k, v, false);
+            if (k.startsWith('on')) {
+                e.addEventListener(k.slice(2).toLocaleLowerCase(), createFunction(v, 'event'), false);
             } else {
                 e.setAttribute(k, v);
             }
         }
         return e;
+    }
+
+    // generate by grok3
+    function createFunction (v, ...paramNamesOrArray) {
+        // 检查是否传入了一个数组作为第二个参数
+        let params = ['event']; // 默认参数名
+        if (paramNamesOrArray.length === 1 && Array.isArray(paramNamesOrArray[0])) {
+            params = paramNamesOrArray[0]; // 如果传入的是数组，则使用该数组
+        } else if (paramNamesOrArray.length > 0) {
+            params = paramNamesOrArray; // 否则使用可变参数
+        }
+
+        let fn;
+        if (typeof v === 'function') {
+            // 如果 v 已经是函数，直接赋值给 fn
+            fn = v;
+        } else if (typeof v === 'string') {
+            if (v.startsWith('function') || v.startsWith('async function')) {
+                // 如果 v 是字符串，且以 'function' 或 'async function' 开头
+                const isAsync = v.startsWith('async');
+                const paramPart = v.match(/\(([^)]*)/)[1]; // 提取参数部分
+                let bodyPart = v
+                    .replace(v.match(/[^)]*/) + ")", "") // 移除参数部分
+                    .replace(/[^{]*\{/, "") // 移除函数体前的部分
+                    .replace(/}$/, ''); // 移除末尾的 }
+                if (isAsync) {
+                    // 如果是 async function，转换为返回 Promise 的普通函数
+                    bodyPart = `return new Promise(async (resolve, reject) => { try { ${bodyPart}; resolve(); } catch (e) { reject(e); } });`;
+                }
+                fn = new Function(paramPart, bodyPart);
+            } else {
+                // 否则，将 v 作为函数体，创建一个以 params 为参数的函数
+                fn = new Function(...params, v);
+            }
+        }
+        return fn;
     }
 
     /**
@@ -1300,9 +1381,7 @@
             tooltiptext: 'Restart Firefox',
             'data-l10n-id': 'copycat-menu-restart',
             class: 'reload',
-            oncommand: function () {
-                Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);
-            },
+            oncommand: "Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);",
         }]
     }, {
         id: 'CopyCat-ChromeFolder-Sep'
@@ -1319,17 +1398,13 @@
                 label: 'Modify CopyCat config',
                 'data-l10n-id': 'copycat-edit-config',
                 image: 'chrome://browser/skin/preferences/category-general.svg',
-                oncommand: function () {
-                    window.CopyCat.editConfig();
-                },
+                oncommand: "CopyCat.editConfig();"
             }, {
                 label: 'Reload CopyCat config',
                 tooltiptext: 'Reload CopyCat config',
                 'data-l10n-id': 'copycat-reload-config',
                 image: 'chrome://browser/skin/preferences/category-sync.svg',
-                oncommand: function () {
-                    window.CopyCat.rebuild(true);
-                }
+                oncommand: "CopyCat.rebuild(true);"
             }]
         }, {
             label: 'About CopyCat',
@@ -1342,8 +1417,6 @@
     }, {
         id: 'CopyCat-Exit-Item',
         'data-l10n-id': 'appmenuitem-exit2',
-        oncommand: function (event) {
-            window.goQuitApplication(event);
-        },
+        oncommand: "goQuitApplication(event);",
         image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity"><path d="M5.561 3.112c-.132-.32-.5-.474-.807-.314a7 7 0 1 0 6.492 0c-.306-.16-.675-.006-.807.314s.021.683.325.85a5.747 5.747 0 1 1-5.528 0c.303-.167.457-.53.325-.85Z"/><path fill-rule="evenodd" d="M8 1.375c.345 0 .625.28.625.625v6a.625.625 0 1 1-1.25 0V2c0-.345.28-.625.625-.625Z" clip-rule="evenodd"/></svg>'
     }], ["separator", "menuseparator"], ['checkbox', 'radio'], ['exec', 'edit'])
