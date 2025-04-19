@@ -123,7 +123,7 @@ menus([{
             image: "chrome://devtools/skin/images/command-frames.svg",
             oncommand: function (event) {
                 var doc = event.target.ownerDocument;
-                if (document.querySelector("#main-menubar > script")) {
+                if (doc.querySelector("#main-menubar > script")) {
                     let { require } = ChromeUtils.importESModule('resource://devtools/shared/loader/Loader.sys.mjs', {});
                     let { BrowserToolboxLauncher } = require('resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs');
                     BrowserToolboxLauncher.init();

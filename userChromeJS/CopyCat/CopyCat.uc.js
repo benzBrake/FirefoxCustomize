@@ -784,21 +784,19 @@
             }
             let d = await IOUtils.readUTF8(this.FILE.path);
             if (!d) return;
-            let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
 
-            // 使用解构赋值来减少冗余声明
+
+            let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
             Object.assign(sandbox, {
                 window, document, console, alert, prompt, confirm,
-                Cu, Ci, Cr, Cc, Services, ChromeUtils, XPCOMUtils,
-                CopyCat: this, _menus: [], _css: []
+                _menus: [], _css: []
             });
-
             sandbox.Components = Components;
-
-            if (SidebarController) {
-                sandbox.SidebarController = SidebarController;
-            } else if (SidebarUI) {
-                sandbox.SidebarUI = SidebarUI;
+            for (let key in window) {
+                try {
+                    if (key in sandbox) continue;
+                    sandbox[key] = window[key];
+                } catch (e) { }
             }
 
             // 简化 menus 函数定义
