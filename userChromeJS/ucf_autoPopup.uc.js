@@ -142,7 +142,7 @@
                 this.hidePopup();
                 let params = { bubbles: false, cancelable: true, };
                 target.dispatchEvent(new MouseEvent("mousedown", params));
-                target.dispatchEvent(new MouseEvent("click", params));
+                target.click();
             }
         }, delay);
     },
