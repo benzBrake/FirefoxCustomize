@@ -189,7 +189,7 @@
                             const b = 'openAddonsMgr';
                             if (parseInt(Services.appinfo.version) < 126) {
                                 BrowserOpenAddonsMgr("addons://list/userchromejs");
-                            } else{
+                            } else {
                                 BrowserAddonUI.openAddonsMgr("addons://list/userchromejs");
                             }
                         }
@@ -786,20 +786,15 @@
             if (!d) return;
 
 
-            let sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
+            let sandbox = new Cu.Sandbox(window, {
+                sandboxPrototype: window,
+                sameZoneAs: window,
+            });
+
             Object.assign(sandbox, {
-                window, document, console, alert, prompt, confirm,
                 _menus: [], _css: []
             });
-            sandbox.Components = Components;
-            for (let key in window) {
-                try {
-                    if (key in sandbox) continue;
-                    sandbox[key] = window[key];
-                } catch (e) { }
-            }
 
-            // 简化 menus 函数定义
             sandbox.menus = itemObj => ps(itemObj, sandbox._menus);
             function ps (item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) : array.push(item);
