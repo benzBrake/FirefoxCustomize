@@ -7,7 +7,8 @@
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
-// @version        2025.04.19
+// @version        2025.04.22
+// @note           2025.04.22 Change prototype of sandbox
 // @note           2025.04.19 remove unsafe eval
 // @note           2024.04.13 修复 openCommand 几个问题
 // @note           2023.07.27 修复 openCommand 不遵循容器设定
@@ -111,17 +112,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             if (!str)
                 return null;
 
-            var sandbox = new Components.utils.Sandbox(new XPCNativeWrapper(window));
-            Object.assign(sandbox, {
-                window, document, console, alert, prompt, confirm
+            var sandbox = new Components.utils.Sandbox(new XPCNativeWrapper(window), {
+                sandboxPrototype: window,
+                sameZoneAs: window,
             });
-            sandbox.Components = Components;
-            for (let key in window) {
-                try {
-                    if (key in sandbox) continue;
-                    sandbox[key] = window[key];
-                } catch (e) { }
-            }
 
             var keys = Components.utils.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
             if (!keys)
