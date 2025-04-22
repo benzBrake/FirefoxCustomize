@@ -823,7 +823,7 @@
                 Object.assign(sandbox, {
                     AppConstants, gBrowser, SessionStore
                 });
-                ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js"].forEach(url => {
+                ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js", "chrome://browser/content/parent/ext-browser.js"].forEach(url => {
                     try {
                         Services.scriptloader.loadSubScript(url, globalThis);
                     } catch (e) { }
@@ -843,101 +843,162 @@
                     });
                 }
 
+                let tPop = document.querySelector("#CopyCat-Popup #menu_ToolsPopup");
+                // 处理点击事件
+                tPop.addEventListener('click', function (event) {
+                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
+                        if (origElm) {
+                            forwardEvent(event, origElm, 'click');
+                        }
+                    }
+                });
+                // 处理右键/辅助点击事件
+                tPop.addEventListener('auxclick', function (event) {
+                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
+                        if (origElm) {
+                            forwardEvent(event, origElm, 'auxclick');
+                        }
+                    }
+                });
+                // 处理双击事件
+                tPop.addEventListener('dblclick', function (event) {
+                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
+                        if (origElm) {
+                            forwardEvent(event, origElm, 'dblclick');
+                        }
+                    }
+                });
+                // 处理上下文菜单事件 (右键菜单)
+                tPop.addEventListener('contextmenu', function (event) {
+                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
+                        if (origElm) {
+                            forwardEvent(event, origElm, 'contextmenu');
+                        }
+                    }
+                });
+                // 处理鼠标按下事件
+                tPop.addEventListener('mousedown', function (event) {
+                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
+                        if (origElm) {
+                            forwardEvent(event, origElm, 'mousedown');
+                        }
+                    }
+                });
+                // 处理鼠标释放事件
+                tPop.addEventListener('mouseup', function (event) {
+                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
+                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
+                        if (origElm) {
+                            forwardEvent(event, origElm, 'mouseup');
+                        }
+                    }
+                });
+
+
                 document.querySelector("#CopyCat-Popup").addEventListener('command', (event) => bm_command(event));
                 function bm_command (event) {
                     if (event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        switch (event.target.id) {
-                            // == edit-menu ==
-                            case "menu_preferences":
-                                openPreferences(undefined);
-                                break;
+                        if (event.target.closest('#tools-menu')) {
 
-                            // == view-menu ==
-                            case "menu_pageStyleNoStyle":
-                                gPageStyleMenu.disableStyle();
-                                break;
-                            case "menu_pageStylePersistentOnly":
-                                gPageStyleMenu.switchStyleSheet(null);
-                                break;
-                            case "repair-text-encoding":
-                                BrowserCommands.forceEncodingDetection();
-                                break;
-                            case "documentDirection-swap":
-                                gBrowser.selectedBrowser.sendMessageToActor(
-                                    "SwitchDocumentDirection",
-                                    {},
-                                    "SwitchDocumentDirection",
-                                    "roots"
-                                );
-                                break;
+                        } else {
+                            switch (event.target.id) {
+                                // == edit-menu ==
+                                case "menu_preferences":
+                                    openPreferences(undefined);
+                                    break;
 
-                            // == history-menu ==
-                            case "sync-tabs-menuitem":
-                                gSync.openSyncedTabsPanel();
-                                break;
-                            case "hiddenTabsMenu":
-                                gTabsPanel.showHiddenTabsPanel(event, "hidden-tabs-menuitem");
-                                break;
-                            case "sync-setup":
-                                gSync.openPrefs("menubar");
-                                break;
-                            case "sync-enable":
-                                gSync.openPrefs("menubar");
-                                break;
-                            case "sync-unverifieditem":
-                                gSync.openPrefs("menubar");
-                                break;
-                            case "sync-syncnowitem":
-                                gSync.doSync(event);
-                                break;
-                            case "sync-reauthitem":
-                                gSync.openSignInAgainPage("menubar");
-                                break;
-                            case "menu_openFirefoxView":
-                                FirefoxViewHandler.openTab();
-                                break;
-                            case "hiddenUndoCloseWindow":
-                                undoCloseWindow(0);
-                                break;
+                                // == view-menu ==
+                                case "menu_pageStyleNoStyle":
+                                    gPageStyleMenu.disableStyle();
+                                    break;
+                                case "menu_pageStylePersistentOnly":
+                                    gPageStyleMenu.switchStyleSheet(null);
+                                    break;
+                                case "repair-text-encoding":
+                                    BrowserCommands.forceEncodingDetection();
+                                    break;
+                                case "documentDirection-swap":
+                                    gBrowser.selectedBrowser.sendMessageToActor(
+                                        "SwitchDocumentDirection",
+                                        {},
+                                        "SwitchDocumentDirection",
+                                        "roots"
+                                    );
+                                    break;
 
-                            // == menu_HelpPopup ==
-                            // (Duplicated in PanelUI._onHelpCommand)
-                            case "menu_openHelp":
-                                openHelpLink("firefox-help");
-                                break;
-                            case "menu_layout_debugger":
-                                toOpenWindowByType(
-                                    "mozapp:layoutdebug",
-                                    "chrome://layoutdebug/content/layoutdebug.xhtml"
-                                );
-                                break;
-                            case "feedbackPage":
-                                openFeedbackPage();
-                                break;
-                            case "helpSafeMode":
-                                safeModeRestart();
-                                break;
-                            case "troubleShooting":
-                                openTroubleshootingPage();
-                                break;
-                            case "menu_HelpPopup_reportPhishingtoolmenu":
-                                openUILink(gSafeBrowsing.getReportURL("Phish"), event, {
-                                    triggeringPrincipal:
-                                        Services.scriptSecurityManager.createNullPrincipal({}),
-                                });
-                                break;
-                            case "menu_HelpPopup_reportPhishingErrortoolmenu":
-                                gSafeBrowsing.reportFalseDeceptiveSite();
-                                break;
-                            case "helpSwitchDevice":
-                                openSwitchingDevicesPage();
-                                break;
-                            case "aboutName":
-                                openAboutDialog();
-                                break;
-                            case "helpPolicySupport":
-                                openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
-                                break;
+                                // == history-menu ==
+                                case "sync-tabs-menuitem":
+                                    gSync.openSyncedTabsPanel();
+                                    break;
+                                case "hiddenTabsMenu":
+                                    gTabsPanel.showHiddenTabsPanel(event, "hidden-tabs-menuitem");
+                                    break;
+                                case "sync-setup":
+                                    gSync.openPrefs("menubar");
+                                    break;
+                                case "sync-enable":
+                                    gSync.openPrefs("menubar");
+                                    break;
+                                case "sync-unverifieditem":
+                                    gSync.openPrefs("menubar");
+                                    break;
+                                case "sync-syncnowitem":
+                                    gSync.doSync(event);
+                                    break;
+                                case "sync-reauthitem":
+                                    gSync.openSignInAgainPage("menubar");
+                                    break;
+                                case "menu_openFirefoxView":
+                                    FirefoxViewHandler.openTab();
+                                    break;
+                                case "hiddenUndoCloseWindow":
+                                    undoCloseWindow(0);
+                                    break;
+
+                                // == menu_HelpPopup ==
+                                // (Duplicated in PanelUI._onHelpCommand)
+                                case "menu_openHelp":
+                                    openHelpLink("firefox-help");
+                                    break;
+                                case "menu_layout_debugger":
+                                    toOpenWindowByType(
+                                        "mozapp:layoutdebug",
+                                        "chrome://layoutdebug/content/layoutdebug.xhtml"
+                                    );
+                                    break;
+                                case "feedbackPage":
+                                    openFeedbackPage();
+                                    break;
+                                case "helpSafeMode":
+                                    safeModeRestart();
+                                    break;
+                                case "troubleShooting":
+                                    openTroubleshootingPage();
+                                    break;
+                                case "menu_HelpPopup_reportPhishingtoolmenu":
+                                    openUILink(gSafeBrowsing.getReportURL("Phish"), event, {
+                                        triggeringPrincipal:
+                                            Services.scriptSecurityManager.createNullPrincipal({}),
+                                    });
+                                    break;
+                                case "menu_HelpPopup_reportPhishingErrortoolmenu":
+                                    gSafeBrowsing.reportFalseDeceptiveSite();
+                                    break;
+                                case "helpSwitchDevice":
+                                    openSwitchingDevicesPage();
+                                    break;
+                                case "aboutName":
+                                    openAboutDialog();
+                                    break;
+                                case "helpPolicySupport":
+                                    openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
+                                    break;
+                            }
                         }
                     }
                 }
@@ -1125,6 +1186,30 @@
             }
         }
         return fn;
+    }
+
+    function forwardEvent (event, origElm, eventType) {
+        // 复制原始事件的一些关键属性
+        const newEvent = new MouseEvent(eventType, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            detail: event.detail,
+            screenX: event.screenX,
+            screenY: event.screenY,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            ctrlKey: event.ctrlKey,
+            altKey: event.altKey,
+            shiftKey: event.shiftKey,
+            metaKey: event.metaKey,
+            button: event.button,
+            buttons: event.buttons,
+            relatedTarget: event.relatedTarget
+        });
+
+        // 在原始元素上触发模拟事件
+        origElm.dispatchEvent(newEvent);
     }
 
     /**
