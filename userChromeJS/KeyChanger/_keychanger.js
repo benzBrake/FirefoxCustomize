@@ -11,11 +11,11 @@ keys['F2'] = {
     ]
 }; // 上一个标签页 (内置命令演示)
 keys['F3'] = function () {
-    gBrowser.getFindBar().then(findBar => {
-        if (findBar.getAttribute('hidden')) {
+    gBrowser.getFindBar().then(function (findBarInstance) {
+        if (findBarInstance.getAttribute('hidden')) {
             gBrowser.tabContainer.advanceSelectedTab(1, true);
         } else {
-            findBar.getElement('find-next').doCommand();
+            findBarInstance.getElement('find-next').doCommand();
         }
     });
 }; // 下一个标签页
@@ -29,7 +29,7 @@ keys['F4'] = {
 //keys['F5'] =""; // 原生功能：刷新
 //keys['F6'] =""; // 原生功能：定位到地址栏
 //keys['F7'] =""; // 原生功能：启用浏览光标
-keys['F8'] = function (e) {
+keys['F8'] = function () {
     KeyChanger.loadURI("javascript:document.body.contentEditable%20=%20'true';%20document.designMode='on';%20void%200");
 }; //编辑当前页面
 //keys['F9'] = function() {};// 原生功能：进入阅读模式
@@ -43,7 +43,7 @@ keys['F10'] = function () {
 keys['Shift+F1'] = function (event) {
     var document = event.target.ownerDocument;
     if (!document.getElementById('menu_browserToolbox')) {
-        let { require } = Cu.import("resource://devtools/shared/loader/Loader.jsm", {});
+        let { require } = "import" in Cu ? Cu.import("resource://devtools/shared/loader/Loader.jsm", {}) : ChromeUtils.importESModule("resource://devtools/shared/loader/Loader.sys.mjs");
         require("devtools/client/framework/devtools-browser");
     };
     document.getElementById('menu_browserToolbox').click();

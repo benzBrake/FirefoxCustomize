@@ -42,7 +42,7 @@
     function onCommand (event) {
         var document = event.target.ownerDocument;
         if (!document.getElementById('menu_browserToolbox')) {
-            let { require } = "import" in Cu ? Cu.import("resource://devtools/shared/loader/Loader.jsm", {}) : ChromeUtils.importESModule("resource://devtools/shared/loader/base-loader.sys.mjs")
+            let { require } = "import" in Cu ? Cu.import("resource://devtools/shared/loader/Loader.jsm", {}) : ChromeUtils.importESModule("resource://devtools/shared/loader/Loader.sys.mjs");
             require("devtools/client/framework/devtools-browser");
         };
         document.getElementById('menu_browserToolbox').click();
