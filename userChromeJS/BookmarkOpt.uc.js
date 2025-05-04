@@ -26,6 +26,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.8 移除 eval，修复 firstUpperCase / ucfirst 命名混乱
 // @note            1.4.7 Fx 136+ 不能使用 inline css
 // @note            1.4.6 加回被删掉的 中按点击书签工具栏文件夹收藏当前页面到该文件夹下
 // @note            1.4.5 修复 1.4.4 导致 this.parentNode is undefined
@@ -49,12 +50,12 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @note            1.1 修复无法热插拔，添加书签使用新 API、修复部分情况无法添加，复制标题和复制链接支持书签文件夹和历史分类，临时移除双击地址栏 显示/隐藏书签工具栏
 // @note            1.0 初始化版本
 // ==/UserScript==
-(async function (css, imp, ucfirst, add_style, copy_text, $, create_el, add_events, remove_events) {
+(async function (css, imp, ucfirst, add_style, copy_text, $, create_el, add_events, remove_events, condition_map) {
     const Services = imp("Services");
     const PlacesUIUtils = imp("PlacesUIUtils");
     const PlacesUtils = imp("PlacesUtils");
     // Bug 1904909 PlacesUtils::GatherDataText and GatherDataHtml should not recurse into queries
-    if (typeof PlacesUtils.nodeIsFolder === "undefined") PlacesUtils.nodeIsFolder = PlacesUtils.nodeIsFolderOrShortcut;
+    PlacesUtils.nodeIsFolder ||= PlacesUtils.nodeIsFolderOrShortcut;
     const LANG = {
         'zh-CN': {
             "add bookmark here": "添加书签到此处",
@@ -176,7 +177,6 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         }
     }
 
-
     window.BookmarkOpt = {
         items: [],
         get topWin () {
@@ -225,7 +225,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                                 }
                             })
                         });
-                        this.PlacesChevronObserver.observe(document.getElementById("PlacesChevron"), { attributes: true });
+                        this.PlacesChevronObserver.observe($("PlacesChevron"), { attributes: true });
                         add_events($('PlacesChevronPopup'), ['popuphidden'], this, false);
                     }
                     if ($('PlacesToolbarItems')) {
@@ -263,7 +263,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                         const ins = $("placesContext_createBookmark");
                         PLACES_CONTEXT_ITEMS.forEach(prop => {
                             let item = create_el('menuitem', prop, document);
-                            if (!prop.condition) item.setAttribute('condition', 'normal');
+                            prop.condition ||= 'normal';
                             this.items.push(item);
                             var refNode = ($(prop.insertBefore) || ins || $('#placesContext').firstChild);
                             if (!refNode.classList.contains('menuitem-iconic')) {
@@ -383,7 +383,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 
                         if (aNode) {
                             ['bookmark', 'container', 'day', 'folder', 'historyContainer', 'host', 'query', 'separator', 'tagQuery'].forEach(condition => {
-                                eval("if (PlacesUtils.nodeIs" + ucfirst(condition) + "(aNode)) state.push(condition)");
+                                if (condition_map[condition](aNode)) {
+                                    state.push(condition);
+                                }
                             });
                             if (PlacesUtils.nodeIsURI(aNode)) state.push("uri");
                         }
@@ -580,7 +582,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                 case 'nodeType':
                     let state = [];
                     ['bookmark', 'container', 'day', 'folder', 'historyContainer', 'host', 'query', 'separator', 'tagQuery'].forEach(condition => {
-                        eval("if (PlacesUtils.nodeIs" + firstUpperCase(condition) + "(aNode)) state.push(condition)");
+                        if (condition_map[condition](aNode)) {
+                            state.push(condition);
+                        }
                     });
                     if (PlacesUtils.nodeIsURI(aNode)) state.push('uri');
                     alert(state.join(" "));
@@ -596,7 +600,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     function $L (key, replace) {
         let str = LANG[LOCALE].hasOwnProperty(key) ? LANG[LOCALE][key] : (LANG['en-US'].hasOwnProperty(key) ? LANG['en-US'][key] : "undefined");
         if (typeof str === "undefined") {
-            str = firstUpperCase(key);
+            str = ucfirst(key);
         }
         if (typeof replace !== "undefined") {
             str = str.replace("%s", replace);
@@ -664,4 +668,14 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
     return el;
 }, (target, types = [], ...args) => Array.isArray(types) && types.forEach(t => target.addEventListener(t, ...args)),
-    (target, types = [], ...args) => Array.isArray(types) && types.forEach(t => target.removeEventListener(t, ...args)));
+    (target, types = [], ...args) => Array.isArray(types) && types.forEach(t => target.removeEventListener(t, ...args)), {
+    bookmark: PlacesUtils.nodeIsBookmark,
+    container: PlacesUtils.nodeIsContainer,
+    day: PlacesUtils.nodeIsDay,
+    folder: PlacesUtils.nodeIsFolder,
+    historyContainer: PlacesUtils.nodeIsHistoryContainer,
+    host: PlacesUtils.nodeIsHost,
+    query: PlacesUtils.nodeIsQuery,
+    separator: PlacesUtils.nodeIsSeparator,
+    tagQuery: PlacesUtils.nodeIsTagQuery
+});
