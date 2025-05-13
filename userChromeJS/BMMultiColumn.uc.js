@@ -8,6 +8,7 @@
 // @async
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2025.05.13 优化横向滚动，感谢 ylcs006
 // @note            2025.03.27 修复 Height Width 弄混导致宽度异常，支持纵向滚轮
 // @note            2025.02.19 fx133
 // @note            2024.10.18 fx131
@@ -143,7 +144,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             scrollBox._scrollButtonUp.style.display = "none";
             scrollBox._scrollButtonDown.style.display = "none";
         },
-        initMultiColumn (menupopup, event) {
+        initMultiColumn (menupopup) {
             menupopup.style.maxWidth = "calc(100vw - 20px)";
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
@@ -154,7 +155,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     display: "flex",
                     flexFlow: "column wrap",
                     overflow: "-moz-hidden-unscrollable",
-                    width: "unset"
+                    width: "unset",
+                    scrollSnapType: "x mandatory",
                 });
                 arrowscrollbox.style.width = "auto";
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
@@ -175,7 +177,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 const wheelHandler = (e) => {
                     e.preventDefault();
                     const delta = e.deltaY || e.detail || e.wheelDelta;
-                    item.scrollLeft += delta * 2;
+                    item.scrollLeft += delta * 50;
                 };
                 item.addEventListener('wheel', wheelHandler, { passive: false });
                 item._bmMultiColumnWheelHandler = wheelHandler;
@@ -199,7 +201,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 flexFlow: "",
                 overflow: "",
                 maxHeight: "",
-                width: ""
+                width: "",
+                scrollSnapType: "",
             });
 
             let menuitem = menupopup.lastChild;
@@ -226,5 +229,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
 #PlacesToolbarItems menupopup {
     max-width: calc(100vw - 20px);
     max-height: calc(100vh - 129px);
+}
+#PlacesToolbarItems menupopup > * {
+    scroll-snap-align: start;
 }
 `)
