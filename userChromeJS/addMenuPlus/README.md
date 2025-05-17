@@ -1,6 +1,6 @@
-# addMenuPlus.uc.js
+# addMenuPlus.uc.mjs
 
-ℹ因为Firefox 136中删除了JSM的支持，所以`addMenuPlus_fx72.uc.js`无法在136(含)以上版本的Firefox中使用，以后只会更新`addMenuPlus.uc.js`
+ℹ因为Firefox 136中删除了JSM的支持，所以`addMenuPlus_fx72.uc.js`无法在136(含)以上版本的Firefox中使用，以后只会更新`addMenuPlus.uc.mjs`。因为`addMenuPlus.uc.mjs`的后缀名是mjs和写死了ChromeURL，所以**只能**用[我改过的userChrome.js](https://github.com/benzBrake/userChrome.js-Loader/blob/main/profile/chrome/userChrome.js)引导。
 
 addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文件可添加、修改、隐藏菜单，修改后无需重启生效。
 
