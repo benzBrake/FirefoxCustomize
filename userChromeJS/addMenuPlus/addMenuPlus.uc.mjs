@@ -5,7 +5,7 @@
 /*
 通过配置文件增加修改菜单，修改版
 
-此版本仅能通过我改过的 userChrome.js 引导：https://github.com/benzBrake/userChrome.js-Loader/blob/main/profile/chrome/userChrome.js，其他 UC 环境需要修改 resolveChromeURL 函数
+此版本仅能通过我改过的 userChrome.js 引导：https://github.com/benzBrake/userChrome.js-Loader/blob/main/profile/chrome/userChrome.js，其他 UC 环境需要修改 const esModuleURI = Components.stack.filename; 这一行
 */
 // @version        0.3.0
 // @author         Ryan, ywzhaiqi, Griever
@@ -16,7 +16,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           0.3.0 ESMified
+// @note           0.3.0 ESMifing
 // ==/UserScript==
 (async (css, getURLSpecFromFile, loadText, writeText, versionGE) => {
     if (typeof window === 'undefined') return;
@@ -48,7 +48,8 @@
             'config has reload': '配置已经重新载入',
             'please set editor path': '请先设置编辑器的路径!!!',
             'set global editor': '设置全局脚本编辑器',
-            'could not load': '无法载入：%s'
+            'could not load': '无法载入：%s',
+            'process command error': '执行命令错误，原因%s',
         },
         'en-US': {
             'config example': '// This is an addMenuPlus configuration file.\n' +
@@ -68,7 +69,8 @@
             'config has reload': 'The configuration has been reloaded',
             'please set editor path': 'Please set the path to the editor first!!!',
             'set global editor': 'Setting up the global script editor',
-            'could not load': 'Could not load：%s'
+            'could not load': 'Could not load：%s',
+            'process command error': 'process command error, resson: %s',
         },
     }
 
@@ -168,8 +170,9 @@
         },
         customShowings: [],
         init: async function () {
+            // 其他 Loader 需要修改此处
+            const esModuleURI = Components.stack.filename;
             // 注册 Actor
-            const esModuleURI = resolveChromeURL(Components.stack.filename)
             ChromeUtils.registerWindowActor("AddMenu", {
                 parent: {
                     esModuleURI
@@ -324,6 +327,7 @@
             $("menu_FilePopup").removeEventListener("popupshowing", this, false);
             $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
             $("contentAreaContextMenu").removeAttribute("photoncompact");
+            $("tabContextMenu").removeAttribute("photoncompact");
             if (typeof this.APP_LITENER_REMOVER === "function")
                 this.APP_LITENER_REMOVER();
             gBrowser.tabpanels.removeEventListener("mouseup", this);
@@ -1116,7 +1120,7 @@
             return menuitem;
         },
         createMenuitem: function (itemArray, insertPoint) {
-            var chldren = $A(insertPoint.parentNode.children);
+            var chldren = Array.from(insertPoint.parentNode.children);
             //Symbol.iterator
             for (let obj of itemArray) {
                 if (!obj) continue;
@@ -1259,7 +1263,7 @@
                 if (!aFile.exists()) {
                     menu.setAttribute("disabled", "true");
                 } else if (aFile.isFile()) {
-                    setImage(menu, "moz-icon://" + this.getURLSpecFromFile(aFile) + "?size=16");
+                    setImage(menu, "moz-icon://" + getURLSpecFromFile(aFile) + "?size=16");
                 } else {
                     setImage(menu, "chrome://global/skin/icons/folder.svg");
                 }
@@ -1465,8 +1469,11 @@
 
             function getEmailAddress () {
                 var url = context.linkURL;
-                if (!url || !/^mailto:([^?]+).*/i.test(url)) return "";
-                var addresses = RegExp.$1;
+                if (!url) return "";
+
+                const match = url.match(/^mailto:([^?]+).*/i);
+                if (!match) return "";
+                let addresses = match[1];
                 try {
                     var characterSet = context.target.ownerDocument.characterSet;
                     const textToSubURI = Cc['@mozilla.org/intl/texttosuburi;1'].getService(Ci.nsITextToSubURI);
@@ -1529,7 +1536,6 @@
             if (hash && href)
                 gBrowser.tabs.filter(t => t.faviconHash === hash).forEach(t => t.faviconUrl = href);
         },
-        getURLSpecFromFile: getURLSpecFromFile,
         edit: function (aFile, aLineNumber) {
             (async () => {
                 if (!aFile || !aFile.exists() || !aFile.isFile()) return;
@@ -1569,7 +1575,7 @@
                     }
                 }
 
-                var aURL = this.getURLSpecFromFile(aFile);
+                var aURL = getURLSpecFromFile(aFile);
                 var aDocument = null;
                 var aCallBack = null;
                 var aPageDescriptor = null;
@@ -1628,8 +1634,10 @@
                 "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
                 aMsg + "", !!callback, "", callback);
         },
-        $$: function (exp, context, aPartly) {
-            // to be reimplemented
+        $$: function (exp, callback, context = gBrowser.selectedBrowser) {
+            this.executeInContent(context, `function () {
+                Array.from(exp).forEach(callback);
+            }`)
         }
     };
 
@@ -1640,11 +1648,6 @@
     function $$ (exp, doc = document) {
         return Array.prototype.slice.call(doc.querySelectorAll(exp));
     }
-
-    function $A (args) {
-        return Array.prototype.slice.call(args);
-    }
-
     function $C (name, attr = {}) {
         const el = document.createXULElement(name);
         for (let [key, value] of Object.entries(attr)) {
@@ -1728,10 +1731,6 @@
                 menu.setAttribute("image", imageUrl);
             }
         }
-    }
-
-    function resolveChromeURL (fileUrl) {
-        return fileUrl.replace("file:///" + PathUtils.profileDir.replace(/\\/g, '/') + "/chrome", "chrome://userchrome/content")
     }
 
     window.addMenu.init();
@@ -1965,7 +1964,6 @@ class AddMenuParent extends JSWindowActorParent {
                     addMenu.setFaviconLink(data);
                     break;
                 case 'AddMenuPlus:SetFocusStatus':
-
                     Object.assign(addMenu.ContextMenu, data);
                     break;
             }
