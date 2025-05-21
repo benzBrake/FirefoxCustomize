@@ -18,7 +18,7 @@
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
 // @note           0.3.0 ESMifying
 // ==/UserScript==
-(async (css, getURLSpecFromFile, loadText, writeText, versionGE) => {
+(async (css, getURLSpecFromFile, loadText, writeText, versionGE, shouldSetIcon, isDef) => {
     if (typeof window === 'undefined') return;
 
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
@@ -44,11 +44,13 @@
             'not exists': ' 不存在',
             'check config file with line': '\n请重新检查配置文件第 %s 行',
             'file not found': '文件不存在: %s',
-            'config file not exists: %s': '配置文件不存在: %s',
+            'config file not exists': '配置文件不存在: %s',
             'config has reload': '配置已经重新载入',
+            'configuration file does not exist or is not a valid file': '配置文件不存在或不是文件: %s',
             'please set editor path': '请先设置编辑器的路径!!!',
             'set global editor': '设置全局脚本编辑器',
             'could not load': '无法载入：%s',
+            'error occurred while editing the file': '编辑文件时出错: %s',
             'process command error': '执行命令错误，原因%s',
         },
         'en-US': {
@@ -67,9 +69,11 @@
             'file not found': 'File not found: %s',
             'config file not exists': 'config file not exists: %s',
             'config has reload': 'The configuration has been reloaded',
+            'configuration file does not exist or is not a valid file': 'Configuration file does not exist or is not a valid file %s',
             'please set editor path': 'Please set the path to the editor first!!!',
             'set global editor': 'Setting up the global script editor',
             'could not load': 'Could not load：%s',
+            'error occurred while editing the file': 'Error occurred while editing the file: %s',
             'process command error': 'process command error, resson: %s',
         },
     }
@@ -335,189 +339,183 @@
             this.style2?.remove();
             delete window.addMenu;
         },
-        getActor (browser = gBrowser.selectedBrowser, name = "AddMenu") {
+        getActor: function (browser = gBrowser.selectedBrowser, name = "AddMenu") {
             return browser.browsingContext.currentWindowGlobal.getActor(name);
         },
-        sendAsyncMessage (key, data = {}) {
+        sendAsyncMessage: function (key, data = {}) {
             return this.getActor().sendAsyncMessage(key, data);
         },
         handleEvent: function (event) {
             const { type, target, button } = event;
+            const $target = $(event.target);
+            const $currentTarget = $(event.currentTarget);
+
             switch (type) {
                 case "ViewShowing":
                 case "popupshowing":
-                    if (event.target != event.currentTarget) return;
+                    if (target !== event.currentTarget) return;
 
+                    // File refreshing logic
                     if (enableFileRefreshing) {
                         this.updateModifiedFile();
                     }
 
-                    event.target.querySelectorAll(`.addMenu`).forEach(m => {
-                        // 强制去除隐藏属性
-                        m.removeAttribute("hidden");
-                        // 显示时自动更新标签
-                        if (m.hasAttribute('onshowinglabel')) {
+                    // Process all .addMenu elements
+                    $$('.addMenu', $target.get()).forEach($menu => {
+                        $menu.removeAttr("hidden");
+
+                        const showingLabel = $menu.attr('onshowinglabel');
+                        if (showingLabel) {
                             onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
-                            var sel = addMenu.convertText(m.getAttribute('onshowinglabel'))
-                            if (sel && sel.length > 15)
-                                sel = sel.substr(0, 15) + "...";
-                            m.setAttribute('label', sel);
+                            let sel = addMenu.convertText(showingLabel);
+                            if (sel.length > 15) sel = sel.substr(0, 15) + "...";
+                            $menu.attr('label', sel);
                         }
                     });
 
+                    // Determine insert point based on menu type
                     let insertPoint = "";
+                    const menuHandlers = {
+                        'contentAreaContextMenu': () => {
+                            const state = [];
+                            const { gContextMenu } = window;
 
-                    if (event.target.id == 'contentAreaContextMenu') {
-                        var state = [];
-                        if (gContextMenu.onTextInput)
-                            state.push("input");
-                        if (gContextMenu.isContentSelected || gContextMenu.isTextSelected)
-                            state.push("select");
-                        if (gContextMenu.onLink || event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden") !== "true")
-                            state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
-                        if (gContextMenu.onCanvas)
-                            state.push("canvas image");
-                        if (gContextMenu.onImage)
-                            state.push("image");
-                        if (/\.(?:jpe?g|png|gif|bmp|webp|svg|ico|jxl)$/i.test(gContextMenu.browser.currentURI.spec))
-                            state.push("completed-image");
-                        if (gContextMenu.onVideo || gContextMenu.onAudio)
-                            state.push("media");
-                        if (addMenu.ContextMenu.onSvg)
-                            state.push("svg");
-                        event.currentTarget.setAttribute("addMenu", state.join(" "));
+                            if (gContextMenu.onTextInput) state.push("input");
+                            if (gContextMenu.isContentSelected || gContextMenu.isTextSelected) state.push("select");
+                            if (gContextMenu.onLink || !$('#context-openlinkincurrent').attr('hidden')) {
+                                state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
+                            }
+                            if (gContextMenu.onCanvas) state.push("canvas image");
+                            if (gContextMenu.onImage) state.push("image");
+                            if (/\.(?:jpe?g|png|gif|bmp|webp|svg|ico|jxl)$/i.test(gContextMenu.browser.currentURI.spec)) {
+                                state.push("completed-image");
+                            }
+                            if (gContextMenu.onVideo || gContextMenu.onAudio) state.push("media");
+                            if (addMenu.ContextMenu.onSvg) state.push("svg");
 
-                        insertPoint = "addMenu-page-insertpoint";
-                    }
+                            $currentTarget.attr("addMenu", state.join(" "));
+                            return "addMenu-page-insertpoint";
+                        },
+                        'toolbar-context-menu': () => {
+                            const triggerNode = event.target.triggerNode;
+                            const state = [];
+                            const toolbarMap = {
+                                'toolbar-menubar': 'menubar',
+                                'TabsToolbar': 'tabs',
+                                'nav-bar': 'navbar',
+                                'PersonalToolbar': 'personal'
+                            };
 
-                    if (event.target.id === "toolbar-context-menu") {
-                        let triggerNode = event.target.triggerNode;
-                        var state = [];
-                        const map = {
-                            'toolbar-menubar': 'menubar',
-                            'TabsToolbar': 'tabs',
-                            'nav-bar': 'navbar',
-                            'PersonalToolbar': 'personal',
-                        }
-                        Object.keys(map).map(e => $('#' + e).contains(triggerNode) && state.push(map[e]));
-                        if (triggerNode && triggerNode.localName === "toolbarbutton") {
-                            state.push("button");
-                        }
-                        event.currentTarget.setAttribute("addMenu", state.join(" "));
+                            Object.entries(toolbarMap).forEach(([id, value]) => {
+                                if ($('#' + id).get().contains(triggerNode)) state.push(value);
+                            });
 
-                        insertPoint = "addMenu-nav-insertpoint";
-                    }
+                            if (triggerNode?.localName === "toolbarbutton") {
+                                state.push("button");
+                            }
 
-                    if (event.target.id === "tabContextMenu") {
-                        insertPoint = "addMenu-tab-insertpoint";
-                        triggerFavMsg(TabContextMenu.contextTab);
-                    }
+                            $currentTarget.attr("addMenu", state.join(" "));
+                            return "addMenu-nav-insertpoint";
+                        },
+                        'tabContextMenu': () => {
+                            triggerFavMsg(TabContextMenu.contextTab);
+                            return "addMenu-tab-insertpoint";
+                        },
+                        'identity-box-contextmenu': () => "addMenu-identity-insertpoint",
+                        'menu_FilePopup': () => "addMenu-app-insertpoint",
+                        'appMenu-protonMainView': () => "addMenu-app-insertpoint",
+                        'menu_ToolsPopup': () => "addMenu-tool-insertpoint"
+                    };
 
-                    if (event.target.id === "identity-box-contextmenu") {
-                        insertPoint = "addMenu-identity-insertpoint";
-                    }
+                    insertPoint = menuHandlers[$target.attr('id')]?.() || "";
 
-                    if (event.target.id === "menu_FilePopup" || event.target.id === "appMenu-protonMainView") {
-                        insertPoint = "addMenu-app-insertpoint";
-                    }
-
-                    if (event.target.id === "menu_ToolsPopup") {
-                        insertPoint = "addMenu-tool-insertpoint";
-                    }
-
-                    this.customShowings.filter(obj => obj.insertPoint === insertPoint).forEach(function (obj) {
-                        var curItem = obj.item;
-                        try {
-                            eval('(' + obj.fnSource + ').call(curItem, curItem)');
-                        } catch (ex) {
-                            console.error(lprintf('custom showing method error'), obj.fnSource, ex);
-                        }
-                    });
-
-                    const delay = new Promise(resolve => {
-                        setTimeout(resolve, 10);
-                    });
-
-                    delay.then(() => {
-                        event.target.querySelectorAll('menuitem.addMenu[command],menu.addMenu[command]').forEach(elem => {
-                            if (/^menugroup$/i.test(elem.parentNode.nodeName)) return;
-                            let original = document.getElementById(elem.getAttribute('command'));
-                            if (original) {
-                                elem.hidden = original.hidden;
-                                elem.collapsed = original.collapsed;
-                                elem.disabled = original.disabled;
+                    // Execute custom showing methods with eval
+                    this.customShowings
+                        .filter(obj => obj.insertPoint === insertPoint)
+                        .forEach(obj => {
+                            try {
+                                eval('(' + obj.fnSource + ').call(obj.item, obj.item)');
+                            } catch (ex) {
+                                console.error(lprintf('custom showing method error'), obj.fnSource, ex);
                             }
                         });
-                        event.target.querySelectorAll('menugroup.addMenu').forEach(group => {
-                            [...group.children].forEach(elem => {
-                                if ((/menu$/i.test(elem.nodeName) || /menuitem$/i.test(elem.nodeName)) && elem.hasAttribute('command')) {
-                                    elem.removeAttribute('hidden');
-                                    const oringal = document.getElementById(elem.getAttribute('command'));
-                                    if (oringal) {
-                                        elem.disabled = oringal.hidden;
+
+                    // Delayed DOM updates
+                    setTimeout(() => {
+                        $$('menuitem.addMenu[command], menu.addMenu[command]', $target.get()).forEach($elem => {
+                            if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
+
+                            const $original = $('#' + $elem.attr('command'));
+                            if ($original.get()) {
+                                $elem.attr('hidden', $original.attr('hidden'))
+                                    .attr('collapsed', $original.attr('collapsed'))
+                                    .attr('disabled', $original.attr('disabled'));
+                            }
+                        });
+
+                        $$('menugroup.addMenu', $target.get()).forEach($group => {
+                            $group.children().forEach($elem => {
+                                if ((/menu$/i.test($elem.get().nodeName) || /menuitem$/i.test($elem.get().nodeName)) &&
+                                    $elem.hasAttr('command')) {
+                                    $elem.removeAttr('hidden');
+                                    const $original = $('#' + $elem.attr('command'));
+                                    if ($original.get()) {
+                                        $elem.attr('disabled', $original.attr('hidden'));
                                     }
                                 }
                             });
                         });
-                    });
+                    }, 10);
                     break;
+
                 case 'popuphiding':
-                    if (event.target.id === "contentAreaContextMenu") {
-                        for (let key of Object.keys(this.ContextMenu)) {
-                            if (key.startsWith("on")) {
-                                this.ContextMenu[key] = false;
-                            } else {
-                                this.ContextMenu[key] = "";
-                            }
-                        }
-                        event.target.setAttribute("addMenu", "");
+                    if ($target.attr('id') === "contentAreaContextMenu") {
+                        Object.keys(this.ContextMenu).forEach(key => {
+                            this.ContextMenu[key] = key.startsWith("on") ? false : "";
+                        });
+                        $target.attr("addMenu", "");
                     }
                     break;
+
                 case 'click':
-                    if (event.button == 2 && event.target.id === this.identityBox.id)
-                        $("#identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
-                    break;
-                case 'mouseup':
-                    switch (button) {
-                        case 2:
-                            this.sendAsyncMessage("AddMenuPlus:ContextMenu");
-                        case 0:
-                            this.sendAsyncMessage("AddMenuPlus:GetSelectedText");
-                            break;
+                    if (button === 2 && $target.closest('#identity-box')) {
+                        $("#identity-box-contextmenu").openPopup(target, "after_pointer", 0, 0, true, false);
                     }
                     break;
+
+                case 'mouseup':
+                    if (button === 2 || button === 0) {
+                        this.sendAsyncMessage("AddMenuPlus:ContextMenu");
+                        if (button === 0) {
+                            this.sendAsyncMessage("AddMenuPlus:GetSelectedText");
+                        }
+                    }
+                    break;
+
                 case 'TabAttrModified':
                     triggerFavMsg(target);
                     break;
             }
 
             function triggerFavMsg (tab) {
-                if (content) return;
-                if (typeof tab === "undefined")
-                    return;
+                if (content || !tab) return;
+
                 const browser = gBrowser.getBrowserForTab(tab);
                 const URI = browser.currentURI || browser.documentURI;
                 if (!URI) return;
-                // if (!(/^(f|ht)tps?:/.test(URI.spec))) return;
-                let hash = calculateHashFromStr(URI.spec);
+
+                const hash = calculateHashFromStr(URI.spec);
                 tab.faviconHash = hash;
                 addMenu.sendAsyncMessage("AddMenuPlus:GetFaviconLink", { hash });
             }
 
             function calculateHashFromStr (data) {
-                // Lazily create a reusable hasher
-                let gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
-                    Ci.nsICryptoHash
-                );
-
+                const gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
                 gCryptoHash.init(gCryptoHash.MD5);
-
-                // Convert the data to a byte array for hashing
                 gCryptoHash.update(
                     data.split("").map(c => c.charCodeAt(0)),
                     data.length
                 );
-                // Request the has result as ASCII base64
                 return gCryptoHash.finish(true);
             }
         },
@@ -566,7 +564,7 @@
                     this.copy(this.convertText(text));
                 }
             } catch (error) {
-                console.error("处理命令时发生错误:", error);
+                console.error(lprintf("process command error", error.message), error);
             }
         },
         openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
@@ -1221,84 +1219,83 @@
                 e.removeClass('addMenuHide');
             });
         },
-        setIcon: function (menu, obj) {
+        setIcon: async function (menu, obj) {
             if (menu.hasAttribute("src") || menu.hasAttribute("icon"))
                 return;
 
-            if (obj.image && /-iconic/.test(menu.className)) {
+            if (obj?.image && shouldSetIcon(menu)) {
                 setImage(menu, obj.image);
                 return;
             }
 
-            if (obj.exec) {
-                var aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-                try {
-                    aFile.initWithPath(obj.exec);
-                } catch (e) {
-                    return;
-                }
-                // if (!aFile.exists() || !aFile.isExecutable()) {
-                if (!aFile.exists()) {
-                    menu.setAttribute("disabled", "true");
-                } else if (aFile.isFile()) {
-                    setImage(menu, "moz-icon://" + getURLSpecFromFile(aFile) + "?size=16");
-                } else {
-                    setImage(menu, "chrome://global/skin/icons/folder.svg");
-                }
+            if (obj?.exec) {
+                await this._setExecIcon(menu, obj.exec);
                 return;
             }
 
-            if (obj.keyword) {
-                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                if (engine) {
-                    (async function () {
-                        engine = await engine;
-                        const image = await getIconURL(engine);
-                        setImage(menu, image);
-                    })();
+            if (obj?.keyword) {
+                await this._setEngineIcon(menu, obj.keyword);
+                return;
+            }
+            await this._setPageIcon(menu, obj?.url);
+        },
+        _setExecIcon: async function (menu, execPath) {
+            const file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+            try {
+                file.initWithPath(execPath);
+                if (!file.exists()) {
+                    menu.setAttribute("disabled", "true");
                     return;
                 }
-                async function getIconURL (engine) {
-                    // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
-                    if ("getIconURL" in engine) {
-                        return await engine.getIconURL(16);
-                    }
-                    return engine.iconURI?.spec || "chrome://browser/skin/search-engine-placeholder.png";
-                }
+                const iconUrl = file.isFile()
+                    ? `moz-icon://${getURLSpecFromFile(file)}?size=16`
+                    : "chrome://global/skin/icons/folder.svg";
+                setImage(menu, iconUrl);
+            } catch (e) {
+                console.error("Failed to set exec icon:", e);
             }
-            var setIconCallback = function (url) {
-                let uri;
-                try {
-                    uri = Services.io.newURI(url, null, null);
-                } catch (e) {
-                    // console.error(e) 
-                }
-                if (!uri) return;
-                menu.setAttribute("scheme", uri.scheme);
-                PlacesUtils.favicons.getFaviconDataForPage(uri, {
-                    onComplete: function (aURI, aDataLen, aData, aMimeType) {
-                        try {
-                            // javascript: URI の host にアクセスするとエラー
-                            let iconURL = aURI && aURI.spec ?
-                                "page-icon:" + aURI.spec :
-                                "page-icon:" + uri.spec;
-                            setImage(menu, iconURL);
-                        } catch (e) { }
-                    }
-                });
-            }
+        },
+        _setEngineIcon: async function (menu, keyword) {
+            try {
+                const engine = keyword === "@default"
+                    ? await Services.search.getDefault()
+                    : await Services.search.getEngineByAlias(keyword);
+                if (!engine) return;
 
-            PlacesUtils.keywords.fetch(obj.keyword || '').then(entry => {
-                let url;
-                if (entry) {
-                    url = entry.url.href;
-                } else {
-                    url = (obj.url + '').replace(this.regexp, "");
+                // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
+                const iconUrl = engine.getIconURL
+                    ? await engine.getIconURL(16)
+                    : engine.iconURI?.spec || "chrome://browser/skin/search-engine-placeholder.png";
+                setImage(menu, iconUrl);
+            } catch (e) {
+                console.error("Failed to set engine icon:", e);
+            }
+        },
+        _setPageIcon: async function (menu, url) {
+            if (!url) return;
+
+            try {
+                // 获取可能的搜索引擎条目
+                const entry = await PlacesUtils.keywords.fetch("");
+                const targetUrl = entry?.url?.href || url.replace(this.regexp, "");
+                if (!targetUrl) return;
+
+                // 解析URI并设置图标
+                const uri = Services.io.newURI(targetUrl, null, null);
+                menu.setAttribute("scheme", uri.scheme);
+
+                const faviconData = await new Promise(resolve => {
+                    PlacesUtils.favicons.getFaviconDataForPage(uri, {
+                        onComplete: (aURI, aDataLen, aData, aMimeType) => resolve({ aURI, aData, aMimeType })
+                    });
+                });
+
+                if (faviconData?.aURI?.spec) {
+                    setImage(menu, `page-icon:${faviconData.aURI.spec}`);
                 }
-                setIconCallback(url);
-            }, e => {
-                console.log(e)
-            }).catch(e => { });
+            } catch (e) {
+                console.error("Failed to set page icon:", e);
+            }
         },
         setCondition: function (menu, obj, opt = {}) {
             if (obj.condition) {
@@ -1387,7 +1384,7 @@
                     case "%IMAGE_URL%":
                         return context.imageURL || context.imageInfo.currentSrc || "";
                     case "%IMAGE_BASE64%":
-                        return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
+                        return isDef(context.mediaURL) ? img2base64(context.mediaURL) : img2base64(context.imageURL);
                     case "%SVG_BASE64%":
                         if (addMenu.ContextMenu.onSvg) {
                             return "data:image/svg+xml;base64," + btoa(addMenu.ContextMenu.svgHTML);
@@ -1514,54 +1511,67 @@
             if (hash && href)
                 gBrowser.tabs.filter(t => t.faviconHash === hash).forEach(t => t.faviconUrl = href);
         },
-        edit: function (aFile, aLineNumber) {
-            (async () => {
-                if (!aFile || !aFile.exists() || !aFile.isFile()) return;
+        edit: async function (aFile, aLineNumber) {
+            if (!aFile?.exists() || !aFile.isFile()) {
+                console.warn(lprintf("configuration file does not exist or is not a valid file", aFile?.path));
+                return;
+            }
 
-                var editor;
-                try {
-                    editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
-                } catch (e) { }
+            try {
+                // 1. 获取或设置编辑器路径
+                let editor = await this.getOrSetEditorPath();
+                if (!editor) return; // 用户取消了操作
 
-                if (!editor || !editor.exists()) {
-                    alert(lprintf('please set editor path'));
-                    var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                // 2. 打开文件
+                const aURL = getURLSpecFromFile(aFile);
+                await new Promise((resolve) => {
+                    gViewSourceUtils.openInExternalEditor({
+                        URL: aURL,
+                        lineNumber: aLineNumber
+                    }, null, null, aLineNumber, resolve);
+                });
 
-                    // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
-                    fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
-                        ? window.browsingContext
-                        : window, lprintf('set global editor'), fp.modeOpen);
+            } catch (e) {
+                console.error(lprintf("error occurred while editing the file", error.message), e);
+                this.alert(lprintf('process command error', e.message));
+            }
+        },
+        getOrSetEditorPath: async function () {
+            // 尝试从首选项获取现有编辑器路径
+            try {
+                const editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
+                if (editor.exists()) return editor;
+            } catch (e) {
+                // 首选项不存在或无效
+            }
 
-                    fp.appendFilters(Ci.nsIFilePicker.filterApps);
+            // 提示用户设置编辑器路径
+            alert(lprintf('please set editor path'));
 
-                    if (typeof fp.show !== 'undefined') {
-                        if (fp.show() == fp.returnCancel || !fp.file)
-                            return;
-                        else {
-                            editor = fp.file;
-                            Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                        }
-                    } else {
-                        await new Promise(resolve => {
-                            fp.open(res => {
-                                if (res != Ci.nsIFilePicker.returnOK) return;
-                                editor = fp.file;
-                                Services.prefs.setCharPref("view_source.editor.path", editor.path);
-                                resolve();
-                            });
-                        });
-                    }
+            const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+            fp.init(
+                !("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                    ? window.browsingContext
+                    : window,
+                lprintf('set global editor'),
+                fp.modeOpen
+            );
+            fp.appendFilters(Ci.nsIFilePicker.filterApps);
+
+            const file = await new Promise(resolve => {
+                if (typeof fp.show !== 'undefined') {
+                    resolve(fp.show() === fp.returnOK ? fp.file : null);
+                } else {
+                    fp.open(res => resolve(res === Ci.nsIFilePicker.returnOK ? fp.file : null));
                 }
+            });
 
-                var aURL = getURLSpecFromFile(aFile);
-                var aDocument = null;
-                var aCallBack = null;
-                var aPageDescriptor = null;
-                gViewSourceUtils.openInExternalEditor({
-                    URL: aURL,
-                    lineNumber: aLineNumber
-                }, aPageDescriptor, aDocument, aLineNumber, aCallBack);
-            })()
+            if (file) {
+                Services.prefs.setCharPref("view_source.editor.path", file.path);
+                return file;
+            }
+
+            return null;
         },
         copy: function (aText) {
             Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
@@ -1630,8 +1640,6 @@
         }
         return el;
     }
-
-
     function addStyle (css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
@@ -1651,21 +1659,6 @@
         }
         return capitalize(key || '');
     }
-
-
-    function isDef (v) {
-        return v !== undefined && v !== null
-    }
-
-    function isPromise (val) {
-        return (
-            val !== null &&
-            val !== undefined &&
-            typeof val.then === 'function' &&
-            typeof val.catch === 'function'
-        );
-    }
-
     function processOnShowing (menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
             this.customShowings.push({
@@ -1859,9 +1852,10 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
         t.processNextEvent(true);
     }
     return flag;
-}, function (v) {
+}, v => {
     return Services.vc.compare(Services.appinfo.version, v) >= 0;
-});
+}, menu => menu.matches(".menuitem-iconic, .menu-iconic"),
+    v => v !== undefined && v !== null);
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
     executeInChrome () {
