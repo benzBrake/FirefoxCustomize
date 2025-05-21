@@ -5,7 +5,7 @@
 /*
 通过配置文件增加修改菜单，修改版
 
-此版本仅能通过我改过的 userChrome.js 引导：https://github.com/benzBrake/userChrome.js-Loader/blob/main/profile/chrome/userChrome.js，其他 UC 环境需要修改 const esModuleURI = Components.stack.filename; 这一行
+此版本仅能通过我改过的 userChrome.js 引导：https://github.com/benzBrake/userChrome.js-Loader/blob/main/profile/chrome/userChrome.js，其他 UC 环境需要修改 resolveChromeURL 函数
 */
 // @version        0.3.0
 // @author         Ryan, ywzhaiqi, Griever
@@ -16,7 +16,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           0.3.0 ESMifing
+// @note           0.3.0 ESMifying
 // ==/UserScript==
 (async (css, getURLSpecFromFile, loadText, writeText, versionGE) => {
     if (typeof window === 'undefined') return;
@@ -90,34 +90,39 @@
     // 增加菜单类型请在这里加入插入点，不能是 IdentGroup
     const MENU_ATTRS = {
         tab: {
-            insRef: $("context_closeTab"),
+            insRef: $("#context_closeTab"),
             current: "tab",
             submenu: "TabMenu",
             groupmenu: "TabGroup"
         },
         page: {
-            insRef: $("context-viewsource"),
+            insRef: $("#context-viewsource"),
             current: "page",
             submenu: "PageMenu",
             groupmenu: "PageGroup"
         },
         tool: {
-            insRef: $("prefSep") || $("webDeveloperMenu"),
+            insRef: $("#prefSep, #webDeveloperMenu"),
             current: "tool",
             submenu: "ToolMenu",
             groupmenu: "ToolGroup"
         },
         app: {
-            insRef: $("appmenu-quit") || $("appMenu-quit-button") || $("appMenu-quit-button2") || $("menu_FileQuitItem"),
+            insRef: $("#appmenu-quit, #appMenu-quit-button, #appMenu-quit-button2, #menu_FileQuitItem"),
             current: "app",
             submenu: "AppMenu",
             groupmenu: "AppGroup"
         },
         nav: {
-            insRef: $("toolbar-context-undoCloseTab") || $("toolbarItemsMenuSeparator"),
+            insRef: $("#toolbar-context-undoCloseTab, #toolbarItemsMenuSeparator"),
             current: "nav",
             submenu: "NavMenu",
             groupmenu: "NavGroup"
+        },
+        group: {
+            current: "group",
+            groupmenu: "GroupMenu",
+            insertId: "addMenu-page-insertpoint"
         }
     };
 
@@ -135,7 +140,7 @@
                 path = '_addmenu.js';
             }
 
-            aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
+            const aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
             aFile.appendRelativePath(path);
 
             if (!aFile.exists()) {
@@ -170,9 +175,8 @@
         },
         customShowings: [],
         init: async function () {
-            // 其他 Loader 需要修改此处
-            const esModuleURI = Components.stack.filename;
             // 注册 Actor
+            const esModuleURI = resolveChromeURL(Components.stack.filename)
             ChromeUtils.registerWindowActor("AddMenu", {
                 parent: {
                     esModuleURI
@@ -189,60 +193,33 @@
             for (let type in MENU_ATTRS) {
                 let ins = MENU_ATTRS[type].insRef;
                 if (ins) {
-                    let tag = ins.localName.startsWith("menu") ? "menuseparator" : "toolbarseparator";
+                    let tag = ins.matches("menu, menuitem, menuseparator") ? "menuseparator" : "toolbarseparator";
                     let insertPoint = $C(tag, {
                         id: `addMenu-${type}-insertpoint`,
                         class: "addMenu-insert-point",
                         hidden: true
                     })
                     MENU_ATTRS[type].insertId = insertPoint.id;
-                    ins.parentNode.insertBefore(insertPoint, ins.nextSibling);
+                    ins.before(insertPoint);
                     delete MENU_ATTRS[type].insRef;
                 } else {
                     delete MENU_ATTRS[type];
                 }
             }
 
-            // old style groupmenu compatibility
-            MENU_ATTRS['group'] = {
-                current: "group",
-                submenu: "GroupMenu",
-                insertId: "addMenu-page-insertpoint"
-            }
-
-            $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
-            $("contentAreaContextMenu").addEventListener("popuphiding", this, false);
-            $("tabContextMenu").addEventListener("popupshowing", this, false);
-            $("toolbar-context-menu").addEventListener("popupshowing", this, false);
-            $("menu_FilePopup").addEventListener("popupshowing", this, false);
-            $("menu_ToolsPopup").addEventListener("popupshowing", this, false);
-
-            // move menuitems to Hamburger menu when firstly clicks the PanelUI button 
-            PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, {
-                once: true
-            });
-
-            // PanelUI 增加 CustomShowing 支持
-            PanelUI.mainView.addEventListener("ViewShowing", this);
-
-            this.APP_LITENER_REMOVER = function () {
-                PanelUI.mainView.removeEventListener("ViewShowing", this);
-            }
-
-            this.identityBox = $('identity-icon') || $('identity-box')
+            this.identityBox = $('#identity-icon, #identity-box')
             if (enableidentityBoxContextMenu && this.identityBox) {
                 // SSL 小锁右键菜单
-                this.identityBox.addEventListener("click", this, false);
-                this.identityBox.setAttribute('contextmenu', false);
-                var popup = $("mainPopupSet").appendChild($C('menupopup', {
+                this.identityBox.on("click", this, false);
+                this.identityBox.attr('contextmenu', false);
+                $("#mainPopupSet").append($C('menupopup', {
                     id: 'identity-box-contextmenu'
                 }));
-                popup.appendChild($C("menuseparator", {
+                $("#identity-box-contextmenu").append($C("menuseparator", {
                     id: "addMenu-identity-insertpoint",
                     class: "addMenu-insert-point",
                     hidden: true
                 }));
-                $("mainPopupSet").appendChild(popup);
                 MENU_ATTRS['ident'] = {
                     current: "ident",
                     submenu: "IdentMenu",
@@ -252,28 +229,44 @@
             }
 
             // 增加工具菜单
-            var ins = $("devToolsSeparator");
-            ins.parentNode.insertBefore($C("menuitem", {
+            $("#devToolsSeparator").before($C("menuitem", {
                 id: "addMenu-rebuild",
                 label: lprintf('addmenuplus label'),
                 tooltiptext: lprintf('addmenuplus tooltip'),
                 oncommand: "setTimeout(async function(){ await addMenu.rebuild(true); }, 10);",
                 onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
-            }), ins);
+            }))
 
             // Photon Compact
             if (enableContentAreaContextMenuCompact && versionGE("90a1")) {
-                $("contentAreaContextMenu").setAttribute("photoncompact", "true");
-                $("tabContextMenu").setAttribute("photoncompact", "true");
+                $("#contentAreaContextMenu").attr("photoncompact", "true");
+                $("#tabContextMenu").attr("photoncompact", "true");
             }
 
+            // 绑定事件
+            $("#contentAreaContextMenu").on("popupshowing", this, false);
+            $("#contentAreaContextMenu").on("popuphiding", this, false);
+            $("#tabContextMenu").on("popupshowing", this, false);
+            $("#toolbar-context-menu").on("popupshowing", this, false);
+            $("#menu_FilePopup").on("popupshowing", this, false);
+            $("#menu_ToolsPopup").on("popupshowing", this, false);
             // 响应鼠标键释放事件（eg：获取选中文本）
             gBrowser.tabpanels.addEventListener("mouseup", this);
-
             // 响应标签修改事件
             gBrowser.tabContainer.addEventListener('TabAttrModified', this);
+            // move menuitems to Hamburger menu when firstly clicks the PanelUI button 
+            PanelUI.mainView.addEventListener("ViewShowing", this.moveToAppMenu, {
+                once: true
+            });
+            // PanelUI 增加 CustomShowing 支持
+            PanelUI.mainView.addEventListener("ViewShowing", this);
+            this.APP_LITENER_REMOVER = function () {
+                PanelUI.mainView.removeEventListener("ViewShowing", this);
+            }
 
+            // 增加样式
             this.style = addStyle(css);
+
             await this.rebuild();
         },
         initRegex: function () {
@@ -320,33 +313,26 @@
 
         },
         destroy: function () {
-            $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
-            $("contentAreaContextMenu").removeEventListener("popuphiding", this, false);
-            $("tabContextMenu").removeEventListener("popupshowing", this, false);
-            $("toolbar-context-menu").removeEventListener("popupshowing", this, false);
-            $("menu_FilePopup").removeEventListener("popupshowing", this, false);
-            $("menu_ToolsPopup").removeEventListener("popupshowing", this, false);
-            $("contentAreaContextMenu").removeAttribute("photoncompact");
-            $("tabContextMenu").removeAttribute("photoncompact");
+            $("#contentAreaContextMenu").off("popupshowing", this, false);
+            $("#contentAreaContextMenu").off("popuphiding", this, false);
+            $("#tabContextMenu").off("popupshowing", this, false);
+            $("#toolbar-context-menu").off("popupshowing", this, false);
+            $("#menu_FilePopup").off("popupshowing", this, false);
+            $("#menu_ToolsPopup").off("popupshowing", this, false);
+            $("#contentAreaContextMenu").removeAttr("photoncompact");
+            $("#tabContextMenu").removeAttr("photoncompact");
             if (typeof this.APP_LITENER_REMOVER === "function")
                 this.APP_LITENER_REMOVER();
             gBrowser.tabpanels.removeEventListener("mouseup", this);
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
-
             this.removeMenuitem();
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
-                e.parentNode.removeChild(e)
+                e.remove();
             });
-            if (this.identityBox) {
-                this.identityBox.removeAttribute('contextmenu');
-                this.identityBox.removeEventListener("click", this, false);
-            }
-            if ($('identity-box-contextmenu')) {
-                var popup = $('identity-box-contextmenu');
-                popup.parentNode.removeChild(popup);
-            }
-            if (this.style && this.style.parentNode) this.style.parentNode.removeChild(this.style);
-            if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
+            this.identityBox?.removeAttr('contextmenu').off("click", this, false);
+            $('#identity-box-contextmenu')?.remove();
+            this.style?.remove();
+            this.style2?.remove();
             delete window.addMenu;
         },
         getActor (browser = gBrowser.selectedBrowser, name = "AddMenu") {
@@ -413,7 +399,7 @@
                             'nav-bar': 'navbar',
                             'PersonalToolbar': 'personal',
                         }
-                        Object.keys(map).map(e => $(e).contains(triggerNode) && state.push(map[e]));
+                        Object.keys(map).map(e => $('#' + e).contains(triggerNode) && state.push(map[e]));
                         if (triggerNode && triggerNode.localName === "toolbarbutton") {
                             state.push("button");
                         }
@@ -489,7 +475,7 @@
                     break;
                 case 'click':
                     if (event.button == 2 && event.target.id === this.identityBox.id)
-                        $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
+                        $("#identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
                     break;
                 case 'mouseup':
                     switch (button) {
@@ -711,13 +697,13 @@
             }
         },
         rebuild: async function (isAlert) {
-            var aFile = this.FILE;
+            const aFile = this.FILE;
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
                 console.log(lprintf("config file not exists", aFile ? aFile.path : "null"));
                 return;
             }
 
-            var data = loadText(aFile.path);
+            const data = loadText(aFile.path);
 
             const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window), {
                 sandboxPrototype: window,
@@ -803,14 +789,14 @@
                 insertId
             }) {
                 if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
-                let insertPoint = $(insertId);
+                let insertPoint = $('#' + insertId);
                 this.createMenuitem(sandbox["_" + current], insertPoint);
             }, this);
 
 
             if (isAlert) this.alert((lprintf('config has reload')));
         },
-        newGroupMenu: function (menuObj, opt) {
+        newGroupMenu: function (menuObj, opt = {}) {
             var group = $C('menugroup');
 
             // 增加 onshowing 事件
@@ -853,8 +839,7 @@
             }, this);
             return group;
         },
-        newMenu: function (menuObj, opt) {
-            opt || (opt = {});
+        newMenu: function (menuObj, opt = {}) {
             if (menuObj._group) {
                 return this.newGroupMenu(menuObj, opt);
             }
@@ -954,9 +939,7 @@
 
             return menu;
         },
-        newMenuitem: function (obj, opt) {
-            opt || (opt = {});
-
+        newMenuitem: function (obj, opt = {}) {
             var menuitem,
                 isAppMenu = opt.insertPoint && opt.insertPoint.localName === "toolbarseparator" && opt.insertPoint.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
@@ -1060,13 +1043,8 @@
                     } else if (obj.keyword) {
                         // 调用搜索引擎 Label hack
                         let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                        if (isPromise(engine)) {
-                            engine.then(s => {
-                                if (s && s._name) menuitem.setAttribute('label', s._name);
-                            });
-                        } else {
-                            if (engine && engine._name) menuitem.setAttribute('label', engine._name);
-                        }
+                        engine = await engine;
+                        if (engine && engine._name) menuitem.setAttribute('label', engine._name);
                     }
                 }
             })()
@@ -1191,16 +1169,16 @@
 
             function insertMenuItem (obj, menuitem) {
                 let ins;
-                if (obj.parent && (ins = $(obj.parent))) {
-                    ins.appendChild(menuitem);
+                if (obj.parent && (ins = $('#' + obj.parent))) {
+                    ins.append(menuitem);
                     return;
                 }
-                if (obj.insertAfter && (ins = $(obj.insertAfter))) {
-                    ins.parentNode.insertBefore(menuitem, ins.nextSibling);
+                if (obj.insertAfter && (ins = $('#' + obj.insertAfter))) {
+                    ins.after(menuitem);
                     return;
                 }
-                if (obj.insertBefore && (ins = $(obj.insertBefore))) {
-                    ins.parentNode.insertBefore(menuitem, ins);
+                if (obj.insertBefore && (ins = $('#' + obj.insertBefore))) {
+                    ins.before(menuitem);
                     return;
                 }
                 if (obj.position && parseInt(obj.position, 10) > 0) {
@@ -1209,12 +1187,12 @@
                         insertPoint.parentNode.appendChild(menuitem);
                     return;
                 }
-                insertPoint.parentNode.insertBefore(menuitem, insertPoint);
+                insertPoint.before(menuitem);
             }
         },
         removeMenuitem: function () {
             var remove = function (e) {
-                if (e.classList.contains('addMenuNot')) {
+                if (e.matches('.addMenuNot')) {
                     if (typeof e.originAttributes === "object") {
                         e.getAttributeNames().forEach(function (attr) {
                             e.removeAttribute(attr);
@@ -1223,24 +1201,24 @@
                             e.setAttribute(key, e.originAttributes[key]);
                         }
                     }
-                    e.classList.remove('addMenuNot');
+                    e.removeClass('addMenuNot');
                     return;
                 }
                 e.parentNode.removeChild(e);
             };
 
             $$('.addMenuOriginal').forEach((e) => {
-                let id = e.getAttribute('original-id');
+                let id = e.attr('original-id');
                 if (id && $(id))
-                    e.parentNode.insertBefore($(id), e);
-                e.parentNode.removeChild(e);
+                    e.before($(id));
+                e.remove();
             });
 
             $$('menu.addMenu, menugroup.addMenu').forEach(remove);
             $$('.addMenu').forEach(remove);
             // 恢复原隐藏菜单
             $$('.addMenuHide').forEach(function (e) {
-                e.classList.remove('addMenuHide');
+                e.removeClass('addMenuHide');
             });
         },
         setIcon: function (menu, obj) {
@@ -1640,14 +1618,6 @@
             }`)
         }
     };
-
-    function $ (id, doc = document) {
-        return doc.getElementById(id);
-    }
-
-    function $$ (exp, doc = document) {
-        return Array.prototype.slice.call(doc.querySelectorAll(exp));
-    }
     function $C (name, attr = {}) {
         const el = document.createXULElement(name);
         for (let [key, value] of Object.entries(attr)) {
@@ -1731,6 +1701,10 @@
                 menu.setAttribute("image", imageUrl);
             }
         }
+    }
+
+    function resolveChromeURL (fileUrl) {
+        return fileUrl.replace("file:///" + PathUtils.profileDir.replace(/\\/g, '/') + "/chrome", "chrome://userchrome/content")
     }
 
     window.addMenu.init();
@@ -1964,6 +1938,7 @@ class AddMenuParent extends JSWindowActorParent {
                     addMenu.setFaviconLink(data);
                     break;
                 case 'AddMenuPlus:SetFocusStatus':
+
                     Object.assign(addMenu.ContextMenu, data);
                     break;
             }
