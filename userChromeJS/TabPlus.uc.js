@@ -80,8 +80,6 @@
         };
     }
 
-    const { gBrowser, cPref } = window;
-
     const LANG = {
         'zh-CN': {
             "tabplus settings": "标签设置",
@@ -113,75 +111,107 @@
         }
     }
 
-    let TabPlus = {
-        listeners: {},
-        modules: {},
-        get showMenuIcon () {
-            return parseInt(Services.appinfo.version) < 90
-        },
-        get sss () {
+    class TabPlus {
+        constructor() {
+            this.listeners = {};
+            this.modules = {};
+            this.menus = [];
+            this.win = window;
+            this.gBrowser = window.gBrowser;
+            this.cPref = window.cPref;
+        }
+
+        get showMenuIcon() {
+            return parseInt(Services.appinfo.version) < 90;
+        }
+
+        get sss() {
             delete this.sss;
             return this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
-        },
-        init (win) {
-            this.menus = [];
-            Object.values(this.modules).forEach(module => {
+        }
+
+        async init() {
+            // 初始化模块
+            for (const [name, module] of Object.entries(this.modules)) {
                 if (!isTMPActive || module.compactWithTMP) {
-                    if (module.menus && module.menus instanceof Array) {
-                        this.menus = this.menus.concat(module.menus);
-                    } else if (typeof module.menus === "object") {
-                        this.menus.push(module.menus);
+                    if (module.menus) {
+                        if (Array.isArray(module.menus)) {
+                            this.menus = this.menus.concat(module.menus);
+                        } else if (typeof module.menus === "object") {
+                            this.menus.push(module.menus);
+                        }
                     }
-                    if (typeof module.init === "function")
-                        module.init(win);
+                    if (typeof module.init === "function") {
+                        module.init(this.win);
+                    }
+                }
+            }
+            
+            this.createOptionsMenu(this.win.document, this.menus);
+        }
+
+        destroy() {
+            const menu = this.$("TabPlus-menu");
+            if (menu) {
+                menu.parentNode.removeChild(menu);
+            }
+            
+            // 移除所有pref监听器
+            Object.values(this.listeners).forEach(l => this.cPref.removeListener(l));
+            
+            // 销毁所有模块
+            Object.values(this.modules).forEach(module => {
+                if (typeof module.destroy === "function") {
+                    module.destroy(this.win);
                 }
             });
-            this.createOptionsMenu(win.document, this.menus);
-        },
-        destroy () {
-            let menu = $("TabPlus-menu");
-            if (menu)
-                menu.parentNode.removeChild(menu);
-            Object.values(this.listeners).forEach(l => cPref.removeListener(l));
-            Object.values(this.modules).forEach(module => {
-                if (typeof module.destroy === "function")
-                    module.init(win);
-                module.destroy(window);
-            });
-        },
-        createOptionsMenu (doc, obj) {
-            let ins = $("devToolsSeparator", doc);
-            let menu = ins.parentNode.insertBefore($C(doc, "menu", {
+        }
+
+        createOptionsMenu(doc, obj) {
+            const ins = this.$("devToolsSeparator", doc);
+            const menu = ins.parentNode.insertBefore(this.$C(doc, "menu", {
                 id: 'TabPlus-menu',
                 class: this.showMenuIcon ? "menu-iconic" : "",
-                label: $L("tabplus settings"),
-                image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMTUpIj4NCiAgPHBhdGggZD0iTTUuNzUgM0M1LjM5NSAzIDUuMDY1NzE4OCAzLjE4OTA5MzcgNC44ODY3MTg4IDMuNDk2MDkzOEwzLjEzNjcxODggNi40OTYwOTM4QzMuMDQ3NzE4OCA2LjY0OTA5MzcgMyA2LjgyMyAzIDdMMyAxOUMzIDIwLjEwMyAzLjg5NyAyMSA1IDIxTDEyLjI5NDkyMiAyMUMxMi4xMDU5MjIgMjAuMzY2IDEyIDE5LjY5NSAxMiAxOUw1IDE5TDUgOUwxOSA5TDE5IDEyQzE5LjY5NSAxMiAyMC4zNjYgMTIuMTA1OTIyIDIxIDEyLjI5NDkyMkwyMSA3QzIxIDYuODIzIDIwLjk1MjI4MSA2LjY0OTA5MzggMjAuODYzMjgxIDYuNDk2MDkzOEwxOS4xMTMyODEgMy40OTYwOTM4QzE4LjkzNDI4MSAzLjE4OTA5MzcgMTguNjA1IDMgMTguMjUgM0w1Ljc1IDMgeiBNIDYuMzI0MjE4OCA1TDE3LjY3NTc4MSA1TDE4Ljg0MTc5NyA3TDUuMTU4MjAzMSA3TDYuMzI0MjE4OCA1IHogTSA5IDExTDkgMTNMMTUgMTNMMTUgMTFMOSAxMSB6IE0gMTguMDQ4ODI4IDE0QzE3LjkxOTgyOCAxNCAxNy44MTE4NzUgMTQuMDk2NjA5IDE3Ljc5Njg3NSAxNC4yMjQ2MDlMMTcuNjc5Njg4IDE1LjIzNjMyOEMxNy4xOTU2ODcgMTUuNDA0MzI4IDE2Ljc1NzkwNiAxNS42NjAyODEgMTYuMzc4OTA2IDE1Ljk4ODI4MUwxNS40NDMzNTkgMTUuNTgyMDMxQzE1LjMyNTM1OSAxNS41MzEwMzEgMTUuMTg3MDQ3IDE1LjU3ODQ1MyAxNS4xMjMwNDcgMTUuNjg5NDUzTDE0LjE4NzUgMTcuMzEwNTQ3QzE0LjEyMzUgMTcuNDIxNTQ3IDE0LjE1Mjg1OSAxNy41NjM2MjUgMTQuMjU1ODU5IDE3LjY0MDYyNUwxNS4wNjI1IDE4LjI0MDIzNEMxNS4wMTQ1IDE4LjQ4NzIzNCAxNC45ODQzNzUgMTguNzQgMTQuOTg0Mzc1IDE5QzE0Ljk4NDM3NSAxOS4yNiAxNS4wMTQ1IDE5LjUxMjc2NiAxNS4wNjI1IDE5Ljc1OTc2NkwxNC4yNTU4NTkgMjAuMzU5Mzc1QzE0LjE1Mjg1OSAyMC40MzYzNzUgMTQuMTIyNSAyMC41Nzg0NTMgMTQuMTg3NSAyMC42ODk0NTNMMTUuMTIzMDQ3IDIyLjMxMDU0N0MxNS4xODcwNDcgMjIuNDIyNTQ3IDE1LjMyNTM1OSAyMi40NjcwMTYgMTUuNDQzMzU5IDIyLjQxNjAxNkwxNi4zNzg5MDYgMjIuMDExNzE5QzE2Ljc1NzkwNiAyMi4zNDA3MTkgMTcuMTk1Njg3IDIyLjU5NTY3MiAxNy42Nzk2ODggMjIuNzYzNjcyTDE3Ljc5Njg3NSAyMy43NzUzOTFDMTcuODExODc1IDIzLjkwMzM5MSAxNy45MTk4MjggMjQgMTguMDQ4ODI4IDI0TDE5LjkyMTg3NSAyNEMyMC4wNTA4NzUgMjQgMjAuMTU4ODI4IDIzLjkwMzM5MSAyMC4xNzM4MjggMjMuNzc1MzkxTDIwLjI4OTA2MiAyMi43NjM2NzJDMjAuNzczMDYzIDIyLjU5NTY3MiAyMS4yMTI3OTcgMjIuMzM5NzE5IDIxLjU5MTc5NyAyMi4wMTE3MTlMMjIuNTI3MzQ0IDIyLjQxNzk2OUMyMi42NDUzNDQgMjIuNDY4OTY5IDIyLjc4MzY1NiAyMi40MjE1NDcgMjIuODQ3NjU2IDIyLjMxMDU0N0wyMy43ODMyMDMgMjAuNjg5NDUzQzIzLjg0NzIwMyAyMC41Nzc0NTMgMjMuODE3ODQ0IDIwLjQzNTM3NSAyMy43MTQ4NDQgMjAuMzU5Mzc1TDIyLjkwODIwMyAxOS43NTk3NjZDMjIuOTU2MjAzIDE5LjUxMjc2NiAyMi45ODQzNzUgMTkuMjYgMjIuOTg0Mzc1IDE5QzIyLjk4NDM3NSAxOC43NCAyMi45NTYyMDMgMTguNDg3MjM0IDIyLjkwODIwMyAxOC4yNDAyMzRMMjMuNzE0ODQ0IDE3LjY0MDYyNUMyMy44MTc4NDQgMTcuNTYzNjI1IDIzLjg0ODIwMyAxNy40MjE1NDcgMjMuNzgzMjAzIDE3LjMxMDU0N0wyMi44NDc2NTYgMTUuNjg5NDUzQzIyLjc4MzY1NiAxNS41Nzg0NTMgMjIuNjQ1MzQ0IDE1LjUzMTAzMSAyMi41MjczNDQgMTUuNTgyMDMxTDIxLjU5MTc5NyAxNS45ODgyODFDMjEuMjEyNzk3IDE1LjY2MDI4MSAyMC43NzMwNjIgMTUuNDA0MzI4IDIwLjI4OTA2MiAxNS4yMzYzMjhMMjAuMTczODI4IDE0LjIyNDYwOUMyMC4xNTg4MjggMTQuMDk2NjA5IDIwLjA1MDg3NSAxNCAxOS45MjE4NzUgMTRMMTguMDQ4ODI4IDE0IHogTSAxOC45ODQzNzUgMTdDMjAuMDg4Mzc1IDE3IDIwLjk4NDM3NSAxNy44OTUgMjAuOTg0Mzc1IDE5QzIwLjk4NDM3NSAyMC4xMDQgMjAuMDg4Mzc1IDIxIDE4Ljk4NDM3NSAyMUMxNy44ODAzNzUgMjEgMTYuOTg0Mzc1IDIwLjEwNCAxNi45ODQzNzUgMTlDMTYuOTg0Mzc1IDE3Ljg5NSAxNy44ODAzNzUgMTcgMTguOTg0Mzc1IDE3IHoiLz4NCjwvc3ZnPg=="
+                label: this.$L("tabplus settings"),
+                image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMTUpIj4NCiAgPHBhdGggZD0iTTUuNzUgM0M1LjM5NSAzIDUuMDY1NzE4OCAzLjE4OTA5MzcgNC44ODY3MTg4IDMuNDk2MDkzOEwzLjEzNjcxODggNi40OTYwOTM4QzMuMDQ3NzE4OCA2LjY0OTA5MzcgMyA2LjgyMyAzIDdMMyAxOUMzIDIwLjEwMyAzLjg5NyAyMSA1IDIxTDEyLjI5NDkyMiAyMUMxMi4xMDU5MjIgMjAuMzY2IDEyIDE5LjY5NSAxMiAxOUw1IDE5TDUgOUwxOSA5TDE5IDEyQzE5LjY5NSAxMiAyMC4zNjYgMTIuMTA1OTIyIDIxIDEyLjI5NDkyMkwyMSA3QzIxIDYuODIzIDIwLjk1MjI4MSA2LjY0OTA5MzggMjAuODYzMjgxIDYuNDk2MDkzOEwxOS4xMTMyODEgMy40OTYwOTM4QzE4LjkzNDI4MSAzLjE4OTA5MzcgMTguNjA1IDMgMTguMjUgM0w1Ljc1IDMgeiBNIDYuMzI0MjE4OCA1TDE3LjY3NTc4MSA1TDE4Ljg0MTc5NyA3TDUuMTU4MjAzMSA3TDYuMzI0MjE4OCA1IHogTSA5IDExTDkgMTNMMTUgMTNMMTUgMTFMOSAxMSB6IE0gMTguMDQ4ODI4IDE0QzE3LjkxOTgyOCAxNCAxNy44MTE4NzUgMTQuMDk2NjA5IDE3Ljc5Njg3NSAxNC4yMjQ2MDlMMTcuNjc5Njg4IDE1LjIzNjMyOEMxNy4xOTU2ODcgMTUuNDA0MzI4IDE2Ljc1NzkwNiAxNS42NjAyODEgMTYuMzc4OTA2IDE1Ljk4ODI4MUwxNS40NDMzNTkgMTUuNTgyMDMxQzE1LjMyNTM1OSAxNS41MzEwMzEgMTUuMTg3MDQ3IDE1LjU3ODQ1MyAxNS4xMjMwNDcgMTUuNjg5NDUzTDE0LjE4NzUgMTcuMzEwNTQ3QzE0LjEyMzUgMTcuNDIxNTQ3IDE0LjE1Mjg1OSAxNy41NjM2MjUgMTQuMjU1ODU5IDE3LjY0MDYyNUwxNS4wNjI1IDE4LjI0MDIzNEMxNS4wMTQ1IDE4LjQ4NzIzNCAxNC45ODQzNzUgMTguNzQgMTQuOTg0Mzc1IDE5QzE0Ljk4NDM3NSAxOS4yNiAxNS4wMTQ1IDE5LjUxMjc2NiAxNS4wNjI1IDE5Ljc1OTc2NkwxNC4yNTU4NTkgMjAuMzU5Mzc1QzE0LjE1Mjg1OSAyMC40MzYzNzUgMTQuMTIyNSAyMC41Nzg0NTMgMTQuMTg3NSAyMC42ODk0NTNMMTUuMTIzMDQ3IDIyLjMxMDU0N0MxNS4xODcwNDcgMjIuNDIyNTQ3IDE1LjMyNTM1OSAyMi40NjcwMTYgMTUuNDQzMzU5IDIyLjQxNjAxNkwxNi4zNzg5MDYgMjIuMDExNzE5QzE2Ljc1NzkwNiAyMi4zNDA3MTkgMTcuMTk1Njg3IDIyLjU5NTY3MiAxNy42Nzk2ODggMjIuNzYzNjcyTDE3Ljc5Njg3NSAyMy43NzUzOTFDMTcuODExODc1IDIzLjkwMzM5MSAxNy45MTk4MjggMjQgMTguMDQ4ODI4IDI0TDE5LjkyMTg3NSAyNEMyMC4wNTA4NzUgMjQgMjAuMTU4ODI4IDIzLjkwMzM5MSAyMC4xNzM4MjggMjMuNzc1MzkxTDIwLjI4OTA2MiAyMi43NjM2NzJDMjAuNzczMDYzIDIyLjU5NTY3MiAyMS4yMTI3OTcgMjIuMzM5NzE5IDIxLjU5MTc5NyAyMi4wMTE3MTlMMjIuNTI3MzQ0IDIyLjQxNzk2OUMyMi42NDUzNDQgMjIuNDY4OTY5IDIyLjc4MzY1NiAyMi40MjE1NDcgMjIuODQ3NjU2IDIyLjMxMDU0N0wyMy43ODMyMDMgMjAuNjg5NDUzQzIzLjg0NzIwMyAyMC41Nzc0NTMgMjMuODE3ODQ0IDIwLjQzNTM3NSAyMy43MTQ4NDQgMjAuMzU5Mzc1TDIyLjkwODIwMyAxOS43NTk3NjZDMjIuOTU2MjAzIDE5LjUxMjc2NiAyMi45ODQzNzUgMTkuMjYgMjIuOTg0Mzc1IDE5QzIyLjk4NDM3NSAxOC43NCAyMi45NTYyMDMgMTguNDg3MjM0IDIyLjkwODIwMyAxOC4yNDAyMzRMMjMuNzE0ODQ0IDE3LjY0MDYyNUMyMy44MTc4NDQgMTcuNTYzNjI1IDIzLjg0ODIwMyAxNy40MjE1NDcgMjMuNzgzMjAzIDE3LjMxMDU0N0wyMi44NDc2NTYgMTUuNjg5NDUzQzIyLjc4MzY1NiAxNS41Nzg0NTMgMjIuNjQ1MzQ0IDE1LjUzMTAzMSAyMi41MjczNDQgMTUuNTgyMDMxTDIxLjU5MTc5NyAxNS45ODgyODFDMjEuMjEyNzk3IDE1LjY2MDI4MSAyMC43NzMwNjIgMTUuNDA0MzI4IDIwLjI4OTA2MiAxNS4yMzYzMjhMMjAuMTczODI4IDE0LjIyNDYwOUMyMC4xNTg4MjggMTQuMDk2NjA5IDIwLjA1MDg3NSAxNCAxOS45MjE4NzUgMTRMMTguMDQ4ODI4IDE0IHogTSAxOC45ODQzNzUgMTdDMjAuMDg4Mzc1IDE3IDIwLjk4NDM3NSAxNy44OTUgMjAuOTg0Mzc1IDE5QzIwLjk4NDM3UgMTkuNTA4ODI4IDE0IHogTSAxOC45ODQzNzUgMTdDMjAuMDg4Mzc1IDE3IDIwLjk4NDM3NSAxNy44OTUgMjAuOTg0Mzc1IDE5QzIwLjk4NDM3NSAyMC4xMDQgMjAuMDg4Mzc1IDIxIDE4Ljk4NDM3NSAyMUMxNy44ODAzNzUgMjEgMTYuOTg0Mzc1IDIwLjEwNCAxNi45ODQzNzUgMTlDMTYuOTg0Mzc1IDE3Ljg5NSAxNy44ODAzNzUgMTcgMTguOTg0Mzc1IDE3IHoiLz4NCjwvc3ZnPg=="
             }), ins);
-            let menupopup = menu.appendChild($C(document, "menupopup", {
+            
+            const menupopup = menu.appendChild(this.$C(document, "menupopup", {
                 id: 'TabPlus-menupopup',
             }));
+            
             menupopup.addEventListener("popupshowing", (event) => {
-                if (event.target.id !== "TabPlus-menupopup");
+                if (event.target.id !== "TabPlus-menupopup") return;
                 event.target.querySelectorAll("menuitem").forEach(elm => elm.setAttribute("closemenu", "none"));
             });
-            if (obj && obj instanceof Array) {
+            
+            if (obj && Array.isArray(obj)) {
                 obj.forEach(itemObj => {
                     menupopup.appendChild(this.newMenuitem(doc, itemObj));
-                })
+                });
             }
-        },
-        newMenuitem (doc, obj) {
+        }
+
+        newMenuitem(doc, obj) {
             if (!obj || !doc) return;
+            
             let item, classList = [], tagName = obj.type || "menuitem";
-            if (['separator', 'toolbarseparator'].includes(obj.type) || !obj.group && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref) {
-                return $C(doc, 'toolbarseparator', obj, ['type', 'group', 'popup']);
+            
+            if (['separator', 'toolbarseparator'].includes(obj.type) || 
+                (!obj.group && !obj.label && !obj.tooltiptext && !obj.image && !obj.content && !obj.command && !obj.pref)) {
+                return this.$C(doc, 'toolbarseparator', obj, ['type', 'group', 'popup']);
             }
 
             // 选项菜单 hack
-            if (['checkbox', 'radio', 'prompt'].includes(obj.type)) tagName = "menuitem";
+            if (['checkbox', 'radio', 'prompt'].includes(obj.type)) {
+                tagName = "menuitem";
+            }
 
             // 设置 class
-            if (obj.class) obj.class.split(' ').forEach(c => classList.push(c));
+            if (obj.class) {
+                obj.class.split(' ').forEach(c => classList.push(c));
+            }
+            
             if (obj.type && obj.type.startsWith("html:")) {
                 obj.disabled = true;
                 delete obj.type;
@@ -189,41 +219,46 @@
                 classList.push("menuitem-iconic");
             }
 
-            item = $C(doc, tagName, obj, ['class', 'onBuild']);
+            item = this.$C(doc, tagName, obj, ['class', 'onBuild']);
 
-            if (!obj.content)
+            if (!obj.content) {
                 item.setAttribute('label', obj.label || obj.command || obj.oncommand);
-
+            }
 
             // 选项设置
             if (obj.pref) {
-                let valType = cPref.getType(obj.pref) || obj.valueType || 'unknown';
+                let valType = this.cPref.getType(obj.pref) || obj.valueType || 'unknown';
                 const map = {
                     string: 'prompt', int: 'prompt', bool: 'checkbox', boolean: 'checkbox'
-                }
+                };
                 const defaultVal = {
                     string: '', int: 0, bool: false, boolean: false
-                }
+                };
+                
                 let objType = map[valType] || obj.type;
                 if (objType) item.setAttribute('type', objType);
-                if (!obj.defaultValue && Object.keys(defaultVal).includes(objType)) item.setAttribute('defaultValue', defaultVal[objType]);
+                
+                if (!obj.defaultValue && Object.keys(defaultVal).includes(objType)) {
+                    item.setAttribute('defaultValue', defaultVal[objType]);
+                }
+                
                 if (objType === 'checkbox') {
-                    let setVal = cPref.get(obj.pref);
+                    let setVal = this.cPref.get(obj.pref);
                     if (typeof setVal === 'undefined') {
-                        cPref.set(obj.pref, item.getAttribute('defaultValue') || true);
+                        this.cPref.set(obj.pref, item.getAttribute('defaultValue') || true);
                     }
-                    item.setAttribute('checked', !!cPref.get(obj.pref));
-                    this.addPrefListener(obj.pref, function (value, pref) {
+                    item.setAttribute('checked', !!this.cPref.get(obj.pref));
+                    this.addPrefListener(obj.pref, (value, pref) => {
                         item.setAttribute('checked', value);
                     });
                 } else {
-                    let value = cPref.get(obj.pref);
+                    let value = this.cPref.get(obj.pref);
                     if (value) {
                         item.setAttribute('value', value);
-                        item.setAttribute('label', $S(obj.label, value));
+                        item.setAttribute('label', this.$S(obj.label, value));
                     }
-                    this.addPrefListener(obj.pref, function (value, pref) {
-                        item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
+                    this.addPrefListener(obj.pref, (value, pref) => {
+                        item.setAttribute('label', this.$S(obj.label, value || item.getAttribute('default')));
                     });
                 }
             }
@@ -235,7 +270,7 @@
                 if (typeof obj.onBuild === "function") {
                     obj.onBuild(doc, item);
                 } else {
-                    eval("(" + obj.onBuild + ").call(item, doc, item)")
+                    eval("(" + obj.onBuild + ").call(item, doc, item)");
                 }
             }
 
@@ -247,41 +282,55 @@
 
             // 设置 command
             if (obj.oncommand || obj.command) return item;
-            // item.setAttribute("oncommand", "TabPlus.onCommand(event);");
+            
             item.addEventListener("command", this.onCommand.bind(this), false);
             return item;
-        },
-        addPrefListener: function (pref, callback) {
-            this.listeners[pref] = cPref.addListener(pref, callback);
-        },
-        onCommand (event) {
+        }
+
+        addPrefListener(pref, callback) {
+            this.listeners[pref] = this.cPref.addListener(pref, callback);
+        }
+
+        onCommand(event) {
             let item = event.target;
             let precommand = item.hasAttribute("precommand"),
                 pref = item.getAttribute("pref") || "",
                 postcommand = item.hasAttribute("postcommand");
-            if (precommand)
+                
+            if (precommand) {
                 eval(item.getAttribute(precommand));
-            if (pref) this.handlePref(event, pref);
-            if (postcommand)
+            }
+            
+            if (pref) {
+                this.handlePref(event, pref);
+            }
+            
+            if (postcommand) {
                 eval(item.getAttribute(postcommand));
-            if (event.button == 0)
+            }
+            
+            if (event.button == 0) {
                 closeMenus(event.target.closest("menupopup"));
+            }
+        }
 
-        },
-        handlePref (event, pref) {
+        handlePref(event, pref) {
             let item = event.target;
             if (item.getAttribute('type') === 'checkbox') {
-                let setVal = cPref.get(pref);
+                let setVal = this.cPref.get(pref);
                 let defaultValue = item.getAttribute('defaultValue') || true;
+                
                 if (typeof setVal === "undefined") {
-                    cPref.set(pref, false, defaultValue);
+                    this.cPref.set(pref, false, defaultValue);
                 }
-                setVal = cPref.get(pref);
-                cPref.set(pref, !setVal);
+                
+                setVal = this.cPref.get(pref);
+                this.cPref.set(pref, !setVal);
                 item.setAttribute('checked', !setVal);
             } else if (item.getAttribute('type') === 'prompt') {
                 let type = item.getAttribute('valueType') || 'string',
-                    val = prompt(item.getAttribute('label'), cPref.get(pref, item.getAttribute('defaultValue') || ""));
+                    val = prompt(item.getAttribute('label'), this.cPref.get(pref, item.getAttribute('defaultValue') || ""));
+                    
                 if (val) {
                     switch (type) {
                         case 'int':
@@ -295,20 +344,77 @@
                             val = "" + val;
                             break;
                     }
-                    cPref.set(pref, val);
+                    this.cPref.set(pref, val);
                 }
-
             }
-        },
+        }
+
+        // DOM 辅助方法
+        $(id, aDoc) {
+            return (aDoc || document).getElementById(id);
+        }
+
+        $C(aDoc, tag, attrs, skipAttrs) {
+            attrs = attrs || {};
+            skipAttrs = skipAttrs || [];
+            let el;
+            
+            if (tag.startsWith('html:')) {
+                el = (aDoc || document).createElement(tag);
+            } else {
+                el = (aDoc || document).createXULElement(tag);
+            }
+
+            return this.$A(el, attrs, skipAttrs);
+        }
+
+        $A(el, obj, skipAttrs) {
+            skipAttrs = skipAttrs || [];
+            if (obj) {
+                Object.keys(obj).forEach(key => {
+                    if (!skipAttrs.includes(key)) {
+                        if (key.startsWith('on')) {
+                            const [e, f] = [key.slice(2), obj[key]];
+                            const fn = typeof f === 'function' ? f : new Function(f);
+                            el.addEventListener(e, fn, false);
+                        } else {
+                            el.setAttribute(key, obj[key]);
+                        }
+                    }
+                });
+            }
+            return el;
+        }
+
+        $L(str, replace) {
+            const LOCALE = LANG[Services.locale.defaultLocale] ? Services.locale.defaultLocale : 'zh-CN';
+            if (str) {
+                str = LANG[LOCALE][str] || str;
+                return this.$S(str, replace);
+            }
+            return "";
+        }
+
+        $S(str, replace) {
+            str || (str = '');
+            if (typeof replace !== "undefined") {
+                str = str.replace("%s", replace);
+            }
+            return str || "";
+        }
     }
-    TabPlus.modules.title = {
+
+    // 初始化模块
+    const tabPlus = new TabPlus();
+
+    tabPlus.modules.title = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
             content: $L("middle click not close popup")
         }]
     }
-    TabPlus.modules.loadInTabs = {
+    tabPlus.modules.loadInTabs = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
@@ -321,7 +427,7 @@
             label: $L('bookmarks'), type: 'checkbox', pref: 'browser.tabs.loadBookmarksInTabs'
         }],
     }
-    TabPlus.modules.loadHistoryInTabs = {
+    tabPlus.modules.loadHistoryInTabs = {
         PREF: 'browser.tabs.loadHistoryInTabs',
         menus: [{
             label: $L('history'), type: 'checkbox', pref: 'browser.tabs.loadHistoryInTabs'
@@ -366,9 +472,9 @@
                 this.replace(win);
             function callback (value, pref) {
                 if (value)
-                    TabPlus.modules.loadHistoryInTabs.replace();
+                    tabPlus.modules.loadHistoryInTabs.replace();
                 else
-                    TabPlus.modules.loadHistoryInTabs.restore();
+                    tabPlus.modules.loadHistoryInTabs.restore();
             }
             this.PREF_LISTENER = cPref.addListener(this.PREF, callback);
         },
@@ -379,7 +485,7 @@
         }
     }
 
-    TabPlus.modules.closeTabOpertate = {
+    tabPlus.modules.closeTabOpertate = {
         PREF_DBLCLICK: 'browser.tabs.closeTabByDblclick',
         PREF_CLICK: 'browser.tabs.closeTabByRightClick',
         menus: [{
@@ -430,7 +536,7 @@
             gBrowser.tabContainer.removeEventListener('click', this, false);
         }
     }
-    TabPlus.modules.loadInBackground = {
+    tabPlus.modules.loadInBackground = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
@@ -439,7 +545,7 @@
             label: $L("middle click link"), type: 'checkbox', pref: 'browser.tabs.loadInBackground',
         }]
     }
-    TabPlus.modules.loadImageInBackground = {
+    tabPlus.modules.loadImageInBackground = {
         PREF: 'browser.tabs.loadImageInBackground',
         menus: [{
             label: $L("image link"), type: 'checkbox', pref: 'browser.tabs.loadImageInBackground'
@@ -494,7 +600,7 @@
         }
     }
 
-    TabPlus.modules.baseMenu = {
+    tabPlus.modules.baseMenu = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
@@ -510,7 +616,7 @@
         compactWithTMP: true,
     }
 
-    TabPlus.modules.switchOnHover = {
+    tabPlus.modules.switchOnHover = {
         // 首选项键名
         PREF: 'browser.tabs.switchOnHover',
         // 是否触发标志
@@ -525,7 +631,7 @@
         init (win) {
             let { gBrowser } = win || window;
             // 监听鼠标移入事件
-            gBrowser.tabContainer.parentNode.addEventListener('mouseover', this, false);
+            gBrowser.tabContainer.addEventListener('mouseover', this, false);
             // 监听标签点击事件
             gBrowser.tabContainer.addEventListener('click', this, false);
         },
@@ -600,7 +706,7 @@
     }
 
 
-    TabPlus.modules.verticalTabPaneSwitchOnHover = {
+    tabPlus.modules.verticalTabPaneSwitchOnHover = {
         PREF: 'userChrome.tabs.verticalTabsPane.switchOnHover',
         menus: [{
             label: $L("vertical tabs panel"),
@@ -651,7 +757,7 @@
         }
     }
 
-    TabPlus.modules.other = {
+    tabPlus.modules.other = {
         menus: [{
             type: 'html:h2',
             class: 'subview-subheader',
@@ -680,7 +786,7 @@
         compactWithTMP: true,
     }
 
-    TabPlus.modules.rightClickLoadFromClipboard = {
+    tabPlus.modules.rightClickLoadFromClipboard = {
         PREF: 'browser.tabs.newTabBtn.rightClickLoadFromClipboard',
         menus: {
             label: $L("right click new tab button open url in clipboard"),
@@ -768,7 +874,7 @@
         }
     }
 
-    TabPlus.modules.switchOnScroll = {
+    tabPlus.modules.switchOnScroll = {
         menus: {
             label: $L("switch tab on scroll"),
             type: 'checkbox',
@@ -777,7 +883,7 @@
         compactWithTMP: true
     }
 
-    TabPlus.modules.selectLeftTabOnClose = {
+    tabPlus.modules.selectLeftTabOnClose = {
         PREF: 'browser.tabs.selectLeftTabOnClose',
         menus: {
             label: $L("select left tab after close current tab"),
@@ -802,7 +908,7 @@
         }
     }
 
-    TabPlus.modules.showDragImages = {
+    tabPlus.modules.showDragImages = {
         PREF: 'nglayout.enable_drag_images',
         menus: {
             label: $L("show drag images"),
@@ -810,39 +916,6 @@
             defaultValue: true,
             pref: 'nglayout.enable_drag_images'
         },
-    }
-
-    function $ (id, aDoc) {
-        return (aDoc || document).getElementById(id);
-    }
-
-    function $C (aDoc, tag, attrs, skipAttrs) {
-        attrs = attrs || {};
-        skipAttrs = skipAttrs || [];
-        var el;
-        if (tag.startsWith('html:')) {
-            el = (aDoc || document).createElement(tag);
-        } else {
-            el = (aDoc || document).createXULElement(tag);
-        }
-
-        return $A(el, attrs, skipAttrs);
-    }
-
-    function $A (el, obj, skipAttrs) {
-        skipAttrs = skipAttrs || [];
-        if (obj) Object.keys(obj).forEach(function (key) {
-            if (!skipAttrs.includes(key)) {
-                if (key.startsWith('on')) {
-                    const [e, f] = [key.slice(2), obj[key]];
-                    const fn = typeof f === 'function' ? f : new Function(f);
-                    el.addEventListener(e, fn, false)
-                } else {
-                    el.setAttribute(key, obj[key]);
-                }
-            }
-        });
-        return el;
     }
 
     function $L (str, replace) {
@@ -861,6 +934,6 @@
         return str || "";
     }
 
-    window.TabPlus = TabPlus;
+    window.TabPlus = tabPlus;
     window.TabPlus.init(window);
 })();
