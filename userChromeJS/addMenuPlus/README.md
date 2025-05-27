@@ -932,11 +932,114 @@ imagesub([
 ]);
 ```
 
+示例：上传图片到 imgdd.com 图床
+
+```js
+page([{
+    label: isZh ? '复制图片到 imgdd.com' : 'Copy image to imgdd.com',
+    class: 'copy',
+    condition: 'image completed-image',
+    oncommand: async function () {
+        // 获取图片链接或上下文菜单中的图片
+        const imageLink = addMenu.convertText("%i");
+        if (!imageLink || (!gContextMenu?.onImage && !extIsImage(imageLink))) {
+            return;
+        }
+
+        let fileName, imageBinary;
+        try {
+            // 获取图片的二进制数据
+            imageBinary = await fetch(imageLink).then(res => {
+                if (!res.ok) throw new Error(`获取图片失败，状态码: ${res.status}`);
+                return res.blob();
+            });
+
+            // 生成文件名
+            fileName = generateFileName(imageLink, imageBinary);
+
+            // 上传图片
+            const uploadResult = await uploadImage(imageBinary, fileName);
+
+            // 处理上传结果
+            addMenu.copy(uploadResult.url); 
+            const message = addMenu.locale.includes("zh")
+                ? "图片已上传到 imgdd.com，链接(" + uploadResult.url + ")已复制到剪贴板"
+                : "Image has been uploaded to imgdd.com, link(" + uploadResult.url + ") has been copied to clipboard";
+            addMenu.alert(message);
+        } catch (error) {
+            console.error("上传图片时出错:", error);
+            const errorMessage = addMenu.locale.includes("zh")
+                ? `上传失败: ${error.message}`
+                : `Upload failed: ${error.message}`;
+            addMenu.alert(errorMessage);
+        }
+
+        // 辅助函数：生成文件名
+        function generateFileName(imageLink, imageBinary) {
+            if (gContextMenu?.onImage) {
+                return gContextMenu.imageInfo.imageText + '.' + imageBinary.type.split('/')[1];
+            }
+            if (extIsImage(imageLink)) {
+                return imageLink.split('/').pop();
+            }
+            const date = new Date();
+            const ymd = date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).replace(/[^\d]/g, '');
+            const hms = date.toLocaleString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(/[^\d]/g, '');
+            return `${ymd}_${hms}.${imageBinary.type.split('/')[1]}`;
+        }
+
+        // 辅助函数：上传图片到指定 URL
+        async function uploadImage(imageBinary, fileName) {
+            const formData = new FormData();
+            formData.append('image', imageBinary, fileName);
+
+            const response = await fetch("https://imgdd.com/upload", {
+                credentials: "omit",
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
+                    "Accept": "*/*",
+                    "Accept-Language": "zh-CN,zh;q=0.8,zh-HK;q=0.7,zh-TW;q=0.5,en;q=0.3,en-US;q=0.2",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                     "Sec-Fetch-Site": "same-origin"
+                },
+                referrer: "https://imgdd.com/",
+                body: formData,
+                method: "POST",
+                mode: "cors",
+                signal: AbortSignal.timeout(10000) // 设置 10 秒超时
+            });
+
+            if (!response.ok) {
+                throw new Error(`上传失败，状态码: ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        // 辅助函数：判断是否为图片链接
+        function extIsImage(url) {
+            return /(?:jpe?g|png|gif|bmp|webp|ico|jxl)$/i.test(url);
+        }
+    },
+    accesskey: "H",
+    insertAfter: 'context-copyimage'
+}]);
+```
+
 #### 视频右键
 
 示例：增加 5 倍速播放
 
-```
+```js
 page([{
     id: 'context-media-playbackrate-500x',
     type: 'radio',
@@ -976,7 +1079,7 @@ page({
 
 示例：动态显示标签标题，详见 [怎么样用 addmenuplus 实现一个这样的菜单项](http://bbs.kafan.cn/forum.php?mod=viewthread&tid=1784671)
 
-```js
+```javascript
 page({
   label: "复制: ...",
   text: "%SEL%",
@@ -1073,7 +1176,7 @@ new (function () {
 
 示例：复制菜单仅复制纯文本格式
 
-```
+```js
 page([{
     id: 'context-copy-new',
     'data-l10n-href': 'textActions.ftl',
