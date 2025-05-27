@@ -131,11 +131,11 @@
     };
 
     window.addMenu = {
-        get platform () {
+        get platform() {
             delete this.platform;
             return this.platform = AppConstants.platform;
         },
-        get FILE () {
+        get FILE() {
             let path;
             try {
                 // addMenu.FILE_PATH があればそれを使う
@@ -159,11 +159,11 @@
             delete this.FILE;
             return this.FILE = aFile;
         },
-        get locale () {
+        get locale() {
             delete this.locale;
             return this.locale = ADDMENU_LOCALE || "en-US";
         },
-        get panelId () {
+        get panelId() {
             delete this.panelId;
             return this.panelId = Math.floor(Math.random() * 900000 + 99999);
         },
@@ -330,9 +330,7 @@
             gBrowser.tabpanels.removeEventListener("mouseup", this);
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
             this.removeMenuitem();
-            $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
-                e.remove();
-            });
+            $$('#addMenu-rebuild, .addMenu-insert-point').remove();
             this.identityBox?.removeAttr('contextmenu').off("click", this, false);
             $('#identity-box-contextmenu')?.remove();
             this.style?.remove();
@@ -497,7 +495,7 @@
                     break;
             }
 
-            function triggerFavMsg (tab) {
+            function triggerFavMsg(tab) {
                 if (content || !tab) return;
 
                 const browser = gBrowser.getBrowserForTab(tab);
@@ -509,7 +507,7 @@
                 addMenu.sendAsyncMessage("AddMenuPlus:GetFaviconLink", { hash });
             }
 
-            function calculateHashFromStr (data) {
+            function calculateHashFromStr(data) {
                 const gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
                 gCryptoHash.init(gCryptoHash.MD5);
                 gCryptoHash.update(
@@ -519,10 +517,10 @@
                 return gCryptoHash.finish(true);
             }
         },
-        executeInContent (browser, func, args = []) {
+        executeInContent(browser, func, args = []) {
 
         },
-        updateModifiedFile: function () {
+        updateModifiedFile() {
             if (!this.FILE.exists()) return;
 
             if (this._modifiedTime != this.FILE.lastModifiedTime) {
@@ -620,9 +618,19 @@
             let process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             let result = { success: false, error: null };
 
+            // 规范化路径函数
+            function normalizePath(path) {
+                if (AppConstants.platform === "win") {
+                    path = path.replace(/\//g, '\\');
+                } else {
+                    path = path.replace(/\\/g, '/');
+                }
+                return path;
+            }
+
             try {
                 // 规范化路径
-                let normalizedPath = normalizePath(path); // 假设有此函数
+                let normalizedPath = normalizePath(path);
                 file.initWithPath(normalizedPath);
 
                 // 检查文件是否存在
@@ -755,7 +763,7 @@
                     }
             }, this);
 
-            function ps (item, array) {
+            function ps(item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) :
                     array.push(item);
             }
@@ -1165,7 +1173,7 @@
                 }
             }
 
-            function insertMenuItem (obj, menuitem) {
+            function insertMenuItem(obj, menuitem) {
                 let ins;
                 if (obj.parent && (ins = $('#' + obj.parent))) {
                     ins.append(menuitem);
@@ -1339,7 +1347,7 @@
                 return convert(str);
             });
 
-            function convert (str) {
+            function convert(str) {
                 switch (str) {
                     case "%T":
                         return bw.contentTitle;
@@ -1413,11 +1421,11 @@
                 return str;
             }
 
-            function htmlEscape (s) {
+            function htmlEscape(s) {
                 return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
             }
 
-            function getUrl () {
+            function getUrl() {
                 const URI = bw.currentURI;
                 if (URI.schemeIs("about")) {
                     switch (URI.filePath) {
@@ -1432,7 +1440,7 @@
                 }
             }
 
-            function getHost () {
+            function getHost() {
                 const url = getUrl();
                 try {
                     const uri = Services.io.newURI(url);
@@ -1442,7 +1450,7 @@
                 }
             }
 
-            function getEmailAddress () {
+            function getEmailAddress() {
                 var url = context.linkURL;
                 if (!url) return "";
 
@@ -1457,7 +1465,7 @@
                 return addresses;
             }
 
-            function img2base64 (imgSrc, imgType) {
+            function img2base64(imgSrc, imgType) {
                 if (typeof imgSrc == 'undefined') return "";
                 imgType = imgType || "image/png";
                 const NSURI = "http://www.w3.org/1999/xhtml";
@@ -1490,7 +1498,7 @@
                 return data;
             }
 
-            function svg2base64 (svgSrc) {
+            function svg2base64(svgSrc) {
                 if (typeof svgSrc == 'undefined') return "";
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", svgSrc, false);
@@ -1501,13 +1509,13 @@
                 return svg64;
             }
         },
-        getSelectedText () {
+        getSelectedText() {
             return this._selectedText;
         },
-        setSelectedText (aText) {
+        setSelectedText(aText) {
             this._selectedText = aText;
         },
-        setFaviconLink ({ hash, href }) {
+        setFaviconLink({ hash, href }) {
             if (hash && href)
                 gBrowser.tabs.filter(t => t.faviconHash === hash).forEach(t => t.faviconUrl = href);
         },
@@ -1628,7 +1636,7 @@
             }`)
         }
     };
-    function $C (name, attr = {}) {
+    function $C(name, attr = {}) {
         const el = document.createXULElement(name);
         for (let [key, value] of Object.entries(attr)) {
             if (key.startsWith('on')) {
@@ -1640,7 +1648,7 @@
         }
         return el;
     }
-    function addStyle (css) {
+    function addStyle(css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
@@ -1648,18 +1656,18 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
-    function capitalize (s) {
+    function capitalize(s) {
         return s && s[0].toUpperCase() + s.slice(1);
     }
 
-    function lprintf (key, ...args) {
+    function lprintf(key, ...args) {
         const localeData = ADDMENU_LANG[ADDMENU_LOCALE];
         if (key && localeData?.[key]) {
             return args.reduce((str, arg) => str.replace('%s', arg), localeData[key]);
         }
         return capitalize(key || '');
     }
-    function processOnShowing (menu, menuObj, insertPoint) {
+    function processOnShowing(menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
             this.customShowings.push({
                 item: menu,
@@ -1685,7 +1693,7 @@
         }
     }
 
-    function setImage (menu, imageUrl) {
+    function setImage(menu, imageUrl) {
         if (imageUrl) {
             if (enableConvertImageAttrToListStyleImage) {
                 menu.style.listStyleImage = `url(${imageUrl})`;
@@ -1696,7 +1704,7 @@
         }
     }
 
-    function resolveChromeURL (fileUrl) {
+    function resolveChromeURL(fileUrl) {
         return fileUrl.replace("file:///" + PathUtils.profileDir.replace(/\\/g, '/') + "/chrome", "chrome://userchrome/content")
     }
 
@@ -1858,10 +1866,10 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     v => v !== undefined && v !== null);
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
-    executeInChrome () {
+    executeInChrome() {
 
     }
-    receiveMessage ({ name, data }) {
+    receiveMessage({ name, data }) {
         const { contentWindow: win } = this;
         const { document: doc } = win;
         switch (name) {
@@ -1906,7 +1914,7 @@ class AddMenuChild extends JSWindowActorChild {
                 break;
         }
 
-        function getSelectedText (win) {
+        function getSelectedText(win) {
             let text = "", doc = win.document;
             if (win.getSelection) {
                 text = win.getSelection().toString();
@@ -1918,7 +1926,7 @@ class AddMenuChild extends JSWindowActorChild {
     }
 }
 class AddMenuParent extends JSWindowActorParent {
-    receiveMessage ({ name, data }) {
+    receiveMessage({ name, data }) {
         try {
             const windowGlobal = this.manager.browsingContext.currentWindowGlobal;
             const browser = windowGlobal.rootFrameLoader.ownerElement;
