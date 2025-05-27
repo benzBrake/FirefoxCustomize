@@ -1201,16 +1201,16 @@
                 if (e.matches('.addMenuNot')) {
                     if (typeof e.originAttributes === "object") {
                         e.getAttributeNames().forEach(function (attr) {
-                            e.removeAttribute(attr);
+                            e.removeAttr(attr);
                         });
                         for (let key in e.originAttributes) {
-                            e.setAttribute(key, e.originAttributes[key]);
+                            e.attr(key, e.originAttributes[key]);
                         }
                     }
                     e.removeClass('addMenuNot');
                     return;
                 }
-                e.parentNode.removeChild(e);
+                e.remove();
             };
 
             $$('.addMenuOriginal').forEach((e) => {
