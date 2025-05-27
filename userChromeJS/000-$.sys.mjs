@@ -61,6 +61,8 @@ const $ = (sel, doc) => {
                     };
                 case 'parent':
                     return () => $(target.parentElement);
+                case 'children':
+                    return () => Array.from(target.children).map(el => $(el));
                 case 'remove':
                     return () => {
                         target.remove();
