@@ -340,8 +340,8 @@
         getActor: function (browser = gBrowser.selectedBrowser, name = "AddMenu") {
             return browser.browsingContext.currentWindowGlobal.getActor(name);
         },
-        sendAsyncMessage: function (key, data = {}) {
-            return this.getActor().sendAsyncMessage(key, data);
+        sendAsyncMessage: function (key, data = {}, browser = gBrowser.selectedBrowser) {
+            return this.getActor(browser).sendAsyncMessage(key, data);
         },
         handleEvent: function (event) {
             const { type, target, button } = event;
@@ -517,8 +517,24 @@
                 return gCryptoHash.finish(true);
             }
         },
-        executeInContent(browser, func, args = []) {
+        executeInContent(browser = gBrowser.selectedBrowser, func) {
+            try {
+                this.sendAsyncMessage("AddMenuPlus:ExecuteInContent", { script: func.toString() }, browser);
 
+            } catch (ex) {
+                console.error("Error in executeInContent : ", ex);
+            }
+        },
+        executeInChrome(func, args = []) {
+            try {
+                const functionobj = new Function(
+                    func.match(/\((.*)\)\s*\{/)[1],
+                    func.replace(/^function\s*.*\s*\(.*\)\s*\{/, '').replace(/}$/, '')
+                );
+                functionobj.apply(window, args);
+            } catch (ex) {
+                console.error("Error in executeInChrome : ", ex);
+            }
         },
         updateModifiedFile() {
             if (!this.FILE.exists()) return;
@@ -1630,10 +1646,20 @@
                 "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
                 aMsg + "", !!callback, "", callback);
         },
-        $$: function (exp, callback, context = gBrowser.selectedBrowser) {
-            this.executeInContent(context, `function () {
-                Array.from(exp).forEach(callback);
-            }`)
+        $$: function (selector, callback, context = gBrowser.selectedBrowser) {
+            // 如果 callback 是函数，转换为字符串
+            const callbackStr = typeof callback === 'function'
+                ? callback.toString()
+                : callback;
+
+            // 构造要执行的代码
+            const script = `
+                const elements = Array.from(this.document.querySelectorAll('${selector}'));
+                elements.forEach(e => (${callbackStr})(e));
+            `;
+
+            // 使用 executeInContent 执行
+            this.executeInContent(context, script);
         }
     };
     function $C(name, attr = {}) {
@@ -1866,8 +1892,14 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     v => v !== undefined && v !== null);
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
-    executeInChrome() {
-
+    executeInChrome(func, args) {
+        let json = {
+            func: func.toString(),
+            args: JSON.stringify(args)
+        }
+        this.sendAsyncMessage("AddMenuPlus:executeInChrome",
+            json
+        );
     }
     receiveMessage({ name, data }) {
         const { contentWindow: win } = this;
@@ -1912,6 +1944,10 @@ class AddMenuChild extends JSWindowActorChild {
                     textSelected: getSelectedText(win),
                 });
                 break;
+            case "AddMenuPlus:ExecuteInContent":
+                const { script } = data;
+                new Function(script).apply(win);
+                break;
         }
 
         function getSelectedText(win) {
@@ -1940,8 +1976,10 @@ class AddMenuParent extends JSWindowActorParent {
                     addMenu.setFaviconLink(data);
                     break;
                 case 'AddMenuPlus:SetFocusStatus':
-
                     Object.assign(addMenu.ContextMenu, data);
+                    break;
+                case 'AddMenuPlus:executeInChrome':
+                    addMenu.executeInChrome(data.func, data.args);
                     break;
             }
         } catch (e) { }
