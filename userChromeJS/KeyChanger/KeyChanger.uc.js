@@ -3,13 +3,13 @@
 // @author         Griever
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @include        main
+// @sandbox        true
 // @description    快捷键配置脚本
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
-// @version        2025.04.22
-// @note           2025.04.22 Change prototype of sandbox
-// @note           2025.04.19 remove unsafe eval
+// @version        2025.03.29
+// @note           2025.03.29 fix event.target is undefined
 // @note           2024.04.13 修复 openCommand 几个问题
 // @note           2023.07.27 修复 openCommand 不遵循容器设定
 // @note           2023.07.16 优化 openCommand 函数
@@ -112,11 +112,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             if (!str)
                 return null;
 
-            var sandbox = new Components.utils.Sandbox(new XPCNativeWrapper(window), {
-                sandboxPrototype: window,
-                sameZoneAs: window,
-            });
-
+            var sandbox = new Components.utils.Sandbox(new XPCNativeWrapper(window));
             var keys = Components.utils.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
             if (!keys)
                 return null;
@@ -225,11 +221,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                         }, this);
                         break;
                     default:
-                        let fn = createFunction(cmd, 'event');
+                        elem.dataset.oncommand = typeof cmd === "function" ? cmd.toString() : cmd;
                         elem.addEventListener('command', (event) => {
-                            fn.call(elem, event);
+                            eval('(' + event.target.dataset.oncommand + ')(window, event)');
                         });
-                        break;
                 }
                 dFrag.appendChild(elem);
             }, this);
@@ -473,13 +468,19 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         skipAttrs = skipAttrs || [];
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
-                if (key.startsWith('on')) {
-                    let fn = createFunction(obj[key]);
-                    el.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        fn.call(el, event);
+                let val = obj[key];
+                if (key.startsWith("on")) {
+                    const fn = typeof val === "string" ? (() => {
+                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
+                            return "(" + val + ").call(this, event)";
+                        }
+                        return val;
+                    })() : "(" + val + ").call(...args)";
+                    el.addEventListener(key.slice(2).toLocaleLowerCase(), (...args) => {
+                        eval(fn);
                     }, false);
                 } else {
-                    el.setAttribute(key, obj[key]);
+                    el.setAttribute(key, val);
                 }
             }
         });
@@ -489,42 +490,6 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
     function $R (el) {
         if (!el || !el.parentNode) return;
         el.parentNode.removeChild(el);
-    }
-
-    // generate by grok3
-    function createFunction (v, ...paramNamesOrArray) {
-        // 检查是否传入了一个数组作为第二个参数
-        let params = ['event']; // 默认参数名
-        if (paramNamesOrArray.length === 1 && Array.isArray(paramNamesOrArray[0])) {
-            params = paramNamesOrArray[0]; // 如果传入的是数组，则使用该数组
-        } else if (paramNamesOrArray.length > 0) {
-            params = paramNamesOrArray; // 否则使用可变参数
-        }
-
-        let fn;
-        if (typeof v === 'function') {
-            // 如果 v 已经是函数，直接赋值给 fn
-            fn = v;
-        } else if (typeof v === 'string') {
-            if (v.startsWith('function') || v.startsWith('async function')) {
-                // 如果 v 是字符串，且以 'function' 或 'async function' 开头
-                const isAsync = v.startsWith('async');
-                const paramPart = v.match(/\(([^)]*)/)[1]; // 提取参数部分
-                let bodyPart = v
-                    .replace(v.match(/[^)]*/) + ")", "") // 移除参数部分
-                    .replace(/[^{]*\{/, "") // 移除函数体前的部分
-                    .replace(/}$/, ''); // 移除末尾的 }
-                if (isAsync) {
-                    // 如果是 async function，转换为返回 Promise 的普通函数
-                    bodyPart = `return new Promise(async (resolve, reject) => { try { ${bodyPart}; resolve(); } catch (e) { reject(e); } });`;
-                }
-                fn = new Function(paramPart, bodyPart);
-            } else {
-                // 否则，将 v 作为函数体，创建一个以 params 为参数的函数
-                fn = new Function(...params, v);
-            }
-        }
-        return fn;
     }
 
     if (gBrowserInit.delayedStartupFinished) window.KeyChanger.init();

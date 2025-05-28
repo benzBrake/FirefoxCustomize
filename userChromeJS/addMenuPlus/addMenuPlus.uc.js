@@ -5,6 +5,7 @@
 // @author         Ryan, ywzhaiqi, Griever
 // @include        main
 // @license        MIT License
+// @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
 // @version        0.1.6r2
@@ -452,94 +453,96 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
 
             // 响应右键菜单显示事件
-            const addMenu_framescript = {
-                init () {
-                    ChromeUtils.defineESModuleGetters(this, {
-                        E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
-                    });
-                    this.console = Cc["@mozilla.org/consoleservice;1"]
-                        .getService(Ci.nsIConsoleService);
-
-                    addEventListener("mousedown", this, true); // 鼠标键按下事件
-                    addEventListener("unload", this, false);
-                    addMessageListener("addMenu_getFavicon", this);
-                    addMessageListener("addMenu_executeInContent", this);
-                },
-                executeInChrome (func, args) {
-                    let json = {
-                        func: func.toString(),
-                        args: JSON.stringify(args)
-                    }
-                    sendAsyncMessage("addMenu_executeInChrome", json);
-                },
-                handleEvent (event) {
-                    if (event.type == "mousedown") {
-                        if (event.button !== 2) return
-                        const target = event.target;
-                        const svg = target.tagName.toLowerCase() !== "svg" ? target.closest("svg") : target;
-                        const input = target.tagName.toLowerCase() === "input" ? target : null;
-                        const textarea = target.tagName.toLowerCase() === "textarea" ? target : null;
-                        const data = {
-                            onSvg: !!svg,
-                            svgHTML: svg ? svg.outerHTML : "",
-                            onInput: !!input,
-                            inputValue: input ? input.value : "",
-                            inputHTML: input ? input.outerHTML : "",
-                            onTextarea: !!textarea,
-                            textareaValue: textarea ? textarea.value : "",
-                            textareaHTML: textarea ? textarea.outerHTML : ""
-                        }
-                        sendAsyncMessage("addMenu_focusedStatus", data);
-                    }
-                },
-                receiveMessage (message) {
-                    const window = content;
-                    const document = window.document;
-                    switch (message.name) {
-                        case "addMenu_getFavicon":
-                            if (!"head" in document) return;
-                            let link = document.head.querySelector('[rel~="shortcut"],[rel="icon"]');
-                            let href = "";
-                            if (link) {
-                                href = processRelLink(link.getAttribute("href"));
-                            } else {
-                                href = document.location.protocol + "//" + document.location.host + "/" + "favicon.ico";
-                            }
-                            sendAsyncMessage("addMenu_faviconLink", { href: href, hash: message.data.hash });
-                            function processRelLink (href) {
-                                if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.indexOf("://")) || href.startsWith("data:")) {
-                                    return href;
-                                } else if (href.startsWith("//")) {
-                                    href = document.location.protocol + href;
-                                } else if (href.startsWith("./") || href.startsWith("/")) {
-                                    href = document.location.protocol + "//" + document.location.host + "/" + href.replace(/^\.?\//g, "");
-                                } else {
-                                    href = document.location.protocol + "//" + document.location.host + "/" + href;
-                                }
-                                return href;
-                            }
-                            break;
-                        case "addMenu_executeInContent":
-                            try {
-                                let func = Function("return " + message.data.func);
-                                let args = JSON.parse(message.data.args);
-                                func.apply(window, args);
-                            } catch (e) {
-                                this.console.log(e);
-                            }
-                            break;
-                    }
-                },
-                uninit () {
-                    removeEventListener("mousedown", this, true);
-                    removeMessageListener("addMenu_getFavicon", this);
-                    removeMessageListener("addMenu_executeInChrome", this);
-                }
+            const addMenu_framescript = `
+    ({
+        init() {
+            ChromeUtils.defineESModuleGetters(this, {
+                E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
+            });
+            this.console = Cc["@mozilla.org/consoleservice;1"]
+                .getService(Ci.nsIConsoleService);
+            addEventListener("mousedown", this, true);
+            addEventListener("unload", this, false);
+            addMessageListener("addMenu_getFavicon", this);
+            addMessageListener("addMenu_executeInContent", this);
+        },
+        executeInChrome(func, args) {
+            let json = {
+                func: func.toString(),
+                args: JSON.stringify(args)
             };
+            sendAsyncMessage("addMenu_executeInChrome", json);
+        },
+        handleEvent(event) {
+            if (event.type == "mousedown") {
+                if (event.button !== 2) return;
+                const target = event.target;
+                const svg = target.tagName.toLowerCase() !== "svg" ? target.closest("svg") : target;
+                const input = target.tagName.toLowerCase() === "input" ? target : null;
+                const textarea = target.tagName.toLowerCase() === "textarea" ? target : null;
+                const data = {
+                    onSvg: !!svg,
+                    svgHTML: svg ? svg.outerHTML : "",
+                    onInput: !!input,
+                    inputValue: input ? input.value : "",
+                    inputHTML: input ? input.outerHTML : "",
+                    onTextarea: !!textarea,
+                    textareaValue: textarea ? textarea.value : "",
+                    textareaHTML: textarea ? textarea.outerHTML : ""
+                };
+                sendAsyncMessage("addMenu_focusedStatus", data);
+            }
+        },
+        receiveMessage(message) {
+            const window = content;
+            const document = window.document;
+            switch (message.name) {
+                case "addMenu_getFavicon":
+                    if (!"head" in document) return;
+                    let link = document.head.querySelector('[rel~="shortcut"],[rel="icon"]');
+                    let href = "";
+                    if (link) {
+                        href = processRelLink(link.getAttribute("href"));
+                    } else {
+                        href = document.location.protocol + "//" + document.location.host + "/" + "favicon.ico";
+                    }
+                    sendAsyncMessage("addMenu_faviconLink", { href: href, hash: message.data.hash });
+                    function processRelLink(href) {
+                        if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.indexOf("://")) || href.startsWith("data:")) {
+                            return href;
+                        } else if (href.startsWith("//")) {
+                            href = document.location.protocol + href;
+                        } else if (href.startsWith("./") || href.startsWith("/")) {
+                            href = document.location.protocol + "//" + document.location.host + "/" + href.replace(/^\\.?\\//g, "");
+                        } else {
+                            href = document.location.protocol + "//" + document.location.host + "/" + href;
+                        }
+                        return href;
+                    }
+                    break;
+                case "addMenu_executeInContent":
+                    try {
+                        let func = Function("return " + message.data.func);
+                        let args = JSON.parse(message.data.args);
+                        func.apply(window, args);
+                    } catch (e) {
+                        this.console.log(e);
+                    }
+                    break;
+            }
+        },
+        uninit() {
+            removeEventListener("mousedown", this, true);
+            removeMessageListener("addMenu_getFavicon", this);
+            removeMessageListener("addMenu_executeInChrome", this);
+        }
+    }).init();
+`;
+            // 使用 data URI 加载 frame script
             window.messageManager.loadFrameScript(
-                "data:application/javascript;charset=UTF-8,"
-                + encodeURIComponent(addMenu_framescript.toSource() + ".init();"
-                ), true); // 第二个参数设置为 true 表示在后续所有窗口中加载
+                "data:application/javascript;charset=UTF-8," + encodeURIComponent(addMenu_framescript),
+                true // 在所有后续窗口中加载
+            );
             window.messageManager.addMessageListener("addMenu_focusedStatus", this);
             window.messageManager.addMessageListener("addMenu_faviconLink", this);
             window.messageManager.addMessageListener("addMenu_executeInChrome", this);

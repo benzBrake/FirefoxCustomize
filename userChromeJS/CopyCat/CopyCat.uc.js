@@ -2,12 +2,14 @@
 // @name            CopyCat.uc.js
 // @description     CopyCat 资源管理
 // @author          Ryan
-// @version         0.3.3
+// @version         0.3.4
 // @compatibility   Firefox 80
+// @sandbox         true
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
 // @shutdown        window.CopyCat.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.3.4 去除 0.3.3 的修改，使用 @sandbox 注解，修复 PlacesUtils.favicons.getFaviconDataForPage undefined 的问题
 // @note            0.3.3 fix unsave eval 使用 sandbox 替代 eval
 // @note            0.3.2 修复 precommand / postcommand 触发，修复 pref 菜单 defaultValue 无效，修复 onCommand 兜底失效
 // @note            0.3.1 修复重复绑定事件
@@ -17,6 +19,7 @@
     const AUTOFIT_POPUP_POSITION = true;
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const PlacesUtils = globalThis.PlacesUtils || ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs").PlacesUtils;
     const alt = (aMsg, aTitle) => Services.prompt.alert(window, aTitle ?? Services.appinfo.name, aMsg)
 
     const xPref = {
@@ -74,14 +77,14 @@
 
     const CopyCat = {
         _style: null,
-        get PLATFORM () {
+        get PLATFORM() {
             delete this.PLATFORM;
             return this.PLATFORM = AppConstants.platform;
         },
-        get DEGUG () {
+        get DEGUG() {
             return xPref.get("extensions.CopyCat.debug", false);
         },
-        get FILE () {
+        get FILE() {
             var path = xPref.get("userChromeJS.CopyCat.FILE_PATH", "_copycat.js")
             var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
             aFile.appendRelativePath(path);
@@ -137,8 +140,8 @@
                     formatMessages: async function () {
                         return "";
                     },
-                    translateRoots () { },
-                    connectRoot () { }
+                    translateRoots() { },
+                    connectRoot() { }
                 }
                 this.MESSAGES = _messages;
             }
@@ -522,31 +525,38 @@
                         });
                     }
                     return;
-                    function getIconURL (engine) {
+                    function getIconURL(engine) {
                         // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines
                         return (engine._iconURI || engine.iconURI)?.spec || "chrome://browser/skin/search-engine-placeholder.png";
                     }
                 }
             }
             var setIconCallback = function (url) {
+                const { favicons, toURI } = PlacesUtils;
                 let uri, iconURI;
                 try {
-                    uri = Services.io.newURI(url, null, null);
+                    uri = toURI(url);
                 } catch (e) { }
                 if (!uri) return;
 
                 menu.setAttribute("scheme", uri.scheme);
-                PlacesUtils.favicons.getFaviconDataForPage(uri, {
-                    onComplete: function (aURI, aDataLen, aData, aMimeType) {
-                        try {
-                            // javascript: URI の host にアクセスするとエラー
-                            let iconURL = aURI && aURI.spec ?
-                                "page-icon:" + aURI.spec :
-                                "page-icon:" + uri.spec;
-                            setMenuImage(menu, iconURL);
-                        } catch (e) { }
-                    }
-                });
+                try {
+                    favicons.getFaviconForPage(uri).then(({ dataURI }) => {
+                        setMenuImage(menu, dataURI.schemeIs('data') ? dataURI.spec : "page-icon:" + dataURI.spec);
+                    })
+                } catch (e) { 
+                    PlacesUtils.favicons.getFaviconDataForPage(uri, {
+                        onComplete: function (aURI, aDataLen, aData, aMimeType) {
+                            try {
+                                // javascript: URI の host にアクセスするとエラー
+                                let iconURL = aURI && aURI.spec ?
+                                    "page-icon:" + aURI.spec :
+                                    "page-icon:" + uri.spec;
+                                setMenuImage(menu, iconURL);
+                            } catch (e) { }
+                        }
+                    });
+                }
             }
             PlacesUtils.keywords.fetch(obj.keyword || '').then(entry => {
                 let url;
@@ -796,7 +806,7 @@
             });
 
             sandbox.menus = itemObj => ps(itemObj, sandbox._menus);
-            function ps (item, array) {
+            function ps(item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) : array.push(item);
             }
 
@@ -823,7 +833,7 @@
                 Object.assign(sandbox, {
                     AppConstants, gBrowser, SessionStore
                 });
-                ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js", "chrome://browser/content/parent/ext-browser.js"].forEach(url => {
+                ["chrome://browser/content/places/controller.js", "chrome://browser/content/places/browserPlacesViews.js", "chrome://browser/content/browser-places.js"].forEach(url => {
                     try {
                         Services.scriptloader.loadSubScript(url, globalThis);
                     } catch (e) { }
@@ -843,162 +853,101 @@
                     });
                 }
 
-                let tPop = document.querySelector("#CopyCat-Popup #menu_ToolsPopup");
-                // 处理点击事件
-                tPop.addEventListener('click', function (event) {
-                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
-                        if (origElm) {
-                            forwardEvent(event, origElm, 'click');
-                        }
-                    }
-                });
-                // 处理右键/辅助点击事件
-                tPop.addEventListener('auxclick', function (event) {
-                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
-                        if (origElm) {
-                            forwardEvent(event, origElm, 'auxclick');
-                        }
-                    }
-                });
-                // 处理双击事件
-                tPop.addEventListener('dblclick', function (event) {
-                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
-                        if (origElm) {
-                            forwardEvent(event, origElm, 'dblclick');
-                        }
-                    }
-                });
-                // 处理上下文菜单事件 (右键菜单)
-                tPop.addEventListener('contextmenu', function (event) {
-                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
-                        if (origElm) {
-                            forwardEvent(event, origElm, 'contextmenu');
-                        }
-                    }
-                });
-                // 处理鼠标按下事件
-                tPop.addEventListener('mousedown', function (event) {
-                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
-                        if (origElm) {
-                            forwardEvent(event, origElm, 'mousedown');
-                        }
-                    }
-                });
-                // 处理鼠标释放事件
-                tPop.addEventListener('mouseup', function (event) {
-                    if (event.target.id && event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        let origElm = document.querySelector("#main-menubar #" + event.target.id);
-                        if (origElm) {
-                            forwardEvent(event, origElm, 'mouseup');
-                        }
-                    }
-                });
-
-
                 document.querySelector("#CopyCat-Popup").addEventListener('command', (event) => bm_command(event));
-                function bm_command (event) {
+                function bm_command(event) {
                     if (event.target !== event.currentTarget && event.target.matches('menuitem:not([command])')) {
-                        if (event.target.closest('#tools-menu')) {
+                        switch (event.target.id) {
+                            // == edit-menu ==
+                            case "menu_preferences":
+                                openPreferences(undefined);
+                                break;
 
-                        } else {
-                            switch (event.target.id) {
-                                // == edit-menu ==
-                                case "menu_preferences":
-                                    openPreferences(undefined);
-                                    break;
+                            // == view-menu ==
+                            case "menu_pageStyleNoStyle":
+                                gPageStyleMenu.disableStyle();
+                                break;
+                            case "menu_pageStylePersistentOnly":
+                                gPageStyleMenu.switchStyleSheet(null);
+                                break;
+                            case "repair-text-encoding":
+                                BrowserCommands.forceEncodingDetection();
+                                break;
+                            case "documentDirection-swap":
+                                gBrowser.selectedBrowser.sendMessageToActor(
+                                    "SwitchDocumentDirection",
+                                    {},
+                                    "SwitchDocumentDirection",
+                                    "roots"
+                                );
+                                break;
 
-                                // == view-menu ==
-                                case "menu_pageStyleNoStyle":
-                                    gPageStyleMenu.disableStyle();
-                                    break;
-                                case "menu_pageStylePersistentOnly":
-                                    gPageStyleMenu.switchStyleSheet(null);
-                                    break;
-                                case "repair-text-encoding":
-                                    BrowserCommands.forceEncodingDetection();
-                                    break;
-                                case "documentDirection-swap":
-                                    gBrowser.selectedBrowser.sendMessageToActor(
-                                        "SwitchDocumentDirection",
-                                        {},
-                                        "SwitchDocumentDirection",
-                                        "roots"
-                                    );
-                                    break;
+                            // == history-menu ==
+                            case "sync-tabs-menuitem":
+                                gSync.openSyncedTabsPanel();
+                                break;
+                            case "hiddenTabsMenu":
+                                gTabsPanel.showHiddenTabsPanel(event, "hidden-tabs-menuitem");
+                                break;
+                            case "sync-setup":
+                                gSync.openPrefs("menubar");
+                                break;
+                            case "sync-enable":
+                                gSync.openPrefs("menubar");
+                                break;
+                            case "sync-unverifieditem":
+                                gSync.openPrefs("menubar");
+                                break;
+                            case "sync-syncnowitem":
+                                gSync.doSync(event);
+                                break;
+                            case "sync-reauthitem":
+                                gSync.openSignInAgainPage("menubar");
+                                break;
+                            case "menu_openFirefoxView":
+                                FirefoxViewHandler.openTab();
+                                break;
+                            case "hiddenUndoCloseWindow":
+                                undoCloseWindow(0);
+                                break;
 
-                                // == history-menu ==
-                                case "sync-tabs-menuitem":
-                                    gSync.openSyncedTabsPanel();
-                                    break;
-                                case "hiddenTabsMenu":
-                                    gTabsPanel.showHiddenTabsPanel(event, "hidden-tabs-menuitem");
-                                    break;
-                                case "sync-setup":
-                                    gSync.openPrefs("menubar");
-                                    break;
-                                case "sync-enable":
-                                    gSync.openPrefs("menubar");
-                                    break;
-                                case "sync-unverifieditem":
-                                    gSync.openPrefs("menubar");
-                                    break;
-                                case "sync-syncnowitem":
-                                    gSync.doSync(event);
-                                    break;
-                                case "sync-reauthitem":
-                                    gSync.openSignInAgainPage("menubar");
-                                    break;
-                                case "menu_openFirefoxView":
-                                    FirefoxViewHandler.openTab();
-                                    break;
-                                case "hiddenUndoCloseWindow":
-                                    undoCloseWindow(0);
-                                    break;
-
-                                // == menu_HelpPopup ==
-                                // (Duplicated in PanelUI._onHelpCommand)
-                                case "menu_openHelp":
-                                    openHelpLink("firefox-help");
-                                    break;
-                                case "menu_layout_debugger":
-                                    toOpenWindowByType(
-                                        "mozapp:layoutdebug",
-                                        "chrome://layoutdebug/content/layoutdebug.xhtml"
-                                    );
-                                    break;
-                                case "feedbackPage":
-                                    openFeedbackPage();
-                                    break;
-                                case "helpSafeMode":
-                                    safeModeRestart();
-                                    break;
-                                case "troubleShooting":
-                                    openTroubleshootingPage();
-                                    break;
-                                case "menu_HelpPopup_reportPhishingtoolmenu":
-                                    openUILink(gSafeBrowsing.getReportURL("Phish"), event, {
-                                        triggeringPrincipal:
-                                            Services.scriptSecurityManager.createNullPrincipal({}),
-                                    });
-                                    break;
-                                case "menu_HelpPopup_reportPhishingErrortoolmenu":
-                                    gSafeBrowsing.reportFalseDeceptiveSite();
-                                    break;
-                                case "helpSwitchDevice":
-                                    openSwitchingDevicesPage();
-                                    break;
-                                case "aboutName":
-                                    openAboutDialog();
-                                    break;
-                                case "helpPolicySupport":
-                                    openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
-                                    break;
-                            }
+                            // == menu_HelpPopup ==
+                            // (Duplicated in PanelUI._onHelpCommand)
+                            case "menu_openHelp":
+                                openHelpLink("firefox-help");
+                                break;
+                            case "menu_layout_debugger":
+                                toOpenWindowByType(
+                                    "mozapp:layoutdebug",
+                                    "chrome://layoutdebug/content/layoutdebug.xhtml"
+                                );
+                                break;
+                            case "feedbackPage":
+                                openFeedbackPage();
+                                break;
+                            case "helpSafeMode":
+                                safeModeRestart();
+                                break;
+                            case "troubleShooting":
+                                openTroubleshootingPage();
+                                break;
+                            case "menu_HelpPopup_reportPhishingtoolmenu":
+                                openUILink(gSafeBrowsing.getReportURL("Phish"), event, {
+                                    triggeringPrincipal:
+                                        Services.scriptSecurityManager.createNullPrincipal({}),
+                                });
+                                break;
+                            case "menu_HelpPopup_reportPhishingErrortoolmenu":
+                                gSafeBrowsing.reportFalseDeceptiveSite();
+                                break;
+                            case "helpSwitchDevice":
+                                openSwitchingDevicesPage();
+                                break;
+                            case "aboutName":
+                                openAboutDialog();
+                                break;
+                            case "helpPolicySupport":
+                                openTrustedLinkIn(Services.policies.getSupportMenu().URL.href, "tab");
+                                break;
                         }
                     }
                 }
@@ -1006,7 +955,7 @@
             }
             return true;
         },
-        insertMenuitem (doc, obj, item) {
+        insertMenuitem(doc, obj, item) {
             if (!item) {
                 this.log("[insertMenuitem] Item to be inserted is null!");
                 return;
@@ -1028,7 +977,7 @@
                 aPopup.appendChild(item);
             }
         },
-        uninit () {
+        uninit() {
             this.CUSTOM_SHOWINGS = [];
             let mp = $('#CopyCat-Popup', this.btn);
             if (mp) {
@@ -1040,7 +989,7 @@
                  * 
                  * @param {HTMLElement} mp 弹出菜单对象
                  */
-                function rmip (mp) {
+                function rmip(mp) {
                     $$('[restoreBeforeUnload="true"]', mp, item => {
                         if (item.originalAttrs) {
                             const originalKeys = Object.keys(item.originalAttrs);
@@ -1071,7 +1020,7 @@
             }
             removeElement(mp, this.MENU_STYLE);
         },
-        destroy () {
+        destroy() {
             if (this._style && SS_SERVICE.sheetRegistered(this._style.url, this._style.type)) {
                 SS_SERVICE.unregisterSheet(this._style.url, this._style.type);
             }
@@ -1092,7 +1041,7 @@
      * @param {Document|null} d 指定 document，不提供就是全局 document
      * @returns 
      */
-    function $ (s, d) {
+    function $(s, d) {
         s = s.trim();
         if (s.startsWith(">")) {
             s = ':scope' + s;
@@ -1102,7 +1051,7 @@
         return isComplexSelector ? (d || document).querySelector(s) : doc.getElementById(s);
     }
 
-    function $$ (s, d, fn) {
+    function $$(s, d, fn) {
         s = s.trim();
         const isComplexSelector = /[#\.[:]/i.test(s);
         const doc = d instanceof Document ? d : (d ? d.ownerDocument : document);
@@ -1125,7 +1074,7 @@
      * @param {Array} s 跳过属性
      * @returns 
      */
-    function createElement (d, t, o = {}, s = []) {
+    function createElement(d, t, o = {}, s = []) {
         if (!d) return;
         let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
         return applyAttr(e, o, s);
@@ -1140,7 +1089,7 @@
      * @param {Object|null} s 跳过属性
      * @returns 
      */
-    function applyAttr (e, o = {}, s = []) {
+    function applyAttr(e, o = {}, s = []) {
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
             if (k.startsWith('on')) {
@@ -1153,7 +1102,7 @@
     }
 
     // generate by grok3
-    function createFunction (v, ...paramNamesOrArray) {
+    function createFunction(v, ...paramNamesOrArray) {
         // 检查是否传入了一个数组作为第二个参数
         let params = ['event']; // 默认参数名
         if (paramNamesOrArray.length === 1 && Array.isArray(paramNamesOrArray[0])) {
@@ -1188,37 +1137,13 @@
         return fn;
     }
 
-    function forwardEvent (event, origElm, eventType) {
-        // 复制原始事件的一些关键属性
-        const newEvent = new MouseEvent(eventType, {
-            bubbles: true,
-            cancelable: true,
-            view: window,
-            detail: event.detail,
-            screenX: event.screenX,
-            screenY: event.screenY,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            ctrlKey: event.ctrlKey,
-            altKey: event.altKey,
-            shiftKey: event.shiftKey,
-            metaKey: event.metaKey,
-            button: event.button,
-            buttons: event.buttons,
-            relatedTarget: event.relatedTarget
-        });
-
-        // 在原始元素上触发模拟事件
-        origElm.dispatchEvent(newEvent);
-    }
-
     /**
      * 删除多个 HTML 元素
      * 
      * @param {...HTMLElement} args - 一个或多个要删除的元素
      * @returns {Array<HTMLElement|null>} 已删除的元素数组，若元素不存在则返回 null
      */
-    function removeElement (...args) {
+    function removeElement(...args) {
         return args.map(e => e && e.parentNode ? e.parentNode.removeChild(e) : null);
     }
 
@@ -1229,7 +1154,7 @@
      * @param {string|null} aTitle 消息标题，不提供则为 CopyCat Button
      * @param {Function} aCallback 回调函数
      */
-    function alerts (aMsg, aTitle, aCallback) {
+    function alerts(aMsg, aTitle, aCallback) {
         var callback = aCallback ? {
             observe: function (subject, topic, data) {
                 if ("alertclickcallback" != topic)
@@ -1250,7 +1175,7 @@
      * @param  {...any} args 剩余参数，只能是数字和字符串
      * @returns 
      */
-    function sprintf (f, ...args) {
+    function sprintf(f, ...args) {
         if (!args.length) return f;
         if (!args.indexOf("%")) return f;
         let s = f; for (let a of args) s = s.replace(/%[sd]/, a); return s;
@@ -1261,7 +1186,7 @@
      * @param {Ci.nsIFile} f 
      * @returns 
      */
-    function getURLSpecFromFile (f) {
+    function getURLSpecFromFile(f) {
         const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
         return fph.getURLSpecFromActualFile(f);
     }
@@ -1272,7 +1197,7 @@
      * @param {path|nsIFile} path 
      * @returns 
      */
-    function getFile (path) {
+    function getFile(path) {
         let aFile;
         if (path instanceof Ci.nsIFile) {
             aFile = path;
@@ -1290,7 +1215,7 @@
      * @param {string} parentPath 相对路径从哪里来，默认为 profile 目录
      * @returns 
      */
-    function handleRelativePath (path, parentPath) {
+    function handleRelativePath(path, parentPath) {
         if (path) {
             var ffdir = parentPath ? parentPath : PathUtils.profileDir
             // windows 的目录分隔符不一样
@@ -1314,7 +1239,7 @@
      * @param {string} css 
      * @returns 
      */
-    function addStyle (css) {
+    function addStyle(css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
@@ -1328,7 +1253,7 @@
      * @param {MozMenuItem|MozMenu} menu 
      * @param {string} imageUrl 
      */
-    function setMenuImage (menu, imageUrl) {
+    function setMenuImage(menu, imageUrl) {
         if (imageUrl) {
             if (menu.className.match(/-iconic/)) {
                 menu.setAttribute("image", imageUrl);

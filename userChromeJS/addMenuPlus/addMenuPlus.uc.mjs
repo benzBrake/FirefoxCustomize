@@ -34,7 +34,7 @@
             'config example': '// 这是一个 addMenuPlus 配置文件\n' +
                 '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
                 '\n\n' +
-                'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+                'tab({\n    label: "addMenuPlus 配置",\n    oncommand: function(){ addMenu.edit(addMenu.FILE); }\n});',
             'example is empty': '目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。',
             'addmenuplus label': 'addMenuPlus',
             'addmenuplus tooltip': '左键：重载配置\n右键：编辑配置',
@@ -57,7 +57,7 @@
             'config example': '// This is an addMenuPlus configuration file.\n' +
                 '// Please visit http://ywzhaiqi.github.io/addMenu_creator/ to generate configuration.' +
                 '\n\n' +
-                'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+                'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: function(){ addMenu.edit(addMenu.FILE); }\n});',
             'example is empty': 'The configuration file for addMenuPlus is currently empty, please generate the configuration and put it in the configuration file in the open link. \nOpen the configuration file by right-clicking the tab.',
             'addmenuplus label': 'addMenuPlus',
             'addmenuplus tooltip': 'Left Click：Reload configuration\nRight Click：Edit configuration',
@@ -237,8 +237,13 @@
                 id: "addMenu-rebuild",
                 label: lprintf('addmenuplus label'),
                 tooltiptext: lprintf('addmenuplus tooltip'),
-                oncommand: "setTimeout(async function(){ await addMenu.rebuild(true); }, 10);",
-                onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
+                oncommand: () => setTimeout(async () => await addMenu.rebuild(true), 10),
+                onclick: (event) => {
+                    if (event.button == 2) {
+                        event.preventDefault();
+                        addMenu.edit(addMenu.FILE);
+                    }
+                },
             }))
 
             // Photon Compact
@@ -1667,7 +1672,12 @@
         for (let [key, value] of Object.entries(attr)) {
             if (key.startsWith('on')) {
                 const eventName = key.slice(2).toLowerCase();
-                el.addEventListener(eventName, typeof value === 'string' ? new Function('event', value) : value);
+                if (typeof value === 'function') {
+                    el.addEventListener(eventName, value);
+                } else {
+                    let error = new Error('addMenuPlus: $C: ' + key + ' is not a function');
+                    console.error(error);
+                }
             } else {
                 el.setAttribute(key, value);
             }

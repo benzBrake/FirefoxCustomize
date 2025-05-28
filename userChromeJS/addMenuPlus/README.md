@@ -69,7 +69,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     url         打开你想要的网址
     where       打开的位置 (默认当前页面，tab前台、tabshifted后台、window窗口、current当前页面)
     condition   菜单出现的条件 (网页右键：select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput；工具栏右键：menubar, tabs, navbar, personal, button, nomenubar, notabs, nonavbar, nopersonal, nobutton)
-    oncommand   自定义命令
+    oncommand   自定义命令，从 
     command     命令的 id
     onclick     点击的函数
     image       添加图标 （对应图标 url 或 base64）
@@ -83,6 +83,14 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     onshowinglabel 我新增的，显示的时候根据模板设置 label
     "data-l10n-href" （我新增的，因JS语法问题配置里请用双引号括起来，本地化语言文件 ftl 后缀）
     "data-l10n-id"  （我新增的，因JS语法问题配置里请用双引号括起来，本地化关联 id）
+
+`onxxx`额外说明：Firefox 139+ 不允许行内函数了，所以`onxxx`必须是下面这种格式
+
+```js
+oncommand: function() {
+
+}
+```
 
 `condition`额外说明：
 

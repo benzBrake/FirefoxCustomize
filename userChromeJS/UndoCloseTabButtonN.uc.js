@@ -3,6 +3,7 @@
 // @description		閉じたタブを復元するツールバーボタン＆タブバーの空き上の中クリックで最後に閉じたタブを復元
 // @version         1.2.6
 // @include         main
+// @sandbox         true
 // @charset         UTF-8
 // @note            2025/01/31 Fx136 fix Remove Cu.import, per Bug Bug 1881888, Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            2023/08/16 Fx117 fix this is undefined
@@ -80,10 +81,6 @@
             }
 
             if (tabLength + winLength === 0) {
-                /*				menu.appendChild(this.$C(doc, "menuitem", {
-                                    disabled: true,
-                                    label	: "履歴がありません"
-                                }));*/
                 event.preventDefault();
             }
         },
@@ -118,7 +115,6 @@
 
         onClick (event) {
             if (event.button === 0 && event.target.id === "ucjs-undo-close-tab-button") {
-                console.log(event.target.id)
                 event.preventDefault();
                 event.stopPropagation();
                 undoCloseTab();
@@ -148,13 +144,8 @@
             const e = tag instanceof Node ? tag : doc.createElementNS(XULNS, tag);
             if (attrs) {
                 Object.entries(attrs).forEach(([key, value]) => {
-                    if (key.startsWith('on')) {
-                        const eventName = key.slice(2).toLowerCase();
-                        if (typeof value === 'string') {
-                            e.addEventListener(eventName, new Function(value));
-                        } else if (typeof value === 'function') {
-                            e.addEventListener(eventName, value);
-                        }
+                    if (key.startsWith('on') && typeof value === 'function') {
+                        e.addEventListener(key.slice(2), value, false);
                     } else {
                         e.setAttribute(key, value);
                     }
@@ -190,13 +181,15 @@
                         label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "已关闭的标签" : "閉じたタブ",
                         tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? "查看已经关闭的标签\n中键快速打开最后一个关闭的标签" : "閉じたタブ\n中クリックで最後に閉じたタブを復元",
                         image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj4KICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMjQiIGZpbGw9IiM1NTU1NTUiIHN0cm9rZT0iI2ZmZmZmZiIgZD0iTSA2IDQ4MCBsIDUwMCAwIGwgMCAtNjAgbCAtNTAgMCBsIDAgLTIyMCBsIC00MDAgMCBsIDAgMjIwIGwgLTUwIDAgeiIvPgogICAgPHBhdGggc3Ryb2tlLXdpZHRoPSIzMCIgZmlsbD0iIzQ0ODhmZiIgc3Ryb2tlPSIjZGRlZWZmIiBkPSJNIDI3MiAzMiBsIC0xNjAgMTMwIGwgMTYwIDEzMCBsIDAgLTc1IGwgNjAgMCBhIDYwIDYwIDAgMCAxIDAgMTIwIGwgLTIwIDAgbCAwIDExMCBsIDIwIDAgYSAxNzAgMTcwIDAgMCAwIDAgLTM0MCBsIC02MCAwIHoiLz4KPC9zdmc+",
-                        onclick: "ucjsUndoCloseTabButtonService.onClick(event);",
+                        onclick: function (event) { 
+                            ucjsUndoCloseTabButtonService.onClick(event); 
+                        },
                     });
                     const menu = ucjsUndoCloseTabButtonService.$C(doc, "menupopup", {
                         tooltip: "bhTooltip",
                         popupsinherittooltip: "true",
                         oncontextmenu: "event.preventDefault();",
-                        onpopupshowing: "ucjsUndoCloseTabButtonService.prepareMenu(event);",
+                        onpopupshowing: function (event) {  ucjsUndoCloseTabButtonService.prepareMenu(event); }
                     });
                     btn.appendChild(menu);
                     return btn;

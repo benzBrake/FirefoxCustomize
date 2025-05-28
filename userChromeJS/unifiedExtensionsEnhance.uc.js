@@ -4,7 +4,7 @@
 // @author          Ryan
 // @include         main
 // @version         0.2.8
-// @async           true
+// @sandbox         true
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
@@ -162,7 +162,8 @@
             unified-extensions-item:not(.addon-disabled) .unified-extensions-item-pin
             unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
             unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
-            unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin {
+            unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin,
+            .unified-extensions-list .unified-extensions-item-pin {
                 display: none;
             }
             unified-extensions-item.addon-disabled .unified-extensions-item-pin,
