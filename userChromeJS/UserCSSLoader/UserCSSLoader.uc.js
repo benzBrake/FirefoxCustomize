@@ -4,6 +4,7 @@
 // @namespace      https://github.com/benzBrake/FirefoxCustomize
 // @author         Ryan, Griever
 // @include        main
+// @sandbox        true
 // @license        MIT License
 // @compatibility  Firefox 80
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
@@ -72,6 +73,7 @@ about:config
     KEY_DISABLED_STYLES: "stylesDisabled",
     KEY_SHOW_IN_TOOLS_MENU: "showInToolsMenu",
     KEY_RELOAD_ON_EDIT: "reloadOnEdit",
+    KEY_LOCALE: "intl.locale.requested",
 
     CSSEntries: [],
     customShowings: [],
@@ -217,12 +219,13 @@ about:config
         this.menupopup = this.BTN.querySelector("#" + this.BTN_ID + "-popup");
         this.l10n.connectRoot(this.BTN);
       }
-      
+
       this.menupopup.addEventListener("popupshowing", this, false);
 
       this.rebuild();
 
       Services.prefs.addObserver(this.KEY_PREFIX, this);
+      Services.prefs.addObserver(this.KEY_LOCALE, this);
       window.addEventListener("unload", this);
     },
     createButton (doc) {
@@ -410,7 +413,7 @@ about:config
           flag: STYLES_NAME_MAP[entry.type]['name'],
           fullName: entry.fullName,
           closemenu: 'none',
-          oncommand: function(event) {
+          oncommand: function (event) {
             UserCSSLoader.changeStyleType(event, entry.fullName);
           }
         });
@@ -420,7 +423,7 @@ about:config
           tooltiptext: "Edit style",
           'data-l10n-id': 'ucl-edit-style-btn',
           class: "menuitem menuitem-iconic edit",
-          oncommand: function(event) {
+          oncommand: function (event) {
             UserCSSLoader.editStyle(entry.fullName);
           }
         });
@@ -430,7 +433,7 @@ about:config
           tooltiptext: "Delete style",
           'data-l10n-id': 'ucl-delete-style-btn',
           class: "menuitem menuitem-iconic delete",
-          oncommand: function(event) {
+          oncommand: function (event) {
             UserCSSLoader.deleteStyle(entry.fullName);
           }
         });
@@ -529,6 +532,9 @@ about:config
                 this.BTN.classList.remove("icon-disabled");
               }
               this.rebuild();
+            case this.KEY_LOCALE:
+              this.rebuild();
+              break;
           }
           break;
       }
@@ -808,7 +814,20 @@ about:config
         const def = ['', '', '', ''];
         let header = (css_content.match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*[\r\n]/m) || def)[0];
         if (header) {
-          this.name = (header.match(/(\/\/|\*) @name\s+(.+)\s*$/im) || ['', '', this.name])[2];
+          // 获取当前语言环境
+          let currentLocale = Services.locale.appLocaleAsBCP47; // 例如 "zh-CN" 或 "en-US"
+
+          // 尝试匹配当前语言的 @name
+          let nameMatch = header.match(new RegExp(`(\/\/|\\*) @name:${currentLocale}\\s+(.+)\\s*$`, 'im'));
+          if (nameMatch && nameMatch[2]) {
+            this.name = nameMatch[2];
+          } else {
+            // 如果没有当前语言的翻译，尝试匹配默认 @name
+            nameMatch = header.match(/(\/\/|\*) @name\s+(.+)\s*$/im);
+            this.name = (nameMatch || ['', '', this.name])[2];
+          }
+
+          // 其他字段保持不变
           this.icon = (header.match(/(\/\/|\*) @icon\s+(.+)\s*$/im) || def)[2];
           this.description = (header.match(/(\/\/|\*) @description\s+(.+)\s*$/im) || def)[2];
           this.downloadURL = (header.match(/(\/\/|\*) @downloadURL\s+(.+)\s*$/im) || def)[2];
@@ -817,6 +836,7 @@ about:config
         }
       }
     },
+
     toggleStyle () {
       this.disabled = !this.disabled;
     },
@@ -890,13 +910,49 @@ about:config
         e.innerHTML = v;
         continue;
       }
-      if (k.startsWith('on') && typeof v == 'function') {
-        e.addEventListener(k.slice(2).toLocaleLowerCase(), v);
+      if (k.startsWith('on')) {
+        e.addEventListener(k.slice(2), createFunction(v, 'event'));
       } else {
         e.setAttribute(k, v);
       }
     }
     return e;
+  }
+
+  // generate by grok3
+  function createFunction (v, ...paramNamesOrArray) {
+    // 检查是否传入了一个数组作为第二个参数
+    let params = ['event']; // 默认参数名
+    if (paramNamesOrArray.length === 1 && Array.isArray(paramNamesOrArray[0])) {
+      params = paramNamesOrArray[0]; // 如果传入的是数组，则使用该数组
+    } else if (paramNamesOrArray.length > 0) {
+      params = paramNamesOrArray; // 否则使用可变参数
+    }
+
+    let fn;
+    if (typeof v === 'function') {
+      // 如果 v 已经是函数，直接赋值给 fn
+      fn = v;
+    } else if (typeof v === 'string') {
+      if (v.startsWith('function') || v.startsWith('async function')) {
+        // 如果 v 是字符串，且以 'function' 或 'async function' 开头
+        const isAsync = v.startsWith('async');
+        const paramPart = v.match(/\(([^)]*)/)[1]; // 提取参数部分
+        let bodyPart = v
+          .replace(v.match(/[^)]*/) + ")", "") // 移除参数部分
+          .replace(/[^{]*\{/, "") // 移除函数体前的部分
+          .replace(/}$/, ''); // 移除末尾的 }
+        if (isAsync) {
+          // 如果是 async function，转换为返回 Promise 的普通函数
+          bodyPart = `return new Promise(async (resolve, reject) => { try { ${bodyPart}; resolve(); } catch (e) { reject(e); } });`;
+        }
+        fn = new Function(paramPart, bodyPart);
+      } else {
+        // 否则，将 v 作为函数体，创建一个以 params 为参数的函数
+        fn = new Function(...params, v);
+      }
+    }
+    return fn;
   }
 
   /**
