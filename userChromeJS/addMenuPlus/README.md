@@ -69,7 +69,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     url         打开你想要的网址
     where       打开的位置 (默认当前页面，tab前台、tabshifted后台、window窗口、current当前页面)
     condition   菜单出现的条件 (网页右键：select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput；工具栏右键：menubar, tabs, navbar, personal, button, nomenubar, notabs, nonavbar, nopersonal, nobutton)
-    oncommand   自定义命令，从 
+    oncommand   自定义命令
     command     命令的 id
     onclick     点击的函数
     image       添加图标 （对应图标 url 或 base64）
