@@ -1004,7 +1004,7 @@ page([{
             const response = await fetch("https://imgdd.com/upload", {
                 credentials: "omit",
                 headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
+                    "User-Agent": navigator.userAgent,
                     "Accept": "*/*",
                     "Accept-Language": "zh-CN,zh;q=0.8,zh-HK;q=0.7,zh-TW;q=0.5,en;q=0.3,en-US;q=0.2",
                     "Sec-Fetch-Dest": "empty",
