@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.1
+// @version        1.0.2
 // @author         Ryan
 // @include        main
 // @sandbox        true
+// @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.2 增加选择目录参数，修复选项打不开的问题
 // @note           1.0.1 修复
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
@@ -13,7 +15,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
         window.OpenWithHelper = {
-            get saveDir () {
+            get saveDir() {
                 let dir = Services.prefs.getStringPref("userChromeJS.OpenWithHelper.SAVE_DIR", DEFAULT_SAVE_DIR);
                 if (dir.startsWith("{") && dir.endsWith("}")) {
                     let matched = (dir.match(/^\{[^\}]+\}$/) || ["", ""])[1]
@@ -23,7 +25,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 return dir;
             },
-            set saveDir (dir) {
+            set saveDir(dir) {
                 dir = dir.replace(/[\\\/]*$/g, ""); // 处理 Windows 下反斜杠的问题
                 for (let [key, value] of Object.entries(DEFINED_DIRS)) {
                     if (dir === value) {
@@ -31,6 +33,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     }
                 }
                 Services.prefs.setStringPref("userChromeJS.OpenWithHelper.SAVE_DIR", dir);
+            },
+            openSaveDir() {
+                this.exec(this.saveDir);
             },
             getAppList: async function () {
                 let APPS_LIST;
@@ -47,35 +52,35 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 return APPS_LIST;
             },
-            openSaveDir () {
-                this.exec(this.saveDir);
-            },
-            async changeSaveDir (event) {
-                const mode = Ci.nsIFilePicker.modeGetFolder, title = await OpenWithHelper.l10n.formatValue("change-download-dir"), textIfCanceled = await OpenWithHelper.l10n.formatValue("operation-canceled"), textIfOK = await OpenWithHelper.l10n.formatValue("opertaion-succeeded");
-                async function openFilePickerDialog () {
-                    return new Promise(resolve => {
-                        // 使用 Promise 让回调看起来不那么难受
-                        const fp = makeFilePicker();
-                        // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
-                        fp.init(("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+            async selectDirectory(titleKey = "change-download-dir") {
+                const mode = Ci.nsIFilePicker.modeGetFolder;
+                const title = await this.l10n.formatValue(titleKey);
+                return new Promise(resolve => {
+                    const fp = makeFilePicker();
+                    fp.init(
+                        !("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
                             ? window.browsingContext
-                            : window, dialogTitle, mode);
-
-                        fp.open(async result => {
-                            if (result === Ci.nsIFilePicker.returnOK) {
-                                resolve({ result, path: fp.file.path });
-                            } else {
-                                resolve({ result, path: null });
-                            }
-                        });
+                            : window,
+                        title,
+                        mode
+                    );
+                    fp.open(result => {
+                        if (result === Ci.nsIFilePicker.returnOK) {
+                            resolve({ result, path: fp.file.path });
+                        } else {
+                            resolve({ result, path: null });
+                        }
                     });
-                }
-                let status = await openFilePickerDialog();
+                });
+            },
+            async changeSaveDir() {
+                const status = await this.selectDirectory("change-download-dir");
                 if (status.result === Ci.nsIFilePicker.returnOK) {
                     this.saveDir = status.path;
+                    const textIfOK = await this.l10n.formatValue("operation-succeeded");
                     alerts(textIfOK);
                 } else {
-                    // Ci.nsIFilePicker.returnCancel
+                    const textIfCanceled = await this.l10n.formatValue("operation-canceled");
                     alerts(textIfCanceled);
                 }
             },
@@ -100,8 +105,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     }
                 }
 
-                let tp = (gBrowser.mPanelContainer /* 屎山 */ || gBrowser.tabpanels);["mouseup", "keydown"].forEach(type => tp.addEventListener(type, this, false));
-
+                let tp = gBrowser.tabpanels;["mouseup", "keydown"].forEach(type => tp.addEventListener(type, this, false));
 
                 if (!(CustomizableUI.getWidget('OpenWithHelper-Btn') && CustomizableUI.getWidget('OpenWithHelper-Btn').forWindow(window)?.node)) {
                     try {
@@ -138,25 +142,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     if (event.target.id !== "OpenWithHelper-Btn") return;
                     // 调整弹出菜单位置，按钮放在浏览器4个角都不一样
                     const menupopup = event.target.querySelector("#OpenWithHelper-Btn-Popup");
-
                     if (!menupopup) return;
-
                     const { innerWidth: w, innerHeight: h } = event.target.ownerGlobal;
-                    const x = event.clientX;
-                    const y = event.clientY;
-
-                    let position;
-                    if (x > w / 2) {
-                        position = y < h / 2 ? 'after_end' : 'before_start';
-                    } else {
-                        position = 'before_start';
-                    }
-
-                    if (position) {
-                        menupopup.setAttribute("position", position);
-                    } else {
-                        menupopup.removeAttribute("position");
-                    }
+                    const position = event.clientX > w / 2
+                        ? (event.clientY < h / 2 ? 'after_end' : 'before_start')
+                        : 'before_start';
+                    menupopup.setAttribute("position", position);
                 });
 
                 this.initMenu(false);
@@ -167,7 +158,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 [this.btn, this.CTX_MENU, this.TAB_MENU].forEach(node => {
                     setText(node);
                     $$('[data-l10n-id]', node, async el => setText(el));
-                    async function setText (el) {
+                    async function setText(el) {
                         if (!el) return;
                         const l10nId = el.getAttribute("data-l10n-id");
                         const l10nArgs = el.getAttribute("data-l10n-args");
@@ -203,8 +194,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let rCOOKIES_SQLITE = "%COOKIES_SQLITE" + he + "%|%cs\\b";
                 let rSAVE_DIR = "%SAVE_DIR" + he + "%|%sd\\b";
                 let rPROFILE_DIR = "%PROFILE_DIR" + he + "%|%pd\\b";
+                let rCHOOSE_DIR = "%CHOOSE_DIR" + he + "%|%cd\\b";
 
-                let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR };
+                let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR, rCHOOSE_DIR };
                 for (let [k, v] of Object.entries(R)) {
                     this[k] = new RegExp(v, "i");
                 }
@@ -242,11 +234,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
                 menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
                 menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchrome/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchromejs/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
                 menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
                 return menupopup;
             },
-            reload (isAlert = false) {
+            reload(isAlert = false) {
                 if (this.BTN_POPUP)
                     this.BTN_POPUP.setAttribute("need-reload", "true");
                 if (this.CTX_POPUP)
@@ -299,7 +291,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 menupopup.setAttribute("need-reload", "false");
             },
             destroy: function () {
-                (gBrowser.mPanelContainer || gBrowser.tabpanels).removeEventListener("mouseup", this, false);
+                gBrowser.tabpanels.removeEventListener("mouseup", this, false);
                 $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
                 $("tabContextMenu").removeEventListener("popupshowing", this, false);
                 document.querySelectorAll(".owh-popup").forEach(el => {
@@ -368,7 +360,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         break;
                 }
             },
-            convertText (text) {
+            convertText(text) {
                 var context = gContextMenu || { // とりあえずエラーにならないようにオブジェクトをでっち上げる
                     link: {
                         href: "",
@@ -406,7 +398,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return convert(str);
                 });
 
-                function convert (str) {
+                function convert(str) {
+                    let isCompleted = false;
                     switch (str) {
                         case "%T":
                             return bw.contentTitle;
@@ -487,16 +480,30 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         case "%COOKIES_SQLITE%":
                             // 读取 Firefox Cookies 文件 cookies.sqlite 的路径
                             return PathUtils.join(PathUtils.profileDir, "cookies.sqlite");
+                        case "%CD":
+                        case "%CHOOSE_DIR%":
+                            let isCompleted = false;
+                            let targetDir = "";
+                            OpenWithHelper.selectDirectory("choose-directory").then(status => {
+                                isCompleted = true;
+                                if (status.result === Ci.nsIFilePicker.returnOK) {
+                                    targetDir = status.path;
+                                }
+                            });
+                            let thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+                            while (!isCompleted) {
+                                thread.processNextEvent(true);
+                            }
+                            return targetDir;
                         case "%EOL%":
                             return "\r\n";
                     }
                     return str;
                 }
 
-                function htmlEscape (s) {
+                function htmlEscape(s) {
                     return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
                 }
-
             },
             onCommand: function (event) {
                 let url = event.target.getAttribute('url') || "";
@@ -692,11 +699,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
              * @param {Document|null} d 指定 document，不提供就是全局 document
              * @returns 
              */
-        function $ (s, d) {
+        function $(s, d) {
             return /[#\.[:]/i.test(s.trim()) ? (d || document).querySelector(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementById(s);
         }
 
-        function $$ (s, d, fn) {
+        function $$(s, d, fn) {
             let elems = /[#\.[:]/i.test(s.trim()) ? (d || document).querySelectorAll(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementsByTagName(s);
             if (typeof fn === "function") {
                 for (let el of [...elems]) { fn.call(el, el) };
@@ -712,7 +719,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          * @param {Array} s 跳过属性
          * @returns 
          */
-        function createElement (d, t, o = {}, s = []) {
+        function createElement(d, t, o = {}, s = []) {
             if (!d) return;
             let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
             e = applyAttr(e, o, s);
@@ -731,7 +738,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          * @param {Object|null} s 跳过属性
          * @returns 
          */
-        function applyAttr (e, o = {}, s = []) {
+        function applyAttr(e, o = {}, s = []) {
             for (let [k, v] of Object.entries(o)) {
                 if (s.includes(k)) continue;
                 if (k.startsWith('on')) {
@@ -746,7 +753,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return e;
         }
 
-        function handleRelativePath (path, parentPath) {
+        function handleRelativePath(path, parentPath) {
             if (path) {
                 var ffdir = parentPath ? parentPath : Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
                 // windows 的目录分隔符不一样
@@ -766,11 +773,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         }
 
         const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-        function getURLSpecFromFile (f) {
+        function getURLSpecFromFile(f) {
             return fph.getURLSpecFromActualFile(f);
         }
 
-        function saveFile (path, data) {
+        function saveFile(path, data) {
             let isCompleted = false, fileExists = false, isError = false;
             IOUtils.exists(path).then(() => {
                 isCompleted = true;
@@ -816,7 +823,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
         }
 
-        function collectCookies (url, NetscapeStyle) {
+        function collectCookies(url, NetscapeStyle) {
             let uri;
             try {
                 uri = Services.io.newURI(url, null, null);
@@ -830,11 +837,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 return cookies.map(formatCookie).join("; ");
             }
 
-            function formatCookie (cookiePair) {
+            function formatCookie(cookiePair) {
                 return cookiePair.name + "=" + cookiePair.value;
             }
 
-            function formatCookieNetscapeStyle (cookiePair) {
+            function formatCookieNetscapeStyle(cookiePair) {
                 return [
                     [
                         cookiePair.isHttpOnly ? '#HttpOnly_' : '',
@@ -850,7 +857,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
         }
 
-        function randomString (e) {
+        function randomString(e) {
             e = e || 32;
             var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
                 a = t.length,
@@ -859,25 +866,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return n
         }
 
-        function escapeCommandLineArg (arg) {
-            // 需要转义的字符
-            const specialChars = ['\\', '"', '\'', '&', '|', '>', '<', '^', '~', '*', '?', '[', ']', '(', ')', '{', '}', '$', ';', '#'];
-
-            let escapedArg = '';
-            for (let i = 0; i < arg.length; i++) {
-                const char = arg.charAt(i);
-                if (specialChars.includes(char)) {
-                    // 如果是特殊字符，则添加转义字符
-                    escapedArg += '\\' + char;
-                } else {
-                    escapedArg += char;
-                }
-            }
-
-            return escapedArg;
-        }
-
-        function alerts (aMsg, aTitle, aCallback) {
+        function alerts(aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
                 observe: function (subject, topic, data) {
                     if ("alertclickcallback" != topic)
@@ -891,7 +880,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 aMsg + "", !!callback, "", callback);
         }
 
-        function uniqueArray (arr) {
+        function uniqueArray(arr) {
             return arr.filter(function (value, index, self) {
                 return self.indexOf(value) === index;
             });
