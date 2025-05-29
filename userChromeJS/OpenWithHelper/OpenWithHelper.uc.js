@@ -3,6 +3,7 @@
 // @version        1.0.1
 // @author         Ryan
 // @include        main
+// @sandbox        true
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
 // @note           1.0.1 修复

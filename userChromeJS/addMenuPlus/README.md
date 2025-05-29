@@ -84,6 +84,14 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     "data-l10n-href" （我新增的，因JS语法问题配置里请用双引号括起来，本地化语言文件 ftl 后缀）
     "data-l10n-id"  （我新增的，因JS语法问题配置里请用双引号括起来，本地化关联 id）
 
+`onxxx`额外说明：Firefox 139+ 不允许行内函数了，所以`onxxx`必须是下面这种格式
+
+```js
+oncommand: function() {
+
+}
+```
+
 `condition`额外说明：
 
 2024.2.10 （不包括）以前的版本仅仅支持单个 condition

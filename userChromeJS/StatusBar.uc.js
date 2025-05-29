@@ -8,8 +8,8 @@
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
-// @note            0.0.4 Fx139
-// @note            0.0.3 Fx137
+// @note            0.0.4 Fx139, 修复 call to Function() blocked by CSP
+// @note            0.0.3 fx137
 // @note            0.0.2 修正启用 TabMixPlus 扩展后看不见状态栏
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
@@ -77,7 +77,7 @@
                     this.insertBefore(toggleItem, this.querySelector("#viewToolbarsMenuSeparator"));
                 }
                 event.currentTarget.querySelector("#toggle_status-bar").setAttribute("checked", String(Services.prefs.getBoolPref("browser.display.statusbar", false)));
-            });
+            }, { once: true });
 
             let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
             if (checked) {
@@ -150,7 +150,7 @@
         if (attr) Object.keys(attr).forEach(function (n) {
             if (n.startsWith("on")) {
                 const [e, fn] = [n.slice(2), attr[n]];
-                el.addEventListener(e, typeof fn === "string" ? new Function(fn) : fn);
+                if (typeof fn === "function") el.addEventListener(e, fn);
             } else {
                 el.setAttribute(n, attr[n])
             }
