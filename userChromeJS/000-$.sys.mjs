@@ -8,6 +8,8 @@ const selectorCache = new Map();
 const $ = (sel, doc) => {
     if (typeof sel === 'undefined') return null;
 
+    if (!(/^[:#]|[, >\.\[\(]/.test(sel))) sel = `#${sel}`;
+
     // Find cached elements in Map
     if (typeof sel !== 'string' && sel.nodeType) {
         if ($cache.has(sel)) return $cache.get(sel);
