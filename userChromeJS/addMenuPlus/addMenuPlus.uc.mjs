@@ -14,7 +14,7 @@
 // @compatibility  Firefox 136
 // @charset        UTF-8
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
-// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.mjs
+// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
 // @note           0.3.0 ESMifying
 // ==/UserScript==
@@ -24,8 +24,16 @@
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     const onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     const enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    const enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+    const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
+
+    const runJS = (code, sandbox = window) => {
+        try {
+            Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     window?.addMenu?.destroy();
 
@@ -167,6 +175,10 @@
             delete this.panelId;
             return this.panelId = Math.floor(Math.random() * 900000 + 99999);
         },
+        get onshowinglabelMaxLength() {
+            delete this.onshowinglabelMaxLength;
+            return this.onshowinglabelMaxLength = onshowinglabelMaxLength;
+        },
         ContextMenu: {
             onSvg: false,
             svgHTML: "",
@@ -179,17 +191,19 @@
         },
         customShowings: [],
         init: async function () {
-            // 注册 Actor
-            const esModuleURI = resolveChromeURL(Components.stack.filename)
-            ChromeUtils.registerWindowActor("AddMenu", {
-                parent: {
-                    esModuleURI
-                },
-                child: {
-                    esModuleURI,
-                },
-                allFrames: true,
-            });
+            try {
+                // 注册 Actor
+                const esModuleURI = resolveChromeURL(Components.stack.filename);
+                ChromeUtils.registerWindowActor("AddMenu", {
+                    parent: {
+                        esModuleURI
+                    },
+                    child: {
+                        esModuleURI,
+                    },
+                    allFrames: true,
+                });
+            } catch (ex) { }
 
             this.initRegex();
 
@@ -432,12 +446,14 @@
 
                     insertPoint = menuHandlers[$target.attr('id')]?.() || "";
 
-                    // Execute custom showing methods with eval
+                    // Execute custom showing methods with runJS
                     this.customShowings
                         .filter(obj => obj.insertPoint === insertPoint)
                         .forEach(obj => {
                             try {
-                                eval('(' + obj.fnSource + ').call(obj.item, obj.item)');
+                                runJS('(' + obj.fnSource + ').call(obj.item, obj.item)', {
+                                    obj
+                                });
                             } catch (ex) {
                                 console.error(lprintf('custom showing method error'), obj.fnSource, ex);
                             }
@@ -707,20 +723,16 @@
             }
         },
         moveToAppMenu: async function (_e) {
-            let ins = document.getElementById('addMenu-app-insertpoint');
+            let ins = $('#addMenu-app-insertpoint');
             if (ins && ins.localName === 'menuseparator') {
-                let separator = $('appMenu-quit-button2').previousSibling;
-                if (separator) {
-                    ins.remove();
-                    // addMenu.removeMenuitem();
-                    ins = $C('toolbarseparator', {
-                        'id': 'addMenu-app-insertpoint',
-                        class: "addMenu-insert-point",
-                        hidden: true
-                    });
-                    separator.parentNode.insertBefore(ins, separator);
-                    addMenu.rebuild();
-                }
+                ins.remove();
+                ins = $C('toolbarseparator', {
+                    'id': 'addMenu-app-insertpoint',
+                    class: "addMenu-insert-point",
+                    hidden: true
+                });
+                $("#appMenu-quit-button2").before(ins);
+                addMenu.rebuild();
             }
         },
         rebuild: async function (isAlert) {
@@ -816,7 +828,7 @@
                 insertId
             }) {
                 if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
-                let insertPoint = $('#' + insertId);
+                let insertPoint = $(insertId);
                 this.createMenuitem(sandbox["_" + current], insertPoint);
             }, this);
 
@@ -841,7 +853,9 @@
                         return val;
                     })() : "(" + val.toString() + ").call(this, event)";
                     group.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn);
+                        runJS(fn, {
+                            event
+                        });
                     }, false);
                 } else {
                     group.setAttribute(key, val);
@@ -908,7 +922,9 @@
                         return val;
                     })() : "(" + val.toString() + ").call(this, event)";
                     menu.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn);
+                        runJS(fn, {
+                            event
+                        });
                     }, false);
                     continue;
                 }
@@ -1049,7 +1065,7 @@
                         return val;
                     })() : "(" + val.toString() + ").call(this, event)";
                     menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn);
+                        runJS(fn);
                     }, false);
                 } else {
                     menuitem.setAttribute(key, val);
@@ -1150,9 +1166,9 @@
                         if (key.startsWith('on') && key !== "onshowinglabel") {
                             const fn = typeof val === "string" ? function (event) {
                                 if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                                    eval("(" + val + ").call(this, event)");
+                                    runJS("(" + val + ").call(this, event)");
                                 } else {
-                                    eval(val);
+                                    runJS(val);
                                 }
                             } : val;
                             dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
@@ -1416,10 +1432,10 @@
                         return isDef(context.mediaURL) ? img2base64(context.mediaURL) : img2base64(context.imageURL);
                     case "%SVG_BASE64%":
                         if (addMenu.ContextMenu.onSvg) {
-                            return "data:image/svg+xml;base64," + btoa(addMenu.ContextMenu.svgHTML);
+                            return svg2base64(addMenu.ContextMenu.svgHTML);
                         }
                         let url = context.linkURL || bw.documentURI.spec || "";
-                        return url.endsWith("svg") ? svg2base64(url) : "";
+                        return svg2base64(url);
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
@@ -1488,6 +1504,8 @@
 
             function img2base64(imgSrc, imgType) {
                 if (typeof imgSrc == 'undefined') return "";
+                if (imgSrc.includes("data:")) return imgSrc;
+                if (imgSrc.includes("<svg") || /\.(svg|SVG)$/.test(imgSrc)) return svg2base64(imgSrc);
                 imgType = imgType || "image/png";
                 const NSURI = "http://www.w3.org/1999/xhtml";
                 var img = new Image();
@@ -1508,26 +1526,29 @@
                     isCompleted = true;
                 };
                 img.src = imgSrc;
-
                 var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
                 while (!isCompleted) {
                     thread.processNextEvent(true);
                 }
-
                 var data = canvas ? canvas.toDataURL(imgType) : "";
                 canvas = null;
                 return data;
             }
 
             function svg2base64(svgSrc) {
-                if (typeof svgSrc == 'undefined') return "";
-                var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("GET", svgSrc, false);
-                xmlhttp.send();
-                var svg = xmlhttp.responseText;
-                // svg string to data url
-                var svg64 = "data:image/svg+xml;base64," + btoa(svg);
-                return svg64;
+                if (/^(https?:\/\/|ftp:\/\/|chrome:\/\/|resource:\/\/|\/\/)/.test(svgSrc)) {
+                    // 使用 NetUtil 读取 SVG 文件内容
+                    const channel = NetUtil.newChannel({
+                        uri: Services.io.newURI(svgSrc),
+                        loadUsingSystemPrincipal: true
+                    });
+                    const input = channel.open();
+                    svgSrc = NetUtil.readInputStreamToString(input, input.available());
+                    input.close();
+                }
+                const encoder = new TextEncoder();
+                const data = encoder.encode(svgSrc);
+                return "data:image/svg+xml;base64," + btoa(String.fromCharCode(...data));
             }
         },
         getSelectedText() {
@@ -1667,6 +1688,7 @@
             this.executeInContent(context, script);
         }
     };
+
     function $C(name, attr = {}) {
         const el = document.createXULElement(name);
         for (let [key, value] of Object.entries(attr)) {
@@ -1684,6 +1706,7 @@
         }
         return el;
     }
+
     function addStyle(css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
@@ -1703,6 +1726,7 @@
         }
         return capitalize(key || '');
     }
+
     function processOnShowing(menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
             this.customShowings.push({
@@ -1720,8 +1744,8 @@
                 insertPoint: insertPoint.id,
                 fnSource: function () {
                     let t = addMenu.convertText(this.dataset.onshowinglabel);
-                    if (t && t.length > onshowinglabelMaxLength)
-                        t = t.substr(0, onshowinglabelMaxLength) + "...";
+                    if (t && t.length > addMenu.onshowinglabelMaxLength)
+                        t = t.substr(0, addMenu.onshowinglabelMaxLength) + "...";
                     this.setAttribute('label', t);
                 }.toString()
             });
@@ -1811,10 +1835,10 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
     -moz-context-properties: fill, fill-opacity !important;
     fill: currentColor !important;
 }
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left,
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > .menu-iconic-left {
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > :is(.menu-iconic-left, .menu-icon),
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > :is(.menu-iconic-left, .menu-icon),
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > :is(.menu-iconic-left, .menu-icon),
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > :is(.menu-iconic-left, .menu-icon) {
     visibility: collapse;
 }
 menugroup.addMenu > .menuitem-iconic.fixedSize {
@@ -1934,7 +1958,7 @@ class AddMenuChild extends JSWindowActorChild {
                 this.sendAsyncMessage("AddMenuPlus:SetFaviconLink", { hash: data.hash, href });
                 break;
             case "AddMenuPlus:ContextMenu":
-                // 获取鼠标 focus 的元素
+                // 获取鼠标 focus 的元素 或者鼠标指针附近元素
                 const focusedElement = doc.activeElement;
                 const svgEl = focusedElement.closest("svg");
                 const inputEl = focusedElement.closest("input");
@@ -1948,6 +1972,8 @@ class AddMenuChild extends JSWindowActorChild {
                     onTextarea: !!textareaEl,
                     textareaValue: textareaEl ? textareaEl.value : "",
                     textareaHTML: textareaEl ? textareaEl.outerHTML : "",
+                    onElement: !!focusedElement,
+                    elementHTML: focusedElement?.outerHTML || ""
                 });
             case "AddMenuPlus:GetSelectedText":
                 this.sendAsyncMessage("AddMenuPlus:SetSelectedText", {
