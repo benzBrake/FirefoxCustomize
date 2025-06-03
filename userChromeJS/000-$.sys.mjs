@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         000-$.sys.mjs
 // @description  jQuery-like DOM selector for single element with Proxy wrapper
+// @author       Ryan
+// @version      1.0.1
 // @export       dollar
+// @note         2025-06-03 remove selectorCache
 // ==/UserScript==
 const $cache = new WeakMap();
-const selectorCache = new Map();
 const $ = (sel, doc) => {
     if (typeof sel === 'undefined') return null;
 
@@ -15,21 +17,12 @@ const $ = (sel, doc) => {
         if ($cache.has(sel)) return $cache.get(sel);
     }
 
-    if (typeof sel === 'string' && selectorCache.has(sel)) {
-        const cachedEl = selectorCache.get(sel);
-        return doc.contains(cachedEl) ? $(cachedEl) : null;
-    }
-
     // Find the DOM element
     const el = (typeof sel === 'string')
         ? (doc || document).querySelector(sel)
         : sel.nodeType ? sel : null;
 
     if (!el) return null;
-
-    if (typeof sel === 'string' && el) {
-        selectorCache.set(sel, el);
-    }
 
     // Store event listeners
     const eventListeners = new Map();
@@ -39,7 +32,7 @@ const $ = (sel, doc) => {
 
     // Proxy wrapper
     const proxy = new Proxy(el, {
-        get (target, prop) {
+        get(target, prop) {
             // Native DOM compatibility cases
             switch (prop) {
                 case '$self':
@@ -68,6 +61,7 @@ const $ = (sel, doc) => {
                 case 'remove':
                     return () => {
                         target.remove();
+                        $cache.delete(target);
                         return null;
                     };
                 case 'before':
@@ -189,7 +183,7 @@ const $$ = (sel, doc) => {
         return {
             elements: Array.from(elements),
             length: elements.length,
-            forEach (callback) {
+            forEach(callback) {
                 this.elements.forEach((el, index) => {
                     callback($(el), index, this.elements);
                 });
@@ -200,8 +194,8 @@ const $$ = (sel, doc) => {
     return {
         elements: [],
         length: 0,
-        forEach () { return this; },
-        remove () {
+        forEach() { return this; },
+        remove() {
             this.elements.forEach(el => el.remove());
         }
     };
