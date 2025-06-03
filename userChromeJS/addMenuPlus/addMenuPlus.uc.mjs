@@ -383,9 +383,9 @@
 
                         const showingLabel = $menu.attr('onshowinglabel');
                         if (showingLabel) {
-                            onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
+                            let maxLength = onshowinglabelMaxLength || 15;
                             let sel = addMenu.convertText(showingLabel);
-                            if (sel.length > 15) sel = sel.substr(0, 15) + "...";
+                            if (sel.length > maxLength) sel = sel.substr(0, maxLength) + "...";
                             $menu.attr('label', sel);
                         }
                     });
@@ -1741,21 +1741,6 @@
             this.customShowings.push(obj);
             delete menuObj.onshowing;
         }
-
-        if (menuObj.onshowinglabel) {
-            menu.dataset.onshowinglabel = menuObj.onshowinglabel;
-            this.customShowings.push({
-                item: menu,
-                insertPoint: insertPoint.id,
-                fn: function () {
-                    let t = addMenu.convertText(this.dataset.onshowinglabel);
-                    if (t && t.length > addMenu.onshowinglabelMaxLength)
-                        t = t.substr(0, addMenu.onshowinglabelMaxLength) + "...";
-                    this.setAttribute('label', t);
-                }
-            });
-            delete menuObj.onshowinglabel;
-        }
     }
 
     function setImage(menu, imageUrl) {
@@ -1828,15 +1813,15 @@ toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
-  -moz-image-region: rect(0pt, 16px, 16px, 0px);
 }
 .addMenu.checkbox .menu-iconic-icon {
-    -moz-appearance: checkbox;
+    appearance: checkbox;
 }
-.addMenu > .menu-iconic-left {
-    -moz-appearance: menuimage;
+.addMenu > :is(.menu-iconic-left, .menu-icon) {
+    appearance: menuimage;
 }
-.addMenu > .menu-iconic-left > .menu-iconic-icon {
+.addMenu > .menu-iconic-left > .menu-iconic-icon,
+.addMenu > .menu-icon {
     -moz-context-properties: fill, fill-opacity !important;
     fill: currentColor !important;
 }
@@ -1847,15 +1832,11 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
     visibility: collapse;
 }
 menugroup.addMenu > .menuitem-iconic.fixedSize {
-    -moz-box-flex: 0;
     flex-grow: 0;
     flex-shrink: 0;
     padding-inline-end: 8px;
 }
 menugroup.addMenu > .menuitem-iconic {
-    -moz-box-flex: 1;
-    -moz-box-pack: center;
-    -moz-box-align: center;
     flex-grow: 1;
     justify-content: center;
     align-items: center;
@@ -1863,7 +1844,7 @@ menugroup.addMenu > .menuitem-iconic {
     padding-inline-start: 1em;
 }
 menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
-    -moz-appearance: none;
+    appearance: none;
     padding-top: 0;
 }
 menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
@@ -1881,7 +1862,6 @@ menugroup.addMenu > .menuitem-iconic {
 menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText),
 menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) {
     padding-left: 0;
-    -moz-box-flex: 0;
     flex-grow: 0;
     flex-shrink: 0;
     padding-inline-end: 0;
