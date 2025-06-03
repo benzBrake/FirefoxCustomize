@@ -451,7 +451,7 @@
                         .filter(obj => obj.insertPoint === insertPoint)
                         .forEach(obj => {
                             try {
-                                runJS('(' + obj.fnSource + ').call(obj.item, obj.item)', {
+                                obj.fn ? obj.fn.call(obj.item, obj.item) : runJS('(' + obj.fnSource + ').call(obj.item, obj.item)', {
                                     obj
                                 });
                             } catch (ex) {
@@ -1729,11 +1729,16 @@
 
     function processOnShowing(menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
-            this.customShowings.push({
+            const obj = {
                 item: menu,
                 insertPoint: insertPoint.id,
-                fnSource: menuObj.onshowing.toString()
-            });
+            }
+            if (typeof menuObj.onshowing === 'function') {
+                obj.fn = menuObj.onshowing;
+            } else {
+                obj.fnSource = menuObj.onshowing;
+            }
+            this.customShowings.push(obj);
             delete menuObj.onshowing;
         }
 
@@ -1742,12 +1747,12 @@
             this.customShowings.push({
                 item: menu,
                 insertPoint: insertPoint.id,
-                fnSource: function () {
+                fn: function () {
                     let t = addMenu.convertText(this.dataset.onshowinglabel);
                     if (t && t.length > addMenu.onshowinglabelMaxLength)
                         t = t.substr(0, addMenu.onshowinglabelMaxLength) + "...";
                     this.setAttribute('label', t);
-                }.toString()
+                }
             });
             delete menuObj.onshowinglabel;
         }
