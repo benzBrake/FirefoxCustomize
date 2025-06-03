@@ -24,7 +24,7 @@
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     const onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     const enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+    const enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
     const runJS = (code, sandbox = window) => {
@@ -1814,7 +1814,7 @@ toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
 }
-.addMenu.checkbox .menu-iconic-icon {
+.addMenu.checkbox :is(.menu-iconic-icon,.menu-icon) {
     appearance: checkbox;
 }
 .addMenu > :is(.menu-iconic-left, .menu-icon) {
@@ -1843,17 +1843,20 @@ menugroup.addMenu > .menuitem-iconic {
     padding-block: 6px;
     padding-inline-start: 1em;
 }
-menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
+menugroup.addMenu > .menuitem-iconic > :is(.menu-iconic-left,.menu-icon) {
     appearance: none;
     padding-top: 0;
 }
+menugroup.addMenu > .menuitem-iconic > .menu-icon,
 menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
     width: 16px;
     height: 16px;
 }
-menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,
-menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,
-menugroup.addMenu > .menuitem-iconic > .menu-accel-container {
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > :is(.menu-iconic-text,.menu-text),
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > :is(.menu-iconic-text,.menu-text) {
+    display: none;
+}
+menugroup.addMenu > .menuitem-iconic > :is(.menu-accel,.menu-accel) {
     display: none;
 }
 menugroup.addMenu > .menuitem-iconic {
@@ -1866,8 +1869,8 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     flex-shrink: 0;
     padding-inline-end: 0;
 }
-menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left,
-menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-left {
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > :is(.menu-iconic-left,.menu-icon),
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > :is(.menu-iconic-left,.menu-icon) {
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
