@@ -32,7 +32,7 @@ const $ = (sel, doc) => {
 
     // Proxy wrapper
     const proxy = new Proxy(el, {
-        get(target, prop) {
+        get (target, prop) {
             // Native DOM compatibility cases
             switch (prop) {
                 case '$self':
@@ -183,21 +183,22 @@ const $$ = (sel, doc) => {
         return {
             elements: Array.from(elements),
             length: elements.length,
-            forEach(callback) {
+            forEach (callback) {
                 this.elements.forEach((el, index) => {
                     callback($(el), index, this.elements);
                 });
                 return this;
+            },
+            remove () {
+                this.elements.forEach(el => el.remove());
             }
         };
     }
     return {
         elements: [],
         length: 0,
-        forEach() { return this; },
-        remove() {
-            this.elements.forEach(el => el.remove());
-        }
+        forEach () { return this; },
+        remove () { return this; }
     };
 };
 
