@@ -1192,7 +1192,7 @@
                         }
                     });
                 });
-                setAttributes(menuitem, obj);
+                setAttributes(menuitem.get(), obj);
                 let fn = addEventListeners(menuitem, obj);
                 if (typeof fn === "function") this.undoFunctions.push(fn);
                 let placeholder = $C('menuseparator', {
