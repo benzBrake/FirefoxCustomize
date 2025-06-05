@@ -18,13 +18,13 @@
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
 // @note           0.3.0 ESMifying
 // ==/UserScript==
-(async (css, getURLSpecFromFile, loadText, writeText, versionGE, shouldSetIcon, isDef) => {
+(async (css, getURLSpecFromFile, loadText, versionGE, shouldSetIcon, isDef) => {
     if (typeof window === 'undefined') return;
 
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     const onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     const enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    const enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+    const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
     const runJS = (code, sandbox = window) => {
@@ -139,11 +139,7 @@
     };
 
     window.addMenu = {
-        get platform() {
-            delete this.platform;
-            return this.platform = AppConstants.platform;
-        },
-        get FILE() {
+        get FILE () {
             let path;
             try {
                 // addMenu.FILE_PATH があればそれを使う
@@ -155,27 +151,23 @@
             const aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
             aFile.appendRelativePath(path);
 
-            if (!aFile.exists()) {
-                writeText(aFile.path, lprintf('config example'));
-                alert(lprintf('example is empty'));
-                addMenu.openCommand({
-                    target: this
-                }, 'https://ywzhaiqi.github.io/addMenu_creator/', 'tab');
-            }
-
             this._modifiedTime = aFile.lastModifiedTime;
             delete this.FILE;
             return this.FILE = aFile;
         },
-        get locale() {
+        get platform () {
+            delete this.platform;
+            return this.platform = AppConstants.platform;
+        },
+        get locale () {
             delete this.locale;
             return this.locale = ADDMENU_LOCALE || "en-US";
         },
-        get panelId() {
+        get panelId () {
             delete this.panelId;
             return this.panelId = Math.floor(Math.random() * 900000 + 99999);
         },
-        get onshowinglabelMaxLength() {
+        get onshowinglabelMaxLength () {
             delete this.onshowinglabelMaxLength;
             return this.onshowinglabelMaxLength = onshowinglabelMaxLength;
         },
@@ -191,6 +183,7 @@
         },
         customShowings: [],
         init: async function () {
+            await this.ensureConfigFileExists();
             try {
                 // 注册 Actor
                 const esModuleURI = resolveChromeURL(Components.stack.filename);
@@ -291,6 +284,16 @@
             this.style = addStyle(css);
 
             await this.rebuild();
+        },
+        ensureConfigFileExists: async function () {
+            const aFile = this.FILE;
+            if (!aFile.exists()) {
+                await IOUtils.writeUTF8(aFile.path, lprintf('config example'))
+                alert(lprintf('example is empty'));
+                addMenu.openCommand({
+                    target: this
+                }, 'https://ywzhaiqi.github.io/addMenu_creator/', 'tab');
+            }
         },
         initRegex: function () {
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
@@ -516,7 +519,7 @@
                     break;
             }
 
-            function triggerFavMsg(tab) {
+            function triggerFavMsg (tab) {
                 if (content || !tab) return;
 
                 const browser = gBrowser.getBrowserForTab(tab);
@@ -528,7 +531,7 @@
                 addMenu.sendAsyncMessage("AddMenuPlus:GetFaviconLink", { hash });
             }
 
-            function calculateHashFromStr(data) {
+            function calculateHashFromStr (data) {
                 const gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
                 gCryptoHash.init(gCryptoHash.MD5);
                 gCryptoHash.update(
@@ -538,7 +541,7 @@
                 return gCryptoHash.finish(true);
             }
         },
-        executeInContent(browser = gBrowser.selectedBrowser, func) {
+        executeInContent (browser = gBrowser.selectedBrowser, func) {
             try {
                 this.sendAsyncMessage("AddMenuPlus:ExecuteInContent", { script: func.toString() }, browser);
 
@@ -546,7 +549,7 @@
                 console.error("Error in executeInContent : ", ex);
             }
         },
-        executeInChrome(func, args = []) {
+        executeInChrome (func, args = []) {
             try {
                 const functionobj = new Function(
                     func.match(/\((.*)\)\s*\{/)[1],
@@ -557,7 +560,7 @@
                 console.error("Error in executeInChrome : ", ex);
             }
         },
-        updateModifiedFile() {
+        updateModifiedFile () {
             if (!this.FILE.exists()) return;
 
             if (this._modifiedTime != this.FILE.lastModifiedTime) {
@@ -656,7 +659,7 @@
             let result = { success: false, error: null };
 
             // 规范化路径函数
-            function normalizePath(path) {
+            function normalizePath (path) {
                 if (AppConstants.platform === "win") {
                     path = path.replace(/\//g, '\\');
                 } else {
@@ -796,7 +799,7 @@
                     }
             }, this);
 
-            function ps(item, array) {
+            function ps (item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) :
                     array.push(item);
             }
@@ -1210,7 +1213,7 @@
                 }
             }
 
-            function insertMenuItem(obj, menuitem) {
+            function insertMenuItem (obj, menuitem) {
                 let ins;
                 if (obj.parent && (ins = $('#' + obj.parent))) {
                     ins.append(menuitem);
@@ -1384,7 +1387,7 @@
                 return convert(str);
             });
 
-            function convert(str) {
+            function convert (str) {
                 switch (str) {
                     case "%T":
                         return bw.contentTitle;
@@ -1458,11 +1461,11 @@
                 return str;
             }
 
-            function htmlEscape(s) {
+            function htmlEscape (s) {
                 return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
             }
 
-            function getUrl() {
+            function getUrl () {
                 const URI = bw.currentURI;
                 if (URI.schemeIs("about")) {
                     switch (URI.filePath) {
@@ -1477,7 +1480,7 @@
                 }
             }
 
-            function getHost() {
+            function getHost () {
                 const url = getUrl();
                 try {
                     const uri = Services.io.newURI(url);
@@ -1487,7 +1490,7 @@
                 }
             }
 
-            function getEmailAddress() {
+            function getEmailAddress () {
                 var url = context.linkURL;
                 if (!url) return "";
 
@@ -1502,7 +1505,7 @@
                 return addresses;
             }
 
-            function img2base64(imgSrc, imgType) {
+            function img2base64 (imgSrc, imgType) {
                 if (typeof imgSrc == 'undefined') return "";
                 if (imgSrc.includes("data:")) return imgSrc;
                 if (imgSrc.includes("<svg") || /\.(svg|SVG)$/.test(imgSrc)) return svg2base64(imgSrc);
@@ -1535,7 +1538,7 @@
                 return data;
             }
 
-            function svg2base64(svgSrc) {
+            function svg2base64 (svgSrc) {
                 if (/^(https?:\/\/|ftp:\/\/|chrome:\/\/|resource:\/\/|\/\/)/.test(svgSrc)) {
                     // 使用 NetUtil 读取 SVG 文件内容
                     const channel = NetUtil.newChannel({
@@ -1551,13 +1554,13 @@
                 return "data:image/svg+xml;base64," + btoa(String.fromCharCode(...data));
             }
         },
-        getSelectedText() {
+        getSelectedText () {
             return this._selectedText;
         },
-        setSelectedText(aText) {
+        setSelectedText (aText) {
             this._selectedText = aText;
         },
-        setFaviconLink({ hash, href }) {
+        setFaviconLink ({ hash, href }) {
             if (hash && href)
                 gBrowser.tabs.filter(t => t.faviconHash === hash).forEach(t => t.faviconUrl = href);
         },
@@ -1689,7 +1692,7 @@
         }
     };
 
-    function $C(name, attr = {}) {
+    function $C (name, attr = {}) {
         const el = document.createXULElement(name);
         for (let [key, value] of Object.entries(attr)) {
             if (key.startsWith('on')) {
@@ -1707,7 +1710,7 @@
         return el;
     }
 
-    function addStyle(css) {
+    function addStyle (css) {
         var pi = document.createProcessingInstruction(
             'xml-stylesheet',
             'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
@@ -1715,11 +1718,11 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
-    function capitalize(s) {
+    function capitalize (s) {
         return s && s[0].toUpperCase() + s.slice(1);
     }
 
-    function lprintf(key, ...args) {
+    function lprintf (key, ...args) {
         const localeData = ADDMENU_LANG[ADDMENU_LOCALE];
         if (key && localeData?.[key]) {
             return args.reduce((str, arg) => str.replace('%s', arg), localeData[key]);
@@ -1727,7 +1730,7 @@
         return capitalize(key || '');
     }
 
-    function processOnShowing(menu, menuObj, insertPoint) {
+    function processOnShowing (menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
             const obj = {
                 item: menu,
@@ -1743,7 +1746,7 @@
         }
     }
 
-    function setImage(menu, imageUrl) {
+    function setImage (menu, imageUrl) {
         if (imageUrl) {
             if (enableConvertImageAttrToListStyleImage) {
                 menu.style.listStyleImage = `url(${imageUrl})`;
@@ -1754,7 +1757,7 @@
         }
     }
 
-    function resolveChromeURL(fileUrl) {
+    function resolveChromeURL (fileUrl) {
         return fileUrl.replace("file:///" + PathUtils.profileDir.replace(/\\/g, '/') + "/chrome", "chrome://userchrome/content")
     }
 
@@ -1893,28 +1896,13 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
         data = decodeURIComponent(escape(data));
     } catch (e) { }
     return data;
-}, (p, d = "") => {
-    if (!d) return false;
-    let ic = false, flag = false
-    IOUtils.writeUTF8(p, d).then(() => {
-        flag = true;
-    }).catch(e => {
-        console.error(e);
-    }).finally(_ => {
-        ic = true;
-    });
-    const t = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-    while (!ic) {
-        t.processNextEvent(true);
-    }
-    return flag;
 }, v => {
     return Services.vc.compare(Services.appinfo.version, v) >= 0;
 }, menu => menu.matches(".menuitem-iconic, .menu-iconic"),
     v => v !== undefined && v !== null);
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
-    executeInChrome(func, args) {
+    executeInChrome (func, args) {
         let json = {
             func: func.toString(),
             args: JSON.stringify(args)
@@ -1923,7 +1911,7 @@ class AddMenuChild extends JSWindowActorChild {
             json
         );
     }
-    receiveMessage({ name, data }) {
+    receiveMessage ({ name, data }) {
         const { contentWindow: win } = this;
         const { document: doc } = win;
         switch (name) {
@@ -1974,7 +1962,7 @@ class AddMenuChild extends JSWindowActorChild {
                 break;
         }
 
-        function getSelectedText(win) {
+        function getSelectedText (win) {
             let text = "", doc = win.document;
             if (win.getSelection) {
                 text = win.getSelection().toString();
@@ -1986,7 +1974,7 @@ class AddMenuChild extends JSWindowActorChild {
     }
 }
 class AddMenuParent extends JSWindowActorParent {
-    receiveMessage({ name, data }) {
+    receiveMessage ({ name, data }) {
         try {
             const windowGlobal = this.manager.browsingContext.currentWindowGlobal;
             const browser = windowGlobal.rootFrameLoader.ownerElement;
