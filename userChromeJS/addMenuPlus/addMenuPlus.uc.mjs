@@ -28,6 +28,7 @@
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
     const runJS = (code, sandbox = window) => {
+        console.log(code);
         try {
             Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
         } catch (e) {
@@ -135,7 +136,10 @@
             current: "group",
             groupmenu: "GroupMenu",
             insertId: "addMenu-page-insertpoint"
-        }
+        },
+        mod: {
+            current: "mod"
+        },
     };
 
     window.addMenu = {
@@ -215,7 +219,7 @@
                     MENU_ATTRS[type].insertId = insertPoint.id;
                     ins.before(insertPoint);
                     delete MENU_ATTRS[type].insRef;
-                } else {
+                } else if (type !== "mod") {
                     delete MENU_ATTRS[type];
                 }
             }
@@ -776,18 +780,20 @@
                         ps(itemObj, sandbox["_" + current]);
                     }
                 }
-                sandbox[submenu] = function (menuObj) {
-                    if (!menuObj)
-                        menuObj = {};
-                    menuObj._items = [];
-                    if (submenu == 'GroupMenu')
-                        menuObj._group = true;
-                    sandbox["_" + current].push(menuObj);
-                    return function (itemObj) {
-                        ps(itemObj, menuObj._items);
+                if (isDef(submenu)) {
+                    sandbox[submenu] = function (menuObj) {
+                        if (!menuObj)
+                            menuObj = {};
+                        menuObj._items = [];
+                        if (submenu == 'GroupMenu')
+                            menuObj._group = true;
+                        sandbox["_" + current].push(menuObj);
+                        return function (itemObj) {
+                            ps(itemObj, menuObj._items);
+                        }
                     }
                 }
-                if (isDef(groupmenu))
+                if (isDef(groupmenu)) {
                     sandbox[groupmenu] = function (menuObj) {
                         if (!menuObj)
                             menuObj = {};
@@ -798,6 +804,7 @@
                             ps(itemObj, menuObj._items);
                         }
                     }
+                }
             }, this);
 
             function ps (item, array) {
@@ -831,11 +838,14 @@
                 groupmenu,
                 insertId
             }) {
-                if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
-                let insertPoint = $(insertId);
-                this.createMenuitem(sandbox["_" + current], insertPoint);
+                if (current === "mod") {
+                    this.modMenuitem(sandbox["_" + current]);
+                } else {
+                    if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
+                    let insertPoint = $(insertId);
+                    this.createMenuitem(sandbox["_" + current], insertPoint);
+                }
             }, this);
-
 
             if (isAlert) this.alert((lprintf('config has reload')));
         },
@@ -845,26 +855,12 @@
             // 增加 onshowing 事件
             processOnShowing.call(this, group, menuObj, opt.insertPoint);
 
-            Object.keys(menuObj).map(function (key) {
-                var val = menuObj[key];
-                if (key === "_items") return;
-                if (key === "_group") return;
-                if (key.startsWith('on') && key !== "onshowinglabel") {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    group.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        runJS(fn, {
-                            event
-                        });
-                    }, false);
-                } else {
-                    group.setAttribute(key, val);
-                }
-            }, this);
+            // 绑定事件
+            addEventListeners(group, menuObj);
+
+            // 设置属性
+            setAttributes(group, menuObj, ["_items", "_group"])
+
             let cls = group.classList;
             cls.add('addMenu');
 
@@ -915,26 +911,11 @@
             // 增加 onshowing 事件
             processOnShowing.call(this, menu, menuObj, opt.insertPoint);
 
-            for (let key in menuObj) {
-                let val = menuObj[key];
-                if (key === "_items") continue;
-                if (key.startsWith('on') && key !== "onshowinglabel") {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        runJS(fn, {
-                            event
-                        });
-                    }, false);
-                    continue;
-                }
-                menu.setAttribute(key, val);
+            // 绑定事件
+            addEventListeners(menu, menuObj);
 
-            }
+            // 设置属性
+            setAttributes(menu, menuObj, ["_items"]);
 
             let cls = menu.classList;
             cls.add("addMenu");
@@ -1058,23 +1039,11 @@
                 processOnShowing.call(this, menuitem, obj, opt.insertPoint);
             }
 
-            for (let key in obj) {
-                let val = obj[key];
-                if (key === "command") continue;
-                if (key.startsWith('on') && key !== "onshowinglabel") {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        runJS(fn);
-                    }, false);
-                } else {
-                    menuitem.setAttribute(key, val);
-                }
-            }
+            // 绑定事件
+            addEventListeners(menuitem, obj);
+
+            // 设置属性
+            setAttributes(menuitem, obj, ["command"]);
 
             (async () => {
                 if (noDefaultLabel && menuitem.localName !== separatorType) {
@@ -1152,34 +1121,12 @@
                 let menuitem;
 
                 // clone menuitem and set attribute
-                if (obj.id && (menuitem = $(obj.id))) {
-                    let dupMenuitem;
-                    let isDupMenu = (obj.clone === true);
-                    if (isDupMenu) {
-                        dupMenuitem = menuitem.cloneNode(true);
-                    } else {
-                        dupMenuitem = menuitem;
-                        dupMenuitem.originAttributes = {}
-                        dupMenuitem.getAttributeNames().forEach(function (attr) {
-                            dupMenuitem.originAttributes[attr] = dupMenuitem.getAttribute(attr);
-                        });
-                        dupMenuitem.classList.add("addMenuNot");
-                    }
-                    for (let key in obj) {
-                        let val = obj[key];
-                        if (key.startsWith('on') && key !== "onshowinglabel") {
-                            const fn = typeof val === "string" ? function (event) {
-                                if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                                    runJS("(" + val + ").call(this, event)");
-                                } else {
-                                    runJS(val);
-                                }
-                            } : val;
-                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
-                            continue;
-                        }
-                        dupMenuitem.setAttribute(key, val);
-                    }
+                // 2025.06.05 ignore obj.clone
+                let sel = obj.id || obj.selector;
+                if (sel && (menuitem = $(sel))) {
+                    let dupMenuitem = menuitem.cloneNode(true);
+                    addEventListeners(dupMenuitem, obj);
+                    setAttributes(dupMenuitem, obj);
 
                     // 如果没有则添加 menuitem-iconic 或 menu-iconic，给菜单添加图标用。
                     let type = dupMenuitem.nodeName,
@@ -1191,18 +1138,7 @@
                     if (!cls.contains('addMenu'))
                         cls.add('addMenu');
 
-                    // // 没有插入位置的不动
-                    if (!obj.parent && !obj.insertAfter && !obj.insertBefore && !obj.position) {
-                        continue;
-                    } else {
-                        // 增加用于还原已移动菜单的标记
-                        dupMenuitem.parentNode.insertBefore($C(insertPoint.localName, {
-                            'original-id': dupMenuitem.getAttribute('id'),
-                            hidden: true,
-                            class: 'addMenuOriginal',
-                        }), dupMenuitem);
-                        insertMenuItem(obj, dupMenuitem);
-                    }
+                    insertMenuItem(obj, dupMenuitem);
                 } else {
                     menuitem = obj._items ? this.newMenu(obj, {
                         insertPoint: insertPoint
@@ -1236,6 +1172,9 @@
                 }
                 insertPoint.before(menuitem);
             }
+        },
+        modMenuitem: function (menuObj) {
+            // to be implemented
         },
         removeMenuitem: function () {
             var remove = function (e) {
@@ -1709,6 +1648,39 @@
             }
         }
         return el;
+    }
+
+    function addEventListener (element, type, listener) {
+        if (typeof listener === 'function') {
+            element.addEventListener(type, listener);
+            return () => element.removeEventListener(type, listener);
+        } else {
+            console.warn(`addMenuPlus: addEventListener: ${type} is not a function, ignored, value is ${listener}`);
+            return () => { }
+        };
+    }
+
+    function addEventListeners (element, obj) {
+        const unlisteners = [];
+        Object.keys(obj).forEach(key => {
+            if (key.startsWith('on') && key !== "onshowinglabel") {
+                const val = obj[key];
+                if (typeof val === 'function') {
+                    unlisteners.push(addEventListener(element, key.slice(2).toLowerCase(), val));
+                } else {
+                    console.warn(`addMenuPlus: addEventListeners: ${key} is not a function, ignored, value is ${val}`);
+                }
+            }
+        });
+        return () => unlisteners.forEach(unlistener => unlistener());
+    }
+
+    function setAttributes (element, obj, exclude = []) {
+        Object.keys(obj).forEach(key => {
+            if (!exclude.includes(key) && !key.startsWith('on')) {
+                element.setAttribute(key, obj[key]);
+            }
+        });
     }
 
     function addStyle (css) {
