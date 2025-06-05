@@ -388,9 +388,8 @@
                     }
 
                     // Process all .addMenu elements
-                    $$('.addMenu', $target.get()).forEach($menu => {
+                    $$('.addMenu[onshowinglabel]', $target.get()).forEach($menu => {
                         $menu.removeAttr("hidden");
-
                         const showingLabel = $menu.attr('onshowinglabel');
                         if (showingLabel) {
                             let maxLength = onshowinglabelMaxLength || 15;
@@ -476,9 +475,9 @@
 
                             const $original = $('#' + $elem.attr('command'));
                             if ($original.get()) {
-                                $elem.attr('hidden', $original.attr('hidden'))
-                                    .attr('collapsed', $original.attr('collapsed'))
-                                    .attr('disabled', $original.attr('disabled'));
+                                $elem.attr('hidden', $original.attr('hidden') || "false")
+                                    .attr('collapsed', $original.attr('collapsed') || "false")
+                                    .attr('disabled', $original.attr('disabled') || "false");
                             }
                         });
 
@@ -1712,7 +1711,7 @@
 
     function setAttributes (element, obj, exclude = []) {
         Object.keys(obj).forEach(key => {
-            if (!exclude.includes(key) && !key.startsWith('on')) {
+            if (key === "onshowinglabel" || !exclude.includes(key) && !key.startsWith('on')) {
                 element.setAttribute(key, obj[key]);
             }
         });
