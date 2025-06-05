@@ -653,9 +653,10 @@
                 });
             }
         },
-        exec: function (path, arg, options = { blocking: false }) {
+        exec: function (path, arg, options = { blocking: false, startHidden: false }) {
             let file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             let process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+            if (options.startHidden) process.startHidden = true;
             let result = { success: false, error: null };
 
             // 规范化路径函数
