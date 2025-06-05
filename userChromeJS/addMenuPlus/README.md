@@ -179,25 +179,19 @@ css('.addMenu .menu-iconic-accel[value="current"] { display: none; }');
 示例：汉堡菜单添加重启菜单（必须是 2022.05.20 以后的版本调用，`data-l10n-href`和`data-l10n-id`必须是 2022.05.27 以后的版本才能用）
 
 ```js
-app([
-  {
-    id: "appMenu-advanced-settings-button",
-    "data-l10n-href": "toolkit/about/config.ftl",
-    "data-l10n-id": "about-config-page-title",
-    insertAfter: "appMenu-settings-button",
-    image: "chrome://global/skin/icons/settings.svg",
-    oncommand: `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
-  },
-  {
-    id: "appMenu-restart-button2",
-    //'label': Services.locale.appLocaleAsBCP47.includes("zh-") ? '重启' : 'Restart',
-    "data-l10n-href": "toolkit/about/aboutSupport.ftl",
-    "data-l10n-id": "restart-button-label",
-    insertBefore: "appMenu-quit-button2",
-    oncommand: `if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-    onclick: `if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();`,
-  },
-]);
+app([{
+    'id': 'appMenu-restart-button2',
+    // 'label': locale.includes("zh-") ? '重启' : 'Restart',
+    'data-l10n-href': 'toolkit/about/aboutSupport.ftl',
+    'data-l10n-id': 'restart-button-label',
+    'insertBefore': 'appMenu-quit-button2',
+    'oncommand': event => {
+        if (event.shiftKey || (AppConstants.platform == "macosx" ? event.metaKey : event.ctrlKey)) Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();
+    },
+    'onclick': event => {
+        if (event.button === 0) return; Services.appinfo.invalidateCachesOnRestart(); setTimeout(() => Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit), 300); this.closest("panel").hidePopup(true); event.preventDefault();
+    }
+}]);
 ```
 
 示例：汉堡菜单移动更多工具到退出前（必须是 2022.05.20 以后的版本调用）
@@ -206,7 +200,7 @@ app([
 app([
   {
     id: "appMenu-more-button2",
-    clone: false,
+    // clone: false, 2025.06.05 版本以后无需这行
     insertBefore: "appMenu-quit-button2",
   },
 ]);
@@ -220,7 +214,7 @@ app([
 
 示例：使用第三方浏览器打开当前页面
 
-```
+```js
 new function () {
     var CatGroup = GroupMenu({
         parent: 'identity-icon-box-contextmenu', // 这个属性 2022.08.08 以后版本可用
@@ -1752,7 +1746,7 @@ page({
 ```js
 css("#appmenu_webDeveloper { display: none; }");
 // 或者
-page({
+mod({
   id: "appmenu_webDeveloper",
   hidden: true,
 });
@@ -1763,10 +1757,9 @@ page({
 示例："字符编码" 移动到 "web 开发者" 的位置
 
 ```js
-tab({
+mod({
   id: "appmenu_developer_charsetMenu",
   insertAfter: "appmenu_webDeveloper",
-  // clone: false,  // 不克隆，直接改在原来的菜单上面
 });
 ```
 
@@ -1786,21 +1779,19 @@ page({
 示例：给 firebug 添加一个 accesskey
 
 ```js
-page({
+mod({
   id: "menu_firebug_firebugInspect",
   accesskey: "R",
-  clone: false,
 });
 ```
 
 示例：修改错误控制台的按键（Ctrl + Shift + J）为以前的版本的控制台（无效了）
 
 ```js
-page({
+mod({
   id: "key_browserConsole",
   command: "",
   oncommand: "toJavaScriptConsole();",
-  clone: false,
 });
 ```
 
@@ -1809,11 +1800,10 @@ page({
 示例：移动星星到书签栏后面，并修正图标大小（firefox 26）
 
 ```js
-page({
+mod({
   id: "star-button",
   insertAfter: "personal-bookmarks",
   style: "margin-top:5px;margin-bottom:5px;",
-  clone: false,
 });
 ```
 
@@ -1822,7 +1812,7 @@ page({
 示例：给下载按钮添加中键点击下载视频功能和右键打开下载历史功能
 
 ```js
-tool({
+mod({
   id: "downloads-button",
   tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-")
     ? "左键：显示下载进度\n中键：下载视频\n右键：打开下载历史（CTRL + J）"

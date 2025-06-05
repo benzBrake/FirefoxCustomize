@@ -28,7 +28,6 @@
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
 
     const runJS = (code, sandbox = window) => {
-        console.log(code);
         try {
             Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
         } catch (e) {
@@ -188,6 +187,7 @@
             elementHTML: ""
         },
         customShowings: [],
+        undoFunctions: [],
         init: async function () {
             await this.ensureConfigFileExists();
             try {
@@ -357,6 +357,7 @@
                 this.APP_LITENER_REMOVER();
             gBrowser.tabpanels.removeEventListener("mouseup", this);
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
+            this.undoMods();
             this.removeMenuitem();
             $$('#addMenu-rebuild, .addMenu-insert-point').remove();
             this.identityBox?.removeAttr('contextmenu').off("click", this, false);
@@ -828,8 +829,8 @@
             if (sandbox._css.length)
                 this.style2 = addStyle(sandbox._css.join("\n"));
 
+            this.undoMods();
             this.removeMenuitem();
-
             this.customShowings = [];
 
             Object.values(MENU_ATTRS).forEach(function ({
@@ -839,7 +840,9 @@
                 insertId
             }) {
                 if (current === "mod") {
-                    this.modMenuitem(sandbox["_" + current]);
+                    sandbox["_" + current].forEach((obj) => {
+                        this.modMenuitem(obj);
+                    });
                 } else {
                     if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
                     let insertPoint = $(insertId);
@@ -1173,26 +1176,58 @@
                 insertPoint.before(menuitem);
             }
         },
-        modMenuitem: function (menuObj) {
-            // to be implemented
+        modMenuitem: function (obj) {
+            const sel = obj.id || obj.selector;
+            if (sel && $(sel)) {
+                const menuitem = $(sel);
+                const originalAttributes = {};
+                menuitem.getAttributeNames().forEach((attr) => {
+                    originalAttributes[attr] = menuitem.getAttribute(attr);
+                });
+                this.undoFunctions.push(() => {
+                    menuitem.getAttributeNames().forEach((attr) => {
+                        if (attr in originalAttributes) {
+                            menuitem.setAttribute(attr, originalAttributes[attr]);
+                        } else {
+                            menuitem.removeAttribute(attr);
+                        }
+                    });
+                });
+                setAttributes(menuitem, obj);
+                let fn = addEventListeners(menuitem, obj);
+                if (typeof fn === "function") this.undoFunctions.push(fn);
+                let placeholder = $C('menuseparator', {
+                    hidden: true,
+                });
+                menuitem.before(placeholder);
+                this.undoFunctions.push(() => {
+                    placeholder.after(menuitem.get());
+                    placeholder.remove();
+                });
+                if (obj.parent && $(obj.parent)) {
+                    let children = $(obj.parent).children;
+                    let position = obj.position || children.length;
+                    if (position > children.length) position = children.length;
+                    $(obj.parent).insertBefore(menuitem, children[position - 1]);
+                } else if (obj.insertAfter && $(obj.insertAfter)) {
+                    $(obj.insertAfter).after(menuitem);
+                } else if (obj.insertBefore && $(obj.insertBefore)) {
+                    $(obj.insertBefore).before(menuitem);
+                } else if (obj.position && parseInt(obj.position, 10) > 0) {
+                    let children = menuitem.parent().get().children;
+                    let position = obj.position || children.length;
+                    if (position > children.length) position = children.length;
+                    menuitem.parent().insertBefore(menuitem.get(), children[position - 1]);
+                }
+            } else {
+                console.warn("menuObj.selector or menuObj.id not found:", obj);
+            }
+        },
+        undoMods: function () {
+            this.undoFunctions.forEach(f => f());
+            this.undoFunctions = [];
         },
         removeMenuitem: function () {
-            var remove = function (e) {
-                if (e.matches('.addMenuNot')) {
-                    if (typeof e.originAttributes === "object") {
-                        e.getAttributeNames().forEach(function (attr) {
-                            e.removeAttr(attr);
-                        });
-                        for (let key in e.originAttributes) {
-                            e.attr(key, e.originAttributes[key]);
-                        }
-                    }
-                    e.removeClass('addMenuNot');
-                    return;
-                }
-                e.remove();
-            };
-
             $$('.addMenuOriginal').forEach((e) => {
                 let id = e.attr('original-id');
                 if (id && $(id))
@@ -1200,8 +1235,8 @@
                 e.remove();
             });
 
-            $$('menu.addMenu, menugroup.addMenu').forEach(remove);
-            $$('.addMenu').forEach(remove);
+            $$('menu.addMenu, menugroup.addMenu').forEach(e => e.remove());
+            $$('.addMenu').forEach(e => e.remove());
             // 恢复原隐藏菜单
             $$('.addMenuHide').forEach(function (e) {
                 e.removeClass('addMenuHide');
