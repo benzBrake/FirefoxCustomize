@@ -367,7 +367,7 @@
         sendAsyncMessage: function (key, data = {}, browser = gBrowser.selectedBrowser) {
             return this.getActor(browser).sendAsyncMessage(key, data);
         },
-        handleEvent: function (event) {
+        handleEvent: async function (event) {
             const { type, target, button } = event;
             const $target = $(event.target);
             const $currentTarget = $(event.currentTarget);
@@ -379,7 +379,7 @@
 
                     // File refreshing logic
                     if (enableFileRefreshing) {
-                        this.updateModifiedFile();
+                        await this.updateModifiedFile();
                     }
 
                     // Process all .addMenu elements
@@ -543,34 +543,32 @@
                 return gCryptoHash.finish(true);
             }
         },
-        executeInContent (browser = gBrowser.selectedBrowser, func) {
+        executeInContent: function (browser = gBrowser.selectedBrowser, func) {
             try {
                 this.sendAsyncMessage("AddMenuPlus:ExecuteInContent", { script: func.toString() }, browser);
-
+                return true;
             } catch (ex) {
                 console.error("Error in executeInContent : ", ex);
             }
+            return false;
         },
-        executeInChrome (func, args = []) {
+        executeInChrome: function (func, args = []) {
             try {
-                const functionobj = new Function(
+                const functionObj = new Function(
                     func.match(/\((.*)\)\s*\{/)[1],
                     func.replace(/^function\s*.*\s*\(.*\)\s*\{/, '').replace(/}$/, '')
                 );
-                functionobj.apply(window, args);
+                functionObj.apply(window, args);
             } catch (ex) {
                 console.error("Error in executeInChrome : ", ex);
             }
         },
-        updateModifiedFile () {
+        updateModifiedFile: async function () {
             if (!this.FILE.exists()) return;
 
             if (this._modifiedTime != this.FILE.lastModifiedTime) {
                 this._modifiedTime = this.FILE.lastModifiedTime;
-
-                setTimeout(async function () {
-                    await addMenu.rebuild(true);
-                }, 10);
+                await addMenu.rebuild(true);
             }
         },
         onCommand: async function (event) {
