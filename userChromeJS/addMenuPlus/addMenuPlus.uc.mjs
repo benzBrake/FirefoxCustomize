@@ -179,7 +179,9 @@
             inputHTML: "",
             onTextarea: false,
             textareaValue: "",
-            textareaHTML: ""
+            textareaHTML: "",
+            onElement: false,
+            elementHTML: ""
         },
         customShowings: [],
         init: async function () {
