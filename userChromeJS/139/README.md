@@ -10,6 +10,16 @@
    @sandbox     true
    ```
 
-   即可解决
+   即可解决大部分，如果实在不行，可以使用这个函数来运行函数字符串
 
+   ```
+   const runJS = (code, sandbox = window) => {
+       try {
+           Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
+       } catch (e) {
+           console.error(e);
+       }
+   }
+   ```
+   
    
