@@ -15,7 +15,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
         window.OpenWithHelper = {
-            get saveDir() {
+            get saveDir () {
                 let dir = Services.prefs.getStringPref("userChromeJS.OpenWithHelper.SAVE_DIR", DEFAULT_SAVE_DIR);
                 if (dir.startsWith("{") && dir.endsWith("}")) {
                     let matched = (dir.match(/^\{[^\}]+\}$/) || ["", ""])[1]
@@ -25,7 +25,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 return dir;
             },
-            set saveDir(dir) {
+            set saveDir (dir) {
                 dir = dir.replace(/[\\\/]*$/g, ""); // 处理 Windows 下反斜杠的问题
                 for (let [key, value] of Object.entries(DEFINED_DIRS)) {
                     if (dir === value) {
@@ -34,7 +34,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 Services.prefs.setStringPref("userChromeJS.OpenWithHelper.SAVE_DIR", dir);
             },
-            openSaveDir() {
+            openSaveDir () {
                 this.exec(this.saveDir);
             },
             getAppList: async function () {
@@ -52,7 +52,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 return APPS_LIST;
             },
-            async selectDirectory(titleKey = "change-download-dir") {
+            async selectDirectory (titleKey = "change-download-dir") {
                 const mode = Ci.nsIFilePicker.modeGetFolder;
                 const title = await this.l10n.formatValue(titleKey);
                 return new Promise(resolve => {
@@ -73,7 +73,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     });
                 });
             },
-            async changeSaveDir() {
+            async changeSaveDir () {
                 const status = await this.selectDirectory("change-download-dir");
                 if (status.result === Ci.nsIFilePicker.returnOK) {
                     this.saveDir = status.path;
@@ -158,7 +158,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 [this.btn, this.CTX_MENU, this.TAB_MENU].forEach(node => {
                     setText(node);
                     $$('[data-l10n-id]', node, async el => setText(el));
-                    async function setText(el) {
+                    async function setText (el) {
                         if (!el) return;
                         const l10nId = el.getAttribute("data-l10n-id");
                         const l10nArgs = el.getAttribute("data-l10n-args");
@@ -238,7 +238,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
                 return menupopup;
             },
-            reload(isAlert = false) {
+            reload (isAlert = false) {
                 if (this.BTN_POPUP)
                     this.BTN_POPUP.setAttribute("need-reload", "true");
                 if (this.CTX_POPUP)
@@ -360,7 +360,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         break;
                 }
             },
-            convertText(text) {
+            convertText (text) {
                 var context = gContextMenu || { // とりあえずエラーにならないようにオブジェクトをでっち上げる
                     link: {
                         href: "",
@@ -398,7 +398,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return convert(str);
                 });
 
-                function convert(str) {
+                function convert (str) {
                     let isCompleted = false;
                     switch (str) {
                         case "%T":
@@ -501,7 +501,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return str;
                 }
 
-                function htmlEscape(s) {
+                function htmlEscape (s) {
                     return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
                 }
             },
@@ -699,11 +699,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
              * @param {Document|null} d 指定 document，不提供就是全局 document
              * @returns 
              */
-        function $(s, d) {
+        function $ (s, d) {
             return /[#\.[:]/i.test(s.trim()) ? (d || document).querySelector(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementById(s);
         }
 
-        function $$(s, d, fn) {
+        function $$ (s, d, fn) {
             let elems = /[#\.[:]/i.test(s.trim()) ? (d || document).querySelectorAll(s) : (d instanceof HTMLDocument ? d : d?.ownerDocument || document).getElementsByTagName(s);
             if (typeof fn === "function") {
                 for (let el of [...elems]) { fn.call(el, el) };
@@ -719,7 +719,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          * @param {Array} s 跳过属性
          * @returns 
          */
-        function createElement(d, t, o = {}, s = []) {
+        function createElement (d, t, o = {}, s = []) {
             if (!d) return;
             let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
             e = applyAttr(e, o, s);
@@ -738,7 +738,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
          * @param {Object|null} s 跳过属性
          * @returns 
          */
-        function applyAttr(e, o = {}, s = []) {
+        function applyAttr (e, o = {}, s = []) {
             for (let [k, v] of Object.entries(o)) {
                 if (s.includes(k)) continue;
                 if (k.startsWith('on')) {
@@ -753,7 +753,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return e;
         }
 
-        function handleRelativePath(path, parentPath) {
+        function handleRelativePath (path, parentPath) {
             if (path) {
                 var ffdir = parentPath ? parentPath : Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties).get("ProfD", Ci.nsIFile).path;
                 // windows 的目录分隔符不一样
@@ -773,11 +773,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         }
 
         const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-        function getURLSpecFromFile(f) {
+        function getURLSpecFromFile (f) {
             return fph.getURLSpecFromActualFile(f);
         }
 
-        function saveFile(path, data) {
+        function saveFile (path, data) {
             let isCompleted = false, fileExists = false, isError = false;
             IOUtils.exists(path).then(() => {
                 isCompleted = true;
@@ -823,41 +823,43 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
         }
 
-        function collectCookies(url, NetscapeStyle) {
-            let uri;
+        function collectCookies (url, netscapeStyle) {
+            let uriObject;
             try {
-                uri = Services.io.newURI(url, null, null);
-            } catch (e) { return ""; }
+                uriObject = Services.io.newURI(url, null, null);
+            } catch (error) {
+                return "";
+            }
 
-            let cookies = Services.cookies.getCookiesFromHost(uri.host, {});
+            let cookieList = Services.cookies.getCookiesFromHost(uriObject.host, {});
 
-            if (NetscapeStyle) {
-                return cookies.map(formatCookieNetscapeStyle).join("");
+            if (netscapeStyle) {
+                return cookieList.map(formatCookieNetscapeStyle).join("");
             } else {
-                return cookies.map(formatCookie).join("; ");
+                return cookieList.map(formatCookie).join("; ");
             }
 
-            function formatCookie(cookiePair) {
-                return cookiePair.name + "=" + cookiePair.value;
+            function formatCookie (cookie) {
+                return cookie.name + "=" + cookie.value;
             }
 
-            function formatCookieNetscapeStyle(cookiePair) {
+            function formatCookieNetscapeStyle (cookie) {
                 return [
                     [
-                        cookiePair.isHttpOnly ? '#HttpOnly_' : '',
-                        cookiePair.host
+                        cookie.isHttpOnly ? '#HttpOnly_' : '',
+                        cookie.host
                     ].join(''),
-                    cookiePair.isDomain ? 'TRUE' : 'FALSE',
-                    cookiePair.path,
-                    cookiePair.isSecure ? 'TRUE' : 'FALSE',
-                    cookiePair.expires,
-                    cookiePair.name,
-                    cookiePair.value + '\n'
+                    cookie.isDomain ? 'TRUE' : 'FALSE',
+                    cookie.path,
+                    cookie.isSecure ? 'TRUE' : 'FALSE',
+                    cookie.expires,
+                    cookie.name,
+                    cookie.value + '\n'
                 ].join('\t');
             }
         }
 
-        function randomString(e) {
+        function randomString (e) {
             e = e || 32;
             var t = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678",
                 a = t.length,
@@ -866,7 +868,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             return n
         }
 
-        function alerts(aMsg, aTitle, aCallback) {
+        function alerts (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
                 observe: function (subject, topic, data) {
                     if ("alertclickcallback" != topic)
@@ -880,7 +882,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 aMsg + "", !!callback, "", callback);
         }
 
-        function uniqueArray(arr) {
+        function uniqueArray (arr) {
             return arr.filter(function (value, index, self) {
                 return self.indexOf(value) === index;
             });
