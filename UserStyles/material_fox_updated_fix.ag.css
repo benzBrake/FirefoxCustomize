@@ -1,0 +1,116 @@
+/* ==UserStyle==
+ * @name            MaterialFox UPDATED Patch
+ * @name:zh-CN      MaterialFox UPDATED 补丁
+ * @description     修复 MaterialFox UPDATED 在  e3kskoy7wqk/Firefox-for-windows-7 上的一些小问题
+ * @author          Ryan
+ * @version         0.1.0
+ * @compatibility   Firefox 121
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+==/UserStyle== */
+menuitem[checked=true]:not(:has(> .menu-icon)):not(:has(> .menu-iconic-left)):before {
+  content: "" !important;
+  display: block !important;
+  height: 16px;
+  width: 16px;
+  margin-inline-end: 8px !important;
+  background-image: var(--md-check-icon);
+}
+
+:is(#urlbar-input-container, .urlbar-input-container)>#location-bar .toolbarbutton-1 {
+  --toolbarbutton-inner-padding: 3px 8px;
+  width: 32px !important;
+
+  &:has(>.toolbarbutton-icon) {
+    --toolbarbutton-border-radius: 0;
+    --urlbar-box-hover-bgcolor: var(--md-control-background-color)
+  }
+}
+
+#zoom-controls[cui-areatype="toolbar"]>#zoom-reset-button>.toolbarbutton-text {
+  padding-block: var(--toolbarbutton-inner-padding) !important
+}
+
+#appMenu-certificate-manager-button {
+  list-style-image: var(--md-lock-icon) !important
+}
+
+/** 扩展管理紧凑样式 */
+:is(#unified-extensions-area, .unified-extensions-list) .subviewbutton {
+  margin-inline-start: 0 !important;
+  margin-inline-end: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-inline-end: 0 !important;
+}
+
+panelview#unified-extensions-view .toolbaritem-combined-buttons {
+  height: 32px;
+}
+
+:is(#unified-extensions-area, .unified-extensions-list) .subviewbutton.unified-extensions-item-action-button {
+  height: 32px;
+  min-height: unset;
+}
+
+.unified-extensions-item-row-wrapper {
+  align-items: center;
+}
+
+@media(-moz-platform: windows) {
+
+  /* 修正菜单缩进、二级菜单指示器 */
+  .menu-text {
+    padding-inline-start: 0 !important;
+  }
+
+  .menu-right {
+    appearance: none !important;
+  }
+}
+
+
+@media (-moz-pref("userChrome.ui-chrome-refresh")) {
+  .tab-background {
+    padding: 3px 12px 0 !important;
+  }
+
+  #tabbrowser-tabs[orient="vertical"] {
+    :root[uidensity="compact"] & {
+      --tab-min-height: 32px !important;
+    }
+
+    :root[uidensity="touch"] & {
+      --tab-min-height: 48px !important;
+    }
+    .tabbrowser-tab {
+      padding-block: 0px !important;
+    }
+    .tabbrowser-tab[fadein]:not([pinned]):not([style*="max-width"]) {
+      max-width: 100% !important;
+    }
+    & .tab-stack,
+    & .tab-background {
+      --tab-vertical-padding: 0px;
+      padding-top: 0px !important;
+      min-height: var(--tab-min-height) !important;
+      max-height: var(--tab-min-height) !important;
+      &:before,
+      &:after {
+        content: none !important;
+      }
+    }
+    & .tabbrowser-tab:is([visuallyselected], [selected]) {
+      &>.tab-stack>.tab-background {
+        border-bottom-left-radius: 11px !important;
+        border-bottom-right-radius: 11px !important;
+      }
+    }
+
+    #tabs-newtab-button {
+      --tab-hover-background-color: transparent;
+    }
+
+    #tabbrowser-arrowscrollbox-periphery {
+      justify-content: center;
+    }
+  }
+}

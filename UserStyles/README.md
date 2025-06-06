@@ -6,7 +6,7 @@
 
 ## 样式额外说明
 
-### hide_tabstoolbar_when_tst_shown_fx122
+### hide_tabstoolbar_when_tst_shown_fx122.css
 
 显示垂直标签栏的时候隐藏横向标签栏。
 
@@ -19,3 +19,7 @@
 比如要兼容`Container Tabs Sidebar`，先装上扩展，通过浏览器内容工具箱获取 sidebarCommand
 
 ![找到sidebarCommand](images/找到sidebarCommand.png)
+
+### material_fox_updated_fix.ag.css
+
+这是修复 [material_fox_updated](github.com/edelvarden/material-fox-updated)主题的 CSS，仅适用于 [e3kskoy7wqk/Firefox-for-windows-7](https://github.com/e3kskoy7wqk/Firefox-for-windows-7)
