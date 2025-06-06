@@ -7,7 +7,7 @@
 // @onlyonce
 // ==/UserScript==
 
-// 需要把 Notepad2 放在 配置目录\chrome\resources\bin\Notepad2 文件夹内
+// 需要把 Notepad2 放在 配置目录\chrome\UserTools\NotePad2文件夹内
 (function () {
     window.setViewSourceEditor = {
         init: function () {
