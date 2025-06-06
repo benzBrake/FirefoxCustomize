@@ -73,7 +73,30 @@
         </tr>
       </tbody>
     </table>
-    <div id="params-description" class="flex flex-col">
+    <div id="condition-description" class="description-table flex flex-col">
+      <label data-l10n-id="application-condition"></label>
+      <div>
+        通用
+        <ul class="flex flex-wrap list-none cols-3">
+          <li><label>normal</label>默认</li>
+          <li><label>button</label>在按钮菜单展示</li>
+          <li><label>tab</label>在标签菜单展示</li>
+        </ul>
+      </div>
+      <div>
+        针对右键菜单
+        <ul class="flex flex-wrap list-none cols-3">
+          <li><label>input</label>输入框右键</li>
+          <li><label>select</label>选中文本右键</li>
+          <li><label>link</label>链接右键</li>
+          <li><label>image</label>图片右键</li>
+          <li><label>media</label>媒体右键</li>
+          <li><label>page</label>页面右键</li>
+          <li><label>frame</label>框架右键</li>
+        </ul>
+      </div>
+    </div>
+    <div id="params-description" class="description-table flex flex-col">
       <label data-l10n-id="call-params-description-label"></label>
       <div>
         <ul class="flex flex-wrap list-none cols-3">
@@ -354,27 +377,27 @@
       display: none !important;
     }
 
-    #params-description,
+    .description-table,
     #operate-toolbar {
       margin-top: 1em;
     }
 
-    #params-description {
+    .description-table {
       border: 1px solid #ddd;
     }
 
-    #params-description>label {
+    .description-table>label {
       font-weight: bold;
       padding: 0.25em 0.5em;
       border-bottom: 1px solid #ddd;
       background-color: #f1f1f1;
     }
 
-    #params-description>div>ul {
+    .description-table>div>ul {
       border-bottom: 1px solid #ddd;
     }
 
-    #params-description>div>ul>li {
+    .description-table>div>ul>li {
       display: flex;
       gap: 10px;
       padding: 5px;
@@ -382,7 +405,7 @@
       box-sizing: border-box;
     }
 
-    #params-description>div>ul:last-child {
+    .description-table>div>ul:last-child {
       border-bottom: unset;
     }
 
