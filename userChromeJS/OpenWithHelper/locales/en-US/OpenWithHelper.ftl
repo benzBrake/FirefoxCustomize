@@ -14,6 +14,7 @@ open-download-dir =
 menu-refreshed = Menu has been refreshed!
 operation-succeeded = Operation succeeded!
 operation-canceled = Operation canceled!
+directory-not-choosed = Directory not choosed!
 manage-applications-list = Manage Applications List
 application-icon = Icon
 application-title = Title

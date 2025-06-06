@@ -1,17 +1,18 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.2
+// @version        1.0.3
 // @author         Ryan
 // @include        main
 // @sandbox        true
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.3 增加选择目录功能
 // @note           1.0.2 增加选择目录参数，修复选项打不开的问题
 // @note           1.0.1 修复
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
-    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */) {
+    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */, syncify) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
         window.OpenWithHelper = {
@@ -399,7 +400,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 });
 
                 function convert (str) {
-                    let isCompleted = false;
                     switch (str) {
                         case "%T":
                             return bw.contentTitle;
@@ -470,9 +470,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                             try {
                                 cookiesURI = Services.io.newURI(cookiesURL, null, null);
                             } catch (e) {
-                                cookiesURI = {
-                                    host: randomString(10)
-                                }
+                                return "";
                             }
                             let cookies = collectCookies(cookiesURI.prePath, netscapeStyle);
                             return cookies;
@@ -482,17 +480,15 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                             return PathUtils.join(PathUtils.profileDir, "cookies.sqlite");
                         case "%CD":
                         case "%CHOOSE_DIR%":
-                            let isCompleted = false;
                             let targetDir = "";
-                            OpenWithHelper.selectDirectory("choose-directory").then(status => {
-                                isCompleted = true;
-                                if (status.result === Ci.nsIFilePicker.returnOK) {
-                                    targetDir = status.path;
-                                }
-                            });
-                            let thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-                            while (!isCompleted) {
-                                thread.processNextEvent(true);
+                            const status = syncify(() => OpenWithHelper.selectDirectory("choose-directory"));
+                            if (status.result === Ci.nsIFilePicker.returnOK) {
+                                targetDir = status.path;
+                            } else {
+                                const directoryNotChoosedStr = syncify(() => OpenWithHelper.l10n.formatValue("directory-not-choosed"));
+                                const operationCanceledStr = syncify(() => OpenWithHelper.l10n.formatValue("operation-canceled"));
+                                alerts(directoryNotChoosedStr, operationCanceledStr);
+                                throw new Error("用户取消或未选择目录。");
                             }
                             return targetDir;
                         case "%EOL%":
@@ -823,38 +819,36 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
         }
 
-        function collectCookies (url, netscapeStyle) {
-            let uriObject;
+        function collectCookies (url, NetscapeStyle) {
+            let uri;
             try {
-                uriObject = Services.io.newURI(url, null, null);
-            } catch (error) {
-                return "";
-            }
+                uri = Services.io.newURI(url, null, null);
+            } catch (e) { return ""; }
 
-            let cookieList = Services.cookies.getCookiesFromHost(uriObject.host, {});
+            let cookies = Services.cookies.getCookiesFromHost(uri.host, {});
 
-            if (netscapeStyle) {
-                return cookieList.map(formatCookieNetscapeStyle).join("");
+            if (NetscapeStyle) {
+                return cookies.map(formatCookieNetscapeStyle).join("");
             } else {
-                return cookieList.map(formatCookie).join("; ");
+                return cookies.map(formatCookie).join("; ");
             }
 
-            function formatCookie (cookie) {
-                return cookie.name + "=" + cookie.value;
+            function formatCookie (cookiePair) {
+                return cookiePair.name + "=" + cookiePair.value;
             }
 
-            function formatCookieNetscapeStyle (cookie) {
+            function formatCookieNetscapeStyle (cookiePair) {
                 return [
                     [
-                        cookie.isHttpOnly ? '#HttpOnly_' : '',
-                        cookie.host
+                        cookiePair.isHttpOnly ? '#HttpOnly_' : '',
+                        cookiePair.host
                     ].join(''),
-                    cookie.isDomain ? 'TRUE' : 'FALSE',
-                    cookie.path,
-                    cookie.isSecure ? 'TRUE' : 'FALSE',
-                    cookie.expires,
-                    cookie.name,
-                    cookie.value + '\n'
+                    cookiePair.isDomain ? 'TRUE' : 'FALSE',
+                    cookiePair.path,
+                    cookiePair.isSecure ? 'TRUE' : 'FALSE',
+                    cookiePair.expires,
+                    cookiePair.name,
+                    cookiePair.value + '\n'
                 ].join('\t');
             }
         }
@@ -964,5 +958,34 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         return PATHS;
     })(), PathUtils.join(PathUtils.profileDir, "chrome",
         ...(Services.prefs.getStringPref("userChromeJS.OpenWithHelper.FILE_PATH", "_openwith.json").replace(/\\/g, "/").split("/"))),
-        Services.vc.compare(Services.appinfo.version, "89.0.2"))
+        Services.vc.compare(Services.appinfo.version, "89.0.2"),
+        function (promiser) {
+            // promiser 是一个无参函数，返回 Promise
+            // 例如：() => OpenWithHelper.selectDirectory("choose-directory")
+            let isDone = false;            // 标记 Promise 是否已经完成
+            let result;                    // 存储成功时的结果
+            let error;                     // 存储错误信息
+            const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
+            const mainThread = threadManager.mainThread;
+            // 调用传入的异步函数，并将结果/错误分别存储
+            promiser()
+                .then(res => {
+                    result = res;
+                    isDone = true;
+                })
+                .catch(err => {
+                    error = err;
+                    isDone = true;
+                });
+            // 轮询主线程事件，阻塞直到 Promise 执行完毕
+            while (!isDone) {
+                mainThread.processNextEvent(true);
+            }
+            // 如果有错误，则抛出错误
+            if (error) {
+                throw error;
+            }
+            // 返回结果
+            return result;
+        })
 }

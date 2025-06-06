@@ -14,6 +14,7 @@ open-download-dir =
 menu-refreshed = 菜单已刷新!
 operation-succeeded = 操作已成功!
 operation-canceled = 操作已取消!
+directory-not-choosed = 未选择目录!
 manage-applications-list = 管理应用列表
 application-icon = 图标
 application-title = 标题
