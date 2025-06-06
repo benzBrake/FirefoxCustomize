@@ -1,0 +1,18 @@
+/* ==UserStyle==
+ * @name            移动标签栏到导航栏下方
+ * @author          Ryan
+ * @version         0.0.1
+ * @compatibility   Firefox 136
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+==/UserStyle== */
+#TabsToolbar {
+    order: 99;
+    & .titlebar-buttonbox-container {
+        visibility: collapse;
+        display: none;
+    }
+}
+#navigator-toolbox:not([tabs-hidden]) > #nav-bar > .titlebar-buttonbox-container {
+    display: flex;
+    --margin-left: 12px;
+}
