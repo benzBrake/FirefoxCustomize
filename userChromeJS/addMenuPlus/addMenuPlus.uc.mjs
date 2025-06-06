@@ -105,36 +105,36 @@
             insRef: $("#context_closeTab"),
             current: "tab",
             submenu: "TabMenu",
-            groupmenu: "TabGroup"
+            groupmenu: "TabGroup",
         },
         page: {
             insRef: $("#context-viewsource"),
             current: "page",
             submenu: "PageMenu",
-            groupmenu: "PageGroup"
+            groupmenu: "PageGroup",
         },
         tool: {
             insRef: $("#prefSep, #webDeveloperMenu"),
             current: "tool",
             submenu: "ToolMenu",
-            groupmenu: "ToolGroup"
+            groupmenu: "ToolGroup",
         },
         app: {
             insRef: $("#appmenu-quit, #appMenu-quit-button, #appMenu-quit-button2, #menu_FileQuitItem"),
             current: "app",
             submenu: "AppMenu",
-            groupmenu: "AppGroup"
+            groupmenu: "AppGroup",
         },
         nav: {
             insRef: $("#toolbar-context-undoCloseTab, #toolbarItemsMenuSeparator"),
             current: "nav",
             submenu: "NavMenu",
-            groupmenu: "NavGroup"
+            groupmenu: "NavGroup",
         },
         group: {
             current: "group",
             groupmenu: "GroupMenu",
-            insertId: "addMenu-page-insertpoint"
+            insertId: "addMenu-page-insertpoint",
         },
         mod: {
             current: "mod"
@@ -445,7 +445,7 @@
                         },
                         'tabContextMenu': () => {
                             triggerFavMsg(TabContextMenu.contextTab);
-                            return "addMenu-tab-insertpoint";
+                            return "`addMenu-tab-insertpoint`";
                         },
                         'identity-box-contextmenu': () => "addMenu-identity-insertpoint",
                         'menu_FilePopup': () => "addMenu-app-insertpoint",
@@ -455,18 +455,24 @@
 
                     insertPoint = menuHandlers[$target.attr('id')]?.() || "";
 
+                    const ev = obj => {
+                        try {
+                            obj.fn ? obj.fn.call(obj.item, obj.item) : runJS('(' + obj.fnSource + ').call(obj.item, obj.item)', {
+                                obj
+                            });
+                        } catch (ex) {
+                            console.error(lprintf('custom showing method error'), obj.fnSource, ex);
+                        }
+                    }
+
                     // Execute custom showing methods with runJS
                     this.customShowings
                         .filter(obj => obj.insertPoint === insertPoint)
-                        .forEach(obj => {
-                            try {
-                                obj.fn ? obj.fn.call(obj.item, obj.item) : runJS('(' + obj.fnSource + ').call(obj.item, obj.item)', {
-                                    obj
-                                });
-                            } catch (ex) {
-                                console.error(lprintf('custom showing method error'), obj.fnSource, ex);
-                            }
-                        });
+                        .forEach(obj => ev(obj));
+
+                    this.customShowings
+                        .filter(obj => obj.insertPoint === "addMenu-all-insertpoint")
+                        .forEach(obj => ev(obj));
 
                     // Delayed DOM updates
                     setTimeout(() => {
@@ -1192,7 +1198,14 @@
                         }
                     });
                 });
-                setAttributes(menuitem.get(), obj);
+                let popup = menuitem.closest("#contentAreaContextMenu,#toolbar-context-menu,#tabContextMenu,#identity-box-contextmenu,#menu_FilePopup,#appMenu-protonMainView,#menu_ToolsPopup");
+                if (popup) {
+                    let insertPoint = popup.querySelector("menuseparator.addMenu-insert-point");
+                    processOnShowing.call(this, menuitem, obj, insertPoint);
+                } else {
+                    processOnShowing.call(this, menuitem, obj);
+                }
+                setAttributes(menuitem.get(), obj, ['id', 'sel']);
                 let fn = addEventListeners(menuitem, obj);
                 if (typeof fn === "function") this.undoFunctions.push(fn);
                 let placeholder = $C('menuseparator', {
@@ -1684,7 +1697,12 @@
         return el;
     }
 
+    function unwrap(menu) {
+        return menu?.$self || menu;
+    }
+
     function addEventListener (element, type, listener) {
+        element = unwrap(element);
         if (typeof listener === 'function') {
             element.addEventListener(type, listener);
             return () => element.removeEventListener(type, listener);
@@ -1695,6 +1713,7 @@
     }
 
     function addEventListeners (element, obj) {
+        element = unwrap(element);
         const unlisteners = [];
         Object.keys(obj).forEach(key => {
             if (key.startsWith('on') && key !== "onshowinglabel") {
@@ -1710,6 +1729,7 @@
     }
 
     function setAttributes (element, obj, exclude = []) {
+        element = unwrap(element);
         Object.keys(obj).forEach(key => {
             if (key === "onshowinglabel" || !exclude.includes(key) && !key.startsWith('on')) {
                 element.setAttribute(key, obj[key]);
@@ -1740,8 +1760,8 @@
     function processOnShowing (menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
             const obj = {
-                item: menu,
-                insertPoint: insertPoint.id,
+                item: unwrap(menu),
+                insertPoint: insertPoint?.id || "addMenu-all-insertpoint",
             }
             if (typeof menuObj.onshowing === 'function') {
                 obj.fn = menuObj.onshowing;
