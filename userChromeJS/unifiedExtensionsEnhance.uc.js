@@ -437,13 +437,14 @@
                     this.createAdditionalButtons(parent);
                 }
             } else if (event.type === "popupshowing") {
-                let elm = event.target;
-                if (!elm.querySelector('.customize-context-manageExtension')) return;
+                const { target: elm } = event;
+                const { triggerNode } = elm;
+                let hidden = triggerNode == null || !triggerNode.matches('.webextension-browser-action');
                 if (elm.querySelector('.customize-context-copyExtensionId')) {
-                    elm.querySelector('.customize-context-copyExtensionId').hidden = elm.querySelector('.customize-context-manageExtension').hidden;
+                    elm.querySelector('.customize-context-copyExtensionId').setAttribute('hidden', hidden);
                 }
                 if (elm.querySelector('.customize-context-disableExtension')) {
-                    elm.querySelector('.customize-context-disableExtension').hidden = elm.querySelector('.customize-context-manageExtension').hidden;
+                    elm.querySelector('.customize-context-disableExtension').setAttribute('hidden', hidden);
                 }
             }
         },
