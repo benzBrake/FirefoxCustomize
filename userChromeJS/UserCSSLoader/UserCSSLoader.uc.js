@@ -492,9 +492,9 @@ about:config
           } else if (event.clientX < (win.innerWidth / 2) && event.clientY > (win.innerHeight / 2)) {
             mp.setAttribute("position", "before_start");
           } else if (event.clientX > (win.innerWidth / 2) && event.clientY > (win.innerHeight / 2)) {
-            mp.setAttribute("position", "before_start");
+            mp.setAttribute("position", "topright bottomright");
           } else {
-            mp.removeAttribute("position", "after_end");
+            mp.setAttribute("position");
           }
           break;
         case "click":
