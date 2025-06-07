@@ -155,12 +155,18 @@
         }
       }
     }
-  }
-}
 
-@-moz-document url-prefix("about:config") {
-  :not(dialog, .dialogBox) :not(button-group)>button:is([accesskey], .accessory-button, [dlgtype="cancel"], [autofocus], [default], .primary, .primary-button, .popup-notification-primary-button, .disco-cta-button, [data-l10n-id="translations-manage-language-download-button"]):not(button[type="menu"]),
-  :not(dialog, .dialogBox) :not(button-group)>button [type="submit"] {
-    min-width: unset !important;
+    #sidebar-box {
+      @media -moz-pref("sidebar.revamp") {
+        padding-block-end: 0 !important;
+      }
+    }
   }
-}
+
+  @-moz-document url-prefix("about:config") {
+
+    :not(dialog, .dialogBox) :not(button-group)>button:is([accesskey], .accessory-button, [dlgtype="cancel"], [autofocus], [default], .primary, .primary-button, .popup-notification-primary-button, .disco-cta-button, [data-l10n-id="translations-manage-language-download-button"]):not(button[type="menu"]),
+    :not(dialog, .dialogBox) :not(button-group)>button [type="submit"] {
+      min-width: unset !important;
+    }
+  }
