@@ -146,8 +146,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     if (!menupopup) return;
                     const { innerWidth: w, innerHeight: h } = event.target.ownerGlobal;
                     const position = event.clientX > w / 2
-                        ? (event.clientY < h / 2 ? 'after_end' : 'before_start')
-                        : 'before_start';
+                        ? (event.clientY < h / 2 ? 'after_end' : 'topright bottomright')
+                        : (event.clientY < h / 2 ? '' : 'topleft bottomleft');
                     menupopup.setAttribute("position", position);
                 });
 
