@@ -9,60 +9,72 @@
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 ==/UserStyle== */
 @media -moz-pref("sidebar.revamp") {
-#sidebar-main {
-    &:not([sidebar-positionend]) {
-        &~#sidebar-box {
-            order: 10 !important;
-        }
-
-
-        &~#sidebar-splitter {
-            order: 9 !important;
-        }
-
-        @media -moz-pref("sidebar.visibility", "expand-on-hover") {
+    #sidebar-main {
+        &:not([sidebar-positionend]) {
             &~#sidebar-box {
-                margin-inline-start: 0 !important;
+                order: 10 !important;
+                padding-inline-end: 0 !important;
+                margin-inline-start: calc(var(--space-small) / 2) !important;
             }
 
-            &[sidebar-panel-open][sidebar-launcher-hovered][sidebar-launcher-expanded],
-            &[sidebar-ongoing-animations][sidebar-panel-open] {
-                &+#sidebar-launcher-splitter {
-                    width: var(--sidebar-launcher-collapsed-width);
-                    display: flex !important;
+            &~#sidebar-splitter {
+                order: 9 !important;
+            }
+
+            @media -moz-pref("sidebar.visibility", "expand-on-hover") {
+                &~#sidebar-box {
+                    margin-inline-start: 0 !important;
                 }
-            }
 
-            &~#sidebar-launcher-splitter[sidebar-launcher-expanded] {
-                width: var(--sidebar-launcher-collapsed-width);
-                display: flex !important;
-            }
-        }
-    }
-
-    &[sidebar-positionend] {
-        &~#sidebar-box {
-            order: 1 !important;
-        }
-
-        &~#sidebar-splitter {
-            order: 2 !important;
-        }
-
-        @media -moz-pref("sidebar.visibility", "expand-on-hover") {
-
-            &~#sidebar-box {
-                margin-inline-end: 0 !important;
-            }
-
-            &[sidebar-launcher-expanded],
-            &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
-                &[sidebar-positionend] {
-                    &~#sidebar-launcher-splitter {
+                &[sidebar-panel-open][sidebar-launcher-hovered][sidebar-launcher-expanded],
+                &[sidebar-ongoing-animations][sidebar-panel-open] {
+                    &+#sidebar-launcher-splitter {
                         width: var(--sidebar-launcher-collapsed-width);
                         display: flex !important;
                     }
                 }
+
+                &~#sidebar-launcher-splitter[sidebar-launcher-expanded] {
+                    width: var(--sidebar-launcher-collapsed-width);
+                    display: flex !important;
+                }
+            }
+        }
+
+        &[sidebar-positionend] {
+            &~#sidebar-box {
+                order: 1 !important;
+                padding-inline-end: calc(var(--space-small) / 2) !important;
+            }
+
+            &~#sidebar-splitter {
+                order: 2 !important;
+            }
+
+            @media -moz-pref("sidebar.visibility", "expand-on-hover") {
+
+                &~#sidebar-box {
+                    margin-inline-end: 0 !important;
+                }
+
+                &[sidebar-launcher-expanded],
+                &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
+                    &[sidebar-positionend] {
+                        &~#sidebar-launcher-splitter {
+                            width: var(--sidebar-launcher-collapsed-width);
+                            display: flex !important;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #tabbrowser-tabbox {
+        order: 3 !important;
+        @media -moz-pref("sidebar.revamp.round-content-area") {
+            :root:not([inDOMFullscreen]) &[sidebar-panel-open] {
+                border-radius: var(--border-radius-medium) !important;
             }
         }
     }
