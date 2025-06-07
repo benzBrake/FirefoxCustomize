@@ -13,7 +13,7 @@
         &:not([sidebar-positionend]) {
             &~#sidebar-box {
                 order: 10 !important;
-                padding-inline-end: 0 !important;
+                padding-inline-end: calc(var(--space-small) / 2) !important;
                 margin-inline-start: calc(var(--space-small) / 2) !important;
             }
 
@@ -44,6 +44,7 @@
         &[sidebar-positionend] {
             &~#sidebar-box {
                 order: 1 !important;
+                margin-inline-start: calc(var(--space-small) / 2) !important;
                 padding-inline-end: calc(var(--space-small) / 2) !important;
             }
 
