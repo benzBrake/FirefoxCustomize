@@ -1,0 +1,69 @@
+/* ==UserStyle==
+ * @name            Separate Sidebar and Vertical Tabs
+ * @name:zh-CN      分离侧边栏和垂直标签栏
+ * @description     Separate the sidebar and vertical tabs into two separate elements, allowing for more customization and control over the layout.
+ * @description:zh-CN  将侧边栏和垂直标签栏分离为两个单独的元素，以便更好地自定义布局。
+ * @author          Ryan
+ * @version         0.1.0
+ * @compatibility   Firefox 121
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+==/UserStyle== */
+@media -moz-pref("sidebar.revamp") {
+#sidebar-main {
+    &:not([sidebar-positionend]) {
+        &~#sidebar-box {
+            order: 10 !important;
+        }
+
+
+        &~#sidebar-splitter {
+            order: 9 !important;
+        }
+
+        @media -moz-pref("sidebar.visibility", "expand-on-hover") {
+            &~#sidebar-box {
+                margin-inline-start: 0 !important;
+            }
+
+            &[sidebar-panel-open][sidebar-launcher-hovered][sidebar-launcher-expanded],
+            &[sidebar-ongoing-animations][sidebar-panel-open] {
+                &+#sidebar-launcher-splitter {
+                    width: var(--sidebar-launcher-collapsed-width);
+                    display: flex !important;
+                }
+            }
+
+            &~#sidebar-launcher-splitter[sidebar-launcher-expanded] {
+                width: var(--sidebar-launcher-collapsed-width);
+                display: flex !important;
+            }
+        }
+    }
+
+    &[sidebar-positionend] {
+        &~#sidebar-box {
+            order: 1 !important;
+        }
+
+        &~#sidebar-splitter {
+            order: 2 !important;
+        }
+
+        @media -moz-pref("sidebar.visibility", "expand-on-hover") {
+
+            &~#sidebar-box {
+                margin-inline-end: 0 !important;
+            }
+
+            &[sidebar-launcher-expanded],
+            &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
+                &[sidebar-positionend] {
+                    &~#sidebar-launcher-splitter {
+                        width: var(--sidebar-launcher-collapsed-width);
+                        display: flex !important;
+                    }
+                }
+            }
+        }
+    }
+}
