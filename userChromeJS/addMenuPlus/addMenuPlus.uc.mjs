@@ -199,6 +199,11 @@
                     },
                     child: {
                         esModuleURI,
+                        events: {
+                            contextmenu: {
+                                capture: true,
+                            }
+                        }
                     },
                     allFrames: true,
                 });
@@ -272,7 +277,8 @@
             $("#toolbar-context-menu").on("popupshowing", this, false);
             $("#menu_FilePopup").on("popupshowing", this, false);
             $("#menu_ToolsPopup").on("popupshowing", this, false);
-            // 响应鼠标键释放事件（eg：获取选中文本）
+            // 响应鼠标键事件（eg：获取选中文本）
+            gBrowser.tabpanels.addEventListener("mousedown", this);
             gBrowser.tabpanels.addEventListener("mouseup", this);
             // 响应标签修改事件
             gBrowser.tabContainer.addEventListener('TabAttrModified', this);
@@ -356,6 +362,7 @@
             if (typeof this.APP_LITENER_REMOVER === "function")
                 this.APP_LITENER_REMOVER();
             gBrowser.tabpanels.removeEventListener("mouseup", this);
+            gBrowser.tabpanels.removeEventListener("mousedown", this);
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
             this.undoMods();
             this.removeMenuitem();
@@ -501,7 +508,6 @@
                         });
                     }, 10);
                     break;
-
                 case 'popuphiding':
                     if ($target.attr('id') === "contentAreaContextMenu") {
                         Object.keys(this.ContextMenu).forEach(key => {
@@ -516,16 +522,17 @@
                         $("#identity-box-contextmenu").openPopup(target, "after_pointer", 0, 0, true, false);
                     }
                     break;
-
+                case 'mousedown': {
+                    Object.keys(this.ContextMenu).forEach(key => {
+                        this.ContextMenu[key] = key.startsWith("on") ? false : "";
+                    });
+                }
                 case 'mouseup':
-                    if (button === 2 || button === 0) {
-                        this.sendAsyncMessage("AddMenuPlus:ContextMenu");
-                        if (button === 0) {
-                            this.sendAsyncMessage("AddMenuPlus:GetSelectedText");
-                        }
+                    if (button === 0) {
+                        this.sendAsyncMessage("AddMenuPlus:GetSelectedText");
                     }
                     break;
-
+                
                 case 'TabAttrModified':
                     triggerFavMsg(target);
                     break;
@@ -1697,7 +1704,7 @@
         return el;
     }
 
-    function unwrap(menu) {
+    function unwrap (menu) {
         return menu?.$self || menu;
     }
 
@@ -1929,6 +1936,32 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     v => v !== undefined && v !== null);
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
+    handleEvent (event) {
+        this[event.type]?.(event);
+    }
+    contextmenu (event) {
+        const { contentWindow: win } = this;
+        const { target } = event;
+        const svgEl = target.closest("svg");
+        const inputEl = target.closest("input");
+        const textareaEl = target.closest("textarea");
+        const isSvg = !!svgEl;
+        const isInput = !!inputEl;
+        const isTextarea = !!textareaEl;
+        const data = {
+            onSvg: isSvg,
+            svgHTML: isSvg ? svgEl.outerHTML : "",
+            onInput: isInput,
+            inputValue: isInput ? inputEl.value : "",
+            inputHTML: isInput ? inputEl.outerHTML : "",
+            onTextarea: isTextarea,
+            textareaValue: isTextarea ? textareaEl.value : "",
+            textareaHTML: isTextarea ? textareaEl.outerHTML : "",
+            onElement: true,
+            elementHTML: target.outerHTML
+        };
+        this.sendAsyncMessage("AddMenuPlus:SetContextMenu", data);
+    }
     executeInChrome (func, args) {
         let json = {
             func: func.toString(),
@@ -1960,24 +1993,6 @@ class AddMenuChild extends JSWindowActorChild {
                 const href = getFaviconUrl();
                 this.sendAsyncMessage("AddMenuPlus:SetFaviconLink", { hash: data.hash, href });
                 break;
-            case "AddMenuPlus:ContextMenu":
-                // 获取鼠标 focus 的元素 或者鼠标指针附近元素
-                const focusedElement = doc.activeElement;
-                const svgEl = focusedElement.closest("svg");
-                const inputEl = focusedElement.closest("input");
-                const textareaEl = focusedElement.closest("textarea");
-                this.sendAsyncMessage("AddMenuPlus:SetFocusStatus", {
-                    onSvg: !!svgEl,
-                    svgHTML: svgEl ? svgEl.outerHTML : "",
-                    onInput: !!inputEl,
-                    inputValue: inputEl ? inputEl.value : "",
-                    inputHTML: inputEl ? inputEl.outerHTML : "",
-                    onTextarea: !!textareaEl,
-                    textareaValue: textareaEl ? textareaEl.value : "",
-                    textareaHTML: textareaEl ? textareaEl.outerHTML : "",
-                    onElement: !!focusedElement,
-                    elementHTML: focusedElement?.outerHTML || ""
-                });
             case "AddMenuPlus:GetSelectedText":
                 this.sendAsyncMessage("AddMenuPlus:SetSelectedText", {
                     textSelected: getSelectedText(win),
@@ -2014,7 +2029,7 @@ class AddMenuParent extends JSWindowActorParent {
                 case 'AddMenuPlus:SetFaviconLink':
                     addMenu.setFaviconLink(data);
                     break;
-                case 'AddMenuPlus:SetFocusStatus':
+                case 'AddMenuPlus:SetContextMenu':
                     Object.assign(addMenu.ContextMenu, data);
                     break;
                 case 'AddMenuPlus:executeInChrome':
