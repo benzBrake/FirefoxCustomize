@@ -62,6 +62,10 @@
     .menu-right {
       appearance: none !important;
     }
+
+    #firefoxbeta_tampermonkey_net-menuitem-_root :is(menu, menuitem)>.menu-text {
+      transform: translateX(-24px);
+    }
   }
 
 
@@ -166,6 +170,7 @@
 
   search-textbox {
     height: 29px;
+
     &+button {
       border-radius: 0 !important;
       height: 29px !important;
