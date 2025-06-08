@@ -1358,7 +1358,7 @@
         },
         setCondition: function (menu, obj, opt = {}) {
             if (obj.condition) {
-                const validConditions = ["normal", "select", "link", "mailto", "image", "canvas", "media", "input", "completed-image"];
+                const validConditions = ["normal", "select", "link", "mailto", "image", "canvas", "media", "input", "svg", "completed-image"];
                 const conditions = obj.condition.split(' ')
                     .filter(c => c && (c === "normal" || validConditions.includes(c.replace(/^no/, ""))));
 
@@ -1821,11 +1821,11 @@
 #contentAreaContextMenu > menugroup > .addMenu[condition],
 #contentAreaContextMenu menugroup.addMenu[condition] {
     display: none;
-    visibility: collsapse;
 }
 #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"],
 #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"],
 #contentAreaContextMenu[addMenu~="image"]  .addMenu[condition~="image"],
+#contentAreaContextMenu[addMenu~="svg"]  .addMenu[condition~="svg"],
 #contentAreaContextMenu[addMenu~="completed-image"]  .addMenu[condition~="completed-image"],
 #contentAreaContextMenu[addMenu~="canvas"] .addMenu[condition~="canvas"],
 #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="media"],
@@ -1836,6 +1836,7 @@
 #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="nolink"],
 #contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="nomailto"],
 #contentAreaContextMenu:not([addMenu~="image"])  .addMenu[condition~="noimage"],
+#contentAreaContextMenu:not([addMenu~="svg"])  .addMenu[condition~="nosvg"],
 #contentAreaContextMenu:not([addMenu~="completed-image"])  .addMenu[condition~="nocompleted-image"],
 #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="nocanvas"],
 #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="nomedia"],
