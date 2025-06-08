@@ -118,32 +118,33 @@
           content: none !important;
         }
       }
-    }
 
-    #tabs-newtab-button {
-      --tab-hover-background-color: transparent;
-    }
 
-    #tabbrowser-arrowscrollbox-periphery {
-      margin-inline: var(--tab-horizontal-padding) !important;
-      padding-inline: 0 !important;
+      #tabs-newtab-button {
+        --tab-hover-background-color: transparent;
+      }
 
-      & #tabs-newtab-button {
-        width: 100% !important;
-        max-width: unset !important;
-        min-width: unset !important;
+      #tabbrowser-arrowscrollbox-periphery {
+        margin-inline: var(--tab-horizontal-padding) !important;
         padding-inline: 0 !important;
-        margin-inline: 0 !important;
-        border-radius: 11px !important;
-        justify-content: flex-start !important;
-        --tab-icon-end-margin: 0;
 
-        &:not([disabled]):hover {
-          background-color: var(--md-tab-background-color-hover) !important;
-        }
+        & #tabs-newtab-button {
+          width: 100% !important;
+          max-width: unset !important;
+          min-width: unset !important;
+          padding-inline: 0 !important;
+          margin-inline: 0 !important;
+          border-radius: 11px !important;
+          justify-content: flex-start !important;
+          --tab-icon-end-margin: 0;
 
-        & .toolbarbutton-icon {
-          --md-tab-background-color-hover: transparent;
+          &:not([disabled]):hover {
+            background-color: var(--md-tab-background-color-hover) !important;
+          }
+
+          & .toolbarbutton-icon {
+            --md-tab-background-color-hover: transparent;
+          }
         }
       }
     }
@@ -163,10 +164,19 @@
     }
   }
 
-  @-moz-document url-prefix("about:config") {
-
-    :not(dialog, .dialogBox) :not(button-group)>button:is([accesskey], .accessory-button, [dlgtype="cancel"], [autofocus], [default], .primary, .primary-button, .popup-notification-primary-button, .disco-cta-button, [data-l10n-id="translations-manage-language-download-button"]):not(button[type="menu"]),
-    :not(dialog, .dialogBox) :not(button-group)>button [type="submit"] {
-      min-width: unset !important;
+  search-textbox {
+    height: 29px;
+    &+button {
+      border-radius: 0 !important;
+      height: 29px !important;
     }
   }
+}
+
+@-moz-document url-prefix("about:config") {
+
+  :not(dialog, .dialogBox) :not(button-group)>button:is([accesskey], .accessory-button, [dlgtype="cancel"], [autofocus], [default], .primary, .primary-button, .popup-notification-primary-button, .disco-cta-button, [data-l10n-id="translations-manage-language-download-button"]):not(button[type="menu"]),
+  :not(dialog, .dialogBox) :not(button-group)>button [type="submit"] {
+    min-width: unset !important;
+  }
+}
