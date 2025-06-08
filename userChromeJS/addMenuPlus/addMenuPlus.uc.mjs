@@ -26,6 +26,7 @@
     const enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
     const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
+    const enableConvertHiddenStyleToAttribue = false; // 将隐藏元素的样式转换为属性
 
     const runJS = (code, sandbox = window) => {
         try {
@@ -523,10 +524,26 @@
                                 }
                             });
                         });
+
+                        if (enableConvertHiddenStyleToAttribue) {
+                            $$('menuitem.addMenu, menu.addMenu, menugroup.addMenu').forEach($elem => {
+                                if (!isVisible($elem)) {
+                                    $elem.attr('hidden', true);
+                                }
+                            });
+
+                            function isVisible ($elem) {
+                                let style = getComputedStyle($elem.get());
+                                return style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse";
+                            }
+                        }
                     }, 10);
                     break;
                 case 'popuphiding':
                     if ($target.attr('id') === "contentAreaContextMenu") {
+                        $$('.addMenu[hidden]', $target.get()).forEach($elem => {
+                            $elem.removeAttr('hidden');
+                        });
                         Object.keys(this.ContextMenu).forEach(key => {
                             this.ContextMenu[key] = key.startsWith("on") ? false : "";
                         });
