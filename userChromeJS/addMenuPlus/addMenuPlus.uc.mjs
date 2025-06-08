@@ -256,10 +256,27 @@
                 label: lprintf('addmenuplus label'),
                 tooltiptext: lprintf('addmenuplus tooltip'),
                 oncommand: () => setTimeout(async () => await addMenu.rebuild(true), 10),
-                onclick: (event) => {
+                onclick: async (event) => {
                     if (event.button == 2) {
                         event.preventDefault();
-                        addMenu.edit(addMenu.FILE);
+                        const regex = /include\("([^"]+)"\)/gm;
+                        let paths = [addMenu.FILE.path];
+                        let text = await IOUtils.readUTF8(addMenu.FILE.path), m;
+                        while (m = regex.exec(text)) {
+                            if (m.index === regex.lastIndex) {
+                                regex.lastIndex++;
+                            }
+                            let path = m[1];
+                            if (!path.startsWith("\\")) {
+                                path = "\\" + path;
+                            }
+                            paths.push(addMenu.handleRelativePath(path, addMenu.FILE.parent.path));
+                        }
+                        paths.forEach(p => {
+                            setTimeout(async () => {
+                                addMenu.edit(await IOUtils.getFile(p));
+                            }, 10);
+                        });
                     }
                 },
             }))
@@ -532,7 +549,7 @@
                         this.sendAsyncMessage("AddMenuPlus:GetSelectedText");
                     }
                     break;
-                
+
                 case 'TabAttrModified':
                     triggerFavMsg(target);
                     break;
