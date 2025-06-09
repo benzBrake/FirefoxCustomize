@@ -150,6 +150,7 @@
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .chromeclass-toolbar-additional {
     height: unset;
     width: unset;
+    margin-inline: 0px;
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1 {
     width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
