@@ -48,7 +48,7 @@
             'addmenuplus label': 'addMenuPlus',
             'addmenuplus tooltip': '左键：重载配置\n右键：编辑配置',
             'addmenuplus btn tooltip': 'addMenuPlus 自定义菜单',
-            'modify menu config': '修改菜单配置',
+            'modify menu config': '修改菜单',
             'reload config': '重新载入配置',
             'custom showing method error': 'addMenuPlus 自定义显示错误',
             'url is invalid': 'URL 不正确: %s',
@@ -76,7 +76,7 @@
             'addmenuplus label': 'addMenuPlus',
             'addmenuplus tooltip': 'Left Click：Reload configuration\nRight Click：Edit configuration',
             'addmenuplus btn tooltip': 'addMenuPlus custom menu',
-            'modify menu config': 'Modify Menu Configuration',
+            'modify menu config': 'Modify Menu',
             'reload config': 'Reload Configuration',
             'custom showing method error': 'addMenuPlus customize popupshow error',
             'url is invalid': 'URL is invalid: %s',
@@ -376,11 +376,12 @@
                         [
                             ['menugroup', (() => {
                                 const group = $C('menugroup', {
-                                    class: 'showText'
+                                    class: 'addMenu addMenuNot showText',
+                                    id: 'addMenu-config-group'
                                 }, doc);
                                 const item1 = $C('menuitem', {
                                     id: 'addMenu-modify-config',
-                                    class: 'menuitem-iconic',
+                                    class: 'menuitem-iconic addMenu addMenuNot edit',
                                     label: lprintf('modify menu config'),
                                     oncommand: async () => {
                                         let editor = await addMenu.getOrSetEditorPath();
@@ -410,7 +411,7 @@
                                 }, doc);
                                 const item2 = $C('menuitem', {
                                     id: 'addMenu-reload-config',
-                                    class: 'menuitem-iconic',
+                                    class: 'addMenu addMenuNot menuitem-iconic sync',
                                     label: lprintf('reload config'),
                                     oncommand: () => setTimeout(async () => await addMenu.rebuild(true), 10)
                                 }, doc);
@@ -418,15 +419,15 @@
                                 group.appendChild(item2);
                                 return group;
                             })()],
-                            ['menuseparator', {}],
                             ['menuseparator', {
                                 id: 'addMenu-btn-insertpoint',
                                 class: 'addMenu-insert-point',
                                 hidden: true
                             }],
+                            ['menuseparator', {}],
                             ['menuitem', {
                                 id: 'addMenu-quit-browser',
-                                class: 'menuitem-iconic',
+                                class: 'menuitem-iconic addMenu addMenuNot quit',
                                 'data-l10n-id': 'menu-quit',
                                 key: 'key_quitApplication',
                                 oncommand: (event) => goQuitApplication(event)
@@ -1355,8 +1356,8 @@
                 e.remove();
             });
 
-            $$('menu.addMenu, menugroup.addMenu').forEach(e => e.remove());
-            $$('.addMenu').forEach(e => e.remove());
+            $$('menu.addMenu:not(.addMenuNot), menugroup.addMenu:not(.addMenuNot)').forEach(e => e.remove());
+            $$('.addMenu:not(.addMenuNot)').forEach(e => e.remove());
             // 恢复原隐藏菜单
             $$('.addMenuHide').forEach(function (e) {
                 e.removeClass('addMenuHide');
@@ -1976,6 +1977,18 @@ toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
 .addMenu.copy,
 menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
+}
+.addMenu.edit {
+    list-style-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMTEuMjUuODE1YTIuNzgzIDIuNzgzIDAgMCAxIDQuMDY2IDMuNzk2bC0uMTMuMTQtOS42MDYgOS42MDVhMiAyIDAgMCAxLS43MjMuNDYzbC0uMTY1LjA1My00LjA1NSAxLjEwNmEuNS41IDAgMCAxLS42My0uNTM1bC4wMTYtLjA4TDEuMTMgMTEuMzFhMiAyIDAgMCAxIC4zOTgtLjc2bC4xMTctLjEyOHptLS44NiAyLjI3NS04LjA0IDguMDM4YTEgMSAwIDAgMC0uMjE1LjMyMWwtLjA0Mi4xMjMtLjg3NiAzLjIxMSAzLjIxMi0uODc2YTEgMSAwIDAgMCAuMjM4LS4xbC4xMDgtLjA3MS4wOTgtLjA4NiA4LjAzOC04LjA0em00LjA4OS0xLjU2OGExLjc4NCAxLjc4NCAwIDAgMC0yLjQwMi0uMTFsLS4xMi4xMS0uODYuODYgMi41MiAyLjUyMi44NjEtLjg2YTEuNzg0IDEuNzg0IDAgMCAwIC4xMS0yLjQwMnoiLz4KPC9zdmc+)
+}
+.addMenu.sync {
+    list-style-image: url(chrome://browser/skin/preferences/category-sync.svg)
+}
+.addMenu.reload {
+    list-style-image: url(chrome://global/skin/icons/reload.svg)
+}
+.addMenu.quit {
+    list-style-image: url(chrome://global/skin/icons/close.svg)
 }
 .addMenu.checkbox :is(.menu-iconic-icon,.menu-icon) {
     appearance: checkbox;
