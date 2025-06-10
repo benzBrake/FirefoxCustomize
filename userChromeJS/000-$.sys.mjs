@@ -4,6 +4,7 @@
 // @author       Ryan
 // @version      1.0.1
 // @export       dollar
+// @note         2025-06-10 fix bug of hasClass
 // @note         2025-06-03 remove selectorCache
 // ==/UserScript==
 const $cache = new WeakMap();
@@ -86,11 +87,12 @@ const $ = (sel, doc) => {
                 case 'addClass':
                 case 'removeClass':
                 case 'toggleClass':
-                case 'hasClass':
                     return (...args) => {
                         target.classList[prop.replace('Class', '')](...args);
                         return proxy;
                     };
+                case 'hasClass':
+                    return (className) => target.classList.contains(className);
                 // Attribute methods cases
                 case 'attr':
                     return (name, value) => {
