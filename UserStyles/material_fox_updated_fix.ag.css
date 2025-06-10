@@ -66,6 +66,11 @@
     #firefoxbeta_tampermonkey_net-menuitem-_root :is(menu, menuitem)>.menu-text {
       transform: translateX(-24px);
     }
+
+    menugroup > menuitem {
+      min-height: 24px !important;
+      max-height: 24px !important;
+    }
   }
 
 
