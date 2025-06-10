@@ -13,6 +13,7 @@
 // @license        MIT License
 // @compatibility  Firefox 136
 // @charset        UTF-8
+// @require        000-$.sys.mjs
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
@@ -716,6 +717,7 @@
                 const url = menuitem.getAttribute("url") || "";
                 const where = menuitem.getAttribute("where") || "";
                 const exec = menuitem.getAttribute("exec") || "";
+                const edit = menuitem.getAttribute("edit") || "";
 
                 if (keyword) {
                     const param = text ? this.convertText(text) : "";
@@ -735,6 +737,9 @@
                     this.openCommand(event, this.convertText(url), where);
                 } else if (exec) {
                     this.exec(exec, this.convertText(text));
+                } else if (edit) {
+                    let file = await IOUtils.getFile(edit);
+                    this.edit(file);
                 } else if (text) {
                     this.copy(this.convertText(text));
                 }
@@ -1173,6 +1178,10 @@
                 if (obj.exec) {
                     obj.exec = this.handleRelativePath(obj.exec);
                 }
+
+                if (obj.edit) {
+                    obj.edit = this.handleRelativePath(obj.edit);
+                }
             }
 
             // 右键第一层菜单添加 onpopupshowing 事件
@@ -1375,6 +1384,10 @@
             if (obj?.exec) {
                 await this._setExecIcon(menu, obj.exec);
                 return;
+            }
+
+            if (obj?.edit) {
+                await this._setExecIcon(menu, obj.edit);
             }
 
             if (obj?.keyword) {
@@ -1922,6 +1935,14 @@
     }
 
     window.addMenu.init();
+
+    setTimeout(() => {
+        window.addMenu.rebuild();
+    }, 1000);
+
+    setTimeout(() => {
+        window.addMenu.rebuild();
+    }, 3000);
 })(`
 .addMenuHide {
     display: none !important;
