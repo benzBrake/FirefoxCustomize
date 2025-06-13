@@ -3,7 +3,8 @@
 // @description  jQuery-like DOM selector for single element with Proxy wrapper
 // @author       Ryan
 // @version      1.0.1
-// @export       dollar
+// @skip         true
+// @note         2015-06-13 never load in global
 // @note         2025-06-10 fix bug of hasClass
 // @note         2025-06-03 remove selectorCache
 // ==/UserScript==
@@ -203,10 +204,4 @@ const $$ = (sel, doc) => {
         remove () { return this; }
     };
 };
-
-export const dollar = {
-    onWindowLoad: (win) => {
-        win.$ = (sel, doc) => $(sel, doc || win.document);
-        win.$$ = (sel, doc) => $$(sel, doc || win.document);
-    }
-};
+export { $, $$ };
