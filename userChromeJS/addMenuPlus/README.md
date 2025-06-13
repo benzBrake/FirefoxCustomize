@@ -54,10 +54,16 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 - nav: 导航工具栏右键菜单
 - app: 左上角橙色菜单（firefox 29 以下版本）/ 汉堡菜单 firefox 29 以上版本
 - ident: SSL 小锁右键菜单（主要用于非浏览器内置网页）
+- btn: 按钮菜单（火狐图标按钮）
+- mod: 修改菜单属性
 
 二级子菜单（menu with menupopup）
 
-> PageMenu, TabMenu, ToolMenu, NavMenu, AppMenu, IdentMenu
+> PageMenu, TabMenu, ToolMenu, NavMenu, AppMenu, IdentMenu, BtnMenu
+
+横排菜单
+
+> PageGroup, TabGroup, ToolGroup, NavGroup, AppGroup, IdentGroup, BtnGroup
 
 ### 标签的介绍
 
@@ -146,7 +152,7 @@ oncommand: function() {
     %RLINK_HOST%         链接的域名（同上）
     %LINK_OR_URL%        优先获取链接URL，不行就获取页面URL
     %RLINK_OR_URL%       优先获取页面URL，不行就获取链接URL
-        
+    
     %XXX_HTMLIFIED%      转义后的变量 （XXX 为 上面的 TITLE 等）
     %XXX_HTML%           转义后的变量
     %XXX_ENCODE%         encodeURIComponent 后的变量
@@ -256,8 +262,8 @@ new function () {
             let prefs = addMenu.prefs, browser = prefs.getStringPref("chooseBrowser", "");
             function chooseBrowser() {
                 let fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-            	// Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
-            	fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+                // Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init
+                fp.init(!("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
                 ? window.browsingContext
                 : window, Services.locale.appLocaleAsBCP47.includes("zh-") ? "设置浏览器路径" : "Set browser path", Ci.nsIFilePicker.modeOpen);
                 fp.appendFilter(Services.locale.appLocaleAsBCP47.includes("zh-") ? "执行文件" : "Executable file", "*.exe"); // 非 Windows 必须注释这一行，不过不一定能用
