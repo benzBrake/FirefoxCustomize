@@ -34,4 +34,4 @@ function syncify (promiser) {
     // 返回结果
     return result;
 }
-export default syncify;
+export { syncify };
