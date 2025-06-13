@@ -13,12 +13,15 @@
 // @license        MIT License
 // @compatibility  Firefox 136
 // @charset        UTF-8
-// @require        000-$.sys.mjs
+// @require        https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/000-$.sys.mjs
+// @require        https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/000-syncify.sys.mjs
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
 // @note           0.3.0 ESMifying
 // ==/UserScript==
+import { $, $$ } from "./000-$.sys.mjs";
+import { syncify } from "./000-syncify.sys.mjs";
 (async (css, getURLSpecFromFile, loadText, versionGE, shouldSetIcon, isDef) => {
     if (typeof window === 'undefined') return;
 
@@ -1614,37 +1617,39 @@
                 return addresses;
             }
 
-            function img2base64 (imgSrc, imgType) {
-                if (typeof imgSrc == 'undefined') return "";
+            function img2base64 (imgSrc, imgType = "image/png") {
+                if (typeof imgSrc === 'undefined') return "";
                 if (imgSrc.includes("data:")) return imgSrc;
-                if (imgSrc.includes("<svg") || /\.(svg|SVG)$/.test(imgSrc)) return svg2base64(imgSrc);
-                imgType = imgType || "image/png";
-                const NSURI = "http://www.w3.org/1999/xhtml";
-                var img = new Image();
-                var canvas,
-                    isCompleted = false;
-                img.onload = function () {
-                    var width = this.naturalWidth,
-                        height = this.naturalHeight;
-                    canvas = document.createElementNS(NSURI, "canvas");
-                    canvas.width = width;
-                    canvas.height = height;
-                    var ctx = canvas.getContext("2d");
-                    ctx.drawImage(this, 0, 0);
-                    isCompleted = true;
-                };
-                img.onerror = () => {
-                    console.error(lprintf('could not load', imgSrc));
-                    isCompleted = true;
-                };
-                img.src = imgSrc;
-                var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-                while (!isCompleted) {
-                    thread.processNextEvent(true);
+                if (imgSrc.includes("<svg") || /\.(svg|SVG)$/i.test(imgSrc)) {
+                    return svg2base64(imgSrc);
                 }
-                var data = canvas ? canvas.toDataURL(imgType) : "";
-                canvas = null;
-                return data;
+
+                return syncify(() => {
+                    return new Promise((resolve) => {
+                        const NSURI = "http://www.w3.org/1999/xhtml";
+                        const img = new Image();
+
+                        img.onload = function () {
+                            try {
+                                const canvas = document.createElementNS(NSURI, "canvas");
+                                canvas.width = this.naturalWidth;
+                                canvas.height = this.naturalHeight;
+                                canvas.getContext("2d").drawImage(this, 0, 0);
+                                resolve(canvas.toDataURL(imgType));
+                            } catch (e) {
+                                console.error('Canvas error:', e);
+                                resolve("");
+                            }
+                        };
+
+                        img.onerror = () => {
+                            console.error('Image load failed:', imgSrc);
+                            resolve("");
+                        };
+
+                        img.src = imgSrc;
+                    });
+                });
             }
 
             function svg2base64 (svgSrc) {
@@ -2074,22 +2079,16 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
 `, f => {
     return Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromActualFile(f);
 }, p => {
-    let ic = false, data = "";
-    IOUtils.readUTF8(p).then((d) => {
-        data = d;
-    }).catch(e => {
-        console.error(e);
-    }).finally(_ => {
-        ic = true;
+    return syncify(() => {
+        return IOUtils.readUTF8(p).then(data => {
+            try {
+                return decodeURIComponent(escape(data));
+            } catch (e) {
+                // console.error(e);
+                return data; // 返回原始数据如果解码失败
+            }
+        });
     });
-    const t = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-    while (!ic) {
-        t.processNextEvent(true);
-    }
-    try {
-        data = decodeURIComponent(escape(data));
-    } catch (e) { }
-    return data;
 }, v => {
     return Services.vc.compare(Services.appinfo.version, v) >= 0;
 }, menu => menu.matches(".menuitem-iconic, .menu-iconic"),
