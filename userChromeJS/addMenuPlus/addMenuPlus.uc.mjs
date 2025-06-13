@@ -831,7 +831,11 @@ import { syncify } from "./000-syncify.sys.mjs";
                 if (typeof arg === "undefined") {
                     argsArray = [];
                 } else if (typeof arg === 'string' || arg instanceof String) {
-                    argsArray = arg.split(/\s+/); // 简单分割，需改进
+                    if (arg.trim() === "") {
+                        argsArray = [];
+                    } else {
+                        argsArray = arg.split(/\s+/);
+                    }
                 } else if (Array.isArray(arg)) {
                     argsArray = arg.filter(item => typeof item === 'string'); // 过滤非字符串参数
                 } else {
@@ -847,6 +851,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     file.launch();
                     result.success = true;
                 }
+
             } catch (e) {
                 result.error = e;
                 console.error(`Execution failed: ${e}`);
