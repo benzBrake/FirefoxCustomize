@@ -3,7 +3,7 @@
 // @description  Syncify system functions
 // @author       Ryan
 // @version      1.0.0
-// @export       Syncify
+// @skip         true
 // ==/UserScript==
 function syncify (promiser) {
     // promiser 是一个无参函数，返回 Promise
@@ -34,8 +34,4 @@ function syncify (promiser) {
     // 返回结果
     return result;
 }
-export const Syncify = {
-    onWindowLoad: (win) => {
-        win.syncify = syncify;
-    }
-}
+export default syncify;
