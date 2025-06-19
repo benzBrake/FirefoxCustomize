@@ -32,6 +32,8 @@ import { syncify } from "./000-syncify.sys.mjs";
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
     const enableConvertHiddenStyleToAttribue = false; // 将隐藏元素的样式转换为属性
 
+    /** 不要修改以下代码 DON'T MODIFY THE CODE BELOW */
+    const { windowUtils } = globalThis;
     const runJS = (code, sandbox = window) => {
         try {
             Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
@@ -477,8 +479,8 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
             this.identityBox?.removeAttr('contextmenu').off("click", this, false);
             $('#identity-box-contextmenu')?.remove();
-            this.style?.remove();
-            this.style2?.remove();
+            this.style?.destroy();
+            this.style2?.destroy();
             delete window.addMenu;
         },
         getActor: function (browser = gBrowser.selectedBrowser, name = "AddMenu") {
@@ -969,10 +971,9 @@ import { syncify } from "./000-syncify.sys.mjs";
                 });
                 return console.log(e);
             }
-            if (this.style2 && this.style2.parentNode)
-                this.style2.parentNode.removeChild(this.style2);
+            this.style2?.destroy();
             if (sandbox._css.length)
-                this.style2 = addStyle(sandbox._css.join("\n"));
+                this.style2 = addStyle(`@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")\n@namespace html url("http://www.w3.org/1999/xhtml");\n${sandbox._css.join('\n')}`, 'AGENT_SHEET');
 
             this.undoMods();
             this.removeMenuitem();
@@ -1472,7 +1473,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     menu.setAttribute("condition", conditions.join(" "));
                 }
             } else if (opt.insertPoint?.id === "addMenu-page-insertpoint") {
-                menu.setAttribute("condition", "normal");
+                // menu.setAttribute("condition", "normal");
             }
         },
         convertText: function (text) {
@@ -1893,12 +1894,27 @@ import { syncify } from "./000-syncify.sys.mjs";
         });
     }
 
-    function addStyle (css) {
-        var pi = document.createProcessingInstruction(
-            'xml-stylesheet',
-            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-        );
-        return document.insertBefore(pi, document.documentElement);
+    function addStyle (css, type = 'AUTHOR_SHEET') {
+        let errorFlag = false;
+        if (typeof type === 'string') {
+            if (!['USER_SHEET', 'AGENT_SHEET', 'AUTHOR_SHEET'].includes(type)) {
+                errorFlag = true;
+            }
+            if (!errorFlag)
+                type = windowUtils[type]; // 转换为 windowUtils 对应的值
+        } else if (typeof type === 'number' && ![0, 1, 2].includes(type)) {
+            errorFlag = true;
+        }
+        if (errorFlag) {
+            throw new Error('addMenuPlus: addStyle: type must be USER_SHEET, AGENT_SHEET or AUTHOR_SHEET or 0 or 1 or 2');
+        }
+        const uriString = 'data:text/css,' + encodeURIComponent(css);
+        windowUtils.loadSheetUsingURIString(uriString, type);
+        return {
+            uriString,
+            type,
+            destroy: function() { windowUtils.removeSheetUsingURIString(this.uriString, this.type) }
+        }
     }
 
     function capitalize (s) {
