@@ -2047,7 +2047,7 @@ menugroup.addMenu > .menuitem-iconic {
     flex-grow: 1;
     justify-content: center;
     align-items: center;
-    padding-block: 6px;
+    padding-block: var(--arrowpanel-menuitem-padding-block, 6px);
     padding-inline-start: 1em;
 }
 menugroup.addMenu > .menuitem-iconic > :is(.menu-iconic-left,.menu-icon) {
