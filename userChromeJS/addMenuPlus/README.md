@@ -792,21 +792,46 @@ page({
 
 #### 链接右键
 
-示例：短网址，分别为当前网页和链接上（相关 API 已经无法使用，并且现在更推荐使用生成二维码）。
+示例：复制链接为短链接。
 
 ```js
-page([
-  {
-    label: "短网址",
-    condition: "nolink",
-    url: 'javascript:function iprl5(l){var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%URL%");void (0);',
-  },
-  {
-    label: "短网址（链接）",
-    condition: "link",
-    url: 'javascript:function iprl5(l){if(l.startsWith("javascript:")){alert("该网址无效："+l);return;}var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%RLINK%");void (0);',
-  },
-]);
+page([{
+    label: "复制短链接(l8.nu)"
+,   condition: 'link',
+    oncommand: function () {
+        let link = addMenu.convertText("%l");
+        fetch("https://l8.nu/", {
+            method: "POST",
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `url=${encodeURIComponent(link)}&keyword=`
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(html => {
+                // 创建一个临时DOM解析器
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // 获取section.link-section元素
+                const linkSection = doc.querySelector('section.link-section .short-url');
+
+                if (linkSection) {
+                    addMenu.alert('短链接：%s'.replace('%s', linkSection.value), '复制成功')
+                    addMenu.copy(linkSection.value);
+                    return linkSection.innerHTML;
+                } else {
+                    throw new Error('section.link-section not found in the response');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+}]);
 ```
 
 示例：二维码
