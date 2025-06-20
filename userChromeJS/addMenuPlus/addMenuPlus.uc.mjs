@@ -544,7 +544,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                             const state = [];
                             const toolbarMap = {
                                 'toolbar-menubar': 'menubar',
-                                'TabsToolbar': 'tabs',
+                                'tabbrowser-tabs': 'tabs',
                                 'nav-bar': 'navbar',
                                 'PersonalToolbar': 'personal'
                             };
