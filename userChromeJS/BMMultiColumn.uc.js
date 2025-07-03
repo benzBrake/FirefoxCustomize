@@ -4,10 +4,11 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2025.03.27
+// @version         2025.07.03
 // @async
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2025.07.03 修复书签工具栏溢出菜单显示不全 #50
 // @note            2025.05.13 优化横向滚动，感谢 ylcs006
 // @note            2025.03.27 修复 Height Width 弄混导致宽度异常，支持纵向滚轮
 // @note            2025.02.19 fx133
@@ -95,7 +96,13 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         menupopup = event.target;
                     } else return;
                     this.initHorizontalScroll(event);
-                    this.initMultiColumn(menupopup, event);
+                    if (menupopup.id === "PlacesChevronPopup") {
+                        setTimeout(_ => {
+                            this.initMultiColumn(menupopup, event);
+                        }, 10);
+                    } else {
+                        this.initMultiColumn(menupopup, event);
+                    }
                     break;
                 case 'aftercustomization':
                     setTimeout(function (self) { self.delayedStartup(self); }, 0, this);
@@ -108,7 +115,6 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         initHorizontalScroll (event) {
             let scrollBox = event.originalTarget.scrollBox;
             scrollBox.scrollbox.style.setProperty("overflow-y", "auto", "important");
-
             scrollBox.scrollbox.style.setProperty("margin-top", "0", "important");
             scrollBox.scrollbox.style.setProperty("margin-bottom", "0", "important");
             scrollBox.scrollbox.style.setProperty("padding-top", "0", "important");
@@ -147,7 +153,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         initMultiColumn (menupopup) {
             menupopup.style.maxWidth = "calc(100vw - 20px)";
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
-            let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
+            let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part~=scrollbox]');
             if (scrollbox) {
                 Object.assign(scrollbox.style, {
                     minHeight: "21px",
