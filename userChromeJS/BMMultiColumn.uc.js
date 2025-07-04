@@ -160,7 +160,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     height: "auto",
                     display: "flex",
                     flexFlow: "column wrap",
-                    overflow: "-moz-hidden-unscrollable",
+                    // overflow: "-moz-hidden-unscrollable",
                     width: "unset",
                     scrollSnapType: "x mandatory",
                 });
@@ -193,7 +193,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             if (!arrowscrollbox) return;
             arrowscrollbox.style.maxHeight = "";
-            let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part=scrollbox]');
+            let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part~=scrollbox]');
 
             if (!scrollbox) return;
             if (!scrollbox._bmMultiColumnWheelHandler) {
