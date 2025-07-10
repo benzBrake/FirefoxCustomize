@@ -19,7 +19,7 @@
     // --- 配置区 ---
 
     // 定义菜单类型: 0=顶部菜单栏中的菜单, 1=可移动的工具栏按钮
-    const MENU_TYPE = 0;
+    const MENU_TYPE = 1;
     // 定义菜单和图标的常量
     const MENU_ID = MENU_TYPE === 0 ? "aboutconfig-menu" : "aboutconfig-button";
     const MENUPOPUP_ID = "aboutconfig-popup";
