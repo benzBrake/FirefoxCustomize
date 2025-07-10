@@ -6,6 +6,7 @@
 选项说明：
     - browser.urlbar.openintab (布尔值): 地址栏输入的 URL 在新标签页打开
     - browser.search.openintab (布尔值): 搜索栏查询在新标签页打开
+    - browser.tabs.openNewTabInContainer (布尔值): 新标签页在当前标签页的相同容器中打开
     - browser.tabs.loadBookmarksInTabs (布尔值): 书签在新标签页打开
     - browser.tabs.loadHistoryInTabs (布尔值): 历史记录在新标签页打开
     - browser.tabs.closeTabByDblclick (布尔值): 双击左键关闭标签页
@@ -27,6 +28,7 @@
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.0.9 增加选项 browser.tabs.openNewTabInContainer (布尔值) 新标签页在当前标签页的相同容器中打开
 // @note            1.0.8 重写，去除内嵌菜单，不再使用模块化，大幅度减少代码量，不再支持 destroy 方法，不再兼容 Tab Mix Plus 扩展
 // @note            1.0.7 适配新版 userChrome.js @async 注解，去除无用 CSS 加载代码
 // @note            1.0.6 修正菜单样式问题
@@ -44,7 +46,31 @@
         _moveThreshold: 100, // 移动恢复的距离阈值（会动态设为标签宽度）
 
         init: function () {
+            let sb = window.userChrome_js?.sb;
+            if (!sb) {
+                sb = Cu.Sandbox(window, {
+                    sandboxPrototype: window,
+                    sameZoneAs: window,
+                });
+
+                /* toSource() is not available in sandbox */
+                Cu.evalInSandbox(`
+          Function.prototype.toSource = window.Function.prototype.toSource;
+          Object.defineProperty(Function.prototype, "toSource", {enumerable : false})
+          Object.prototype.toSource = window.Object.prototype.toSource;
+          Object.defineProperty(Object.prototype, "toSource", {enumerable : false})
+          Array.prototype.toSource = window.Array.prototype.toSource;
+          Object.defineProperty(Array.prototype, "toSource", {enumerable : false})
+      `, sb);
+                window.addEventListener("unload", () => {
+                    setTimeout(() => {
+                        Cu.nukeSandbox(sb);
+                    }, 0);
+                }, { once: true });
+            }
+            this.sb = sb;
             this.initWhereToOpenLinkMod();
+            this.initOpenInContainerMod();
             const tabContainer = gBrowser.tabContainer;
             tabContainer.addEventListener('mouseover', this, false);
             tabContainer.addEventListener('mouseleave', this, false);
@@ -84,6 +110,17 @@
                     }
                     catch { return res; }
                 }
+            }
+        },
+
+        initOpenInContainerMod: function () {
+            let func = BrowserCommands.openTab.toString();
+            if (!/browser.tabs.openNewTabInContainer/.test(func)) {
+                func = func.replace(
+                    'openTrustedLinkIn(url, where, options);',
+                    'if (Services.prefs.getBoolPref("browser.tabs.openNewTabInContainer", false)) {\n            options.userContextId = gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") || null;\n          };\n          openTrustedLinkIn(url, where, options);'
+                );
+                Cu.evalInSandbox("BrowserCommands.openTab = function " + func.replace(/^function/, ''), this.sb);
             }
         },
 

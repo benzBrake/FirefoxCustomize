@@ -19,7 +19,7 @@
     // --- 配置区 ---
 
     // 定义菜单类型: 0=顶部菜单栏中的菜单, 1=可移动的工具栏按钮
-    const MENU_TYPE = 1;
+    const MENU_TYPE = 0;
     // 定义菜单和图标的常量
     const MENU_ID = MENU_TYPE === 0 ? "aboutconfig-menu" : "aboutconfig-button";
     const MENUPOPUP_ID = "aboutconfig-popup";
@@ -152,6 +152,16 @@
                 { val: 500, name: "500 - 稍慢" }
             ]
         }, {
+            name: "新建标签页跟随当前标签页容器",
+            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
+            type: prefs.PREF_BOOL,
+            pref: "browser.tabs.openNewTabInContainer",
+            defaultVal: false,
+            possibleVals: [
+                { val: false },
+                { val: true },
+            ]
+        }, {
             name: "新标签页在当前标签右侧打开",
             image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
             type: prefs.PREF_BOOL,
@@ -212,6 +222,27 @@
             image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
             type: prefs.PREF_BOOL,
             pref: "nglayout.enable_drag_images",
+            possibleVals: [
+                { val: false },
+                { val: true },
+            ]
+        },
+        "seperator",
+        {
+            name: "使用新版侧边栏",
+            image: "resource:///chrome/browser/skin/classic/browser/sidebars.svg",
+            type: prefs.PREF_BOOL,
+            pref: "sidebar.revamp",
+            possibleVals: [
+                { val: false },
+                { val: true },
+            ]
+        },
+        {
+            name: "网页区域圆角(新版侧边栏有效)",
+            pref: "sidebar.revamp.round-content-area",
+            type: prefs.PREF_BOOL,
+            image: "resource:///chrome/browser/skin/classic/browser/sidebars.svg",
             possibleVals: [
                 { val: false },
                 { val: true },
@@ -669,7 +700,7 @@
 
         prefItems.forEach((item, itemIndex) => {
             // 添加分割线
-            if (item === "seperator") {
+            if (item === "seperator" || (!item.name && !item.pref)) {
                 mainPopup.appendChild(doc.createXULElement('menuseparator'));
                 return;
             }
