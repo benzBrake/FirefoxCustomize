@@ -72,6 +72,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             'error occurred while editing the file': '编辑文件时出错: %s',
             'process command error': '执行命令错误，原因%s',
             'open chrome folder': '打开 Chrome 文件夹',
+            'error in file': '文件“%s”的第 %s 行发生错误',
         },
         'en-US': {
             'config example': '// This is an addMenuPlus configuration file.\n' +
@@ -100,6 +101,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             'error occurred while editing the file': 'Error occurred while editing the file: %s',
             'process command error': 'process command error, resson: %s',
             'open chrome folder': 'Open Chrome folder',
+            'error in file': 'Error in file "%s" at line %s'
         },
     }
 
@@ -593,7 +595,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                     // Delayed DOM updates
                     setTimeout(() => {
-                        $$('menuitem.addMenu[command], menu.addMenu[command]', $target.get()).forEach($elem => {
+                        $$('menuitem.addMenu[command]:not([sync-hidden="false"]), menu.addMenu[command]:not([sync-hidden="false"])', $target.get()).forEach($elem => {
                             if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
 
                             const $original = $('#' + $elem.attr('command'));
@@ -891,14 +893,69 @@ import { syncify } from "./000-syncify.sys.mjs";
                 addMenu.rebuild();
             }
         },
-        rebuild: async function (isAlert) {
+                rebuild: async function (isAlert) {
             const aFile = this.FILE;
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
                 console.log(lprintf("config file not exists", aFile ? aFile.path : "null"));
                 return;
             }
 
-            const data = loadText(aFile.path);
+            const sourceMap = []; // 源码地图，格式: [{ file: nsIFile, path: string, startLine: number }]
+            let finalCode = '';   // 最终拼接好的完整代码
+            const processedFiles = new Set(); // 防止循环引用
+
+            /**
+             * 递归函数，用于展开所有 include 并构建源码和地图
+             * @param {nsIFile} file - 当前要处理的文件对象
+             */
+            function expandIncludes(file) {
+                if (processedFiles.has(file.path)) {
+                    // 防止无限循环
+                    return;
+                }
+                processedFiles.add(file.path);
+
+                let content = loadText(file.path) || '';
+                
+                // 正则表达式，用于匹配 include('path/to/file.js');
+                const includeRegex = /\binclude\s*\(\s*['"]([^'"]+)['"]\s*\);?/g;
+                
+                let lastIndex = 0;
+                let match;
+
+                while ((match = includeRegex.exec(content)) !== null) {
+                    // a. 添加 include 语句之前的部分代码
+                    const codeSegment = content.substring(lastIndex, match.index);
+                    if (codeSegment.trim()) {
+                        finalCode += codeSegment;
+                    }
+                    
+                    // b. 递归处理被引用的文件
+                    const includedFile = file.parent.clone();
+                    includedFile.appendRelativePath(match[1]);
+
+                    if (includedFile.exists() && includedFile.isFile()) {
+                        expandIncludes(includedFile);
+                    } else {
+                        // 如果文件不存在，直接抛出错误，中断整个过程
+                        throw new Error(`Include file not found: ${includedFile.path} (in ${file.path})`);
+                    }
+
+                    lastIndex = includeRegex.lastIndex;
+                }
+
+                // c. 添加最后一个 include 语句之后（或整个文件）的代码
+                const remainingCode = content.substring(lastIndex);
+                if (remainingCode.trim()) {
+                    // 记录这个文件片段在最终代码中的起始行
+                    sourceMap.push({
+                        file: file,
+                        path: file.path,
+                        startLine: finalCode.split('\n').length
+                    });
+                    finalCode += remainingCode + '\n'; // 确保文件间有换行
+                }
+            }
 
             const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window), {
                 sandboxPrototype: window,
@@ -906,71 +963,81 @@ import { syncify } from "./000-syncify.sys.mjs";
             });
 
             sandbox.locale = this.locale;
-
-            var includeSrc = "";
-            sandbox.include = function (aLeafName) {
-                var file = addMenu.FILE.parent.clone();
-                file.appendRelativePath(aLeafName);
-                var data = loadText(file.path);
-                if (data)
-                    includeSrc += data + "\n";
-            };
             sandbox._css = [];
-
-            Object.values(MENU_ATTRS).forEach(function ({
-                current,
-                submenu,
-                groupmenu
-            }) {
+            // 在沙箱中预定义所有需要的函数和变量...
+            Object.values(MENU_ATTRS).forEach(function ({ current, submenu, groupmenu }) {
                 sandbox["_" + current] = [];
                 if (submenu !== "GroupMenu") {
-                    sandbox[current] = function (itemObj) {
-                        ps(itemObj, sandbox["_" + current]);
-                    }
+                    sandbox[current] = function (itemObj) { ps(itemObj, sandbox["_" + current]); }
                 }
                 if (isDef(submenu)) {
                     sandbox[submenu] = function (menuObj) {
-                        if (!menuObj)
-                            menuObj = {};
+                        if (!menuObj) menuObj = {};
                         menuObj._items = [];
-                        if (submenu == 'GroupMenu')
-                            menuObj._group = true;
+                        if (submenu == 'GroupMenu') menuObj._group = true;
                         sandbox["_" + current].push(menuObj);
-                        return function (itemObj) {
-                            ps(itemObj, menuObj._items);
-                        }
+                        return function (itemObj) { ps(itemObj, menuObj._items); }
                     }
                 }
                 if (isDef(groupmenu)) {
                     sandbox[groupmenu] = function (menuObj) {
-                        if (!menuObj)
-                            menuObj = {};
+                        if (!menuObj) menuObj = {};
                         menuObj._items = [];
                         menuObj._group = true;
                         sandbox["_" + current].push(menuObj);
-                        return function (itemObj) {
-                            ps(itemObj, menuObj._items);
-                        }
+                        return function (itemObj) { ps(itemObj, menuObj._items); }
                     }
                 }
             }, this);
-
-            function ps (item, array) {
-                ("join" in item && "unshift" in item) ? [].push.apply(array, item) :
-                    array.push(item);
+            function ps(item, array) {
+                ("join" in item && "unshift" in item) ? [].push.apply(array, item) : array.push(item);
             }
-
+            
             try {
-                var lineFinder = new Error();
-                Cu.evalInSandbox("function css(code){ this._css.push(code+'') };\n" + data, sandbox, "1.8");
-                Cu.evalInSandbox(includeSrc, sandbox, "1.8");
+                // 从主配置文件开始构建
+                expandIncludes(aFile);
+
+                // 注入 css 辅助函数，并执行拼接好的完整代码
+                const codeToRun = `function css(code) { this._css.push(code+''); };\n${finalCode}`;
+                Cu.evalInSandbox(codeToRun, sandbox, "1.8", "addMenuPlus_merged_config", 1);
+
             } catch (e) {
-                let line = e.lineNumber - lineFinder.lineNumber - 1;
-                this.alert(e + lprintf("check config file with line", line), null, function () {
-                    addMenu.edit(addMenu.FILE, line);
+                let errorLineInFinalCode = e.lineNumber;
+                let foundFile = aFile; // 默认是主文件
+                let finalLineNumber = errorLineInFinalCode;
+
+                // 如果是自定义的 "Include not found" 错误，直接显示
+                if (e.message.startsWith('Include file not found')) {
+                    this.alert(e.message, "addMenuPlus Config Error");
+                    return console.error("addMenuPlus Error:", e.message);
+                }
+
+                // 减去我们添加的 `function css...` 的一行
+                errorLineInFinalCode -= 1;
+
+                // 遍历源码地图，找到错误在哪一个文件片段里
+                for (let i = sourceMap.length - 1; i >= 0; i--) {
+                    const mapEntry = sourceMap[i];
+                    if (errorLineInFinalCode >= mapEntry.startLine) {
+                        foundFile = mapEntry.file;
+                        // 计算在原始文件中的相对行号
+                        finalLineNumber = errorLineInFinalCode - mapEntry.startLine + 1;
+                        break;
+                    }
+                }
+
+                const errorMessage = `${e.message}\n\n${lprintf("error in file", foundFile.path, finalLineNumber)}`;
+                this.alert(errorMessage, "addMenuPlus Config Error", () => {
+                    addMenu.edit(foundFile, finalLineNumber);
                 });
-                return console.log(e);
+
+                return console.error(`addMenuPlus Error: ${e.message}`, {
+                    fileName: foundFile.path,
+                    lineNumber: finalLineNumber,
+                    stack: e.stack,
+                });
             }
+
             this.style2?.destroy();
             if (sandbox._css.length)
                 this.style2 = addStyle(`@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")\n@namespace html url("http://www.w3.org/1999/xhtml");\n${sandbox._css.join('\n')}`, 'AGENT_SHEET');
@@ -979,31 +1046,23 @@ import { syncify } from "./000-syncify.sys.mjs";
             this.removeMenuitem();
             this.customShowings = [];
 
-            Object.values(MENU_ATTRS).forEach(function ({
-                current,
-                submenu,
-                groupmenu,
-                insertId
-            }) {
+            Object.values(MENU_ATTRS).forEach(function ({ current, insertId }) {
                 if (current === "mod") {
-                    sandbox["_" + current].forEach((obj) => {
-                        this.modMenuitem(obj);
-                    });
+                    sandbox["_" + current].forEach((obj) => { this.modMenuitem(obj); });
                 } else {
                     if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
-
                     if (current === "btn") {
                         this.createMenuitem(sandbox["_" + current], $("#addMenu-btn-insertpoint", this.BTN), this.BTN.ownerDocument || document);
                     } else {
                         let insertPoint = $(insertId);
                         this.createMenuitem(sandbox["_" + current], insertPoint);
                     }
-
                 }
             }, this);
 
             if (isAlert) this.alert((lprintf('config has reload')));
         },
+
         newGroupMenu: function (menuObj, opt = {}, doc = document) {
             var group = $C('menugroup', {}, doc);
 
@@ -1913,7 +1972,7 @@ import { syncify } from "./000-syncify.sys.mjs";
         return {
             uriString,
             type,
-            destroy: function() { windowUtils.removeSheetUsingURIString(this.uriString, this.type) }
+            destroy: function () { windowUtils.removeSheetUsingURIString(this.uriString, this.type) }
         }
     }
 
