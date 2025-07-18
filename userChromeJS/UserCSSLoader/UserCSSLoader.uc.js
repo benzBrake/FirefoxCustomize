@@ -466,12 +466,12 @@ about:config
       window.removeEventListener("unload", this);
     },
     destroy (force = false) {
-      if (doc.getElementById("ucl-change-style-popup")) {
-        doc.getElementById("ucl-change-style-popup").parentNode.removeChild(doc.getElementById("ucl-change-style-popup"));
+      if (document.getElementById("ucl-change-style-popup")) {
+        document.getElementById("ucl-change-style-popup").parentNode.removeChild(doc.getElementById("ucl-change-style-popup"));
       }
 
-      if (doc.getElementById('ucl-rebuild-key')) {
-        doc.getElementById('ucl-rebuild-key').parentNode.removeChild(doc.getElementById('ucl-rebuild-key'));
+      if (document.getElementById('ucl-rebuild-key')) {
+        document.getElementById('ucl-rebuild-key').parentNode.removeChild(document.getElementById('ucl-rebuild-key'));
       }
 
       if (this.BTN)
@@ -582,8 +582,20 @@ about:config
         if (await IOUtils.exists(path)) {
           reject(UserCSSLoader.MESSAGES.format('ucl-file-not-exists', path));
         }
+        const msg = {
+          'name': UserCSSLoader.MESSAGES.format('ucl-create-style-style-name'),
+          'description': UserCSSLoader.MESSAGES.format('ucl-create-style-style-description'),
+          'author': UserCSSLoader.MESSAGES.format('ucl-create-style-style-author'),
+        }
         try {
-          await IOUtils.writeUTF8(path, "");
+          await IOUtils.writeUTF8(path, `/* ==UserStyle==
+ * @name            ${fileName}`
+            + (Services.locale.appLocaleAsBCP47 !== "en-US" ? `\n * @name:${Services.locale.appLocaleAsBCP47}      ${msg.name}\n` : "") +
+            ` * @description     ${msg.description}
+ * @author          ${msg.author}
+ * @version         1.0.0
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+==/UserStyle== */`);
           resolve(await IOUtils.getFile(path));
         } catch (e) {
           reject(e);
