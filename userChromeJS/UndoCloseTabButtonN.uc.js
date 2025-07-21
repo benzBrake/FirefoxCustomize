@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name            UndoCloseTabButtonN
 // @description		閉じたタブを復元するツールバーボタン＆タブバーの空き上の中クリックで最後に閉じたタブを復元
-// @version         1.2.6
+// @version         1.2.7
 // @include         main
 // @sandbox         true
 // @charset         UTF-8
+// @note            2025/07/21 Fx141
 // @note            2025/01/31 Fx136 fix Remove Cu.import, per Bug Bug 1881888, Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note            2023/08/16 Fx117 fix this is undefined
 // @note            2023/06/08 Fx115 SessionStore.getClosedTabData → SessionStore.getClosedTabDataForWindow
@@ -19,195 +20,240 @@
 (function () {
     "use strict";
 
-    const useTabbarMiddleClick = true; // タブバーの空き・タブ追加ボタン上の中クリックで最後に閉じたタブを復元するか？
+    const CONFIG = {
+        useTabbarMiddleClick: true, // Enable middle-click on tab bar to restore last closed tab
+        XULNS: "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+        BUTTON_ID: "ucjs-undo-close-tab-button",
+        LOCALE: Services.locale.appLocaleAsBCP47.includes("zh-"),
+        LABELS: {
+            closedTab: Services.locale.appLocaleAsBCP47.includes("zh-") ? "已关闭的标签" : "閉じたタブ",
+            closedWindow: Services.locale.appLocaleAsBCP47.includes("zh-") ? "已关闭的窗口" : "閉じたウインドウ",
+            tooltip: Services.locale.appLocaleAsBCP47.includes("zh-")
+                ? "查看已经关闭的标签\n中键快速打开最后一个关闭的标签"
+                : "閉じたタブ\n中クリックで最後に閉じたタブを復元"
+        }
+    };
 
-    const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-
-    window.ucjsUndoCloseTabButtonService = {
-        prepareMenu (event) {
-            const doc = (event.view && event.view.document) || document;
-            const menu = event.originalTarget;
-            this.removeChilds(menu);
-
-            // 閉じたタブ
-            let data = "getClosedTabDataForWindow" in SessionStore ? SessionStore.getClosedTabDataForWindow(window) : SessionStore.getClosedTabData(window);
-            if (typeof (data) === "string") {
-                data = JSON.parse(data);
+    if (typeof undoCloseTab === "undefined") {
+        window.undoCloseTab = function (aIndex, sourceWindowSSId) {
+            // the window we'll open the tab into
+            let targetWindow = window;
+            // the window the tab was closed from
+            let sourceWindow;
+            if (sourceWindowSSId) {
+                sourceWindow = SessionStore.getWindowById(sourceWindowSSId);
+                if (!sourceWindow) {
+                    throw new Error(
+                        "sourceWindowSSId argument to undoCloseTab didn't resolve to a window"
+                    );
+                }
+            } else {
+                sourceWindow = window;
             }
-            const tabLength = data.length;
 
-            for (let i = 0; i < tabLength; i++) {
-                const item = data[i];
-                const m = this.createFaviconMenuitem(doc, item.title, item.image, i, this.undoTab);
-
-                const state = item.state;
-                let idx = state.index;
-                if (idx == 0)
-                    idx = state.entries.length;
-                if (--idx >= 0 && state.entries[idx])
-                    m.setAttribute("targetURI", state.entries[idx].url);
-
-                menu.appendChild(m);
+            // wallpaper patch to prevent an unnecessary blank tab (bug 343895)
+            let blankTabToRemove = null;
+            if (
+                targetWindow.gBrowser.visibleTabs.length == 1 &&
+                targetWindow.gBrowser.selectedTab.isEmpty
+            ) {
+                blankTabToRemove = targetWindow.gBrowser.selectedTab;
             }
 
-            // 閉じたウィンドウ
-            data = SessionStore.getClosedWindowData(window);
-            if (typeof (data) === "string") {
-                data = JSON.parse(data);
-            }
-            const winLength = data.length;
-            if (winLength > 0) {
-                if (tabLength > 0)
-                    menu.appendChild(this.$C(doc, "menuseparator"));
-
-                menu.appendChild(this.$C(doc, "menuitem", {
-                    disabled: true,
-                    label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "已关闭的窗口" : "閉じたウインドウ"
-                }));
-
-                for (let i = 0; i < winLength; i++) {
-                    const item = data[i];
-
-                    let title = item.title;
-                    const tabsCount = item.tabs.length - 1;
-                    if (tabsCount > 0)
-                        title += " (他:" + tabsCount + ")";
-
-                    const tab = item.tabs[item.selected - 1];
-
-                    const m = this.createFaviconMenuitem(doc, title, tab.image, i, this.undoWindow);
-                    menu.appendChild(m);
+            // We are specifically interested in the lastClosedTabCount for the source window.
+            // When aIndex is undefined, we restore all the lastClosedTabCount tabs.
+            let lastClosedTabCount = SessionStore.getLastClosedTabCount(sourceWindow);
+            let tab = null;
+            // aIndex is undefined if the function is called without a specific tab to restore.
+            let tabsToRemove =
+                aIndex !== undefined ? [aIndex] : new Array(lastClosedTabCount).fill(0);
+            let tabsRemoved = false;
+            for (let index of tabsToRemove) {
+                if (SessionStore.getClosedTabCountForWindow(sourceWindow) > index) {
+                    tab = SessionStore.undoCloseTab(sourceWindow, index, targetWindow);
+                    tabsRemoved = true;
                 }
             }
 
-            if (tabLength + winLength === 0) {
+            if (tabsRemoved && blankTabToRemove) {
+                targetWindow.gBrowser.removeTab(blankTabToRemove);
+            }
+
+            return tab;
+        }
+    }
+
+    const UndoCloseTabService = {
+        prepareMenu (event) {
+            const doc = event.view?.document || document;
+            const menu = event.originalTarget;
+            this.clearMenu(menu);
+
+            // Populate closed tabs
+            const tabData = this.getClosedTabData();
+            this.addTabMenuItems(doc, menu, tabData);
+
+            // Populate closed windows
+            const windowData = this.getClosedWindowData();
+            if (windowData.length > 0) {
+                if (tabData.length > 0) {
+                    menu.appendChild(this.createElement(doc, "menuseparator"));
+                }
+                menu.appendChild(this.createElement(doc, "menuitem", {
+                    disabled: true,
+                    label: CONFIG.LABELS.closedWindow
+                }));
+                this.addWindowMenuItems(doc, menu, windowData);
+            }
+
+            if (tabData.length + windowData.length === 0) {
                 event.preventDefault();
             }
         },
 
+        getClosedTabData () {
+            let data = "getClosedTabDataForWindow" in SessionStore
+                ? SessionStore.getClosedTabDataForWindow(window)
+                : SessionStore.getClosedTabData(window);
+            return typeof data === "string" ? JSON.parse(data) : data;
+        },
+
+        getClosedWindowData () {
+            let data = SessionStore.getClosedWindowData(window);
+            return typeof data === "string" ? JSON.parse(data) : data;
+        },
+
+        addTabMenuItems (doc, menu, data) {
+            data.forEach((item, index) => {
+                const menuItem = this.createFaviconMenuitem(doc, item.title, item.image, index, this.undoTab);
+                const state = item.state;
+                let idx = state.index;
+                if (idx === 0) idx = state.entries.length;
+                if (--idx >= 0 && state.entries[idx]) {
+                    menuItem.setAttribute("targetURI", state.entries[idx].url);
+                }
+                menu.appendChild(menuItem);
+            });
+        },
+
+        addWindowMenuItems (doc, menu, data) {
+            data.forEach((item, index) => {
+                let title = item.title;
+                const tabsCount = item.tabs.length - 1;
+                if (tabsCount > 0) title += ` (总计:${tabsCount})`;
+                const tab = item.tabs[item.selected - 1];
+                menu.appendChild(this.createFaviconMenuitem(doc, title, tab.image, index, this.undoWindow));
+            });
+        },
+
         createFaviconMenuitem (doc, label, icon, value, command) {
-            const attr = {
+            const attrs = {
                 class: "menuitem-iconic bookmark-item menuitem-with-favicon",
-                label: label,
-                value: value
+                label,
+                value
             };
             if (icon) {
-                if (/^https?:/.test(icon))
-                    icon = "moz-anno:favicon:" + icon;
-                attr.image = icon;
+                attrs.image = /^https?:/.test(icon) ? `moz-anno:favicon:${icon}` : icon;
             }
-            const m = this.$C(doc, "menuitem", attr);
-            m.addEventListener("command", command, false);
-            return m;
+            const menuItem = this.createElement(doc, "menuitem", attrs);
+            menuItem.addEventListener("command", command, false);
+            return menuItem;
         },
 
         undoTab (event) {
             undoCloseTab(event.originalTarget.getAttribute("value"));
         },
+
         undoWindow (event) {
             undoCloseWindow(event.originalTarget.getAttribute("value"));
         },
-        removeChilds (element) {
+
+        clearMenu (element) {
             const range = document.createRange();
             range.selectNodeContents(element);
             range.deleteContents();
         },
 
         onClick (event) {
-            if (event.button === 0 && event.target.id === "ucjs-undo-close-tab-button") {
+            if (event.button === 0 && event.target.id === CONFIG.BUTTON_ID) {
                 event.preventDefault();
                 event.stopPropagation();
                 undoCloseTab();
-            } else if (event.button == 1) {
-                switch (event.originalTarget.localName) {
-                    case "box": // -Fx65
-                    case "scrollbox": // Fx66-
-                        event.preventDefault();
-                        event.stopPropagation();
-                        undoCloseTab();
-                        break;
-                }
-            } else if (event.button === 2 && event.target.id === "ucjs-undo-close-tab-button") {
+            } else if (event.button === 1 && ["box", "scrollbox"].includes(event.originalTarget.localName)) {
                 event.preventDefault();
                 event.stopPropagation();
-                let pos = "after_end", x, y;
-                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
-                    pos = "after_position";
-                    x = 0;
-                    y = 0 + event.target.clientHeight;
-                }
-                event.target.querySelector("menupopup").openPopup(event.target, pos, x, y);
+                undoCloseTab();
+            } else if (event.button === 2 && event.target.id === CONFIG.BUTTON_ID) {
+                event.preventDefault();
+                event.stopPropagation();
+                const pos = (event.target.ownerGlobal.innerWidth / 2) > event.pageX
+                    ? { position: "after_position", x: 0, y: event.target.clientHeight }
+                    : { position: "after_end", x: 0, y: 0 };
+                event.target.querySelector("menupopup").openPopup(event.target, pos.position, pos.x, pos.y);
             }
         },
 
-        $C (doc, tag, attrs) {
-            const e = tag instanceof Node ? tag : doc.createElementNS(XULNS, tag);
-            if (attrs) {
-                Object.entries(attrs).forEach(([key, value]) => {
-                    if (key.startsWith('on') && typeof value === 'function') {
-                        e.addEventListener(key.slice(2), value, false);
-                    } else {
-                        e.setAttribute(key, value);
-                    }
-                });
-            }
-            return e;
-        },
+        createElement (doc, tag, attrs = {}) {
+            const element = doc.createElementNS(CONFIG.XULNS, tag);
+            Object.entries(attrs).forEach(([key, value]) => {
+                if (key.startsWith('on') && typeof value === 'function') {
+                    element.addEventListener(key.slice(2).toLowerCase(), value, false);
+                } else {
+                    element.setAttribute(key, value);
+                }
+            });
+            return element;
+        }
     };
 
-    function run () {
-        if (useTabbarMiddleClick) {
-            gBrowser.tabContainer.addEventListener("click", ucjsUndoCloseTabButtonService.onClick, true);
+    function initialize () {
+        if (CONFIG.useTabbarMiddleClick) {
+            gBrowser.tabContainer.addEventListener("click", UndoCloseTabService.onClick, true);
         }
 
-        const buttonId = "ucjs-undo-close-tab-button";
-
-        if (document.getElementById(buttonId)) {
-            return;
-        }
+        if (document.getElementById(CONFIG.BUTTON_ID)) return;
 
         try {
             const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
             CustomizableUI.createWidget({
-                id: buttonId,
+                id: CONFIG.BUTTON_ID,
                 defaultArea: CustomizableUI.AREA_TABSTRIP,
                 type: "custom",
                 onBuild: doc => {
-                    const btn = ucjsUndoCloseTabButtonService.$C(doc, "toolbarbutton", {
-                        id: buttonId,
+                    const button = UndoCloseTabService.createElement(doc, "toolbarbutton", {
+                        id: CONFIG.BUTTON_ID,
                         class: "toolbarbutton-1 chromeclass-toolbar-additional",
                         type: "contextmenu",
                         anchor: "dropmarker",
-                        label: Services.locale.appLocaleAsBCP47.includes("zh-") ? "已关闭的标签" : "閉じたタブ",
-                        tooltiptext: Services.locale.appLocaleAsBCP47.includes("zh-") ? "查看已经关闭的标签\n中键快速打开最后一个关闭的标签" : "閉じたタブ\n中クリックで最後に閉じたタブを復元",
+                        label: CONFIG.LABELS.closedTab,
+                        tooltiptext: CONFIG.LABELS.tooltip,
                         image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj4KICAgIDxwYXRoIHN0cm9rZS13aWR0aD0iMjQiIGZpbGw9IiM1NTU1NTUiIHN0cm9rZT0iI2ZmZmZmZiIgZD0iTSA2IDQ4MCBsIDUwMCAwIGwgMCAtNjAgbCAtNTAgMCBsIDAgLTIyMCBsIC00MDAgMCBsIDAgMjIwIGwgLTUwIDAgeiIvPgogICAgPHBhdGggc3Ryb2tlLXdpZHRoPSIzMCIgZmlsbD0iIzQ0ODhmZiIgc3Ryb2tlPSIjZGRlZWZmIiBkPSJNIDI3MiAzMiBsIC0xNjAgMTMwIGwgMTYwIDEzMCBsIDAgLTc1IGwgNjAgMCBhIDYwIDYwIDAgMCAxIDAgMTIwIGwgLTIwIDAgbCAwIDExMCBsIDIwIDAgYSAxNzAgMTcwIDAgMCAwIDAgLTM0MCBsIC02MCAwIHoiLz4KPC9zdmc+",
-                        onclick: function (event) { 
-                            ucjsUndoCloseTabButtonService.onClick(event); 
-                        },
+                        onclick: UndoCloseTabService.onClick
                     });
-                    const menu = ucjsUndoCloseTabButtonService.$C(doc, "menupopup", {
+                    const menu = UndoCloseTabService.createElement(doc, "menupopup", {
                         tooltip: "bhTooltip",
                         popupsinherittooltip: "true",
-                        oncontextmenu: "event.preventDefault();",
-                        onpopupshowing: function (event) {  ucjsUndoCloseTabButtonService.prepareMenu(event); }
+                        oncontextmenu: event => event.preventDefault(),
+                        onpopupshowing: event => UndoCloseTabService.prepareMenu(event)
                     });
-                    btn.appendChild(menu);
-                    return btn;
-                },
+                    button.appendChild(menu);
+                    return button;
+                }
             });
-        } catch (e) { }
+        } catch (e) {
+            console.error("Failed to create widget:", e);
+        }
     }
 
     if (gBrowserInit.delayedStartupFinished) {
-        run();
+        initialize();
     } else {
-        const OBS_TOPIC = "browser-delayed-startup-finished";
-        const delayedStartupFinished = (subject, topic) => {
-            if (topic === OBS_TOPIC && subject === window) {
-                Services.obs.removeObserver(delayedStartupFinished, topic);
-                run();
+        const observer = (subject, topic) => {
+            if (topic === "browser-delayed-startup-finished" && subject === window) {
+                Services.obs.removeObserver(observer, topic);
+                initialize();
             }
         };
-        Services.obs.addObserver(delayedStartupFinished, OBS_TOPIC);
+        Services.obs.addObserver(observer, "browser-delayed-startup-finished");
     }
 })();
