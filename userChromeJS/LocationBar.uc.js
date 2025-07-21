@@ -163,11 +163,12 @@
     padding: var(--toolbarbutton-inner-padding) !important;
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover {
-    background-color: var(--urlbar-box-hover-bgcolor);
+    background-color: var(--urlbar-box-hover-bgcolor, var(--button-background-color-hover));
     color: var(--urlbar-box-hover-text-color);
 }
-:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover:active {
-    background-color: var(--urlbar-box-active-bgcolor);
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover:active,
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1[open] {
+    background-color: var(--urlbar-box-active-bgcolor, var(--toolbarbutton-active-background));
     color: var(--urlbar-box-hover-text-color);
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
