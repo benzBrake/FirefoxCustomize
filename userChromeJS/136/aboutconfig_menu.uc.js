@@ -529,23 +529,34 @@
             max-width: calc(100vw - 20px);
             max-height: calc(100vh - 129px);
             & > menu {
-                padding-inline-start: 36px !important;
                 position: relative;
 
-                &:before {
-                    content: attr(image-emoji);
-                    width: 16px;
-                    height: 16px;
-                    margin-right: 8px;
-                    position: absolute;
-                    top: 50%;
-                    left: 1em;
-                    transform: translateY(-50%);
-                    background-image: var(--menu-image);
-                    background-size: 16px 16px;
-                    background-repeat: no-repeat;
-                    background-position: center;
+                &:not(:has(>image)){
+                    padding-inline-start: 36px !important;
+                    &:before {
+                        content: attr(image-emoji);
+                        width: 16px;
+                        height: 16px;
+                        margin-right: 8px;
+                        position: absolute;
+                        top: 50%;
+                        left: 1em;
+                        transform: translateY(-50%);
+                        background-image: var(--menu-image);
+                        background-size: 16px 16px;
+                        background-repeat: no-repeat;
+                        background-position: center;
+                    }
                 }
+
+                &:has(>image) {
+                    list-style-image: var(--menu-image) !important;
+                    & > image {
+                        display: flex !important;
+                    }
+                }
+
+
             }
         }
         .aboutconfig-reset-menuitem {
