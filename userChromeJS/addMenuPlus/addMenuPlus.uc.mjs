@@ -22,7 +22,7 @@
 // ==/UserScript==
 import { $, $$ } from "./000-$.sys.mjs";
 import { syncify } from "./000-syncify.sys.mjs";
-(async (css, getURLSpecFromFile, loadText, versionGE, shouldSetIcon, isDef, isFirefoxSupportedImageMime) => {
+(async (css, getURLSpecFromFile, loadText, versionGE, shouldSetIcon, isDef, isFirefoxSupportedImageMime, isImageUrl) => {
     if (typeof window === 'undefined') return;
 
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
@@ -1607,15 +1607,21 @@ import { syncify } from "./000-syncify.sys.mjs";
                     case "%I":
                         return context.imageURL || context.imageInfo.currentSrc || "";
                     case "%IMAGE_URL%":
-                        return context.imageURL || context.imageInfo.currentSrc || "";
+                        let imgUrl = context.imageURL || context.imageInfo?.currentSrc || "";
+                        if (imgUrl && imgUrl !== "chrome://global/skin/media/imagedoc-darknoise.png") {
+                            return imgUrl;
+                        }
+                        imgUrl = addMenu.convertText("%LINK_OR_URL%");
+                        if (isImageUrl(imgUrl)) return imgUrl;
+                        return "";
                     case "%IMAGE_BASE64%":
                         if (isDef(context.mediaURL) && context.mediaURL !== "chrome://global/skin/media/imagedoc-darknoise.png") {
                             return img2base64(context.mediaURL);
-                        } else if (isDef(context.imageURL) && context.imageURL !== "chrome://global/skin/icons/image-missing.png") {
-                            return img2base64(context.imageURL);
+                        } else if (context.imageInfo?.currentSrc !== "chrome://global/skin/icons/image-missing.png") {
+                            return img2base64(context.imageInfo.currentSrc);
                         } else {
                             let imageUrl = addMenu.convertText("%LINK_OR_URL%");
-                            if (imageUrl) {
+                            if (isImageUrl(imageUrl)) {
                                 return img2base64(imageUrl);
                             }
                             return "";
@@ -2268,6 +2274,54 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
             'image/jxl', // JPEG XL
         ];
         return firefoxSupportedImageMimes.includes(mime.toLowerCase());
+    }, source => {
+        // 辅助函数：检查 Base64 是否为图片
+        function isBase64Image (dataUrl) {
+            const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/svg+xml', 'image/webp', 'image/x-icon'];
+            const mimeMatch = dataUrl.match(/^data:(image\/[a-z+]+);base64,/);
+            return mimeMatch && imageMimeTypes.includes(mimeMatch[1]);
+        }
+
+        // 辅助函数：检查文件扩展名
+        function hasImageExtension (url) {
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico'];
+            const extensionMatch = url.match(/\.([a-zA-Z0-9]+)$/);
+            return extensionMatch && imageExtensions.includes(extensionMatch[1].toLowerCase());
+        }
+
+        // 处理不同类型的输入
+        try {
+            // 1. 处理 Base64 Data URL
+            if (source.startsWith('data:')) {
+                return isBase64Image(source);
+            }
+
+            // 2. 处理 chrome:// 协议
+            if (source.startsWith('chrome://')) {
+                return false; // chrome:// 协议通常不是图片资源
+            }
+
+            // 3. 处理 file://, http://, https://, ftp://
+            if (
+                source.startsWith('file://') ||
+                source.startsWith('http://') ||
+                source.startsWith('https://') ||
+                source.startsWith('ftp://')
+            ) {
+                return hasImageExtension(source);
+            }
+
+            // 4. 处理本地文件名（无协议头）
+            if (!source.includes('://')) {
+                return hasImageExtension(source);
+            }
+
+            // 5. 默认情况：无效输入
+            return false;
+        } catch (error) {
+            console.error('Error checking image:', error);
+            return false;
+        }
     });
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
