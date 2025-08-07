@@ -4,7 +4,6 @@
 // @namespace      https://github.com/benzBrake/FirefoxCustomize
 // @author         Ryan, Griever
 // @include        main
-// @sandbox        true
 // @license        MIT License
 // @compatibility  Firefox 80
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
@@ -19,7 +18,6 @@
 // @note           0.0.5r1 修复退出编辑器后不能自动更新
 // @note           0.0.5   FileUtils 改为 IOUtils，不兼容Fireofox 80以下，把主菜单项目改成工具按钮了。
 // ==/UserScript==
-
 /****** 使い方 ******
 
 默认从 profileDir\chrome\UserSyles 读取样式
@@ -58,6 +56,14 @@ about:config
     2: {
       name: "AUTHOR_SHEET",
       ext: ".css",
+    }
+  }
+
+  const runJS = (code, sandbox = window) => {
+    try {
+      Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -262,7 +268,10 @@ about:config
         label: !this.prefs.getBoolPref("allDisabled", false) ? MESSAGES.format('ucl-enabled') : MESSAGES.format('ucl-disabled'),
         class: "menuitem menuitem-iconic",
         type: "checkbox",
-        oncommand: "UserCSSLoader.allDisabled = !UserCSSLoader.allDisabled;",
+        oncommand: function (event) {
+          const { UserCSSLoader: ucl } = window;
+          ucl.allDisabled = !ucl.allDisabled;
+        },
         onshowing: function () {
           const { MESSAGES } = UserCSSLoader;
           this.setAttribute("label", !UserCSSLoader.allDisabled ? MESSAGES.format('ucl-enabled') : MESSAGES.format('ucl-disabled'));
@@ -272,12 +281,16 @@ about:config
         label: "Reload all styles",
         'data-l10n-id': 'ucl-reload-all-styles',
         class: "menuitem menuitem-iconic",
-        oncommand: "window.UserCSSLoader.rebuild();"
+        oncommand: function (event) {
+          window.UserCSSLoader.rebuild();
+        }
       }, {
         label: "Open Style Folder",
         'data-l10n-id': 'ucl-open-style-folder',
         class: "menuitem menuitem-iconic",
-        oncommand: "window.UserCSSLoader.openFolder();"
+        oncommand: function (event) {
+          window.UserCSSLoader.openFolder();
+        }
       }, {
         label: "Create Style",
         'data-l10n-id': 'ucl-create-style',
@@ -286,17 +299,27 @@ about:config
           label: "AUTHOR_SHEET",
           'data-l10n-id': 'ucl-author-sheet',
           class: "menuitem menuitem-iconic",
-          oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.AUTHOR_SHEET)"
+          oncommand: function (event) {
+            const { UserCSSLoader: ucl } = window;
+            ucl.createStyle(ucl.AUTHOR_SHEET);
+          }
         }, {
           label: "USER_SHEET",
           'data-l10n-id': 'ucl-user-sheet',
           class: "menuitem menuitem-iconic",
-          oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.USER_SHEET)"
+          oncommand: function (event) {
+            const { UserCSSLoader: ucl } = window;
+            ucl.createStyle(ucl.USER_SHEET);
+          }
         }, {
           label: "AGENT_SHEET",
           'data-l10n-id': 'ucl-agent-sheet',
           class: "menuitem menuitem-iconic",
-          oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.AGENT_SHEET)"
+          oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.AGENT_SHEET)",
+          oncommand: function (event) {
+            const { UserCSSLoader: ucl } = window;
+            ucl.createStyle(ucl.AGENT_SHEET);
+          }
         }]
       }, {
 
@@ -324,19 +347,28 @@ about:config
           'data-l10n-id': 'ucl-author-sheet',
           flag: "AUTHOR_SHEET",
           class: "menuitem menuitem-iconic",
-          oncommand: "UserCSSLoader.changeStyleType(event, UserCSSLoader.AUTHOR_SHEET)"
+          oncommand: function (event) {
+            const { UserCSSLoader: ucl } = window;
+            ucl.changeStyleType(event, ucl.AUTHOR_SHEET);
+          }
         }, {
           label: "USER_SHEET",
           'data-l10n-id': 'ucl-user-sheet',
           flag: "USER_SHEET",
           class: "menuitem menuitem-iconic",
-          oncommand: "UserCSSLoader.changeStyleType(event, UserCSSLoader.USER_SHEET)"
+          oncommand: function (event) {
+            const { UserCSSLoader: ucl } = window;
+            ucl.changeStyleType(event, ucl.USER_SHEET);
+          }
         }, {
           label: "AGENT_SHEET",
           'data-l10n-id': 'ucl-agent-sheet',
           flag: "AGENT_SHEET",
           class: "menuitem menuitem-iconic",
-          oncommand: 'UserCSSLoader.changeStyleType(event, UserCSSLoader.AGENT_SHEET)'
+          oncommand: function (event) {
+            const { UserCSSLoader: ucl } = window;
+            ucl.changeStyleType(event, ucl.AGENT_SHEET);
+          }
         }].forEach(menuObj => {
           changeTypePopup.appendChild(createMenu(doc, menuObj));
         });
@@ -354,7 +386,7 @@ about:config
         if (menuObj.onshowing) {
           that.customShowings.push({
             item: menu,
-            fnSource: menuObj.onshowing.toString()
+            fn: menuObj.onshowing
           });
         }
         if (isMenu) {
@@ -387,7 +419,10 @@ about:config
           fullName: entry.fullName,
           css: true,
           closemenu: 'none',
-          oncommand: `window.UserCSSLoader.toggleStyle(event, "${entry.fullName}");`
+          oncommand: function (event) {
+            let fullName = event.target.getAttribute("fullName");
+            window.UserCSSLoader.toggleStyle(event, fullName);
+          }
         });
         if (typeof entry.icon === "string" && (entry.icon.startsWith("data:") || entry.icon.startsWith("chrome://") || entry.icon.startsWith("resource://"))) {
           item.style.setProperty('--icon', `url(${entry.icon})`);
@@ -399,9 +434,12 @@ about:config
             tooltiptext: "Open homepage",
             class: "menuitem menuitem-iconic homepage",
             'data-l10n-id': 'ucl-open-homepage-btn',
-            fullName: entry.fullName,
+            homepageURL: entry.homepageURL,
             closemenu: 'none',
-            oncommand: `window.UserCSSLoader.openHomePage(event, "${entry.homepageURL}");`
+            oncommand: function (event) {
+              let homepageURL = event.target.getAttribute("homepageURL");
+              window.UserCSSLoader.openHomePage(event, homepageURL);
+            }
           });
           group.appendChild(homePage);
         }
@@ -413,15 +451,22 @@ about:config
           flag: STYLES_NAME_MAP[entry.type]['name'],
           fullName: entry.fullName,
           closemenu: 'none',
-          oncommand: `window.UserCSSLoader.changeTypePopup(event, "${entry.fullName}");`
+          oncommand: function (event) {
+            let fullName = event.target.getAttribute("fullName");
+            window.UserCSSLoader.changeTypePopup(event, fullName);
+          }
         });
         group.appendChild(type);
         let edit = createElement(popup.ownerDocument, 'menuitem', {
           label: "Edit style",
           tooltiptext: "Edit style",
+          fullName: entry.fullName,
           'data-l10n-id': 'ucl-edit-style-btn',
           class: "menuitem menuitem-iconic edit",
-          oncommand: `window.UserCSSLoader.editStyle("${entry.fullName}");`
+          oncommand: function (event) {
+            let fullName = event.target.getAttribute("fullName");
+            window.UserCSSLoader.editStyle(fullName);
+          }
         });
         group.appendChild(edit);
         let del = createElement(popup.ownerDocument, 'menuitem', {
@@ -429,7 +474,11 @@ about:config
           tooltiptext: "Delete style",
           'data-l10n-id': 'ucl-delete-style-btn',
           class: "menuitem menuitem-iconic delete",
-          oncommand: `window.UserCSSLoader.deleteStyle("${entry.fullName}");`
+          fullName: entry.fullName,
+          oncommand: function (event) {
+            let fullName = event.target.getAttribute("fullName");
+            window.UserCSSLoader.deleteStyle(fullName);
+          }
         });
         group.appendChild(del);
         popup.appendChild(group);
@@ -439,9 +488,8 @@ about:config
     refreshMenuItemStatus (popup) {
       if (!popup) return;
       this.customShowings.forEach(function (obj) {
-        var curItem = obj.item;
         try {
-          eval('(' + obj.fnSource + ').call(curItem, curItem)');
+          obj.fn.call(obj.item);
         } catch (ex) {
           console.error('custom showing method error', obj.fnSource, ex);
         }
@@ -914,48 +962,14 @@ about:config
         continue;
       }
       if (k.startsWith('on')) {
-        e.addEventListener(k.slice(2), createFunction(v, 'event'));
+        if (typeof v == "function") {
+          e.addEventListener(k.slice(2).toLocaleLowerCase(), v, false);
+        }
       } else {
         e.setAttribute(k, v);
       }
     }
     return e;
-  }
-
-  // generate by grok3
-  function createFunction (v, ...paramNamesOrArray) {
-    // 检查是否传入了一个数组作为第二个参数
-    let params = ['event']; // 默认参数名
-    if (paramNamesOrArray.length === 1 && Array.isArray(paramNamesOrArray[0])) {
-      params = paramNamesOrArray[0]; // 如果传入的是数组，则使用该数组
-    } else if (paramNamesOrArray.length > 0) {
-      params = paramNamesOrArray; // 否则使用可变参数
-    }
-
-    let fn;
-    if (typeof v === 'function') {
-      // 如果 v 已经是函数，直接赋值给 fn
-      fn = v;
-    } else if (typeof v === 'string') {
-      if (v.startsWith('function') || v.startsWith('async function')) {
-        // 如果 v 是字符串，且以 'function' 或 'async function' 开头
-        const isAsync = v.startsWith('async');
-        const paramPart = v.match(/\(([^)]*)/)[1]; // 提取参数部分
-        let bodyPart = v
-          .replace(v.match(/[^)]*/) + ")", "") // 移除参数部分
-          .replace(/[^{]*\{/, "") // 移除函数体前的部分
-          .replace(/}$/, ''); // 移除末尾的 }
-        if (isAsync) {
-          // 如果是 async function，转换为返回 Promise 的普通函数
-          bodyPart = `return new Promise(async (resolve, reject) => { try { ${bodyPart}; resolve(); } catch (e) { reject(e); } });`;
-        }
-        fn = new Function(paramPart, bodyPart);
-      } else {
-        // 否则，将 v 作为函数体，创建一个以 params 为参数的函数
-        fn = new Function(...params, v);
-      }
-    }
-    return fn;
   }
 
   /**
