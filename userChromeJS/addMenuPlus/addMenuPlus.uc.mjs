@@ -28,7 +28,7 @@ import { syncify } from "./000-syncify.sys.mjs";
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     const onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     const enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    const enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+    const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
     const enableConvertHiddenStyleToAttribue = false; // 将隐藏元素的样式转换为属性
 
@@ -527,7 +527,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                             if (gContextMenu.onTextInput) state.push("input");
                             if (gContextMenu.isContentSelected || gContextMenu.isTextSelected) state.push("select");
-                            if (gContextMenu.onLink || !$('#context-openlinkincurrent').attr('hidden')) {
+                            if (gContextMenu.onLink ) {
                                 state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
                             }
                             if (gContextMenu.onCanvas) state.push("canvas image");
