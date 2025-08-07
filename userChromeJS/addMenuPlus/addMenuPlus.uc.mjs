@@ -22,13 +22,13 @@
 // ==/UserScript==
 import { $, $$ } from "./000-$.sys.mjs";
 import { syncify } from "./000-syncify.sys.mjs";
-(async (css, getURLSpecFromFile, loadText, versionGE, shouldSetIcon, isDef) => {
+(async (css, getURLSpecFromFile, loadText, versionGE, shouldSetIcon, isDef, isFirefoxSupportedImageMime) => {
     if (typeof window === 'undefined') return;
 
     const enableFileRefreshing = false; // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
     const onshowinglabelMaxLength = 15; // 通过 onshowinglabel 设置标签的标签最大长度
     const enableidentityBoxContextMenu = true; // 启用 SSL 状态按钮右键菜单
-    const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
+    const enableContentAreaContextMenuCompact = true; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
     const enableConvertHiddenStyleToAttribue = false; // 将隐藏元素的样式转换为属性
 
@@ -893,7 +893,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 addMenu.rebuild();
             }
         },
-                rebuild: async function (isAlert) {
+        rebuild: async function (isAlert) {
             const aFile = this.FILE;
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
                 console.log(lprintf("config file not exists", aFile ? aFile.path : "null"));
@@ -908,7 +908,7 @@ import { syncify } from "./000-syncify.sys.mjs";
              * 递归函数，用于展开所有 include 并构建源码和地图
              * @param {nsIFile} file - 当前要处理的文件对象
              */
-            function expandIncludes(file) {
+            function expandIncludes (file) {
                 if (processedFiles.has(file.path)) {
                     // 防止无限循环
                     return;
@@ -916,10 +916,10 @@ import { syncify } from "./000-syncify.sys.mjs";
                 processedFiles.add(file.path);
 
                 let content = loadText(file.path) || '';
-                
+
                 // 正则表达式，用于匹配 include('path/to/file.js');
-                const includeRegex = /\binclude\s*\(\s*['"]([^'"]+)['"]\s*\);?/g;
-                
+                const includeRegex = /^\s*include\s*\(\s*['"]([^'"]+)['"]\s*\);?/gm;
+
                 let lastIndex = 0;
                 let match;
 
@@ -929,7 +929,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     if (codeSegment.trim()) {
                         finalCode += codeSegment;
                     }
-                    
+
                     // b. 递归处理被引用的文件
                     const includedFile = file.parent.clone();
                     includedFile.appendRelativePath(match[1]);
@@ -989,10 +989,10 @@ import { syncify } from "./000-syncify.sys.mjs";
                     }
                 }
             }, this);
-            function ps(item, array) {
+            function ps (item, array) {
                 ("join" in item && "unshift" in item) ? [].push.apply(array, item) : array.push(item);
             }
-            
+
             try {
                 // 从主配置文件开始构建
                 expandIncludes(aFile);
@@ -1609,7 +1609,17 @@ import { syncify } from "./000-syncify.sys.mjs";
                     case "%IMAGE_URL%":
                         return context.imageURL || context.imageInfo.currentSrc || "";
                     case "%IMAGE_BASE64%":
-                        return isDef(context.mediaURL) ? img2base64(context.mediaURL) : img2base64(context.imageURL);
+                        if (isDef(context.mediaURL) && context.mediaURL !== "chrome://global/skin/media/imagedoc-darknoise.png") {
+                            return img2base64(context.mediaURL);
+                        } else if (isDef(context.imageURL) && context.imageURL !== "chrome://global/skin/icons/image-missing.png") {
+                            return img2base64(context.imageURL);
+                        } else {
+                            let imageUrl = addMenu.convertText("%LINK_OR_URL%");
+                            if (imageUrl) {
+                                return img2base64(imageUrl);
+                            }
+                            return "";
+                        }
                     case "%SVG_BASE64%":
                         if (addMenu.ContextMenu.onSvg) {
                             return svg2base64(addMenu.ContextMenu.svgHTML);
@@ -1682,6 +1692,46 @@ import { syncify } from "./000-syncify.sys.mjs";
                 return addresses;
             }
 
+            /**
+             * Checks if the URL is a local file.
+             * 
+             * @param {string} url  
+             * @param {Ci.nsIURI} uri 
+             * @returns boolean
+             */
+            function isLocalFile (url) {
+                try {
+                    const _uri = Services.io.newURI(url);
+                    return _uri.schemeIs("file");
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function toLocalUri (fileUri) {
+                // 移除 file:// 前缀
+                let path = fileUri.replace(/^file:\/\/(localhost)?/, '');
+
+                // 解码 URL 编码的字符（如 %20 转换为空格）
+                path = decodeURI(path);
+
+                // 移除开头的斜杠（file://localhost/ 后的 /）
+                if (path.startsWith('/')) {
+                    path = path.substring(1);
+                }
+
+                // 检测是否为 Windows 路径（包含驱动器号，如 C:）
+                const isWindows = /^[a-zA-Z]:/.test(path);
+
+                if (isWindows) {
+                    // Windows 路径：保持驱动器号，替换正斜杠为反斜杠
+                    return path.replace(/\//g, '\\');
+                } else {
+                    // 类 Unix 路径：直接返回（已移除开头的 /，符合绝对路径）
+                    return '/' + path;
+                }
+            }
+
             function img2base64 (imgSrc, imgType = "image/png") {
                 if (typeof imgSrc === 'undefined') return "";
                 if (imgSrc.includes("data:")) return imgSrc;
@@ -1690,7 +1740,11 @@ import { syncify } from "./000-syncify.sys.mjs";
                 }
 
                 return syncify(() => {
-                    return new Promise((resolve) => {
+                    return new Promise(async (resolve) => {
+                        if (isLocalFile(imgSrc)) {
+                            let data = await IOUtils.read(toLocalUri(imgSrc));
+                            imgSrc = "data:image/png;base64," + btoa(String.fromCharCode(...data));
+                        }
                         const NSURI = "http://www.w3.org/1999/xhtml";
                         const img = new Image();
 
@@ -1840,6 +1894,36 @@ import { syncify } from "./000-syncify.sys.mjs";
 
             clipboard.setData(trans, null, Components.interfaces.nsIClipboard.kGlobalClipboard);
             return true;
+        },
+        copyImage: function (base64URI, imageMime) {
+            // https://searchfox.org/mozilla-central/rev/d5ed9df049e40f12d058a5b7c2f3451ed778163b/devtools/client/shared/screenshot.js#293-325
+            if (!(/^data:(?:image\/(jpeg|png|gif|bmp|webp|svg|ico|x-jxl|x-jxlp))|(x-icon);base64,/i.test(base64URI))) return;
+            if (!isFirefoxSupportedImageMime(imageMime)) return;
+            try {
+                const imageTools = Cc["@mozilla.org/image/tools;1"].getService(
+                    Ci.imgITools
+                );
+                const base64Data = base64URI.split(";base64,")[1];
+                const image = atob(base64Data);
+                const img = imageTools.decodeImageFromBuffer(
+                    image,
+                    image.length,
+                    imageMime
+                );
+                const transferable = Cc[
+                    "@mozilla.org/widget/transferable;1"
+                ].createInstance(Ci.nsITransferable);
+                transferable.init(null);
+                transferable.addDataFlavor(imageMime);
+                transferable.setTransferData(imageMime, img);
+                Services.clipboard.setData(
+                    transferable,
+                    null,
+                    Services.clipboard.kGlobalClipboard
+                );
+            } catch (e) {
+                this.error(e);
+            }
         },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
@@ -2172,7 +2256,19 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
 }, v => {
     return Services.vc.compare(Services.appinfo.version, v) >= 0;
 }, menu => menu.matches(".menuitem-iconic, .menu-iconic"),
-    v => v !== undefined && v !== null);
+    v => v !== undefined && v !== null, mime => {
+        const firefoxSupportedImageMimes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/bmp',
+            'image/webp',
+            'image/svg+xml',
+            'image/vnd.microsoft.icon', // .ico
+            'image/jxl', // JPEG XL
+        ];
+        return firefoxSupportedImageMimes.includes(mime.toLowerCase());
+    });
 export { AddMenuChild, AddMenuParent };
 class AddMenuChild extends JSWindowActorChild {
     handleEvent (event) {
