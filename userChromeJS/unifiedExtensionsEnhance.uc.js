@@ -4,7 +4,6 @@
 // @author          Ryan
 // @include         main
 // @version         0.2.8
-// @sandbox         true
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
@@ -257,6 +256,30 @@
                 return;
             }
 
+            let sb = window.userChrome_js?.sb;
+            if (!sb) {
+                sb = Cu.Sandbox(window, {
+                    sandboxPrototype: window,
+                    sameZoneAs: window,
+                });
+
+                /* toSource() is not available in sandbox */
+                Cu.evalInSandbox(`
+                    Function.prototype.toSource = window.Function.prototype.toSource;
+                    Object.defineProperty(Function.prototype, "toSource", {enumerable : false})
+                    Object.prototype.toSource = window.Object.prototype.toSource;
+                    Object.defineProperty(Object.prototype, "toSource", {enumerable : false})
+                    Array.prototype.toSource = window.Array.prototype.toSource;
+                    Object.defineProperty(Array.prototype, "toSource", {enumerable : false})
+                `, sb);
+                window.addEventListener("unload", () => {
+                    setTimeout(() => {
+                        Cu.nukeSandbox(sb);
+                    }, 0);
+                }, { once: true });
+            }
+            this.sb = sb;
+
             this.sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
 
             gUnifiedExtensions.panel;
@@ -265,10 +288,10 @@
             if (origBtn) origBtn.addEventListener('click', this.openAddonsMgr);
 
             this.togglePanel = gUnifiedExtensions.togglePanel.toString();
-            eval("gUnifiedExtensions.togglePanel = " + this.togglePanel.toString().replace("async togglePanel", "async function").replace("!this.hasExtensionsInPanel()", "false"));
+            Cu.evalInSandbox("gUnifiedExtensions.togglePanel = " + this.togglePanel.toString().replace("async togglePanel", "async function").replace("!this.hasExtensionsInPanel()", "false"), sb);
 
             this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
-            eval("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"));
+            Cu.evalInSandbox("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"), sb);
 
             // 增加启用所有
             view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.ENABLE_ALL_ADDONS));
@@ -415,7 +438,7 @@
                         break;
                     case "up":
                     case "down":
-                        let moveWidget = eval('(' + gUnifiedExtensions.moveWidget.toString().replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "function moveWidget") + ')');
+                        let moveWidget = Cu.evalInSandbox('(' + gUnifiedExtensions.moveWidget.toString().replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "function moveWidget") + ')', this.sb);
                         moveWidget(event.target, uniAction);
                         break;
                     case "copy-id":
