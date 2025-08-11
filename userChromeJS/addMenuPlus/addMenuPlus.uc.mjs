@@ -486,10 +486,12 @@ import { syncify } from "./000-syncify.sys.mjs";
             delete window.addMenu;
         },
         getActor: function (browser = gBrowser.selectedBrowser, name = "AddMenu") {
-            return browser.browsingContext.currentWindowGlobal.getActor(name);
+            try {
+                return browser.browsingContext.currentWindowGlobal.getActor(name);
+            } catch (e) { }
         },
         sendAsyncMessage: function (key, data = {}, browser = gBrowser.selectedBrowser) {
-            return this.getActor(browser).sendAsyncMessage(key, data);
+            return this.getActor(browser)?.sendAsyncMessage(key, data);
         },
         handleEvent: async function (event) {
             const { type, target, button } = event;
@@ -527,7 +529,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                             if (gContextMenu.onTextInput) state.push("input");
                             if (gContextMenu.isContentSelected || gContextMenu.isTextSelected) state.push("select");
-                            if (gContextMenu.onLink ) {
+                            if (gContextMenu.onLink || gContextMenu.onTextLink) {
                                 state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
                             }
                             if (gContextMenu.onCanvas) state.push("canvas image");
@@ -1605,7 +1607,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     case "%IMAGE_TITLE%":
                         return context.target.title || "";
                     case "%I":
-                        return context.imageURL || context.imageInfo.currentSrc || "";
+                        return context.imageURL || context?.imageInfo?.currentSrc || "";
                     case "%IMAGE_URL%":
                         let imgUrl = context.imageURL || context.imageInfo?.currentSrc || "";
                         if (imgUrl && imgUrl !== "chrome://global/skin/media/imagedoc-darknoise.png") {
@@ -1615,10 +1617,12 @@ import { syncify } from "./000-syncify.sys.mjs";
                         if (isImageUrl(imgUrl)) return imgUrl;
                         return "";
                     case "%IMAGE_BASE64%":
-                        if (isDef(context.mediaURL) && context.mediaURL !== "chrome://global/skin/media/imagedoc-darknoise.png") {
+                        if (isDef(context.mediaURL) && context.mediaURL !== "" && context.mediaURL !== "chrome://global/skin/media/imagedoc-darknoise.png") {
                             return img2base64(context.mediaURL);
-                        } else if (context.imageInfo?.currentSrc !== "chrome://global/skin/icons/image-missing.png") {
+                        } else if (context.imageInfo?.currentSrc && context.imageInfo.currentSrc !== "chrome://global/skin/icons/image-missing.png") {
                             return img2base64(context.imageInfo.currentSrc);
+                        } else if (addMenu.ContextMenu.onSvg) {
+                            return svg2base64(addMenu.ContextMenu.svgHTML);
                         } else {
                             let imageUrl = addMenu.convertText("%LINK_OR_URL%");
                             if (isImageUrl(imageUrl)) {
@@ -1787,6 +1791,8 @@ import { syncify } from "./000-syncify.sys.mjs";
                     const input = channel.open();
                     svgSrc = NetUtil.readInputStreamToString(input, input.available());
                     input.close();
+                } else {
+                    return "";
                 }
                 const encoder = new TextEncoder();
                 const data = encoder.encode(svgSrc);
