@@ -23,3 +23,7 @@
 ### material_fox_updated_fix.ag.css
 
 这是修复 [material_fox_updated](github.com/edelvarden/material-fox-updated)主题的 CSS，仅适用于 [e3kskoy7wqk/Firefox-for-windows-7](https://github.com/e3kskoy7wqk/Firefox-for-windows-7)
+
+### search_jumper_beauty.css
+
+搜索酱右键菜单美化，需要配合[我的配置](https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/UserConfig/searchJumper.json)使用。
