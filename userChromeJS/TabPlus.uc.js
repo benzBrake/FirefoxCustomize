@@ -28,6 +28,7 @@
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.0 修复开启右键关闭标签页的功能后无法打开标签右键菜单的问题
 // @note            1.0.9 增加选项 browser.tabs.openNewTabInContainer (布尔值) 新标签页在当前标签页的相同容器中打开
 // @note            1.0.8 重写，去除内嵌菜单，不再使用模块化，大幅度减少代码量，不再支持 destroy 方法，不再兼容 Tab Mix Plus 扩展
 // @note            1.0.7 适配新版 userChrome.js @async 注解，去除无用 CSS 加载代码
@@ -173,7 +174,7 @@
                         case 'closetab':
                             if (!tab) return;
                             if ((prefs.getBoolPref("browser.tabs.closeTabByDblclick", false) && b === 0 && dblclick)
-                                || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2)) {
+                                || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2 && !event.ctrlKey && !event.shiftKey)) {
                                 event.preventDefault();
                                 event.stopPropagation();
                                 // 在移除标签之前调用禁用函数，因为移除后 tab 对象可能无效
