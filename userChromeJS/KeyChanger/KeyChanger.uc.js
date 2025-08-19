@@ -170,8 +170,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             if (!str) return null;
 
             // 在沙箱中执行配置文件，以隔离作用域并获取配置对象
-            const sandbox = new Components.utils.Sandbox(new XPCNativeWrapper(window));
-            const keys = Components.utils.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
+            const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
+            const keys = Cu.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
             if (!keys) return null;
 
             const dFrag = document.createDocumentFragment();
@@ -232,7 +232,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                         elem.addEventListener('command', (event) => {
                             // event.target 在某些情况下可能为 undefined，使用 event.currentTarget 更稳定
                             const commandTarget = event.currentTarget || event.target;
-                            eval('(' + commandTarget.dataset.oncommand + ')(window, event)');
+                            Cu.evalInSandbox('(' + commandTarget.dataset.oncommand + ')(window, event)', KeyChanger.sb);
                         });
                 }
                 dFrag.appendChild(elem);
@@ -478,6 +478,28 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          * 脚本初始化入口
          */
         init: function () {
+            let sb = window.userChrome_js?.sb;
+            if (!sb) {
+                sb = Cu.Sandbox(window, {
+                    sandboxPrototype: window,
+                    sameZoneAs: window,
+                });
+                /* toSource() is not available in sandbox */
+                Cu.evalInSandbox(`
+                    Function.prototype.toSource = window.Function.prototype.toSource;
+                    Object.defineProperty(Function.prototype, "toSource", {enumerable : false})
+                    Object.prototype.toSource = window.Object.prototype.toSource;
+                    Object.defineProperty(Object.prototype, "toSource", {enumerable : false})
+                    Array.prototype.toSource = window.Array.prototype.toSource;
+                    Object.defineProperty(Array.prototype, "toSource", {enumerable : false})
+                `, sb);
+                window.addEventListener("unload", () => {
+                    setTimeout(() => {
+                        Cu.nukeSandbox(sb);
+                    }, 0);
+                }, { once: true });
+            }
+            this.sb = sb;
             this.createMenuitem();
             this.makeKeyset();
             this.addEventListener();
@@ -597,7 +619,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         close: {
             current: function () { gBrowser.removeTab(gBrowser.selectedTab); },
             all: function () { gBrowser.removeTabs(gBrowser.tabs); },
-            other: function () { gBrowser.removeAllTabsBut(gBrowser.selectedTab); }
+            other: function () { gBrowser.removeAllTabsBut(gBrowser.selectedTab); },
+            toEnd: function () { gBrowser.removeTabsToTheEndFrom(gBrowser.selectedTab); },
+            toStart: function () { gBrowser.removeTabsToTheStartFrom(gBrowser.selectedTab); },
         },
         pin: {
             current: function () { gBrowser.pinTab(gBrowser.selectedTab); },
@@ -612,6 +636,13 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                 const tab = gBrowser.selectedTab;
                 if (tab.pinned) gBrowser.unpinTab(tab);
                 else gBrowser.pinTab(tab);
+            }
+        },
+        undo: function () {
+            try {
+                undoCloseTab();
+            } catch (ex) {
+                $('History:UndoCloseTab').doCommand();
             }
         },
         prev: function () { gBrowser.tabContainer.advanceSelectedTab(-1, true); },
