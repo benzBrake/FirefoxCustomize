@@ -233,10 +233,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             createBasicPopup: function (doc) {
                 let menupopup = createElement(doc, 'menupopup', { class: 'owh-popup', 'need-reload': true });
                 menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchromejs/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: function (event) { OpenWithHelper.openSaveDir(event); } }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: function (event) { OpenWithHelper.changeSaveDir(event); } }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchromejs/content/utils/ManageApps.html', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
                 return menupopup;
             },
             reload (isAlert = false) {
@@ -281,7 +281,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         app.exec = handleRelativePath(exec);
                     }
                     if (typeof oncommand === "undefined") {
-                        app.oncommand = 'OpenWithHelper.onCommand(event);';
+                        app.oncommand = function (event) {
+                            OpenWithHelper.onCommand(event);
+                        }
                     }
                     Object.assign(app, { label, dynamic: true });
                     let menuitem = createElement(doc, 'menuitem', app);
@@ -737,11 +739,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         function applyAttr (e, o = {}, s = []) {
             for (let [k, v] of Object.entries(o)) {
                 if (s.includes(k)) continue;
-                if (k.startsWith('on')) {
-                    const fn = typeof v === "function" ? v : function (event) {
-                        eval(v)
-                    };
-                    e.addEventListener(k.slice(2), fn, false);
+                if (k.startsWith('on') && typeof v === 'function') {
+                    e.addEventListener(k.slice(2), v, false);
                 } else {
                     e.setAttribute(k, v);
                 }
