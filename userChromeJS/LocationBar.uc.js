@@ -3,16 +3,19 @@
 // @description     地址栏内工具栏
 // @license         MIT License
 // @compatibility   Firefox 107
-// @version         0.0.3
+// @version         0.0.4
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            2025-08-26 增加固定扩展按钮到地址栏内工具栏的功能
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
 (function (css) {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const MENU_LABEL = "地址栏快捷工具";
+    const PIN_ADDON_BUTTON_TO_LOCATION_BAR = false; // 是否默认将扩展按钮固定到地址栏
+    const PIN_ADDON_BUTTON_TO_LOCATION_BAR_START = true; // 是否固定扩展按钮到地址栏开始处
 
     window.LocationBar = {
         delayedInit: function () {
@@ -87,6 +90,21 @@
                     LocationBar.hide();
                 }
             });
+
+            if (PIN_ADDON_BUTTON_TO_LOCATION_BAR) {
+                this.ORIGINAL_PIN_FN = gUnifiedExtensions.pinToToolbar;
+                gUnifiedExtensions.pinToToolbar = function (widgetId, shouldPinToToolbar) {
+                    let newArea = shouldPinToToolbar
+                        ? "location-bar"
+                        : CustomizableUI.AREA_ADDONS;
+                    let newPosition = 0;
+                    if (!PIN_ADDON_BUTTON_TO_LOCATION_BAR_START && shouldPinToToolbar) {
+                        newPosition = undefined;
+                    }
+                    CustomizableUI.addWidgetToArea(widgetId, newArea, newPosition);
+                }
+            }
+
             window.addEventListener("beforecustomization", this, false);
             window.addEventListener("aftercustomization", this, false);
         },
@@ -163,12 +181,11 @@
     padding: var(--toolbarbutton-inner-padding) !important;
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover {
-    background-color: var(--urlbar-box-hover-bgcolor, var(--button-background-color-hover));
+    background-color: var(--urlbar-box-hover-bgcolor);
     color: var(--urlbar-box-hover-text-color);
 }
-:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover:active,
-:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1[open] {
-    background-color: var(--urlbar-box-active-bgcolor, var(--toolbarbutton-active-background));
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover:active {
+    background-color: var(--urlbar-box-active-bgcolor);
     color: var(--urlbar-box-hover-text-color);
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
