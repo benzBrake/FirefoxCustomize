@@ -18,7 +18,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           0.3.0 ESMifying
+// @note           20250827 Fx142 菜单图标异常
+// @note           0.3.0 ESMified
 // ==/UserScript==
 import { $, $$ } from "./000-$.sys.mjs";
 import { syncify } from "./000-syncify.sys.mjs";
@@ -305,6 +306,9 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
 
             // 增加样式
+            if (versionGE("143a1")) {
+                css = css.replaceAll('list-style-image', '--menuitem-icon')
+            }
             this.style = addStyle(css);
 
             await this.rebuild();
@@ -1041,9 +1045,13 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
 
             this.style2?.destroy();
-            if (sandbox._css.length)
-                this.style2 = addStyle(`@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")\n@namespace html url("http://www.w3.org/1999/xhtml");\n${sandbox._css.join('\n')}`, 'AGENT_SHEET');
-
+            if (sandbox._css.length) {
+                let css = sandbox._css.join('\n');
+                if (versionGE("143a1")) {
+                    css = css.replaceAll('list-style-image', '--menuitem-icon')
+                }
+                this.style2 = addStyle(`@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")\n@namespace html url("http://www.w3.org/1999/xhtml");\n${css}`, 'AGENT_SHEET');
+            }
             this.undoMods();
             this.removeMenuitem();
             this.customShowings = [];
@@ -1744,7 +1752,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
             function img2base64 (imgSrc, imgType = "image/png") {
                 if (typeof imgSrc === 'undefined') return "";
-                if (imgSrc.includes("data:")) return imgSrc;
+                if (imgSrc.startsWith("data:")) return imgSrc;
                 if (imgSrc.includes("<svg") || /\.(svg|SVG)$/i.test(imgSrc)) {
                     return svg2base64(imgSrc);
                 }
@@ -1782,7 +1790,16 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
 
             function svg2base64 (svgSrc) {
-                if (/^(https?:\/\/|ftp:\/\/|chrome:\/\/|resource:\/\/|\/\/)/.test(svgSrc)) {
+                if (isLocalFile(svgSrc)) {
+                    svgSrc = syncify(() => {
+                        return new Promise(async (resolve) => {
+                            let data = await IOUtils.readUTF8(toLocalUri(svgSrc));
+                            let encoder = new TextEncoder();
+                            let dataArray = encoder.encode(data);
+                            resolve("data:image/svg+xml;base64," + btoa(String.fromCharCode(...dataArray)));
+                        });
+                    });
+                } else if (/^(https?:\/\/|ftp:\/\/|chrome:\/\/|resource:\/\/|\/\/)/.test(svgSrc)) {
                     // 使用 NetUtil 读取 SVG 文件内容
                     const channel = NetUtil.newChannel({
                         uri: Services.io.newURI(svgSrc),
@@ -1791,6 +1808,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     const input = channel.open();
                     svgSrc = NetUtil.readInputStreamToString(input, input.available());
                     input.close();
+                } else if (svgSrc.startsWith("<svg")) {
                 } else {
                     return "";
                 }
