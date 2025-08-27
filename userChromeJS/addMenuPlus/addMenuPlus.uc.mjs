@@ -307,7 +307,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
             // 增加样式
             if (versionGE("143a1")) {
-                css = css.replaceAll('list-style-image', '--menuitem-icon')
+                css = css.replaceAll('list-style-image', '--menuitem-icon');
             }
             this.style = addStyle(css);
 
@@ -2120,7 +2120,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
     function setImage (menu, imageUrl) {
         if (imageUrl) {
-            if (enableConvertImageAttrToListStyleImage) {
+            if (enableConvertImageAttrToListStyleImage && !versionGE("143a1")) {
                 menu.style.listStyleImage = `url(${imageUrl})`;
                 menu.removeAttribute("image");
             } else {
