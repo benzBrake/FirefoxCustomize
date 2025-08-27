@@ -1,18 +1,19 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.3
+// @version        1.0.4
 // @author         Ryan
 // @include        main
 // @sandbox        true
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.4 修复 Fx143 图标显示异常
 // @note           1.0.3 增加选择目录功能
 // @note           1.0.2 增加选择目录参数，修复选项打不开的问题
 // @note           1.0.1 修复
 // ==/UserScript==
 if (location.href.startsWith("chrome://browser/content/browser.x")) {
-    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, GE_90 /* 版本号大于等于 90 */, syncify) {
+    (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, versionGE /* 版本号大于等于 */, syncify) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
         window.OpenWithHelper = {
@@ -87,7 +88,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             },
             init: async function () {
                 this.initRegexp();
-                var pi = document.createProcessingInstruction(
+                if (versionGE("143a1")) {
+                    CSS = CSS.replaceAll('list-style-image', '--menuitem-icon');
+                    CSS = `#OpenWithHelper-Btn { list-style-image: var(--menuitem-icon); }\n` + CSS;
+                }
+                let pi = document.createProcessingInstruction(
                     'xml-stylesheet',
                     'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(CSS) + '"'
                 );
@@ -233,10 +238,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             createBasicPopup: function (doc) {
                 let menupopup = createElement(doc, 'menupopup', { class: 'owh-popup', 'need-reload': true });
                 menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: function (event) { OpenWithHelper.openSaveDir(event); } }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: function (event) { OpenWithHelper.changeSaveDir(event); } }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchromejs/content/utils/ManageApps.html', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: "OpenWithHelper.openSaveDir(event);" }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: "OpenWithHelper.changeSaveDir(event);" }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchromejs/content/utils/ManageApps.html', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: 'OpenWithHelper.onCommand(event);' }));
                 return menupopup;
             },
             reload (isAlert = false) {
@@ -281,9 +286,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         app.exec = handleRelativePath(exec);
                     }
                     if (typeof oncommand === "undefined") {
-                        app.oncommand = function (event) {
-                            OpenWithHelper.onCommand(event);
-                        }
+                        app.oncommand = 'OpenWithHelper.onCommand(event);';
                     }
                     Object.assign(app, { label, dynamic: true });
                     let menuitem = createElement(doc, 'menuitem', app);
@@ -614,11 +617,23 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         menu.setAttribute("disabled", "true");
                     } else if (aFile.isFile()) {
                         let fileURL = getURLSpecFromFile(aFile);
-                        menu.style.listStyleImage = `url("moz-icon://${fileURL}?size=16")`;
+                        setImageCSS(menu, `url("moz-icon://${fileURL}?size=16")`);
                     } else {
-                        menu.style.listStyleImage = `url("chrome://global/skin/icons/folder.svg")`;
+                        setImageCSS(menu, `url("chrome://global/skin/icons/folder.svg"`)
                     }
                     return;
+                }
+
+                function setImageCSS (menu, cssValue) {
+                    if (!cssValue) {
+                        menu.classList.remove("menu-iconic");
+                        menu.classList.remove("menuitem-iconic");
+                    }
+                    if (versionGE("143a1")) {
+                        menu.style.setProperty('--menuitem-icon', cssValue);
+                    } else {
+                        menu.style.setProperty('list-style-image', cssValue);
+                    }
                 }
 
                 var setIconCallback = function (url) {
@@ -739,8 +754,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         function applyAttr (e, o = {}, s = []) {
             for (let [k, v] of Object.entries(o)) {
                 if (s.includes(k)) continue;
-                if (k.startsWith('on') && typeof v === 'function') {
-                    e.addEventListener(k.slice(2), v, false);
+                if (k.startsWith('on')) {
+                    const fn = typeof v === "function" ? v : function (event) {
+                        eval(v)
+                    };
+                    e.addEventListener(k.slice(2), fn, false);
                 } else {
                     e.setAttribute(k, v);
                 }
@@ -928,7 +946,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 .owh-popup menuitem.settings {
     list-style-image:url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB0cmFuc2Zvcm09InNjYWxlKDEuMDUpIj4NCiAgPHBhdGggZmlsbD0iIzMyQkVBNiIgZD0iTTUwNC4xLDI1NkM1MDQuMSwxMTksMzkzLDcuOSwyNTYsNy45QzExOSw3LjksNy45LDExOSw3LjksMjU2QzcuOSwzOTMsMTE5LDUwNC4xLDI1Niw1MDQuMUMzOTMsNTA0LjEsNTA0LjEsMzkzLDUwNC4xLDI1NnoiIC8+DQogIDxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik00MTYuMiwyNzUuM3YtMzguNmwtMzYuNi0xMS41Yy0zLjEtMTIuNC04LTI0LjEtMTQuNS0zNC44bDE3LjgtMzQuMUwzNTUuNiwxMjlsLTM0LjIsMTcuOGMtMTAuNi02LjQtMjIuMi0xMS4yLTM0LjYtMTQuM2wtMTEuNi0zNi44aC0zOC43bC0xMS42LDM2LjhjLTEyLjMsMy4xLTI0LDcuOS0zNC42LDE0LjNMMTU2LjQsMTI5TDEyOSwxNTYuNGwxNy44LDM0LjFjLTYuNCwxMC43LTExLjQsMjIuMy0xNC41LDM0LjhsLTM2LjYsMTEuNXYzOC42bDM2LjQsMTEuNWMzLjEsMTIuNSw4LDI0LjMsMTQuNSwzNS4xTDEyOSwzNTUuNmwyNy4zLDI3LjNsMzMuNy0xNy42YzEwLjgsNi41LDIyLjcsMTEuNSwzNS4zLDE0LjZsMTEuNCwzNi4yaDM4LjdsMTEuNC0zNi4yYzEyLjYtMy4xLDI0LjQtOC4xLDM1LjMtMTQuNmwzMy43LDE3LjZsMjcuMy0yNy4zbC0xNy42LTMzLjhjNi41LTEwLjgsMTEuNC0yMi42LDE0LjUtMzUuMUw0MTYuMiwyNzUuM3ogTTI1NiwzNDAuOGMtNDYuNywwLTg0LjYtMzcuOS04NC42LTg0LjZjMC00Ni43LDM3LjktODQuNiw4NC42LTg0LjZjNDYuNywwLDg0LjUsMzcuOSw4NC41LDg0LjZDMzQwLjUsMzAzLDMwMi43LDM0MC44LDI1NiwzNDAuOHoiIC8+DQo8L3N2Zz4=);
 }
-#tabContextMenu[photoncompact="true"] #OpenWithHelper-Tab-Menu > :is(.menu-iconic-left, .menu-icon),
+#tabContextMenu[photoncompact="true"] #OpenWithHelper-Tab-Menu > .menu-iconic-left,
 #OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]:not([condition~="tab"]),
 #OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="notab"],
 #OpenWithHelper-Ctx-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition],
@@ -957,7 +975,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         return PATHS;
     })(), PathUtils.join(PathUtils.profileDir, "chrome",
         ...(Services.prefs.getStringPref("userChromeJS.OpenWithHelper.FILE_PATH", "_openwith.json").replace(/\\/g, "/").split("/"))),
-        Services.vc.compare(Services.appinfo.version, "89.0.2"),
+        v => {
+            return Services.vc.compare(Services.appinfo.version, v) >= 0;
+        },
         function (promiser) {
             // promiser 是一个无参函数，返回 Promise
             // 例如：() => OpenWithHelper.selectDirectory("choose-directory")
