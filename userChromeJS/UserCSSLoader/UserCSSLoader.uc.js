@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.5r5
+// @version        0.0.5r6
 // @charset        UTF-8
+// @note           0.0.5r6 修正 Fx143 中菜单图标显示
 // @note           0.0.5r5 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note           0.0.5r4 新增 Alt+R 重载所有样式
 // @note           0.0.5r3 修正翻译问题
@@ -36,7 +37,7 @@ about:config
 "userChromeJS.UserCSSLoader.showInToolsMenu" 显示在工具菜单中，开发中，不可用 (true/false， 默认为 false)
 
  **** 説明終わり ****/
-(async function (css) {
+(async function (css, versionGE) {
   const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
   const CustomizableUI = globalThis.CustomizableUI || ChromeUtils.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
 
@@ -56,14 +57,6 @@ about:config
     2: {
       name: "AUTHOR_SHEET",
       ext: ".css",
-    }
-  }
-
-  const runJS = (code, sandbox = window) => {
-    try {
-      Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
-    } catch (e) {
-      console.error(e);
     }
   }
 
@@ -101,6 +94,10 @@ about:config
     },
 
     get STYLE () {
+      if (versionGE("143a1")) {
+        css = css.replaceAll("list-style-image", "--menuitem-icon");
+        css = `#{BTN_ID} > .toolbarbutton-icon { list-style-image: var(--menuitem-icon); }` + css;
+      }
       delete this.STYLE;
       return this.STYLE = {
         url: makeURI("data:text/css;charset=utf-8," + encodeURIComponent(css.replaceAll("{BTN_ID}", this.BTN_ID))),
@@ -266,7 +263,6 @@ about:config
 
       [{
         label: !this.prefs.getBoolPref("allDisabled", false) ? MESSAGES.format('ucl-enabled') : MESSAGES.format('ucl-disabled'),
-        class: "menuitem menuitem-iconic",
         type: "checkbox",
         oncommand: function (event) {
           const { UserCSSLoader: ucl } = window;
@@ -280,25 +276,25 @@ about:config
       }, {}, {
         label: "Reload all styles",
         'data-l10n-id': 'ucl-reload-all-styles',
-        class: "menuitem menuitem-iconic",
+        class: "menuitem",
         oncommand: function (event) {
           window.UserCSSLoader.rebuild();
         }
       }, {
         label: "Open Style Folder",
         'data-l10n-id': 'ucl-open-style-folder',
-        class: "menuitem menuitem-iconic",
+        class: "menuitem",
         oncommand: function (event) {
           window.UserCSSLoader.openFolder();
         }
       }, {
         label: "Create Style",
         'data-l10n-id': 'ucl-create-style',
-        class: "menu menu-iconic",
+        class: "menu",
         popup: [{
           label: "AUTHOR_SHEET",
           'data-l10n-id': 'ucl-author-sheet',
-          class: "menuitem menuitem-iconic",
+          class: "menuitem",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
             ucl.createStyle(ucl.AUTHOR_SHEET);
@@ -306,7 +302,7 @@ about:config
         }, {
           label: "USER_SHEET",
           'data-l10n-id': 'ucl-user-sheet',
-          class: "menuitem menuitem-iconic",
+          class: "menuitem",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
             ucl.createStyle(ucl.USER_SHEET);
@@ -314,8 +310,7 @@ about:config
         }, {
           label: "AGENT_SHEET",
           'data-l10n-id': 'ucl-agent-sheet',
-          class: "menuitem menuitem-iconic",
-          oncommand: "window.UserCSSLoader.createStyle(window.UserCSSLoader.AGENT_SHEET)",
+          class: "menuitem",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
             ucl.createStyle(ucl.AGENT_SHEET);
@@ -414,7 +409,6 @@ about:config
         let item = createElement(doc, 'menuitem', {
           label: entry.name,
           type: "checkbox",
-          class: "menuitem menuitem-iconic",
           checked: !entry.disabled,
           fullName: entry.fullName,
           css: true,
@@ -1002,21 +996,25 @@ about:config
 #{BTN_ID}.icon-disabled .toolbarbutton-icon {
   filter: grayscale(1);
 }
+#{BTN_ID}-popup menuitem[type="checkbox"] > .menu-icon {
+  display: flex;
+}
 #{BTN_ID}-popup menugroup.ucl-dynamic > .menuitem-iconic {
-    -moz-box-flex: 1;
-    -moz-box-pack: center;
-    -moz-box-align: center;
-    flex-grow: 1;
-    justify-content: center;
-    align-items: center;
-    padding-block: 6px;
-    padding-inline: 1em;
+  -moz-box-flex: 1;
+  -moz-box-pack: center;
+  -moz-box-align: center;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  padding-block: 6px;
+  padding-inline: 1em;
 }
 #{BTN_ID}-popup menugroup.ucl-dynamic > .menuitem-iconic > .menu-iconic-left {
   -moz-appearance: none;
   padding-top: 0;
 }
-#{BTN_ID}-popup menugroup.ucl-dynamic > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
+#{BTN_ID}-popup menugroup.ucl-dynamic > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon,
+#{BTN_ID}-popup menugroup.ucl-dynamic > .menuitem-iconic > .menu-icon {
   display: -moz-box;
   display: flex;
   width: 16px;
@@ -1075,4 +1073,6 @@ about:config
   list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjMiIHJ5PSIzIiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iOCIgeT0iMTEiIGZvbnQtZmFtaWx5PSLpu5HkvZMiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9ImN1cnJlbnRDb2xvciI+VVM8L3RleHQ+Cjwvc3ZnPg==");
   fill: #5b89f6;
 }
-`);
+`, v => {
+  return Services.vc.compare(Services.appinfo.version, v) >= 0;
+});
