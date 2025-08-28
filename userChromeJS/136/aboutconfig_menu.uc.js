@@ -524,6 +524,7 @@
     // --- CSS 样式 ---
     let mainCss = `
         #${MENU_ID} {
+            list-style-image: var(--menuitem-icon) !important;
             --menuitem-icon: url("${MENU_ICON}") !important;
         }
         #${MENU_ID} .toolbarbutton-badge {
@@ -588,6 +589,8 @@
             }
         }
     `;
+
+    
     const mainCssUri = toCssURI(mainCss);
 
     // --- 核心功能函数 ---
