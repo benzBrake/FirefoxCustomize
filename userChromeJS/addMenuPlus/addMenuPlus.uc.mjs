@@ -1147,8 +1147,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 cls.add("subviewbutton");
                 cls.add("subviewbutton-nav");
             } else {
-                if (menuObj.image)
-                    cls.add("menu-iconic");
+                cls.add("menu-iconic");
             }
 
             // 表示 / 非表示の設定
@@ -1308,8 +1307,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             if (isAppMenu) {
                 if (menuitem.localName == "toolbarbutton") cls.add("subviewbutton");
             } else {
-                if (obj.image)
-                    cls.add("menuitem-iconic");
+                cls.add("menuitem-iconic");
             }
             // 表示 / 非表示の設定
             this.setCondition(menuitem, obj, opt);
@@ -2191,6 +2189,9 @@ import { syncify } from "./000-syncify.sys.mjs";
 .addMenu-insert-point,
 toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
     display: none !important;
+}
+.addMenu {
+    list-style-image: url(data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7);
 }
 .addMenu.exec,
 .addMenu[exec] {
