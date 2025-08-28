@@ -37,7 +37,8 @@
       <tbody class="table">
         <tr id="demo-row" class="table-row" draggable="false">
           <td class="application-drag item" style="width: 24px">
-            <div class="drag-handle" title="拖拽排序" onmousedown="gApplicationList.enableDrag(event)">
+            <div class="drag-handle" title="Drag to sort" data-l10n-id="drag-to-sort"
+              onmousedown="gApplicationList.enableDrag(event)">
               <div class="drag-handle-icon"></div>
             </div>
           </td>
@@ -74,71 +75,77 @@
       </tbody>
     </table>
     <div id="condition-description" class="description-table flex flex-col">
-      <label data-l10n-id="application-condition"></label>
+      <label data-l10n-id="application-condition">Condition Description</label>
       <div>
-        通用
+        <span data-l10n-id="fit-for-all">Fit for all</span>
         <ul class="flex flex-wrap list-none cols-3">
-          <li><label>normal</label>默认</li>
-          <li><label>button</label>在按钮菜单展示</li>
-          <li><label>tab</label>在标签菜单展示</li>
+          <li><label>normal</label><span data-l10n-id="condition-default">Default</span></li>
+          <li><label>button</label><span data-l10n-id="condition-button-menu">Show in button menu</span></li>
+          <li><label>tab</label><span data-l10n-id="condition-tab-menu">Show in tab menu</span></li>
         </ul>
       </div>
       <div>
-        针对右键菜单
+        <span data-l10n-id="fit-for-context-menu">Fit for context menu</span>
         <ul class="flex flex-wrap list-none cols-3">
-          <li><label>input</label>输入框右键</li>
-          <li><label>select</label>选中文本右键</li>
-          <li><label>link</label>链接右键</li>
-          <li><label>image</label>图片右键</li>
-          <li><label>media</label>媒体右键</li>
-          <li><label>page</label>页面右键</li>
-          <li><label>frame</label>框架右键</li>
+          <li><label>input</label><span data-l10n-id="context-menu-input">Input context menu</span></li>
+          <li><label>select</label><span data-l10n-id="context-menu-select">Selected text context menu</span></li>
+          <li><label>link</label><span data-l10n-id="context-menu-link">Link context menu</span></li>
+          <li><label>image</label><span data-l10n-id="context-menu-image">Image context menu</span></li>
+          <li><label>media</label><span data-l10n-id="context-menu-media">Media context menu</span></li>
+          <li><label>page</label><span data-l10n-id="context-menu-page">Page context menu</span></li>
+          <li><label>frame</label><span data-l10n-id="context-menu-frame">Frame context menu</span></li>
         </ul>
       </div>
     </div>
     <div id="params-description" class="description-table flex flex-col">
-      <label data-l10n-id="call-params-description-label"></label>
+      <label data-l10n-id="call-params-description-label">Params Description</label>
       <div>
         <ul class="flex flex-wrap list-none cols-3">
-          <li><label>%EOL%</label><span>换行(\\r\\n)</span></li>
-          <li><label>%TITLE%</label><span>当前网页标题</span></li>
-          <li><label>%TITLES%</label><span>简化的当前网页标题</span></li>
-          <li><label>%SEL%</label><span>选取范围内的文字</span></li>
-          <li><label>%URL%</label><span>当前页面网址</span></li>
-          <li>
-            <label>%LINK_OR_URL%</label><span>优先链接地址，否则获取当前网址</span>
+          <li><label>%EOL%</label><span data-l10n-id="param-eol-description">Newline (\\r\\n)</span></li>
+          <li><label>%TITLE%</label><span data-l10n-id="param-title-description">Current page title</span></li>
+          <li><label>%TITLES%</label><span data-l10n-id="param-titles-description">Simplified current page title</span>
           </li>
-          <li><label>%LINK%</label><span>链接地址</span></li>
-          <li><label>%IMAGE_URL%</label><span>图片地址</span></li>
-          <li><label>%IMAGE_TITLE%</label><span>图片标题</span></li>
-          <li><label>%MEDIA_URL%</label><span>媒体地址</span></li>
+          <li><label>%SEL%</label><span data-l10n-id="param-sel-description">Selected text</span></li>
+          <li><label>%URL%</label><span data-l10n-id="param-url-description">Current page URL</span></li>
           <li>
-            <label>%PROFILE_DIR%</label><span>Firefox配置文件夹路径</span>
+            <label>%LINK_OR_URL%</label><span data-l10n-id="param-link-or-url-description">Link URL or current page
+              URL</span>
           </li>
-          <li><label>%SAVE_DIR%</label><span>保存路径（默认桌面）</span></li>
+          <li><label>%LINK%</label><span data-l10n-id="param-link-description">Link URL</span></li>
+          <li><label>%IMAGE_URL%</label><span data-l10n-id="param-image-url-description">Image URL</span></li>
+          <li><label>%IMAGE_TITLE%</label><span data-l10n-id="param-image-title-description">Image title</span></li>
+          <li><label>%MEDIA_URL%</label><span data-l10n-id="param-media-url-description">Media URL</span></li>
+          <li>
+            <label>%PROFILE_DIR%</label><span data-l10n-id="param-profile-dir-description">Firefox profile directory
+              path</span>
+          </li>
+          <li><label>%SAVE_DIR%</label><span data-l10n-id="param-save-dir-description">Save directory (default
+              desktop)</span></li>
           <li>
             <label>%COOKIE%</label><span>key1=value1; key2=value2</span>
           </li>
-          <li><label>%COOKIE_TXT%</label><span>COOKIE 存到临时路径</span></li>
+          <li><label>%COOKIE_TXT%</label><span data-l10n-id="param-cookie-txt-description">COOKIE saved to temporary
+              path</span></li>
           <li>
-            <label>%COOKIES_SQLITE%</label><span>cookies.sqlite 路径</span>
+            <label>%COOKIES_SQLITE%</label><span data-l10n-id="param-cookies-sqlite-description">cookies.sqlite
+              cookies.sqlite path</span>
           </li>
           <li>
-            <label>%CHOOSE_DIR%</label><span>选择目录</span>
+            <label>%CHOOSE_DIR%</label><span data-l10n-id="param-choose-dir-description">Choose directory</span>
           </li>
           <li>
-            <label>%CLIPBOARD%</label><span>剪贴板内容</span>
+            <label>%CLIPBOARD%</label><span>Clipboard content</span>
           </li>
-          <li><label>更多的自己翻源码</label><span></span></li>
+          <li><label></label><span data-l10n-id="param-more-info">More info in source code</span></li>
         </ul>
       </div>
     </div>
     <div id="operate-toolbar" class="flex flex-center gap-2">
       <button class="btn-flat btn-margin" data-l10n-id="add-application"
-        onclick="gApplicationList.addApplication(event)"></button>
+        onclick="gApplicationList.addApplication(event)">Add application</button>
       <button class="btn-flat btn-margin" data-l10n-id="add-separator"
-        onclick="gApplicationList.addSeparator(event)"></button>
-      <button class="btn-flat btn-margin" data-l10n-id="save" onclick="gApplicationList.save(event)"></button>
+        onclick="gApplicationList.addSeparator(event)">Add separator</button>
+      <button class="btn-flat btn-margin" data-l10n-id="save" onclick="gApplicationList.save(event)">Save</button>
     </div>
   </div>
   <style>
