@@ -1147,7 +1147,8 @@ import { syncify } from "./000-syncify.sys.mjs";
                 cls.add("subviewbutton");
                 cls.add("subviewbutton-nav");
             } else {
-                cls.add("menu-iconic");
+                if (menuObj.image)
+                    cls.add("menu-iconic");
             }
 
             // 表示 / 非表示の設定
@@ -1307,7 +1308,8 @@ import { syncify } from "./000-syncify.sys.mjs";
             if (isAppMenu) {
                 if (menuitem.localName == "toolbarbutton") cls.add("subviewbutton");
             } else {
-                cls.add("menuitem-iconic");
+                if (obj.image)
+                    cls.add("menuitem-iconic");
             }
             // 表示 / 非表示の設定
             this.setCondition(menuitem, obj, opt);
