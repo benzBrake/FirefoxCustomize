@@ -248,6 +248,27 @@
                 { val: true },
             ]
         },
+        {
+            name: "窗口开启 Mica 效果",
+            pref: "widget.windows.mica",
+            image: "resource:///chrome/browser/skin/classic/browser/window.svg",
+            type: prefs.PREF_BOOL,
+            defaultVal: false,
+            possibleVals: [
+                { val: false },
+                { val: true },
+            ]
+        },
+        {
+            name: "右键菜单开启 Mica 效果",
+            pref: "widget.windows.mica.popups",
+            image: "resource:///chrome/browser/skin/classic/browser/menu.svg",
+            type: prefs.PREF_INT,
+            possibleVals: [
+                { val: 0, name: "0 - 关闭" },
+                { val: 2, name: "2 - 开启 (默认)" },
+            ]
+        },
         "seperator",
         {
             name: "禁用 IPv6",
@@ -496,14 +517,14 @@
 
 
     // --- 初始化和模块加载 ---
-    const { CustomizableUI } = ChromeUtils.importESModule("resource:///modules/CustomizableUI.sys.mjs");
+    const { CustomizableUI } = globalThis || ChromeUtils.importESModule("resource:///modules/CustomizableUI.sys.mjs");
     const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
 
     // --- CSS 样式 ---
-    const mainCss = `
+    let mainCss = `
         #${MENU_ID} {
-            list-style-image: url("${MENU_ICON}") !important;
+            --menuitem-icon: url("${MENU_ICON}") !important;
         }
         #${MENU_ID} .toolbarbutton-badge {
             background-color: #009f00 !important;
@@ -531,37 +552,32 @@
             & > menu {
                 position: relative;
 
-                &:not(:has(>image)){
-                    padding-inline-start: 36px !important;
-                    &:before {
-                        content: attr(image-emoji);
-                        width: 16px;
-                        height: 16px;
-                        margin-right: 8px;
-                        position: absolute;
-                        top: 50%;
-                        left: 1em;
-                        transform: translateY(-50%);
-                        background-image: var(--menu-image);
-                        background-size: 16px 16px;
-                        background-repeat: no-repeat;
-                        background-position: center;
-                    }
+    
+                padding-inline-start: 36px !important;
+                &:before {
+                    content: attr(image-emoji);
+                    width: 16px;
+                    height: 16px;
+                    margin-right: 8px;
+                    position: absolute;
+                    top: 50%;
+                    left: 1em;
+                    transform: translateY(-50%);
+                    background-image: var(--menu-image);
+                    background-size: 16px 16px;
+                    background-repeat: no-repeat;
+                    background-position: center;
                 }
+                
 
-                &:has(>image) {
-                    list-style-image: var(--menu-image) !important;
-                    & > image {
-                        display: flex !important;
-                    }
+                & > .menu-icon {
+                    display: none !important;
                 }
-
-
             }
         }
         .aboutconfig-reset-menuitem {
             fill: #ff5033;
-            list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4xKSI+CiAgPHBhdGggZD0iTTI0IDRDMTguNTU2MjQxIDQgMTMuNjExMTA1IDYuMTg5MzEwNyAxMCA5LjczMDQ2ODhMMTAgOCBBIDIuMDAwMiAyLjAwMDIgMCAwIDAgNy45NzA3MDMxIDUuOTcyNjU2MiBBIDIuMDAwMiAyLjAwMDIgMCAwIDAgNiA4TDYgMTUgQSAyLjAwMDIgMi4wMDAyIDAgMCAwIDggMTdMMTUgMTcgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDE1IDEzTDEyLjM4MjgxMiAxM0MxNS4yOTU1NjYgOS45MjE0OTIxIDE5LjQxMjc0MyA4IDI0IDhDMzIuODYwMDg5IDggNDAgMTUuMTM5OTExIDQwIDI0QzQwIDMyLjg2MDA4OSAzMi44NjAwODkgNDAgMjQgNDAgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDI0IDQ0QzM1LjAyMTkxMSA0NCA0NCAzNS4wMjE5MTEgNDQgMjRDNDQgMTIuOTc4MDg5IDM1LjAyMTkxMSA0IDI0IDQgeiBNIDYgMjIgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDYgMjYgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDYgMjIgeiBNIDcuMzY5MTQwNiAyOC44ODg2NzJMNS44NjMyODEyIDI5LjU3NDIxOUw1LjM4ODY3MTkgMzEuMTYwMTU2TDYuMjcxNDg0NCAzMi41NjA1NDdMNy4zNjkxNDA2IDMyLjg4ODY3Mkw4Ljg3Njk1MzEgMzIuMjAzMTI1TDkuMzUxNTYyNSAzMC42MTcxODhMOC40Njg3NSAyOS4yMTY3OTdMNy4zNjkxNDA2IDI4Ljg4ODY3MiB6IE0gMTEuMjc3MzQ0IDM0LjcyMDcwM0w5Ljc2OTUzMTIgMzUuNDA2MjVMOS4yOTQ5MjE5IDM2Ljk5MjE4OEwxMC4xNzc3MzQgMzguMzkyNTc4TDExLjI3NzM0NCAzOC43MjA3MDNMMTIuNzgzMjAzIDM4LjAzNzEwOUwxMy4yNTc4MTIgMzYuNDUxMTcyTDEyLjM3NSAzNS4wNTA3ODFMMTEuMjc3MzQ0IDM0LjcyMDcwMyB6IE0gMTcuMTA3NDIyIDM4LjYzMjgxMkwxNS41OTk2MDkgMzkuMzE4MzU5TDE1LjEyNSA0MC45MDQyOTdMMTYuMDA3ODEyIDQyLjMwNDY4OEwxNy4xMDc0MjIgNDIuNjMyODEyTDE4LjYxMzI4MSA0MS45NDcyNjZMMTkuMDg3ODkxIDQwLjM2MTMyOEwxOC4yMDUwNzggMzguOTYwOTM4TDE3LjEwNzQyMiAzOC42MzI4MTIgeiIvPgo8L3N2Zz4=) !important;
+            --menuitem-icon: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4xKSI+CiAgPHBhdGggZD0iTTI0IDRDMTguNTU2MjQxIDQgMTMuNjExMTA1IDYuMTg5MzEwNyAxMCA5LjczMDQ2ODhMMTAgOCBBIDIuMDAwMiAyLjAwMDIgMCAwIDAgNy45NzA3MDMxIDUuOTcyNjU2MiBBIDIuMDAwMiAyLjAwMDIgMCAwIDAgNiA4TDYgMTUgQSAyLjAwMDIgMi4wMDAyIDAgMCAwIDggMTdMMTUgMTcgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDE1IDEzTDEyLjM4MjgxMiAxM0MxNS4yOTU1NjYgOS45MjE0OTIxIDE5LjQxMjc0MyA4IDI0IDhDMzIuODYwMDg5IDggNDAgMTUuMTM5OTExIDQwIDI0QzQwIDMyLjg2MDA4OSAzMi44NjAwODkgNDAgMjQgNDAgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDI0IDQ0QzM1LjAyMTkxMSA0NCA0NCAzNS4wMjE5MTEgNDQgMjRDNDQgMTIuOTc4MDg5IDM1LjAyMTkxMSA0IDI0IDQgeiBNIDYgMjIgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDYgMjYgQSAyLjAwMDIgMi4wMDAyIDAgMSAwIDYgMjIgeiBNIDcuMzY5MTQwNiAyOC44ODg2NzJMNS44NjMyODEyIDI5LjU3NDIxOUw1LjM4ODY3MTkgMzEuMTYwMTU2TDYuMjcxNDg0NCAzMi41NjA1NDdMNy4zNjkxNDA2IDMyLjg4ODY3Mkw4Ljg3Njk1MzEgMzIuMjAzMTI1TDkuMzUxNTYyNSAzMC42MTcxODhMOC40Njg3NSAyOS4yMTY3OTdMNy4zNjkxNDA2IDI4Ljg4ODY3MiB6IE0gMTEuMjc3MzQ0IDM0LjcyMDcwM0w5Ljc2OTUzMTIgMzUuNDA2MjVMOS4yOTQ5MjE5IDM2Ljk5MjE4OEwxMC4xNzc3MzQgMzguMzkyNTc4TDExLjI3NzM0NCAzOC43MjA3MDNMMTIuNzgzMjAzIDM4LjAzNzEwOUwxMy4yNTc4MTIgMzYuNDUxMTcyTDEyLjM3NSAzNS4wNTA3ODFMMTEuMjc3MzQ0IDM0LjcyMDcwMyB6IE0gMTcuMTA3NDIyIDM4LjYzMjgxMkwxNS41OTk2MDkgMzkuMzE4MzU5TDE1LjEyNSA0MC45MDQyOTdMMTYuMDA3ODEyIDQyLjMwNDY4OEwxNy4xMDc0MjIgNDIuNjMyODEyTDE4LjYxMzI4MSA0MS45NDcyNjZMMTkuMDg3ODkxIDQwLjM2MTMyOEwxOC4yMDUwNzggMzguOTYwOTM4TDE3LjEwNzQyMiAzOC42MzI4MTIgeiIvPgo8L3N2Zz4=) !important;
         }
         @media -moz-pref("userChromeJS.aboutconfig.warn_badge") {
             #${MENU_ID} .toolbarbutton-badge {
@@ -757,7 +773,6 @@
                 menuItem.id = `aboutconfig_menu_${itemIndex}__${valIndex}`;
                 menuItem.label = pv.name || prefValToDisplay(item, pv.val);
                 menuItem.setAttribute('type', 'radio');
-                menuItem.className = 'menuitem-iconic';
                 menuItem.tooltipText = prefValToDisplay(item, pv.val);
                 if (pv.sign) {
                     menuItem.label += `　　${pv.sign}`;
