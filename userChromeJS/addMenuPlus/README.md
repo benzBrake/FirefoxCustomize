@@ -1671,7 +1671,7 @@ new (function () {
         let cookieJarSettings = gBrowser.selectedBrowser.cookieJarSettings;
         // internalSave(aURL, aOriginalURL, aDocument, aDefaultFileName, aContentDisposition, aContentType, aShouldBypassCache, aFilePickerTitleKey, aChosenData, aReferrerInfo, aCookieJarSettings, aInitiatingDocument, aSkipPrompt, aCacheKey, aIsContentWindowPrivate, aPrincipal)
 
-        eval(
+        Cu.evalInSandbox(
           "(" +
             internalSave
               .toString()
@@ -1681,7 +1681,7 @@ new (function () {
                 "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams"
               ) +
             ")"
-        )(
+        , addMenu.sandbox)(
           aUrl,
           null,
           document,
