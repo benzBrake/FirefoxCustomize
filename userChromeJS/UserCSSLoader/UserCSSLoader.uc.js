@@ -125,6 +125,10 @@ about:config
       return this.FOLDER = aFile;
     },
 
+    get disabledStyles () {
+      return new DisabledSet(JSON.parse(this.prefs.getStringPref(this.KEY_DISABLED_STYLES, "[]")).sort((a, b) => a[0].localeCompare(b[0])));
+    },
+
     async init () {
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
@@ -180,8 +184,6 @@ about:config
       if (!sss.sheetRegistered(this.STYLE.url, this.STYLE.type)) {
         sss.loadAndRegisterSheet(this.STYLE.url, this.STYLE.type);
       }
-
-      this.disabledStyles = new DisabledSet(JSON.parse(this.prefs.getStringPref(this.KEY_DISABLED_STYLES, "[]")).sort((a, b) => a[0].localeCompare(b[0])));
 
       if (this.showInToolsMenu) {
         let ins = document.getElementById("devToolsSeparator");
