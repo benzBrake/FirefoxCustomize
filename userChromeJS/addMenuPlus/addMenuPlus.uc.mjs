@@ -18,6 +18,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note           20250830 移除 inline showing function 支持
 // @note           20250827 Fx142 菜单图标异常
 // @note           0.3.0 ESMified
 // ==/UserScript==
@@ -35,13 +36,6 @@ import { syncify } from "./000-syncify.sys.mjs";
 
     /** 不要修改以下代码 DON'T MODIFY THE CODE BELOW */
     const { windowUtils } = globalThis;
-    const runJS = (code, sandbox = window) => {
-        try {
-            Services.scriptloader.loadSubScript("data:application/javascript;," + encodeURIComponent(code), sandbox);
-        } catch (e) {
-            console.error(e);
-        }
-    }
 
     window?.addMenu?.destroy();
 
@@ -582,15 +576,12 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                     const ev = obj => {
                         try {
-                            obj.fn ? obj.fn.call(obj.item, obj.item) : runJS('(' + obj.fnSource + ').call(obj.item, obj.item)', {
-                                obj
-                            });
+                            typeof obj.fn === "function" && obj.fn.call(obj.item, obj.item)
                         } catch (ex) {
                             console.error(lprintf('custom showing method error'), obj.fnSource, ex);
                         }
                     }
 
-                    // Execute custom showing methods with runJS
                     this.customShowings
                         .filter(obj => obj.insertPoint === insertPoint)
                         .forEach(obj => ev(obj));
