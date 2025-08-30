@@ -22,9 +22,9 @@ Since December 1, 2022, I have been modifying scripts based on [alice0775's](htt
 
 You can install my packaged [userChrome.js Loader](Loader). Starting from May 7, 2024, the userChrome.js Loader here has limited compatibility with scripts from [@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts) and [@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js) repositories, and can also install adapted legacy extensions.
 
-我的当前 Firefox 版本 Firefox 125.0.3。
+我的当前 Firefox 版本 Firefox 143.0b6。
 
-My current Firefox version is Firefox 125.0.3.
+My current Firefox version is Firefox 143.0b6.
 
 最低支持 Firefox 101 的脚本就会放 101 目录里，不过版本可能不太准确。
 
