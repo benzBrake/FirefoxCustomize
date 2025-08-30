@@ -18,7 +18,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           20250830 移除 inline showing function 支持
+// @note           20250830 移除 inline showing function 支持, 初始化 sandbox
 // @note           20250827 Fx142 菜单图标异常
 // @note           0.3.0 ESMified
 // ==/UserScript==
@@ -209,6 +209,27 @@ import { syncify } from "./000-syncify.sys.mjs";
         customShowings: [],
         undoFunctions: [],
         init: async function () {
+            let sb = window.userChrome_js?.sb;
+            if (!sb) {
+                sb = Cu.Sandbox(window, {
+                    sandboxPrototype: window,
+                    sameZoneAs: window,
+                });
+                Cu.evalInSandbox(`
+                    Function.prototype.toSource = window.Function.prototype.toSource;
+                    Object.defineProperty(Function.prototype, "toSource", {enumerable : false})
+                    Object.prototype.toSource = window.Object.prototype.toSource;
+                    Object.defineProperty(Object.prototype, "toSource", {enumerable : false})
+                    Array.prototype.toSource = window.Array.prototype.toSource;
+                    Object.defineProperty(Array.prototype, "toSource", {enumerable : false})
+                `, sb);
+                window.addEventListener("unload", () => {
+                    setTimeout(() => {
+                        Cu.nukeSandbox(sb);
+                    }, 0);
+                }, { once: true });
+            }
+            this.sandbox = sb;
             await this.ensureConfigFileExists();
             try {
                 // 注册 Actor
