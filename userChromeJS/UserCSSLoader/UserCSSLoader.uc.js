@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.5r6
+// @version        0.0.6
 // @charset        UTF-8
+// @note           0.0.6 默认使用使用 file 资源定位符载入 css
 // @note           0.0.5r6 修正 Fx143 中菜单图标显示
 // @note           0.0.5r5 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note           0.0.5r4 新增 Alt+R 重载所有样式
@@ -35,6 +36,7 @@ about:config
 "userChromeJS.UserCSSLoader.FOLDER" CSS 文件夹路径，相对于 chrome 文件夹
 "userChromeJS.UserCSSLoader.reloadOnEdit" 编辑的时候只要文件修改时间发生变化就重载 (true/false， 默认为 true)
 "userChromeJS.UserCSSLoader.showInToolsMenu" 显示在工具菜单中，开发中，不可用 (true/false， 默认为 false)
+"userChromeJS.UserCSSLoader.useResourceProtocol" 是否使用 resource:// 协议加载 CSS (true/false，默认为 true)
 
  **** 説明終わり ****/
 (async function (css, versionGE) {
@@ -72,7 +74,8 @@ about:config
     KEY_DISABLED_STYLES: "stylesDisabled",
     KEY_SHOW_IN_TOOLS_MENU: "showInToolsMenu",
     KEY_RELOAD_ON_EDIT: "reloadOnEdit",
-    KEY_LOCALE: "intl.locale.requested",
+    KEY_USE_RESOURCE_PROTOCOL: "useResourceProtocol",
+    PREF_LOCALE: "intl.locale.requested",
 
     CSSEntries: [],
     customShowings: [],
@@ -91,6 +94,10 @@ about:config
 
     get reloadOnEdit () {
       return this.prefs.getBoolPref(this.KEY_RELOAD_ON_EDIT, true);
+    },
+
+    get useResourceProtocol () {
+      return this.prefs.getBoolPref(this.KEY_USE_RESOURCE_PROTOCOL, false);
     },
 
     get STYLE () {
@@ -112,15 +119,17 @@ about:config
 
     get FOLDER () {
       delete this.FOLDER;
-      var path = this.prefs.getStringPref(this.KEY_FOLDER, this.DEFAULT_FOLDER)
+      var path = this.prefs.getStringPref(this.KEY_FOLDER, this.DEFAULT_FOLDER);
       var aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
       aFile.appendRelativePath(path);
       if (!aFile.exists()) {
         aFile.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
       }
-      let resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
-      if (!resourceHandler.hasSubstitution("usercssloader")) {
-        resourceHandler.setSubstitution("usercssloader", Services.io.newFileURI(aFile));
+      if (this.useResourceProtocol) {
+        let resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
+        if (!resourceHandler.hasSubstitution("usercssloader")) {
+          resourceHandler.setSubstitution("usercssloader", Services.io.newFileURI(aFile));
+        }
       }
       return this.FOLDER = aFile;
     },
@@ -230,7 +239,7 @@ about:config
       this.rebuild();
 
       Services.prefs.addObserver(this.KEY_PREFIX, this);
-      Services.prefs.addObserver(this.KEY_LOCALE, this);
+      Services.prefs.addObserver(this.PREF_LOCALE, this);
       window.addEventListener("unload", this);
     },
     createButton (doc) {
@@ -566,7 +575,7 @@ about:config
                 this.BTN.classList.remove("icon-disabled");
               }
               this.rebuild();
-            case this.KEY_LOCALE:
+            case this.PREF_LOCALE:
               this.rebuild();
               break;
           }
@@ -837,7 +846,10 @@ about:config
     this.fileName = aFile.leafName.replace(/(?:\.(?:user|as|ag||us))?\.css$/, '');
     this.name = this.fileName;
     this.path = aFile.path;
-    this.url = Services.io.newURI("resource://usercssloader/" + this.fullName, null, null);
+    // Use resource:// or file:// based on preference
+    this.url = UserCSSLoader.useResourceProtocol
+      ? Services.io.newURI("resource://usercssloader/" + this.fullName, null, null)
+      : Services.io.newFileURI(aFile);
     this.lastModifiedTime = aFile.lastModifiedTime;
     this.readStyleInfo();
   }
@@ -908,7 +920,7 @@ about:config
         IOUtils.stat(this.path).then((value) => {
           if (sss.sheetRegistered(this.url, this.type)) {
             if (this.lastModifiedTime != value.lastModified) {
-              sss.unregisterSheet(uri, this.SHEET);
+              sss.unregisterSheet(this.url, this.type);
               sss.loadAndRegisterSheet(this.url, this.type);
               this.isRunning = true;
             }
