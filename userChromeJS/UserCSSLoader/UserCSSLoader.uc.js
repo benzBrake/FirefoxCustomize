@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.6r2
+// @version        0.0.6r3
 // @charset        UTF-8
+// @note           0.0.6r3 创建样式子菜单增加图标
 // @note           0.0.6r2 修复能创建空文件名文件的 bug
 // @note           0.0.6r1 完成显示在工具菜单中的功能
 // @note           0.0.6 默认使用使用 file 资源定位符载入 css
@@ -309,7 +310,7 @@ about:config
         popup: [{
           label: "AUTHOR_SHEET",
           'data-l10n-id': 'ucl-author-sheet',
-          class: "menuitem",
+          class: "menuitem menuitem-iconic",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
             ucl.createStyle(ucl.AUTHOR_SHEET);
@@ -317,7 +318,7 @@ about:config
         }, {
           label: "USER_SHEET",
           'data-l10n-id': 'ucl-user-sheet',
-          class: "menuitem",
+          class: "menuitem menuitem-iconic",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
             ucl.createStyle(ucl.USER_SHEET);
@@ -325,7 +326,7 @@ about:config
         }, {
           label: "AGENT_SHEET",
           'data-l10n-id': 'ucl-agent-sheet',
-          class: "menuitem",
+          class: "menuitem menuitem-iconic",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
             ucl.createStyle(ucl.AGENT_SHEET);
@@ -355,7 +356,7 @@ about:config
         }, {
           label: "AUTHOR_SHEET",
           'data-l10n-id': 'ucl-author-sheet',
-          flag: "AUTHOR_SHEET",
+          flag: 'AUTHOR_SHEET',
           class: "menuitem menuitem-iconic",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
@@ -364,7 +365,7 @@ about:config
         }, {
           label: "USER_SHEET",
           'data-l10n-id': 'ucl-user-sheet',
-          flag: "USER_SHEET",
+          flag: 'USER_SHEET',
           class: "menuitem menuitem-iconic",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
@@ -373,7 +374,7 @@ about:config
         }, {
           label: "AGENT_SHEET",
           'data-l10n-id': 'ucl-agent-sheet',
-          flag: "AGENT_SHEET",
+          'flag': 'AGENT_SHEET',
           class: "menuitem menuitem-iconic",
           oncommand: function (event) {
             const { UserCSSLoader: ucl } = window;
@@ -1080,16 +1081,18 @@ about:config
 #{BTN_ID}-popup menuitem.delete {
   list-style-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNOCAuNUEyLjUgMi41IDAgMCAwIDUuNSAzSDFhLjUuNSAwIDAgMC0uNS41bC4wMDguMDlBLjUuNSAwIDAgMCAxIDRoLjU1M0wyLjg1IDE0LjIyOUEyIDIgMCAwIDAgNC44MzYgMTZoNi4zMjhhMiAyIDAgMCAwIDEuOTg2LTEuNzcxTDE0LjQ0NSA0SDE1YS41LjUgMCAwIDAgMC0xaC00LjVBMi41IDIuNSAwIDAgMCA4IC41em0wIDFBMS41IDEuNSAwIDAgMSA5LjUgM2gtM0ExLjUgMS41IDAgMCAxIDggMS41ek0yLjU2IDRoMTAuODc3bC0xLjI4IDEwLjExNmEuOTk4Ljk5OCAwIDAgMS0uOTkzLjg4NEg0LjgzNmEuOTk4Ljk5OCAwIDAgMS0uOTkyLS44ODR6TTYuNSA2LjVjLS4yNzYgMC0uNS4xOTYtLjUuNDM4djUuMTI0bC4wMDguMDc4Yy4wNDIuMjA0LjI0Ny4zNi40OTIuMzYuMjc2IDAgLjUtLjE5Ni41LS40MzhWNi45MzhsLS4wMDgtLjA3OUM2Ljk1IDYuNjU1IDYuNzQ1IDYuNSA2LjUgNi41em0zIDBjLS4yNzYgMC0uNS4xOTYtLjUuNDM4djUuMTI0bC4wMDguMDc4Yy4wNDIuMjA0LjI0Ny4zNi40OTIuMzYuMjc2IDAgLjUtLjE5Ni41LS40MzhWNi45MzhsLS4wMDgtLjA3OUM5Ljk1IDYuNjU1IDkuNzQ1IDYuNSA5LjUgNi41eiIvPgo8L3N2Zz4K);
 }
+#{BTN_ID}-popup [data-l10n-id="ucl-author-sheet"],
 #{BTN_ID}-popup .style-flag,
 #{BTN_ID}-popup .style-flag[flag="AUTHOR_SHEET"],
 #ucl-change-style-popup menuitem[flag="AUTHOR_SHEET"] {
   list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjMiIHJ5PSIzIiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iOCIgeT0iMTEiIGZvbnQtZmFtaWx5PSLpu5HkvZMiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9ImN1cnJlbnRDb2xvciI+QVM8L3RleHQ+Cjwvc3ZnPg==");
 }
-#{BTN_ID}-popup .style-flag[flag="AGENT_SHEET"],
+#{BTN_ID}-popup [data-l10n-id="ucl-agent-sheet"],
 #ucl-change-style-popup menuitem[flag="AGENT_SHEET"] {
   list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjMiIHJ5PSIzIiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iOCIgeT0iMTEiIGZvbnQtZmFtaWx5PSLpu5HkvZMiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9ImN1cnJlbnRDb2xvciI+QUc8L3RleHQ+Cjwvc3ZnPg==");
   fill: #2a9fa2;
 }
+#{BTN_ID}-popup [data-l10n-id="ucl-user-sheet"],
 #{BTN_ID}-popup .style-flag[flag="USER_SHEET"],
 #ucl-change-style-popup menuitem[flag="USER_SHEET"] {
   list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjMiIHJ5PSIzIiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iOCIgeT0iMTEiIGZvbnQtZmFtaWx5PSLpu5HkvZMiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9ImN1cnJlbnRDb2xvciI+VVM8L3RleHQ+Cjwvc3ZnPg==");
