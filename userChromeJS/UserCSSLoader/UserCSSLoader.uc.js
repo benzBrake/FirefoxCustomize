@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.6
+// @version        0.0.6r1
 // @charset        UTF-8
+// @note           0.0.6r1 完成显示在工具菜单中的功能
 // @note           0.0.6 默认使用使用 file 资源定位符载入 css
 // @note           0.0.5r6 修正 Fx143 中菜单图标显示
 // @note           0.0.5r5 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
@@ -35,7 +36,7 @@ about:config
 "view_source.editor.path" 指定编辑器路径
 "userChromeJS.UserCSSLoader.FOLDER" CSS 文件夹路径，相对于 chrome 文件夹
 "userChromeJS.UserCSSLoader.reloadOnEdit" 编辑的时候只要文件修改时间发生变化就重载 (true/false， 默认为 true)
-"userChromeJS.UserCSSLoader.showInToolsMenu" 显示在工具菜单中，开发中，不可用 (true/false， 默认为 false)
+"userChromeJS.UserCSSLoader.showInToolsMenu" 显示在工具菜单中(true/false， 默认为 false)
 "userChromeJS.UserCSSLoader.useResourceProtocol" 是否使用 resource:// 协议加载 CSS (true/false，默认为 true)
 
  **** 説明終わり ****/
@@ -64,6 +65,7 @@ about:config
 
   window.UserCSSLoader = {
     BTN_ID: 'UserCSSLoader-btn',
+    MENU_ID: 'UserCSSLoader-menu',
     AGENT_SHEET: sss.AGENT_SHEET,
     USER_SHEET: sss.USER_SHEET,
     AUTHOR_SHEET: sss.AUTHOR_SHEET,
@@ -107,7 +109,7 @@ about:config
       }
       delete this.STYLE;
       return this.STYLE = {
-        url: makeURI("data:text/css;charset=utf-8," + encodeURIComponent(css.replaceAll("{BTN_ID}", this.BTN_ID))),
+        url: makeURI("data:text/css;charset=utf-8," + encodeURIComponent(css.replaceAll("{BTN_ID}", this.BTN_ID).replaceAll("{MENU_ID}", this.MENU_ID))),
         type: this.AUTHOR_SHEET
       }
     },
@@ -197,6 +199,7 @@ about:config
       if (this.showInToolsMenu) {
         let ins = document.getElementById("devToolsSeparator");
         let menu = createElement(document, "menu", {
+          id: this.MENU_ID,
           label: "UserCSSLoader",
           class: "menu-iconic",
           'data-l10n-id': 'user-css-loader'
@@ -1004,6 +1007,7 @@ about:config
 
   UserCSSLoader.init();
 })(`
+#{MENU_ID},
 #{BTN_ID} > .toolbarbutton-icon {
   list-style-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjE2cHgiIGhlaWdodD0iMTZweCIgdmlld0JveD0iMCAwIDE2IDE2IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbDpzcGFjZT0icHJlc2VydmUiIHhtbG5zOnNlcmlmPSJodHRwOi8vd3d3LnNlcmlmLmNvbS8iIHN0eWxlPSJmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtzdHJva2UtbGluZWpvaW46cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MjsiPgogICAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMS4zMjg3LDAsMCwxLjMyODcsLTIuNjI5NTksLTIuNDYzNSkiPgogICAgICAgIDxwYXRoIGQ9Ik03LjkxNSwyLjI1QzkuNTEzLDIuMjUgMTEuOTQ1LDIuOTIgMTEuOTQ1LDQuNDcyQzExLjk0NSw1LjE1NSAxMS4zODksNS43NSAxMC43MDYsNS43NUM5LjUwNiw1Ljc1IDkuNDk3LDQuMjUgNy44NDMsNC4yNUM2LjkxOCw0LjI1IDYuNDk4LDQuNzg1IDYuNDk4LDUuMjgzQzYuNDk4LDUuODEgNi42NDcsNi4xOTUgNy43Myw2LjQyMkw5LjQ2Nyw2Ljc5M0MxMS42NDYsNy4yNjMgMTIuNSw4LjM3NCAxMi41LDkuOTgzQzEyLjUsMTEuODA2IDExLjM2MSwxMy41IDguMDE0LDEzLjVDNS44NzIsMTMuNSAzLjUsMTIuODkgMy41LDExLjIzNkMzLjUsMTAuNTI0IDQuMDg0LDEwLjA1NCA0Ljc5NiwxMC4wNTRDNi4wMDQsMTAuMDU0IDYuMTkxLDExLjI1IDcuOSwxMS4yNUM5LjA0LDExLjI1IDkuNzUsMTAuODUxIDkuNzUsMTAuMTY4QzkuNzUsOS42NjkgOS4zODEsOS4zMjggOC4zNTYsOS4xMTRMNi42MDUsOC43NDRDNC42MTEsOC4zMTcgMy43NSw3LjMxOSAzLjc1LDUuNTU0QzMuNzUsMy42ODggNS4xOCwyLjI1IDcuOTE1LDIuMjVaIiBzdHlsZT0iZmlsbDp1cmwoI19MaW5lYXIxKTtmaWxsLXJ1bGU6bm9uemVybzsiLz4KICAgIDwvZz4KICAgIDxkZWZzPgogICAgICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iX0xpbmVhcjEiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCg2LjQ5NDYxZS0xNiwtMTAuNjA2NSwxMC42MDY1LDYuNDk0NjFlLTE2LDgsMTMpIj48c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOnJnYigyMSw5MiwyMjIpO3N0b3Atb3BhY2l0eToxIi8+PHN0b3Agb2Zmc2V0PSIwLjI4IiBzdHlsZT0ic3RvcC1jb2xvcjpyZ2IoMzEsMTI3LDIyOSk7c3RvcC1vcGFjaXR5OjEiLz48c3RvcCBvZmZzZXQ9IjAuNTciIHN0eWxlPSJzdG9wLWNvbG9yOnJnYigzOSwxNTYsMjM1KTtzdG9wLW9wYWNpdHk6MSIvPjxzdG9wIG9mZnNldD0iMC44MiIgc3R5bGU9InN0b3AtY29sb3I6cmdiKDQ0LDE3NSwyMzkpO3N0b3Atb3BhY2l0eToxIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjpyZ2IoNDYsMTgxLDI0MCk7c3RvcC1vcGFjaXR5OjEiLz48L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgo8L3N2Zz4K)
 }
