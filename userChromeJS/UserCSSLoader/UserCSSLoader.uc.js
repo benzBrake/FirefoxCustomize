@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.6r1
+// @version        0.0.6r2
 // @charset        UTF-8
+// @note           0.0.6r2 修复能创建空文件名文件的 bug
 // @note           0.0.6r1 完成显示在工具菜单中的功能
 // @note           0.0.6 默认使用使用 file 资源定位符载入 css
 // @note           0.0.5r6 修正 Fx143 中菜单图标显示
@@ -612,25 +613,28 @@ about:config
         console.error(MESSAGES.format('ucl-style-type-not-exists', type));
         return;
       }
-      let result = { value: new Date().getTime() };
+      let result = { value: new Date().getTime() }, confirm;
       let aTitle = MESSAGES.format('ucl-create-style-prompt-title', STYLES_NAME_MAP[type]['name']), aDetail = MESSAGES.format('ucl-create-style-prompt-text', STYLES_NAME_MAP[type]['name']);
-      if (Services.prompt.prompt(
+      const getFileName = () => Services.prompt.prompt(
         window, aTitle, aDetail, result, null, {}
-      )) {
-        let name = result.value + STYLES_NAME_MAP[type]['ext'];
-        if (!this.FOLDER.exists()) {
-          this.FOLDER.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-        }
-        this._createStyle(name).then(async file => {
-          let entry = new CSSEntry(file);
-          this.CSSEntries.push(entry);
-          entry.register();
-          this.menupopup?.setAttribute("css-initalized", false);
-          await this.editStyle(entry.fullName);
-        }).catch(err => {
-          console.error(err);
-        });
+      );
+      confirm = getFileName();
+      while (confirm && result.value.trim() === "") confirm = getFileName();
+      if (!confirm) return;
+      let name = result.value + STYLES_NAME_MAP[type]['ext'];
+      if (!this.FOLDER.exists()) {
+        this.FOLDER.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
       }
+      this._createStyle(name).then(async file => {
+        let entry = new CSSEntry(file);
+        this.CSSEntries.push(entry);
+        entry.register();
+        this.menupopup?.setAttribute("css-initalized", false);
+        await this.editStyle(entry.fullName);
+      }).catch(err => {
+        console.error(err);
+      });
+
     },
     _createStyle (fileName) {
       const path = this.FOLDER.path + DIRECTORY_SEPARATOR + fileName;
