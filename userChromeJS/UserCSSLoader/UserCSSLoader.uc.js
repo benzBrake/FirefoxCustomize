@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.6r3
+// @version        0.0.6r4
 // @charset        UTF-8
+// @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
 // @note           0.0.6r3 创建样式子菜单增加图标
 // @note           0.0.6r2 修复能创建空文件名文件的 bug
 // @note           0.0.6r1 完成显示在工具菜单中的功能
@@ -683,7 +684,6 @@ about:config
           this.rebuild();
         });
       }
-
     },
     async _editCSSEntry (entry) {
       let editor;
@@ -884,22 +884,23 @@ about:config
           // 获取当前语言环境
           let currentLocale = Services.locale.appLocaleAsBCP47; // 例如 "zh-CN" 或 "en-US"
 
-          // 尝试匹配当前语言的 @name
-          let nameMatch = header.match(new RegExp(`(\/\/|\\*) @name:${currentLocale}\\s+(.+)\\s*$`, 'im'));
-          if (nameMatch && nameMatch[2]) {
-            this.name = nameMatch[2];
+          // 尝试匹配当前语言的 @name - 确保只匹配单行
+          let nameLines = header.split(/\n\r|\r\n|\n/).filter(line => line.includes("@name"));
+          let nameLocale = nameLines.find(line => line.includes(`@name:${currentLocale}`)) || "";
+          nameLocale = nameLocale.replace(/.*@name:([\w\-]+)(.*)$/, '$2').trim() || "";
+          if (nameLocale) {
+            this.name = nameLocale;
           } else {
-            // 如果没有当前语言的翻译，尝试匹配默认 @name
-            nameMatch = header.match(/(\/\/|\*) @name\s+(.+)\s*$/im);
-            this.name = (nameMatch || ['', '', this.name])[2];
+            let nameLine = nameLines.find(line => !line.includes(":")) || "";
+            this.name = nameLine.replace(/.*@name\s+(.*)$/, '$1').trim() || this.fileName;
           }
 
-          // 其他字段保持不变
-          this.icon = (header.match(/(\/\/|\*) @icon\s+(.+)\s*$/im) || def)[2];
-          this.description = (header.match(/(\/\/|\*) @description\s+(.+)\s*$/im) || def)[2];
-          this.downloadURL = (header.match(/(\/\/|\*) @downloadURL\s+(.+)\s*$/im) || def)[2];
-          this.homepageURL = (header.match(/(\/\/|\*) @homepage(URL)?\s+(.+)\s*$/im) || def)[3];
-          this.license = (header.match(/(\/\/|\*) @license\s+(.+)\s*$/im) || def)[2];
+          // 其他字段保持不变 - 修复所有字段的正则表达式，移除multiline标志
+          this.icon = (header.match(/(\/\/|\*) @icon\s+(.+)\s*$/i) || def)[2];
+          this.description = (header.match(/(\/\/|\*) @description\s+(.+)\s*$/i) || def)[2];
+          this.downloadURL = (header.match(/(\/\/|\*) @downloadURL\s+(.+)\s*$/i) || def)[2];
+          this.homepageURL = (header.match(/(\/\/|\*) @homepage(URL)?\s+(.+)\s*$/i) || def)[3];
+          this.license = (header.match(/(\/\/|\*) @license\s+(.+)\s*$/i) || def)[2];
         }
       }
     },
