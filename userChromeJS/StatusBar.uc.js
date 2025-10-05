@@ -3,11 +3,12 @@
 // @description     状态栏
 // @license         MIT License
 // @compatibility   Firefox 137
-// @version         0.0.4
+// @version         0.0.5
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.0.5 移除 0.0.2 引入的 TabMixPlus 兼容代码
 // @note            0.0.4 Fx139, 修复 call to Function() blocked by CSP
 // @note            0.0.3 fx137
 // @note            0.0.2 修正启用 TabMixPlus 扩展后看不见状态栏
@@ -18,15 +19,6 @@
     const MENU_LABEL = "状态栏";
 
     window.StatusBar = {
-        delayedInit: function () {
-            if (typeof Tabmix !== "undefined") {
-                Tabmix._deferredInitialized.promise.then(() => {
-                    this.init();
-                })
-            } else {
-                this.init();
-            }
-        },
         init: function () {
             const toolbarElem = window.MozXULElement.parseXULToFragment(
                 `
@@ -166,7 +158,7 @@
         return document.insertBefore(pi, document.documentElement);
     }
 
-    window.StatusBar.delayedInit();
+    window.StatusBar.init();
 })(`
 #status-text-inner[inactive="true"] {
     display: none;
