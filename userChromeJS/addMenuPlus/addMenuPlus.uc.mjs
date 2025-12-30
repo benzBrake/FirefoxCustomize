@@ -557,9 +557,9 @@ import { syncify } from "./000-syncify.sys.mjs";
                             const state = [];
                             const { gContextMenu } = window;
 
-                            if (gContextMenu.onTextInput) state.push("input");
+                            if (gContextMenu.onTextInput || gContextMenu.onEditable) state.push("input");
                             if (gContextMenu.isContentSelected || gContextMenu.isTextSelected) state.push("select");
-                            if (gContextMenu.onLink || gContextMenu.onTextLink) {
+                            if (gContextMenu.onLink || this.onPlainTextLink) {
                                 state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
                             }
                             if (gContextMenu.onCanvas) state.push("canvas image");
@@ -648,6 +648,35 @@ import { syncify } from "./000-syncify.sys.mjs";
                                     $elem.attr('disabled', true);
                                 } else {
                                     $elem.removeAttr('disabled');
+                                }
+                                // 获取原始属性值，如果没有则使用 "false"
+                                const hiddenAttr = $original.attr('hidden');
+                                const collapsedAttr = $original.attr('collapsed');
+                                const disabledAttr = $original.attr('disabled');
+                                
+                                // 只有当属性值为 "false" 时才删除属性，非 "false" 值则设置
+                                if (hiddenAttr) {
+                                    if (hiddenAttr === "false") {
+                                        $elem.removeAttr('hidden');
+                                    } else {
+                                        $elem.attr('hidden', hiddenAttr);
+                                    }
+                                }
+                                
+                                if (collapsedAttr) {
+                                    if (collapsedAttr === "false") {
+                                        $elem.removeAttr('collapsed');
+                                    } else {
+                                        $elem.attr('collapsed', collapsedAttr);
+                                    }
+                                }
+                                
+                                if (disabledAttr) {
+                                    if (disabledAttr === "false") {
+                                        $elem.removeAttr('disabled');
+                                    } else {
+                                        $elem.attr('disabled', disabledAttr);
+                                    }
                                 }
                             }
                         });
