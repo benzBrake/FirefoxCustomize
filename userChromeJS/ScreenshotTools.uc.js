@@ -18,7 +18,7 @@
 // @note           0.0.2 修复无法打开系统画板
 // @note           0.0.1
 // ==/UserScript==
-(async function () {
+(async function (versionGE) {
     const CustomizableUI = imp('CustomizableUI');
     const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
     window.ScreenshotTools = {
@@ -35,15 +35,15 @@
                 image: 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB2aWV3Qm94PSIwIDAgMjAgMjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik0gNy4zNjcgNC43OCBMIDMuODM3IDQuNzggTCAzLjgzNyA4LjI5NyBMIDUuNjAyIDguMjk3IEwgNS42MDIgNi41MzggTCA3LjM2NyA2LjUzOCBNIDE2LjE5MSA4LjI5NyBMIDE0LjQyNiA4LjI5NyBMIDE0LjQyNiAxMC4wNTUgTCAxMi42NiAxMC4wNTUgTCAxMi42NiAxMS44MTQgTCAxNi4xOTEgMTEuODE0IE0gMTcuOTU1IDEzLjU3MiBMIDIuMDczIDEzLjU3MiBMIDIuMDczIDMuMDIxIEwgMTcuOTU1IDMuMDIxIE0gMTcuOTU1IDEuMjYzIEwgMi4wNzMgMS4yNjMgQyAxLjA5MyAxLjI2MyAwLjMwOCAyLjA0NiAwLjMwOCAzLjAyMSBMIDAuMzA4IDEzLjU3MiBDIDAuMzA4IDE0LjU0MyAxLjA5NyAxNS4zMzIgMi4wNzMgMTUuMzMyIEwgOC4yNDkgMTUuMzMyIEwgOC4yNDkgMTcuMDkgTCA2LjQ4NCAxNy4wOSBMIDYuNDg0IDE4Ljg0OSBMIDEzLjU0NCAxOC44NDkgTCAxMy41NDQgMTcuMDkgTCAxMS43NzggMTcuMDkgTCAxMS43NzggMTUuMzMyIEwgMTcuOTU1IDE1LjMzMiBDIDE4LjkzIDE1LjMzMiAxOS43MiAxNC41NDMgMTkuNzIgMTMuNTcyIEwgMTkuNzIgMy4wMjEgQyAxOS43MiAyLjA1IDE4LjkzIDEuMjYzIDE3Ljk1NSAxLjI2MyIgc3R5bGU9IiIvPgo8L3N2Zz4='
             }, {}, {
                 label: "滚动截图工具",
-                oncommand: "event.target.ownerDocument.getElementById('key_screenshot').doCommand()",
+                oncommand: (event) => event.target.ownerDocument.getElementById('key_screenshot').doCommand(),
                 image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4zKSI+PHBhdGggZD0iTTQgNEw0IDZMNiA2TDYgNCBaIE0gOCA0TDggNkwxMCA2TDEwIDQgWiBNIDEyIDRMMTIgNkwxNCA2TDE0IDQgWiBNIDE2IDRMMTYgNkwxOCA2TDE4IDQgWiBNIDIwIDRMMjAgNkwyMiA2TDIyIDQgWiBNIDI0IDRMMjQgNkwyNiA2TDI2IDQgWiBNIDQgOEw0IDEwTDYgMTBMNiA4IFogTSAyNCA4TDI0IDEwTDI2IDEwTDI2IDggWiBNIDQgMTJMNCAxNEw2IDE0TDYgMTIgWiBNIDI0IDEyTDI0IDE0TDI2IDE0TDI2IDEyIFogTSAxNC41IDEzTDE0LjE4NzUgMTMuNDA2MjVMMTMgMTVMOCAxNUw4IDI4TDI4IDI4TDI4IDE1TDIzIDE1TDIxLjgxMjUgMTMuNDA2MjVMMjEuNSAxMyBaIE0gMTUuNSAxNUwyMC41IDE1TDIxLjY4NzUgMTYuNTkzNzVMMjIgMTdMMjYgMTdMMjYgMjZMMTAgMjZMMTAgMTdMMTQgMTdMMTQuMzEyNSAxNi41OTM3NSBaIE0gNCAxNkw0IDE4TDYgMThMNiAxNiBaIE0gMTggMTdDMTUuODAwNzgxIDE3IDE0IDE4LjgwMDc4MSAxNCAyMUMxNCAyMy4xOTkyMTkgMTUuODAwNzgxIDI1IDE4IDI1QzIwLjE5OTIxOSAyNSAyMiAyMy4xOTkyMTkgMjIgMjFDMjIgMTguODAwNzgxIDIwLjE5OTIxOSAxNyAxOCAxNyBaIE0gMTggMTlDMTkuMTE3MTg4IDE5IDIwIDE5Ljg4MjgxMyAyMCAyMUMyMCAyMi4xMTcxODggMTkuMTE3MTg4IDIzIDE4IDIzQzE2Ljg4MjgxMyAyMyAxNiAyMi4xMTcxODggMTYgMjFDMTYgMTkuODgyODEzIDE2Ljg4MjgxMyAxOSAxOCAxOSBaIE0gNCAyMEw0IDIyTDYgMjJMNiAyMFoiLz48L3N2Zz4="
             }, {
                 label: "网页所有区域",
-                oncommand: "window.ScreenshotTools.takeWebpageScreenShot(event.target.ownerDocument, true)",
+                oncommand: event => window.ScreenshotTools.takeWebpageScreenShot(event.target.ownerDocument, true),
                 image: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4zKSI+PHBhdGggZD0iTTUgNkw1IDE0TDcgMTRMNyAxMUw5IDExTDkgOUw3IDlMNyA4TDEwIDhMMTAgNiBaIE0gMTEgNkwxMSAxMUMxMSAxMi42NDQ1MzEgMTIuMzU1NDY5IDE0IDE0IDE0QzE1LjY0NDUzMSAxNCAxNyAxMi42NDQ1MzEgMTcgMTFMMTcgNkwxNSA2TDE1IDExQzE1IDExLjU2NjQwNiAxNC41NjY0MDYgMTIgMTQgMTJDMTMuNDMzNTk0IDEyIDEzIDExLjU2NjQwNiAxMyAxMUwxMyA2IFogTSAxOCA2TDE4IDE0TDIyIDE0TDIyIDEyTDIwIDEyTDIwIDYgWiBNIDIzIDZMMjMgMTRMMjcgMTRMMjcgMTJMMjUgMTJMMjUgNiBaIE0gNSAxNkw1IDI2TDcgMjZMNyAxOEwxNSAxOEwxNSAyMi41NjI1TDEzLjcxODc1IDIxLjI4MTI1TDEyLjI4MTI1IDIyLjcxODc1TDE1LjI4MTI1IDI1LjcxODc1TDE2IDI2LjQwNjI1TDE2LjcxODc1IDI1LjcxODc1TDE5LjcxODc1IDIyLjcxODc1TDE4LjI4MTI1IDIxLjI4MTI1TDE3IDIyLjU2MjVMMTcgMThMMjUgMThMMjUgMjZMMjcgMjZMMjcgMTZaIi8+PC9zdmc+'
             }, {
                 label: "网页可见区域",
-                oncommand: "window.ScreenshotTools.takeWebpageScreenShot(event.target.ownerDocument)",
+                oncommand: event => window.ScreenshotTools.takeWebpageScreenShot(event.target.ownerDocument),
                 image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4yKSI+PHBhdGggZD0iTTMgM0wzIDVMMyA4TDUgOEw1IDVMOCA1TDggM0w1IDNMMyAzIHogTSAxNiAzTDE2IDVMMTkgNUwxOSA4TDIxIDhMMjEgM0wxNiAzIHogTSAxMiAxMSBBIDEgMSAwIDAgMCAxMSAxMiBBIDEgMSAwIDAgMCAxMiAxMyBBIDEgMSAwIDAgMCAxMyAxMiBBIDEgMSAwIDAgMCAxMiAxMSB6IE0gMyAxNkwzIDIxTDUgMjFMOCAyMUw4IDE5TDUgMTlMNSAxNkwzIDE2IHogTSAxOSAxNkwxOSAxOUwxNiAxOUwxNiAyMUwyMSAyMUwyMSAxOUwyMSAxNkwxOSAxNiB6Ii8+PC9zdmc+"
             }, {}, {
                 label: "颜色拾取工具",
@@ -135,7 +135,7 @@
                     switch (event.button) {
                         case 0:
                             // 搜狗截图工具
-                            this.exec(this.handleRelativePath("\\UserTools\\SGScreencapture\\screencapture.exe"));
+                            this.exec(this.handleRelativePath("\\UserTools\\Snapshot.exe"));
                             break;
                         case 1:
                             // 截图网页可视区域
@@ -203,7 +203,9 @@
                     el.classList.add('menuitem-iconic');
                     this.setIcon(el, cfg);
                     if (!("oncommand" in cfg)) {
-                        el.setAttribute("oncommand", "window.ScreenshotTools.onCommand(event);");
+                        el.addEventListener("command", function (event) {
+                            window.ScreenshotTools.onCommand(event);
+                        });
                     }
                 }
                 if (el) popup.appendChild(el);
@@ -227,7 +229,7 @@
                 return;
 
             if (cfg.image) {
-                menu.style.listStyleImage = "url(" + cfg.image + ")";
+                setImage(menu, cfg.image)
                 return;
             }
 
@@ -243,13 +245,22 @@
                 } else {
                     if (aFile.isFile()) {
                         let fileURL = this.getURLSpecFromFile(aFile);
-                        menu.style.listStyleImage = "url(moz-icon://" + fileURL + "?size=16)";
+                        setImage(menu, "moz-icon://" + fileURL + "?size=16");
                     } else {
-                        menu.style.listStyleImage = "url(chrome://global/skin/icons/folder.svg)";
+                        setImage(menu, "chrome://global/skin/icons/folder.svg")
                     }
                 }
                 return;
             }
+
+            function setImage(item, image) {
+                if (versionGE('143a1')) {
+                    item.style.setProperty("--menuitem-icon", "url(" + image + ")");
+                } else {
+                    item.style.listStyleImage = "url(" + image + ")";
+                }
+            }
+
         },
         getURLSpecFromFile (aFile) {
             const fph = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
@@ -369,9 +380,13 @@
         for (let [k, v] of Object.entries(o)) {
             if (s.includes(k)) continue;
             if (k.startsWith('on')) {
-                const ev = k.replace(/^on/, '');
-                const fn = typeof v === 'function' ? v : new Function(v);
-                ev === 'wheel' ? e.addEventListener(ev, fn, { passive: true }) : e.addEventListener(ev, fn);
+                if (typeof v === 'function') {
+                    const ev = k.replace(/^on/, '');
+                    ev === 'wheel' ? e.addEventListener(ev, v, { passive: true }) : e.addEventListener(ev, v);
+                } else {
+                    let error = new Error('addMenuPlus: $C: ' + key + ' is not a function');
+                    console.error(error);
+                }
             } else {
                 e.setAttribute(k, v);
             }
@@ -392,4 +407,4 @@
         }
         return false;
     }
-})()
+})(v => Services.vc.compare(Services.appinfo.version, v) >= 0)
