@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.4
+// @version        1.0.5
 // @author         Ryan
 // @include        main
 // @sandbox        true
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.5 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           1.0.4 修复 Fx143 图标显示异常
 // @note           1.0.3 增加选择目录功能
 // @note           1.0.2 增加选择目录参数，修复选项打不开的问题
@@ -16,6 +17,15 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
     (async function (CSS, DEFINED_DIRS /* 预定义的一些路径 */, FILE_PATH /* 配置文件路径 */, versionGE /* 版本号大于等于 */, syncify) {
         const DEFAULT_SAVE_DIR = DEFINED_DIRS['Desk']; // 默认保存路径为桌面
         if (window.OpenWithHelper) return;
+
+        const AlertNotification = Components.Constructor(
+            "@mozilla.org/alert-notification;1",
+            "nsIAlertNotification",
+            "initWithObject"
+        );
+
+        const AlertImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiMwMDAwMDAiPjxkZWZzPjxwYXRoIGlkPSJmZU5vdGljZVB1c2gwIiBkPSJNMTcgMTFhNCA0IDAgMSAxIDAtOGE0IDQgMCAwIDEgMCA4Wk01IDVoNnYySDV2MTJoMTJ2LTZoMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjdhMiAyIDAgMCAxIDItMloiLz48L2RlZnM+PGcgaWQ9ImZlTm90aWNlUHVzaDEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiPjxnIGlkPSJmZU5vdGljZVB1c2gyIj48bWFzayBpZD0iZmVOb3RpY2VQdXNoMyIgZmlsbD0iIzAwMDAwMCI+PHVzZSBocmVmPSIjZmVOb3RpY2VQdXNoMCIvPjwvbWFzaz48dXNlIGlkPSJmZU5vdGljZVB1c2g0IiBmaWxsPSIjMDAwMDAwIiBmaWxsLXJ1bGU9Im5vbnplcm8iIGhyZWY9IiNmZU5vdGljZVB1c2gwIi8+PC9nPjwvZz48L3N2Zz4=';
+
         window.OpenWithHelper = {
             get saveDir () {
                 let dir = Services.prefs.getStringPref("userChromeJS.OpenWithHelper.SAVE_DIR", DEFAULT_SAVE_DIR);
@@ -879,17 +889,67 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
         }
 
         function alerts (aMsg, aTitle, aCallback) {
-            var callback = aCallback ? {
-                observe: function (subject, topic, data) {
-                    if ("alertclickcallback" != topic)
-                        return;
-                    aCallback.call(null);
+            let alertOptions = {};
+            let callback = null;
+
+            // === 新模式：alert(aAlertObject, aCallback)
+            if (typeof aMsg === 'object' && aMsg !== null) {
+                alertOptions = {
+                    title: aMsg.title || "OpenWithHelper",
+                    text: aMsg.text + "",
+                    textClickable: !!aMsg.textClickable,
+                    imageURL: aMsg.imageURL || AlertImage,
+                };
+                callback = aTitle; // 第二个参数是 callback
+            }
+            // === 旧模式：alert(aMsg, aTitle, aCallback)
+            else {
+                alertOptions = {
+                    title: aTitle || "OpenWithHelper",
+                    text: aMsg + "",
+                    textClickable: !!aCallback,
+                    imageURL: AlertImage,
+                };
+                callback = aCallback;
+            }
+
+            const callbackObject = callback
+                ? {
+                    observe: function (subject, topic, data) {
+                        if (topic === "alertclickcallback") {
+                            callback.call(null);
+                        }
+                    },
                 }
-            } : null;
-            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                "chrome://devtools/skin/images/browsers/firefox.svg", aTitle || "Open With Helper",
-                aMsg + "", !!callback, "", callback);
+                : null;
+
+            const alertsService = Cc["@mozilla.org/alerts-service;1"]
+                .getService(Ci.nsIAlertsService);
+
+            if (versionGE("147a1")) {
+                let alert = new AlertNotification({
+                    imageURL: alertOptions.imageURL,
+                    title: alertOptions.title,
+                    text: alertOptions.text,
+                    textClickable: alertOptions.textClickable,
+                });
+
+                alertsService.showAlert(
+                    alert,
+                    callbackObject && callbackObject.observe
+                        ? callbackObject.observe
+                        : null
+                );
+            } else {
+                alertsService.showAlertNotification(
+                    alertOptions.imageURL,
+                    alertOptions.title,
+                    alertOptions.text,
+                    alertOptions.textClickable,
+                    "",
+                    callbackObject
+                );
+            }
         }
 
         function uniqueArray (arr) {

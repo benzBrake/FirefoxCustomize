@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.6r4
+// @version        0.0.6r5
 // @charset        UTF-8
+// @note           0.0.6r5 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
 // @note           0.0.6r3 创建样式子菜单增加图标
 // @note           0.0.6r2 修复能创建空文件名文件的 bug
@@ -65,6 +66,14 @@ about:config
       ext: ".css",
     }
   }
+
+  const AlertNotification = Components.Constructor(
+    "@mozilla.org/alert-notification;1",
+    "nsIAlertNotification",
+    "initWithObject"
+  );
+
+  const AlertImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiMwMDAwMDAiPjxkZWZzPjxwYXRoIGlkPSJmZU5vdGljZVB1c2gwIiBkPSJNMTcgMTFhNCA0IDAgMSAxIDAtOGE0IDQgMCAwIDEgMCA4Wk01IDVoNnYySDV2MTJoMTJ2LTZoMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjdhMiAyIDAgMCAxIDItMloiLz48L2RlZnM+PGcgaWQ9ImZlTm90aWNlUHVzaDEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiPjxnIGlkPSJmZU5vdGljZVB1c2gyIj48bWFzayBpZD0iZmVOb3RpY2VQdXNoMyIgZmlsbD0iIzAwMDAwMCI+PHVzZSBocmVmPSIjZmVOb3RpY2VQdXNoMCIvPjwvbWFzaz48dXNlIGlkPSJmZU5vdGljZVB1c2g0IiBmaWxsPSIjMDAwMDAwIiBmaWxsLXJ1bGU9Im5vbnplcm8iIGhyZWY9IiNmZU5vdGljZVB1c2gwIi8+PC9nPjwvZz48L3N2Zz4=';
 
   window.UserCSSLoader = {
     BTN_ID: 'UserCSSLoader-btn',
@@ -809,19 +818,100 @@ about:config
         }
       }
     },
+    /**
+     * 显示桌面通知
+     *
+     * 【兼容两种调用方式】
+     *
+     * 1️⃣ 旧用法（保持不变）：
+     * alert(aMsg, aTitle, aCallback)
+     *
+     * @param {string} aMsg
+     *        消息内容
+     * @param {string} [aTitle]
+     *        消息标题
+     * @param {Function} [aCallback]
+     *        点击消息后的回调函数
+     *
+     * 2️⃣ 新用法（Object 参数）：
+     * alert(aAlertObject, aCallback)
+     *
+     * @param {Object} aAlertObject
+     *        通知配置对象
+     * @param {string} [aAlertObject.title]
+     *        消息标题（默认："addMenuPlus"）
+     * @param {string} aAlertObject.text
+     *        消息内容
+     * @param {boolean} [aAlertObject.textClickable]
+     *        消息内容是否可点击（默认：false）
+     * @param {string} [aAlertObject.imageURL]
+     *        通知图标 URL
+     * @param {Function} [aCallback]
+     *        点击消息后的回调函数
+     */
     alert: function (aMsg, aTitle, aCallback) {
-      var callback = aCallback ? {
-        observe: function (subject, topic, data) {
-          if ("alertclickcallback" != topic)
-            return;
-          aCallback.call(null);
+      let alertOptions = {};
+      let callback = null;
+
+      // === 新模式：alert(aAlertObject, aCallback)
+      if (typeof aMsg === 'object' && aMsg !== null) {
+        alertOptions = {
+          title: aMsg.title || "UserCSSLoader",
+          text: aMsg.text + "",
+          textClickable: !!aMsg.textClickable,
+          imageURL: aMsg.imageURL || AlertImage,
+        };
+        callback = aTitle; // 第二个参数是 callback
+      }
+      // === 旧模式：alert(aMsg, aTitle, aCallback)
+      else {
+        alertOptions = {
+          title: aTitle || "UserCSSLoader",
+          text: aMsg + "",
+          textClickable: !!aCallback,
+          imageURL: AlertImage,
+        };
+        callback = aCallback;
+      }
+
+      const callbackObject = callback
+        ? {
+          observe: function (subject, topic, data) {
+            if (topic === "alertclickcallback") {
+              callback.call(null);
+            }
+          },
         }
-      } : null;
-      var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-      alertsService.showAlertNotification(
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || this.MESSAGES.format('user-css-loader'),
-        aMsg + "", !!callback, "", callback);
-    },
+        : null;
+
+      const alertsService = Cc["@mozilla.org/alerts-service;1"]
+        .getService(Ci.nsIAlertsService);
+
+      if (versionGE("147a1")) {
+        let alert = new AlertNotification({
+          imageURL: alertOptions.imageURL,
+          title: alertOptions.title,
+          text: alertOptions.text,
+          textClickable: alertOptions.textClickable,
+        });
+
+        alertsService.showAlert(
+          alert,
+          callbackObject && callbackObject.observe
+            ? callbackObject.observe
+            : null
+        );
+      } else {
+        alertsService.showAlertNotification(
+          alertOptions.imageURL,
+          alertOptions.title,
+          alertOptions.text,
+          alertOptions.textClickable,
+          "",
+          callbackObject
+        );
+      }
+    }
   };
 
   class DisabledSet extends Set {

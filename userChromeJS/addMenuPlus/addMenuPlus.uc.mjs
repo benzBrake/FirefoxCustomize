@@ -18,6 +18,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note           20260113 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
+// @note           20260111 Fx145+同步 hidden/collapsed/disabled 属性失效
 // @note           20250830 移除 inline showing function 支持, 初始化 sandbox
 // @note           20250827 Fx142 菜单图标异常
 // @note           0.3.0 ESMified
@@ -160,6 +162,14 @@ import { syncify } from "./000-syncify.sys.mjs";
             current: "mod"
         },
     };
+
+    const AlertNotification = Components.Constructor(
+        "@mozilla.org/alert-notification;1",
+        "nsIAlertNotification",
+        "initWithObject"
+    );
+
+    const AlertImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiMwMDAwMDAiPjxkZWZzPjxwYXRoIGlkPSJmZU5vdGljZVB1c2gwIiBkPSJNMTcgMTFhNCA0IDAgMSAxIDAtOGE0IDQgMCAwIDEgMCA4Wk01IDVoNnYySDV2MTJoMTJ2LTZoMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjdhMiAyIDAgMCAxIDItMloiLz48L2RlZnM+PGcgaWQ9ImZlTm90aWNlUHVzaDEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiPjxnIGlkPSJmZU5vdGljZVB1c2gyIj48bWFzayBpZD0iZmVOb3RpY2VQdXNoMyIgZmlsbD0iIzAwMDAwMCI+PHVzZSBocmVmPSIjZmVOb3RpY2VQdXNoMCIvPjwvbWFzaz48dXNlIGlkPSJmZU5vdGljZVB1c2g0IiBmaWxsPSIjMDAwMDAwIiBmaWxsLXJ1bGU9Im5vbnplcm8iIGhyZWY9IiNmZU5vdGljZVB1c2gwIi8+PC9nPjwvZz48L3N2Zz4=';
 
     window.addMenu = {
         get FILE () {
@@ -618,9 +628,26 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                             const $original = $('#' + $elem.attr('command'));
                             if ($original.get()) {
-                                $elem.attr('hidden', $original.attr('hidden') || "false")
-                                    .attr('collapsed', $original.attr('collapsed') || "false")
-                                    .attr('disabled', $original.attr('disabled') || "false");
+                                // 处理 hidden 属性
+                                if ($original.attr('hidden') === "true") {
+                                    $elem.attr('hidden', true);
+                                } else {
+                                    $elem.removeAttr('hidden');
+                                }
+
+                                // 处理 collapsed 属性
+                                if ($original.attr('collapsed') === "true") {
+                                    $elem.attr('collapsed', true);
+                                } else {
+                                    $elem.removeAttr('collapsed');
+                                }
+
+                                // 处理 disabled 属性
+                                if ($original.attr('disabled') === "true") {
+                                    $elem.attr('disabled', true);
+                                } else {
+                                    $elem.removeAttr('disabled');
+                                }
                             }
                         });
 
@@ -639,7 +666,11 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                         if (enableConvertHiddenStyleToAttribue) {
                             $$('menuitem.addMenu, menu.addMenu, menugroup.addMenu').forEach($elem => {
-                                if (!isVisible($elem)) {
+                                if (isVisible($elem)) {
+                                    $elem.removeAttr('hidden')
+                                        .removeAttr('collapsed')
+                                        .removeAttr('disabled');
+                                } else {
                                     $elem.attr('hidden', true);
                                 }
                             });
@@ -1968,17 +1999,67 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
         },
         alert: function (aMsg, aTitle, aCallback) {
-            var callback = aCallback ? {
-                observe: function (subject, topic, data) {
-                    if ("alertclickcallback" != topic)
-                        return;
-                    aCallback.call(null);
+            let alertOptions = {};
+            let callback = null;
+
+            // === 新模式：alert(aAlertObject, aCallback)
+            if (typeof aMsg === 'object' && aMsg !== null) {
+                alertOptions = {
+                    title: aMsg.title || "addMenuPlus",
+                    text: aMsg.text + "",
+                    textClickable: !!aMsg.textClickable,
+                    imageURL: aMsg.imageURL || AlertImage,
+                };
+                callback = aTitle; // 第二个参数是 callback
+            }
+            // === 旧模式：alert(aMsg, aTitle, aCallback)
+            else {
+                alertOptions = {
+                    title: aTitle || "addMenuPlus",
+                    text: aMsg + "",
+                    textClickable: !!aCallback,
+                    imageURL: AlertImage,
+                };
+                callback = aCallback;
+            }
+
+            const callbackObject = callback
+                ? {
+                    observe: function (subject, topic, data) {
+                        if (topic === "alertclickcallback") {
+                            callback.call(null);
+                        }
+                    },
                 }
-            } : null;
-            var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
-                aMsg + "", !!callback, "", callback);
+                : null;
+
+            const alertsService = Cc["@mozilla.org/alerts-service;1"]
+                .getService(Ci.nsIAlertsService);
+
+            if (versionGE("147a1")) {
+                let alert = new AlertNotification({
+                    imageURL: alertOptions.imageURL,
+                    title: alertOptions.title,
+                    text: alertOptions.text,
+                    textClickable: alertOptions.textClickable,
+                });
+
+                alertsService.showAlert(
+                    alert,
+                    callbackObject && callbackObject.observe
+                        ? callbackObject.observe
+                        : null
+                );
+            } else {
+                alertsService.showAlertNotification(
+                    alertOptions.imageURL,
+                    alertOptions.title,
+                    alertOptions.text,
+                    alertOptions.textClickable,
+                    "",
+                    callbackObject
+                );
+            }
         },
         $$: function (selector, callback, context = gBrowser.selectedBrowser) {
             // 如果 callback 是函数，转换为字符串

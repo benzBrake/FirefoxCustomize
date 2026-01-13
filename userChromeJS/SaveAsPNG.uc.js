@@ -7,7 +7,7 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    保存图片为 PNG 格式
 // ==/UserScript==
-(function (ins) {
+(function (ins, AlertNotification, versionGE) {
     const isChinese = Services.locale.appLocaleAsBCP47.includes("zh-");
     const label = isChinese ? "保存为 PNG 图片" : "Save as PNG";
     const menuItem = document.createXULElement("menuitem");
@@ -43,7 +43,7 @@
             foStream.write(bytes, bytes.length);
             foStream.close();
             if (file.exists() && file.fileSize > 0) {
-                alerts((isChinese ? "成功图片保存到 %s!" : "Successfully saved image to %s!").replace("%s", file.path), function() {
+                alerts((isChinese ? "成功图片保存到 %s!" : "Successfully saved image to %s!").replace("%s", file.path), function () {
                     file.launch();
                 });
             }
@@ -61,13 +61,13 @@
         contextMenu.removeEventListener("popupshowing", callback);
     });
 
-    function callback() {
+    function callback () {
         setTimeout(function () {
             menuItem.hidden = !gContextMenu.onImage;
         }, 10);
     }
 
-    async function saveFileDialog(defaultFilename) {
+    async function saveFileDialog (defaultFilename) {
         return new Promise(function (resolve) {
             const fp = makeFilePicker();
             const title = isChinese ? "保存图片" : "Save Image";
@@ -88,7 +88,7 @@
         });
     }
 
-    function readBlobAsBase64(blob) {
+    function readBlobAsBase64 (blob) {
         return new Promise(function (resolve, reject) {
             const reader = new FileReader();
             reader.onloadend = function () {
@@ -101,7 +101,7 @@
         });
     }
 
-    function readBytesFromInputStream(stream, count) {
+    function readBytesFromInputStream (stream, count) {
         let BinaryInputStream = Components.Constructor(
             "@mozilla.org/binaryinputstream;1",
             "nsIBinaryInputStream",
@@ -113,20 +113,33 @@
         return new BinaryInputStream(stream).readBytes(count);
     }
 
-    function alerts(message, aCallback) {
-        var callback = aCallback ? {
+    function alerts (message, callback) {
+        const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+        const mTitle = isChinese ? "保存为 PNG 图片" : "Save As PNG";
+        const mMessage = message + "";
+        const callbackObject = callback ? {
             observe: function (subject, topic, data) {
                 if ("alertclickcallback" != topic)
                     return;
-                aCallback.call(null);
+                callback.call(null);
             }
         } : null;
-        const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-        alertsService.showAlertNotification(
-            "chrome://devtools/skin/images/browsers/firefox.svg",
-            isChinese ? "保存为 PNG 图片" : "Save As PNG",
-            message + "",
-            !!callback, "", callback
-        );
+        if (versionGE('147a1')) {
+            let alert = new AlertNotification({
+                imageURL: 'chrome://devtools/skin/images/browsers/firefox.svg',
+                title: mTitle,
+                text: mMessage,
+                textClickable: !!callbackObject,
+            });
+            alertsService.showAlert(alert, callbackObject?.observe);
+        } else {
+            alertsService.show(
+                "chrome://devtools/skin/images/browsers/firefox.svg", mTitle,
+                mMessage, !!callbackObject, "", callbackObject);
+        }
     }
-})(document.getElementById('context-video-saveimage'));
+})(document.getElementById('context-video-saveimage'), Components.Constructor(
+    "@mozilla.org/alert-notification;1",
+    "nsIAlertNotification",
+    "initWithObject"
+), v => Services.vc.compare(Services.appinfo.version, v) >= 0);

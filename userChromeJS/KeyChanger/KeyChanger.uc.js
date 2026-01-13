@@ -8,7 +8,7 @@
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
-// @version        2025.03.29
+// @note           2026.01.13 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           2025.03.29 fix event.target is undefined
 // @note           2024.04.13 修复 openCommand 几个问题
 // @note           2023.07.27 修复 openCommand 不遵循容器设定
@@ -29,6 +29,18 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
 
     // true: 若无外部编辑器则使用代码片段速记器(Scratchpad) | false: 提示设置编辑器路径
     const useScraptchpad = true;
+
+    const AlertNotification = Components.Constructor(
+        "@mozilla.org/alert-notification;1",
+        "nsIAlertNotification",
+        "initWithObject"
+    );
+
+    const AlertImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiMwMDAwMDAiPjxkZWZzPjxwYXRoIGlkPSJmZU5vdGljZVB1c2gwIiBkPSJNMTcgMTFhNCA0IDAgMSAxIDAtOGE0IDQgMCAwIDEgMCA4Wk01IDVoNnYySDV2MTJoMTJ2LTZoMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjdhMiAyIDAgMCAxIDItMloiLz48L2RlZnM+PGcgaWQ9ImZlTm90aWNlUHVzaDEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiPjxnIGlkPSJmZU5vdGljZVB1c2gyIj48bWFzayBpZD0iZmVOb3RpY2VQdXNoMyIgZmlsbD0iIzAwMDAwMCI+PHVzZSBocmVmPSIjZmVOb3RpY2VQdXNoMCIvPjwvbWFzaz48dXNlIGlkPSJmZU5vdGljZVB1c2g0IiBmaWxsPSIjMDAwMDAwIiBmaWxsLXJ1bGU9Im5vbnplcm8iIGhyZWY9IiNmZU5vdGljZVB1c2gwIi8+PC9nPjwvZz48L3N2Zz4=';
+
+    const versionGE = (v) => {
+        return Services.vc.compare(Services.appinfo.version, v) >= 0;
+    }
 
     /**
      * @class KeyChanger
@@ -447,25 +459,98 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
 
         /**
          * 显示桌面通知
-         * @param {string} aMsg - 消息内容
-         * @param {string} aTitle - 消息标题
-         * @param {Function} aCallback - 点击消息后的回调函数
+         *
+         * 【兼容两种调用方式】
+         *
+         * 1️⃣ 旧用法（保持不变）：
+         * alert(aMsg, aTitle, aCallback)
+         *
+         * @param {string} aMsg
+         *        消息内容
+         * @param {string} [aTitle]
+         *        消息标题
+         * @param {Function} [aCallback]
+         *        点击消息后的回调函数
+         *
+         * 2️⃣ 新用法（Object 参数）：
+         * alert(aAlertObject, aCallback)
+         *
+         * @param {Object} aAlertObject
+         *        通知配置对象
+         * @param {string} [aAlertObject.title]
+         *        消息标题（默认："addMenuPlus"）
+         * @param {string} aAlertObject.text
+         *        消息内容
+         * @param {boolean} [aAlertObject.textClickable]
+         *        消息内容是否可点击（默认：false）
+         * @param {string} [aAlertObject.imageURL]
+         *        通知图标 URL
+         * @param {Function} [aCallback]
+         *        点击消息后的回调函数
          */
         alert: function (aMsg, aTitle, aCallback) {
-            const callback = aCallback ? {
-                observe: function (subject, topic, data) {
-                    if ("alertclickcallback" === topic) {
-                        aCallback.call(null);
-                    }
-                }
-            } : null;
-            const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                "chrome://global/skin/icons/information-32.png", aTitle || "KeyChanger",
-                aMsg + "", !!callback, "", callback
-            );
-        },
+            let alertOptions = {};
+            let callback = null;
 
+            // === 新模式：alert(aAlertObject, aCallback)
+            if (typeof aMsg === 'object' && aMsg !== null) {
+                alertOptions = {
+                    title: aMsg.title || "KeyChanger",
+                    text: aMsg.text + "",
+                    textClickable: !!aMsg.textClickable,
+                    imageURL: aMsg.imageURL || AlertImage,
+                };
+                callback = aTitle; // 第二个参数是 callback
+            }
+            // === 旧模式：alert(aMsg, aTitle, aCallback)
+            else {
+                alertOptions = {
+                    title: aTitle || "KeyChanger",
+                    text: aMsg + "",
+                    textClickable: !!aCallback,
+                    imageURL: AlertImage,
+                };
+                callback = aCallback;
+            }
+
+            const callbackObject = callback
+                ? {
+                    observe: function (subject, topic, data) {
+                        if (topic === "alertclickcallback") {
+                            callback.call(null);
+                        }
+                    },
+                }
+                : null;
+
+            const alertsService = Cc["@mozilla.org/alerts-service;1"]
+                .getService(Ci.nsIAlertsService);
+
+            if (versionGE("147a1")) {
+                let alert = new AlertNotification({
+                    imageURL: alertOptions.imageURL,
+                    title: alertOptions.title,
+                    text: alertOptions.text,
+                    textClickable: alertOptions.textClickable,
+                });
+
+                alertsService.showAlert(
+                    alert,
+                    callbackObject && callbackObject.observe
+                        ? callbackObject.observe
+                        : null
+                );
+            } else {
+                alertsService.showAlertNotification(
+                    alertOptions.imageURL,
+                    alertOptions.title,
+                    alertOptions.text,
+                    alertOptions.textClickable,
+                    "",
+                    callbackObject
+                );
+            }
+        },
         /**
          * 在浏览器控制台输出日志
          * @param {...any} args - 要输出的内容
