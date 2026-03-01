@@ -224,6 +224,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 sb = Cu.Sandbox(window, {
                     sandboxPrototype: window,
                     sameZoneAs: window,
+                    freezeBuiltins: false,
                 });
                 Cu.evalInSandbox(`
                     Function.prototype.toSource = window.Function.prototype.toSource;

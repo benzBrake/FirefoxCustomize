@@ -52,6 +52,7 @@
                 sb = Cu.Sandbox(window, {
                     sandboxPrototype: window,
                     sameZoneAs: window,
+                    freezeBuiltins: false,
                 });
 
                 /* toSource() is not available in sandbox */
