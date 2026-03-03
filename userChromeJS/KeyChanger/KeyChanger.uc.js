@@ -8,6 +8,7 @@
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
+// @note           2026.03.04 整理代码
 // @note           2026.01.13 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           2025.03.29 fix event.target is undefined
 // @note           2024.04.13 修复 openCommand 几个问题
@@ -108,7 +109,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             switch (event.type) {
                 case 'mouseup':
                     // 兼容不同 Firefox 版本获取选中内容的方式
-                    if (content) {
+                    if (typeof content !== "undefined" && content && content.getSelection) {
                         this.setSelectedText(content.getSelection().toString());
                     } else {
                         try {
@@ -183,51 +184,51 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
 
             // 在沙箱中执行配置文件，以隔离作用域并获取配置对象
             const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
-            const keys = Cu.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
-            if (!keys) return null;
+            try {
+                const keys = Cu.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
+                if (!keys) return null;
 
-            const dFrag = document.createDocumentFragment();
+                const dFrag = document.createDocumentFragment();
 
-            Object.keys(keys).forEach(n => {
-                const keyString = n.toUpperCase().split("+");
-                let modifiers = "", key, keycode;
+                Object.keys(keys).forEach(n => {
+                    const keyString = n.toUpperCase().split("+");
+                    let modifiers = "", key, keycode;
 
-                // 解析修饰键和主键
-                keyString.forEach(k => {
-                    switch (k) {
-                        case "CTRL": case "CONTROL": case "ACCEL": modifiers += "accel,"; break;
-                        case "SHIFT": modifiers += "shift,"; break;
-                        case "ALT": case "OPTION": modifiers += "alt,"; break;
-                        case "META": case "COMMAND": modifiers += "meta,"; break;
-                        case "OS": case "WIN": case "WINDOWS": case "HYPER": case "SUPER": modifiers += "os,"; break;
-                        case "": key = "+"; break; // 处理 "++" 这种情况
-                        // 特殊按键名转换为 Keycode
-                        case "BACKSPACE": case "BKSP": case "BS": keycode = "VK_BACK"; break;
-                        case "RET": case "ENTER": keycode = "VK_RETURN"; break;
-                        case "ESC": keycode = "VK_ESCAPE"; break;
-                        case "PAGEUP": case "PAGE UP": case "PGUP": case "PUP": keycode = "VK_PAGE_UP"; break;
-                        case "PAGEDOWN": case "PAGE DOWN": case "PGDN": case "PDN": keycode = "VK_PAGE_DOWN"; break;
-                        case "TOP": keycode = "VK_UP"; break;
+                    // 解析修饰键和主键
+                    keyString.forEach(k => {
+                        switch (k) {
+                            case "CTRL": case "CONTROL": case "ACCEL": modifiers += "accel,"; break;
+                            case "SHIFT": modifiers += "shift,"; break;
+                            case "ALT": case "OPTION": modifiers += "alt,"; break;
+                            case "META": case "COMMAND": modifiers += "meta,"; break;
+                            case "OS": case "WIN": case "WINDOWS": case "HYPER": case "SUPER": modifiers += "os,"; break;
+                            case "": key = "+"; break; // 处理 "++" 这种情况
+                            // 特殊按键名转换为 Keycode
+                            case "BACKSPACE": case "BKSP": case "BS": keycode = "VK_BACK"; break;
+                            case "RET": case "ENTER": keycode = "VK_RETURN"; break;
+                            case "ESC": keycode = "VK_ESCAPE"; break;
+                            case "PAGEUP": case "PAGE UP": case "PGUP": case "PUP": keycode = "VK_PAGE_UP"; break;
+                            case "PAGEDOWN": case "PAGE DOWN": case "PGDN": case "PDN": keycode = "VK_PAGE_DOWN"; break;
+                            case "TOP": keycode = "VK_UP"; break;
 
-                        case "BOTTOM": keycode = "VK_DOWN"; break;
-                        case "INS": keycode = "VK_INSERT"; break;
-                        case "DEL": keycode = "VK_DELETE"; break;
-                        default:
-                            if (k.length === 1) key = k; // 单字符按键
-                            else if (!k.startsWith("VK_")) keycode = "VK_" + k; // 非 VK_ 前缀的转为 Keycode
-                            else keycode = k; // 已经是 Keycode
-                            break;
-                    }
-                });
+                            case "BOTTOM": keycode = "VK_DOWN"; break;
+                            case "INS": keycode = "VK_INSERT"; break;
+                            case "DEL": keycode = "VK_DELETE"; break;
+                            default:
+                                if (k.length === 1) key = k; // 单字符按键
+                                else if (!k.startsWith("VK_")) keycode = "VK_" + k; // 非 VK_ 前缀的转为 Keycode
+                                else keycode = k; // 已经是 Keycode
+                                break;
+                        }
+                    });
 
-                const elem = document.createXULElement('key');
-                if (modifiers) elem.setAttribute('modifiers', modifiers.slice(0, -1));
-                if (key) elem.setAttribute('key', key);
-                else if (keycode) elem.setAttribute('keycode', keycode);
+                    const elem = document.createXULElement('key');
+                    if (modifiers) elem.setAttribute('modifiers', modifiers.slice(0, -1));
+                    if (key) elem.setAttribute('key', key);
+                    else if (keycode) elem.setAttribute('keycode', keycode);
 
-                const cmd = keys[n];
-                switch (typeof cmd) {
-                    case 'object': // 处理对象形式的命令，通常用于内置命令
+                    const cmd = keys[n];
+                    if (cmd && typeof cmd === 'object') { // 处理对象形式的命令，通常用于内置命令
                         Object.keys(cmd).forEach(function (a) {
                             if (a === 'oncommand' && cmd[a] === "internal") {
                                 elem.addEventListener('command', (event) => KeyChanger.internalCommand(event));
@@ -236,26 +237,35 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                                 elem.setAttribute(a, cmd[a]);
                             }
                         });
-                        break;
-                    default: // 处理函数或字符串形式的命令
+                    } else { // 处理函数或字符串形式的命令
                         // 安全提示: 下方的 eval 会执行配置文件中定义的代码。请确保配置文件来源可靠。
                         // 这是脚本的核心功能，允许用户高度自定义快捷键行为。
-                        elem.dataset.oncommand = typeof cmd === "function" ? cmd.toString() : cmd;
+                        elem.dataset.oncommand = typeof cmd === "function" ? cmd.toString() : (cmd + "");
                         elem.addEventListener('command', (event) => {
                             // event.target 在某些情况下可能为 undefined，使用 event.currentTarget 更稳定
                             const commandTarget = event.currentTarget || event.target;
                             Cu.evalInSandbox('(' + commandTarget.dataset.oncommand + ')(window, event)', KeyChanger.sb);
                         });
-                }
-                dFrag.appendChild(elem);
-            });
-            return dFrag;
+                    }
+                    dFrag.appendChild(elem);
+                });
+                return dFrag;
+            } catch (e) {
+                this.log("快捷键配置解析失败:", e);
+                return null;
+            } finally {
+                try {
+                    Cu.nukeSandbox(sandbox);
+                } catch (ex) {}
+            }
         },
 
         /**
          * 在工具菜单中创建脚本控制菜单项
          */
         createMenuitem: function () {
+            if (document.getElementById('toolsbar_KeyChanger_rebuild')) return;
+
             const menuitem = $C(document, 'menuitem', {
                 id: 'toolsbar_KeyChanger_rebuild',
                 label: 'KeyChanger',
@@ -284,7 +294,13 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          */
         internalCommand: function (event) {
             const commandTarget = event.currentTarget || event.target;
-            const params = commandTarget.getAttribute('params');
+            const params = commandTarget && commandTarget.getAttribute
+                ? commandTarget.getAttribute('params')
+                : "";
+            if (!params) {
+                this.log("内置命令参数为空");
+                return;
+            }
             const cmd = this.internalParamsParse(params);
             if (typeof cmd === "function") {
                 cmd.call(this, event);
@@ -299,10 +315,18 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          * @returns {Function|string}
          */
         internalParamsParse: function (params) {
-            const args = params.split(',');
+            if (!params || typeof params !== "string") {
+                return "";
+            }
+
+            const args = params.split(',').map(s => s.trim()).filter(Boolean);
+            if (!args.length) {
+                return "";
+            }
+
             let cmd = INTERNAL_MAP;
             for (let i = 0; i < args.length; i++) {
-                if (cmd.hasOwnProperty(args[i])) {
+                if (cmd && Object.prototype.hasOwnProperty.call(cmd, args[i])) {
                     cmd = cmd[args[i]];
                 } else {
                     return "";
@@ -448,7 +472,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             const file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
             const process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
             try {
-                const args = (typeof arg === 'string') ? arg.split(/\s+/) : [arg];
+                let args = [];
+                if (typeof arg === 'string') {
+                    const trimmedArg = arg.trim();
+                    args = trimmedArg ? trimmedArg.split(/\s+/) : [];
+                } else if (Array.isArray(arg)) {
+                    args = arg.map(v => String(v));
+                } else if (arg !== undefined && arg !== null) {
+                    args = [String(arg)];
+                }
                 file.initWithPath(path);
                 process.init(file);
                 process.run(false, args, args.length);
@@ -627,19 +659,26 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
     function loadText (aFile) {
         if (!aFile.exists()) return "";
         const fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-        const sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-        fstream.init(aFile, -1, 0, 0);
-        sstream.init(fstream);
-
-        let data = sstream.read(sstream.available());
+        const cstream = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);
+        let data = "";
         try {
-            // 尝试将数据从 UTF-8 字节流解码为 JS 字符串
-            data = decodeURIComponent(escape(data));
+            fstream.init(aFile, -1, 0, 0);
+            cstream.init(fstream, "UTF-8", 0, Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+
+            const str = {};
+            while (cstream.readString(0xffffffff, str) !== 0) {
+                data += str.value;
+            }
         } catch (e) {
-            console.error("KeyChanger: loadText 解码失败", e);
+            Services.console.logStringMessage("[KeyChanger] loadText 解码失败: " + e);
+        } finally {
+            try {
+                cstream.close();
+            } catch (ex) {}
+            try {
+                fstream.close();
+            } catch (ex) {}
         }
-        sstream.close();
-        fstream.close();
         return data;
     }
 
