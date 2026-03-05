@@ -232,7 +232,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let CTX_POPUP = this.createBasicPopup(doc);
                 CTX_POPUP.id = 'OpenWithHelper-Ctx-Popup';
                 CTX_POPUP.addEventListener("popupshowing", this, false);
-                let CTX_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Ctx-Menu', 'data-l10n-id': 'open-with-applications', label: "Open With Application" });
+                let CTX_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Ctx-Menu', 'data-l10n-id': 'open-with-applications', label: "使用应用打开" });
                 // remove the comment to hide context menu icon for firefox 90+
                 // if (GE_90) {
                 //     CTX_MENU.classList.remove("menu-iconic");
@@ -247,7 +247,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let TAB_POPUP = this.createBasicPopup(doc);
                 TAB_POPUP.id = 'OpenWithHelper-Tab-Popup';
                 TAB_POPUP.addEventListener("popupshowing", this, false);
-                let TAB_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Tab-Menu', 'data-l10n-id': 'open-with-applications', label: "Open With Application" });
+                let TAB_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Tab-Menu', 'data-l10n-id': 'open-with-applications', label: "使用应用打开" });
                 TAB_MENU.appendChild(TAB_POPUP);
                 this.TAB_POPUP = $('tabContextMenu')?.insertBefore(TAB_MENU, $('context_reopenInContainer')?.nextElementSibling);
                 if (isAlert) {
@@ -257,10 +257,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             createBasicPopup: function (doc) {
                 let menupopup = createElement(doc, 'menupopup', { class: 'owh-popup', 'need-reload': true });
                 menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: function (event) { OpenWithHelper.openSaveDir(event); } }));
-                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: function (event) { OpenWithHelper.changeSaveDir(event); } }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", oncommand: function (event) { OpenWithHelper.openManagePanel(event); } }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "打开下载目录", class: "folder", oncommand: function (event) { OpenWithHelper.openSaveDir(event); } }));
+                menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "更改下载目录", class: "settings", oncommand: function (event) { OpenWithHelper.changeSaveDir(event); } }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "管理应用", class: "settings", oncommand: function (event) { OpenWithHelper.openManagePanel(event); } }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "关于", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
                 return menupopup;
             },
             reload (isAlert = false) {
@@ -980,26 +980,59 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
 
             async loadStrings() {
-                const keys = [
-                    "manage-applications-list", "application-icon", "application-title",
-                    "application-condition", "application-path", "application-params",
-                    "application-operate", "set-application-path", "change-path",
-                    "separator", "add-application", "add-separator", "dont-do-that",
-                    "delete-application", "save", "drag-to-sort", "fit-for-all",
-                    "fit-for-context-menu", "condition-default", "condition-button-menu",
-                    "condition-tab-menu", "context-menu-input", "context-menu-select",
-                    "context-menu-link", "context-menu-image", "context-menu-media",
-                    "context-menu-page", "context-menu-frame", "call-params-description-label",
-                    "param-eol-description", "param-title-description", "param-titles-description",
-                    "param-sel-description", "param-url-description", "param-link-or-url-description",
-                    "param-link-description", "param-image-url-description", "param-image-title-description",
-                    "param-media-url-description", "param-profile-dir-description", "param-save-dir-description",
-                    "param-cookie-txt-description", "param-cookies-sqlite-description", "param-choose-dir-description",
-                    "param-clipboard-description", "param-more-info", "operation-succeeded", "operation-canceled"
-                ];
+                const defaults = {
+                    "manage-applications-list": "管理应用列表",
+                    "application-icon": "图标",
+                    "application-title": "标题",
+                    "application-condition": "条件",
+                    "application-path": "可执行文件路径",
+                    "application-params": "参数",
+                    "application-operate": "操作",
+                    "set-application-path": "设置可执行文件路径",
+                    "change-path": "更改",
+                    "separator": "分隔符",
+                    "add-application": "添加应用",
+                    "add-separator": "添加分隔符",
+                    "dont-do-that": "请勿这样操作！",
+                    "delete-application": "❌",
+                    "save": "保存",
+                    "drag-to-sort": "拖动排序",
+                    "fit-for-all": "适用于全部",
+                    "fit-for-context-menu": "适用于右键菜单",
+                    "condition-default": "默认",
+                    "condition-button-menu": "显示在按钮菜单",
+                    "condition-tab-menu": "显示在标签页菜单",
+                    "context-menu-input": "输入框右键菜单",
+                    "context-menu-select": "选中文本右键菜单",
+                    "context-menu-link": "链接右键菜单",
+                    "context-menu-image": "图片右键菜单",
+                    "context-menu-media": "媒体右键菜单",
+                    "context-menu-page": "页面右键菜单",
+                    "context-menu-frame": "框架右键菜单",
+                    "call-params-description-label": "调用应用时传递的参数",
+                    "param-eol-description": "换行符 (\\r\\n)",
+                    "param-title-description": "当前页面标题",
+                    "param-titles-description": "简化的当前页面标题",
+                    "param-sel-description": "选中的文本",
+                    "param-url-description": "当前页面 URL",
+                    "param-link-or-url-description": "链接 URL 或当前页面 URL",
+                    "param-link-description": "链接 URL",
+                    "param-image-url-description": "图片 URL",
+                    "param-image-title-description": "图片标题",
+                    "param-media-url-description": "媒体 URL",
+                    "param-profile-dir-description": "Firefox 配置文件目录路径",
+                    "param-save-dir-description": "保存目录（默认桌面）",
+                    "param-cookie-txt-description": "COOKIE 保存到临时路径",
+                    "param-cookies-sqlite-description": "cookies.sqlite 路径",
+                    "param-choose-dir-description": "选择目录",
+                    "param-clipboard-description": "剪贴板内容",
+                    "param-more-info": "更多信息见源代码",
+                    "operation-succeeded": "操作成功！",
+                    "operation-canceled": "操作已取消！"
+                };
 
-                for (const key of keys) {
-                    this.strings[key] = await this.helper.l10n.formatValue(key) || key;
+                for (const [key, defaultValue] of Object.entries(defaults)) {
+                    this.strings[key] = await this.helper.l10n.formatValue(key) || defaultValue;
                 }
             }
 
