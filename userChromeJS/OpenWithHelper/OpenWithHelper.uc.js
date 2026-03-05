@@ -1042,6 +1042,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     this.createModal();
                 }
                 this.container.style.display = 'flex';
+                document.documentElement.setAttribute('owh-modal-open', 'true');
                 await this.loadApps();
             }
 
@@ -1059,10 +1060,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     position: fixed;
                     top: 0;
                     left: 0;
-                    right: 0;
-                    bottom: 0;
+                    width: 100vw;
+                    height: 100vh;
                     background: rgba(0, 0, 0, 0.5);
-                    z-index: 999999;
+                    z-index: 2147483647;
                     align-items: center;
                     justify-content: center;
                     font-size: ${modalScale}rem;
@@ -1176,6 +1177,39 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     }
                 });
 
+                // 拦截键盘事件
+                this.keydownHandler = (e) => {
+                    if (document.documentElement.hasAttribute('owh-modal-open')) {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            this.hide();
+                        } else if (e.altKey && e.key === 'F4') {
+                            return;
+                        } else {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                        }
+                    }
+                };
+                this.keypressHandler = (e) => {
+                    if (document.documentElement.hasAttribute('owh-modal-open')) {
+                        if (e.altKey && e.key === 'F4') return;
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                    }
+                };
+                this.keyupHandler = (e) => {
+                    if (document.documentElement.hasAttribute('owh-modal-open')) {
+                        if (e.altKey && e.key === 'F4') return;
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                    }
+                };
+                window.addEventListener('keydown', this.keydownHandler, true);
+                window.addEventListener('keypress', this.keypressHandler, true);
+                window.addEventListener('keyup', this.keyupHandler, true);
+
                 this.doc.body.appendChild(overlay);
                 this.container = overlay;
                 this.dialog = dialog;
@@ -1258,6 +1292,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             hide() {
                 if (this.container) {
                     this.container.style.display = 'none';
+                    document.documentElement.removeAttribute('owh-modal-open');
                 }
             }
 
@@ -1588,9 +1623,18 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
 
             destroy() {
+                if (this.keydownHandler) {
+                    window.removeEventListener('keydown', this.keydownHandler, true);
+                    window.removeEventListener('keypress', this.keypressHandler, true);
+                    window.removeEventListener('keyup', this.keyupHandler, true);
+                    this.keydownHandler = null;
+                    this.keypressHandler = null;
+                    this.keyupHandler = null;
+                }
                 if (this.container && this.container.parentNode) {
                     this.container.parentNode.removeChild(this.container);
                 }
+                document.documentElement.removeAttribute('owh-modal-open');
                 this.container = null;
                 this.dialog = null;
             }
