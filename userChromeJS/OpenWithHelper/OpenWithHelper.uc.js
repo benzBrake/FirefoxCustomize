@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.5
+// @version        1.0.6
 // @author         Ryan
 // @include        main
 // @sandbox        true
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.6 改用 ModalDialog 来配置应用
 // @note           1.0.5 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           1.0.4 修复 Fx143 图标显示异常
 // @note           1.0.3 增加选择目录功能
@@ -218,6 +219,14 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
                 this.regexp = new RegExp(Object.values(R).join("|"), "ig");
             },
+            // ========== 管理面板相关代码开始 ==========
+            openManagePanel: async function () {
+                if (!this._managePanel) {
+                    this._managePanel = new ManageAppsPanel(this);
+                }
+                await this._managePanel.show();
+            },
+            // ========== 管理面板相关代码结束 ==========
             initMenu: async function (isAlert, doc) {
                 doc || (doc = document);
                 let CTX_POPUP = this.createBasicPopup(doc);
@@ -250,7 +259,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 menupopup.appendChild(createElement(doc, 'menuseparator', { static: true, class: 'owh-separator' }));
                 menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'open-download-dir', label: "Open Download Directory", class: "folder", oncommand: function (event) { OpenWithHelper.openSaveDir(event); } }));
                 menupopup.appendChild(createElement(doc, "menuitem", { static: true, 'data-l10n-id': 'change-download-dir', label: "Change Download Directory", class: "settings", oncommand: function (event) { OpenWithHelper.changeSaveDir(event); } }));
-                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", url: 'chrome://userchromejs/content/utils/ManageApps.html', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
+                menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'manage-applications', label: "Manage Applications", class: "settings", oncommand: function (event) { OpenWithHelper.openManagePanel(event); } }));
                 menupopup.appendChild(createElement(doc, 'menuitem', { static: true, 'data-l10n-id': 'about-open-with-helper', label: "About", class: "info", url: 'https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS/OpenWithHelper', where: 'tab', oncommand: function (event) { OpenWithHelper.onCommand(event); } }));
                 return menupopup;
             },
@@ -957,7 +966,603 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 return self.indexOf(value) === index;
             });
         }
-    })(`
+
+        /**
+         * ManageAppsPanel - 使用 HTML 模态对话框的应用配置面板
+         */
+        class ManageAppsPanel {
+            constructor(helper) {
+                this.helper = helper;
+                this.container = null;
+                this.doc = document;
+                this.EMPTY_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII=";
+                this.strings = {};
+            }
+
+            async loadStrings() {
+                const keys = [
+                    "manage-applications-list", "application-icon", "application-title",
+                    "application-condition", "application-path", "application-params",
+                    "application-operate", "set-application-path", "change-path",
+                    "separator", "add-application", "add-separator", "dont-do-that",
+                    "delete-application", "save", "drag-to-sort", "fit-for-all",
+                    "fit-for-context-menu", "condition-default", "condition-button-menu",
+                    "condition-tab-menu", "context-menu-input", "context-menu-select",
+                    "context-menu-link", "context-menu-image", "context-menu-media",
+                    "context-menu-page", "context-menu-frame", "call-params-description-label",
+                    "param-eol-description", "param-title-description", "param-titles-description",
+                    "param-sel-description", "param-url-description", "param-link-or-url-description",
+                    "param-link-description", "param-image-url-description", "param-image-title-description",
+                    "param-media-url-description", "param-profile-dir-description", "param-save-dir-description",
+                    "param-cookie-txt-description", "param-cookies-sqlite-description", "param-choose-dir-description",
+                    "param-clipboard-description", "param-more-info", "operation-succeeded", "operation-canceled"
+                ];
+
+                for (const key of keys) {
+                    this.strings[key] = await this.helper.l10n.formatValue(key) || key;
+                }
+            }
+
+            async show() {
+                if (!this.container) {
+                    await this.loadStrings();
+                    this.createModal();
+                }
+                this.container.style.display = 'flex';
+                await this.loadApps();
+            }
+
+            createModal() {
+                // 获取系统 DPI 缩放比例
+                const dpiScale = window.devicePixelRatio || 1;
+                // 计算合适的缩放比例（限制在 0.8-1.5 之间）
+                const modalScale = Math.min(Math.max(dpiScale, 0.8), 1.5);
+
+                // 创建遮罩层
+                const overlay = this.doc.createElement('div');
+                overlay.className = 'owh-modal-overlay';
+                overlay.style.cssText = `
+                    display: none;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    z-index: 999999;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: ${modalScale}rem;
+                `;
+
+                // 创建对话框
+                const dialog = this.doc.createElement('div');
+                dialog.className = 'owh-modal-dialog';
+                dialog.style.cssText = `
+                    background: var(--toolbar-bgcolor, #fff);
+                    border-radius: ${8 * modalScale}px;
+                    box-shadow: 0 ${4 * modalScale}px ${20 * modalScale}px rgba(0, 0, 0, 0.3);
+                    width: ${900 * modalScale}px;
+                    max-width: 95vw;
+                    max-height: 90vh;
+                    display: flex;
+                    flex-direction: column;
+                `;
+
+                // 创建标题栏
+                const header = this.doc.createElement('div');
+                header.className = 'owh-modal-header';
+                header.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: ${12 * modalScale}px ${16 * modalScale}px;
+                    border-bottom: 1px solid var(--chrome-content-separator-color, #e0e0e0);
+                `;
+
+                const title = this.doc.createElement('span');
+                title.className = 'owh-modal-title';
+                title.textContent = this.strings["manage-applications-list"];
+                title.style.cssText = `font-size: ${16 * modalScale}px; font-weight: 600;`;
+
+                const closeBtn = this.doc.createElement('button');
+                closeBtn.className = 'owh-modal-close';
+                closeBtn.textContent = '×';
+                closeBtn.style.cssText = `
+                    background: none;
+                    border: none;
+                    font-size: ${24 * modalScale}px;
+                    cursor: pointer;
+                    padding: 0;
+                    width: ${28 * modalScale}px;
+                    height: ${28 * modalScale}px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--chrome-color, #333);
+                `;
+                closeBtn.addEventListener('click', () => this.hide());
+
+                header.appendChild(title);
+                header.appendChild(closeBtn);
+
+                // 创建内容区
+                const content = this.doc.createElement('div');
+                content.className = 'owh-modal-content';
+                content.style.cssText = `
+                    padding: ${16 * modalScale}px;
+                    overflow: auto;
+                    flex: 1;
+                `;
+
+                // 工具栏
+                const toolbar = this.doc.createElement('div');
+                toolbar.className = 'owh-toolbar';
+                toolbar.style.cssText = `
+                    display: flex;
+                    gap: ${8 * modalScale}px;
+                    margin-bottom: ${12 * modalScale}px;
+                `;
+
+                const addAppBtn = this.createButton(this.strings["add-application"], () => this.addApplication());
+                const addSepBtn = this.createButton(this.strings["add-separator"], () => this.addSeparator());
+                const saveBtn = this.createButton(this.strings["save"], () => this.save());
+
+                toolbar.appendChild(addAppBtn);
+                toolbar.appendChild(addSepBtn);
+                toolbar.appendChild(saveBtn);
+
+                content.appendChild(toolbar);
+
+                // 应用列表
+                const listContainer = this.doc.createElement('div');
+                listContainer.className = 'owh-list-container';
+                listContainer.id = 'owh-apps-list';
+                listContainer.style.cssText = `
+                    border: 1px solid var(--chrome-content-separator-color, #ccc);
+                    border-radius: 4px;
+                    max-height: 400px;
+                    overflow-y: auto;
+                    margin-bottom: 12px;
+                `;
+
+                content.appendChild(listContainer);
+
+                // 帮助信息
+                const helpBox = this.createHelpBox();
+                content.appendChild(helpBox);
+
+                dialog.appendChild(header);
+                dialog.appendChild(content);
+                overlay.appendChild(dialog);
+
+                // 点击遮罩关闭
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        this.hide();
+                    }
+                });
+
+                this.doc.body.appendChild(overlay);
+                this.container = overlay;
+                this.dialog = dialog;
+
+                // 设置拖拽排序
+                this.setupDragDrop();
+            }
+
+            createButton(label, callback) {
+                const btn = this.doc.createElement('button');
+                btn.textContent = label;
+                btn.classList.add('owh-btn-primary');
+                btn.addEventListener('click', callback);
+                return btn;
+            }
+
+            createHelpBox() {
+                const box = this.doc.createElement('div');
+                box.className = 'owh-help-box';
+                box.style.cssText = `
+                    border: 1px solid var(--chrome-content-separator-color, #ccc);
+                    border-radius: 4px;
+                    padding: 12px;
+                    font-size: 12px;
+                `;
+
+                const condTitle = this.doc.createElement('div');
+                condTitle.textContent = this.strings["application-condition"];
+                condTitle.style.cssText = 'font-weight: 600; margin-bottom: 8px;';
+
+                const cond1 = this.doc.createElement('div');
+                cond1.textContent = `${this.strings["fit-for-all"]}: normal, button, tab`;
+
+                const cond2 = this.doc.createElement('div');
+                cond2.textContent = `${this.strings["fit-for-context-menu"]}: input, select, link, image, media, page, frame`;
+                cond2.style.cssText = 'margin-bottom: 12px;';
+
+                const paramTitle = this.doc.createElement('div');
+                paramTitle.textContent = this.strings["application-params"];
+                paramTitle.style.cssText = 'font-weight: 600; margin-bottom: 8px;';
+
+                const params = [
+                    ['%EOL%', this.strings["param-eol-description"]],
+                    ['%TITLE%', this.strings["param-title-description"]],
+                    ['%TITLES%', this.strings["param-titles-description"]],
+                    ['%SEL%', this.strings["param-sel-description"]],
+                    ['%URL%', this.strings["param-url-description"]],
+                    ['%LINK_OR_URL%', this.strings["param-link-or-url-description"]],
+                    ['%LINK%', this.strings["param-link-description"]],
+                    ['%IMAGE_URL%', this.strings["param-image-url-description"]],
+                    ['%IMAGE_TITLE%', this.strings["param-image-title-description"]],
+                    ['%MEDIA_URL%', this.strings["param-media-url-description"]],
+                    ['%PROFILE_DIR%', this.strings["param-profile-dir-description"]],
+                    ['%SAVE_DIR%', this.strings["param-save-dir-description"]],
+                    ['%COOKIE_TXT%', this.strings["param-cookie-txt-description"]],
+                    ['%COOKIES_SQLITE%', this.strings["param-cookies-sqlite-description"]],
+                    ['%CHOOSE_DIR%', this.strings["param-choose-dir-description"]],
+                    ['%CLIPBOARD%', this.strings["param-clipboard-description"]]
+                ];
+
+                const paramList = this.doc.createElement('div');
+                paramList.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;';
+
+                for (const [param, desc] of params) {
+                    const item = this.doc.createElement('div');
+                    item.textContent = `${param} - ${desc}`;
+                    item.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+                    paramList.appendChild(item);
+                }
+
+                box.appendChild(condTitle);
+                box.appendChild(cond1);
+                box.appendChild(cond2);
+                box.appendChild(paramTitle);
+                box.appendChild(paramList);
+
+                return box;
+            }
+
+            hide() {
+                if (this.container) {
+                    this.container.style.display = 'none';
+                }
+            }
+
+            setupDragDrop() {
+                const listContainer = this.doc.getElementById('owh-apps-list');
+                if (!listContainer) return;
+
+                let draggedItem = null;
+
+                listContainer.addEventListener('dragstart', (e) => {
+                    const item = e.target.closest('.owh-app-row, .owh-separator-row');
+                    if (item) {
+                        draggedItem = item;
+                        e.dataTransfer.effectAllowed = 'move';
+                        item.style.opacity = '0.5';
+                    }
+                });
+
+                listContainer.addEventListener('dragend', (e) => {
+                    const item = e.target.closest('.owh-app-row, .owh-separator-row');
+                    if (item) {
+                        item.style.opacity = '1';
+                        draggedItem = null;
+                    }
+                });
+
+                listContainer.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const item = e.target.closest('.owh-app-row, .owh-separator-row');
+                    if (item && item !== draggedItem) {
+                        e.dataTransfer.dropEffect = 'move';
+                    }
+                });
+
+                listContainer.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const dropTarget = e.target.closest('.owh-app-row, .owh-separator-row');
+                    if (dropTarget && draggedItem && dropTarget !== draggedItem) {
+                        const rect = dropTarget.getBoundingClientRect();
+                        const midY = rect.top + rect.height / 2;
+
+                        if (e.clientY < midY) {
+                            dropTarget.parentNode.insertBefore(draggedItem, dropTarget);
+                        } else {
+                            dropTarget.parentNode.insertBefore(draggedItem, dropTarget.nextSibling);
+                        }
+                    }
+                });
+            }
+
+            async loadApps() {
+                if (!this.doc) return;
+
+                const listContainer = this.doc.getElementById('owh-apps-list');
+                if (!listContainer) return;
+
+                // 清空列表
+                while (listContainer.lastChild) {
+                    listContainer.removeChild(listContainer.lastChild);
+                }
+
+                const apps = await this.helper.getAppList();
+                for (const app of apps) {
+                    if (Object.keys(app).length === 0 || (Object.keys(app).length === 1 && "condition" in app)) {
+                        this.addSeparatorRow(app);
+                    } else {
+                        await this.addAppRow(app);
+                    }
+                }
+            }
+
+            async addAppRow(app) {
+                if (!this.doc) return;
+
+                const listContainer = this.doc.getElementById('owh-apps-list');
+                if (!listContainer) return;
+
+                const row = this.doc.createElement('div');
+                row.className = 'owh-app-row';
+                row.draggable = true;
+                row.dataset.appData = JSON.stringify(app);
+                row.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    padding: 8px;
+                    border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
+                    gap: 8px;
+                    cursor: move;
+                `;
+
+                // 拖拽手柄
+                const dragHandle = this.doc.createElement('span');
+                dragHandle.className = 'owh-drag-handle';
+                dragHandle.style.cssText = `
+                    width: 20px;
+                    height: 20px;
+                    flex-shrink: 0;
+                    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMjMuOTc4NTE2IDQgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjIuOTM5NDUzIDQuNDM5NDUzMUwxNy45Mzk0NTMgOS40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDIwLjA2MDU0NyAxMS41NjA1NDdMMjQgNy42MjEwOTM4TDI3LjkzOTQ1MyAxMS41NjA1NDcgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgMzAuMDYwNTQ3IDkuNDM5NDUzMUwyNS4wNjA1NDcgNC40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIzLjk3ODUxNiA0IHogTSA1LjUgMTYgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNS41IDE5TDQyLjUgMTkgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNDIuNSAxNkw1LjUgMTYgeiBNIDUuNSAyMyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA1LjUgMjZMNDIuNSAyNiBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA0Mi41IDIzTDUuNSAyMyB6IE0gNS41IDMwIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDUuNSAzM0w0Mi41IDMzIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDQyLjUgMzBMNS41IDMwIHoiLz48L3N2Zz4=");
+                    background-size: 16px;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                `;
+
+                // 图标
+                const iconWrapper = this.doc.createElement('div');
+                iconWrapper.className = 'owh-icon-wrapper';
+                iconWrapper.style.cssText = 'width: 16px; height: 16px; flex-shrink: 0; cursor: pointer;';
+                const img = this.doc.createElement('img');
+                img.className = 'owh-icon-img';
+                img.src = app.image || this.EMPTY_IMG;
+                img.style.cssText = 'width: 16px; height: 16px; object-fit: contain;';
+                iconWrapper.appendChild(img);
+                iconWrapper.addEventListener('click', (e) => this.changeIcon(e));
+
+                // 标题输入
+                const titleInput = this.doc.createElement('input');
+                titleInput.className = 'owh-input';
+                titleInput.placeholder = this.strings["application-title"];
+                titleInput.value = app.label || '';
+                titleInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+
+                // 条件输入
+                const conditionInput = this.doc.createElement('input');
+                conditionInput.className = 'owh-input';
+                conditionInput.placeholder = this.strings["application-condition"];
+                conditionInput.value = app.condition || '';
+                conditionInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+
+                // 路径显示
+                const pathLabel = this.doc.createElement('div');
+                pathLabel.className = 'owh-path-label';
+                pathLabel.textContent = app.exec || '';
+                pathLabel.style.cssText = 'flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px;';
+
+                const changeBtn = this.createButton(this.strings["change-path"], (e) => this.changePath(e, pathLabel));
+                changeBtn.classList.add('owh-change');
+
+                // 参数输入
+                const paramsInput = this.doc.createElement('input');
+                paramsInput.className = 'owh-input';
+                paramsInput.value = app.text || '%LINK_OR_URL%';
+                paramsInput.style.cssText = 'width: 150px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+
+                // 删除按钮
+                const deleteBtn = this.createButton(this.strings["delete-application"], (e) => this.deleteRow(e));
+                deleteBtn.classList.add('owh-btn-danger');
+
+                row.appendChild(dragHandle);
+                row.appendChild(iconWrapper);
+                row.appendChild(titleInput);
+                row.appendChild(conditionInput);
+                row.appendChild(pathLabel);
+                row.appendChild(changeBtn);
+                row.appendChild(paramsInput);
+                row.appendChild(deleteBtn);
+
+                listContainer.appendChild(row);
+            }
+
+            addSeparatorRow(app) {
+                if (!this.doc) return;
+
+                const listContainer = this.doc.getElementById('owh-apps-list');
+                if (!listContainer) return;
+
+                const row = this.doc.createElement('div');
+                row.className = 'owh-separator-row';
+                row.draggable = true;
+                row.dataset.separator = 'true';
+                row.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    padding: 8px;
+                    border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
+                    gap: 8px;
+                    cursor: move;
+                `;
+
+                const dragHandle = this.doc.createElement('span');
+                dragHandle.className = 'owh-drag-handle';
+                dragHandle.style.cssText = `
+                    width: 20px;
+                    height: 20px;
+                    flex-shrink: 0;
+                    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMjMuOTc4NTE2IDQgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjIuOTM5NDUzIDQuNDM5NDUzMUwxNy45Mzk0NTMgOS40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDIwLjA2MDU0NyAxMS41NjA1NDdMMjQgNy42MjEwOTM4TDI3LjkzOTQ1MyAxMS41NjA1NDcgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgMzAuMDYwNTQ3IDkuNDM5NDUzMUwyNS4wNjA1NDcgNC40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIzLjk3ODUxNiA0IHogTSA1LjUgMTYgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNS41IDE5TDQyLjUgMTkgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNDIuNSAxNkw1LjUgMTYgeiBNIDUuNSAyMyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA1LjUgMjZMNDIuNSAyNiBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA0Mi41IDIzTDUuNSAyMyB6IE0gNS41IDMwIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDUuNSAzM0w0Mi41IDMzIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDQyLjUgMzBMNS41IDMwIHoiLz48L3N2Zz4=");
+                    background-size: 16px;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                `;
+
+                const sep = this.doc.createElement('div');
+                sep.textContent = `--- ${this.strings["separator"]} ---`;
+                sep.style.cssText = 'flex: 1; text-align: center; color: #999;';
+
+                const deleteBtn = this.createButton(this.strings["delete-application"], (e) => this.deleteRow(e));
+                deleteBtn.classList.add('owh-btn-danger');
+
+                row.appendChild(dragHandle);
+                row.appendChild(sep);
+                row.appendChild(deleteBtn);
+
+                listContainer.appendChild(row);
+            }
+
+            addApplication() {
+                const newApp = {
+                    label: '',
+                    exec: '',
+                    text: '%LINK_OR_URL%',
+                    condition: ''
+                };
+                this.addAppRow(newApp);
+            }
+
+            addSeparator() {
+                this.addSeparatorRow({});
+            }
+
+            deleteRow(event) {
+                const row = event.target.closest('.owh-app-row, .owh-separator-row');
+                if (row && row.parentNode) {
+                    row.parentNode.removeChild(row);
+                }
+            }
+
+            async changeIcon(event) {
+                const wrapper = event.target.closest('.owh-icon-wrapper');
+                if (!wrapper) return;
+
+                const img = wrapper.querySelector('.owh-icon-img');
+                if (event.ctrlKey) {
+                    img.src = this.EMPTY_IMG;
+                    return;
+                }
+
+                const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+                fp.init(window.browsingContext, null, Ci.nsIFilePicker.modeOpen);
+                fp.appendFilters(Ci.nsIFilePicker.filterImages);
+
+                const result = await new Promise(resolve => {
+                    fp.open(resolve);
+                });
+
+                if (result === Ci.nsIFilePicker.returnOK) {
+                    const extension = fp.file.path.split('.').pop();
+                    const path = "file:///" + fp.file.path.replace(/\\/g, '/');
+                    const resp = await fetch(path);
+                    let base64;
+                    if (extension === "svg") {
+                        const svgString = await resp.text();
+                        base64 = "data:image/svg+xml;base64," + btoa(svgString);
+                    } else {
+                        const blob = await resp.blob();
+                        base64 = await this.blobToDataURL(blob);
+                    }
+                    img.src = base64;
+                }
+            }
+
+            blobToDataURL(blob) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.addEventListener('loadend', () => resolve(reader.result));
+                    reader.addEventListener('error', reject);
+                    reader.readAsDataURL(blob);
+                });
+            }
+
+            async changePath(event, label) {
+                const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+                fp.init(window.browsingContext, this.strings["set-application-path"], Ci.nsIFilePicker.modeOpen);
+                fp.appendFilters(Ci.nsIFilePicker.filterApps);
+
+                const result = await new Promise(resolve => {
+                    fp.open(resolve);
+                });
+
+                if (result === Ci.nsIFilePicker.returnOK) {
+                    label.textContent = fp.file.path;
+                }
+            }
+
+            async save() {
+                if (!this.doc) return;
+
+                const rows = this.doc.getElementById('owh-apps-list').querySelectorAll('.owh-app-row, .owh-separator-row');
+                const apps = [];
+
+                for (const row of rows) {
+                    if (row.dataset.separator === 'true') {
+                        apps.push({});
+                        continue;
+                    }
+
+                    const img = row.querySelector('.owh-icon-img');
+                    const inputs = row.querySelectorAll('input');
+                    const pathLabel = row.querySelector('.owh-path-label');
+
+                    if (!pathLabel.textContent) {
+                        alerts(this.strings["dont-do-that"]);
+                        return;
+                    }
+
+                    // inputs[0] = titleInput, inputs[1] = conditionInput, inputs[2] = paramsInput
+                    const app = {
+                        exec: pathLabel.textContent,
+                        text: inputs[2]?.value || '%LINK_OR_URL%'
+                    };
+
+                    if (inputs[0]?.value) app.label = inputs[0].value;
+                    if (inputs[1]?.value) app.condition = inputs[1].value;
+                    if (img.src && img.src !== this.EMPTY_IMG) app.image = img.src;
+
+                    apps.push(app);
+                }
+
+                await IOUtils.writeUTF8(FILE_PATH, JSON.stringify(apps));
+
+                // 刷新所有窗口的菜单
+                const enumerator = Services.wm.getEnumerator(null);
+                while (enumerator.hasMoreElements()) {
+                    const win = enumerator.getNext();
+                    win?.OpenWithHelper?.reload(true);
+                }
+
+                alerts(this.strings["operation-succeeded"]);
+                this.hide();
+            }
+
+            destroy() {
+                if (this.container && this.container.parentNode) {
+                    this.container.parentNode.removeChild(this.container);
+                }
+                this.container = null;
+                this.dialog = null;
+            }
+        }
+    }(`
 #OpenWithHelper-Btn,
 #OpenWithHelper-Ctx-Menu,
 #OpenWithHelper-Tab-Menu {
@@ -1025,6 +1630,43 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
     display: flex;
     display: -moz-box;
 }
+/* Modal 按钮样式 */
+.owh-btn-primary {
+    padding: 6px 12px !important;
+    border: 1px solid #4a90e2 !important;
+    border-radius: 4px !important;
+    background: #4a90e2 !important;
+    color: white !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+}
+.owh-btn-primary:hover {
+    background: #357ae8 !important;
+}
+.owh-change {
+    padding: 4px 8px !important;
+    border: 1px solid #4a90e2 !important;
+    border-radius: 4px !important;
+    background: #4a90e2 !important;
+    color: white !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+}
+.owh-change:hover {
+    background: #357ae8 !important;
+}
+.owh-btn-danger {
+    padding: 4px 8px !important;
+    border: 1px solid #f44336 !important;
+    border-radius: 4px !important;
+    background: #f44336 !important;
+    color: white !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+}
+.owh-btn-danger:hover {
+    background: #d32f2f !important;
+}
 `, (function () {
         let PATHS = [];
         ["GreD", "ProfD", "ProfLD", "UChrm", "TmpD", "Home", "Desk", "Favs", "LocalAppData"].forEach(key => {
@@ -1065,5 +1707,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
             // 返回结果
             return result;
-        })
+        }
+    ))
 }
