@@ -224,7 +224,6 @@ import { syncify } from "./000-syncify.sys.mjs";
                 sb = Cu.Sandbox(window, {
                     sandboxPrototype: window,
                     sameZoneAs: window,
-                    freezeBuiltins: false,
                 });
                 Cu.evalInSandbox(`
                     Function.prototype.toSource = window.Function.prototype.toSource;
@@ -334,6 +333,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             // 增加样式
             if (versionGE("143a1")) {
                 css = css.replaceAll('list-style-image', '--menuitem-icon');
+                css = ".addMenu-icon  > .menu-icon { visibility: visible !important; content: var(--menuitem-icon);}\n" + css;
             }
             this.style = addStyle(css);
 
@@ -2292,19 +2292,24 @@ toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
     list-style-image: url("data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiB2aWV3Qm94PSIwIDAgMTYgMTYiIGZpbGw9ImNvbnRleHQtZmlsbCI+CiAgPHBhdGggZD0iTTEgM2ExIDEgMCAwMTEtMWgxMmExIDEgMCAwMTEgMXYxMGExIDEgMCAwMS0xIDFIMmExIDEgMCAwMS0xLTFWM3ptMTMgMEgydjJoMTJWM3ptMCAzSDJ2N2gxMlY2eiIvPgo8L3N2Zz4K");
 }
 .addMenu.copy,
-menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
+menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]),
+.addMenu-icon.copy {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
 }
-.addMenu.edit {
+.addMenu.edit,
+.addMenu-icon.edit {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMTEuMjUuODE1YTIuNzgzIDIuNzgzIDAgMCAxIDQuMDY2IDMuNzk2bC0uMTMuMTQtOS42MDYgOS42MDVhMiAyIDAgMCAxLS43MjMuNDYzbC0uMTY1LjA1My00LjA1NSAxLjEwNmEuNS41IDAgMCAxLS42My0uNTM1bC4wMTYtLjA4TDEuMTMgMTEuMzFhMiAyIDAgMCAxIC4zOTgtLjc2bC4xMTctLjEyOHptLS44NiAyLjI3NS04LjA0IDguMDM4YTEgMSAwIDAgMC0uMjE1LjMyMWwtLjA0Mi4xMjMtLjg3NiAzLjIxMSAzLjIxMi0uODc2YTEgMSAwIDAgMCAuMjM4LS4xbC4xMDgtLjA3MS4wOTgtLjA4NiA4LjAzOC04LjA0em00LjA4OS0xLjU2OGExLjc4NCAxLjc4NCAwIDAgMC0yLjQwMi0uMTFsLS4xMi4xMS0uODYuODYgMi41MiAyLjUyMi44NjEtLjg2YTEuNzg0IDEuNzg0IDAgMCAwIC4xMS0yLjQwMnoiLz4KPC9zdmc+)
 }
-.addMenu.sync {
+.addMenu.sync,
+.addMenu-icon.sync {
     list-style-image: url(chrome://browser/skin/preferences/category-sync.svg)
 }
-.addMenu.reload {
+.addMenu.reload,
+.addMenu-icon.reload {
     list-style-image: url(chrome://global/skin/icons/reload.svg)
 }
-.addMenu.quit {
+.addMenu.quit,
+.addMenu-icon.quit {
     list-style-image: url(chrome://global/skin/icons/close.svg)
 }
 .addMenu.checkbox :is(.menu-iconic-icon,.menu-icon) {
