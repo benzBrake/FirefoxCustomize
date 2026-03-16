@@ -1,0 +1,26 @@
+/* ==UserStyle==
+ * @name            Tab Busy Thinking
+ * @name:zh-CN      标签页载入中显示"thinking..."
+ * @description     Display "thinking..." instead of the tab title when the tab is loading or pending.
+ * @description:zh-CN  当标签页正在载入或待载入时，将标签文本显示为"thinking..."
+ * @author          Ryan
+ * @version         0.2.0
+ * @compatibility   Firefox 121
+ * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+==/UserStyle== */
+
+/* 隐藏原有标签文本 - busy状态 */
+tab[busy] .tab-label,
+/* 隐藏原有标签文本 - pending状态 */
+tab[pending] .tab-label {
+  display: none;
+}
+
+/* 使用伪元素显示"thinking..." - busy状态 */
+tab[busy] .tab-label-container::after,
+/* 使用伪元素显示"thinking..." - pending状态 */
+tab[pending] .tab-label-container::after {
+  content: "thinking...";
+  visibility: visible;
+  color: #888888; /* 可选：设置颜色 */
+}
