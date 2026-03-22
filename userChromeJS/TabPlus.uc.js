@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.0.8
+// @version         1.1.1
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.1 修复右键新标签按钮无法搜索 Services.search is undefined 的 bug
 // @note            1.1.0 修复开启右键关闭标签页的功能后无法打开标签右键菜单的问题
 // @note            1.0.9 增加选项 browser.tabs.openNewTabInContainer (布尔值) 新标签页在当前标签页的相同容器中打开
 // @note            1.0.8 重写，去除内嵌菜单，不再使用模块化，大幅度减少代码量，不再支持 destroy 方法，不再兼容 Tab Mix Plus 扩展
@@ -45,6 +46,7 @@
         _diableMouseOver: false,
         _lastMouseX: 0, // 用于记录关闭标签时的鼠标X坐标
         _moveThreshold: 100, // 移动恢复的距离阈值（会动态设为标签宽度）
+        lazy: {},
 
         init: function () {
             let sb = window.userChrome_js?.sb;
@@ -52,7 +54,6 @@
                 sb = Cu.Sandbox(window, {
                     sandboxPrototype: window,
                     sameZoneAs: window,
-                    freezeBuiltins: false,
                 });
 
                 /* toSource() is not available in sandbox */
@@ -71,6 +72,7 @@
                 }, { once: true });
             }
             this.sb = sb;
+            this.initSearchService();
             this.initWhereToOpenLinkMod();
             this.initOpenInContainerMod();
             const tabContainer = gBrowser.tabContainer;
@@ -81,6 +83,27 @@
                 this.handleEvent(event, 'clipboard');
                 this.handleEvent(event, 'closetab');
             }, false);
+        },
+        
+        initSearchService: async function () {
+            if (this._searchServiceInitPromise) {
+                return this._searchServiceInitPromise;
+            }
+            this._searchServiceInitPromise = (async () => {
+                if (typeof Services.search !== 'undefined') {
+                    this.searchService = Services.search;
+                } else { // Fx 149
+                    ChromeUtils.defineESModuleGetters(this.lazy, {
+                        SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+                    });
+                    this.searchService = this.lazy.SearchService;
+                }
+                if (!this.searchService.isInitialized) {
+                    await this.searchService.init();
+                }
+                return this.searchService;
+            })();
+            return this._searchServiceInitPromise;
         },
 
         initWhereToOpenLinkMod: function () {
@@ -175,7 +198,7 @@
                         case 'closetab':
                             if (!tab) return;
                             if ((prefs.getBoolPref("browser.tabs.closeTabByDblclick", false) && b === 0 && dblclick)
-                                || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2 && !event.ctrlKey && !event.shiftKey)) {
+                                || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2)) {
                                 event.preventDefault();
                                 event.stopPropagation();
                                 // 在移除标签之前调用禁用函数，因为移除后 tab 对象可能无效
@@ -208,7 +231,7 @@
             }
         },
 
-        _clipboardCommand: function (e) {
+        _clipboardCommand: async function (e) {
             const { target } = e;
             const { ownerGlobal: win } = target;
             let url = (win.readFromClipboard() || "").trim();
@@ -231,17 +254,17 @@
                     });
                 }
             } else {
-                Services.search.getDefault().then(engine => {
-                    let submission = engine.getSubmission(url, null, 'search');
-                    let aAllowThirdPartyFixup = {
-                        private: false,
-                        referrerInfo: submission.referrerInfo,
-                        postData: submission.postData,
-                        inBackground: e.shiftKey,
-                        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
-                    }
-                    openTrustedLinkIn(submission.uri.spec, 'tab', aAllowThirdPartyFixup);
-                });
+                let searchService = await this.initSearchService();
+                let engine = await searchService.getDefault();
+                let submission = engine.getSubmission(url, null, 'search');
+                let aAllowThirdPartyFixup = {
+                    private: false,
+                    referrerInfo: submission.referrerInfo,
+                    postData: submission.postData,
+                    inBackground: e.shiftKey,
+                    triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+                }
+                openTrustedLinkIn(submission.uri.spec, 'tab', aAllowThirdPartyFixup);
             }
         },
 
