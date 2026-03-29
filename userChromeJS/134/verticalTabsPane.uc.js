@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name           Vertical Tabs Pane
 // @version        1.7.5
+// @compatibility  Firefox 134
 // @author         aminomancer
+// @note           2026-03-29 归档：不再跟随作者更新，最后测试版本 Firefox 134
 // @homepageURL    https://github.com/aminomancer/uc.css.js
 // @long-description
 // @description
