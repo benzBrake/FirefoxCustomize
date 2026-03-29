@@ -14,6 +14,7 @@
 // @note            0.3.2 修复 precommand / postcommand 触发，修复 pref 菜单 defaultValue 无效，修复 onCommand 兜底失效
 // @note            0.3.1 修复重复绑定事件
 // @note            0.3.0 整理代码，移除 tool 属性支持，减小 css 影响范围，修复移动主菜单栏项目事件失效，增加多语言支持
+// @note            2026-03-29 归档：兼容 Firefox 80+，归档至版本目录（不再更新）
 // ==/UserScript==
 (async function (CSS, SS_SERVICE, DEFINED_MENUS_OBJ, SEPARATOR_TYPE, OPTION_TYPE, PATH_ATTRS) {
     const AUTOFIT_POPUP_POSITION = true;
