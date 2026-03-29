@@ -76,42 +76,6 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 90   | [LinkGopher](LinkGopher.uc.js)                               | 提取链接，代替 LinkGopher 扩展                               |                                                              |
 |      | 107  | [LocationBar](LocationBar.uc.js)                             | 地址栏内新增一个工具栏                                       |                                                              |
 |      | 100  | [MenubarReplaceWithButton](MenubarReplaceWithButton.uc.js)   | 把主菜单替换成按钮                                           | [📃](https://u6.getuploader.com/script/download/2051)         |
-|      | 90   | [middleClickTabContextMenu](middleClickTabContextMenu.uc.js) | 使用鼠标中键打开标签页菜单（配合右键关闭标签页使用）         | [📃](https://kkp.disk.st/firefox-uses-the-middle-click-to-open-the-tab-context-menu.html) |
-|      | 90   | [miscMods](miscMods.uc.js)                                   | 没有分类的脚本合集，粘贴并转到增加 Access Key，中键单击地址栏复制当前地址，右键地址栏收藏按钮打开书签管理，右键刷新按钮强制刷新，右键 xiaoxiaoflood 的扩展管理管理器打开扩展管理页面，右键 Styloaix 按钮打开主题管理，中键下载按钮提示保存 URL，右键下载按钮打开下载历史，右键下载按钮打开下载管理，左键侧边栏按钮打开书签侧边栏，中键侧边栏按钮切换侧边栏方向，右键侧边栏按钮打开历史侧边栏，CTRL + F 开关侧边栏，只有一个标签时退出浏览器页提示（需要打开关闭浏览器时提示的功能） |                                                              |
-|      | 100  | [movableOverflowButton](movableOverflowButton.uc.js)         | 可移动 更多工具 按钮                                         |                                                              |
-|      | 100  | [movablePanelUIButton](movablePanelUIButton.uc.js)           | 可移动 PanelUI 按钮，改成可热插拔了                          | [📃](https://bbs.kafan.cn/thread-2231475-1-1.html)            |
-|      | 136  | [newtab-aboutconfig](newtab-aboutconfig.uc.js)               | 还原新标签页选项 browser.newtab.url                          | [📃](https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/newtab-aboutconfig.uc.js) |
-|      | 100  | [OpenWithHelper](OpenWithHelper)                             | 使用其他应用打开当前地址，支持自定义                         |                                                              |
-| 🅰️    |      | [privateTab](privateTab)                                     | 无痕标签，一共两个版本                                       |                                                              |
-|      | 100  | [PipMod](PipMod.uc.js)                                       | 视频小窗进度条修改                                           |                                                              |
-| ❌    | 96   | [rebuild_userChrome](rebuild_userChrome.uc.js)               | 汉化版脚本管理器                                             | [📃]()                                                        |
-|      | 57   | [ReloadAllTabs](ReloadAllTabs.uc.js)                         | 标签页右键菜单添加一个刷新全部页面的菜单                     |                                                              |
-|      | 98   | [restoreOldStyleCleanHistory](restoreOldStyleCleanHistory.uc.js) | 还原清除历史记录为旧版对话框                                 |                                                              |
-|      | 98   | [restoreOldStyleLaunchApp](restoreOldStyleLaunchApplication.uc.js) | 还原调用第三方软件为旧版对话框                               | [📃](https://bbs.kafan.cn/thread-2231355-1-1.html)            |
-|      | 72   | [SaveAsPNG](SaveAsPNG.uc.js)                                 | 保存图片为 PNG格式                                           |                                                              |
-|      | 68   | [saveUCJS](saveUCJS.uc.js)                                   | 快速保存 github 上的 UC 脚本                                 |                                                              |
-|      | 127  | [ScreenshotToos](ScreenshotToos.uc.js)                       | 高级截图工具                                                 |                                                              |
-|      | 96   | [setViewSourceEditor](setViewSourceEditor.uc.js)             | 打开Firefox自动设置编辑器路径（用于便携版FF）                |                                                              |
-|      | 100  | [showLimitedTimeTheme](showLimitedTimeTheme.uc.js)           | 主题中心显示过期的限时主题                                   | [📃](https://bbs.kafan.cn/thread-2234549-1-1.html)            |
-|      | 78   | [sidebarAttrubesDetector](sidebarAttrubesDetector.uc.js)     | 浏览器主窗口增加`sidebarHidden`和`sidebarCommand`属性        |                                                              |
-|      | 117  | [SidebarModoki](SidebarModoki/SidebarModoki.uc.js)           | 侧边工具栏修改版                                             | [📃](https://github.com/alice0775/userChrome.js/blob/master/127/SidebarModoki.uc.js) |
-|      | 107  | [StatusBar](StatusBar.uc.js)                                 | 状态栏脚本，应该通用吧                                       | [📃](https://github.com/Floorp-Projects/Floorp/blob/242338213f92dcdc79e677842526d7ca098d9218/floorp/browser/base/content/browser-statusbar.js) |
-|      | 90   | [syncTabsMod](syncTabsMod.uc.js)                             | 受同步的标签页按钮/侧边栏增强                                | [📃](https://blog.iplayloli.com/synctabsbtnmoducjs-firefox-enhanced-with-synchronized-tab-buttons.html) |
-|      | 90   | [tabNotifitionBadge.uc.js](tabNotifitionBadge.uc.js)         | 仿 Vivaldi 的功能  标签页图标显示未读消息数量                |                                                              |
-|      | 100  | [textZoomPerDomain](textZoomPerDomain_e10s.uc.js)            | 分域名设定字体大小                                           | [📃](https://github.com/alice0775/userChrome.js/blob/master/100/textZoomPerDomain_e10s.uc.js) |
-|      | 90   | [textZoomTool](textZoomTool.uc.js)                           | 文本缩放                                                     |                                                              |
-|      | 78   | [toggleExtensions](toggleExtensions.uc.js)                   | 工具菜单添加一键切换扩展状态，用于修复便携版扩展图标问题     |                                                              |
-|      | 100  | [ToolbarAutoHide](ToolbarAutoHide.uc.js)                     | 自动隐藏 标签栏/工具栏/书签栏                                | [📃](https://u6.getuploader.com/script/download/2061)         |
-|      | 127  | [ucf_autoPopup.uc.js](ucf_autoPopup.uc.js)                   | 自动弹出菜单                                                 | [📃](https://forum.mozilla-russia.org/viewtopic.php?pid=810204#p810204) |
-|      | 78   | [ucf_drag_ModR](ucf_drag_ModR.uc.js)                         | 鼠标拖拽 Drag & Go，来自于 Mozilla-Russia 论坛，Ryan 修改自用 | [📃](https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234) |
-|      | 78   | [uiDensity](uiDensity.uc.js)                                 | 非浏览器主窗口增加uidensity属性                              |                                                              |
-|      | 100  | [UndoCloseTabButtonN](UndoCloseTabButtonN.uc.js)             | 查看已关闭的标签页和窗口                                     | [📃](https://u6.getuploader.com/script/download/2043)         |
-|      | 115  | [unifiedExtensionsEnhance](unifiedExtensionsEnhance.uc.js)   | 扩展管理按钮增强，左键点击切换状态，点击设置按钮打开设置页面 |                                                              |
-|      | 126  | [UnifiedExtensionsSearch](UnifiedExtensionsSearch.uc.js)     | 在扩展面板中搜索扩展                                         |                                                              |
-|      | 100  | [unreadTabMods](unreadTabMods.uc.js)                         | 未读标签页修改                                               | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js) |
-|      | 80   | [UserCSSLoader](UserCSSLoader/UserCSSLoader.uc.js)           | UserCSSLoader 修改版，结合了部分 Styloaix 的特性，支持编辑保存后自动刷新 | [📃](https://github.com/Griever/userChromeJS)                 |
-|      | 70   | [verticalAddOnBar](verticalAddOnBar.uc.js)                   | 增加一个类似 vivaldi 的侧边工具栏                            |                                                              |
-|      | 100  | [verticalTabsPane](verticalTabsPane.uc.js)                   | 垂直标签栏，原版只能在 MrOtherGuy 的 UC 环境使用，修改版应该通用了，并且把默认快捷键修改为 Ctrl+F1 了 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/verticalTabsPane.uc.js) |
 
 下面的不能用了的话，请一定不要找我，因为我不用了，你们可以顺着源链接过去找原作者修复
 
@@ -135,6 +99,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 136  | [revivalOldHistorySidebar](136/revivalOldHistorySidebar.uc.js) | 新版历史侧边栏改回旧版布局                                   | [📃](https://github.com/alice0775/userChrome.js/blob/master/136/revivalOldHistorySidebar.uc.js) |
 |  ❌   | 96   | [rightClickOpenClipboard](90/rightClickOpenClipboard.uc.js)  | 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）<br />新窗口不生效，已经被 TabPlus.uc.js 替代 |                                                              |
 |      | 90   | [showPersonalToolbarOnDemand](90/showPersonalToolbarOnDemand.uc.js) | 按需显示书签工具栏（主要是为了解决在新标签页在显示书签工具栏的功能不能用于`about:blank`），这个 BUG 已经在 Firefox 108 修复了 |                                                              |
+|  ⛔   | 70   | [verticalAddOnBar](70/verticalAddOnBar.uc.js)               | 增加一个类似 vivaldi 的侧边工具栏（已不再使用）             |                                                              |
 |  ❌   | 78   | [SyncStyles](78/SyncStyles.uc.js)                            | 非浏览器主窗口的窗口自动读取浏览器主窗口 CSS 属性，这个脚本主要是为了 CopyCatTheme.uc.js 服务，已合并，所以不再单独维护 |                                                              |
 |      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)            | 给工具栏书签新增替换书签功能，已经被 BookmarkOpt.uc.js 替代  |      [📃](https://bbs.kafan.cn/thread-2233641-1-1.html)       |
 |      | 90   | [YouGetBtn](90/YouGetBtn.uc.js)                              | 鉴于 Video DownloadHelper 下载高清需要付费<br />就做了这个小脚本调用 you-get.exe 下载视频 |                                                              |
