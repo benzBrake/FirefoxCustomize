@@ -3,9 +3,8 @@
 // @description     右键添加保存 UC 脚本菜单
 // @charset         UTF-8
 // @include         main
-// @compatibility   Firefox 149
+// @compatibility   Firefox 80
 // @note            去除 FileUtils 依赖
-// @note            2026-03-29 修复 Firefox 149+ 兼容性：更新 gBrowser.currentURI 和 gContextMenu.linkURL API，移除 hidden 属性以适配新版 XUL 渲染行为
 // @note            Nightlyで使っているSaveUserChromeJS.uc.jsが60で動かなかったので作成
 // @homepageURL     https://github.com/alice0775/userChrome.js/
 // ==/UserScript==
@@ -30,14 +29,8 @@
         areaMenu.addEventListener('popupshowing', function () {
             const _areaMenu = document.getElementById('ucjs_getUCJS_areamenu');
             if (_areaMenu) this.removeChild(_areaMenu);
-
-            // Firefox 新版本兼容修复
-            const currentURI = gBrowser.selectedBrowser?.currentURI?.spec || gBrowser.currentURI.spec;
-            if (!currentURI.startsWith(github)) return;
-
-            // 获取链接 URL（兼容新旧 API）
-            const linkURL = gContextMenu.linkInfo?.linkUrl || gContextMenu.linkURL;
-            createMenu(false, linkURL);
+            if (!gBrowser.currentURI.spec.startsWith(github)) return;
+            createMenu(false, gContextMenu.linkURL);
         }, false);
     }
 
@@ -51,13 +44,10 @@
         const parentMenu = tool ? toolMenu : areaMenu;
         const skip = tool ? skipDialogTool : skipDialogCxt;
         const check = tool ? true : false;
-        let url = file ? file : tool ? subloader : gBrowser.selectedBrowser?.currentURI?.spec || gBrowser.currentURI.spec;
+        let url = file ? file : tool ? subloader : gBrowser.currentURI.spec;
         url = url.replace('/blob/', '/raw/');
-
-        // Firefox 149+ 兼容：只在 JS 文件时才创建菜单
-        if (!(/\.(js|mjs|jsm)$/.test(url))) return;
-
         const menu = document.createXULElement('menuitem');
+        menu.setAttribute('hidden', /(\.js|\.mjs|\.jsm)$/.test(url) ? 'false' : 'true');
         menu.setAttribute('id', tool ? 'ucjs_getUCJS_toolmenu' : 'ucjs_getUCJS_areamenu');
         menu.setAttribute('label', tool ? '更新UC脚本' : '保存UC脚本');
         menu.setAttribute('tooltiptext', tool ? 'Alice 0775的下标加载程序脚本 ' : '保存为脚本');
