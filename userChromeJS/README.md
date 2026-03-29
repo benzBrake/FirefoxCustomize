@@ -101,6 +101,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 90   | [showPersonalToolbarOnDemand](90/showPersonalToolbarOnDemand.uc.js) | 按需显示书签工具栏（主要是为了解决在新标签页在显示书签工具栏的功能不能用于`about:blank`），这个 BUG 已经在 Firefox 108 修复了 |                                                              |
 |  ⛔   | 70   | [verticalAddOnBar](70/verticalAddOnBar.uc.js)               | 增加一个类似 vivaldi 的侧边工具栏（已不再使用）             |                                                              |
 |  ⛔   | 134  | [verticalTabsPane](134/verticalTabsPane.uc.js)              | 垂直标签栏面板，类似 Edge 的垂直标签页（不再跟随作者更新）     | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/verticalTabsPane.uc.js) |
+|  ⛔   | 134  | [unreadTabMods](134/unreadTabMods.uc.js)                    | 未读标签页样式增强，添加标记已读/未读菜单（不再跟随作者更新） | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js) |
 |  ❌   | 78   | [SyncStyles](78/SyncStyles.uc.js)                            | 非浏览器主窗口的窗口自动读取浏览器主窗口 CSS 属性，这个脚本主要是为了 CopyCatTheme.uc.js 服务，已合并，所以不再单独维护 |                                                              |
 |      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)            | 给工具栏书签新增替换书签功能，已经被 BookmarkOpt.uc.js 替代  |      [📃](https://bbs.kafan.cn/thread-2233641-1-1.html)       |
 |      | 90   | [YouGetBtn](90/YouGetBtn.uc.js)                              | 鉴于 Video DownloadHelper 下载高清需要付费<br />就做了这个小脚本调用 you-get.exe 下载视频 |                                                              |

@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name           Unread Tab Mods
 // @version        1.2
+// @compatibility  Firefox 134
 // @author         aminomancer
+// @note           2026-03-29 归档：不再跟随作者更新，最后测试版本 Firefox 134
 // @homepageURL    https://github.com/aminomancer/uc.css.js
 // @description    Modifies some javascript methods so that unread tabs can be
 // styled in CSS, and (optionally) adds new items to the tab context menu so you
