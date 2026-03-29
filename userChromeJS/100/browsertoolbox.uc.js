@@ -7,6 +7,7 @@
 // @compatibility   Firefox 100
 // @homepage        https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js
 // @version         2025.01.31 Remove Cu.import, per Bug Bug 1881888, Bug 1937080 Block inline event handlers in Nightly and collect telemetry
+// @note            2026-03-29 归档：兼容 Firefox 100+，归档至版本目录
 // ==/UserScript==
 (function () {
     if (location != 'chrome://browser/content/browser.xhtml')
