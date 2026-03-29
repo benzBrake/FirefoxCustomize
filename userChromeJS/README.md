@@ -30,6 +30,29 @@ My current Firefox version is Firefox 143.0b6.
 
 Scripts that support Firefox 101 at minimum will be placed in the 101 directory, although the version may not be accurate.
 
+## 使用 Claude Code 修改脚本
+
+本项目包含详细的 [CLAUDE.md](CLAUDE.md) 开发规范文档，定义了：
+
+- **@compatibility 规则**：脚本的最低兼容 Firefox 版本规范
+- **@note 规则**：脚本修改历史记录格式
+- **@compatibility 变更工作流**：版本升级时的归档和修改流程
+- **版本兼容性文档清单**：Firefox 126/127/129/135/136/139/147/149 等版本的 API 变化参考
+
+**使用方法：**
+
+在与 Claude Code 对话时，可以直接这样说：
+
+> 请遵循项目根目录的 CLAUDE.md 规范文档修改代码
+
+Claude Code 会自动：
+- 遵循 `@compatibility` 和 `@note` 格式规范
+- 在升级兼容性版本时自动归档旧版本
+- 参考对应版本的兼容性文档进行 API 修改
+- 使用符合项目规范的提交信息格式
+
+这样可以确保脚本修改始终遵循项目的统一规范。
+
 ### 标志
 
 ⛔ 为不可用状态
