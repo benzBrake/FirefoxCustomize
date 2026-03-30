@@ -7,7 +7,7 @@
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
-// @note           1.0.6 改用 ModalDialog 来配置应用
+// @note           1.0.6 改用 ModalDialog 来配置应用, 优化拖拽体验
 // @note           1.0.5 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           1.0.4 修复 Fx143 图标显示异常
 // @note           1.0.3 增加选择目录功能
@@ -1243,6 +1243,54 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 return btn;
             }
 
+            setRowDragEnabled(row, enabled) {
+                row.draggable = enabled;
+                if (enabled) {
+                    row.dataset.dragEnabled = 'true';
+                } else {
+                    delete row.dataset.dragEnabled;
+                }
+            }
+
+            bindDragHandle(row, dragHandle) {
+                this.setRowDragEnabled(row, false);
+                dragHandle.title = this.strings["drag-to-sort"];
+                dragHandle.style.cursor = 'grab';
+
+                const releaseDrag = () => {
+                    if (row.dataset.dragging === 'true') {
+                        return;
+                    }
+                    this.setRowDragEnabled(row, false);
+                    window.removeEventListener('mouseup', releaseDrag, true);
+                };
+
+                dragHandle.addEventListener('mousedown', (event) => {
+                    if (event.button !== 0) {
+                        return;
+                    }
+                    this.setRowDragEnabled(row, true);
+                    window.addEventListener('mouseup', releaseDrag, true);
+                });
+
+                row._owhReleaseDrag = releaseDrag;
+            }
+
+            createDragHandle() {
+                const dragHandle = this.doc.createElement('span');
+                dragHandle.className = 'owh-drag-handle';
+                dragHandle.style.cssText = `
+                    width: 20px;
+                    height: 20px;
+                    flex-shrink: 0;
+                    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMjMuOTc4NTE2IDQgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjIuOTM5NDUzIDQuNDM5NDUzMUwxNy45Mzk0NTMgOS40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDIwLjA2MDU0NyAxMS41NjA1NDdMMjQgNy42MjEwOTM4TDI3LjkzOTQ1MyAxMS41NjA1NDcgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgMzAuMDYwNTQ3IDkuNDM5NDUzMUwyNS4wNjA1NDcgNC40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIzLjk3ODUxNiA0IHogTSA1LjUgMTYgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNS41IDE5TDQyLjUgMTkgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNDIuNSAxNkw1LjUgMTYgeiBNIDUuNSAyMyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA1LjUgMjZMNDIuNSAyNiBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA0Mi41IDIzTDUuNSAyMyB6IE0gNS41IDMwIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDUuNSAzM0w0Mi41IDMzIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDQyLjUgMzBMNS41IDMwIHoiLz48L3N2Zz4=");
+                    background-size: 16px;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                `;
+                return dragHandle;
+            }
+
             createHelpBox() {
                 const box = this.doc.createElement('div');
                 box.className = 'owh-help-box';
@@ -1324,7 +1372,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 listContainer.addEventListener('dragstart', (e) => {
                     const item = e.target.closest('.owh-app-row, .owh-separator-row');
                     if (item) {
+                        if (item.dataset.dragEnabled !== 'true') {
+                            e.preventDefault();
+                            return;
+                        }
                         draggedItem = item;
+                        item.dataset.dragging = 'true';
                         e.dataTransfer.effectAllowed = 'move';
                         item.style.opacity = '0.5';
                     }
@@ -1334,6 +1387,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     const item = e.target.closest('.owh-app-row, .owh-separator-row');
                     if (item) {
                         item.style.opacity = '1';
+                        delete item.dataset.dragging;
+                        this.setRowDragEnabled(item, false);
+                        if (item._owhReleaseDrag) {
+                            window.removeEventListener('mouseup', item._owhReleaseDrag, true);
+                        }
                         draggedItem = null;
                     }
                 });
@@ -1391,7 +1449,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 const row = this.doc.createElement('div');
                 row.className = 'owh-app-row';
-                row.draggable = true;
                 row.dataset.appData = JSON.stringify(app);
                 row.style.cssText = `
                     display: flex;
@@ -1399,21 +1456,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     padding: 8px;
                     border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
                     gap: 8px;
-                    cursor: move;
+                    cursor: default;
                 `;
 
                 // 拖拽手柄
-                const dragHandle = this.doc.createElement('span');
-                dragHandle.className = 'owh-drag-handle';
-                dragHandle.style.cssText = `
-                    width: 20px;
-                    height: 20px;
-                    flex-shrink: 0;
-                    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMjMuOTc4NTE2IDQgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjIuOTM5NDUzIDQuNDM5NDUzMUwxNy45Mzk0NTMgOS40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDIwLjA2MDU0NyAxMS41NjA1NDdMMjQgNy42MjEwOTM4TDI3LjkzOTQ1MyAxMS41NjA1NDcgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgMzAuMDYwNTQ3IDkuNDM5NDUzMUwyNS4wNjA1NDcgNC40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIzLjk3ODUxNiA0IHogTSA1LjUgMTYgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNS41IDE5TDQyLjUgMTkgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNDIuNSAxNkw1LjUgMTYgeiBNIDUuNSAyMyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA1LjUgMjZMNDIuNSAyNiBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA0Mi41IDIzTDUuNSAyMyB6IE0gNS41IDMwIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDUuNSAzM0w0Mi41IDMzIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDQyLjUgMzBMNS41IDMwIHoiLz48L3N2Zz4=");
-                    background-size: 16px;
-                    background-repeat: no-repeat;
-                    background-position: center;
-                `;
+                const dragHandle = this.createDragHandle();
+                this.bindDragHandle(row, dragHandle);
 
                 // 图标
                 const iconWrapper = this.doc.createElement('div');
@@ -1479,7 +1527,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 const row = this.doc.createElement('div');
                 row.className = 'owh-separator-row';
-                row.draggable = true;
                 row.dataset.separator = 'true';
                 row.style.cssText = `
                     display: flex;
@@ -1487,20 +1534,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     padding: 8px;
                     border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
                     gap: 8px;
-                    cursor: move;
+                    cursor: default;
                 `;
 
-                const dragHandle = this.doc.createElement('span');
-                dragHandle.className = 'owh-drag-handle';
-                dragHandle.style.cssText = `
-                    width: 20px;
-                    height: 20px;
-                    flex-shrink: 0;
-                    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2Ij48cGF0aCBkPSJNMjMuOTc4NTE2IDQgQSAxLjUwMDE1IDEuNTAwMTUgMCAwIDAgMjIuOTM5NDUzIDQuNDM5NDUzMUwxNy45Mzk0NTMgOS40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDIwLjA2MDU0NyAxMS41NjA1NDdMMjQgNy42MjEwOTM4TDI3LjkzOTQ1MyAxMS41NjA1NDcgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgMzAuMDYwNTQ3IDkuNDM5NDUzMUwyNS4wNjA1NDcgNC40Mzk0NTMxIEEgMS41MDAxNSAxLjUwMDE1IDAgMCAwIDIzLjk3ODUxNiA0IHogTSA1LjUgMTYgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNS41IDE5TDQyLjUgMTkgQSAxLjUwMDE1IDEuNTAwMTUgMCAxIDAgNDIuNSAxNkw1LjUgMTYgeiBNIDUuNSAyMyBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA1LjUgMjZMNDIuNSAyNiBBIDEuNTAwMTUgMS41MDAxNSAwIDEgMCA0Mi41IDIzTDUuNSAyMyB6IE0gNS41IDMwIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDUuNSAzM0w0Mi41IDMzIEEgMS41MDAxNSAxLjUwMDE1IDAgMSAwIDQyLjUgMzBMNS41IDMwIHoiLz48L3N2Zz4=");
-                    background-size: 16px;
-                    background-repeat: no-repeat;
-                    background-position: center;
-                `;
+                const dragHandle = this.createDragHandle();
+                this.bindDragHandle(row, dragHandle);
 
                 const sep = this.doc.createElement('div');
                 sep.textContent = `--- ${this.strings["separator"]} ---`;
