@@ -21,11 +21,13 @@
 */
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20260330.1
+// @version         20260330.3
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20260330 增加右键强制刷新按钮反馈动画
+// @note            20260330 修复右键刷新在 Fx136+ 报 BrowserReloadWithFlags is not a function
 // @note            20260330 增加地址栏复制成功动画反馈
 // @note            20260330 修复 Fx136+ 地址栏中键复制当前地址失效
 // @note            20250218 修复 Fx135+ Ctrl + F 失效 
@@ -67,12 +69,12 @@
         Services.obs.addObserver(this, 'domwindowopened', false);
     }
 
-    function ensureUrlbarCopyFeedbackStyle (document) {
-        if (document.getElementById("miscmods-urlbar-copy-feedback-style")) {
+    function ensureMiscFeedbackStyle (document) {
+        if (document.getElementById("miscmods-feedback-style")) {
             return;
         }
         let style = document.createElementNS("http://www.w3.org/1999/xhtml", "style");
-        style.id = "miscmods-urlbar-copy-feedback-style";
+        style.id = "miscmods-feedback-style";
         style.textContent = `
 #urlbar-container {
     position: relative;
@@ -129,6 +131,38 @@
         opacity: 0;
         transform: translate(-50%, -10px) scale(.98);
     }
+}
+#reload-button[miscmods-force-reload-success="true"] {
+    animation: miscmods-force-reload-button .62s ease;
+}
+#reload-button[miscmods-force-reload-success="true"] > .toolbarbutton-icon,
+#reload-button[miscmods-force-reload-success="true"] > .toolbarbutton-badge-stack {
+    animation: miscmods-force-reload-icon .62s ease;
+}
+@keyframes miscmods-force-reload-button {
+    0% {
+        background-color: transparent;
+        box-shadow: 0 0 0 rgba(58, 152, 255, 0);
+    }
+    35% {
+        background-color: color-mix(in srgb, currentColor 16%, transparent);
+        box-shadow: 0 0 0 2px rgba(58, 152, 255, .24), 0 0 18px rgba(58, 152, 255, .18);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: 0 0 0 rgba(58, 152, 255, 0);
+    }
+}
+@keyframes miscmods-force-reload-icon {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    40% {
+        transform: scale(1.08) rotate(-18deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
 }`;
         document.documentElement.appendChild(style);
     }
@@ -137,7 +171,7 @@
         if (!config["urlbar middle click copy feedback"]) {
             return;
         }
-        ensureUrlbarCopyFeedbackStyle(document);
+        ensureMiscFeedbackStyle(document);
         let urlbar = document.getElementById("urlbar");
         let container = document.getElementById("urlbar-container");
         if (!urlbar || !container) {
@@ -162,6 +196,39 @@
             toast.removeAttribute("data-active");
             urlbar.removeAttribute("miscmods-copy-success");
         }, 900);
+    }
+
+    function showForceReloadFeedback (button, window, document) {
+        if (!button) {
+            return;
+        }
+        ensureMiscFeedbackStyle(document);
+        if (button._miscForceReloadTimer) {
+            window.clearTimeout(button._miscForceReloadTimer);
+        }
+        button.removeAttribute("miscmods-force-reload-success");
+        void button.offsetWidth;
+        button.setAttribute("miscmods-force-reload-success", "true");
+        button._miscForceReloadTimer = window.setTimeout(() => {
+            button.removeAttribute("miscmods-force-reload-success");
+        }, 650);
+    }
+
+    function forceReloadBrowser (window) {
+        const flags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE | Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_PROXY;
+        if (typeof window.BrowserReloadSkipCache === "function") {
+            window.BrowserReloadSkipCache();
+            return;
+        }
+        const browsingContext = window.gBrowser?.selectedBrowser?.browsingContext;
+        if (typeof browsingContext?.reload === "function") {
+            browsingContext.reload(flags);
+            return;
+        }
+        const webNavigation = window.gBrowser?.selectedBrowser?.webNavigation;
+        if (typeof webNavigation?.reload === "function") {
+            webNavigation.reload(flags);
+        }
     }
 
     MiscUtils.prototype = {
@@ -263,7 +330,8 @@
                             if (event.button == 2) {
                                 const global = event.target.ownerGlobal;
                                 event.preventDefault();
-                                "BrowserReloadSkipCache" in global ? global.BrowserReloadSkipCache() : global.BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
+                                forceReloadBrowser(global);
+                                showForceReloadFeedback(reload, global, document);
                             }
                         }
                         reload.addEventListener('click', clickFn);
