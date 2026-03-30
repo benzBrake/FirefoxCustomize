@@ -21,11 +21,12 @@
 */
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20260330.3
+// @version         20260330.4
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20260330 修复新侧边栏标题双击切换侧边栏位置失效
 // @note            20260330 增加右键强制刷新按钮反馈动画
 // @note            20260330 修复右键刷新在 Fx136+ 报 BrowserReloadWithFlags is not a function
 // @note            20260330 增加地址栏复制成功动画反馈
@@ -43,6 +44,8 @@
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
     const SidebarController = globalThis.SidebarController || globalThis.SidebarUI;
     const isZh = Services.locale.appLocaleAsLangTag.startsWith("zh");
+    const boundSidebarHeaderDocs = new WeakSet();
+    const boundSidebarBrowsers = new WeakSet();
     const config = {
         "urlbar paste and go add accesskey": { // 地址栏右键粘贴并前往增加 AccessKey
             enabled: true, // true 是启用， false 是禁用
@@ -229,6 +232,71 @@
         if (typeof webNavigation?.reload === "function") {
             webNavigation.reload(flags);
         }
+    }
+
+    function toggleSidebarPosition () {
+        Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+    }
+
+    function isSidebarHeaderElement (node) {
+        return !!node && node.nodeType === 1 && (
+            node.id === "sidebar-header" ||
+            node.id === "sidebar-panel-header" ||
+            node.localName === "sidebar-panel-header" ||
+            node.classList?.contains("sidebar-panel-header") ||
+            node.classList?.contains("sidebar-panel-heading")
+        );
+    }
+
+    function findSidebarHeaderFromEvent (event) {
+        if (typeof event.composedPath === "function") {
+            for (let node of event.composedPath()) {
+                if (isSidebarHeaderElement(node)) {
+                    return node;
+                }
+            }
+        }
+        let target = event.target;
+        if (target && typeof target.closest === "function") {
+            return target.closest("#sidebar-header, #sidebar-panel-header, sidebar-panel-header, .sidebar-panel-header, .sidebar-panel-heading");
+        }
+        return null;
+    }
+
+    function bindSidebarHeaderDoubleClick (targetDocument) {
+        if (!targetDocument || boundSidebarHeaderDocs.has(targetDocument)) {
+            return;
+        }
+        boundSidebarHeaderDocs.add(targetDocument);
+        targetDocument.addEventListener("dblclick", function (event) {
+            if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                return;
+            }
+            if (event.target?.closest?.("button, toolbarbutton, moz-button, input, textarea, a")) {
+                return;
+            }
+            if (!findSidebarHeaderFromEvent(event)) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            toggleSidebarPosition();
+        }, true);
+    }
+
+    function bindSidebarBrowserDoubleClick (document, window) {
+        let sidebar = document.getElementById("sidebar");
+        if (!sidebar || boundSidebarBrowsers.has(sidebar)) {
+            return;
+        }
+        boundSidebarBrowsers.add(sidebar);
+        let bindCurrentSidebarDocument = function () {
+            try {
+                bindSidebarHeaderDoubleClick(sidebar.contentDocument);
+            } catch (ex) { }
+        };
+        sidebar.addEventListener("load", bindCurrentSidebarDocument, true);
+        window.setTimeout(bindCurrentSidebarDocument, 0);
     }
 
     MiscUtils.prototype = {
@@ -428,7 +496,7 @@
                                 SidebarController.toggle("viewHistorySidebar");
                                 break;
                             case 1:
-                                Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+                                toggleSidebarPosition();
                                 break;
                             case 0:
                                 SidebarController.toggle("viewBookmarksSidebar")
@@ -438,13 +506,8 @@
                     btn.addEventListener('click', clickFn);
                 }
 
-                if (document.getElementById("sidebar-header")) {
-                    let header = document.getElementById("sidebar-header");
-                    header.addEventListener('dblclick', ({ target }) => {
-                        if (target !== header) return;
-                        Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
-                    });
-                }
+                bindSidebarHeaderDoubleClick(document);
+                bindSidebarBrowserDoubleClick(document, window);
 
                 if (window.SidebarModoki) {
                     let header = document.getElementById("SM_header");
@@ -469,7 +532,7 @@
                     function addEvent (header) {
                         header.addEventListener('dblclick', ({ target }) => {
                             if (target !== header) return;
-                            Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+                            toggleSidebarPosition();
                         });
                     }
                 }
@@ -498,7 +561,7 @@
                         if (e.button == 1) {
                             e.preventDefault();
                             e.stopPropagation();
-                            Services.prefs.setBoolPref("sidebar.position_start", !Services.prefs.getBoolPref("sidebar.position_start"));
+                            toggleSidebarPosition();
                         }
                     });
                 }
