@@ -21,11 +21,12 @@
 */
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20260330
+// @version         20260330.1
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20260330 增加地址栏复制成功动画反馈
 // @note            20260330 修复 Fx136+ 地址栏中键复制当前地址失效
 // @note            20250218 修复 Fx135+ Ctrl + F 失效 
 // @note            20240806 修复 Ctrl + F 右键级太高，新增中键 SidebarModoki 按钮切换侧边栏方向
@@ -46,6 +47,7 @@
             key: 'S'
         },
         "urlbar middle click copy url": true,
+        "urlbar middle click copy feedback": true, // 地址栏复制成功动画反馈
         "searchbar paste and go add accesskey": { // 搜索框右键粘贴并搜索增加 AccessKey
             enabled: true, // true 是启用， false 是禁用
             key: 'S'
@@ -63,6 +65,103 @@
 
     function MiscUtils () {
         Services.obs.addObserver(this, 'domwindowopened', false);
+    }
+
+    function ensureUrlbarCopyFeedbackStyle (document) {
+        if (document.getElementById("miscmods-urlbar-copy-feedback-style")) {
+            return;
+        }
+        let style = document.createElementNS("http://www.w3.org/1999/xhtml", "style");
+        style.id = "miscmods-urlbar-copy-feedback-style";
+        style.textContent = `
+#urlbar-container {
+    position: relative;
+}
+#urlbar[miscmods-copy-success="true"] .urlbar-background {
+    animation: miscmods-urlbar-copy-flash .85s ease;
+}
+#miscmods-urlbar-copy-toast {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    z-index: 2147483647;
+    pointer-events: none;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(32, 122, 72, .96);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: .02em;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(.92);
+}
+#miscmods-urlbar-copy-toast[data-active="true"] {
+    animation: miscmods-urlbar-copy-toast .9s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+@keyframes miscmods-urlbar-copy-flash {
+    0% {
+        box-shadow: 0 0 0 rgba(48, 171, 98, 0);
+    }
+    30% {
+        box-shadow: 0 0 0 2px rgba(48, 171, 98, .36), 0 0 20px rgba(48, 171, 98, .24);
+    }
+    100% {
+        box-shadow: 0 0 0 rgba(48, 171, 98, 0);
+    }
+}
+@keyframes miscmods-urlbar-copy-toast {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 8px) scale(.92);
+    }
+    18% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+    72% {
+        opacity: 1;
+        transform: translate(-50%, -1px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -10px) scale(.98);
+    }
+}`;
+        document.documentElement.appendChild(style);
+    }
+
+    function showUrlbarCopyFeedback (document, window) {
+        if (!config["urlbar middle click copy feedback"]) {
+            return;
+        }
+        ensureUrlbarCopyFeedbackStyle(document);
+        let urlbar = document.getElementById("urlbar");
+        let container = document.getElementById("urlbar-container");
+        if (!urlbar || !container) {
+            return;
+        }
+        let toast = document.getElementById("miscmods-urlbar-copy-toast");
+        if (!toast) {
+            toast = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+            toast.id = "miscmods-urlbar-copy-toast";
+            container.appendChild(toast);
+        }
+        toast.textContent = isZh ? "已复制" : "Copied";
+        if (toast._hideTimer) {
+            window.clearTimeout(toast._hideTimer);
+        }
+        toast.removeAttribute("data-active");
+        urlbar.removeAttribute("miscmods-copy-success");
+        void toast.offsetWidth;
+        toast.setAttribute("data-active", "true");
+        urlbar.setAttribute("miscmods-copy-success", "true");
+        toast._hideTimer = window.setTimeout(() => {
+            toast.removeAttribute("data-active");
+            urlbar.removeAttribute("miscmods-copy-success");
+        }, 900);
     }
 
     MiscUtils.prototype = {
@@ -112,6 +211,7 @@
                             return;
                         }
                         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(currentURL);
+                        showUrlbarCopyFeedback(document, window);
                     };
                     input.addEventListener('mousedown', handleUrlbarMiddleClick, true);
                     input.addEventListener('auxclick', handleUrlbarMiddleClick, true);
