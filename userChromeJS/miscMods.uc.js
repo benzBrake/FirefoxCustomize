@@ -21,11 +21,12 @@
 */
 // @license         MIT License
 // @compatibility   Firefox 90
-// @version         20240806
+// @version         20260330
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20260330 修复 Fx136+ 地址栏中键复制当前地址失效
 // @note            20250218 修复 Fx135+ Ctrl + F 失效 
 // @note            20240806 修复 Ctrl + F 右键级太高，新增中键 SidebarModoki 按钮切换侧边栏方向
 // @note            20240710 修复中键地址栏复制地址，修复中键下载按钮提示保存 URL
@@ -87,14 +88,35 @@
             }
             if (config["urlbar middle click copy url"]) {
                 let input = document.getElementById('urlbar');
-                if (input)
-                    input.addEventListener('click', function (e) {
-                        if (e.button == 1) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(gBrowser.currentURI.spec);
+                if (input) {
+                    let isUrlbarCopyTarget = function (target) {
+                        if (!(target instanceof Element) || !target.closest('#urlbar')) {
+                            return false;
                         }
-                    }, false);
+                        if (target.closest('#location-bar, #page-action-buttons, #star-button-box, #identity-box, #tracking-protection-icon-container, #urlbar-searchmode-switcher, .urlbarView, menupopup')) {
+                            return false;
+                        }
+                        return !!target.closest('#urlbar-input, #urlbar-scheme, .urlbar-input-box, .urlbar-input-container, .urlbar-background, #urlbar');
+                    };
+                    let handleUrlbarMiddleClick = function (e) {
+                        if (e.button !== 1 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || !isUrlbarCopyTarget(e.target)) {
+                            return;
+                        }
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (e.type === 'mousedown') {
+                            return;
+                        }
+                        let currentURL = window.gBrowser?.selectedBrowser?.currentURI?.spec || window.gBrowser?.currentURI?.spec || window.gURLBar?.untrimmedValue || window.gURLBar?.value;
+                        if (!currentURL) {
+                            return;
+                        }
+                        Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(currentURL);
+                    };
+                    input.addEventListener('mousedown', handleUrlbarMiddleClick, true);
+                    input.addEventListener('auxclick', handleUrlbarMiddleClick, true);
+                    input.addEventListener('click', handleUrlbarMiddleClick, true);
+                }
             }
             if (config["searchbar paste and go add accesskey"].enabled) {
                 let accesskey = config["urlbar paste and go add accesskey"].accesskey || 'S';
