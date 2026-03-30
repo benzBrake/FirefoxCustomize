@@ -974,6 +974,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             constructor(helper) {
                 this.helper = helper;
                 this.container = null;
+                this.dialog = null;
                 this.doc = document;
                 this.EMPTY_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII=";
                 this.strings = {};
@@ -1041,8 +1042,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     await this.loadStrings();
                     this.createModal();
                 }
-                this.container.style.display = 'flex';
-                document.documentElement.setAttribute('owh-modal-open', 'true');
+                if (!this.container.open) {
+                    this.container.showModal();
+                    document.documentElement.setAttribute('owh-modal-open', 'true');
+                }
                 await this.loadApps();
             }
 
@@ -1052,20 +1055,16 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 // 计算合适的缩放比例（限制在 0.8-1.5 之间）
                 const modalScale = Math.min(Math.max(dpiScale, 0.8), 1.5);
 
-                // 创建遮罩层
-                const overlay = this.doc.createElement('div');
-                overlay.className = 'owh-modal-overlay';
-                overlay.style.cssText = `
-                    display: none;
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
-                    background: rgba(0, 0, 0, 0.5);
-                    z-index: 2147483647;
-                    align-items: center;
-                    justify-content: center;
+                // 使用原生 dialog，避免自绘遮罩层被地址栏弹层覆盖
+                const modal = this.doc.createElementNS('http://www.w3.org/1999/xhtml', 'dialog');
+                modal.className = 'owh-modal-overlay';
+                modal.style.cssText = `
+                    padding: 0;
+                    border: none;
+                    background: transparent;
+                    max-width: none;
+                    max-height: none;
+                    overflow: visible;
                     font-size: ${modalScale}rem;
                 `;
 
@@ -1168,11 +1167,29 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 dialog.appendChild(header);
                 dialog.appendChild(content);
-                overlay.appendChild(dialog);
+                modal.appendChild(dialog);
 
-                // 点击遮罩关闭
-                overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) {
+                modal.addEventListener('cancel', (e) => {
+                    e.preventDefault();
+                    this.hide();
+                });
+
+                modal.addEventListener('close', () => {
+                    document.documentElement.removeAttribute('owh-modal-open');
+                });
+
+                // 点击 backdrop 关闭
+                modal.addEventListener('click', (e) => {
+                    if (e.target !== modal) {
+                        return;
+                    }
+                    const rect = dialog.getBoundingClientRect();
+                    const isBackdropClick =
+                        e.clientX < rect.left ||
+                        e.clientX > rect.right ||
+                        e.clientY < rect.top ||
+                        e.clientY > rect.bottom;
+                    if (isBackdropClick) {
                         this.hide();
                     }
                 });
@@ -1210,8 +1227,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 window.addEventListener('keypress', this.keypressHandler, true);
                 window.addEventListener('keyup', this.keyupHandler, true);
 
-                this.doc.body.appendChild(overlay);
-                this.container = overlay;
+                this.doc.body.appendChild(modal);
+                this.container = modal;
                 this.dialog = dialog;
 
                 // 设置拖拽排序
@@ -1291,7 +1308,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
             hide() {
                 if (this.container) {
-                    this.container.style.display = 'none';
+                    if (this.container.open) {
+                        this.container.close();
+                    }
                     document.documentElement.removeAttribute('owh-modal-open');
                 }
             }
@@ -1632,6 +1651,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     this.keyupHandler = null;
                 }
                 if (this.container && this.container.parentNode) {
+                    if (this.container.open) {
+                        this.container.close();
+                    }
                     this.container.parentNode.removeChild(this.container);
                 }
                 document.documentElement.removeAttribute('owh-modal-open');
@@ -1671,6 +1693,17 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 }
 .owh-popup menuitem[filename="you-get.exe"][style*="file:///"] {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDQ4IDQ4IiB0cmFuc2Zvcm09InNjYWxlKDEuMjUpIj48cGF0aCBmaWxsPSIjOEJDMzRBIiBkPSJNMzgsNDJIMTBjLTIuMjA5LDAtNC0xLjc5MS00LTRWMTBjMC0yLjIwOSwxLjc5MS00LDQtNGgyOGMyLjIwOSwwLDQsMS43OTEsNCw0djI4QzQyLDQwLjIwOSw0MC4yMDksNDIsMzgsNDIiLz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNMzEgMjRMMjAgMTYgMjAgMzJ6Ii8+PC9zdmc+) !important;
+}
+.owh-modal-overlay {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+.owh-modal-overlay::backdrop {
+    background: rgba(0, 0, 0, 0.5) !important;
 }
 .owh-popup menuitem[filename="yt-dlp.exe"][style*="file:///"] {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHRyYW5zZm9ybT0ic2NhbGUoMS40KSI+PHBhdGggZmlsbD0iI2ZmNjk3YiIgZD0iTTg2LjIsMTA0SDQxLjhDMzIsMTA0LDI0LDk2LDI0LDg2LjJWNDEuOEMyNCwzMiwzMiwyNCw0MS44LDI0aDQ0LjRDOTYsMjQsMTA0LDMyLDEwNCw0MS44djQ0LjRDMTA0LDk2LDk2LDEwNCw4Ni4yLDEwNHoiLz48cGF0aCBmaWxsPSIjZmY2OTdiIiBkPSJNODYuMiwxMDRINDEuOEMzMiwxMDQsMjQsOTYsMjQsODYuMlY0MS44QzI0LDMyLDMyLDI0LDQxLjgsMjRoNDQuNEM5NiwyNCwxMDQsMzIsMTA0LDQxLjh2NDQuNEMxMDQsOTYsOTYsMTA0LDg2LjIsMTA0eiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0yNCw0MS44djE0LjdjMTQuNS0xMS4xLDQxLjItMjQuOSw3OS41LTE5QzEwMS41LDI5LjcsOTQuNiwyNCw4Ni4yLDI0SDQxLjhDMzIsMjQsMjQsMzIsMjQsNDEuOHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTMuNSA0OUw1My41IDc5IDc5LjUgNjR6Ii8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNDQ0YjU0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNiIgZD0iTTg2LjIsMTA0SDQxLjhDMzIsMTA0LDI0LDk2LDI0LDg2LjJWNDEuOEMyNCwzMiwzMiwyNCw0MS44LDI0aDQ0LjRDOTYsMjQsMTA0LDMyLDEwNCw0MS44djQ0LjRDMTA0LDk2LDk2LDEwNCw4Ni4yLDEwNHoiLz48L3N2Zz4=) !important;
