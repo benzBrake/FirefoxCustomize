@@ -2,12 +2,14 @@
 // @name            StatusBar.uc.js
 // @description     状态栏
 // @license         MIT License
-// @compatibility   Firefox 137
-// @version         0.0.5
+// @compatibility   Firefox 149
+// @version         0.0.7
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.0.7 修复 togglePref 函数使用 hasAttribute 检测选中状态
+// @note            0.0.6 升级兼容性至 Firefox 149+
 // @note            0.0.5 移除 0.0.2 引入的 TabMixPlus 兼容代码
 // @note            0.0.4 Fx139, 修复 call to Function() blocked by CSP
 // @note            0.0.3 fx137
@@ -99,8 +101,7 @@
             });
         },
         togglePref: function () {
-            let checked = document.getElementById("toggle_status-bar").getAttribute("checked") == "true";
-            Services.prefs.setBoolPref("browser.display.statusbar", checked);
+            Services.prefs.setBoolPref("browser.display.statusbar", document.getElementById("toggle_status-bar").hasAttribute("checked"));
         },
         show: function () {
             //move statustext to statusbar

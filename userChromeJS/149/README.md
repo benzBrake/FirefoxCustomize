@@ -101,3 +101,64 @@ areaMenu.addEventListener('popupshowing', function () {
 **注意事项：**
 - `menu.hidden = false` 无效，必须使用 `removeAttribute('hidden')`
 - 推荐使用移除-重建模式，避免 hidden 属性问题
+
+## 3. checkbox menuitem checked 属性检测变化
+
+Firefox 149+ 中，`type="checkbox"` 的 menuitem 元素的 `checked` 属性检测方式发生变化。
+
+**问题表现：**
+- `getAttribute("checked")` 在取消选中时返回 `"false"` 字符串，而不是 `null`
+- 使用 `getAttribute("checked") == "true"` 判断会失效
+
+**解决方案：**
+
+使用 `hasAttribute("checked")` 来检测选中状态：
+
+```javascript
+// 错误方法（Firefox 149+ 失效）
+let checked = menuitem.getAttribute("checked") == "true";
+
+// 正确方法（Firefox 149+）
+let checked = menuitem.hasAttribute("checked");
+```
+
+**完整示例：**
+
+```javascript
+// 设置菜单项初始状态
+let toggleItem = document.createXULElement("menuitem");
+toggleItem.setAttribute("type", "checkbox");
+
+// 根据 pref 设置初始状态
+let prefValue = Services.prefs.getBoolPref("extensions.myaddon.enabled", false);
+if (prefValue) {
+    toggleItem.setAttribute("checked", "true");
+}
+
+// 点击事件处理
+toggleItem.addEventListener("command", function () {
+    // 使用 hasAttribute 检测当前状态
+    let isChecked = this.hasAttribute("checked");
+
+    // 切换状态
+    if (isChecked) {
+        this.removeAttribute("checked");
+        Services.prefs.setBoolPref("extensions.myaddon.enabled", false);
+    } else {
+        this.setAttribute("checked", "true");
+        Services.prefs.setBoolPref("extensions.myaddon.enabled", true);
+    }
+});
+
+// 或者在 togglePref 函数中使用
+togglePref: function () {
+    let menuitem = document.getElementById("my-toggle-item");
+    Services.prefs.setBoolPref("extensions.myaddon.enabled", menuitem.hasAttribute("checked"));
+}
+```
+
+**注意事项：**
+- `hasAttribute("checked")` 返回布尔值，更加可靠
+- 设置选中：`setAttribute("checked", "true")`
+- 取消选中：`removeAttribute("checked")`
+- 避免使用 `getAttribute("checked") == "true"` 的判断方式
