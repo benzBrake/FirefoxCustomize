@@ -24,7 +24,7 @@ await searchService.getDefault();
 ```javascript
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-    SearchService: "resource:///modules/SearchService.sys.mjs",
+    SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 const searchService = lazy.SearchService;
 if (!searchService.isInitialized) {
