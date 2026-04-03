@@ -3,14 +3,16 @@
 // @description     鼠标拖拽 Drag & Go，来自于 Mozilla-Russia 论坛，Ryan 修改自用
 // @author          Ryan, Dumby
 // @include         main
-// @version         2025.04.10
-// @compatibility   Firefox 80
+// @version         2026.04.03
+// @compatibility   Firefox 149
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @referenceURL    https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234
+// @note            2026.04.03 修复搜索失效
 // @note            2025.04.10 替换 Yandex 以图搜图为 AI反查图片，简化代码
 // @note            2025.04.05 修复保存非英文文本乱码
 // @note            2024.03.06 增加复制链接文本
 // @note            2024.02.29 修复站内搜索失效
+// @note            2026.04.02 升级兼容性至 Firefox 149+，使用 ESM 模块化搜索服务
 // @onlyonce
 // ==/UserScript==
 (function () {
@@ -20,6 +22,7 @@
 
     window.UCFDrag = {
         debug: false,
+        lazy: {},
         gestures: {
             link: [
                 {
@@ -91,31 +94,31 @@
                 {
                     dir: "U",
                     name: "搜索文本（新标签，前台）",
-                    cmd (val) {
-                        this.searchWithEngine(val, "tab", "@default");
+                    async cmd (val) {
+                        await this.searchWithEngine(val, "tab", "@default");
                     }
                 },
                 {
                     dir: "U",
                     shift: true,
                     name: "搜索文本（新标签，后台）",
-                    cmd (val) {
-                        this.searchWithEngine(val, "tabshifted", "@default");
+                    async cmd (val) {
+                        await this.searchWithEngine(val, "tabshifted", "@default");
                     }
                 },
                 {
                     dir: "R",
                     name: "百度搜索（新标签，前台）",
-                    cmd (val) {
-                        this.searchWithEngine(val, 'tab', '百度');
+                    async cmd (val) {
+                        await this.searchWithEngine(val, 'tab', '百度');
                     }
                 },
                 {
                     dir: "U",
                     shift: true,
                     name: "百度搜索（新标签，后台）",
-                    cmd (val) {
-                        this.searchWithEngine(val, 'tabshifted', '百度');
+                    async cmd (val) {
+                        await this.searchWithEngine(val, 'tabshifted', '百度');
                     }
                 },
                 {
@@ -128,22 +131,22 @@
                 {
                     dir: "D",
                     name: "站内搜索（当前标签）",
-                    cmd (val, event) {
+                    async cmd (val, event) {
                         var currentPageUrl = event.originalTarget.currentURI.spec;
                         var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
                         if (val)
-                            this.searchWithEngine(TERM, 'current', '@default');
+                            await this.searchWithEngine(TERM, 'current', '@default');
                     }
                 },
                 {
                     dir: "D",
                     name: "站内搜索（新标签，前台）",
                     ctrl: true,
-                    cmd (val, event) {
+                    async cmd (val, event) {
                         var currentPageUrl = event.originalTarget.currentURI.spec;
                         var TERM = "site:" + new URL(currentPageUrl).hostname.replace(/^www./, '') + " " + val;
                         if (val)
-                            this.searchWithEngine(TERM, 'tab', '@default');
+                            await this.searchWithEngine(TERM, 'tab', '@default');
                     }
                 },
                 {
@@ -223,21 +226,43 @@
                 }
             ]
         },
-        searchWithEngine (val, where, engine, addToHistory) {
+        initSearchService: async function () {
+            if (this._searchServiceInitPromise) {
+                return this._searchServiceInitPromise;
+            }
+            this._searchServiceInitPromise = (async () => {
+                if (typeof Services.search !== 'undefined') {
+                    // Firefox 148 及更早版本
+                    this.searchService = Services.search;
+                } else {
+                    // Firefox 149+
+                    ChromeUtils.defineESModuleGetters(this.lazy, {
+                        SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+                    });
+                    this.searchService = this.lazy.SearchService;
+                }
+                if (!this.searchService.isInitialized) {
+                    await this.searchService.init();
+                }
+                return this.searchService;
+            })();
+            return this._searchServiceInitPromise;
+        },
+        searchWithEngine: async function (val, where, engine, addToHistory) {
             val || (val = this.val);
-            var engine = this.getEngineByName(engine);
+            var engine = await this.getEngineByName(engine);
             var submission = engine.getSubmission(val, null);
             this.openLink(submission.uri.spec, where, { postData: submission.postData, ...this.opts });
             if (addToHistory) {
                 this.updateSearchbarHistory(val);
             }
         },
-        getEngineByName (aEngineName) {
+        getEngineByName: async function (aEngineName) {
+            await this.initSearchService();
             const UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
                 createInstance(Ci.nsIScriptableUnicodeConverter);
             UI.charset = "UTF-8";
-            const nsIBSS = Ci.nsIBrowserSearchService || Ci.nsISearchService;
-            const searchService = Cc["@mozilla.org/browser/search-service;1"].getService(nsIBSS);
+            const searchService = this.searchService;
             if (aEngineName.toUpperCase() == "CURRENT") {
                 var searchbar = this.searchbar;
                 if (searchbar) return searchbar.currentEngine;
@@ -534,6 +559,8 @@
                 Services.obs.removeObserver(self, topic);
                 Services.obs.removeObserver(quit, t);
             }, "quit-application-granted");
+            // 预初始化搜索服务
+            this.initSearchService();
         }
     }
 
