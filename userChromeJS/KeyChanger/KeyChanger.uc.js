@@ -8,6 +8,7 @@
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
+// @note           2026.04.05 统一命令调用契约(event / this=window)，新增通用 modal
 // @note           2026.03.04 整理代码
 // @note           2026.01.13 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           2025.03.29 fix event.target is undefined
@@ -29,7 +30,7 @@
 location.href.startsWith("chrome://browser/content/browser.x") && (function (INTERNAL_MAP, getURLSpecFromFile, _openTrustedLinkIn, syncify) {
 
     // true: 若无外部编辑器则使用代码片段速记器(Scratchpad) | false: 提示设置编辑器路径
-    const useScraptchpad = true;
+    const useScratchpad = true;
 
     const AlertNotification = Components.Constructor(
         "@mozilla.org/alert-notification;1",
@@ -93,6 +94,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         isBuilding: false, // 标记是否正在构建快捷键，防止重复执行
         _selectedText: "", // 用于存储当前页面选中的文本
         KEYSETID: "keychanger-keyset", // 动态创建的 <keyset> 元素的 ID
+        commandSandbox: null, // 保存当前配置文件的执行上下文，供快捷键命令复用
+        activeModal: null, // 当前打开的通用弹窗
 
         /**
          * 初始化事件监听器，用于捕获选中的文本
@@ -136,6 +139,52 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          */
         setSelectedText: function (text) {
             this._selectedText = text;
+        },
+
+        // 兼容旧配置中的拼写错误接口。
+        getSelctionText: function () {
+            return this.getSelectedText();
+        },
+
+        getSelectionText: function () {
+            return this.getSelectedText();
+        },
+
+        /**
+         * 创建一个可复用的快捷键沙箱
+         * @returns {Object}
+         */
+        createSandbox: function () {
+            const sandbox = Cu.Sandbox(window, {
+                sandboxPrototype: window,
+                sameZoneAs: window,
+                freezeBuiltins: false
+            });
+            /* toSource() is not available in sandbox */
+            Cu.evalInSandbox(`
+                Function.prototype.toSource = window.Function.prototype.toSource;
+                Object.defineProperty(Function.prototype, "toSource", { enumerable: false });
+                Object.prototype.toSource = window.Object.prototype.toSource;
+                Object.defineProperty(Object.prototype, "toSource", { enumerable: false });
+                Array.prototype.toSource = window.Array.prototype.toSource;
+                Object.defineProperty(Array.prototype, "toSource", { enumerable: false });
+            `, sandbox);
+            return sandbox;
+        },
+
+        destroySandbox: function (sandbox) {
+            if (!sandbox) return;
+            try {
+                Cu.nukeSandbox(sandbox);
+            } catch (ex) { }
+        },
+
+        replaceCommandSandbox: function (sandbox) {
+            const previousSandbox = this.commandSandbox;
+            this.commandSandbox = sandbox;
+            if (previousSandbox && previousSandbox !== sandbox) {
+                this.destroySandbox(previousSandbox);
+            }
         },
 
         /**
@@ -182,11 +231,17 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             const str = loadText(this.FILE);
             if (!str) return null;
 
-            // 在沙箱中执行配置文件，以隔离作用域并获取配置对象
-            const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
+            // 在专用沙箱中执行配置文件，保留配置里的辅助函数与共享变量
+            const sandbox = this.createSandbox();
             try {
-                const keys = Cu.evalInSandbox('var keys = {};\n' + str + ';\nkeys;', sandbox);
-                if (!keys) return null;
+                const keys = Cu.evalInSandbox(
+                    'var keys = this.__keyChangerKeys = {};\n' + str + ';\nthis.__keyChangerKeys;',
+                    sandbox
+                );
+                if (!keys) {
+                    this.destroySandbox(sandbox);
+                    return null;
+                }
 
                 const dFrag = document.createDocumentFragment();
 
@@ -238,25 +293,27 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                             }
                         });
                     } else { // 处理函数或字符串形式的命令
-                        // 安全提示: 下方的 eval 会执行配置文件中定义的代码。请确保配置文件来源可靠。
-                        // 这是脚本的核心功能，允许用户高度自定义快捷键行为。
-                        elem.dataset.oncommand = typeof cmd === "function" ? cmd.toString() : (cmd + "");
+                        // 命令按名称回查到当前配置沙箱中执行，避免丢失 helper 和共享变量。
+                        elem.dataset.commandType = typeof cmd === "function" ? "function" : "script";
+                        elem.dataset.commandName = n;
                         elem.addEventListener('command', (event) => {
                             // event.target 在某些情况下可能为 undefined，使用 event.currentTarget 更稳定
                             const commandTarget = event.currentTarget || event.target;
-                            Cu.evalInSandbox('(' + commandTarget.dataset.oncommand + ')(window, event)', KeyChanger.sb);
+                            KeyChanger.executeCommand(
+                                commandTarget.dataset.commandName,
+                                event,
+                                commandTarget.dataset.commandType
+                            );
                         });
                     }
                     dFrag.appendChild(elem);
                 });
+                this.replaceCommandSandbox(sandbox);
                 return dFrag;
             } catch (e) {
+                this.destroySandbox(sandbox);
                 this.log("快捷键配置解析失败:", e);
                 return null;
-            } finally {
-                try {
-                    Cu.nukeSandbox(sandbox);
-                } catch (ex) {}
             }
         },
 
@@ -336,6 +393,45 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         },
 
         /**
+         * 执行配置文件中定义的快捷键命令
+         * 函数命令按 this === window、首参为 event 的约定执行；
+         * 字符串命令作为脚本执行，并显式暴露 event 全局变量。
+         * @param {string} commandName
+         * @param {Event} event
+         * @param {string} commandType
+         */
+        executeCommand: function (commandName, event, commandType = "script") {
+            if (!commandName) {
+                this.log("快捷键命令为空");
+                return;
+            }
+
+            const sandbox = this.commandSandbox;
+            if (!sandbox) {
+                this.log("快捷键配置沙箱尚未初始化");
+                return;
+            }
+
+            const commandKey = JSON.stringify(commandName);
+            sandbox.event = event;
+            try {
+                if (commandType === "function") {
+                    Cu.evalInSandbox(`this.__keyChangerKeys[${commandKey}].call(window, event);`, sandbox);
+                } else {
+                    Cu.evalInSandbox(`eval(this.__keyChangerKeys[${commandKey}]);`, sandbox);
+                }
+            } catch (e) {
+                this.log("快捷键命令执行失败:", e);
+            } finally {
+                try {
+                    delete sandbox.event;
+                } catch (ex) {
+                    sandbox.event = undefined;
+                }
+            }
+        },
+
+        /**
          * 打开链接的通用函数，处理不同协议和打开方式
          * @param {string} url - 要打开的 URL
          * @param {string} aWhere - 打开位置 (tab, window, current)
@@ -344,15 +440,24 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          * @param {*} aReferrerInfo - 引用信息
          */
         openCommand: function (url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
+            if (!url || typeof url !== "string") {
+                this.log("openCommand 缺少有效 URL");
+                return;
+            }
+
             const isJavaScriptURL = url.startsWith("javascript:");
             const isWebURL = /^(f|ht)tps?:/.test(url);
             const where = aWhere || 'tab';
 
-            const fixup = { ...aAllowThirdPartyFixup };
+            const fixup = aAllowThirdPartyFixup && typeof aAllowThirdPartyFixup === "object"
+                ? { ...aAllowThirdPartyFixup }
+                : {};
 
             // 如果是网页且未指定容器，则继承当前标签的容器
             if (!fixup.userContextId && isWebURL) {
-                fixup.userContextId = gBrowser.contentPrincipal.userContextId || gBrowser.selectedBrowser.getAttribute("userContextId") || null;
+                fixup.userContextId = gBrowser.selectedBrowser.contentPrincipal.userContextId
+                    || gBrowser.selectedBrowser.getAttribute("userContextId")
+                    || null;
             }
 
             if (aPostData) fixup.postData = aPostData;
@@ -378,14 +483,20 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                     private: PrivateBrowsingUtils.isWindowPrivate(window),
                     userContextId: fixup.userContextId,
                 });
-            } else if (where) {
-                _openTrustedLinkIn(url, where, fixup);
-            } else {
-                // 默认情况
-                openUILink(url, {}, {
-                    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
-                });
+                return;
             }
+
+            _openTrustedLinkIn(url, where, fixup);
+        },
+
+        /**
+         * 兼容旧配置中对 loadURI 的调用
+         * @param {string} url
+         * @param {string} where
+         * @param {object} params
+         */
+        loadURI: function (url, where = "current", params = {}) {
+            this.openCommand(url, where, params);
         },
 
         /**
@@ -404,7 +515,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             } catch (e) { }
 
             if (!editor || !editor.exists()) {
-                if (useScraptchpad && this.appVersion <= 72) {
+                if (useScratchpad && this.appVersion <= 72) {
                     // 旧版 Firefox 可回退到代码片段速记器
                     this.openScriptInScratchpad(window, aFile);
                     return;
@@ -489,6 +600,251 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             }
         },
 
+        closeModal: function () {
+            const modal = this.activeModal;
+            if (!modal) return;
+            this.activeModal = null;
+            try {
+                modal.close();
+            } catch (e) {
+                this.log("关闭弹窗失败:", e);
+            }
+        },
+
+        /**
+         * 显示一个可复用的通用弹窗壳
+         * @param {object} options
+         * @returns {object|null}
+         */
+        showModal: function (options = {}) {
+            const modalOptions = options && typeof options === "object" ? options : {};
+            const modalWindow = modalOptions.window || window;
+            const doc = modalWindow?.document;
+            if (!doc || !doc.documentElement) {
+                this.log("showModal 缺少可用窗口");
+                return null;
+            }
+
+            this.closeModal();
+
+            const width = typeof modalOptions.width === "number"
+                ? `${modalOptions.width}px`
+                : (modalOptions.width || "420px");
+            const applyStyles = (node, styles) => {
+                if (styles) {
+                    Object.assign(node.style, styles);
+                }
+                return node;
+            };
+            const createElement = (tag, styles, props) => {
+                const node = doc.createElement(tag);
+                applyStyles(node, styles);
+                if (props) {
+                    for (const [key, value] of Object.entries(props)) {
+                        if (key === "dataset" && value && typeof value === "object") {
+                            Object.assign(node.dataset, value);
+                        } else if (key === "attributes" && value && typeof value === "object") {
+                            for (const [attr, attrValue] of Object.entries(value)) {
+                                node.setAttribute(attr, attrValue);
+                            }
+                        } else if (key === "textContent") {
+                            node.textContent = value;
+                        } else {
+                            node[key] = value;
+                        }
+                    }
+                }
+                return node;
+            };
+
+            const overlay = createElement("div", {
+                position: "fixed",
+                inset: "0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "16px",
+                background: "rgba(15, 23, 42, 0.42)",
+                zIndex: "2147483647",
+                fontFamily: "\"Segoe UI\", \"Microsoft YaHei UI\", sans-serif"
+            }, {
+                id: modalOptions.id || "keychanger-modal"
+            });
+            const panel = createElement("div", {
+                width,
+                maxWidth: "calc(100vw - 32px)",
+                background: "#ffffff",
+                border: "1px solid #d8dee9",
+                borderRadius: "12px",
+                boxShadow: "0 18px 40px rgba(15, 23, 42, 0.18)",
+                color: "#1f2937",
+                overflow: "hidden"
+            });
+            const header = createElement("div", {
+                padding: "16px 18px 0"
+            });
+            const title = createElement("div", {
+                fontSize: "18px",
+                fontWeight: "700",
+                lineHeight: "1.4"
+            }, {
+                textContent: modalOptions.title || "KeyChanger"
+            });
+            const subtitle = createElement("div", {
+                marginTop: "6px",
+                fontSize: "12px",
+                lineHeight: "1.5",
+                color: "#6b7280",
+                display: modalOptions.subtitle ? "" : "none"
+            }, {
+                textContent: modalOptions.subtitle || ""
+            });
+            const body = createElement("div", {
+                padding: "16px 18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px"
+            });
+            const actions = createElement("div", {
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+                padding: "0 18px 18px"
+            });
+            const cancelButton = createElement("button", {
+                padding: "8px 14px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
+                background: "#ffffff",
+                color: "#374151",
+                cursor: "pointer",
+                fontSize: "13px"
+            }, {
+                type: "button",
+                textContent: modalOptions.cancelText || "取消"
+            });
+            const confirmButton = createElement("button", {
+                padding: "8px 14px",
+                borderRadius: "10px",
+                border: "none",
+                background: "#2563eb",
+                color: "#ffffff",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: "600"
+            }, {
+                type: "button",
+                textContent: modalOptions.confirmText || "确定"
+            });
+
+            let isClosed = false;
+            const close = () => {
+                if (isClosed) return;
+                isClosed = true;
+                overlay.removeEventListener("click", onOverlayClick);
+                doc.removeEventListener("keydown", onKeyDown, true);
+                overlay.remove();
+                if (this.activeModal?.overlay === overlay) {
+                    this.activeModal = null;
+                }
+            };
+            const api = {
+                window: modalWindow,
+                document: doc,
+                overlay,
+                panel,
+                body,
+                confirmButton,
+                cancelButton,
+                close: () => close(),
+                submit: () => handleConfirm(),
+                createElement,
+                setStyles: applyStyles
+            };
+            const finishConfirm = (result) => {
+                if (result === false) {
+                    return false;
+                }
+                close();
+                return true;
+            };
+            const handleConfirm = () => {
+                try {
+                    if (typeof modalOptions.onConfirm !== "function") {
+                        close();
+                        return;
+                    }
+                    const result = modalOptions.onConfirm(api);
+                    if (result && typeof result.then === "function") {
+                        result.then(finishConfirm).catch((e) => {
+                            this.log("弹窗确认失败:", e);
+                        });
+                        return;
+                    }
+                    finishConfirm(result);
+                } catch (e) {
+                    this.log("弹窗确认失败:", e);
+                }
+            };
+            const onOverlayClick = (event) => {
+                if (event.target === overlay) {
+                    close();
+                }
+            };
+            const onKeyDown = (event) => {
+                if (isClosed) return;
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    close();
+                }
+            };
+
+            try {
+                if (typeof modalOptions.buildBody === "function") {
+                    modalOptions.buildBody(body, api);
+                }
+            } catch (e) {
+                this.log("构建弹窗内容失败:", e);
+                return null;
+            }
+
+            cancelButton.addEventListener("click", () => close());
+            confirmButton.addEventListener("click", () => handleConfirm());
+            overlay.addEventListener("click", onOverlayClick);
+            doc.addEventListener("keydown", onKeyDown, true);
+
+            header.appendChild(title);
+            header.appendChild(subtitle);
+            actions.appendChild(cancelButton);
+            actions.appendChild(confirmButton);
+            panel.appendChild(header);
+            panel.appendChild(body);
+            panel.appendChild(actions);
+            overlay.appendChild(panel);
+            doc.documentElement.appendChild(overlay);
+
+            this.activeModal = {
+                window: modalWindow,
+                overlay,
+                close
+            };
+
+            if (typeof modalOptions.onMount === "function") {
+                modalWindow.setTimeout(() => {
+                    if (!isClosed) {
+                        try {
+                            modalOptions.onMount(api);
+                        } catch (e) {
+                            this.log("弹窗挂载回调失败:", e);
+                        }
+                    }
+                }, 0);
+            }
+
+            return api;
+        },
+
         /**
          * 显示桌面通知
          *
@@ -510,7 +866,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          * @param {Object} aAlertObject
          *        通知配置对象
          * @param {string} [aAlertObject.title]
-         *        消息标题（默认："addMenuPlus"）
+         *        消息标题（默认："KeyChanger"）
          * @param {string} aAlertObject.text
          *        消息内容
          * @param {boolean} [aAlertObject.textClickable]
@@ -597,19 +953,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         init: function () {
             let sb = window.userChrome_js?.sb;
             if (!sb) {
-                sb = Cu.Sandbox(window, {
-                    sandboxPrototype: window,
-                    sameZoneAs: window,
-                });
-                /* toSource() is not available in sandbox */
-                Cu.evalInSandbox(`
-                    Function.prototype.toSource = window.Function.prototype.toSource;
-                    Object.defineProperty(Function.prototype, "toSource", {enumerable : false})
-                    Object.prototype.toSource = window.Object.prototype.toSource;
-                    Object.defineProperty(Object.prototype, "toSource", {enumerable : false})
-                    Array.prototype.toSource = window.Array.prototype.toSource;
-                    Object.defineProperty(Array.prototype, "toSource", {enumerable : false})
-                `, sb);
+                sb = this.createSandbox();
                 window.addEventListener("unload", () => {
                     setTimeout(() => {
                         Cu.nukeSandbox(sb);
@@ -617,6 +961,12 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                 }, { once: true });
             }
             this.sb = sb;
+            window.addEventListener("unload", () => {
+                this.closeModal();
+                const sandbox = this.commandSandbox;
+                this.commandSandbox = null;
+                this.destroySandbox(sandbox);
+            }, { once: true });
             this.createMenuitem();
             this.makeKeyset();
             this.addEventListener();

@@ -1,5 +1,179 @@
 //修改自Firefox 自定义快捷 RunningCheese 版 for 90+
 
+function getSearchHost (uri) {
+    try {
+        if (!uri) return "";
+        if (uri.schemeIs("http") || uri.schemeIs("https") || uri.schemeIs("ftp")) {
+            return uri.asciiHost || uri.host || "";
+        }
+    } catch (ex) { }
+    return "";
+}
+
+function isSearchEngineHost (host) {
+    return /(^|\.)google\.[^./]+$|(^|\.)baidu\.com$|(^|\.)bing\.com$/.test(host);
+}
+
+function buildSearchURL (engine, keyword, host = "") {
+    const query = encodeURIComponent(keyword);
+    switch (engine) {
+        case "site-google":
+            return "https://www.google.com/search?q=" + encodeURIComponent("site:" + host + " " + keyword);
+        case "site-baidu":
+            return "https://www.baidu.com/s?wd=" + encodeURIComponent("site:" + host + " " + keyword);
+        case "baidu":
+            return "https://www.baidu.com/s?wd=" + query;
+        case "google":
+            return "https://www.google.com/search?q=" + query;
+        case "bing":
+            return "https://www.bing.com/search?q=" + query;
+    }
+    return "";
+}
+
+function showSearchModal (win, keyword, canSearchCurrentSite, siteEngine, host, isZh) {
+    const options = [];
+    if (canSearchCurrentSite) {
+        options.push({
+            value: siteEngine === "baidu" ? "site-baidu" : "site-google",
+            label: isZh
+                ? `站内搜索 (${siteEngine === "baidu" ? "百度" : "谷歌"})`
+                : `Site search (${siteEngine === "baidu" ? "Baidu" : "Google"})`
+        });
+    }
+    options.push(
+        { value: "baidu", label: isZh ? "百度" : "Baidu" },
+        { value: "google", label: isZh ? "谷歌" : "Google" },
+        { value: "bing", label: isZh ? "必应" : "Bing" }
+    );
+
+    const defaultMode = canSearchCurrentSite ? options[0].value : siteEngine;
+    let selectedMode = defaultMode;
+    let keywordInput = null;
+
+    KeyChanger.showModal({
+        id: "keychanger-search-modal",
+        window: win,
+        title: isZh ? "搜索" : "Search",
+        subtitle: canSearchCurrentSite
+            ? (isZh ? `当前站点: ${host}` : `Current site: ${host}`)
+            : (isZh ? "当前页面不支持站内搜索" : "Site search is unavailable on this page"),
+        width: 420,
+        confirmText: isZh ? "搜索" : "Search",
+        cancelText: isZh ? "取消" : "Cancel",
+        buildBody: function (body, api) {
+            keywordInput = api.createElement("input", {
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                border: "1px solid #c9d3e0",
+                outline: "none",
+                background: "#ffffff",
+                color: "#111827",
+                fontSize: "14px"
+            }, {
+                type: "text",
+                value: keyword,
+                placeholder: isZh ? "输入搜索关键词" : "Enter search keyword"
+            });
+            keywordInput.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" && !event.isComposing) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    api.submit();
+                }
+            });
+
+            const optionGroup = api.createElement("div", {
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: "10px"
+            });
+            const updateSelection = () => {
+                optionGroup.querySelectorAll("label").forEach(label => {
+                    const radio = label.querySelector("input");
+                    const isChecked = !!radio?.checked;
+                    api.setStyles(label, isChecked ? {
+                        borderColor: "#2563eb",
+                        background: "#eff6ff",
+                        boxShadow: "inset 0 0 0 1px rgba(37, 99, 235, 0.18)"
+                    } : {
+                        borderColor: "#d7deea",
+                        background: "#ffffff",
+                        boxShadow: "none"
+                    });
+                });
+            };
+
+            for (const option of options) {
+                const label = api.createElement("label", {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid #d7deea",
+                    background: "#ffffff",
+                    cursor: "pointer",
+                    userSelect: "none"
+                });
+                const radio = api.createElement("input", null, {
+                    type: "radio",
+                    name: "keychanger-search-mode",
+                    value: option.value,
+                    checked: option.value === defaultMode
+                });
+                radio.addEventListener("change", function () {
+                    selectedMode = option.value;
+                    updateSelection();
+                });
+                const text = api.createElement("span", {
+                    fontSize: "13px",
+                    color: "#1f2937"
+                }, {
+                    textContent: option.label
+                });
+
+                label.appendChild(radio);
+                label.appendChild(text);
+                optionGroup.appendChild(label);
+            }
+
+            body.appendChild(keywordInput);
+            body.appendChild(optionGroup);
+            updateSelection();
+        },
+        onConfirm: function () {
+            const finalKeyword = keywordInput?.value.trim() || "";
+            if (!finalKeyword) {
+                keywordInput?.focus();
+                return false;
+            }
+
+            const url = buildSearchURL(selectedMode, finalKeyword, host);
+            if (!url) {
+                return false;
+            }
+            KeyChanger.openCommand(url, "tab");
+        },
+        onMount: function () {
+            keywordInput?.focus();
+            keywordInput?.select();
+        }
+    });
+}
+
+function promptSearch (event, siteEngine = "google") {
+    const win = event?.target?.ownerGlobal || window;
+    const { currentURI } = win.gBrowser.selectedTab.linkedBrowser;
+    const host = getSearchHost(currentURI);
+    const canSearchCurrentSite = !!host && !isSearchEngineHost(host);
+    const isZh = Services.locale.appLocaleAsBCP47.includes("zh-");
+    const keyword = KeyChanger.getSelectedText().trim();
+    showSearchModal(win, keyword, canSearchCurrentSite, siteEngine, host, isZh);
+}
+
 //F1-12键
 //--------------------------------------------------------------------------------------------------------------------------------------------
 // 新建标签页并光标定位到地址栏
@@ -68,27 +242,12 @@ keys['Alt+F'] = function () {
     setToolbarVisibility(bar, bar.collapsed);
 }; //显示或隐藏书签栏， 自带按键 Ctrl+Shift+B
 keys['Alt+G'] = function (event) {
-    let sel = KeyChanger.getSelectedText(),
-        win = event.target.ownerGlobal;
-    if (!sel.length) {
-        sel = win.prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '请输入搜索的关键词:' : 'Please input keyword:', '');
-    }
-    if (sel) {
-        let url = 'https://www.google.com/search?q=site:' + encodeURIComponent(win.gBrowser.currentURI.host) + ' ' + sel;
-        win.KeyChanger.openCommand(url, 'tab');
-    }
-}; //Google站内搜索
+    promptSearch(event, "google");
+}; //搜索（网页默认 Google 站内）
+// 注意：Alt+B 可能被 Firefox / 系统菜单 access key 抢占，若要稳定触发请改键位或调整 ui.key.menuAccessKey。
 keys['Alt+B'] = function (event) {
-    let sel = KeyChanger.getSelectedText(),
-        win = event.target.ownerGlobal;
-    if (!sel.length) {
-        sel = win.prompt(Services.locale.appLocaleAsBCP47.includes("zh-") ? '请输入搜索的关键词:' : 'Please input keyword:', '');
-    }
-    if (sel) {
-        let url = 'http://www.baidu.com/s?&ie=UTF-8&oe=UTF-8&cl=3&rn=100&wd=site:' + encodeURIComponent(win.gBrowser.currentURI.host) + ' ' + sel;
-        win.KeyChanger.openCommand(url, 'tab');
-    }
-};//Baidu站内搜索
+    promptSearch(event, "baidu");
+}; //搜索（网页默认 Baidu 站内）
 keys['Alt+I'] = function (event) {
     event.target.ownerGlobal.BrowserPageInfo();
 }; //查看页面信息
@@ -100,7 +259,7 @@ keys['Alt+Z'] = function () {
         else throw "Session Restore feature is disabled."
     }
 }; //恢复关闭标签页
-keys['Alt+V'] = function () {
+keys['Alt+V'] = function (event) {
     let url = readFromClipboard();
     try {
         switchToTabHavingURI(url, true);
@@ -117,8 +276,8 @@ keys['Alt+V'] = function () {
         }
         switchToTabHavingURI(url, true);
     }
-    e.preventDefault();
-    e.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
 }; //打开剪切板地址
 keys['Alt+C'] = function () {
     (function () {
@@ -166,4 +325,8 @@ keys['Ctrl+Shift+Q'] = (event) => {
     if (event.target.ownerGlobal === window) {
         console.log(KeyChanger.getSelectedText());
     }
+}
+keys['Ctrl+Shift+Q'] = (event) => {
+    BrowserOpenTab();
+    gBrowser.removeAllTabsBut(gBrowser.selectedTab);
 }
