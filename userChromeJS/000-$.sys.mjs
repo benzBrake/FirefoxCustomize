@@ -2,9 +2,10 @@
 // @name         000-$.sys.mjs
 // @description  jQuery-like DOM selector for single element with Proxy wrapper
 // @author       Ryan
-// @version      1.0.1
+// @version      1.0.2
 // @skip         true
-// @note         2015-06-13 never load in global
+// @note         2026-04-05 fix element input, event listener removal, and contextual fragment insertion
+// @note         2025-06-13 never load in global
 // @note         2025-06-10 fix bug of hasClass
 // @note         2025-06-03 remove selectorCache
 // ==/UserScript==
@@ -12,7 +13,9 @@ const $cache = new WeakMap();
 const $ = (sel, doc) => {
     if (typeof sel === 'undefined') return null;
 
-    if (!(/^[:#]|[, >\.\[\(]/.test(sel))) sel = `#${sel}`;
+    if (typeof sel === 'string' && !(/^[:#]|[, >\.\[\(]/.test(sel))) {
+        sel = `#${sel}`;
+    }
 
     // Find cached elements in Map
     if (typeof sel !== 'string' && sel.nodeType) {
@@ -26,7 +29,7 @@ const $ = (sel, doc) => {
 
     if (!el) return null;
 
-    // Store event listeners
+    // Store event listeners with options to support reliable removal.
     const eventListeners = new Map();
 
     // Helper function to unwrap proxy to native element
@@ -41,6 +44,9 @@ const $ = (sel, doc) => {
                     return target;
                 case 'native':
                     return (methodName) => (...args) => {
+                        if (typeof target[methodName] !== 'function') {
+                            throw new TypeError(`${String(methodName)} is not a function`);
+                        }
                         const unwrappedArgs = args.map(unwrap);
                         return target[methodName](...unwrappedArgs);
                     };
@@ -70,13 +76,13 @@ const $ = (sel, doc) => {
                 case 'after':
                 case 'append':
                     return (...nodes) => {
-                        const document = target.ownerDocument;  // 从目标元素获取 document
-                        const fragment = document.createDocumentFragment();
+                        const ownerDocument = target.ownerDocument;
+                        const range = ownerDocument.createRange();
+                        range.selectNode(target);
+                        const fragment = ownerDocument.createDocumentFragment();
                         nodes.forEach(node => {
                             if (typeof node === 'string') {
-                                const temp = document.createElement('div');
-                                temp.innerHTML = node;
-                                fragment.append(...temp.childNodes);
+                                fragment.append(range.createContextualFragment(node));
                             } else {
                                 fragment.appendChild(unwrap(node));
                             }
@@ -114,23 +120,35 @@ const $ = (sel, doc) => {
                 // Event methods cases
                 case 'on':
                     return (event, handler, options) => {
-                        const finalOptions = typeof options === 'object'
-                            ? { ...options, passive: true }
-                            : { passive: true };
+                        const finalOptions = options ?? false;
 
                         target.addEventListener(event, handler, finalOptions);
                         eventListeners.has(event) || eventListeners.set(event, new Set());
-                        eventListeners.get(event).add(handler);
+                        eventListeners.get(event).add({
+                            handler,
+                            options: finalOptions,
+                        });
                         return proxy;
                     };
                 case 'off':
                     return (event, handler) => {
+                        const listeners = eventListeners.get(event);
+                        if (!listeners) return proxy;
+
                         if (handler) {
-                            target.removeEventListener(event, handler);
-                            eventListeners.get(event)?.delete(handler);
+                            for (const listener of listeners) {
+                                if (listener.handler !== handler) continue;
+
+                                target.removeEventListener(event, listener.handler, listener.options);
+                                listeners.delete(listener);
+                            }
+
+                            if (!listeners.size) {
+                                eventListeners.delete(event);
+                            }
                         } else {
-                            eventListeners.get(event)?.forEach(h => {
-                                target.removeEventListener(event, h);
+                            listeners.forEach(listener => {
+                                target.removeEventListener(event, listener.handler, listener.options);
                             });
                             eventListeners.delete(event);
                         }
@@ -194,6 +212,7 @@ const $$ = (sel, doc) => {
             },
             remove () {
                 this.elements.forEach(el => el.remove());
+                return this;
             }
         };
     }
