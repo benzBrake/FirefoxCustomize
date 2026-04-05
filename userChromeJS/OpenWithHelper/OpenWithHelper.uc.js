@@ -202,6 +202,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let rURL = "%(?:R?LINK_OR_)?URL" + he + "%|%u\\b";
                 let rSEL = "%SEL" + he + "%|%s\\b";
                 let rLINK = "%R?LINK(?:_TEXT|_HOST)?" + he + "%|%l\\b";
+                let rIMAGE = "%IMAGE_(?:URL|ALT|TITLE)" + he + "%|%i\\b";
+                let rMEDIA = "%MEDIA_URL" + he + "%|%m\\b";
                 let rExt = "%EOL" + he + "%";
                 let rCLIPBOARD = "%CLIPBOARD" + he + "%|%p\\b";
                 let rRLT_OR_UT = "%RLT_OR_UT" + he + "%";
@@ -213,7 +215,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 let rPROFILE_DIR = "%PROFILE_DIR" + he + "%|%pd\\b";
                 let rCHOOSE_DIR = "%CHOOSE_DIR" + he + "%|%cd\\b";
 
-                let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR, rCHOOSE_DIR };
+                let R = { rTITLE, rTITLES, rURL, rSEL, rLINK, rIMAGE, rMEDIA, rCLIPBOARD, rExt, rRLT_OR_UT, rCOOKIE, rCOOKIE_NESCAPE, rCOOKIE_HOST, rCOOKIES_SQLITE, rSAVE_DIR, rPROFILE_DIR, rCHOOSE_DIR };
                 for (let [k, v] of Object.entries(R)) {
                     this[k] = new RegExp(v, "i");
                 }
@@ -242,14 +244,16 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     if (e.target !== e.currentTarget) return;
                     CTX_MENU.querySelector("[dynamic=true][exec]").doCommand();
                 }, false);
+                this.CTX_MENU = CTX_MENU;
                 this.CTX_POPUP = CTX_MENU.appendChild(CTX_POPUP);
                 $('contentAreaContextMenu')?.insertBefore(CTX_MENU, $('#contentAreaContextMenu > menuseparator:last-child'));
                 let TAB_POPUP = this.createBasicPopup(doc);
                 TAB_POPUP.id = 'OpenWithHelper-Tab-Popup';
                 TAB_POPUP.addEventListener("popupshowing", this, false);
                 let TAB_MENU = createElement(doc, 'menu', { id: 'OpenWithHelper-Tab-Menu', 'data-l10n-id': 'open-with-applications', label: "使用应用打开" });
-                TAB_MENU.appendChild(TAB_POPUP);
-                this.TAB_POPUP = $('tabContextMenu')?.insertBefore(TAB_MENU, $('context_reopenInContainer')?.nextElementSibling);
+                this.TAB_MENU = TAB_MENU;
+                this.TAB_POPUP = TAB_MENU.appendChild(TAB_POPUP);
+                $('tabContextMenu')?.insertBefore(TAB_MENU, $('context_reopenInContainer')?.nextElementSibling);
                 if (isAlert) {
                     OpenWithHelper.l10n.formatValue("menu-refreshed").then(text => alerts(text));
                 }
@@ -281,7 +285,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 });
                 let insertPoint = menupopup.querySelector(".owh-separator");
                 (await this.getAppList()).forEach((app) => {
-                    if (Object.keys(app).length === 0 || (Object.keys(app).length === 1 && "condition" in app)) {
+                    if (isSeparatorConfig(app)) {
                         let sep = menupopup.insertBefore(createElement(doc, "menuseparator", app), insertPoint);
                         sep.setAttribute("dynamic", true);
                         this.setCondition(sep, app.condition);
@@ -315,7 +319,167 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     this.setCondition(menuitem, app.condition);
                     menupopup.insertBefore(menuitem, insertPoint);
                 });
+                this.updateDynamicVisibility(menupopup);
                 menupopup.setAttribute("need-reload", "false");
+            },
+            getDefaultConditionTokens: function (menu) {
+                if (menu.nodeName === "menuseparator") {
+                    return ["button", "tab", "normal", "page", "frame", "input", "select", "link", "mailto", "image", "canvas", "media"];
+                }
+
+                const text = menu.getAttribute("text") || "";
+                const conditions = ["button", "tab"];
+                if (this.rLINK.test(text) || /%R?LINK_OR_URL/i.test(text)) {
+                    conditions.push("link");
+                }
+                if (this.rSEL.test(text)) {
+                    conditions.push("select");
+                }
+                if (this.rIMAGE.test(text)) {
+                    conditions.push("image");
+                }
+                if (this.rMEDIA.test(text)) {
+                    conditions.push("media");
+                }
+                if (this.rURL.test(text) || !conditions.some(token => ["link", "select", "image", "media"].includes(token))) {
+                    conditions.push("normal");
+                }
+                return uniqueArray(conditions);
+            },
+            normalizeConditionTokens: function (menu, condition) {
+                const allowedTokens = new Set(["button", "tab", "normal", "page", "frame", "input", "select", "link", "mailto", "image", "canvas", "media"]);
+                const tokens = (condition || "")
+                    .toLowerCase()
+                    .split(/\s+/)
+                    .map(token => token.trim())
+                    .filter(Boolean);
+
+                if (!tokens.length) {
+                    return this.getDefaultConditionTokens(menu);
+                }
+
+                return uniqueArray(tokens.filter(token => {
+                    const normalized = token.replace(/^no/, "");
+                    return allowedTokens.has(normalized);
+                }));
+            },
+            collectContextStates: function () {
+                const states = [];
+                const contextMenu = gContextMenu;
+                if (!contextMenu) {
+                    return states;
+                }
+
+                if (contextMenu.onTextInput) {
+                    states.push("input");
+                }
+                if (contextMenu.isContentSelected || contextMenu.isTextSelected) {
+                    states.push("select");
+                }
+                const openCurrentItem = $("contentAreaContextMenu")?.querySelector("#context-openlinkincurrent");
+                const hasLinkTarget = contextMenu.onLink || (!!openCurrentItem && openCurrentItem.getAttribute("hidden") !== "true" /* 兼容 textLink.uc.js */);
+                if (hasLinkTarget) {
+                    states.push(contextMenu.onMailtoLink ? "mailto" : "link");
+                }
+                if (contextMenu.onCanvas) {
+                    states.push("canvas", "image");
+                }
+                if (contextMenu.onImage) {
+                    states.push("image");
+                }
+                if (contextMenu.onVideo || contextMenu.onAudio) {
+                    states.push("media");
+                }
+                if (contextMenu.inFrame) {
+                    states.push("frame");
+                }
+                if (!states.some(token => ["input", "select", "link", "mailto", "image", "canvas", "media"].includes(token))) {
+                    states.push("page", "normal");
+                }
+
+                return uniqueArray(states);
+            },
+            matchesCondition: function (menu, popupType, contextStates = []) {
+                const condition = menu.getAttribute("condition") || "";
+                const tokens = condition.split(/\s+/).filter(Boolean);
+                const positives = tokens.filter(token => !token.startsWith("no"));
+                const negatives = new Set(tokens.filter(token => token.startsWith("no")).map(token => token.slice(2)));
+
+                if (popupType === "button") {
+                    return positives.includes("button") && !negatives.has("button");
+                }
+                if (popupType === "tab") {
+                    return positives.includes("tab") && !negatives.has("tab");
+                }
+
+                const contextTokenSet = new Set(contextStates);
+                if (contextTokenSet.has("page")) {
+                    contextTokenSet.add("normal");
+                }
+                if (contextTokenSet.has("normal")) {
+                    contextTokenSet.add("page");
+                }
+
+                if ([...negatives].some(token => contextTokenSet.has(token))) {
+                    return false;
+                }
+
+                return positives.some(token => contextTokenSet.has(token));
+            },
+            normalizeDynamicSeparators: function (menupopup) {
+                const dynamicNodes = [...menupopup.querySelectorAll(":scope > :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]")];
+                let previousVisibleIsSeparator = true;
+
+                for (const node of dynamicNodes) {
+                    if (node.hidden) {
+                        continue;
+                    }
+
+                    if (node.nodeName === "menuseparator") {
+                        if (previousVisibleIsSeparator) {
+                            node.hidden = true;
+                            continue;
+                        }
+                        previousVisibleIsSeparator = true;
+                        continue;
+                    }
+
+                    previousVisibleIsSeparator = false;
+                }
+
+                for (let i = dynamicNodes.length - 1; i >= 0; i--) {
+                    const node = dynamicNodes[i];
+                    if (node.hidden) {
+                        continue;
+                    }
+                    if (node.nodeName === "menuseparator") {
+                        node.hidden = true;
+                    }
+                    break;
+                }
+            },
+            updateDynamicVisibility: function (menupopup) {
+                const popupType = {
+                    "OpenWithHelper-Btn-Popup": "button",
+                    "OpenWithHelper-Tab-Popup": "tab",
+                    "OpenWithHelper-Ctx-Popup": "context"
+                }[menupopup?.id];
+                if (!popupType) {
+                    return;
+                }
+
+                const contextStates = popupType === "context" ? this.collectContextStates() : [];
+                const dynamicNodes = menupopup.querySelectorAll(":scope > :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]");
+                for (const node of dynamicNodes) {
+                    node.hidden = !this.matchesCondition(node, popupType, contextStates);
+                }
+
+                this.normalizeDynamicSeparators(menupopup);
+
+                const staticSeparator = menupopup.querySelector(".owh-separator");
+                if (staticSeparator) {
+                    staticSeparator.hidden = !menupopup.querySelector(":scope > menuitem[dynamic=true]:not([hidden])");
+                }
             },
             destroy: function () {
                 gBrowser.tabpanels.removeEventListener("mouseup", this, false);
@@ -354,35 +518,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                             await this.reloadApps(event.target);
                         }
                         if (event.target.id == 'contentAreaContextMenu') {
-                            var state = [];
-                            if (gContextMenu.onTextInput)
-                                state.push("input");
-                            if (gContextMenu.isContentSelected || gContextMenu.isTextSelected)
-                                state.push("select");
-                            if (gContextMenu.onLink || event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden") !== "true" /* 兼容 textLink.uc.js */) {
-                                state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
-                                if (/^https?:/.test(gContextMenu.linkURL)) {
-                                    state.push("http");
-                                }
-                            }
-                            if (gContextMenu.onCanvas)
-                                state.push("canvas image");
-                            if (gContextMenu.onImage)
-                                state.push("image");
-                            if (gContextMenu.onVideo || gContextMenu.onAudio)
-                                state.push("media");
-                            $("OpenWithHelper-Ctx-Menu").setAttribute("openWith", state.join(" "));
+                            $("OpenWithHelper-Ctx-Menu").setAttribute("openWith", this.collectContextStates().join(" "));
                         } else if (event.target.id === "tabContextMenu") {
 
-                        } else if (event.target.id === "OpenWithHelper-Ctx-Popup") {
-                            const CTX_POPUP = event.target;
-                            CTX_POPUP.querySelectorAll(" [dynamic=true]").forEach(el => {
-                                el.removeAttribute("hidden");
-                            });
-                            const ms = CTX_POPUP.querySelectorAll("menuitem[dynamic=true]:not([hidden=true])");
-                            if (ms.length) {
-                                CTX_POPUP.querySelector("menuitem[dynamic=true] ~ menuseparator").removeAttribute("hidden");
-                            }
+                        } else if (event.target.classList.contains("owh-popup")) {
+                            this.updateDynamicVisibility(event.target);
                         }
                         break;
                 }
@@ -693,32 +833,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }).catch(e => { });
             },
             setCondition: function (menu, condition) {
-                condition || (condition = "button tab normal link");
-                let beforeProcessConditons = condition.split(' ');
-                let conditions = [];
-                for (let i = 0; i < beforeProcessConditons.length; i++) {
-                    let c = beforeProcessConditons[i] || "";
-                    if (c === "normal") {
-                        conditions.push("normal");
-                    } else if (["button", "tab", "select", "link", "mailto", "image", "canvas", "media", "input"].includes(c.replace(/^no/, ""))) {
-                        conditions.push(c);
-                    }
-                }
-                // hack，没写完（配合的 CSS 也没写完），凑合用
-                if (this.rLINK.test(menu.getAttribute("text"))) {
-                    conditions.push("link");
-                }
-                if (this.rSEL.test(menu.getAttribute("text"))) {
-                    conditions.push("select");
-                }
-                if ((this.rURL.test(menu.getAttribute("text")) || menu.nodeName === "menuseparator") && !conditions.includes("notab")) {
-                    conditions.push("tab");
-                }
-                if (!conditions.includes("nobutton")) {
-                    conditions.push("button");
-                }
+                const conditions = this.normalizeConditionTokens(menu, condition);
                 if (conditions.length) {
                     menu.setAttribute("condition", uniqueArray(conditions).join(" "));
+                } else {
+                    menu.removeAttribute("condition");
                 }
             },
             log: console.log,
@@ -967,6 +1086,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             });
         }
 
+        function isSeparatorConfig (app) {
+            return !!app && (Object.keys(app).length === 0 || (Object.keys(app).length === 1 && "condition" in app));
+        }
+
         /**
          * ManageAppsPanel - 使用 HTML 模态对话框的应用配置面板
          */
@@ -975,6 +1098,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.helper = helper;
                 this.container = null;
                 this.dialog = null;
+                this.paramEditor = null;
+                this.paramEditorTextarea = null;
+                this.paramEditorTarget = null;
+                this.paramEditorInitialValue = '';
+                this.savedAppsSnapshot = '[]';
                 this.doc = document;
                 this.EMPTY_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII=";
                 this.strings = {};
@@ -989,14 +1117,24 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     "application-path": "可执行文件路径",
                     "application-params": "参数",
                     "application-operate": "操作",
+                    "edit-application-params": "编辑参数",
                     "set-application-path": "设置可执行文件路径",
                     "change-path": "更改",
+                    "edit": "编辑",
                     "separator": "分隔符",
                     "add-application": "添加应用",
                     "add-separator": "添加分隔符",
                     "dont-do-that": "请勿这样操作！",
                     "delete-application": "❌",
                     "save": "保存",
+                    "cancel": "取消",
+                    "validation-error-title": "保存失败",
+                    "validation-error-prefix": "请先完善以下必填项：",
+                    "application-title-required": "请填写应用标题",
+                    "application-path-required": "请设置可执行文件路径",
+                    "save-failed": "保存失败，请检查配置或稍后重试。",
+                    "discard-unsaved-changes": "有未保存的更改，确定要关闭并放弃吗？",
+                    "discard-unsaved-param-changes": "参数编辑器中有未保存的更改，确定要放弃吗？",
                     "drag-to-sort": "拖动排序",
                     "fit-for-all": "适用于全部",
                     "fit-for-context-menu": "适用于右键菜单",
@@ -1049,6 +1187,83 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 await this.loadApps();
             }
 
+            isEditableTarget(target) {
+                if (!(target instanceof this.doc.defaultView.Element)) {
+                    return false;
+                }
+
+                const editable = target.closest('input, textarea, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]');
+                return !!editable;
+            }
+
+            shouldAllowModalKeyEvent(event) {
+                if (!this.dialog?.contains(event.target)) {
+                    return false;
+                }
+
+                if (event.key === 'Tab') {
+                    return true;
+                }
+
+                if (!this.isEditableTarget(event.target)) {
+                    return false;
+                }
+
+                if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+                    return true;
+                }
+
+                if (event.altKey) {
+                    return false;
+                }
+
+                const allowedShortcutKeys = new Set(['a', 'c', 'v', 'x', 'z', 'y', 'backspace', 'delete', 'arrowleft', 'arrowright', 'home', 'end']);
+                return allowedShortcutKeys.has(event.key.toLowerCase());
+            }
+
+            createListHeader() {
+                const header = this.doc.createElement('div');
+                header.className = 'owh-list-header';
+                header.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px;
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                    background: var(--toolbar-bgcolor, #fff);
+                    border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
+                    font-size: 12px;
+                    font-weight: 600;
+                `;
+
+                const columns = [
+                    { label: '', width: '20px' },
+                    { label: this.strings["application-icon"], width: '16px', textAlign: 'center' },
+                    { label: this.strings["application-title"], width: '100px' },
+                    { label: this.strings["application-condition"], width: '100px' },
+                    { label: this.strings["application-path"], flex: '1', minWidth: '0' },
+                    { label: this.strings["application-operate"], width: '52px', textAlign: 'center' },
+                    { label: this.strings["application-params"], width: '220px' },
+                    { label: '', width: '32px' }
+                ];
+
+                for (const column of columns) {
+                    const cell = this.doc.createElement('div');
+                    cell.textContent = column.label;
+                    cell.style.cssText = `
+                        width: ${column.width || 'auto'};
+                        flex: ${column.flex || '0 0 auto'};
+                        min-width: ${column.minWidth || 'auto'};
+                        text-align: ${column.textAlign || 'left'};
+                    `;
+                    header.appendChild(cell);
+                }
+
+                return header;
+            }
+
             createModal() {
                 // 获取系统 DPI 缩放比例
                 const dpiScale = window.devicePixelRatio || 1;
@@ -1075,11 +1290,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     background: var(--toolbar-bgcolor, #fff);
                     border-radius: ${8 * modalScale}px;
                     box-shadow: 0 ${4 * modalScale}px ${20 * modalScale}px rgba(0, 0, 0, 0.3);
-                    width: ${900 * modalScale}px;
+                    width: ${980 * modalScale}px;
                     max-width: 95vw;
                     max-height: 90vh;
                     display: flex;
                     flex-direction: column;
+                    position: relative;
                 `;
 
                 // 创建标题栏
@@ -1165,8 +1381,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 const helpBox = this.createHelpBox();
                 content.appendChild(helpBox);
 
+                const paramEditor = this.createParamEditor();
+
                 dialog.appendChild(header);
                 dialog.appendChild(content);
+                dialog.appendChild(paramEditor);
                 modal.appendChild(dialog);
 
                 modal.addEventListener('cancel', (e) => {
@@ -1197,11 +1416,27 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 // 拦截键盘事件
                 this.keydownHandler = (e) => {
                     if (document.documentElement.hasAttribute('owh-modal-open')) {
+                        if (this.isParamEditorOpen()) {
+                            if (e.key === 'Escape') {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                                this.closeParamEditor(false);
+                                return;
+                            }
+                            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                                this.closeParamEditor(true);
+                                return;
+                            }
+                        }
                         if (e.key === 'Escape') {
                             e.preventDefault();
                             e.stopImmediatePropagation();
                             this.hide();
                         } else if (e.altKey && e.key === 'F4') {
+                            return;
+                        } else if (this.shouldAllowModalKeyEvent(e)) {
                             return;
                         } else {
                             e.preventDefault();
@@ -1212,6 +1447,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.keypressHandler = (e) => {
                     if (document.documentElement.hasAttribute('owh-modal-open')) {
                         if (e.altKey && e.key === 'F4') return;
+                        if (this.shouldAllowModalKeyEvent(e)) return;
                         e.preventDefault();
                         e.stopImmediatePropagation();
                     }
@@ -1219,6 +1455,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.keyupHandler = (e) => {
                     if (document.documentElement.hasAttribute('owh-modal-open')) {
                         if (e.altKey && e.key === 'F4') return;
+                        if (this.shouldAllowModalKeyEvent(e)) return;
                         e.preventDefault();
                         e.stopImmediatePropagation();
                     }
@@ -1230,6 +1467,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.doc.body.appendChild(modal);
                 this.container = modal;
                 this.dialog = dialog;
+                this.paramEditor = paramEditor;
 
                 // 设置拖拽排序
                 this.setupDragDrop();
@@ -1241,6 +1479,264 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 btn.classList.add('owh-btn-primary');
                 btn.addEventListener('click', callback);
                 return btn;
+            }
+
+            createParamEditor() {
+                const overlay = this.doc.createElement('div');
+                overlay.className = 'owh-param-editor';
+                overlay.style.cssText = `
+                    position: absolute;
+                    inset: 0;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 24px;
+                    background: rgba(0, 0, 0, 0.45);
+                    z-index: 10;
+                `;
+
+                const panel = this.doc.createElement('div');
+                panel.className = 'owh-param-editor-panel';
+                panel.style.cssText = `
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    width: min(680px, 100%);
+                    max-height: 100%;
+                    padding: 16px;
+                    border-radius: 8px;
+                    background: var(--toolbar-bgcolor, #fff);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+                `;
+
+                const title = this.doc.createElement('div');
+                title.textContent = this.strings["edit-application-params"];
+                title.style.cssText = 'font-size: 14px; font-weight: 600;';
+
+                const textarea = this.doc.createElement('textarea');
+                textarea.className = 'owh-param-editor-textarea';
+                textarea.placeholder = this.strings["application-params"];
+                textarea.style.cssText = `
+                    width: 100%;
+                    min-height: 220px;
+                    resize: vertical;
+                    padding: 8px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font: 12px/1.5 Consolas, "Courier New", monospace;
+                    box-sizing: border-box;
+                `;
+
+                const actions = this.doc.createElement('div');
+                actions.style.cssText = 'display: flex; justify-content: flex-end; gap: 8px;';
+
+                const cancelBtn = this.createButton(this.strings["cancel"], () => this.closeParamEditor(false));
+                cancelBtn.classList.add('owh-btn-secondary');
+
+                const saveBtn = this.createButton(this.strings["save"], () => this.closeParamEditor(true));
+
+                actions.appendChild(cancelBtn);
+                actions.appendChild(saveBtn);
+
+                panel.appendChild(title);
+                panel.appendChild(textarea);
+                panel.appendChild(actions);
+                overlay.appendChild(panel);
+
+                overlay.addEventListener('click', (event) => {
+                    if (event.target === overlay) {
+                        this.closeParamEditor(false);
+                    }
+                });
+
+                this.paramEditorTextarea = textarea;
+                return overlay;
+            }
+
+            isParamEditorOpen() {
+                return this.paramEditor?.style.display === 'flex';
+            }
+
+            confirmDiscardChanges(message) {
+                return Services.prompt.confirm(
+                    this.doc.defaultView,
+                    this.strings["manage-applications-list"],
+                    message
+                );
+            }
+
+            hasPendingParamEditorChanges() {
+                if (!this.isParamEditorOpen() || !this.paramEditorTextarea) {
+                    return false;
+                }
+                return this.paramEditorTextarea.value !== this.paramEditorInitialValue;
+            }
+
+            openParamEditor(input) {
+                if (!input || !this.paramEditor || !this.paramEditorTextarea) {
+                    return;
+                }
+
+                this.paramEditorTarget = input;
+                this.paramEditorInitialValue = input.value || '';
+                this.paramEditorTextarea.value = input.value || '';
+                this.paramEditor.style.display = 'flex';
+                this.paramEditorTextarea.focus();
+                this.paramEditorTextarea.setSelectionRange(this.paramEditorTextarea.value.length, this.paramEditorTextarea.value.length);
+            }
+
+            closeParamEditor(shouldApply) {
+                if (!this.paramEditor || !this.paramEditorTextarea) {
+                    return true;
+                }
+
+                if (!shouldApply && this.hasPendingParamEditorChanges()) {
+                    const shouldDiscard = this.confirmDiscardChanges(this.strings["discard-unsaved-param-changes"]);
+                    if (!shouldDiscard) {
+                        return false;
+                    }
+                }
+
+                if (shouldApply && this.paramEditorTarget) {
+                    this.paramEditorTarget.value = this.paramEditorTextarea.value;
+                    this.paramEditorTarget.title = this.paramEditorTextarea.value || this.strings["application-params"];
+                }
+
+                const focusTarget = this.paramEditorTarget;
+                this.paramEditor.style.display = 'none';
+                this.paramEditorTarget = null;
+                this.paramEditorInitialValue = '';
+
+                if (focusTarget) {
+                    focusTarget.focus();
+                }
+
+                return true;
+            }
+
+            collectAppsFromUI() {
+                if (!this.doc) {
+                    return [];
+                }
+
+                const list = this.doc.getElementById('owh-apps-list');
+                if (!list) {
+                    return [];
+                }
+
+                const rows = list.querySelectorAll('.owh-app-row, .owh-separator-row');
+                const apps = [];
+
+                for (const row of rows) {
+                    if (row.dataset.separator === 'true') {
+                        const condition = row.querySelector('input')?.value?.trim() || '';
+                        apps.push(condition ? { condition } : {});
+                        continue;
+                    }
+
+                    const img = row.querySelector('.owh-icon-img');
+                    const inputs = row.querySelectorAll('input');
+                    const pathLabel = row.querySelector('.owh-path-label');
+                    const app = {
+                        exec: pathLabel?.textContent || '',
+                        text: inputs[2]?.value || '%LINK_OR_URL%'
+                    };
+
+                    if (inputs[0]?.value) app.label = inputs[0].value;
+                    if (inputs[1]?.value) app.condition = inputs[1].value;
+                    if (img?.src && img.src !== this.EMPTY_IMG) app.image = img.src;
+
+                    apps.push(app);
+                }
+
+                return apps;
+            }
+
+            refreshSavedAppsSnapshot() {
+                this.savedAppsSnapshot = JSON.stringify(this.collectAppsFromUI());
+            }
+
+            hasUnsavedAppChanges() {
+                return JSON.stringify(this.collectAppsFromUI()) !== this.savedAppsSnapshot;
+            }
+
+            showAlertMessage(title, message) {
+                Services.prompt.alert(this.doc.defaultView, title, message);
+            }
+
+            clearValidationState() {
+                if (!this.doc) {
+                    return;
+                }
+
+                const invalidNodes = this.doc.querySelectorAll('.owh-invalid-field');
+                for (const node of invalidNodes) {
+                    node.classList.remove('owh-invalid-field');
+                    node.style.removeProperty('outline');
+                    node.style.removeProperty('outline-offset');
+                    node.style.removeProperty('border-color');
+                    node.style.removeProperty('background-color');
+                }
+            }
+
+            markInvalidField(field) {
+                if (!field) {
+                    return;
+                }
+
+                field.classList.add('owh-invalid-field');
+                field.style.outline = '2px solid #d93025';
+                field.style.outlineOffset = '1px';
+                field.style.borderColor = '#d93025';
+                field.style.backgroundColor = 'rgba(217, 48, 37, 0.08)';
+            }
+
+            validateAppsBeforeSave() {
+                this.clearValidationState();
+
+                const list = this.doc.getElementById('owh-apps-list');
+                if (!list) {
+                    return { valid: true };
+                }
+
+                const rows = list.querySelectorAll('.owh-app-row');
+                const errors = [];
+                let firstInvalidField = null;
+
+                rows.forEach((row, index) => {
+                    const rowNumber = index + 1;
+                    const inputs = row.querySelectorAll('input');
+                    const titleInput = inputs[0];
+                    const pathLabel = row.querySelector('.owh-path-label');
+                    const changeBtn = row.querySelector('.owh-change');
+
+                    if (!titleInput?.value.trim()) {
+                        this.markInvalidField(titleInput);
+                        if (!firstInvalidField) {
+                            firstInvalidField = titleInput;
+                        }
+                        errors.push(`第 ${rowNumber} 行：${this.strings["application-title-required"]}`);
+                    }
+
+                    if (!pathLabel?.textContent.trim()) {
+                        this.markInvalidField(pathLabel);
+                        this.markInvalidField(changeBtn);
+                        if (!firstInvalidField) {
+                            firstInvalidField = changeBtn || pathLabel;
+                        }
+                        errors.push(`第 ${rowNumber} 行：${this.strings["application-path-required"]}`);
+                    }
+                });
+
+                if (errors.length > 0) {
+                    return {
+                        valid: false,
+                        message: `${this.strings["validation-error-prefix"]}\n\n${errors.join('\n')}`,
+                        firstInvalidField
+                    };
+                }
+
+                return { valid: true };
             }
 
             setRowDragEnabled(row, enabled) {
@@ -1309,7 +1805,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 cond1.textContent = `${this.strings["fit-for-all"]}: normal, button, tab`;
 
                 const cond2 = this.doc.createElement('div');
-                cond2.textContent = `${this.strings["fit-for-context-menu"]}: input, select, link, image, media, page, frame`;
+                cond2.textContent = `${this.strings["fit-for-context-menu"]}: input, select, link, mailto, image, canvas, media, page, frame`;
                 cond2.style.cssText = 'margin-bottom: 12px;';
 
                 const paramTitle = this.doc.createElement('div');
@@ -1355,12 +1851,22 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
 
             hide() {
+                if (!this.closeParamEditor(false)) {
+                    return false;
+                }
+                if (this.hasUnsavedAppChanges()) {
+                    const shouldDiscard = this.confirmDiscardChanges(this.strings["discard-unsaved-changes"]);
+                    if (!shouldDiscard) {
+                        return false;
+                    }
+                }
                 if (this.container) {
                     if (this.container.open) {
                         this.container.close();
                     }
                     document.documentElement.removeAttribute('owh-modal-open');
                 }
+                return true;
             }
 
             setupDragDrop() {
@@ -1431,14 +1937,18 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     listContainer.removeChild(listContainer.lastChild);
                 }
 
+                listContainer.appendChild(this.createListHeader());
+
                 const apps = await this.helper.getAppList();
                 for (const app of apps) {
-                    if (Object.keys(app).length === 0 || (Object.keys(app).length === 1 && "condition" in app)) {
+                    if (isSeparatorConfig(app)) {
                         this.addSeparatorRow(app);
                     } else {
                         await this.addAppRow(app);
                     }
                 }
+
+                this.refreshSavedAppsSnapshot();
             }
 
             async addAppRow(app) {
@@ -1478,6 +1988,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 const titleInput = this.doc.createElement('input');
                 titleInput.className = 'owh-input';
                 titleInput.placeholder = this.strings["application-title"];
+                titleInput.title = this.strings["application-title"];
                 titleInput.value = app.label || '';
                 titleInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
 
@@ -1485,6 +1996,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 const conditionInput = this.doc.createElement('input');
                 conditionInput.className = 'owh-input';
                 conditionInput.placeholder = this.strings["application-condition"];
+                conditionInput.title = this.strings["application-condition"];
                 conditionInput.value = app.condition || '';
                 conditionInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
 
@@ -1492,7 +2004,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 const pathLabel = this.doc.createElement('div');
                 pathLabel.className = 'owh-path-label';
                 pathLabel.textContent = app.exec || '';
-                pathLabel.style.cssText = 'flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px;';
+                pathLabel.style.cssText = 'flex: 1; min-width: 0; min-height: 26px; padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 18px; box-sizing: border-box; border: 1px solid transparent; border-radius: 3px; display: flex; align-items: center;';
 
                 const changeBtn = this.createButton(this.strings["change-path"], (e) => this.changePath(e, pathLabel));
                 changeBtn.classList.add('owh-change');
@@ -1500,8 +2012,24 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 // 参数输入
                 const paramsInput = this.doc.createElement('input');
                 paramsInput.className = 'owh-input';
+                paramsInput.placeholder = this.strings["application-params"];
+                paramsInput.title = this.strings["application-params"];
                 paramsInput.value = app.text || '%LINK_OR_URL%';
-                paramsInput.style.cssText = 'width: 150px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+                paramsInput.title = paramsInput.value || this.strings["application-params"];
+                paramsInput.style.cssText = 'width: 160px; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-family: Consolas, "Courier New", monospace;';
+                paramsInput.addEventListener('input', () => {
+                    paramsInput.title = paramsInput.value || this.strings["application-params"];
+                });
+                paramsInput.addEventListener('dblclick', () => this.openParamEditor(paramsInput));
+
+                const editParamsBtn = this.createButton(this.strings["edit"], () => this.openParamEditor(paramsInput));
+                editParamsBtn.classList.add('owh-btn-secondary', 'owh-param-edit-btn');
+
+                const paramsWrapper = this.doc.createElement('div');
+                paramsWrapper.className = 'owh-param-cell';
+                paramsWrapper.style.cssText = 'width: 220px; display: flex; align-items: center; gap: 6px;';
+                paramsWrapper.appendChild(paramsInput);
+                paramsWrapper.appendChild(editParamsBtn);
 
                 // 删除按钮
                 const deleteBtn = this.createButton(this.strings["delete-application"], (e) => this.deleteRow(e));
@@ -1513,7 +2041,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 row.appendChild(conditionInput);
                 row.appendChild(pathLabel);
                 row.appendChild(changeBtn);
-                row.appendChild(paramsInput);
+                row.appendChild(paramsWrapper);
                 row.appendChild(deleteBtn);
 
                 listContainer.appendChild(row);
@@ -1544,11 +2072,19 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 sep.textContent = `--- ${this.strings["separator"]} ---`;
                 sep.style.cssText = 'flex: 1; text-align: center; color: #999;';
 
+                const conditionInput = this.doc.createElement('input');
+                conditionInput.className = 'owh-input';
+                conditionInput.placeholder = this.strings["application-condition"];
+                conditionInput.title = this.strings["application-condition"];
+                conditionInput.value = app.condition || '';
+                conditionInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+
                 const deleteBtn = this.createButton(this.strings["delete-application"], (e) => this.deleteRow(e));
                 deleteBtn.classList.add('owh-btn-danger');
 
                 row.appendChild(dragHandle);
                 row.appendChild(sep);
+                row.appendChild(conditionInput);
                 row.appendChild(deleteBtn);
 
                 listContainer.appendChild(row);
@@ -1565,7 +2101,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             }
 
             addSeparator() {
-                this.addSeparatorRow({});
+                this.addSeparatorRow({ condition: '' });
             }
 
             deleteRow(event) {
@@ -1635,48 +2171,37 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
             async save() {
                 if (!this.doc) return;
 
-                const rows = this.doc.getElementById('owh-apps-list').querySelectorAll('.owh-app-row, .owh-separator-row');
-                const apps = [];
-
-                for (const row of rows) {
-                    if (row.dataset.separator === 'true') {
-                        apps.push({});
-                        continue;
-                    }
-
-                    const img = row.querySelector('.owh-icon-img');
-                    const inputs = row.querySelectorAll('input');
-                    const pathLabel = row.querySelector('.owh-path-label');
-
-                    if (!pathLabel.textContent) {
-                        alerts(this.strings["dont-do-that"]);
-                        return;
-                    }
-
-                    // inputs[0] = titleInput, inputs[1] = conditionInput, inputs[2] = paramsInput
-                    const app = {
-                        exec: pathLabel.textContent,
-                        text: inputs[2]?.value || '%LINK_OR_URL%'
-                    };
-
-                    if (inputs[0]?.value) app.label = inputs[0].value;
-                    if (inputs[1]?.value) app.condition = inputs[1].value;
-                    if (img.src && img.src !== this.EMPTY_IMG) app.image = img.src;
-
-                    apps.push(app);
+                if (this.isParamEditorOpen()) {
+                    this.closeParamEditor(true);
                 }
 
-                await IOUtils.writeUTF8(FILE_PATH, JSON.stringify(apps));
-
-                // 刷新所有窗口的菜单
-                const enumerator = Services.wm.getEnumerator(null);
-                while (enumerator.hasMoreElements()) {
-                    const win = enumerator.getNext();
-                    win?.OpenWithHelper?.reload(true);
+                const validation = this.validateAppsBeforeSave();
+                if (!validation.valid) {
+                    this.showAlertMessage(this.strings["validation-error-title"], validation.message);
+                    validation.firstInvalidField?.focus?.();
+                    return;
                 }
 
-                alerts(this.strings["operation-succeeded"]);
-                this.hide();
+                try {
+                    const apps = this.collectAppsFromUI();
+                    await IOUtils.writeUTF8(FILE_PATH, JSON.stringify(apps));
+                    this.savedAppsSnapshot = JSON.stringify(apps);
+
+                    // 刷新所有窗口的菜单
+                    const enumerator = Services.wm.getEnumerator(null);
+                    while (enumerator.hasMoreElements()) {
+                        const win = enumerator.getNext();
+                        win?.OpenWithHelper?.reload(true);
+                    }
+
+                    alerts(this.strings["operation-succeeded"]);
+                    this.hide();
+                } catch (error) {
+                    this.showAlertMessage(
+                        this.strings["validation-error-title"],
+                        `${this.strings["save-failed"]}\n\n${error}`
+                    );
+                }
             }
 
             destroy() {
@@ -1695,6 +2220,11 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     this.container.parentNode.removeChild(this.container);
                 }
                 document.documentElement.removeAttribute('owh-modal-open');
+                this.paramEditor = null;
+                this.paramEditorTextarea = null;
+                this.paramEditorTarget = null;
+                this.paramEditorInitialValue = '';
+                this.savedAppsSnapshot = '[]';
                 this.container = null;
                 this.dialog = null;
             }
@@ -1704,9 +2234,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 #OpenWithHelper-Ctx-Menu,
 #OpenWithHelper-Tab-Menu {
     list-style-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIwIiB5PSIwIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdHJhbnNmb3JtPSJzY2FsZSgxLjM1KSI+DQogIDxwYXRoIGZpbGw9IiM5MGE0YWUiIGQ9Ik02LDMzdjVjMCwxLjcsMS4zLDMsMywzaDMwYzEuNywwLDMtMS4zLDMtM3YtNUg2eiIgLz4NCiAgPHBhdGggZmlsbD0iI2NmZDhkYyIgZD0iTTQyLDMzYy0wLjEsMS43LTEuNSwzLTMuMSwzSDljLTEuNiwwLTMtMS4zLTMtM1YxMGMwLTEuNywxLjMtMywzLTNoMjkuOWMxLjYsMCwzLDEuMywzLjEsM0w0MiwzM0w0MiwzM3oiIC8+DQogIDxwYXRoIGZpbGw9IiM1NDZlN2EiIGQ9Ik0yMiwyMGgtMy41Yy0xLjksMC0zLjUtMS42LTMuNS0zLjVzMS42LTMuNSwzLjUtMy41czMuNSwxLjYsMy41LDMuNVYyMHogTTE4LjUsMTVjLTAuOCwwLTEuNSwwLjctMS41LDEuNSBzMC43LDEuNSwxLjUsMS41SDIwdi0xLjVDMjAsMTUuNywxOS4zLDE1LDE4LjUsMTV6IiAvPg0KICA8cGF0aCBmaWxsPSIjNTQ2ZTdhIiBkPSJNMjkuNSwyMEgyNnYtMy41YzAtMS45LDEuNi0zLjUsMy41LTMuNXMzLjUsMS42LDMuNSwzLjVTMzEuNCwyMCwyOS41LDIweiBNMjgsMThoMS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNSBTMzAuMywxNSwyOS41LDE1UzI4LDE1LjcsMjgsMTYuNVYxOHoiIC8+DQogIDxwYXRoIGZpbGw9IiM1NDZlN2EiIGQ9Ik0xOC41LDMwYy0xLjksMC0zLjUtMS42LTMuNS0zLjVzMS42LTMuNSwzLjUtMy41SDIydjMuNUMyMiwyOC40LDIwLjQsMzAsMTguNSwzMHogTTE4LjUsMjUgYy0wLjgsMC0xLjUsMC43LTEuNSwxLjVzMC43LDEuNSwxLjUsMS41czEuNS0wLjcsMS41LTEuNVYyNUgxOC41eiIgLz4NCiAgPHBhdGggZmlsbD0iIzU0NmU3YSIgZD0iTTI5LjUsMzBjLTEuOSwwLTMuNS0xLjYtMy41LTMuNVYyM2gzLjVjMS45LDAsMy41LDEuNiwzLjUsMy41UzMxLjQsMzAsMjkuNSwzMHogTTI4LDI1djEuNSBjMCwwLjgsMC43LDEuNSwxLjUsMS41czEuNS0wLjcsMS41LTEuNVMzMC4zLDI1LDI5LjUsMjVIMjh6IiAvPg0KICA8cmVjdCB3aWR0aD0iMiIgaGVpZ2h0PSI1IiB4PSIyMCIgeT0iMTkiIGZpbGw9IiM1NDZlN2EiIC8+DQogIDxyZWN0IHdpZHRoPSI1IiBoZWlnaHQ9IjIiIHg9IjIxIiB5PSIxOCIgZmlsbD0iIzU0NmU3YSIgLz4NCiAgPHJlY3Qgd2lkdGg9IjIiIGhlaWdodD0iNSIgeD0iMjYiIHk9IjE5IiBmaWxsPSIjNTQ2ZTdhIiAvPg0KICA8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSIyIiB4PSIyMSIgeT0iMjMiIGZpbGw9IiM1NDZlN2EiIC8+DQo8L3N2Zz4=)
-}
-#OpenWithHelper-Btn-Popup menuitem:is([text*="%URL"]) {
-    display: none;
 }
 .owh-popup menugroup > .menuitem-iconic {
     -moz-box-flex: 1;
@@ -1758,25 +2285,8 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 .owh-popup menuitem.settings {
     list-style-image:url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB0cmFuc2Zvcm09InNjYWxlKDEuMDUpIj4NCiAgPHBhdGggZmlsbD0iIzMyQkVBNiIgZD0iTTUwNC4xLDI1NkM1MDQuMSwxMTksMzkzLDcuOSwyNTYsNy45QzExOSw3LjksNy45LDExOSw3LjksMjU2QzcuOSwzOTMsMTE5LDUwNC4xLDI1Niw1MDQuMUMzOTMsNTA0LjEsNTA0LjEsMzkzLDUwNC4xLDI1NnoiIC8+DQogIDxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik00MTYuMiwyNzUuM3YtMzguNmwtMzYuNi0xMS41Yy0zLjEtMTIuNC04LTI0LjEtMTQuNS0zNC44bDE3LjgtMzQuMUwzNTUuNiwxMjlsLTM0LjIsMTcuOGMtMTAuNi02LjQtMjIuMi0xMS4yLTM0LjYtMTQuM2wtMTEuNi0zNi44aC0zOC43bC0xMS42LDM2LjhjLTEyLjMsMy4xLTI0LDcuOS0zNC42LDE0LjNMMTU2LjQsMTI5TDEyOSwxNTYuNGwxNy44LDM0LjFjLTYuNCwxMC43LTExLjQsMjIuMy0xNC41LDM0LjhsLTM2LjYsMTEuNXYzOC42bDM2LjQsMTEuNWMzLjEsMTIuNSw4LDI0LjMsMTQuNSwzNS4xTDEyOSwzNTUuNmwyNy4zLDI3LjNsMzMuNy0xNy42YzEwLjgsNi41LDIyLjcsMTEuNSwzNS4zLDE0LjZsMTEuNCwzNi4yaDM4LjdsMTEuNC0zNi4yYzEyLjYtMy4xLDI0LjQtOC4xLDM1LjMtMTQuNmwzMy43LDE3LjZsMjcuMy0yNy4zbC0xNy42LTMzLjhjNi41LTEwLjgsMTEuNC0yMi42LDE0LjUtMzUuMUw0MTYuMiwyNzUuM3ogTTI1NiwzNDAuOGMtNDYuNywwLTg0LjYtMzcuOS04NC42LTg0LjZjMC00Ni43LDM3LjktODQuNiw4NC42LTg0LjZjNDYuNywwLDg0LjUsMzcuOSw4NC41LDg0LjZDMzQwLjUsMzAzLDMwMi43LDM0MC44LDI1NiwzNDAuOHoiIC8+DQo8L3N2Zz4=);
 }
-#tabContextMenu[photoncompact="true"] #OpenWithHelper-Tab-Menu > .menu-iconic-left,
-#OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]:not([condition~="tab"]),
-#OpenWithHelper-Tab-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="notab"],
-#OpenWithHelper-Ctx-Menu :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition],
-#OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]:not([condition~="button"]),
-#OpenWithHelper-Btn-Popup :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="nobutton"],
-#OpenWithHelper-Ctx-Menu[openWith="input"],
-#frame-sep ~ #OpenWithHelper-Ctx-Menu[openWith="input"] + menuseparator {
+#tabContextMenu[photoncompact="true"] #OpenWithHelper-Tab-Menu > .menu-iconic-left {
     display: none;
-}
-#OpenWithHelper-Ctx-Menu[openWith=""] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="normal"],
-#OpenWithHelper-Ctx-Menu[openWith~="select"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="select"],
-#OpenWithHelper-Ctx-Menu[openWith~="input"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="input"],
-#OpenWithHelper-Ctx-Menu[openWith~="link"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="link"],
-#OpenWithHelper-Ctx-Menu[openWith~="image"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="image"],
-#OpenWithHelper-Ctx-Menu[openWith~="media"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="media"],
-#OpenWithHelper-Ctx-Menu[openWith~="canvas"] :is(menu, menuitem, menugroup, menuseparator)[dynamic=true][condition~="canvas"]{
-    display: flex;
-    display: -moz-box;
 }
 /* Modal 按钮样式 */
 .owh-btn-primary {
@@ -1790,6 +2300,18 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 }
 .owh-btn-primary:hover {
     background: #357ae8 !important;
+}
+.owh-btn-secondary {
+    padding: 4px 8px !important;
+    border: 1px solid #9aa0a6 !important;
+    border-radius: 4px !important;
+    background: #f1f3f4 !important;
+    color: #202124 !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+}
+.owh-btn-secondary:hover {
+    background: #e8eaed !important;
 }
 .owh-change {
     padding: 4px 8px !important;
