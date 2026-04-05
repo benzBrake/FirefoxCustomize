@@ -5,11 +5,12 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 72
-// @version         2025.04.04
+// @version         2026.04.06
 // @downloadURL     https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            2026.04.06 Fix multi-window provider handoff and add debug pref
 // @note            2025.04.04 Fx137 fix lazy is undefined
 // @note            2025.03.08 Add English / Japanese String
 // @note            2025.01.31 Remove Cu.import, per Bug 1881888 
@@ -58,6 +59,51 @@
     const AM_FILENAME = Components.stack.filename.split("/").pop().split("?")[0];
     const APP_VERSION = parseFloat(Services.appinfo.version);
     const EXCLUED_SCRIPTS = [AM_FILENAME];
+    const LOG_PREFIX = "[AddonsPage_fx72]";
+    const UNLOAD_HANDLER_KEY = "__AddonsPageFx72UnloadHandler";
+    const DEBUG_PREF = "userChromeJS.AddonsPage_fx72.debug";
+    const DEBUG = (() => {
+        try {
+            return Services.prefs.getBoolPref(DEBUG_PREF);
+        } catch (e) {
+            return false;
+        }
+    })();
+
+    function debugLog (...args) {
+        if (!DEBUG) {
+            return;
+        }
+        try {
+            console.log(LOG_PREFIX, ...args);
+        } catch (e) {
+            try {
+                Services.console.logStringMessage([LOG_PREFIX, ...args.map(debugStringify)].join(" "));
+            } catch (ex) { }
+        }
+    }
+
+    function debugWarn (...args) {
+        if (!DEBUG) {
+            return;
+        }
+        try {
+            console.warn(LOG_PREFIX, ...args);
+        } catch (e) {
+            debugLog(...args);
+        }
+    }
+
+    function debugStringify (value) {
+        if (typeof value === "string") {
+            return value;
+        }
+        try {
+            return JSON.stringify(value);
+        } catch (e) {
+            return String(value);
+        }
+    }
 
     if (window.AM_Helper) {  // 修改调试用，重新载入无需重启
         window.AM_Helper.uninit();
@@ -66,6 +112,10 @@
     if (window.userChromeJSAddon) {
         window.userChromeJSAddon.uninit();
         delete window.userChromeJSAddon;
+    }
+    if (window[UNLOAD_HANDLER_KEY]) {
+        window.removeEventListener("unload", window[UNLOAD_HANDLER_KEY], false);
+        delete window[UNLOAD_HANDLER_KEY];
     }
 
     const LANG = {
@@ -480,58 +530,445 @@
     window.userChromeJSAddon = {
         scripts: [],
         unloads: [],
+        isProviderOwner: false,
 
         init () {
-            if (AddonManager.hasAddonType && AddonManager.hasAddonType("userchromejs") ||
-                AddonManager.addonTypes && 'userchromejs' in AddonManager.addonTypes)
-                return;
-
+            const hasType = this.isAddonTypeRegistered();
+            debugLog("init()", {
+                href: String(window.location),
+                hasAddonType: !!hasType,
+            });
             this.initScripts();
+            if (hasType) {
+                debugLog("provider already registered, skip registerProvider()");
+            } else {
+                this.registerProvider();
+                this.addStyle();
+            }
+        },
+        isAddonTypeRegistered () {
+            try {
+                if (typeof AddonManager.hasAddonType === "function") {
+                    return AddonManager.hasAddonType("userchromejs");
+                }
+            } catch (ex) {
+                console.error(ex);
+            }
+            return !!(AddonManager.addonTypes &&
+                Object.prototype.hasOwnProperty.call(AddonManager.addonTypes, "userchromejs"));
+        },
+        ensureProviderRegistration () {
+            if (this.isAddonTypeRegistered()) {
+                debugLog("ensureProviderRegistration(): provider already registered");
+                return false;
+            }
+            debugLog("ensureProviderRegistration(): registering provider in this window", {
+                href: String(window.location),
+            });
             this.registerProvider();
             this.addStyle();
+            return true;
+        },
+        handoffProviderToOtherWindow () {
+            const enumerator = Services.wm.getEnumerator("navigator:browser");
+            while (enumerator.hasMoreElements()) {
+                const win = enumerator.getNext();
+                if (!win || win === window || win.closed) {
+                    continue;
+                }
+                try {
+                    if (win.userChromeJSAddon &&
+                        typeof win.userChromeJSAddon.ensureProviderRegistration === "function") {
+                        const adopted = win.userChromeJSAddon.ensureProviderRegistration();
+                        if (adopted) {
+                            debugLog("handoffProviderToOtherWindow(): provider adopted", {
+                                href: String(win.location || ""),
+                            });
+                        }
+                        return;
+                    }
+                } catch (ex) {
+                    console.error(ex);
+                }
+            }
+            debugLog("handoffProviderToOtherWindow(): no other window available");
         },
         uninit () {
-            this.unloads.forEach(function (func) { func(); });
+            debugLog("uninit()", {
+                href: String(window.location),
+                unloadCount: this.unloads.length,
+            });
+            this.scripts = [];
+            this.unloads.splice(0).forEach(function (func) { func(); });
+        },
+        describeWindow (win) {
+            if (!win || win.closed) {
+                return {
+                    href: null,
+                    closed: true,
+                };
+            }
+
+            const info = {
+                href: null,
+                hasUserChromeJs: false,
+                ucjsDone: false,
+                ucjsScripts: null,
+                ucjsOverlays: null,
+                hasUc: false,
+                ucIsFaked: null,
+                ucScripts: null,
+                hasUcUtils: false,
+            };
+
+            try {
+                info.href = String(win.location);
+            } catch (e) { }
+            try {
+                info.hasUserChromeJs = !!win.userChrome_js;
+                if (win.userChrome_js) {
+                    info.ucjsDone = !!win.userChrome_js.getScriptsDone;
+                    info.ucjsScripts = Array.isArray(win.userChrome_js.scripts) ? win.userChrome_js.scripts.length : null;
+                    info.ucjsOverlays = Array.isArray(win.userChrome_js.overlays) ? win.userChrome_js.overlays.length : null;
+                }
+            } catch (e) { }
+            try {
+                info.hasUc = !!win._uc;
+                if (win._uc) {
+                    info.ucIsFaked = !!win._uc.isFaked;
+                    info.ucScripts = win._uc.scripts ? Object.keys(win._uc.scripts).length : null;
+                }
+            } catch (e) { }
+            try {
+                info.hasUcUtils = typeof win._ucUtils === "object" && !!win._ucUtils;
+            } catch (e) { }
+
+            return info;
+        },
+        dumpWindowState (label, preferredWindow) {
+            debugWarn(label, this.getLiveBrowserWindows(preferredWindow).map(win => this.describeWindow(win)));
+        },
+        getLiveBrowserWindows (preferredWindow) {
+            const wins = [];
+            const seen = new Set();
+            const appendWindow = win => {
+                if (!win || win.closed || seen.has(win)) {
+                    return;
+                }
+                try {
+                    if (win.document.documentElement.getAttribute("windowtype") !== "navigator:browser") {
+                        return;
+                    }
+                } catch (e) {
+                    return;
+                }
+                seen.add(win);
+                wins.push(win);
+            };
+
+            appendWindow(preferredWindow);
+            appendWindow(window);
+
+            const enumerator = Services.wm.getEnumerator("navigator:browser");
+            while (enumerator.hasMoreElements()) {
+                appendWindow(enumerator.getNext());
+            }
+
+            return wins;
+        },
+        getBackendFromWindow (win) {
+            try {
+                if (win.userChrome_js) {
+                    const ucjs = win.userChrome_js;
+                    if (Array.isArray(ucjs.scripts) && Array.isArray(ucjs.overlays) &&
+                        (ucjs.getScriptsDone || ucjs.scripts.length || ucjs.overlays.length)) {
+                        return {
+                            kind: "userChrome_js",
+                            ownerWindow: win,
+                        };
+                    }
+                }
+            } catch (e) { }
+
+            try {
+                if (win._uc && !win._uc.isFaked && win._uc.scripts) {
+                    return {
+                        kind: "_uc",
+                        ownerWindow: win,
+                    };
+                }
+            } catch (e) { }
+
+            try {
+                if (typeof win._ucUtils === "object" && win._ucUtils) {
+                    return {
+                        kind: "_ucUtils",
+                        ownerWindow: win,
+                    };
+                }
+            } catch (e) { }
+
+            return null;
+        },
+        resolveBackend (preferredWindow, preferredKind, scriptName) {
+            const preferred = [];
+            const fallback = [];
+
+            for (const win of this.getLiveBrowserWindows(preferredWindow)) {
+                const backend = this.getBackendFromWindow(win);
+                if (!backend) {
+                    continue;
+                }
+                if (scriptName && !this.backendHasScript(backend, scriptName)) {
+                    continue;
+                }
+                if (!preferredKind || backend.kind === preferredKind) {
+                    preferred.push(backend);
+                } else {
+                    fallback.push(backend);
+                }
+            }
+
+            const backend = preferred[0] || fallback[0] || null;
+            if (!backend) {
+                debugWarn("resolveBackend(): no backend", {
+                    preferredKind: preferredKind || null,
+                    scriptName: scriptName || null,
+                });
+                this.dumpWindowState("resolveBackend(): window snapshot", preferredWindow);
+            }
+            return backend;
+        },
+        resolveChromeURL (str) {
+            const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
+            try {
+                return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        },
+        getBackendScripts (backend) {
+            if (!backend) {
+                return [];
+            }
+
+            switch (backend.kind) {
+                case "userChrome_js":
+                    return backend.ownerWindow.userChrome_js.scripts.concat(backend.ownerWindow.userChrome_js.overlays);
+                case "_uc":
+                    return Object.values(backend.ownerWindow._uc.scripts);
+                case "_ucUtils":
+                    return backend.ownerWindow._ucUtils.getScriptData().map(script => {
+                        let aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+                        let path = this.resolveChromeURL(`chrome://userscripts/content/${script.filename}`);
+                        path = path.replace("file:///", "").replace(/\//g, '\\');
+                        aFile.initWithPath(path);
+                        return Object.assign({}, script, {
+                            file: aFile
+                        });
+                    });
+            }
+
+            return [];
+        },
+        getScriptFromBackend (backend, scriptName) {
+            if (!backend) {
+                return null;
+            }
+
+            if (backend.kind === "_uc") {
+                const script = backend.ownerWindow._uc.scripts[scriptName];
+                if (script) {
+                    return script;
+                }
+            }
+
+            return this.getBackendScripts(backend).find(script => script.filename === scriptName) || null;
+        },
+        backendHasScript (backend, scriptName) {
+            return !!this.getScriptFromBackend(backend, scriptName);
+        },
+        splitPrefList (value) {
+            return (value || "").split(",").filter(Boolean);
+        },
+        joinPrefList (list) {
+            return list.filter((name, index, arr) => !!name && arr.indexOf(name) === index).join(",");
+        },
+        restoreDisabledState (arr) {
+            var disable = [];
+            for (var i = 0, len = arr.length; i < len; i++) {
+                disable[arr[i]] = true;
+            }
+            return disable;
+        },
+        getScriptEnabled (backend, script) {
+            if (!script) {
+                return false;
+            }
+            if (script.hasOwnProperty("isEnabled")) {
+                return !!script.isEnabled;
+            }
+
+            switch (backend.kind) {
+                case "userChrome_js":
+                    return !(backend.ownerWindow.userChrome_js.scriptDisable &&
+                        backend.ownerWindow.userChrome_js.scriptDisable[script.filename]);
+                case "_uc":
+                    return !this.splitPrefList(xPref.get(backend.ownerWindow._uc.PREF_SCRIPTSDISABLED, "")).includes(script.filename);
+                case "_ucUtils":
+                    if (script.hasOwnProperty("enabled")) {
+                        return !!script.enabled;
+                    }
+                    return true;
+            }
+
+            return true;
+        },
+        setUserChromeDisabled (scriptName, disabled) {
+            const next = this.splitPrefList(Services.prefs.getStringPref("userChrome.disable.script", "")).filter(name => name !== scriptName);
+            if (disabled) {
+                next.push(scriptName);
+            }
+
+            Services.prefs.setStringPref("userChrome.disable.script", this.joinPrefList(next));
+
+            const state = this.restoreDisabledState(next);
+            this.getLiveBrowserWindows().forEach(win => {
+                try {
+                    if (win.userChrome_js) {
+                        win.userChrome_js.scriptDisable = state;
+                    }
+                } catch (e) { }
+            });
+
+            return !state[scriptName];
+        },
+        setUcDisabled (uc, scriptName, disabled) {
+            const next = this.splitPrefList(xPref.get(uc.PREF_SCRIPTSDISABLED, "")).filter(name => name !== scriptName);
+            if (disabled) {
+                next.unshift(scriptName);
+            }
+            xPref.set(uc.PREF_SCRIPTSDISABLED, this.joinPrefList(next));
+        },
+        applyUserDisabled (addon, disabled) {
+            const backend = addon.resolveBackend();
+            if (!backend) {
+                return !disabled;
+            }
+
+            switch (backend.kind) {
+                case "userChrome_js":
+                    return this.setUserChromeDisabled(addon.name, disabled);
+                case "_ucUtils": {
+                    const currentScript = this.getScriptFromBackend(backend, addon.name) || addon._script;
+                    const currentEnabled = this.getScriptEnabled(backend, currentScript);
+                    if (currentEnabled === !disabled) {
+                        return currentEnabled;
+                    }
+                    const obj = backend.ownerWindow._ucUtils.toggleScript(addon.name);
+                    if (obj && typeof obj.enabled === "boolean") {
+                        return obj.enabled;
+                    }
+                    if (obj && typeof obj.isEnabled === "boolean") {
+                        return obj.isEnabled;
+                    }
+                    return !disabled;
+                }
+                default:
+                    return !disabled;
+            }
+        },
+        enableLegacyScript (addon, backend) {
+            backend = backend || this.resolveBackend(addon._backend && addon._backend.ownerWindow, "_uc", addon.name);
+            if (!backend || backend.kind !== "_uc") {
+                return;
+            }
+
+            const uc = backend.ownerWindow._uc;
+            let script = this.getScriptFromBackend(backend, addon.name) || addon._script;
+            if (!script) {
+                return;
+            }
+
+            this.setUcDisabled(uc, script.filename, false);
+            if (!Array.isArray(uc.everLoaded) || !uc.everLoaded.includes(script.id)) {
+                script = uc.getScriptData(script.file);
+                Services.obs.notifyObservers(null, "startupcache-invalidate");
+                uc.windows((doc, win, loc) => {
+                    if (win._uc && script.regex.test(loc.href)) {
+                        uc.loadScript(script, win);
+                    }
+                }, false);
+            }
+            addon._script = script;
+        },
+        disableLegacyScript (addon, backend) {
+            backend = backend || this.resolveBackend(addon._backend && addon._backend.ownerWindow, "_uc", addon.name);
+            if (!backend || backend.kind !== "_uc") {
+                return;
+            }
+
+            const uc = backend.ownerWindow._uc;
+            const script = this.getScriptFromBackend(backend, addon.name) || addon._script;
+            if (!script) {
+                return;
+            }
+
+            this.setUcDisabled(uc, script.filename, true);
+            if (script.isRunning && !!script.shutdown) {
+                uc.windows((doc, win, loc) => {
+                    if (script.regex.test(loc.href)) {
+                        try {
+                            eval(script.shutdown);
+                        } catch (ex) {
+                            Cu.reportError(ex);
+                        }
+                        if (script.onlyonce) {
+                            return true;
+                        }
+                    }
+                }, false);
+                script.isRunning = false;
+            }
         },
         initScripts () {
             this.scripts = [];
-            let scripts;
-            if (window.userChrome_js) {
-                scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
-            } else if (window._uc && !window._uc.isFaked) {
-                scripts = Object.values(_uc.scripts);
-            } else if (typeof _ucUtils === 'object') {
-                scripts = _ucUtils.getScriptData().map(script => {
-                    let aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-                    let path = resolveChromeURL(`chrome://userscripts/content/${script.filename}`);
-                    path = path.replace("file:///", "").replace(/\//g, '\\\\');
-                    aFile.initWithPath(path);
-                    return Object.assign(script, {
-                        file: aFile
-                    });
-                });
-                function resolveChromeURL (str) {
-                    const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
-                    try {
-                        return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
-                    } catch (e) {
-                        console.error(e);
-                        return ""
-                    }
-                }
-
-            } else {
-                // 不支持其他环境
-                window.AM_Helper.uninit();
-                delete window.AM_Helper;
+            debugLog("initScripts(): start", {
+                href: String(window.location),
+            });
+            const backend = this.resolveBackend(window);
+            if (!backend) {
+                debugWarn("initScripts(): no backend, scripts list stays empty");
+                return this.scripts;
             }
 
-            scripts.forEach((script) => {
-                if (!EXCLUED_SCRIPTS.includes(script.filename))
-                    this.scripts.push(new ScriptAddon(script));
+            const rawScripts = this.getBackendScripts(backend);
+            debugLog("initScripts(): backend resolved", {
+                kind: backend.kind,
+                ownerHref: String(backend.ownerWindow.location),
+                rawCount: rawScripts.length,
             });
+
+            rawScripts.forEach((script) => {
+                if (!EXCLUED_SCRIPTS.includes(script.filename)) {
+                    this.scripts.push(new ScriptAddon(script, backend));
+                }
+            });
+
+            debugLog("initScripts(): completed", {
+                kind: backend.kind,
+                filteredCount: this.scripts.length,
+                excluded: EXCLUED_SCRIPTS.slice(),
+            });
+            if (!this.scripts.length) {
+                this.dumpWindowState("initScripts(): empty result window snapshot", backend.ownerWindow);
+            }
+
+            return this.scripts;
         },
         getScriptById (aId) {
+            this.initScripts();
             for (var i = 0; i < this.scripts.length; i++) {
                 if (this.scripts[i].id == aId)
                     return this.scripts[i];
@@ -541,14 +978,25 @@
         registerProvider () {
             const provider = {
                 async getAddonByID (aId) {
-                    return userChromeJSAddon.getScriptById(aId);
+                    const addon = userChromeJSAddon.getScriptById(aId);
+                    debugLog("provider.getAddonByID()", {
+                        id: aId,
+                        found: !!addon,
+                    });
+                    return addon;
                 },
 
                 async getAddonsByTypes (aTypes) {
+                    debugLog("provider.getAddonsByTypes()", {
+                        types: aTypes || null,
+                    });
                     if (aTypes && !aTypes.includes("userchromejs")) {
                         return [];
                     } else {
                         userChromeJSAddon.initScripts();
+                        debugLog("provider.getAddonsByTypes(): result", {
+                            count: userChromeJSAddon.scripts.length,
+                        });
                         return userChromeJSAddon.scripts;
                     }
                 },
@@ -565,9 +1013,14 @@
                     ) :
                     "userchromejs"
             ]);
+            this.isProviderOwner = true;
+            debugLog("registerProvider(): registered");
 
-            this.unloads.push(function () {
+            this.unloads.push(() => {
+                debugLog("registerProvider(): unregister");
+                this.isProviderOwner = false;
                 AddonManagerPrivate.unregisterProvider(provider);
+                this.handoffProviderToOtherWindow();
             });
         },
         addStyle () {
@@ -667,17 +1120,17 @@
         },
     };
 
-    function ScriptAddon (aScript) {
+    function ScriptAddon (aScript, aBackend) {
         this._script = aScript;
+        this._backend = {
+            kind: aBackend.kind,
+            ownerWindow: aBackend.ownerWindow,
+        };
 
         this.id = "ucjs:" + this._script.filename;  //this._script.url.replace(/\//g, "|");
         this.name = this._script.filename;
         this.description = this._script.description || "";
-        if (this._script.hasOwnProperty("isEnabled")) {
-            this.enabled = this._script.isEnabled;
-        } else {
-            this.enabled = !userChrome_js.scriptDisable[this.name];
-        }
+        this.enabled = userChromeJSAddon.getScriptEnabled(aBackend, this._script);
 
         // 我修改过的 userChrome.js 新增的
         this.version = this._script.version || "";
@@ -708,15 +1161,41 @@
             if (this.isActive && this._script.optionsURL)
                 return this._script.optionsURL;
         },
+        resolveBackend () {
+            const backend = userChromeJSAddon.resolveBackend(
+                this._backend && this._backend.ownerWindow,
+                this._backend && this._backend.kind,
+                this.name
+            );
+            if (backend) {
+                this._backend = {
+                    kind: backend.kind,
+                    ownerWindow: backend.ownerWindow,
+                };
+                const script = userChromeJSAddon.getScriptFromBackend(backend, this.name);
+                if (script) {
+                    this._script = script;
+                }
+            }
+            return backend;
+        },
+        refreshState () {
+            const backend = this.resolveBackend();
+            if (backend) {
+                this.enabled = userChromeJSAddon.getScriptEnabled(backend, this._script);
+            }
+            return this.enabled;
+        },
 
         get isActive () {
             return !this.userDisabled ? true : false;
         },
         get userDisabled () {
+            this.refreshState();
             return !this.enabled ? true : false;
         },
         set userDisabled (val) {
-            if (val == this.userDisabled) {
+            if (val == !this.enabled) {
                 return val;
             }
 
@@ -728,34 +1207,9 @@
                 this.pendingOperations = AddonManager.PENDING_NONE;
             }
 
-            this.enabled = !val;
-            if (window.userChromejs) {
-                userChromejs.chgScriptStat(this.name);
-            } else if (typeof userChrome_js !== "undefined") {
-                var s = Services.prefs.getStringPref("userChrome.disable.script", "");
-                var afilename = this.name;
-                if (!userChrome_js.scriptDisable[afilename]) {
-                    s = (s + ',').replace(afilename + ',', '') + afilename + ',';
-                } else {
-                    s = (s + ',').replace(afilename + ',', '');
-                }
-                s = s.replace(/,,/g, ',').replace(/^,/, '');
-                Services.prefs.setStringPref("userChrome.disable.script", s);
-                userChrome_js.scriptDisable = restoreState(s.split(','));
-            } else if (typeof _ucUtils === "object") {
-                let obj = _ucUtils.toggleScript(this.name);
-                this.enabled = obj.enabled;
-            }
+            this.enabled = userChromeJSAddon.applyUserDisabled(this, val);
 
             AddonManagerPrivate.callAddonListeners(val ? 'onEnabled' : 'onDisabled', this);
-
-            function restoreState (arr) {
-                var disable = [];
-                for (var i = 0, len = arr.length; i < len; i++)
-                    disable[arr[i]] = true;
-                return disable;
-            }
-
         },
         get permissions () {
             // var perms = AddonManager.PERM_CAN_UNINSTALL;
@@ -779,39 +1233,16 @@
 
         // Fx62.0-
         async enable () {
-            if (typeof _uc !== "undefined" && !_uc.isFaked) {
-                let script = _uc.scripts[this.name];
-                xPref.set(_uc.PREF_SCRIPTSDISABLED, xPref.get(_uc.PREF_SCRIPTSDISABLED).replace(new RegExp('^' + script.filename + ',|,' + script.filename), ''));
-                if (!_uc.everLoaded.includes(script.id)) {
-                    script = _uc.getScriptData(script.file);
-                    Services.obs.notifyObservers(null, 'startupcache-invalidate');
-                    _uc.windows((doc, win, loc) => {
-                        if (win._uc && script.regex.test(loc.href)) {
-                            _uc.loadScript(script, win);
-                        }
-                    }, false);
-                }
+            const backend = this.resolveBackend();
+            if (backend && backend.kind === "_uc") {
+                userChromeJSAddon.enableLegacyScript(this, backend);
             }
             this.userDisabled = false;
         },
         async disable () {
-            if (typeof _uc !== "undefined" && !_uc.isFaked) {
-                let script = _uc.scripts[this.name];
-                xPref.set(_uc.PREF_SCRIPTSDISABLED, script.filename + ',' + xPref.get(_uc.PREF_SCRIPTSDISABLED));
-                if (script.isRunning && !!script.shutdown) {
-                    _uc.windows((doc, win, loc) => {
-                        if (script.regex.test(loc.href)) {
-                            try {
-                                eval(script.shutdown);
-                            } catch (ex) {
-                                Cu.reportError(ex);
-                            }
-                            if (script.onlyonce)
-                                return true;
-                        }
-                    }, false);
-                    script.isRunning = false;
-                }
+            const backend = this.resolveBackend();
+            if (backend && backend.kind === "_uc") {
+                userChromeJSAddon.disableLegacyScript(this, backend);
             }
             this.userDisabled = true;
         },
@@ -966,6 +1397,29 @@
         }
         return LOCALE;
     }
+
+    window[UNLOAD_HANDLER_KEY] = function () {
+        debugLog("window unload cleanup", {
+            href: String(window.location),
+        });
+        try {
+            if (window.AM_Helper) {
+                window.AM_Helper.uninit();
+            }
+        } catch (ex) {
+            console.error(ex);
+        }
+        try {
+            if (window.userChromeJSAddon) {
+                window.userChromeJSAddon.uninit();
+            }
+        } catch (ex) {
+            console.error(ex);
+        }
+        window.removeEventListener("unload", window[UNLOAD_HANDLER_KEY], false);
+        delete window[UNLOAD_HANDLER_KEY];
+    };
+    window.addEventListener("unload", window[UNLOAD_HANDLER_KEY], false);
 
     AM_Helper.init();
 
