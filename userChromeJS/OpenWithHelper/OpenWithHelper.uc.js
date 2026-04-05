@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.6
+// @version        1.0.7
 // @author         Ryan
 // @include        main
 // @sandbox        true
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           1.0.7 减少管理面板 inline css，集中样式定义
 // @note           1.0.6 改用 ModalDialog 来配置应用, 优化拖拽体验
 // @note           1.0.5 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
 // @note           1.0.4 修复 Fx143 图标显示异常
@@ -322,32 +323,81 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 this.updateDynamicVisibility(menupopup);
                 menupopup.setAttribute("need-reload", "false");
             },
-            getDefaultConditionTokens: function (menu) {
-                if (menu.nodeName === "menuseparator") {
-                    return ["button", "tab", "normal", "page", "frame", "input", "select", "link", "mailto", "image", "canvas", "media"];
+            getConditionContextTokens: function () {
+                return ["page", "frame", "input", "select", "link", "mailto", "image", "canvas", "media"];
+            },
+            getConditionPageKinds: function () {
+                return ["web", "internal", "local"];
+            },
+            getDefaultConditionModel: function () {
+                return {
+                    targets: {
+                        button: true,
+                        tab: false,
+                        context: true
+                    },
+                    pageScope: {
+                        button: ["web"],
+                        tab: ["web"]
+                    },
+                    contexts: ["page", "link"],
+                    legacyExcludes: []
+                };
+            },
+            normalizeConditionModel: function (model) {
+                const pageKinds = new Set(this.getConditionPageKinds());
+                const contextTokens = new Set(this.getConditionContextTokens());
+                const supportedTokens = new Set([
+                    "button",
+                    "tab",
+                    "normal",
+                    ...this.getConditionPageKinds(),
+                    ...this.getConditionContextTokens()
+                ]);
+                const normalized = {
+                    targets: {
+                        button: !!model?.targets?.button,
+                        tab: !!model?.targets?.tab,
+                        context: !!model?.targets?.context
+                    },
+                    pageScope: {
+                        button: uniqueArray((model?.pageScope?.button || []).filter(token => pageKinds.has(token))),
+                        tab: uniqueArray((model?.pageScope?.tab || []).filter(token => pageKinds.has(token)))
+                    },
+                    contexts: uniqueArray((model?.contexts || []).map(token => token === "normal" ? "page" : token).filter(token => contextTokens.has(token))),
+                    legacyExcludes: uniqueArray((model?.legacyExcludes || []).map(token => token === "normal" ? "page" : token).filter(token => supportedTokens.has(token)))
+                };
+
+                if (!normalized.targets.button) {
+                    normalized.pageScope.button = [];
+                }
+                if (!normalized.targets.tab) {
+                    normalized.pageScope.tab = [];
+                }
+                if (!normalized.targets.context) {
+                    normalized.contexts = [];
                 }
 
-                const text = menu.getAttribute("text") || "";
-                const conditions = ["button", "tab"];
-                if (this.rLINK.test(text) || /%R?LINK_OR_URL/i.test(text)) {
-                    conditions.push("link");
-                }
-                if (this.rSEL.test(text)) {
-                    conditions.push("select");
-                }
-                if (this.rIMAGE.test(text)) {
-                    conditions.push("image");
-                }
-                if (this.rMEDIA.test(text)) {
-                    conditions.push("media");
-                }
-                if (this.rURL.test(text) || !conditions.some(token => ["link", "select", "image", "media"].includes(token))) {
-                    conditions.push("normal");
-                }
-                return uniqueArray(conditions);
+                return normalized;
             },
-            normalizeConditionTokens: function (menu, condition) {
-                const allowedTokens = new Set(["button", "tab", "normal", "page", "frame", "input", "select", "link", "mailto", "image", "canvas", "media"]);
+            isSameTokenList: function (a = [], b = []) {
+                if (a.length !== b.length) {
+                    return false;
+                }
+                return a.every((token, index) => token === b[index]);
+            },
+            isDefaultConditionModel: function (model) {
+                const normalized = this.normalizeConditionModel(model);
+                const defaults = this.normalizeConditionModel(this.getDefaultConditionModel());
+                return normalized.targets.button === defaults.targets.button
+                    && normalized.targets.tab === defaults.targets.tab
+                    && normalized.targets.context === defaults.targets.context
+                    && this.isSameTokenList(normalized.pageScope.button, defaults.pageScope.button)
+                    && this.isSameTokenList(normalized.pageScope.tab, defaults.pageScope.tab)
+                    && this.isSameTokenList(normalized.contexts, defaults.contexts)
+                    && normalized.legacyExcludes.length === 0;
+            },
+            parseConditionModel: function (menu, condition) {
                 const tokens = (condition || "")
                     .toLowerCase()
                     .split(/\s+/)
@@ -355,13 +405,121 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     .filter(Boolean);
 
                 if (!tokens.length) {
-                    return this.getDefaultConditionTokens(menu);
+                    return this.getDefaultConditionModel(menu);
                 }
 
-                return uniqueArray(tokens.filter(token => {
-                    const normalized = token.replace(/^no/, "");
-                    return allowedTokens.has(normalized);
-                }));
+                const pageKinds = new Set(this.getConditionPageKinds());
+                const contextTokens = new Set(this.getConditionContextTokens());
+                const model = {
+                    targets: {
+                        button: false,
+                        tab: false,
+                        context: false
+                    },
+                    pageScope: {
+                        button: [],
+                        tab: []
+                    },
+                    contexts: [],
+                    legacyExcludes: []
+                };
+                const explicitTargetScopes = {
+                    button: false,
+                    tab: false
+                };
+                const explicitTargets = new Set();
+                const globalPageKinds = [];
+
+                for (const token of tokens) {
+                    const isNegative = token.startsWith("no");
+                    const normalized = isNegative ? token.slice(2) : token;
+                    if (!normalized) {
+                        continue;
+                    }
+
+                    const scopedMatch = normalized.match(/^(button|tab)-(web|internal|local)$/);
+                    if (scopedMatch) {
+                        if (isNegative) {
+                            continue;
+                        }
+                        const [, target, pageKind] = scopedMatch;
+                        model.targets[target] = true;
+                        model.pageScope[target].push(pageKind);
+                        explicitTargetScopes[target] = true;
+                        explicitTargets.add(target);
+                        continue;
+                    }
+
+                    if (normalized === "button" || normalized === "tab") {
+                        if (isNegative) {
+                            model.legacyExcludes.push(normalized);
+                        } else {
+                            model.targets[normalized] = true;
+                            explicitTargets.add(normalized);
+                        }
+                        continue;
+                    }
+
+                    if (pageKinds.has(normalized)) {
+                        if (isNegative) {
+                            model.legacyExcludes.push(normalized);
+                        } else {
+                            globalPageKinds.push(normalized);
+                        }
+                        continue;
+                    }
+
+                    const contextToken = normalized === "normal" ? "page" : normalized;
+                    if (contextTokens.has(contextToken)) {
+                        if (isNegative) {
+                            model.legacyExcludes.push(contextToken);
+                        } else {
+                            model.targets.context = true;
+                            model.contexts.push(contextToken);
+                        }
+                    }
+                }
+
+                if (globalPageKinds.length) {
+                    const targets = explicitTargets.size ? [...explicitTargets] : ["button", "tab"];
+                    for (const target of targets) {
+                        model.targets[target] = true;
+                        model.pageScope[target].push(...globalPageKinds);
+                    }
+                }
+
+                const allPageKinds = this.getConditionPageKinds();
+                for (const target of ["button", "tab"]) {
+                    if (!model.targets[target]) {
+                        continue;
+                    }
+                    if (!model.pageScope[target].length && !explicitTargetScopes[target]) {
+                        model.pageScope[target] = [...allPageKinds];
+                    }
+                }
+
+                return this.normalizeConditionModel(model);
+            },
+            serializeConditionModel: function (model) {
+                const normalized = this.normalizeConditionModel(model);
+                if (this.isDefaultConditionModel(normalized)) {
+                    return "";
+                }
+
+                const tokens = [];
+                if (normalized.targets.button) {
+                    tokens.push("button");
+                    normalized.pageScope.button.forEach(pageKind => tokens.push(`button-${pageKind}`));
+                }
+                if (normalized.targets.tab) {
+                    tokens.push("tab");
+                    normalized.pageScope.tab.forEach(pageKind => tokens.push(`tab-${pageKind}`));
+                }
+                if (normalized.targets.context) {
+                    tokens.push(...normalized.contexts);
+                }
+
+                return uniqueArray(tokens).join(" ");
             },
             collectContextStates: function () {
                 const states = [];
@@ -399,17 +557,45 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 return uniqueArray(states);
             },
-            matchesCondition: function (menu, popupType, contextStates = []) {
-                const condition = menu.getAttribute("condition") || "";
-                const tokens = condition.split(/\s+/).filter(Boolean);
-                const positives = tokens.filter(token => !token.startsWith("no"));
-                const negatives = new Set(tokens.filter(token => token.startsWith("no")).map(token => token.slice(2)));
-
-                if (popupType === "button") {
-                    return positives.includes("button") && !negatives.has("button");
+            getBrowserURI: function (browser) {
+                const uriList = [browser?.currentURI, browser?.documentURI, browser?.originalURI].filter(Boolean);
+                return uriList.find(uri => uri?.spec && uri.spec !== "about:blank") || uriList[0] || null;
+            },
+            getPageKindFromURI: function (uri) {
+                const scheme = (uri?.scheme || "").toLowerCase();
+                if (["http", "https"].includes(scheme)) {
+                    return "web";
                 }
-                if (popupType === "tab") {
-                    return positives.includes("tab") && !negatives.has("tab");
+                if (["about", "chrome", "resource", "moz-extension"].includes(scheme)) {
+                    return "internal";
+                }
+                if (["file", "data", "blob"].includes(scheme)) {
+                    return "local";
+                }
+                return "other";
+            },
+            getPopupPageKind: function (popupType) {
+                const tab = popupType === "tab"
+                    ? (TabContextMenu.contextTab || gBrowser.selectedTab)
+                    : gBrowser.selectedTab;
+                return this.getPageKindFromURI(this.getBrowserURI(tab?.linkedBrowser));
+            },
+            matchesCondition: function (menu, popupType, contextStates = [], pageKind = "other") {
+                const model = menu._owhConditionModel || this.parseConditionModel(menu, menu.getAttribute("condition") || "");
+                const negatives = new Set(model.legacyExcludes || []);
+
+                if (popupType === "button" || popupType === "tab") {
+                    if (negatives.has(popupType) || negatives.has(pageKind)) {
+                        return false;
+                    }
+                    if (!model.targets?.[popupType]) {
+                        return false;
+                    }
+                    return !!model.pageScope?.[popupType]?.includes(pageKind);
+                }
+
+                if (!model.targets?.context) {
+                    return false;
                 }
 
                 const contextTokenSet = new Set(contextStates);
@@ -424,7 +610,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     return false;
                 }
 
-                return positives.some(token => contextTokenSet.has(token));
+                return model.contexts.some(token => contextTokenSet.has(token));
             },
             normalizeDynamicSeparators: function (menupopup) {
                 const dynamicNodes = [...menupopup.querySelectorAll(":scope > :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]")];
@@ -469,9 +655,10 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }
 
                 const contextStates = popupType === "context" ? this.collectContextStates() : [];
+                const pageKind = popupType === "context" ? "other" : this.getPopupPageKind(popupType);
                 const dynamicNodes = menupopup.querySelectorAll(":scope > :is(menu, menuitem, menugroup, menuseparator)[dynamic=true]");
                 for (const node of dynamicNodes) {
-                    node.hidden = !this.matchesCondition(node, popupType, contextStates);
+                    node.hidden = !this.matchesCondition(node, popupType, contextStates, pageKind);
                 }
 
                 this.normalizeDynamicSeparators(menupopup);
@@ -574,13 +761,13 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         case "%TITLES%":
                             return bw.contentTitle.replace(/\s-\s.*/i, "").replace(/_[^\[\]【】]+$/, "");
                         case "%U":
-                            return bw.documentURI.spec;
+                            return getUrl();
                         case "%URL%":
-                            return bw.documentURI.spec;
+                            return getUrl();
                         case "%H":
-                            return bw.documentURI.host;
+                            return getHost();
                         case "%HOST%":
-                            return bw.documentURI.host;
+                            return getHost();
                         case "%S":
                             return (context.selectionInfo && context.selectionInfo.fullText) || addMenu.getSelectedText() || "";
                         case "%SEL%":
@@ -598,7 +785,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                         case "%RLINK_TEXT%":
                             return context.linkText() || "";
                         case "%RLINK_OR_URL%":
-                            return context?.linkURL || bw?.documentURI?.spec || "";
+                            return context?.linkURL || getUrl() || "";
                         case "%RLT_OR_UT%":
                             return context.onLink && context.linkText() || bw.contentTitle; // 链接文本或网页标题
                         case "%IMAGE_ALT%":
@@ -665,6 +852,38 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 function htmlEscape (s) {
                     return (s + "").replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/\"/g, "&quot;").replace(/\'/g, "&apos;");
+                }
+
+                function getUrl () {
+                    const pendingURL = typeof bw?.userTypedValue === "string" ? bw.userTypedValue.trim() : "";
+                    const uriList = [bw?.currentURI, bw?.documentURI, bw?.originalURI].filter(Boolean);
+                    const URI = uriList.find(uri => uri?.spec && uri.spec !== "about:blank") || uriList[0];
+
+                    if (!URI) {
+                        return pendingURL;
+                    }
+
+                    if (URI.schemeIs?.("about")) {
+                        switch (URI.filePath) {
+                            case "neterror":
+                                return new URLSearchParams(URI.query).get("u") || pendingURL || URI.spec;
+                            case "blank":
+                                return pendingURL || URI.spec;
+                            default:
+                                return pendingURL || URI.spec;
+                        }
+                    }
+
+                    return URI.spec;
+                }
+
+                function getHost () {
+                    const url = getUrl();
+                    try {
+                        return Services.io.newURI(url).host;
+                    } catch (e) {
+                        return "";
+                    }
                 }
             },
             onCommand: function (event) {
@@ -833,9 +1052,14 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 }).catch(e => { });
             },
             setCondition: function (menu, condition) {
-                const conditions = this.normalizeConditionTokens(menu, condition);
-                if (conditions.length) {
-                    menu.setAttribute("condition", uniqueArray(conditions).join(" "));
+                const rawCondition = typeof condition === "string" ? condition.trim() : "";
+                const model = this.parseConditionModel(menu, rawCondition);
+                const normalizedCondition = model.legacyExcludes.length && rawCondition
+                    ? rawCondition
+                    : this.serializeConditionModel(model);
+                menu._owhConditionModel = model;
+                if (normalizedCondition) {
+                    menu.setAttribute("condition", normalizedCondition);
                 } else {
                     menu.removeAttribute("condition");
                 }
@@ -1141,13 +1365,26 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     "condition-default": "默认",
                     "condition-button-menu": "显示在按钮菜单",
                     "condition-tab-menu": "显示在标签页菜单",
+                    "condition-page-scope-web": "网页",
+                    "condition-page-scope-internal": "内部页面",
+                    "condition-page-scope-local": "本地/临时页面",
+                    "condition-context-menu": "显示在右键菜单",
+                    "condition-show-details": "展开详细条件",
+                    "condition-hide-details": "收起详细条件",
                     "context-menu-input": "输入框右键菜单",
                     "context-menu-select": "选中文本右键菜单",
                     "context-menu-link": "链接右键菜单",
+                    "context-menu-mailto": "邮件链接右键菜单",
                     "context-menu-image": "图片右键菜单",
+                    "context-menu-canvas": "Canvas 右键菜单",
                     "context-menu-media": "媒体右键菜单",
                     "context-menu-page": "页面右键菜单",
                     "context-menu-frame": "框架右键菜单",
+                    "condition-help-page-scope": "按钮菜单和标签页菜单可分别勾选：网页、内部页面、本地/临时页面。",
+                    "condition-help-context": "右键菜单可勾选：页面、链接、邮件链接、输入框、选中文本、图片、Canvas、媒体、框架。",
+                    "condition-legacy-exclude-note": "包含旧版排除条件；未修改条件前会原样保留，修改后将按新条件模型保存。",
+                    "param-quick-insert": "快捷插入",
+                    "param-editor-tip": "点击下方按钮可在当前光标位置插入占位符。",
                     "call-params-description-label": "调用应用时传递的参数",
                     "param-eol-description": "换行符 (\\r\\n)",
                     "param-title-description": "当前页面标题",
@@ -1156,16 +1393,23 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     "param-url-description": "当前页面 URL",
                     "param-link-or-url-description": "链接 URL 或当前页面 URL",
                     "param-link-description": "链接 URL",
+                    "param-link-text-description": "链接文本",
+                    "param-link-host-description": "链接域名",
+                    "param-link-text-or-title-description": "链接文本或当前页面标题",
                     "param-image-url-description": "图片 URL",
+                    "param-image-alt-description": "图片 ALT 文本",
                     "param-image-title-description": "图片标题",
                     "param-media-url-description": "媒体 URL",
                     "param-profile-dir-description": "Firefox 配置文件目录路径",
                     "param-save-dir-description": "保存目录（默认桌面）",
+                    "param-cookie-description": "当前链接或页面的 Cookie",
+                    "param-cookie-netscape-description": "当前链接或页面的 Cookie（Netscape 格式）",
+                    "param-cookie-host-description": "当前链接或页面所属站点的 Cookie",
                     "param-cookie-txt-description": "COOKIE 保存到临时路径",
                     "param-cookies-sqlite-description": "cookies.sqlite 路径",
                     "param-choose-dir-description": "选择目录",
                     "param-clipboard-description": "剪贴板内容",
-                    "param-more-info": "更多信息见源代码",
+                    "param-modifier-description": "支持后缀：_ENCODE（URL 编码）、_QUOT（转义双引号）、_HTML/_HTMLIFIED（HTML 转义）、_TXT（写入临时 txt 后返回路径），例如 %URL_ENCODE% / %COOKIE_HOST_TXT%。",
                     "operation-succeeded": "操作成功！",
                     "operation-canceled": "操作已取消！"
                 };
@@ -1221,43 +1465,37 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 return allowedShortcutKeys.has(event.key.toLowerCase());
             }
 
+            getAppListColumnTemplate() {
+                return '20px 16px 120px 280px minmax(0, 1fr) 52px 220px 32px';
+            }
+
+            createGridSpacer() {
+                const spacer = this.doc.createElement('div');
+                spacer.setAttribute('aria-hidden', 'true');
+                return spacer;
+            }
+
             createListHeader() {
                 const header = this.doc.createElement('div');
                 header.className = 'owh-list-header';
-                header.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 8px;
-                    position: sticky;
-                    top: 0;
-                    z-index: 1;
-                    background: var(--toolbar-bgcolor, #fff);
-                    border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
-                    font-size: 12px;
-                    font-weight: 600;
-                `;
+                header.style.setProperty('--owh-app-list-columns', this.getAppListColumnTemplate());
 
                 const columns = [
-                    { label: '', width: '20px' },
-                    { label: this.strings["application-icon"], width: '16px', textAlign: 'center' },
-                    { label: this.strings["application-title"], width: '100px' },
-                    { label: this.strings["application-condition"], width: '100px' },
-                    { label: this.strings["application-path"], flex: '1', minWidth: '0' },
-                    { label: this.strings["application-operate"], width: '52px', textAlign: 'center' },
-                    { label: this.strings["application-params"], width: '220px' },
-                    { label: '', width: '32px' }
+                    { label: '' },
+                    { label: this.strings["application-icon"], textAlign: 'center' },
+                    { label: this.strings["application-title"] },
+                    { label: this.strings["application-condition"] },
+                    { label: this.strings["application-path"] },
+                    { label: this.strings["application-operate"], textAlign: 'center' },
+                    { label: this.strings["application-params"] },
+                    { label: '' }
                 ];
 
                 for (const column of columns) {
                     const cell = this.doc.createElement('div');
+                    cell.className = 'owh-list-header-cell';
                     cell.textContent = column.label;
-                    cell.style.cssText = `
-                        width: ${column.width || 'auto'};
-                        flex: ${column.flex || '0 0 auto'};
-                        min-width: ${column.minWidth || 'auto'};
-                        text-align: ${column.textAlign || 'left'};
-                    `;
+                    cell.style.textAlign = column.textAlign || 'left';
                     header.appendChild(cell);
                 }
 
@@ -1273,63 +1511,23 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 // 使用原生 dialog，避免自绘遮罩层被地址栏弹层覆盖
                 const modal = this.doc.createElementNS('http://www.w3.org/1999/xhtml', 'dialog');
                 modal.className = 'owh-modal-overlay';
-                modal.style.cssText = `
-                    padding: 0;
-                    border: none;
-                    background: transparent;
-                    max-width: none;
-                    max-height: none;
-                    overflow: visible;
-                    font-size: ${modalScale}rem;
-                `;
+                modal.style.setProperty('--owh-modal-scale', modalScale);
 
                 // 创建对话框
                 const dialog = this.doc.createElement('div');
                 dialog.className = 'owh-modal-dialog';
-                dialog.style.cssText = `
-                    background: var(--toolbar-bgcolor, #fff);
-                    border-radius: ${8 * modalScale}px;
-                    box-shadow: 0 ${4 * modalScale}px ${20 * modalScale}px rgba(0, 0, 0, 0.3);
-                    width: ${980 * modalScale}px;
-                    max-width: 95vw;
-                    max-height: 90vh;
-                    display: flex;
-                    flex-direction: column;
-                    position: relative;
-                `;
 
                 // 创建标题栏
                 const header = this.doc.createElement('div');
                 header.className = 'owh-modal-header';
-                header.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    padding: ${12 * modalScale}px ${16 * modalScale}px;
-                    border-bottom: 1px solid var(--chrome-content-separator-color, #e0e0e0);
-                `;
 
                 const title = this.doc.createElement('span');
                 title.className = 'owh-modal-title';
                 title.textContent = this.strings["manage-applications-list"];
-                title.style.cssText = `font-size: ${16 * modalScale}px; font-weight: 600;`;
 
                 const closeBtn = this.doc.createElement('button');
                 closeBtn.className = 'owh-modal-close';
                 closeBtn.textContent = '×';
-                closeBtn.style.cssText = `
-                    background: none;
-                    border: none;
-                    font-size: ${24 * modalScale}px;
-                    cursor: pointer;
-                    padding: 0;
-                    width: ${28 * modalScale}px;
-                    height: ${28 * modalScale}px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: var(--chrome-color, #333);
-                `;
                 closeBtn.addEventListener('click', () => this.hide());
 
                 header.appendChild(title);
@@ -1338,24 +1536,15 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 // 创建内容区
                 const content = this.doc.createElement('div');
                 content.className = 'owh-modal-content';
-                content.style.cssText = `
-                    padding: ${16 * modalScale}px;
-                    overflow: auto;
-                    flex: 1;
-                `;
 
                 // 工具栏
                 const toolbar = this.doc.createElement('div');
                 toolbar.className = 'owh-toolbar';
-                toolbar.style.cssText = `
-                    display: flex;
-                    gap: ${8 * modalScale}px;
-                    margin-bottom: ${12 * modalScale}px;
-                `;
 
                 const addAppBtn = this.createButton(this.strings["add-application"], () => this.addApplication());
                 const addSepBtn = this.createButton(this.strings["add-separator"], () => this.addSeparator());
                 const saveBtn = this.createButton(this.strings["save"], () => this.save());
+                saveBtn.classList.add('owh-btn-success');
 
                 toolbar.appendChild(addAppBtn);
                 toolbar.appendChild(addSepBtn);
@@ -1367,13 +1556,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 const listContainer = this.doc.createElement('div');
                 listContainer.className = 'owh-list-container';
                 listContainer.id = 'owh-apps-list';
-                listContainer.style.cssText = `
-                    border: 1px solid var(--chrome-content-separator-color, #ccc);
-                    border-radius: 4px;
-                    max-height: 400px;
-                    overflow-y: auto;
-                    margin-bottom: 12px;
-                `;
 
                 content.appendChild(listContainer);
 
@@ -1481,64 +1663,310 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 return btn;
             }
 
+            getParamTokenItems() {
+                return [
+                    { token: '%EOL%', description: this.strings["param-eol-description"] },
+                    { token: '%TITLE%', description: this.strings["param-title-description"] },
+                    { token: '%TITLES%', description: this.strings["param-titles-description"] },
+                    { token: '%SEL%', description: this.strings["param-sel-description"] },
+                    { token: '%URL%', description: this.strings["param-url-description"] },
+                    { token: '%LINK_OR_URL%', description: this.strings["param-link-or-url-description"] },
+                    { token: '%LINK%', description: this.strings["param-link-description"] },
+                    { token: '%LINK_TEXT%', description: this.strings["param-link-text-description"] },
+                    { token: '%LINK_HOST%', description: this.strings["param-link-host-description"] },
+                    { token: '%RLT_OR_UT%', description: this.strings["param-link-text-or-title-description"] },
+                    { token: '%IMAGE_URL%', description: this.strings["param-image-url-description"] },
+                    { token: '%IMAGE_ALT%', description: this.strings["param-image-alt-description"] },
+                    { token: '%IMAGE_TITLE%', description: this.strings["param-image-title-description"] },
+                    { token: '%MEDIA_URL%', description: this.strings["param-media-url-description"] },
+                    { token: '%PROFILE_DIR%', description: this.strings["param-profile-dir-description"] },
+                    { token: '%SAVE_DIR%', description: this.strings["param-save-dir-description"] },
+                    { token: '%COOKIE%', description: this.strings["param-cookie-description"] },
+                    { token: '%COOKIE_NETSCAPE%', description: this.strings["param-cookie-netscape-description"] },
+                    { token: '%COOKIE_HOST%', description: this.strings["param-cookie-host-description"] },
+                    { token: '%COOKIE_TXT%', description: this.strings["param-cookie-txt-description"] },
+                    { token: '%COOKIES_SQLITE%', description: this.strings["param-cookies-sqlite-description"] },
+                    { token: '%CHOOSE_DIR%', description: this.strings["param-choose-dir-description"] },
+                    { token: '%CLIPBOARD%', description: this.strings["param-clipboard-description"] }
+                ];
+            }
+
+            insertTextAtCursor(text) {
+                const textarea = this.paramEditorTextarea;
+                if (!textarea) {
+                    return;
+                }
+
+                const start = textarea.selectionStart ?? textarea.value.length;
+                const end = textarea.selectionEnd ?? start;
+                textarea.focus();
+                textarea.setRangeText(text, start, end, 'end');
+                textarea.dispatchEvent(new this.doc.defaultView.Event('input', { bubbles: true }));
+            }
+
+            markConditionEditorDirty(editor) {
+                if (editor) {
+                    editor.dataset.conditionDirty = 'true';
+                }
+            }
+
+            syncConditionGroupState(editor, target) {
+                const master = editor?.querySelector(`.owh-condition-target[data-target="${target}"]`);
+                const options = [...(editor?.querySelectorAll(`.owh-condition-option[data-target="${target}"]`) || [])];
+                if (!master || !options.length) {
+                    return;
+                }
+                master.checked = options.some(node => node.checked);
+            }
+
+            setConditionEditorExpanded(editor, expanded) {
+                const details = editor?.querySelector('.owh-condition-details');
+                const toggleBtn = editor?.querySelector('.owh-condition-toggle');
+                if (!details || !toggleBtn) {
+                    return;
+                }
+                details.style.display = expanded ? 'grid' : 'none';
+                toggleBtn.textContent = expanded
+                    ? this.strings["condition-hide-details"]
+                    : this.strings["condition-show-details"];
+                editor.dataset.conditionExpanded = expanded ? 'true' : 'false';
+            }
+
+            createConditionEditor(condition = '') {
+                const editor = this.doc.createElement('div');
+                editor.className = 'owh-condition-editor';
+
+                const rawCondition = typeof condition === 'string' ? condition.trim() : '';
+                const model = this.helper.parseConditionModel(null, rawCondition);
+                editor.dataset.originalCondition = rawCondition;
+                editor.dataset.conditionDirty = 'false';
+                editor.dataset.hasLegacyExcludes = model.legacyExcludes.length ? 'true' : 'false';
+                editor.dataset.conditionExpanded = 'false';
+
+                const groups = [
+                    {
+                        target: 'button',
+                        label: this.strings["condition-button-menu"],
+                        options: [
+                            { value: 'web', label: this.strings["condition-page-scope-web"] },
+                            { value: 'internal', label: this.strings["condition-page-scope-internal"] },
+                            { value: 'local', label: this.strings["condition-page-scope-local"] }
+                        ]
+                    },
+                    {
+                        target: 'tab',
+                        label: this.strings["condition-tab-menu"],
+                        options: [
+                            { value: 'web', label: this.strings["condition-page-scope-web"] },
+                            { value: 'internal', label: this.strings["condition-page-scope-internal"] },
+                            { value: 'local', label: this.strings["condition-page-scope-local"] }
+                        ]
+                    },
+                    {
+                        target: 'context',
+                        label: this.strings["condition-context-menu"],
+                        options: [
+                            { value: 'page', label: this.strings["context-menu-page"] },
+                            { value: 'link', label: this.strings["context-menu-link"] },
+                            { value: 'mailto', label: this.strings["context-menu-mailto"] },
+                            { value: 'input', label: this.strings["context-menu-input"] },
+                            { value: 'select', label: this.strings["context-menu-select"] },
+                            { value: 'image', label: this.strings["context-menu-image"] },
+                            { value: 'canvas', label: this.strings["context-menu-canvas"] },
+                            { value: 'media', label: this.strings["context-menu-media"] },
+                            { value: 'frame', label: this.strings["context-menu-frame"] }
+                        ]
+                    }
+                ];
+
+                const summary = this.doc.createElement('div');
+                summary.className = 'owh-condition-summary';
+
+                const mainTargets = this.doc.createElement('div');
+                mainTargets.className = 'owh-condition-main-targets';
+
+                const details = this.doc.createElement('div');
+                details.className = 'owh-condition-details';
+
+                for (const group of groups) {
+                    const targetLabel = this.doc.createElement('label');
+                    targetLabel.className = 'owh-condition-target-label';
+
+                    const targetInput = this.doc.createElement('input');
+                    targetInput.type = 'checkbox';
+                    targetInput.className = 'owh-condition-target';
+                    targetInput.dataset.target = group.target;
+                    targetInput.checked = !!model.targets[group.target];
+                    targetInput.addEventListener('change', () => {
+                        if (!targetInput.checked) {
+                            editor.querySelectorAll(`.owh-condition-option[data-target="${group.target}"]`).forEach(node => {
+                                node.checked = false;
+                            });
+                        }
+                        this.markConditionEditorDirty(editor);
+                    });
+
+                    const targetText = this.doc.createElement('span');
+                    targetText.textContent = group.label;
+
+                    targetLabel.appendChild(targetInput);
+                    targetLabel.appendChild(targetText);
+                    mainTargets.appendChild(targetLabel);
+
+                    const section = this.doc.createElement('div');
+                    section.className = 'owh-condition-section';
+
+                    const sectionTitle = this.doc.createElement('div');
+                    sectionTitle.textContent = group.label;
+                    sectionTitle.className = 'owh-condition-section-title';
+
+                    const optionsWrap = this.doc.createElement('div');
+                    optionsWrap.className = 'owh-condition-options-wrap';
+
+                    for (const option of group.options) {
+                        const optionLabel = this.doc.createElement('label');
+                        optionLabel.className = 'owh-condition-option-label';
+
+                        const optionInput = this.doc.createElement('input');
+                        optionInput.type = 'checkbox';
+                        optionInput.className = 'owh-condition-option';
+                        optionInput.dataset.target = group.target;
+                        optionInput.value = option.value;
+                        optionInput.checked = group.target === 'context'
+                            ? model.contexts.includes(option.value)
+                            : model.pageScope[group.target]?.includes(option.value);
+                        optionInput.addEventListener('change', () => {
+                            this.syncConditionGroupState(editor, group.target);
+                            this.markConditionEditorDirty(editor);
+                        });
+
+                        const optionText = this.doc.createElement('span');
+                        optionText.textContent = option.label;
+
+                        optionLabel.appendChild(optionInput);
+                        optionLabel.appendChild(optionText);
+                        optionsWrap.appendChild(optionLabel);
+                    }
+
+                    section.appendChild(sectionTitle);
+                    section.appendChild(optionsWrap);
+                    details.appendChild(section);
+                    this.syncConditionGroupState(editor, group.target);
+                }
+
+                const toggleBtn = this.doc.createElement('button');
+                toggleBtn.type = 'button';
+                toggleBtn.className = 'owh-btn-secondary owh-condition-toggle';
+                toggleBtn.addEventListener('click', () => {
+                    this.setConditionEditorExpanded(editor, editor.dataset.conditionExpanded !== 'true');
+                });
+
+                summary.appendChild(mainTargets);
+                summary.appendChild(toggleBtn);
+                editor.appendChild(summary);
+                editor.appendChild(details);
+                this.setConditionEditorExpanded(editor, false);
+
+                if (model.legacyExcludes.length) {
+                    const note = this.doc.createElement('div');
+                    note.className = 'owh-condition-legacy-note';
+                    note.textContent = this.strings["condition-legacy-exclude-note"];
+                    editor.appendChild(note);
+                }
+
+                return editor;
+            }
+
+            getConditionEditorModel(editor) {
+                const readTarget = (target) => !!editor.querySelector(`.owh-condition-target[data-target="${target}"]`)?.checked;
+                const readOptions = (target) => [...editor.querySelectorAll(`.owh-condition-option[data-target="${target}"]:checked`)].map(node => node.value);
+                const buttonOptions = readOptions('button');
+                const tabOptions = readOptions('tab');
+                const contextOptions = readOptions('context');
+                return {
+                    targets: {
+                        button: readTarget('button') && buttonOptions.length > 0,
+                        tab: readTarget('tab') && tabOptions.length > 0,
+                        context: readTarget('context') && contextOptions.length > 0
+                    },
+                    pageScope: {
+                        button: readTarget('button') ? buttonOptions : [],
+                        tab: readTarget('tab') ? tabOptions : []
+                    },
+                    contexts: readTarget('context') ? contextOptions : [],
+                    legacyExcludes: []
+                };
+            }
+
+            getConditionValueFromEditor(editor) {
+                if (!editor) {
+                    return '';
+                }
+                const originalCondition = editor.dataset.originalCondition || '';
+                const hasLegacyExcludes = editor.dataset.hasLegacyExcludes === 'true';
+                const wasDirty = editor.dataset.conditionDirty === 'true';
+                if (hasLegacyExcludes && !wasDirty) {
+                    return originalCondition;
+                }
+                return this.helper.serializeConditionModel(this.getConditionEditorModel(editor));
+            }
+
             createParamEditor() {
                 const overlay = this.doc.createElement('div');
                 overlay.className = 'owh-param-editor';
-                overlay.style.cssText = `
-                    position: absolute;
-                    inset: 0;
-                    display: none;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 24px;
-                    background: rgba(0, 0, 0, 0.45);
-                    z-index: 10;
-                `;
 
                 const panel = this.doc.createElement('div');
                 panel.className = 'owh-param-editor-panel';
-                panel.style.cssText = `
-                    display: flex;
-                    flex-direction: column;
-                    gap: 12px;
-                    width: min(680px, 100%);
-                    max-height: 100%;
-                    padding: 16px;
-                    border-radius: 8px;
-                    background: var(--toolbar-bgcolor, #fff);
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-                `;
 
                 const title = this.doc.createElement('div');
+                title.className = 'owh-param-editor-title';
                 title.textContent = this.strings["edit-application-params"];
-                title.style.cssText = 'font-size: 14px; font-weight: 600;';
+
+                const shortcuts = this.doc.createElement('div');
+                shortcuts.className = 'owh-param-editor-shortcuts';
+
+                const shortcutsTitle = this.doc.createElement('div');
+                shortcutsTitle.className = 'owh-param-editor-shortcuts-title';
+                shortcutsTitle.textContent = this.strings["param-quick-insert"];
+
+                const shortcutButtons = this.doc.createElement('div');
+                shortcutButtons.className = 'owh-param-editor-shortcut-buttons';
+
+                for (const item of this.getParamTokenItems()) {
+                    const shortcutBtn = this.createButton(item.token, () => this.insertTextAtCursor(item.token));
+                    shortcutBtn.type = 'button';
+                    shortcutBtn.classList.remove('owh-btn-primary');
+                    shortcutBtn.classList.add('owh-btn-secondary', 'owh-param-editor-shortcut-btn');
+                    shortcutBtn.title = item.description;
+                    shortcutButtons.appendChild(shortcutBtn);
+                }
+
+                const shortcutTip = this.doc.createElement('div');
+                shortcutTip.className = 'owh-param-editor-tip';
+                shortcutTip.textContent = `${this.strings["param-editor-tip"]} ${this.strings["param-modifier-description"]}`;
+
+                shortcuts.appendChild(shortcutsTitle);
+                shortcuts.appendChild(shortcutButtons);
+                shortcuts.appendChild(shortcutTip);
 
                 const textarea = this.doc.createElement('textarea');
                 textarea.className = 'owh-param-editor-textarea';
                 textarea.placeholder = this.strings["application-params"];
-                textarea.style.cssText = `
-                    width: 100%;
-                    min-height: 220px;
-                    resize: vertical;
-                    padding: 8px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    font: 12px/1.5 Consolas, "Courier New", monospace;
-                    box-sizing: border-box;
-                `;
 
                 const actions = this.doc.createElement('div');
-                actions.style.cssText = 'display: flex; justify-content: flex-end; gap: 8px;';
+                actions.className = 'owh-param-editor-actions';
 
                 const cancelBtn = this.createButton(this.strings["cancel"], () => this.closeParamEditor(false));
                 cancelBtn.classList.add('owh-btn-secondary');
 
                 const saveBtn = this.createButton(this.strings["save"], () => this.closeParamEditor(true));
+                saveBtn.classList.add('owh-btn-success');
 
                 actions.appendChild(cancelBtn);
                 actions.appendChild(saveBtn);
 
                 panel.appendChild(title);
+                panel.appendChild(shortcuts);
                 panel.appendChild(textarea);
                 panel.appendChild(actions);
                 overlay.appendChild(panel);
@@ -1628,22 +2056,25 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 const apps = [];
 
                 for (const row of rows) {
+                    const conditionEditor = row.querySelector('.owh-condition-editor');
                     if (row.dataset.separator === 'true') {
-                        const condition = row.querySelector('input')?.value?.trim() || '';
+                        const condition = this.getConditionValueFromEditor(conditionEditor);
                         apps.push(condition ? { condition } : {});
                         continue;
                     }
 
                     const img = row.querySelector('.owh-icon-img');
-                    const inputs = row.querySelectorAll('input');
+                    const titleInput = row.querySelector('.owh-title-input');
+                    const paramsInput = row.querySelector('.owh-param-input');
                     const pathLabel = row.querySelector('.owh-path-label');
                     const app = {
                         exec: pathLabel?.textContent || '',
-                        text: inputs[2]?.value || '%LINK_OR_URL%'
+                        text: paramsInput?.value || '%LINK_OR_URL%'
                     };
 
-                    if (inputs[0]?.value) app.label = inputs[0].value;
-                    if (inputs[1]?.value) app.condition = inputs[1].value;
+                    const condition = this.getConditionValueFromEditor(conditionEditor);
+                    if (titleInput?.value) app.label = titleInput.value;
+                    if (condition) app.condition = condition;
                     if (img?.src && img.src !== this.EMPTY_IMG) app.image = img.src;
 
                     apps.push(app);
@@ -1705,8 +2136,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 rows.forEach((row, index) => {
                     const rowNumber = index + 1;
-                    const inputs = row.querySelectorAll('input');
-                    const titleInput = inputs[0];
+                    const titleInput = row.querySelector('.owh-title-input');
                     const pathLabel = row.querySelector('.owh-path-label');
                     const changeBtn = row.querySelector('.owh-change');
 
@@ -1802,50 +2232,36 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 condTitle.style.cssText = 'font-weight: 600; margin-bottom: 8px;';
 
                 const cond1 = this.doc.createElement('div');
-                cond1.textContent = `${this.strings["fit-for-all"]}: normal, button, tab`;
+                cond1.textContent = this.strings["condition-help-page-scope"];
 
                 const cond2 = this.doc.createElement('div');
-                cond2.textContent = `${this.strings["fit-for-context-menu"]}: input, select, link, mailto, image, canvas, media, page, frame`;
+                cond2.textContent = this.strings["condition-help-context"];
                 cond2.style.cssText = 'margin-bottom: 12px;';
 
                 const paramTitle = this.doc.createElement('div');
                 paramTitle.textContent = this.strings["application-params"];
                 paramTitle.style.cssText = 'font-weight: 600; margin-bottom: 8px;';
 
-                const params = [
-                    ['%EOL%', this.strings["param-eol-description"]],
-                    ['%TITLE%', this.strings["param-title-description"]],
-                    ['%TITLES%', this.strings["param-titles-description"]],
-                    ['%SEL%', this.strings["param-sel-description"]],
-                    ['%URL%', this.strings["param-url-description"]],
-                    ['%LINK_OR_URL%', this.strings["param-link-or-url-description"]],
-                    ['%LINK%', this.strings["param-link-description"]],
-                    ['%IMAGE_URL%', this.strings["param-image-url-description"]],
-                    ['%IMAGE_TITLE%', this.strings["param-image-title-description"]],
-                    ['%MEDIA_URL%', this.strings["param-media-url-description"]],
-                    ['%PROFILE_DIR%', this.strings["param-profile-dir-description"]],
-                    ['%SAVE_DIR%', this.strings["param-save-dir-description"]],
-                    ['%COOKIE_TXT%', this.strings["param-cookie-txt-description"]],
-                    ['%COOKIES_SQLITE%', this.strings["param-cookies-sqlite-description"]],
-                    ['%CHOOSE_DIR%', this.strings["param-choose-dir-description"]],
-                    ['%CLIPBOARD%', this.strings["param-clipboard-description"]]
-                ];
-
                 const paramList = this.doc.createElement('div');
-                paramList.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;';
+                paramList.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px 12px;';
 
-                for (const [param, desc] of params) {
+                for (const paramItem of this.getParamTokenItems()) {
                     const item = this.doc.createElement('div');
-                    item.textContent = `${param} - ${desc}`;
-                    item.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+                    item.textContent = `${paramItem.token} - ${paramItem.description}`;
+                    item.style.cssText = 'line-height: 1.5; overflow-wrap: anywhere;';
                     paramList.appendChild(item);
                 }
+
+                const paramModifierNote = this.doc.createElement('div');
+                paramModifierNote.textContent = this.strings["param-modifier-description"];
+                paramModifierNote.style.cssText = 'margin-top: 10px; color: #5f6368; line-height: 1.5; overflow-wrap: anywhere;';
 
                 box.appendChild(condTitle);
                 box.appendChild(cond1);
                 box.appendChild(cond2);
                 box.appendChild(paramTitle);
                 box.appendChild(paramList);
+                box.appendChild(paramModifierNote);
 
                 return box;
             }
@@ -1961,11 +2377,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 row.className = 'owh-app-row';
                 row.dataset.appData = JSON.stringify(app);
                 row.style.cssText = `
-                    display: flex;
+                    display: grid;
+                    grid-template-columns: ${this.getAppListColumnTemplate()};
                     align-items: center;
                     padding: 8px;
                     border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
-                    gap: 8px;
+                    column-gap: 8px;
                     cursor: default;
                 `;
 
@@ -1986,37 +2403,32 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 // 标题输入
                 const titleInput = this.doc.createElement('input');
-                titleInput.className = 'owh-input';
+                titleInput.className = 'owh-input owh-title-input';
                 titleInput.placeholder = this.strings["application-title"];
                 titleInput.title = this.strings["application-title"];
                 titleInput.value = app.label || '';
-                titleInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+                titleInput.style.cssText = 'width: 100%; min-width: 0; padding: 4px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box;';
 
-                // 条件输入
-                const conditionInput = this.doc.createElement('input');
-                conditionInput.className = 'owh-input';
-                conditionInput.placeholder = this.strings["application-condition"];
-                conditionInput.title = this.strings["application-condition"];
-                conditionInput.value = app.condition || '';
-                conditionInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+                const conditionEditor = this.createConditionEditor(app.condition || '');
 
                 // 路径显示
                 const pathLabel = this.doc.createElement('div');
                 pathLabel.className = 'owh-path-label';
                 pathLabel.textContent = app.exec || '';
-                pathLabel.style.cssText = 'flex: 1; min-width: 0; min-height: 26px; padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 18px; box-sizing: border-box; border: 1px solid transparent; border-radius: 3px; display: flex; align-items: center;';
+                pathLabel.style.cssText = 'width: 100%; min-width: 0; min-height: 26px; padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 18px; box-sizing: border-box; border: 1px solid transparent; border-radius: 3px; display: flex; align-items: center;';
 
                 const changeBtn = this.createButton(this.strings["change-path"], (e) => this.changePath(e, pathLabel));
                 changeBtn.classList.add('owh-change');
+                changeBtn.style.cssText = 'width: 100%; min-width: 0; box-sizing: border-box;';
 
                 // 参数输入
                 const paramsInput = this.doc.createElement('input');
-                paramsInput.className = 'owh-input';
+                paramsInput.className = 'owh-input owh-param-input';
                 paramsInput.placeholder = this.strings["application-params"];
                 paramsInput.title = this.strings["application-params"];
                 paramsInput.value = app.text || '%LINK_OR_URL%';
                 paramsInput.title = paramsInput.value || this.strings["application-params"];
-                paramsInput.style.cssText = 'width: 160px; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-family: Consolas, "Courier New", monospace;';
+                paramsInput.style.cssText = 'width: 160px; min-width: 0; padding: 4px 8px; border: none; background: transparent; font-family: Consolas, "Courier New", monospace; outline: none; box-sizing: border-box;';
                 paramsInput.addEventListener('input', () => {
                     paramsInput.title = paramsInput.value || this.strings["application-params"];
                 });
@@ -2027,18 +2439,19 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 const paramsWrapper = this.doc.createElement('div');
                 paramsWrapper.className = 'owh-param-cell';
-                paramsWrapper.style.cssText = 'width: 220px; display: flex; align-items: center; gap: 6px;';
+                paramsWrapper.style.cssText = 'width: 100%; min-width: 0; box-sizing: border-box;';
                 paramsWrapper.appendChild(paramsInput);
                 paramsWrapper.appendChild(editParamsBtn);
 
                 // 删除按钮
                 const deleteBtn = this.createButton(this.strings["delete-application"], (e) => this.deleteRow(e));
                 deleteBtn.classList.add('owh-btn-danger');
+                deleteBtn.style.cssText = 'width: 100%; min-width: 0; padding: 4px 0; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; writing-mode: horizontal-tb; line-height: 1;';
 
                 row.appendChild(dragHandle);
                 row.appendChild(iconWrapper);
                 row.appendChild(titleInput);
-                row.appendChild(conditionInput);
+                row.appendChild(conditionEditor);
                 row.appendChild(pathLabel);
                 row.appendChild(changeBtn);
                 row.appendChild(paramsWrapper);
@@ -2057,11 +2470,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 row.className = 'owh-separator-row';
                 row.dataset.separator = 'true';
                 row.style.cssText = `
-                    display: flex;
+                    display: grid;
+                    grid-template-columns: ${this.getAppListColumnTemplate()};
                     align-items: center;
                     padding: 8px;
                     border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
-                    gap: 8px;
+                    column-gap: 8px;
                     cursor: default;
                 `;
 
@@ -2070,21 +2484,19 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 
                 const sep = this.doc.createElement('div');
                 sep.textContent = `--- ${this.strings["separator"]} ---`;
-                sep.style.cssText = 'flex: 1; text-align: center; color: #999;';
+                sep.style.cssText = 'grid-column: 5 / 8; min-width: 0; text-align: center; color: #999;';
 
-                const conditionInput = this.doc.createElement('input');
-                conditionInput.className = 'owh-input';
-                conditionInput.placeholder = this.strings["application-condition"];
-                conditionInput.title = this.strings["application-condition"];
-                conditionInput.value = app.condition || '';
-                conditionInput.style.cssText = 'width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 3px;';
+                const conditionEditor = this.createConditionEditor(app.condition || '');
 
                 const deleteBtn = this.createButton(this.strings["delete-application"], (e) => this.deleteRow(e));
                 deleteBtn.classList.add('owh-btn-danger');
+                deleteBtn.style.cssText = 'width: 100%; min-width: 0; padding: 4px 0; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; writing-mode: horizontal-tb; line-height: 1;';
 
                 row.appendChild(dragHandle);
+                row.appendChild(this.createGridSpacer());
+                row.appendChild(this.createGridSpacer());
+                row.appendChild(conditionEditor);
                 row.appendChild(sep);
-                row.appendChild(conditionInput);
                 row.appendChild(deleteBtn);
 
                 listContainer.appendChild(row);
@@ -2191,7 +2603,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     const enumerator = Services.wm.getEnumerator(null);
                     while (enumerator.hasMoreElements()) {
                         const win = enumerator.getNext();
-                        win?.OpenWithHelper?.reload(true);
+                        win?.OpenWithHelper?.reload(false);
                     }
 
                     alerts(this.strings["operation-succeeded"]);
@@ -2266,9 +2678,82 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
     max-width: none !important;
     max-height: none !important;
     overflow: visible !important;
+    font-size: calc(var(--owh-modal-scale, 1) * 1rem) !important;
 }
 .owh-modal-overlay::backdrop {
     background: rgba(0, 0, 0, 0.5) !important;
+}
+.owh-modal-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: calc(var(--owh-modal-scale, 1) * 1180px);
+    max-width: 95vw;
+    max-height: 90vh;
+    background: var(--toolbar-bgcolor, #fff);
+    border-radius: calc(var(--owh-modal-scale, 1) * 8px);
+    box-shadow: 0 calc(var(--owh-modal-scale, 1) * 4px) calc(var(--owh-modal-scale, 1) * 20px) rgba(0, 0, 0, 0.3);
+}
+.owh-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--owh-modal-scale, 1) * 12px) calc(var(--owh-modal-scale, 1) * 16px);
+    border-bottom: 1px solid var(--chrome-content-separator-color, #e0e0e0);
+}
+.owh-modal-title {
+    font-size: calc(var(--owh-modal-scale, 1) * 16px);
+    font-weight: 600;
+}
+.owh-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--owh-modal-scale, 1) * 28px);
+    height: calc(var(--owh-modal-scale, 1) * 28px);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--chrome-color, #333);
+    cursor: pointer;
+    font-size: calc(var(--owh-modal-scale, 1) * 24px);
+}
+.owh-modal-content {
+    flex: 1;
+    overflow: auto;
+    padding: calc(var(--owh-modal-scale, 1) * 16px);
+}
+.owh-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: calc(var(--owh-modal-scale, 1) * 8px);
+    margin-bottom: calc(var(--owh-modal-scale, 1) * 12px);
+}
+.owh-list-container {
+    margin-bottom: 12px;
+    overflow-y: auto;
+    max-height: 400px;
+    border: 1px solid var(--chrome-content-separator-color, #ccc);
+    border-radius: 4px;
+}
+.owh-list-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: var(--owh-app-list-columns);
+    align-items: center;
+    column-gap: 8px;
+    padding: 8px;
+    background: var(--toolbar-bgcolor, #fff);
+    border-bottom: 1px solid var(--chrome-content-separator-color, #eee);
+    font-size: 12px;
+    font-weight: 600;
+}
+.owh-list-header-cell {
+    min-width: 0;
 }
 .owh-popup menuitem[filename="yt-dlp.exe"][style*="file:///"] {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHRyYW5zZm9ybT0ic2NhbGUoMS40KSI+PHBhdGggZmlsbD0iI2ZmNjk3YiIgZD0iTTg2LjIsMTA0SDQxLjhDMzIsMTA0LDI0LDk2LDI0LDg2LjJWNDEuOEMyNCwzMiwzMiwyNCw0MS44LDI0aDQ0LjRDOTYsMjQsMTA0LDMyLDEwNCw0MS44djQ0LjRDMTA0LDk2LDk2LDEwNCw4Ni4yLDEwNHoiLz48cGF0aCBmaWxsPSIjZmY2OTdiIiBkPSJNODYuMiwxMDRINDEuOEMzMiwxMDQsMjQsOTYsMjQsODYuMlY0MS44QzI0LDMyLDMyLDI0LDQxLjgsMjRoNDQuNEM5NiwyNCwxMDQsMzIsMTA0LDQxLjh2NDQuNEMxMDQsOTYsOTYsMTA0LDg2LjIsMTA0eiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0yNCw0MS44djE0LjdjMTQuNS0xMS4xLDQxLjItMjQuOSw3OS41LTE5QzEwMS41LDI5LjcsOTQuNiwyNCw4Ni4yLDI0SDQxLjhDMzIsMjQsMjQsMzIsMjQsNDEuOHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTMuNSA0OUw1My41IDc5IDc5LjUgNjR6Ii8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNDQ0YjU0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNiIgZD0iTTg2LjIsMTA0SDQxLjhDMzIsMTA0LDI0LDk2LDI0LDg2LjJWNDEuOEMyNCwzMiwzMiwyNCw0MS44LDI0aDQ0LjRDOTYsMjQsMTA0LDMyLDEwNCw0MS44djQ0LjRDMTA0LDk2LDk2LDEwNCw4Ni4yLDEwNHoiLz48L3N2Zz4=) !important;
@@ -2301,6 +2786,13 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 .owh-btn-primary:hover {
     background: #357ae8 !important;
 }
+.owh-btn-success {
+    border-color: #2e7d32 !important;
+    background: #34a853 !important;
+}
+.owh-btn-success:hover {
+    background: #2e8b57 !important;
+}
 .owh-btn-secondary {
     padding: 4px 8px !important;
     border: 1px solid #9aa0a6 !important;
@@ -2312,6 +2804,167 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
 }
 .owh-btn-secondary:hover {
     background: #e8eaed !important;
+}
+.owh-condition-editor {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.02);
+}
+.owh-condition-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.owh-condition-main-targets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    min-width: 0;
+}
+.owh-condition-details {
+    display: none;
+    gap: 8px;
+}
+.owh-condition-target-label,
+.owh-condition-option-label {
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+    -moz-user-select: none;
+}
+.owh-condition-target-label {
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.owh-condition-option-label {
+    gap: 4px;
+    font-size: 12px;
+}
+.owh-condition-section {
+    display: grid;
+    gap: 4px;
+}
+.owh-condition-section-title {
+    font-size: 12px;
+    font-weight: 600;
+}
+.owh-condition-options-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding-inline-start: 12px;
+}
+.owh-condition-toggle {
+    padding: 2px 8px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+}
+.owh-condition-legacy-note {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #a15c00;
+}
+.owh-param-editor {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.45);
+}
+.owh-param-editor-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(680px, 100%);
+    max-height: 100%;
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--toolbar-bgcolor, #fff);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.owh-param-editor-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+.owh-param-editor-shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.owh-param-editor-shortcuts-title {
+    font-size: 12px;
+    font-weight: 600;
+}
+.owh-param-editor-shortcut-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.owh-param-editor-shortcut-btn {
+    padding: 4px 8px !important;
+    font: 12px/1.4 Consolas, "Courier New", monospace !important;
+    white-space: nowrap;
+}
+.owh-param-editor-tip {
+    color: #5f6368;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.owh-param-editor-textarea {
+    width: 100%;
+    min-height: 220px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    font: 12px/1.5 Consolas, "Courier New", monospace;
+}
+.owh-param-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.owh-param-cell {
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+}
+.owh-param-cell:focus-within {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 1px rgba(74, 144, 226, 0.2);
+}
+.owh-param-input {
+    flex: 1;
+}
+.owh-param-input::placeholder {
+    color: #80868b;
+}
+.owh-param-edit-btn {
+    flex: 0 0 auto;
+    min-width: 42px;
+    border: none !important;
+    border-left: 1px solid #d2d6dc !important;
+    border-radius: 0 !important;
+    background: #f8f9fa !important;
+}
+.owh-param-edit-btn:hover {
+    background: #eef3fd !important;
 }
 .owh-change {
     padding: 4px 8px !important;
@@ -2333,6 +2986,12 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
     color: white !important;
     font-size: 11px !important;
     cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    writing-mode: horizontal-tb !important;
+    line-height: 1 !important;
 }
 .owh-btn-danger:hover {
     background: #d32f2f !important;
