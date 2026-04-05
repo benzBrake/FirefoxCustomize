@@ -3,11 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.29
+// @version         0.2.9
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @note            0.29 修复销毁时事件监听未移除、togglePanel 恢复异常、widget id 计算不完整、uniItem 变量泄漏及样式选择器遗漏问题
+// @note            0.2.9 去除 onPinToToolbarChange 和 moveWidget 的 monkey patch，改用官方 ExtensionCommon.makeWidgetId，并保留最小化 togglePanel patch
 // @note            0.2.8 修复样式问题
 // @note            0.2.7 修复上移功能，去除一部分无用代码
 // @note            0.2.6 适配 Firefox 135
@@ -28,6 +28,7 @@
 (function () {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
+    const { ExtensionCommon } = ChromeUtils.importESModule("resource://gre/modules/ExtensionCommon.sys.mjs");
 
     if (window.unifiedExtensionsEnhance) {
         window.unifiedExtensionsEnhance.destroy();
@@ -154,10 +155,7 @@
             .unified-extensions-item-option > .toolbarbutton-text,
             .unified-extensions-item-enable > .toolbarbutton-text,
             .unified-extensions-item-disable > .toolbarbutton-text,
-            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-pin,
-            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-option,
-            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-enable,
-            toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable,
+            toolbar toolbaritem.unified-extensions-item .ue-btn,
             unified-extensions-item.addon-disabled .unified-extensions-item-option,
             unified-extensions-item:not(.addon-disabled) .unified-extensions-item-pin,
             unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
@@ -292,9 +290,6 @@
             this.togglePanel = gUnifiedExtensions.togglePanel;
             Cu.evalInSandbox("gUnifiedExtensions.togglePanel = " + this.togglePanel.toString().replace("async togglePanel", "async function").replace("!this.hasExtensionsInPanel()", "false"), sb);
 
-            this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
-            Cu.evalInSandbox("gUnifiedExtensions.onPinToToolbarChange = " + gUnifiedExtensions.onPinToToolbarChange.toString().replace("async onPinToToolbarChange", "async function").replace("this.pinToToolbar", "unifiedExtensionsEnhance.onPinToolbarChange(menu, event);this.pinToToolbar"), sb);
-
             // 增加启用所有
             view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.ENABLE_ALL_ADDONS));
 
@@ -316,11 +311,14 @@
             }
 
             $('toolbar-context-menu').addEventListener('popupshowing', this);
+            $('toolbar-context-menu').addEventListener('command', this);
+            $('unified-extensions-context-menu').addEventListener('command', this);
         },
-        onPinToolbarChange (menu, event) {
-            let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
-            let widgetId = gUnifiedExtensions._getWidgetId(menu);
+        onPinToolbarChange (widgetId, shouldPinToToolbar) {
             if (!widgetId) return;
+            this.syncPinnedWidgetButtons(widgetId, shouldPinToToolbar);
+        },
+        syncPinnedWidgetButtons (widgetId, shouldPinToToolbar) {
             let node = CustomizableUI.getWidget(widgetId)?.forWindow(window)?.node;
             if (!node) return;
             if (shouldPinToToolbar) {
@@ -328,6 +326,13 @@
             } else {
                 this.removeAdditionalButtons(node);
             }
+        },
+        pinWidget (widgetId, shouldPinToToolbar) {
+            if (shouldPinToToolbar) {
+                gUnifiedExtensions._maybeMoveWidgetNodeBack?.(widgetId);
+            }
+            gUnifiedExtensions.pinToToolbar(widgetId, shouldPinToToolbar);
+            this.syncPinnedWidgetButtons(widgetId, shouldPinToToolbar);
         },
         openAddonsMgr (event) {
             if (event.button == 2 && event.target.localName == 'toolbarbutton') {
@@ -351,6 +356,19 @@
         removeAdditionalButtons (node) {
             $QA(".ue-btn", node).forEach(el => $R(el));
         },
+        moveWidget (triggerItem, direction) {
+            const node = triggerItem.closest(".unified-extensions-item");
+            if (!node) {
+                return;
+            }
+            const sibling = direction === "up" ? node.previousElementSibling : node.nextElementSibling;
+            const placement = CustomizableUI.getPlacementOfWidget(sibling?.id);
+            if (!placement) {
+                return;
+            }
+            const newPosition = direction === "down" ? placement.position + 1 : placement.position;
+            CustomizableUI.moveWidgetWithinArea(node.id, newPosition);
+        },
         convertSrcToStyle (node) {
             if (node.tagName.toLowerCase() === "unified-extensions-item") {
                 ;
@@ -372,6 +390,16 @@
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
                 await this.refreshAddonsList(event.target);
+            } else if (event.type === "command") {
+                const { currentTarget: menu, target } = event;
+                if (!["toolbar-context-pin-to-toolbar", "unified-extensions-context-menu-pin-to-toolbar"].includes(target.id)) {
+                    return;
+                }
+                const shouldPinToToolbar = target.getAttribute("checked") == "true";
+                const widgetId = gUnifiedExtensions._getWidgetId(menu);
+                setTimeout(() => {
+                    this.onPinToolbarChange(widgetId, shouldPinToToolbar);
+                }, 0);
             } else if (event.type === "click") {
                 const { target: triggerItem } = event;
                 const panelview = triggerItem.closest("panelview");
@@ -425,8 +453,8 @@
                         const uniItem = triggerItem.closest(".unified-extensions-item");
                         if (uniItem) {
                             this.removeAdditionalButtons(uniItem);
-                            gUnifiedExtensions.pinToToolbar(uniItem.id, true);
-                            this.refreshAddonsList(panelview);
+                            this.pinWidget(uniItem.id, true);
+                            await this.refreshAddonsList(panelview);
                         }
                         break;
                     }
@@ -435,15 +463,14 @@
                         if (uniItem) {
                             let extensionId = uniItem.getAttribute("extension-id");
                             let actionId = makeWidgetId(extensionId) + "-browser-action";
-                            gUnifiedExtensions.pinToToolbar(actionId, false);
-                            this.refreshAddonsList(panelview);
+                            this.pinWidget(actionId, false);
+                            await this.refreshAddonsList(panelview);
                         }
                         break;
                     }
                     case "up":
                     case "down":
-                        let moveWidget = Cu.evalInSandbox('(' + gUnifiedExtensions.moveWidget.toString().replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "function moveWidget") + ')', this.sb);
-                        moveWidget(event.target, uniAction);
+                        this.moveWidget(triggerItem, uniAction);
                         break;
                     case "copy-id":
                         const _addonId = gUnifiedExtensions._getExtensionId(event.target.parentElement);
@@ -567,20 +594,21 @@
                 $R(el);
             })
             view.removeEventListener('ViewShowing', this);
-            gUnifiedExtensions.onPinToToolbarChange = this.onPinToToolbarChange;
             gUnifiedExtensions.togglePanel = this.togglePanel;
             let origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')));
             $R($Q(".customize-context-copyExtensionId", $('toolbar-context-menu')));
             $R($Q(".customize-context-disableExtension", $('toolbar-context-menu')));
             $('toolbar-context-menu').removeEventListener('popupshowing', this);
+            $('toolbar-context-menu').removeEventListener('command', this);
+            $('unified-extensions-context-menu').removeEventListener('command', this);
             if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
             delete window.unifiedExtensionsEnhance;
         }
     }
 
     function makeWidgetId (id) {
-        return id.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+        return ExtensionCommon.makeWidgetId(id);
     }
 
     function $ (id, aDoc) {
