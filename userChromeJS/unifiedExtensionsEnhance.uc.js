@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.8
+// @version         0.29
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            0.29 修复销毁时事件监听未移除、togglePanel 恢复异常、widget id 计算不完整、uniItem 变量泄漏及样式选择器遗漏问题
 // @note            0.2.8 修复样式问题
 // @note            0.2.7 修复上移功能，去除一部分无用代码
 // @note            0.2.6 适配 Firefox 135
@@ -158,7 +159,7 @@
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-enable,
             toolbar toolbaritem.unified-extensions-item .unified-extensions-item-disable,
             unified-extensions-item.addon-disabled .unified-extensions-item-option,
-            unified-extensions-item:not(.addon-disabled) .unified-extensions-item-pin
+            unified-extensions-item:not(.addon-disabled) .unified-extensions-item-pin,
             unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
             unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
             unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin,
@@ -288,7 +289,7 @@
             const origBtn = CustomizableUI.getWidget('unified-extensions-button').forWindow(window).node;
             if (origBtn) origBtn.addEventListener('click', this.openAddonsMgr);
 
-            this.togglePanel = gUnifiedExtensions.togglePanel.toString();
+            this.togglePanel = gUnifiedExtensions.togglePanel;
             Cu.evalInSandbox("gUnifiedExtensions.togglePanel = " + this.togglePanel.toString().replace("async togglePanel", "async function").replace("!this.hasExtensionsInPanel()", "false"), sb);
 
             this.onPinToToolbarChange = gUnifiedExtensions.onPinToToolbarChange;
@@ -420,23 +421,25 @@
                         }
                         this.openAddonOptions(addon, triggerItem.ownerGlobal);
                         break;
-                    case "pin":
-                        uniItem = triggerItem.closest(".unified-extensions-item");
+                    case "pin": {
+                        const uniItem = triggerItem.closest(".unified-extensions-item");
                         if (uniItem) {
                             this.removeAdditionalButtons(uniItem);
                             gUnifiedExtensions.pinToToolbar(uniItem.id, true);
                             this.refreshAddonsList(panelview);
                         }
                         break;
-                    case "unpin":
-                        uniItem = triggerItem.closest("unified-extensions-item");
+                    }
+                    case "unpin": {
+                        const uniItem = triggerItem.closest("unified-extensions-item");
                         if (uniItem) {
                             let extensionId = uniItem.getAttribute("extension-id");
-                            let actionId = extensionId.replace("@", "_").replace(".", "_").replace("{", "_").replace("}", "_") + "-browser-action";
+                            let actionId = makeWidgetId(extensionId) + "-browser-action";
                             gUnifiedExtensions.pinToToolbar(actionId, false);
                             this.refreshAddonsList(panelview);
                         }
                         break;
+                    }
                     case "up":
                     case "down":
                         let moveWidget = Cu.evalInSandbox('(' + gUnifiedExtensions.moveWidget.toString().replace("menu.triggerNode.closest", "menu.closest").replace("async moveWidget", "function moveWidget") + ')', this.sb);
@@ -511,7 +514,7 @@
                 if (!extension.isActive) {
                     el.classList.add("addon-disabled");
                 }
-                const actionId = extensionId.replace("@", "_").replace(".", "_").replace("{", "_").replace("}", "_") + "-browser-action";
+                const actionId = makeWidgetId(extensionId) + "-browser-action";
                 if (!document.getElementById(actionId)) {
                     el.classList.add("addon-no-unpin");
                 }
@@ -570,10 +573,14 @@
             $R($Q(".unified-extensions-context-menu-copy-id", $('unified-extensions-context-menu')));
             $R($Q(".customize-context-copyExtensionId", $('toolbar-context-menu')));
             $R($Q(".customize-context-disableExtension", $('toolbar-context-menu')));
-            $('toolbar-context-menu').addEventListener('popupshowing', this);
+            $('toolbar-context-menu').removeEventListener('popupshowing', this);
             if (origBtn) origBtn.removeEventListener('click', this.openAddonsMgr);
             delete window.unifiedExtensionsEnhance;
         }
+    }
+
+    function makeWidgetId (id) {
+        return id.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
     }
 
     function $ (id, aDoc) {
