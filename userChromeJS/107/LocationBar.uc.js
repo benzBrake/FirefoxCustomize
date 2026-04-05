@@ -2,14 +2,14 @@
 // @name            LocationBar.uc.js
 // @description     地址栏内工具栏
 // @license         MIT License
-// @compatibility   Firefox 149
+// @compatibility   Firefox 107
 // @version         0.0.4
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            2025-08-26 增加固定扩展按钮到地址栏内工具栏的功能
-// @note            2026-04-05 升级兼容性至 Firefox 149+，修复 checkbox checked 属性检测
+// @note            2026-04-05 归档：新版本升级至 Firefox 149+
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
 (function (css) {
@@ -84,13 +84,10 @@
 
             Services.prefs.addObserver("browser.display.locationbar", function () {
                 let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
-                const toggleItem = document.getElementById("toggle_location-bar");
-
+                document.getElementById("toggle_location-bar").setAttribute("checked", String(checked));
                 if (checked) {
-                    toggleItem.setAttribute("checked", "true");
                     LocationBar.show();
                 } else {
-                    toggleItem.removeAttribute("checked");
                     LocationBar.hide();
                 }
             });
@@ -113,7 +110,7 @@
             window.addEventListener("aftercustomization", this, false);
         },
         togglePref: function () {
-            let checked = document.getElementById("toggle_location-bar").hasAttribute("checked");
+            let checked = document.getElementById("toggle_location-bar").getAttribute("checked") == "true";
             Services.prefs.setBoolPref("browser.display.locationbar", checked);
         },
         show: function () {
