@@ -39,7 +39,7 @@ import { syncify } from "./000-syncify.sys.mjs";
     /** 不要修改以下代码 DON'T MODIFY THE CODE BELOW */
     const { windowUtils } = globalThis;
 
-    window?.addMenu?.destroy();
+    window?.addMenu?.destroy(true);
 
     const ADDMENU_LANG = {
         'zh-CN': {
@@ -392,104 +392,124 @@ import { syncify } from "./000-syncify.sys.mjs";
                 [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rSVG_BASE64, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT, rSEL_OR_LT].join("|"), "ig");
 
         },
-        initButton: function () {
+        shouldDestroyWidget: function () {
             try {
-                CustomizableUI.createWidget({
-                    id: "addMenu-button",
-                    removable: true,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    type: "custom",
-                    onBuild: function (doc) {
-                        const button = $C('toolbarbutton', {
-                            id: 'addMenu-button',
-                            label: 'addMenuPlus',
-                            image: 'chrome://devtools/skin/images/browsers/firefox.svg',
-                            type: 'menu',
-                            class: 'toolbarbutton-1 chromeclass-toolbar-additional'
-                        }, doc);
-                        const menupopup = $C('menupopup', {
-                            id: 'addMenu-button-popup'
-                        }, doc);
-                        button.appendChild(menupopup);
-                        [
-                            ['menugroup', (() => {
-                                const group = $C('menugroup', {
-                                    class: 'addMenu addMenuNot showText',
-                                    id: 'addMenu-config-group'
-                                }, doc);
-                                const item1 = $C('menuitem', {
-                                    id: 'addMenu-modify-config',
-                                    class: 'menuitem-iconic addMenu addMenuNot edit',
-                                    label: lprintf('modify menu config'),
-                                    oncommand: async () => {
-                                        let editor = await addMenu.getOrSetEditorPath();
-                                        if (!editor) {
-                                            addMenu.alert(lprintf('editor not set'));
-                                            return;
-                                        }
-                                        const regex = /include\("([^"]+)"\)/gm;
-                                        let paths = [addMenu.FILE.path];
-                                        let text = await IOUtils.readUTF8(addMenu.FILE.path), m;
-                                        while (m = regex.exec(text)) {
-                                            if (m.index === regex.lastIndex) {
-                                                regex.lastIndex++;
-                                            }
-                                            let path = m[1];
-                                            if (!path.startsWith("\\")) {
-                                                path = "\\" + path;
-                                            }
-                                            paths.push(addMenu.handleRelativePath(path, addMenu.FILE.parent.path));
-                                        }
-                                        paths.forEach(p => {
-                                            setTimeout(async () => {
-                                                addMenu.edit(await IOUtils.getFile(p));
-                                            }, 10);
-                                        });
-                                    }
-                                }, doc);
-                                const item2 = $C('menuitem', {
-                                    id: 'addMenu-reload-config',
-                                    class: 'addMenu addMenuNot menuitem-iconic sync',
-                                    label: lprintf('reload config'),
-                                    oncommand: () => setTimeout(async () => await addMenu.rebuild(true), 10)
-                                }, doc);
-                                group.appendChild(item1);
-                                group.appendChild(item2);
-                                return group;
-                            })()],
-                            ['menuseparator', {
-                                id: 'addMenu-btn-insertpoint',
-                                class: 'addMenu-insert-point',
-                                hidden: true
-                            }],
-                            ['menuseparator', {}],
-                            ['menuitem', {
-                                id: 'addMenu-quit-browser',
-                                class: 'menuitem-iconic addMenu addMenuNot quit',
-                                'data-l10n-id': 'menu-quit',
-                                key: 'key_quitApplication',
-                                oncommand: (event) => goQuitApplication(event)
-                            }]
-                        ].forEach(obj => {
-                            let type = obj[0];
-                            let item;
-                            let attrs = obj[1];
-                            if (attrs.nodeName) {
-                                item = menupopup.appendChild(attrs);
-                            } else {
-                                item = $C(type, attrs, doc);
-                            }
-                            menupopup.appendChild(item);
-                        });
-                        return button;
+                const windows = Services.wm.getEnumerator("navigator:browser");
+                let count = 0;
+                while (windows.hasMoreElements()) {
+                    windows.getNext();
+                    count++;
+                    if (count > 1) {
+                        return false;
                     }
-                });
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
+        },
+        initButton: function () {
+            let widget = CustomizableUI.getWidget("addMenu-button");
+            try {
+                if (!widget) {
+                    CustomizableUI.createWidget({
+                        id: "addMenu-button",
+                        removable: true,
+                        defaultArea: CustomizableUI.AREA_NAVBAR,
+                        type: "custom",
+                        onBuild: function (doc) {
+                            const button = $C('toolbarbutton', {
+                                id: 'addMenu-button',
+                                label: 'addMenuPlus',
+                                image: 'chrome://devtools/skin/images/browsers/firefox.svg',
+                                type: 'menu',
+                                class: 'toolbarbutton-1 chromeclass-toolbar-additional'
+                            }, doc);
+                            const menupopup = $C('menupopup', {
+                                id: 'addMenu-button-popup'
+                            }, doc);
+                            button.appendChild(menupopup);
+                            [
+                                ['menugroup', (() => {
+                                    const group = $C('menugroup', {
+                                        class: 'addMenu addMenuNot showText',
+                                        id: 'addMenu-config-group'
+                                    }, doc);
+                                    const item1 = $C('menuitem', {
+                                        id: 'addMenu-modify-config',
+                                        class: 'menuitem-iconic addMenu addMenuNot edit',
+                                        label: lprintf('modify menu config'),
+                                        oncommand: async () => {
+                                            let editor = await addMenu.getOrSetEditorPath();
+                                            if (!editor) {
+                                                addMenu.alert(lprintf('editor not set'));
+                                                return;
+                                            }
+                                            const regex = /include\("([^"]+)"\)/gm;
+                                            let paths = [addMenu.FILE.path];
+                                            let text = await IOUtils.readUTF8(addMenu.FILE.path), m;
+                                            while (m = regex.exec(text)) {
+                                                if (m.index === regex.lastIndex) {
+                                                    regex.lastIndex++;
+                                                }
+                                                let path = m[1];
+                                                if (!path.startsWith("\\")) {
+                                                    path = "\\" + path;
+                                                }
+                                                paths.push(addMenu.handleRelativePath(path, addMenu.FILE.parent.path));
+                                            }
+                                            paths.forEach(p => {
+                                                setTimeout(async () => {
+                                                    addMenu.edit(await IOUtils.getFile(p));
+                                                }, 10);
+                                            });
+                                        }
+                                    }, doc);
+                                    const item2 = $C('menuitem', {
+                                        id: 'addMenu-reload-config',
+                                        class: 'addMenu addMenuNot menuitem-iconic sync',
+                                        label: lprintf('reload config'),
+                                        oncommand: () => setTimeout(async () => await addMenu.rebuild(true), 10)
+                                    }, doc);
+                                    group.appendChild(item1);
+                                    group.appendChild(item2);
+                                    return group;
+                                })()],
+                                ['menuseparator', {
+                                    id: 'addMenu-btn-insertpoint',
+                                    class: 'addMenu-insert-point',
+                                    hidden: true
+                                }],
+                                ['menuseparator', {}],
+                                ['menuitem', {
+                                    id: 'addMenu-quit-browser',
+                                    class: 'menuitem-iconic addMenu addMenuNot quit',
+                                    'data-l10n-id': 'menu-quit',
+                                    key: 'key_quitApplication',
+                                    oncommand: (event) => goQuitApplication(event)
+                                }]
+                            ].forEach(obj => {
+                                let type = obj[0];
+                                let item;
+                                let attrs = obj[1];
+                                if (attrs.nodeName) {
+                                    item = menupopup.appendChild(attrs);
+                                } else {
+                                    item = $C(type, attrs, doc);
+                                }
+                                menupopup.appendChild(item);
+                            });
+                            return button;
+                        }
+                    });
+                    widget = CustomizableUI.getWidget("addMenu-button");
+                }
             } catch (e) {
                 console.error(e);
             }
-            this.BTN = CustomizableUI.getWidget("addMenu-button").forWindow(window)?.node;
+            this.BTN = widget?.forWindow(window)?.node || document.getElementById("addMenu-button");
         },
-        destroy: function () {
+        destroy: function (forceDestroyWidget = false) {
             $("#contentAreaContextMenu").off("popupshowing", this, false);
             $("#contentAreaContextMenu").off("popuphiding", this, false);
             $("#tabContextMenu").off("popupshowing", this, false);
@@ -506,7 +526,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             this.undoMods();
             this.removeMenuitem();
             $$('#addMenu-rebuild, .addMenu-insert-point').remove();
-            if (this.BTN) {
+            if ((forceDestroyWidget || this.shouldDestroyWidget()) && CustomizableUI.getWidget("addMenu-button")) {
                 CustomizableUI.destroyWidget("addMenu-button");
             }
             this.identityBox?.removeAttr('contextmenu').off("click", this, false);
