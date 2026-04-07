@@ -61,6 +61,10 @@
     const EXCLUED_SCRIPTS = [AM_FILENAME];
     const LOG_PREFIX = "[AddonsPage_fx72]";
     const UNLOAD_HANDLER_KEY = "__AddonsPageFx72UnloadHandler";
+    const DETAIL_OBSERVER_KEY = "__AddonsPageFx72DetailObserver";
+    const DETAIL_REFRESH_TIMER_KEY = "__AddonsPageFx72DetailRefreshTimer";
+    const DETAIL_REFRESH_TOKEN_KEY = "__AddonsPageFx72DetailRefreshToken";
+    const DETAIL_RENDERING_KEY = "__AddonsPageFx72DetailRendering";
     const DEBUG_PREF = "userChromeJS.AddonsPage_fx72.debug";
     const DEBUG = (() => {
         try {
@@ -148,6 +152,11 @@
         },
         uninit () {
             document.removeEventListener("DOMContentLoaded", this, false);
+            this.disconnectDetailObserver(document);
+            const htmlBrowser = document.getElementById("html-view-browser");
+            if (htmlBrowser && htmlBrowser.contentDocument) {
+                this.disconnectDetailObserver(htmlBrowser.contentDocument);
+            }
         },
         handleEvent (event) {
             switch (event.type) {
@@ -176,6 +185,8 @@
                     if (cDoc) {
                         this.replace_l10n_setAttributes(cDoc);
                         this.injectCategory(cDoc);
+                        this.ensureDetailObserver(cDoc);
+                        this.scheduleDetailInfoRefresh(cDoc, "htmlBrowser.load");
                     }
                 });
 
@@ -183,6 +194,7 @@
                 doc.addEventListener("ViewChanged", event => {
                     const cDoc = htmlBrowser.contentDocument;
                     if (cDoc) {
+                        this.ensureDetailObserver(cDoc);
                         this.injectView(cDoc);
                     }
                 });
@@ -191,6 +203,8 @@
                 // Fx87-
                 this.replace_l10n_setAttributes(doc);
                 this.injectCategory(doc);
+                this.ensureDetailObserver(doc);
+                this.scheduleDetailInfoRefresh(doc, "DOMContentLoaded");
 
                 const loadedEvent = event => {
                     this.injectView(doc);
@@ -287,6 +301,109 @@
             }
         },
 
+        disconnectDetailObserver (doc) {
+            if (!doc) {
+                return;
+            }
+
+            if (doc[DETAIL_REFRESH_TIMER_KEY] && doc.defaultView) {
+                doc.defaultView.clearTimeout(doc[DETAIL_REFRESH_TIMER_KEY]);
+                doc[DETAIL_REFRESH_TIMER_KEY] = 0;
+            }
+            if (doc[DETAIL_OBSERVER_KEY]) {
+                try {
+                    doc[DETAIL_OBSERVER_KEY].disconnect();
+                } catch (e) { }
+                delete doc[DETAIL_OBSERVER_KEY];
+            }
+            delete doc[DETAIL_RENDERING_KEY];
+            delete doc[DETAIL_REFRESH_TOKEN_KEY];
+        },
+
+        ensureDetailObserver (doc) {
+            if (!doc || doc[DETAIL_OBSERVER_KEY] || typeof MutationObserver !== "function") {
+                return;
+            }
+
+            const root = doc.getElementById("main") || doc.body;
+            if (!root) {
+                return;
+            }
+
+            const observer = new MutationObserver(() => {
+                if (doc[DETAIL_RENDERING_KEY]) {
+                    return;
+                }
+                this.scheduleDetailInfoRefresh(doc, "mutation");
+            });
+            observer.observe(root, {
+                subtree: true,
+                childList: true,
+                attributes: true,
+                attributeFilter: ["current-view", "loading"],
+            });
+            doc[DETAIL_OBSERVER_KEY] = observer;
+            debugLog("ensureDetailObserver(): attached", {
+                href: String(doc.URL || ""),
+            });
+        },
+
+        scheduleDetailInfoRefresh (doc, reason = "unknown", attempt = 0) {
+            if (!doc || !doc.defaultView) {
+                return;
+            }
+
+            const win = doc.defaultView;
+            const token = `${Date.now()}:${Math.random()}`;
+            doc[DETAIL_REFRESH_TOKEN_KEY] = token;
+            if (doc[DETAIL_REFRESH_TIMER_KEY]) {
+                win.clearTimeout(doc[DETAIL_REFRESH_TIMER_KEY]);
+            }
+
+            const run = () => {
+                if (doc[DETAIL_REFRESH_TOKEN_KEY] !== token) {
+                    return;
+                }
+
+                const applied = this.setUrlOrPath(doc);
+                if (!applied && attempt < 8) {
+                    const nextAttempt = attempt + 1;
+                    const delay = nextAttempt < 3 ? 80 : 160;
+                    doc[DETAIL_REFRESH_TIMER_KEY] = win.setTimeout(() => {
+                        this.scheduleDetailInfoRefresh(doc, reason, nextAttempt);
+                    }, delay);
+                    return;
+                }
+
+                doc[DETAIL_REFRESH_TIMER_KEY] = 0;
+                debugLog("scheduleDetailInfoRefresh(): completed", {
+                    reason,
+                    attempt,
+                    applied,
+                });
+            };
+
+            doc[DETAIL_REFRESH_TIMER_KEY] = win.setTimeout(run, attempt ? 40 : 0);
+        },
+
+        getDetailViewState (doc) {
+            const detail = doc.querySelector(
+                '#main [current-view="detail"], #main[current-view="detail"], addon-details, #main addon-details'
+            );
+            const card = (detail && detail.querySelector("addon-card")) ||
+                doc.querySelector('#main [current-view="detail"] addon-card, #main[current-view="detail"] addon-card, addon-details addon-card');
+            const addon = card && card.addon;
+            const section = (detail && detail.querySelector('section[name="details"]')) ||
+                doc.querySelector('#main [current-view="detail"] section[name="details"], #main[current-view="detail"] section[name="details"], addon-details section[name="details"]');
+
+            return {
+                detail,
+                card,
+                addon,
+                section,
+            };
+        },
+
         injectView (doc) {
             const header = doc.getElementById("page-header");
             if (!header) return;
@@ -346,7 +463,7 @@
                 }
             });
 
-            this.setUrlOrPath(doc);
+            this.scheduleDetailInfoRefresh(doc, "injectView");
         },
 
         injectCategory (doc) {
@@ -382,6 +499,15 @@
             const target = event.target;
             const action = target.getAttribute("action");
             const addon = this.getTargetAddon(target);
+            if (action === "AM-open-url") {
+                event.preventDefault();
+                const href = target.getAttribute("href");
+                const url = href || (addon && this.getInstallURL(addon));
+                if (url) {
+                    this.openUrl(url);
+                }
+                return;
+            }
             if (action && addon) {
                 switch (action) {
                     case "AM-edit-script":
@@ -389,10 +515,6 @@
                         break;
                     case "AM-browse-dir":
                         this.browseDir(addon);
-                        break;
-                    case "AM-open-url":
-                        event.preventDefault();
-                        this.openUrl(target.href ? target.href : this.getInstallURL(addon));
                         break;
                     case "AM-copy-name":
                         this.copyName(addon);
@@ -456,59 +578,190 @@
             return path || false;
         },
 
-        setUrlOrPath (doc) {
-            let addon;
-            const detail = doc.querySelector('#main [current-view="detail"]');
-            if (detail) {
-                const card = detail.querySelector("addon-card");
-                addon = card.addon;
+        getOptionsURL (aAddon) {
+            if (!aAddon) return null;
+
+            return aAddon.optionsURL ||
+                (aAddon._script && aAddon._script.optionsURL) ||
+                null;
+        },
+
+        getBackendLabel (aAddon) {
+            if (!aAddon || !aAddon._backend || !aAddon._backend.kind) {
+                return null;
             }
-            if (!addon) return;
 
-            const installURL = this.getInstallURL(addon);
-            const pluginPath = this.getPath(addon);
-            if (!installURL && !pluginPath) return;
-
-            if (!doc.getElementById("detail-InstallURL-row")) {
-                let value = "", label = "";
-                switch (addon.type) {
-                    case "extension":
-                    case "theme":
-                    case "greasemonkey-user-script":
-                        value = installURL;
-                        label = "Install Page";
-                        break;
-                    case "plugin":
-                    case "userchromejs":
-                        value = pluginPath;
-                        label = "Path";
-                        break;
-                }
-
-                if (!!value && !!label) {
-                    const row = $C(doc, "div", {
-                        id: "detail-InstallURL-row",
-                        class: "addon-detail-row",
-                    });
-                    $C(doc, "label", {
-                        class: "detail-row-label",
-                        "#text": label
-                    }, row);
-
-                    const link = $C(doc, "a", {
-                        href: value,
-                        action: "AM-open-url",
-                        "#text": value
-                    }, row);
-                    link.addEventListener("click", this);
-
-                    doc.querySelector('section[name="details"]').appendChild(row);
-                }
+            switch (aAddon._backend.kind) {
+                case "userChrome_js":
+                    return "userChrome.js";
+                case "_uc":
+                    return "_uc.js";
+                case "_ucUtils":
+                    return "_ucUtils";
+                default:
+                    return aAddon._backend.kind;
             }
         },
 
+        getNoteValue (aAddon) {
+            if (!aAddon) {
+                return null;
+            }
+
+            const value = aAddon.note ||
+                aAddon.notes ||
+                (aAddon._script && (aAddon._script.note || aAddon._script.notes));
+            if (Array.isArray(value)) {
+                return value.filter(Boolean).join("\n");
+            }
+            return value || null;
+        },
+
+        getDetailRows (aAddon) {
+            if (!aAddon) return [];
+
+            const installURL = this.getInstallURL(aAddon);
+            const pluginPath = this.getPath(aAddon);
+            const rows = [];
+            const pushRow = (id, label, value, isLink = false) => {
+                if (!value) return;
+                rows.push({ id, label, value, isLink });
+            };
+
+            switch (aAddon.type) {
+                case "extension":
+                case "theme":
+                case "greasemonkey-user-script":
+                    pushRow("install-page", "安装页面", installURL, true);
+                    break;
+                case "plugin":
+                    pushRow("path", "路径", pluginPath, true);
+                    break;
+                case "userchromejs":
+                    pushRow("path", "路径", pluginPath, true);
+                    pushRow("version", "版本", aAddon.version);
+                    pushRow("author", "作者", aAddon.author);
+                    pushRow("note", "备注", this.getNoteValue(aAddon));
+                    pushRow("review", "评论页面", aAddon.reviewURL, true);
+                    pushRow("download", "下载链接", aAddon.downloadURL || aAddon.updateURL, true);
+                    pushRow("options", "Options URL", this.getOptionsURL(aAddon), true);
+                    break;
+                default:
+                    pushRow("homepage", "Homepage", aAddon.homepageURL, true);
+                    pushRow("path", "Path", pluginPath, true);
+                    break;
+            }
+
+            return rows;
+        },
+
+        appendDetailRow (doc, section, rowInfo) {
+            const row = $C(doc, "div", {
+                id: `detail-${rowInfo.id}-row`,
+                class: "addon-detail-row userchromejs-detail-row",
+                style: "display: flex; align-items: flex-start; gap: 12px;",
+            });
+            $C(doc, "label", {
+                class: "detail-row-label",
+                style: "flex: 0 0 88px; min-width: 88px; margin: 0; text-align: left;",
+                "#text": rowInfo.label
+            }, row);
+            const valueBox = $C(doc, "div", {
+                class: "userchromejs-detail-value",
+                style: "flex: 1 1 auto; min-width: 0;",
+            }, row);
+
+            if (rowInfo.isLink) {
+                const link = $C(doc, "a", {
+                    href: rowInfo.value,
+                    action: "AM-open-url",
+                    style: "display: block; text-align: left; overflow-wrap: anywhere; word-break: break-word;",
+                    "#text": rowInfo.value
+                }, valueBox);
+                link.addEventListener("click", this);
+            } else {
+                $C(doc, "span", {
+                    style: `display: block; text-align: left; overflow-wrap: anywhere; word-break: break-word;${rowInfo.value.includes("\n") ? " white-space: pre-wrap;" : ""}`,
+                    "#text": rowInfo.value
+                }, valueBox);
+            }
+
+            section.appendChild(row);
+        },
+
+        normalizeDetailText (text) {
+            return String(text || "")
+                .replace(/\s+/g, " ")
+                .trim();
+        },
+
+        syncDescriptionVisibility (detailState) {
+            if (!detailState || !detailState.card) {
+                return;
+            }
+
+            const root = detailState.card;
+            const contents = root.querySelector(".card-contents");
+            const summary = root.querySelector(".addon-description, addon-description");
+            const detailDescription = root.querySelector(".addon-detail-description, addon-detail-description");
+            const detailWrapper = root.querySelector(".addon-detail-description-wrapper");
+            if (!detailDescription) {
+                return;
+            }
+
+            const shouldHide = !!detailState.addon &&
+                detailState.addon.type === "userchromejs" &&
+                summary &&
+                this.normalizeDetailText(summary.textContent) &&
+                this.normalizeDetailText(summary.textContent) === this.normalizeDetailText(detailDescription.textContent);
+
+            if (detailWrapper) {
+                detailWrapper.hidden = shouldHide;
+            } else {
+                detailDescription.hidden = shouldHide;
+            }
+            if (contents) {
+                contents.style.paddingBottom = shouldHide ? "8px" : "";
+            }
+        },
+
+        setUrlOrPath (doc) {
+            const detailState = this.getDetailViewState(doc);
+            const addon = detailState.addon;
+            const section = detailState.section;
+            if (!addon || !section) {
+                debugLog("setUrlOrPath(): detail not ready", {
+                    hasDetail: !!detailState.detail,
+                    hasCard: !!detailState.card,
+                    hasAddon: !!addon,
+                    hasSection: !!section,
+                });
+                return false;
+            }
+
+            doc[DETAIL_RENDERING_KEY] = true;
+            section.querySelectorAll(".userchromejs-detail-row").forEach(node => node.remove());
+
+            const rows = this.getDetailRows(addon);
+            rows.forEach(rowInfo => this.appendDetailRow(doc, section, rowInfo));
+            this.syncDescriptionVisibility(detailState);
+            if (doc.defaultView) {
+                doc.defaultView.setTimeout(() => {
+                    delete doc[DETAIL_RENDERING_KEY];
+                }, 0);
+            } else {
+                delete doc[DETAIL_RENDERING_KEY];
+            }
+            debugLog("setUrlOrPath(): rows rendered", {
+                id: addon.id || null,
+                type: addon.type || null,
+                count: rows.length,
+            });
+            return true;
+        },
+
         openUrl (url) {
-            if (/^https?:/.test(url)) {
+            if (/^(https?|about|chrome|resource|file|moz-extension):/i.test(url)) {
                 openURL(url);
             } else {
                 this.revealPath(url);
@@ -531,6 +784,8 @@
         scripts: [],
         unloads: [],
         isProviderOwner: false,
+        iconURLCache: new Map(),
+        iconBlobURLs: new Set(),
 
         init () {
             const hasType = this.isAddonTypeRegistered();
@@ -538,6 +793,7 @@
                 href: String(window.location),
                 hasAddonType: !!hasType,
             });
+            this.logBackendDiagnostics("init(): backend diagnostics", window);
             this.initScripts();
             if (hasType) {
                 debugLog("provider already registered, skip registerProvider()");
@@ -598,8 +854,49 @@
                 href: String(window.location),
                 unloadCount: this.unloads.length,
             });
+            this.releaseIconURLs();
             this.scripts = [];
             this.unloads.splice(0).forEach(function (func) { func(); });
+        },
+        releaseIconURLs () {
+            this.iconBlobURLs.forEach(url => {
+                try {
+                    URL.revokeObjectURL(url);
+                } catch (e) { }
+            });
+            this.iconBlobURLs.clear();
+            this.iconURLCache.clear();
+        },
+        normalizeIconURL (url) {
+            if (!url || typeof url !== "string") {
+                return iconURL;
+            }
+            if (!url.startsWith("data:")) {
+                return url;
+            }
+            if (this.iconURLCache.has(url)) {
+                return this.iconURLCache.get(url);
+            }
+
+            try {
+                const match = url.match(/^data:([^;,]+)?(;base64)?,(.*)$/i);
+                if (!match) {
+                    return url;
+                }
+                const mime = match[1] || "application/octet-stream";
+                const isBase64 = !!match[2];
+                const body = match[3] || "";
+                const bytes = isBase64
+                    ? Uint8Array.from(atob(body), c => c.charCodeAt(0))
+                    : new TextEncoder().encode(decodeURIComponent(body));
+                const blobURL = URL.createObjectURL(new Blob([bytes], { type: mime }));
+                this.iconBlobURLs.add(blobURL);
+                this.iconURLCache.set(url, blobURL);
+                return blobURL;
+            } catch (e) {
+                console.error(e);
+                return url;
+            }
         },
         describeWindow (win) {
             if (!win || win.closed) {
@@ -647,6 +944,43 @@
         },
         dumpWindowState (label, preferredWindow) {
             debugWarn(label, this.getLiveBrowserWindows(preferredWindow).map(win => this.describeWindow(win)));
+        },
+        collectBackendDiagnostics (preferredWindow) {
+            return this.getLiveBrowserWindows(preferredWindow).map(win => {
+                const info = this.describeWindow(win);
+                let backend = null;
+                let rawCount = null;
+
+                try {
+                    backend = this.getBackendFromWindow(win);
+                    if (backend) {
+                        rawCount = this.getBackendScripts(backend).length;
+                    }
+                } catch (e) {
+                    rawCount = "error: " + e;
+                }
+
+                return {
+                    href: info.href,
+                    userChrome_js: {
+                        exists: info.hasUserChromeJs,
+                        done: info.ucjsDone,
+                        scripts: info.ucjsScripts,
+                        overlays: info.ucjsOverlays,
+                    },
+                    _uc: {
+                        exists: info.hasUc,
+                        isFaked: info.ucIsFaked,
+                        scripts: info.ucScripts,
+                    },
+                    _ucUtils: info.hasUcUtils,
+                    detectedBackend: backend ? backend.kind : null,
+                    backendScriptCount: rawCount,
+                };
+            });
+        },
+        logBackendDiagnostics (label, preferredWindow) {
+            debugWarn(label, this.collectBackendDiagnostics(preferredWindow));
         },
         getLiveBrowserWindows (preferredWindow) {
             const wins = [];
@@ -937,6 +1271,7 @@
             debugLog("initScripts(): start", {
                 href: String(window.location),
             });
+            this.logBackendDiagnostics("initScripts(): before resolveBackend", window);
             const backend = this.resolveBackend(window);
             if (!backend) {
                 debugWarn("initScripts(): no backend, scripts list stays empty");
@@ -962,6 +1297,7 @@
                 excluded: EXCLUED_SCRIPTS.slice(),
             });
             if (!this.scripts.length) {
+                this.logBackendDiagnostics("initScripts(): empty result diagnostics", backend.ownerWindow);
                 this.dumpWindowState("initScripts(): empty result window snapshot", backend.ownerWindow);
             }
 
@@ -1108,7 +1444,48 @@
                     html|*.category[name="userchromejs"] {
                         background-image: url(chrome://mozapps/skin/extensions/category-extensions.svg);
                     }
-                    
+                    .userchromejs-detail-row {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 12px;
+                    }
+                    .userchromejs-detail-row > .detail-row-label {
+                        flex: 0 0 128px;
+                        min-width: 128px;
+                        margin: 0;
+                        text-align: left;
+                        whitespace: nowrap;
+                    }
+                    .userchromejs-detail-value {
+                        flex: 1 1 auto;
+                        min-width: 0;
+                    }
+                    .userchromejs-detail-value > a,
+                    .userchromejs-detail-value > span {
+                        display: block;
+                        text-align: left;
+                        overflow-wrap: anywhere;
+                        word-break: break-word;
+                    }
+                    .addon-detail-row-homepage {
+                        justify-content: flex-start !important;
+                        align-items: flex-start !important;
+                        gap: 12px !important;
+                    }
+                    .addon-detail-row-homepage > label {
+                        flex: 0 0 88px !important;
+                        min-width: 88px !important;
+                        margin: 0 !important;
+                        text-align: left !important;
+                    }
+                    .addon-detail-row-homepage > a {
+                        display: block !important;
+                        flex: 1 1 auto !important;
+                        min-width: 0 !important;
+                        text-align: left !important;
+                        overflow-wrap: anywhere !important;
+                        word-break: break-word !important;
+                    }
                 }`;
 
             let styleURI = Services.io.newURI("data:text/css," + encodeURIComponent(data), null, null);
@@ -1141,7 +1518,14 @@
         this.fullDescription = this._script.fullDescription || null;
         this.downloadURL = this._script.downloadURL || null;
 
-        this.iconURL = iconURL;
+        const resolvedIconURL = userChromeJSAddon.normalizeIconURL(this._script.iconURL || this._script.icon || iconURL);
+        this.iconURL = resolvedIconURL;
+        this.icon32URL = resolvedIconURL;
+        this.icon64URL = resolvedIconURL;
+        this.icons = {
+            32: resolvedIconURL,
+            64: resolvedIconURL,
+        };
     }
 
     ScriptAddon.prototype = {
