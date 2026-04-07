@@ -1,28 +1,34 @@
 // ==UserScript==
-// @name           addMenuPlus.uc.mjs
+// @name               addMenuPlus.uc.mjs
 // @long-description
 // @description
 /*
 通过配置文件增加修改菜单，修改版
 
-此版本仅能通过我改过的 userChrome.js 引导：https://github.com/benzBrake/userChrome.js-Loader/blob/main/profile/chrome/userChrome.js，其他 UC 环境需要修改 resolveChromeURL 函数
+此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
+Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version        0.3.0
-// @author         Ryan, ywzhaiqi, Griever
-// @include        main
-// @license        MIT License
-// @compatibility  Firefox 136
-// @charset        UTF-8
-// @require        https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/000-$.sys.mjs
-// @require        https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/000-syncify.sys.mjs
-// @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
-// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
-// @reviewURL      https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note           20260113 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
-// @note           20260111 Fx145+同步 hidden/collapsed/disabled 属性失效
-// @note           20250830 移除 inline showing function 支持, 初始化 sandbox
-// @note           20250827 Fx142 菜单图标异常
-// @note           0.3.0 ESMified
+// @version            0.3.1
+// @author             Ryan, ywzhaiqi, Griever
+// @include            main
+// @actor              AddMenu
+// @actor:events       contextmenu
+// @actor:allframes    true
+// @license            MIT License
+// @compatibility      Firefox 136
+// @charset            UTF-8
+// @require            https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/000-$.sys.mjs
+// @require            https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/000-syncify.sys.mjs
+// @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
+// @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
+// @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               20260407 Actor registration moved to userChrome.js loader; keep single-file chrome+actor implementation, fix first-run startup when config file does not exist yet
+// @note               20260407 Fx146 alerts-service compatibility: prefer showAlert and keep showAlertNotification as fallback
+// @note               20260111 Fx145+同步 hidden/collapsed/disabled 属性失效
+// @note               20250830 移除 inline showing function 支持, 初始化 sandbox
+// @note               20250827 Fx142 菜单图标异常
+// @note               0.3.1 Loader-managed actor registration
+// @note               0.3.0 ESMified
 // ==/UserScript==
 import { $, $$ } from "./000-$.sys.mjs";
 import { syncify } from "./000-syncify.sys.mjs";
@@ -35,6 +41,17 @@ import { syncify } from "./000-syncify.sys.mjs";
     const enableContentAreaContextMenuCompact = false; // Photon 界面下右键菜单兼容开关（网页右键隐藏非纯图标菜单的图标，Firefox 版本号小于90无效）
     const enableConvertImageAttrToListStyleImage = false; // 将图片属性转换为 css 属性 list-style-image 
     const enableConvertHiddenStyleToAttribue = false; // 将隐藏元素的样式转换为属性
+    const enableDebugLogging = false; // 调试日志开关
+    const debugLog = (...args) => {
+        if (enableDebugLogging) {
+            console.log(...args);
+        }
+    };
+    const debugWarn = (...args) => {
+        if (enableDebugLogging) {
+            console.warn(...args);
+        }
+    };
 
     /** 不要修改以下代码 DON'T MODIFY THE CODE BELOW */
     const { windowUtils } = globalThis;
@@ -158,6 +175,12 @@ import { syncify } from "./000-syncify.sys.mjs";
             groupmenu: "BtnGroup",
             insertId: "addMenu-btn-insertpoint",
         },
+        ident: {
+            current: "ident",
+            submenu: "IdentMenu",
+            groupmenu: "IdentGroup",
+            insertId: "addMenu-identity-insertpoint",
+        },
         mod: {
             current: "mod"
         },
@@ -184,7 +207,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             const aFile = Services.dirsvc.get("UChrm", Ci.nsIFile);
             aFile.appendRelativePath(path);
 
-            this._modifiedTime = aFile.lastModifiedTime;
+            this._modifiedTime = aFile.exists() ? aFile.lastModifiedTime : 0;
             delete this.FILE;
             return this.FILE = aFile;
         },
@@ -224,6 +247,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 sb = Cu.Sandbox(window, {
                     sandboxPrototype: window,
                     sameZoneAs: window,
+                    freezeBuiltins: false
                 });
                 Cu.evalInSandbox(`
                     Function.prototype.toSource = window.Function.prototype.toSource;
@@ -241,25 +265,6 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
             this.sandbox = sb;
             await this.ensureConfigFileExists();
-            try {
-                // 注册 Actor
-                const esModuleURI = resolveChromeURL(Components.stack.filename);
-                ChromeUtils.registerWindowActor("AddMenu", {
-                    parent: {
-                        esModuleURI
-                    },
-                    child: {
-                        esModuleURI,
-                        events: {
-                            contextmenu: {
-                                capture: true,
-                            }
-                        }
-                    },
-                    allFrames: true,
-                });
-            } catch (ex) { }
-
             this.initRegex();
             this.initButton();
 
@@ -276,7 +281,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     MENU_ATTRS[type].insertId = insertPoint.id;
                     ins.before(insertPoint);
                     delete MENU_ATTRS[type].insRef;
-                } else if (!["btn", "mod"].includes(type)) {
+                } else if (!["btn", "mod", "ident"].includes(type)) {
                     delete MENU_ATTRS[type];
                 }
             }
@@ -294,12 +299,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     class: "addMenu-insert-point",
                     hidden: true
                 }));
-                MENU_ATTRS['ident'] = {
-                    current: "ident",
-                    submenu: "IdentMenu",
-                    groupmenu: "IdentGroup",
-                    insertId: 'addMenu-identity-insertpoint'
-                }
+                MENU_ATTRS.ident.insertId = 'addMenu-identity-insertpoint';
             }
 
             // Photon Compact
@@ -343,6 +343,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             const aFile = this.FILE;
             if (!aFile.exists()) {
                 await IOUtils.writeUTF8(aFile.path, lprintf('config example'))
+                this._modifiedTime = aFile.exists() ? aFile.lastModifiedTime : 0;
                 alert(lprintf('example is empty'));
                 addMenu.openCommand({
                     target: this
@@ -409,11 +410,33 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
         },
         initButton: function () {
-            let widget = CustomizableUI.getWidget("addMenu-button");
+            const widgetId = "addMenu-button";
+            let widget = CustomizableUI.getWidget(widgetId);
+            const getButtonNode = () =>
+                widget?.forWindow(window)?.node ||
+                document.getElementById(widgetId);
+            const logWidgetState = (stage) => {
+                let placement = null;
+                try {
+                    placement = typeof CustomizableUI.getPlacementOfWidget === "function"
+                        ? CustomizableUI.getPlacementOfWidget(widgetId)
+                        : null;
+                } catch (e) { }
+                debugLog(`addMenuPlus: initButton [${stage}]`, {
+                    widget: !!widget,
+                    placement,
+                    node: !!getButtonNode(),
+                    delayedStartupFinished: !!window.gBrowserInit?.delayedStartupFinished,
+                });
+            };
+
+            let button = getButtonNode();
+            logWidgetState("start");
             try {
-                if (!widget) {
+                if (!button) {
+                    debugLog("addMenuPlus: initButton creating widget because current window node is missing");
                     CustomizableUI.createWidget({
-                        id: "addMenu-button",
+                        id: widgetId,
                         removable: true,
                         defaultArea: CustomizableUI.AREA_NAVBAR,
                         type: "custom",
@@ -502,12 +525,55 @@ import { syncify } from "./000-syncify.sys.mjs";
                             return button;
                         }
                     });
-                    widget = CustomizableUI.getWidget("addMenu-button");
+                    widget = CustomizableUI.getWidget(widgetId);
+                    button = getButtonNode();
+                    logWidgetState("after-createWidget");
                 }
+
+                if (!button && typeof CustomizableUI.addWidgetToArea === "function") {
+                    try {
+                        debugLog("addMenuPlus: initButton calling addWidgetToArea");
+                        CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
+                    } catch (e) {
+                        console.warn("addMenuPlus: addWidgetToArea failed", e);
+                    }
+                    widget = CustomizableUI.getWidget(widgetId);
+                    button = getButtonNode();
+                    logWidgetState("after-addWidgetToArea");
+                }
+
+                if (!button &&
+                    typeof CustomizableUI.removeWidgetFromArea === "function" &&
+                    typeof CustomizableUI.addWidgetToArea === "function") {
+                    try {
+                        debugLog("addMenuPlus: initButton calling removeWidgetFromArea");
+                        CustomizableUI.removeWidgetFromArea(widgetId);
+                    } catch (e) {
+                        console.warn("addMenuPlus: removeWidgetFromArea failed", e);
+                    }
+                    try {
+                        debugLog("addMenuPlus: initButton calling addWidgetToArea after remove");
+                        CustomizableUI.addWidgetToArea(widgetId, CustomizableUI.AREA_NAVBAR);
+                    } catch (e) {
+                        console.warn("addMenuPlus: re-add widget to navbar failed", e);
+                    }
+                    widget = CustomizableUI.getWidget(widgetId);
+                    button = getButtonNode();
+                    logWidgetState("after-readd");
+                }
+
+                this.BTN = button;
             } catch (e) {
-                console.error(e);
+                console.error("addMenuPlus: failed to initialize toolbar button", e);
             }
-            this.BTN = widget?.forWindow(window)?.node || document.getElementById("addMenu-button");
+
+            this.BTN ||= getButtonNode();
+            logWidgetState("final");
+
+            if (!this.BTN) {
+                debugWarn("addMenuPlus: toolbar button is still unavailable after initButton");
+            }
+            return !!this.BTN;
         },
         destroy: function (forceDestroyWidget = false) {
             $("#contentAreaContextMenu").off("popupshowing", this, false);
@@ -1155,9 +1221,19 @@ import { syncify } from "./000-syncify.sys.mjs";
                 } else {
                     if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
                     if (current === "btn") {
-                        this.createMenuitem(sandbox["_" + current], $("#addMenu-btn-insertpoint", this.BTN), this.BTN.ownerDocument || document);
+                        if (!this.BTN?.isConnected) {
+                            this.initButton();
+                        }
+                        const button = this.BTN;
+                        const insertPoint = button ? $("#addMenu-btn-insertpoint", button) : null;
+                        if (!button || !insertPoint) {
+                            debugWarn("addMenuPlus: toolbar button is not ready yet, skipping btn menuitems for this rebuild");
+                            return;
+                        }
+                        this.createMenuitem(sandbox["_" + current], insertPoint, button.ownerDocument || document);
                     } else {
                         let insertPoint = $(insertId);
+                        if (!insertPoint) return;
                         this.createMenuitem(sandbox["_" + current], insertPoint);
                     }
                 }
@@ -1941,7 +2017,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 });
 
             } catch (e) {
-                console.error(lprintf("error occurred while editing the file", error.message), e);
+                console.error(lprintf("error occurred while editing the file", e.message), e);
                 this.alert(lprintf('process command error', e.message));
             }
         },
@@ -2086,30 +2162,44 @@ import { syncify } from "./000-syncify.sys.mjs";
             const alertsService = Cc["@mozilla.org/alerts-service;1"]
                 .getService(Ci.nsIAlertsService);
 
-            if (versionGE("147a1")) {
-                let alert = new AlertNotification({
-                    imageURL: alertOptions.imageURL,
-                    title: alertOptions.title,
-                    text: alertOptions.text,
-                    textClickable: alertOptions.textClickable,
-                });
+            try {
+                if (typeof alertsService.showAlert === "function") {
+                    let alert = new AlertNotification({
+                        imageURL: alertOptions.imageURL,
+                        title: alertOptions.title,
+                        text: alertOptions.text,
+                        textClickable: alertOptions.textClickable,
+                    });
 
-                alertsService.showAlert(
-                    alert,
-                    callbackObject && callbackObject.observe
-                        ? callbackObject.observe
-                        : null
-                );
-            } else {
-                alertsService.showAlertNotification(
-                    alertOptions.imageURL,
-                    alertOptions.title,
-                    alertOptions.text,
-                    alertOptions.textClickable,
-                    "",
-                    callbackObject
-                );
+                    alertsService.showAlert(
+                        alert,
+                        callbackObject && callbackObject.observe
+                            ? callbackObject.observe
+                            : null
+                    );
+                    return;
+                }
+            } catch (e) {
+                console.warn("addMenuPlus: showAlert failed, falling back to showAlertNotification", e);
             }
+
+            try {
+                if (typeof alertsService.showAlertNotification === "function") {
+                    alertsService.showAlertNotification(
+                        alertOptions.imageURL,
+                        alertOptions.title,
+                        alertOptions.text,
+                        alertOptions.textClickable,
+                        "",
+                        callbackObject
+                    );
+                    return;
+                }
+            } catch (e) {
+                console.warn("addMenuPlus: showAlertNotification failed", e);
+            }
+
+            console.warn("addMenuPlus: alerts service is not available", alertOptions);
         },
         $$: function (selector, callback, context = gBrowser.selectedBrowser) {
             // 如果 callback 是函数，转换为字符串
@@ -2270,10 +2360,6 @@ import { syncify } from "./000-syncify.sys.mjs";
                 menu.setAttribute("image", imageUrl);
             }
         }
-    }
-
-    function resolveChromeURL (fileUrl) {
-        return fileUrl.replace("file:///" + PathUtils.profileDir.replace(/\\/g, '/') + "/chrome", "chrome://userchrome/content")
     }
 
     window.addMenu.init();
@@ -2498,7 +2584,7 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
             return false;
         }
     });
-export { AddMenuChild, AddMenuParent };
+export { AddMenuChild, AddMenuParent, AddMenuChild as ActorChild, AddMenuParent as ActorParent };
 class AddMenuChild extends JSWindowActorChild {
     handleEvent (event) {
         this[event.type]?.(event);
