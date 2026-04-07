@@ -9,6 +9,7 @@
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            fix for fx 126
+// @note            2026-04-07 归档：不再更新
 // ==/UserScript==
 location.href.startsWith('chrome://browser/content/browser.x') && (() => {
     document.getElementById('tabContextMenu').addEventListener('popupshowing', function () {
