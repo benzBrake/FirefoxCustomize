@@ -109,6 +109,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 57   | [AutoCopySelectionText](AutoCopySelectionText.uc.js)         | 自动复制选中文本（ScrLk 亮起时不复制）                       |                                                              |
 |      | 57   | [AutoPopup](109/AutoPopup.uc.js)                             | 自动弹出菜单，好像是从阳光盒子定制版里拉出来的               |                                                              |
 |      | 69   | [autoPopup++](autoPopup++.uc.js)                             | 自动弹出菜单增强版                                           |      [📃](https://bbs.kafan.cn/thread-1866855-1-1.html)       |
+|      | 57   | [ReloadAllTabs](57/ReloadAllTabs.uc.js)                      | 标签页右键菜单添加"刷新所有标签页"（已归档）                  |                                                              |
 |      | 127  | [AutoSaveScreenshot](127/AutoSaveScreenshot.uc.js)           | 一键保存截图，左键单击保存可见范围，Shift+左键保存整个页面   | [📃](https://www.camp-firefox.de/forum/thema/138011-automatischer-screenshot/?postID=1250968#post1250968) |
 |      | 95   | [bookmarksmenu_scrollbar](bookmarksmenu_scrollbar.uc.js)     | 书签弹出菜单显示滚动条，修改兼容BMMultiColumn.uc.js          | [📃](https://github.com/alice0775/userChrome.js/blob/master/95/bookmarksmenu_scrollbar.uc.js) |
 |  ⛔   | 68   | [downloadPlus](68/downloadPlus.uc.js)                        | 下载功能增强，第三方工具，另存为，复制下载连接（没记错最多支持到73）。 |                                                              |
