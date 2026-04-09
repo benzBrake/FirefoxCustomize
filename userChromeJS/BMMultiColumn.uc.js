@@ -4,10 +4,12 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2025.07.03
+// @version         2026.04.09
+// @compatibility   Firefox 133
 // @async
 // @shutdown        window.BMMultiColumn.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.04.09 兼容新版 Firefox 书签菜单宽度规则，修复多列书签标题被撑宽后显示不全
 // @note            2025.07.03 修复书签工具栏溢出菜单显示不全 #50
 // @note            2025.05.13 优化横向滚动，感谢 ylcs006
 // @note            2025.03.27 修复 Height Width 弄混导致宽度异常，支持纵向滚轮
@@ -169,6 +171,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 let slot = scrollbox.querySelector('slot');
                 slot.style.display = "contents";
                 let maxWidth = calcWidth(-129);
+                let columnWidth = getColumnWidth(menupopup, maxWidth);
+                for (let item = menupopup.firstElementChild; item; item = item.nextElementSibling) {
+                    if (!item.matches?.("menu, menuitem, menuseparator")) {
+                        continue;
+                    }
+                    item.style.setProperty("min-width", "0", "important");
+                    item.style.setProperty("max-width", columnWidth + "px", "important");
+                    item.style.setProperty("width", columnWidth + "px", "important");
+                }
                 if (maxWidth < scrollbox.scrollWidth) {
                     scrollbox.style.setProperty("overflow-x", "auto", "important");
                     scrollbox.style.setProperty("width", maxWidth + "px");
@@ -192,13 +203,19 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         resetPopup (menupopup) {
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             if (!arrowscrollbox) return;
+            menupopup.style.maxWidth = "";
+            arrowscrollbox.style.width = "";
             arrowscrollbox.style.maxHeight = "";
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part~=scrollbox]');
 
             if (!scrollbox) return;
-            if (!scrollbox._bmMultiColumnWheelHandler) {
+            if (scrollbox._bmMultiColumnWheelHandler) {
                 scrollbox.removeEventListener('wheel', scrollbox._bmMultiColumnWheelHandler);
                 delete scrollbox._bmMultiColumnWheelHandler;
+            }
+            let slot = scrollbox.querySelector('slot');
+            if (slot) {
+                slot.style.display = "";
             }
             Object.assign(scrollbox.style, {
                 minHeight: "",
@@ -206,17 +223,28 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 display: "",
                 flexFlow: "",
                 overflow: "",
+                overflowX: "",
+                overflowY: "",
                 maxHeight: "",
                 width: "",
                 scrollSnapType: "",
             });
 
-            let menuitem = menupopup.lastChild;
+            let menuitem = menupopup.lastElementChild;
             while (menuitem) {
+                menuitem.style.minWidth = "";
+                menuitem.style.maxWidth = "";
                 menuitem.style.width = "";
-                menuitem = menuitem.previousSibling;
+                menuitem = menuitem.previousElementSibling;
             }
         }
+    }
+
+    function getColumnWidth (menupopup, maxWidth) {
+        let fontSize = parseFloat(getComputedStyle(menupopup).fontSize) || 16;
+        let preferredWidth = Math.round(fontSize * 26);
+        let minWidth = Math.round(fontSize * 18);
+        return Math.max(Math.min(preferredWidth, maxWidth), Math.min(minWidth, maxWidth));
     }
 
     function calcWidth (offset) {
