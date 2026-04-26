@@ -70,7 +70,7 @@
             }
         ],
         HIDE_COMPONENT: {
-            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`#screenshots-component, #screenshotsPagePanel { visibility:hidden }`)),
+            url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`#screenshots-component, #screenshotsPagePanel, .screenshotsPagePanel { visibility:hidden }`)),
             type: 0,
         },
         get sss () {
@@ -159,7 +159,7 @@
                         }
                         if (count++ > 300) {
                             clearInterval(timer);
-                            reject(null);
+                            resolve(null);
                         }
                     }, 10);
                 });
@@ -177,7 +177,7 @@
                         }
                         if (count++ > 300) {
                             clearInterval(timer);
-                            reject(null);
+                            resolve(null);
                         }
                     }, 10);
                 });
@@ -319,22 +319,39 @@
                 this.isCapturing = false;
             }
         },
+        getScreenshotsPagePanel (doc) {
+            let panel = doc.getElementById("screenshotsPagePanel");
+            if (panel) {
+                return panel;
+            }
+
+            let win = doc.defaultView;
+            let browser = win?.gBrowser?.selectedBrowser;
+            let browserWrapper = browser ? win.gBrowser.getPanel(browser) : null;
+            panel = browserWrapper?.querySelector(".screenshotsPagePanel");
+            if (panel) {
+                return panel;
+            }
+
+            return doc.querySelector('.screenshotsPagePanel:not([hidden="true"])') || doc.querySelector(".screenshotsPagePanel");
+        },
         async getScreenSortButton (doc, isFullPage) {
-            let screenshotsPagePanel = await new Promise(resolve => {
+            let selector = isFullPage ? "#full-page" : "#visible-page";
+            return await new Promise(resolve => {
                 let count = 0;
                 let interval = setInterval(() => {
-                    let screenshotsPagePanel = doc.getElementById("screenshotsPagePanel");
+                    let screenshotsPagePanel = this.getScreenshotsPagePanel(doc);
+                    let btn = screenshotsPagePanel?.querySelector("screenshots-buttons")?.shadowRoot?.querySelector(selector);
                     if (count++ > 200) {
                         clearInterval(interval);
                         resolve(null);
                     }
-                    if (screenshotsPagePanel) {
+                    if (btn) {
                         clearInterval(interval);
-                        resolve(screenshotsPagePanel);
+                        resolve(btn);
                     }
                 }, 10);
             });
-            return screenshotsPagePanel.querySelector("screenshots-buttons").shadowRoot.querySelector(isFullPage ? "#full-page" : "#visible-page");
         },
         alert: function (aMsg, aTitle, aCallback) {
             var callback = aCallback ? {
