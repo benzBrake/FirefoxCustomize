@@ -26,6 +26,7 @@
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            20260330 修复新侧边栏标题双击切换侧边栏位置失效
 // @note            20260330 增加右键强制刷新按钮反馈动画
 // @note            20260330 修复右键刷新在 Fx136+ 报 BrowserReloadWithFlags is not a function
@@ -307,7 +308,7 @@
             if (aEvent.type === "load") {
                 let document = aEvent.originalTarget;
                 if (document.location.href.startsWith('chrome://browser/content/browser.x')) {
-                    this.init(document, document.ownerGlobal);
+                    this.init(document, document.documentGlobal || document.ownerGlobal || document.defaultView);
                 }
             }
         },
@@ -396,7 +397,7 @@
                         reload.setAttribute('tooltiptext', isZh ? '左键：刷新\n右键：强制刷新' : 'Left click: refresh page\nRight click: force refresh page');
                         let clickFn = function (event) {
                             if (event.button == 2) {
-                                const global = event.target.ownerGlobal;
+                                const global = event.target.documentGlobal || event.target.ownerGlobal || event.target.ownerDocument?.defaultView || window;
                                 event.preventDefault();
                                 forceReloadBrowser(global);
                                 showForceReloadFeedback(reload, global, document);

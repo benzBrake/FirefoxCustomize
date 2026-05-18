@@ -3,10 +3,13 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.2.9
+// @version         0.3.1
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
+// @note            0.3.1 关闭拖拽调试日志，完善拖拽结束兜底排序
+// @note            0.3.0 为 #unified-extensions-area 增加拖拽排序手柄，移除上移/下移按钮
 // @note            0.2.9 去除 onPinToToolbarChange 和 moveWidget 的 monkey patch，改用官方 ExtensionCommon.makeWidgetId，并保留最小化 togglePanel patch
 // @note            0.2.8 修复样式问题
 // @note            0.2.7 修复上移功能，去除一部分无用代码
@@ -35,10 +38,10 @@
     }
 
     const COMPACT_LIST = true;
+    const DEBUG_DRAG = false;
 
     const BUTTONS = {
-        MOVE_UP: { label: "上移", tooltiptext: "上移", "uni-action": "up", closemenu: "none", class: "unified-extensions-item-up subviewbutton subviewbutton-iconic" },
-        MOVE_DOWN: { label: "下移", tooltiptext: "下移", "uni-action": "down", closemenu: "none", class: "unified-extensions-item-down subviewbutton subviewbutton-iconic" },
+        DRAG_HANDLE: { label: "拖拽排序", tooltiptext: "拖拽排序", class: "unified-extensions-item-drag-handle subviewbutton subviewbutton-iconic" },
         PIN_TO_TOOLBAR: { label: "在工具栏中显示", tooltiptext: "在工具栏中显示", "uni-action": "pin", class: "unified-extensions-item-pin subviewbutton subviewbutton-iconic" },
         UNPIN_FROM_TOOLBAR: { label: "从工具栏移除", tooltiptext: "从工具栏移除", "uni-action": "unpin", class: "unified-extensions-item-unpin subviewbutton subviewbutton-iconic" },
         PLUGIN_OPTION: { label: "选项", tooltiptext: "扩展选项", "uni-action": "option", class: "unified-extensions-item-option subviewbutton subviewbutton-iconic" },
@@ -62,6 +65,20 @@
         return el;
     };
 
+    const createEl = (doc, tag, attrs) => {
+        const el = doc.createXULElement(tag);
+        Object.entries(attrs).forEach(([key, val]) => el.setAttribute(key, val));
+        el.classList.add("ue-btn");
+        return el;
+    };
+
+    const logDrag = (...args) => {
+        if (!DEBUG_DRAG) {
+            return;
+        }
+        console.log("[unifiedExtensionsEnhance:drag]", ...args);
+    };
+
     window.unifiedExtensionsEnhance = {
         get appVersion () {
             delete this.appVersion;
@@ -74,6 +91,8 @@
         get showDisabled () {
             return Services.prefs.getBoolPref("extensions.unifiedExtensions.showDisabled", true);
         },
+        dragState: null,
+        dragArmedId: null,
         STYLE: {
             url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(`
             #movable-unified-extensions {
@@ -127,11 +146,14 @@
                 margin-inline-end: 0;
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9ImNvbnRleHQtZmlsbCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSI+PHBhdGggZD0iTTI0My4yIDUxMm0tODMuMiAwYTEuMyAxLjMgMCAxIDAgMTY2LjQgMCAxLjMgMS4zIDAgMSAwLTE2Ni40IDBaIiBwLWlkPSIzNjAxIj48L3BhdGg+PHBhdGggZD0iTTUxMiA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiIgcC1pZD0iMzYwMiI+PC9wYXRoPjxwYXRoIGQ9Ik03ODAuOCA1MTJtLTgzLjIgMGExLjMgMS4zIDAgMSAwIDE2Ni40IDAgMS4zIDEuMyAwIDEgMC0xNjYuNCAwWiI+PC9wYXRoPjwvc3ZnPg==");
             }
-            #unified-extensions-view .unified-extensions-item-up {
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMikiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTAuODI4bC00Ljk1IDQuOTUtMS40MTQtMS40MTRMMTIgOGw2LjM2NCA2LjM2NC0xLjQxNCAxLjQxNHoiLz48L3N2Zz4=")
+            #unified-extensions-view .unified-extensions-item-drag-handle {
+                list-style-image: url("chrome://devtools/skin/images/select-arrow.svg");
+                -moz-context-properties: fill;
+                fill: currentColor;
+                cursor: grab;
             }
-            #unified-extensions-view .unified-extensions-item-down {
-                list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMikiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMTMuMTcybDQuOTUtNC45NSAxLjQxNCAxLjQxNEwxMiAxNiA1LjYzNiA5LjYzNiA3LjA1IDguMjIyeiIvPjwvc3ZnPg==")
+            #unified-extensions-view .unified-extensions-item-drag-handle > .toolbarbutton-icon {
+                cursor: grab;
             }
             #unified-extensions-view .unified-extensions-item-pin {
                 list-style-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiBmaWxsPSJjb250ZXh0LWZpbGwiIHRyYW5zZm9ybT0ic2NhbGUoMS4xLCAxLjIpIj48cGF0aCBkPSJNMTIuMDAwMyAzQzE3LjM5MjQgMyAyMS44Nzg0IDYuODc5NzYgMjIuODE4OSAxMkMyMS44Nzg0IDE3LjEyMDIgMTcuMzkyNCAyMSAxMi4wMDAzIDIxQzYuNjA4MTIgMjEgMi4xMjIxNSAxNy4xMjAyIDEuMTgxNjQgMTJDMi4xMjIxNSA2Ljg3OTc2IDYuNjA4MTIgMyAxMi4wMDAzIDNaTTEyLjAwMDMgMTlDMTYuMjM1OSAxOSAxOS44NjAzIDE2LjA1MiAyMC43Nzc3IDEyQzE5Ljg2MDMgNy45NDgwMyAxNi4yMzU5IDUgMTIuMDAwMyA1QzcuNzY0NiA1IDQuMTQwMjIgNy45NDgwMyAzLjIyMjc4IDEyQzQuMTQwMjIgMTYuMDUyIDcuNzY0NiAxOSAxMi4wMDAzIDE5Wk0xMi4wMDAzIDE2LjVDOS41MTQ5OCAxNi41IDcuNTAwMjYgMTQuNDg1MyA3LjUwMDI2IDEyQzcuNTAwMjYgOS41MTQ3MiA5LjUxNDk4IDcuNSAxMi4wMDAzIDcuNUMxNC40ODU1IDcuNSAxNi41MDAzIDkuNTE0NzIgMTYuNTAwMyAxMkMxNi41MDAzIDE0LjQ4NTMgMTQuNDg1NSAxNi41IDEyLjAwMDMgMTYuNVpNMTIuMDAwMyAxNC41QzEzLjM4MSAxNC41IDE0LjUwMDMgMTMuMzgwNyAxNC41MDAzIDEyQzE0LjUwMDMgMTAuNjE5MyAxMy4zODEgOS41IDEyLjAwMDMgOS41QzEwLjYxOTYgOS41IDkuNTAwMjYgMTAuNjE5MyA5LjUwMDI2IDEyQzkuNTAwMjYgMTMuMzgwNyAxMC42MTk2IDE0LjUgMTIuMDAwMyAxNC41WiIvPjwvc3ZnPg==")
@@ -161,13 +183,9 @@
             unified-extensions-item.addon-disabled .unified-extensions-item-unpin,
             unified-extensions-item.addon-no-option-page .unified-extensions-item-option,
             unified-extensions-item.addon-no-unpin .unified-extensions-item-unpin,
-            .unified-extensions-list .unified-extensions-item-pin {
+            .unified-extensions-list .unified-extensions-item-pin,
+            .unified-extensions-list .unified-extensions-item-drag-handle {
                 display: none;
-            }
-            unified-extensions-item.addon-disabled .unified-extensions-item-pin,
-            .unified-extensions-list :is(.unified-extensions-item-up, .unified-extensions-item-down) {
-                opacity: .2;
-                pointer-events: none;
             }
             toolbarbutton.ue-btn:not([no-icon=true]) {
                 padding: calc(var(--arrowpanel-menuitem-margin-inline) - 1px) var(--arrowpanel-menuitem-margin-inline);
@@ -194,11 +212,25 @@
             .unified-extensions-list unified-extensions-item > .unified-extensions-item-action-button {
                 margin: var(--arrowpanel-menuitem-margin);
             }
-            #unified-extensions-area > toolbaritem:first-child > .unified-extensions-item-up,
-            #unified-extensions-area > toolbaritem:last-child > .unified-extensions-item-down,
-            unified-extensions-item > :is(.unified-extensions-item-up,.unified-extensions-item-down) {
-                opacity: .2;
-                cursor: not-allowed;
+            #unified-extensions-area > .unified-extensions-item {
+                transition: opacity 120ms ease, box-shadow 120ms ease;
+            }
+            #unified-extensions-area > .unified-extensions-item[drag-ready="true"] .unified-extensions-item-drag-handle > .toolbarbutton-icon {
+                background-color: var(--uei-button-hover-bgcolor);
+            }
+            #unified-extensions-area[dragging="true"] > .unified-extensions-item[dragging="true"] {
+                opacity: .55;
+            }
+            #unified-extensions-area[dragging="true"] .unified-extensions-item-drag-handle,
+            #unified-extensions-area[dragging="true"] .unified-extensions-item-drag-handle > .toolbarbutton-icon,
+            #unified-extensions-view .unified-extensions-item-drag-handle:active > .toolbarbutton-icon {
+                cursor: grabbing;
+            }
+            #unified-extensions-area > .unified-extensions-item[dragover="before"] {
+                box-shadow: inset 0 2px 0 var(--panel-item-active-bgcolor, var(--panel-item-hover-bgcolor));
+            }
+            #unified-extensions-area > .unified-extensions-item[dragover="after"] {
+                box-shadow: inset 0 -2px 0 var(--panel-item-active-bgcolor, var(--panel-item-hover-bgcolor));
             }
             .unified-extensions-list .addon-disabled {
                 order: 99;
@@ -297,6 +329,7 @@
             view.querySelector("#unified-extensions-manage-extensions").before(createElWithClickEvent(document, 'toolbarbutton', BUTTONS.DISABLE_ALL_ADDONS));
 
             view.addEventListener('ViewShowing', this);
+            this.initAreaDragAndDrop(view);
 
             if ("COPY_ID" in MENUS) {
                 const menuitem = createElWithClickEvent(document, 'menuitem', MENUS.COPY_ID);
@@ -337,37 +370,286 @@
         openAddonsMgr (event) {
             if (event.button == 2 && event.target.localName == 'toolbarbutton') {
                 event.preventDefault();
-                const addonMgr = "BrowserOpenAddonsMgr" in window ? event.target.ownerGlobal.BrowserOpenAddonsMgr : event.target.ownerGlobal.BrowserAddonUI.openAddonsMgr;
+                const targetWin = event.target.documentGlobal || event.target.ownerGlobal || event.target.ownerDocument?.defaultView || window;
+                const addonMgr = "BrowserOpenAddonsMgr" in window ? targetWin.BrowserOpenAddonsMgr : targetWin.BrowserAddonUI.openAddonsMgr;
                 addonMgr('addons://list/extension');
             }
         },
         createAdditionalButtons (node) {
             let ins = $Q(".webextension-browser-action,.unified-extensions-item-action-button", node);
             if (ins) {
-                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.MOVE_DOWN));
-                ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.MOVE_UP));
+                ins.after(createEl(node.ownerDocument, "toolbarbutton", BUTTONS.DRAG_HANDLE));
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.UNPIN_FROM_TOOLBAR));
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.PIN_TO_TOOLBAR));
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.DISABLE_ADDON));
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.ENABLE_ADDON));
                 ins.after(createElWithClickEvent(node.ownerDocument, "toolbarbutton", BUTTONS.PLUGIN_OPTION));
             }
+            if (node.parentElement?.id === "unified-extensions-area") {
+                node.setAttribute("draggable", "true");
+            } else {
+                node.removeAttribute("draggable");
+            }
         },
         removeAdditionalButtons (node) {
             $QA(".ue-btn", node).forEach(el => $R(el));
         },
-        moveWidget (triggerItem, direction) {
-            const node = triggerItem.closest(".unified-extensions-item");
-            if (!node) {
+        initAreaDragAndDrop (viewOrArea) {
+            const area = viewOrArea?.id === "unified-extensions-area" ? viewOrArea : $Q("#unified-extensions-area", viewOrArea);
+            if (!area || area.getAttribute("ue-drag-bound") === "true") {
                 return;
             }
-            const sibling = direction === "up" ? node.previousElementSibling : node.nextElementSibling;
-            const placement = CustomizableUI.getPlacementOfWidget(sibling?.id);
+            ["mousedown", "mouseup"].forEach(type => {
+                area.addEventListener(type, this);
+            });
+            ["dragstart", "dragenter", "dragover", "drop", "dragend", "dragleave"].forEach(type => {
+                area.addEventListener(type, this, true);
+            });
+            area.setAttribute("ue-drag-bound", "true");
+            logDrag("bind area listeners", area.id);
+        },
+        destroyAreaDragAndDrop (viewOrArea) {
+            const area = viewOrArea?.id === "unified-extensions-area" ? viewOrArea : $Q("#unified-extensions-area", viewOrArea || document);
+            if (!area || area.getAttribute("ue-drag-bound") !== "true") {
+                return;
+            }
+            ["mousedown", "mouseup"].forEach(type => {
+                area.removeEventListener(type, this);
+            });
+            ["dragstart", "dragenter", "dragover", "drop", "dragend", "dragleave"].forEach(type => {
+                area.removeEventListener(type, this, true);
+            });
+            area.removeAttribute("ue-drag-bound");
+            this.clearAreaDragState(area);
+            logDrag("unbind area listeners", area.id);
+        },
+        clearAreaDragState (area = this.dragState?.area, reason = "unknown") {
+            logDrag("clearAreaDragState", {
+                reason,
+                areaId: area?.id,
+                draggedId: this.dragState?.draggedId,
+                dropTargetId: this.dragState?.dropTarget?.id,
+                dropPosition: this.dragState?.dropPosition,
+            });
+            if (area) {
+                area.removeAttribute("dragging");
+                area.querySelectorAll(':scope > .unified-extensions-item').forEach(item => {
+                    item.removeAttribute("dragover");
+                    item.removeAttribute("dragging");
+                    item.removeAttribute("drag-ready");
+                });
+            }
+            this.dragArmedId = null;
+            this.dragState = null;
+        },
+        getAreaDragTarget (area, clientY) {
+            const items = [...area.querySelectorAll(":scope > .unified-extensions-item")];
+            if (!items.length) {
+                return null;
+            }
+            let targetItem = items[0];
+            let minDistance = Number.POSITIVE_INFINITY;
+            for (const item of items) {
+                const rect = item.getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2;
+                const distance = Math.abs(clientY - centerY);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    targetItem = item;
+                }
+            }
+            const rect = targetItem.getBoundingClientRect();
+            return {
+                item: targetItem,
+                position: clientY < rect.top + rect.height / 2 ? "before" : "after",
+            };
+        },
+        updateAreaDragTarget (targetItem, position) {
+            if (!this.dragState) {
+                return;
+            }
+            const { dropTarget, dropPosition } = this.dragState;
+            if (dropTarget === targetItem && dropPosition === position) {
+                return;
+            }
+            if (dropTarget) {
+                dropTarget.removeAttribute("dragover");
+            }
+            this.dragState.dropTarget = targetItem;
+            this.dragState.dropPosition = position;
+            if (targetItem) {
+                targetItem.setAttribute("dragover", position);
+            }
+        },
+        getAreaDropPosition (targetItem, beforeOrAfter) {
+            const placement = CustomizableUI.getPlacementOfWidget(targetItem?.id);
             if (!placement) {
+                logDrag("no placement for target", targetItem?.id, beforeOrAfter);
+                return null;
+            }
+            logDrag("computed drop position", { targetId: targetItem.id, beforeOrAfter, placement: placement.position });
+            return beforeOrAfter === "after" ? placement.position + 1 : placement.position;
+        },
+        onAreaMouseDown (event) {
+            if (event.button !== 0) {
                 return;
             }
-            const newPosition = direction === "down" ? placement.position + 1 : placement.position;
-            CustomizableUI.moveWidgetWithinArea(node.id, newPosition);
+            const handle = event.target.closest(".unified-extensions-item-drag-handle");
+            const item = handle?.closest(".unified-extensions-item");
+            const area = item?.parentElement;
+            if (!handle || !item || area?.id !== "unified-extensions-area") {
+                return;
+            }
+            this.dragArmedId = item.id;
+            area.querySelectorAll(':scope > .unified-extensions-item[drag-ready="true"]').forEach(node => {
+                node.removeAttribute("drag-ready");
+            });
+            item.setAttribute("drag-ready", "true");
+            logDrag("mousedown armed drag", { itemId: item.id, targetTag: event.target.localName });
+        },
+        onAreaMouseUp (event) {
+            const area = event.currentTarget;
+            if (area?.id !== "unified-extensions-area") {
+                return;
+            }
+            if (!this.dragState) {
+                this.dragArmedId = null;
+                area.querySelectorAll(':scope > .unified-extensions-item[drag-ready="true"]').forEach(node => {
+                    node.removeAttribute("drag-ready");
+                });
+            }
+            logDrag("mouseup", { armedId: this.dragArmedId, dragging: !!this.dragState });
+        },
+        onAreaDragStart (event) {
+            const item = event.target.closest(".unified-extensions-item");
+            const area = item?.parentElement;
+            logDrag("dragstart", {
+                targetTag: event.target.localName,
+                itemId: item?.id,
+                armedId: this.dragArmedId,
+            });
+            if (!item || area?.id !== "unified-extensions-area") {
+                return;
+            }
+            if (this.dragArmedId !== item.id) {
+                logDrag("dragstart ignored because item was not armed", { itemId: item.id, armedId: this.dragArmedId });
+                event.preventDefault();
+                return;
+            }
+            this.clearAreaDragState(area, "dragstart-reset");
+            this.dragState = {
+                area,
+                draggedId: item.id,
+                draggedNode: item,
+                dropTarget: null,
+                dropPosition: null,
+            };
+            area.setAttribute("dragging", "true");
+            item.setAttribute("dragging", "true");
+            item.setAttribute("drag-ready", "true");
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", item.id);
+            if (typeof event.dataTransfer.mozSetDataAt === "function") {
+                event.dataTransfer.mozSetDataAt("text/unified-extension-id", item.id, 0);
+            }
+            logDrag("dragstart accepted", { itemId: item.id });
+        },
+        onAreaDragOver (event) {
+            const state = this.dragState;
+            if (!state || event.currentTarget !== state.area) {
+                return;
+            }
+            const target = this.getAreaDragTarget(state.area, event.clientY);
+            if (!target || target.item?.id === state.draggedId) {
+                this.updateAreaDragTarget(null, null);
+                logDrag("dragover no valid target", { draggedId: state.draggedId, clientY: event.clientY });
+                return;
+            }
+            this.updateAreaDragTarget(target.item, target.position);
+            event.dataTransfer.dropEffect = "move";
+            event.preventDefault();
+            event.stopPropagation();
+            logDrag("dragover target", { draggedId: state.draggedId, targetId: target.item.id, position: target.position });
+        },
+        onAreaDragEnter (event) {
+            const state = this.dragState;
+            if (!state || event.currentTarget !== state.area) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            logDrag("dragenter", {
+                targetTag: event.target.localName,
+                currentTargetId: event.currentTarget?.id,
+                draggedId: state.draggedId,
+            });
+        },
+        onAreaDrop (event) {
+            const state = this.dragState;
+            if (!state || event.currentTarget !== state.area) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            const { draggedNode, dropTarget, dropPosition } = state;
+            if (!draggedNode || !dropTarget || !dropPosition || dropTarget.id === draggedNode.id) {
+                logDrag("drop noop", { draggedId: draggedNode?.id, targetId: dropTarget?.id, dropPosition });
+                this.clearAreaDragState(state.area, "drop-noop");
+                return;
+            }
+            const newPosition = this.getAreaDropPosition(dropTarget, dropPosition);
+            this.clearAreaDragState(state.area, "drop");
+            if (newPosition == null) {
+                return;
+            }
+            logDrag("drop moveWidgetWithinArea", { draggedId: draggedNode.id, targetId: dropTarget.id, dropPosition, newPosition });
+            CustomizableUI.moveWidgetWithinArea(draggedNode.id, newPosition);
+        },
+        onAreaDragEnd (event) {
+            const state = this.dragState;
+            logDrag(event.type, {
+                targetTag: event.target.localName,
+                currentTargetId: event.currentTarget?.id,
+                draggedId: state?.draggedId,
+            });
+            if (!state) {
+                if (event.currentTarget?.id === "unified-extensions-area") {
+                    this.dragArmedId = null;
+                    event.currentTarget.querySelectorAll(':scope > .unified-extensions-item[drag-ready="true"]').forEach(node => {
+                        node.removeAttribute("drag-ready");
+                    });
+                }
+                return;
+            }
+            const area = state.area;
+            if (event.type === "dragleave") {
+                if (event.target === event.currentTarget) {
+                    logDrag("dragleave on area root, keep drag state until dragend/drop", {
+                        draggedId: state.draggedId,
+                        dropTargetId: state.dropTarget?.id,
+                        dropPosition: state.dropPosition,
+                    });
+                }
+                return;
+            }
+            if (event.type === "dragend") {
+                const { draggedNode, dropTarget, dropPosition } = state;
+                if (draggedNode && dropTarget && dropPosition && dropTarget.id !== draggedNode.id) {
+                    const newPosition = this.getAreaDropPosition(dropTarget, dropPosition);
+                    logDrag("dragend fallback", {
+                        draggedId: draggedNode.id,
+                        targetId: dropTarget.id,
+                        dropPosition,
+                        newPosition,
+                    });
+                    this.clearAreaDragState(area, "dragend-fallback");
+                    if (newPosition != null) {
+                        CustomizableUI.moveWidgetWithinArea(draggedNode.id, newPosition);
+                    }
+                    return;
+                }
+                this.clearAreaDragState(area, "dragend");
+            }
         },
         convertSrcToStyle (node) {
             if (node.tagName.toLowerCase() === "unified-extensions-item") {
@@ -390,6 +672,20 @@
         handleEvent: async function (event) {
             if (event.type === "ViewShowing") {
                 await this.refreshAddonsList(event.target);
+            } else if (event.type === "mousedown") {
+                this.onAreaMouseDown(event);
+            } else if (event.type === "mouseup") {
+                this.onAreaMouseUp(event);
+            } else if (event.type === "dragstart") {
+                this.onAreaDragStart(event);
+            } else if (event.type === "dragenter") {
+                this.onAreaDragEnter(event);
+            } else if (event.type === "dragover") {
+                this.onAreaDragOver(event);
+            } else if (event.type === "drop") {
+                this.onAreaDrop(event);
+            } else if (event.type === "dragend" || event.type === "dragleave") {
+                this.onAreaDragEnd(event);
             } else if (event.type === "command") {
                 const { currentTarget: menu, target } = event;
                 if (!["toolbar-context-pin-to-toolbar", "unified-extensions-context-menu-pin-to-toolbar"].includes(target.id)) {
@@ -447,7 +743,7 @@
                             const dei = triggerItem.closest('[data-extensionid]');
                             addon = await AddonManager.getAddonByID(dei.getAttribute("data-extensionid"));
                         }
-                        this.openAddonOptions(addon, triggerItem.ownerGlobal);
+                        this.openAddonOptions(addon, triggerItem.documentGlobal || triggerItem.ownerGlobal || triggerItem.ownerDocument?.defaultView || window);
                         break;
                     case "pin": {
                         const uniItem = triggerItem.closest(".unified-extensions-item");
@@ -468,10 +764,6 @@
                         }
                         break;
                     }
-                    case "up":
-                    case "down":
-                        this.moveWidget(triggerItem, uniAction);
-                        break;
                     case "copy-id":
                         const _addonId = gUnifiedExtensions._getExtensionId(event.target.parentElement);
                         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(_addonId);
@@ -504,6 +796,8 @@
         },
         refreshAddonsList: async function (aView) {
             const area = $Q("#unified-extensions-area", aView);
+            this.initAreaDragAndDrop(area);
+            this.clearAreaDragState(area);
             for (const el of area.querySelectorAll('.unified-extensions-item')) {
                 this.removeAdditionalButtons(el);
                 this.createAdditionalButtons(el);
@@ -590,6 +884,7 @@
                 document,
                 "unified-extensions-view"
             );
+            this.destroyAreaDragAndDrop(view);
             view.querySelectorAll("[uni-action]").forEach(el => {
                 $R(el);
             })

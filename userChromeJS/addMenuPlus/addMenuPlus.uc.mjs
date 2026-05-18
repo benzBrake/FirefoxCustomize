@@ -22,6 +22,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note               20260407 Actor registration moved to userChrome.js loader; keep single-file chrome+actor implementation, fix first-run startup when config file does not exist yet
 // @note               20260407 Fx146 alerts-service compatibility: prefer showAlert and keep showAlertNotification as fallback
 // @note               20260111 Fx145+同步 hidden/collapsed/disabled 属性失效
@@ -2670,7 +2671,7 @@ class AddMenuParent extends JSWindowActorParent {
         try {
             const windowGlobal = this.manager.browsingContext.currentWindowGlobal;
             const browser = windowGlobal.rootFrameLoader.ownerElement;
-            const win = browser.ownerGlobal;
+            const win = browser.documentGlobal || browser.ownerGlobal;
             const { addMenu } = win;
             switch (name) {
                 case 'AddMenuPlus:SetSelectedText':

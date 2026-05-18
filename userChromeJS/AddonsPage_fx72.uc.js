@@ -10,6 +10,7 @@
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            2026.04.06 Fix multi-window provider handoff and add debug pref
 // @note            2025.04.04 Fx137 fix lazy is undefined
 // @note            2025.03.08 Add English / Japanese String
@@ -1641,7 +1642,8 @@
             node = doc.createTextNode(attrs);
             attrs = null;
         } else if (tag === "panel-item" && parseInt(APP_VERSION) === 110) {
-            node = new (doc.ownerGlobal.customElements.get("panel-item"));
+            const docWin = doc.documentGlobal || doc.ownerGlobal || doc.defaultView;
+            node = new (docWin.customElements.get("panel-item"));
         } else {
             node = doc.createElement(tag);
         }

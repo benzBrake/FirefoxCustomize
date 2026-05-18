@@ -11,6 +11,7 @@
 // @shutdown       window.UserCSSLoader.unload(true);
 // @version        0.0.6r5
 // @charset        UTF-8
+// @note           Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note           0.0.6r5 兼容 Firefox 149+ checkbox menuitem checked 属性变化
 // @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
 // @note           0.0.6r3 创建样式子菜单增加图标
@@ -545,9 +546,9 @@ about:config
       switch (event.type) {
         case "mouseover":
           if (event.target.id !== this.BTN_ID) return;
-          const win = event.target.ownerGlobal;
+          const win = event.target.documentGlobal || event.target.ownerGlobal || event.target.ownerDocument?.defaultView || window;
           const mp = event.target.querySelector(":scope>menupopup");
-          const { innerWidth: w, innerHeight: h } = event.target.ownerGlobal;
+          const { innerWidth: w, innerHeight: h } = win;
           const position = event.clientX > w / 2
             ? (event.clientY < h / 2 ? 'after_end' : 'topright bottomright')
             : (event.clientY < h / 2 ? '' : 'topleft bottomleft');

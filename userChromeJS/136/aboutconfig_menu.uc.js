@@ -10,6 +10,7 @@
 // @homepageURL     https://garywill.github.io/
 // @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/136/aboutconfig_menu.uc.js
 // @compatibility   Firefox 136
+// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @onlyonce
 // ==/UserScript==
 
@@ -889,7 +890,7 @@
             arrowscrollBox.style.maxHeight = "calc(100vh - 129px)";
             let slot = scrollbox.querySelector('slot');
             slot.style.display = "contents";
-            let maxWidth = calcWidth(-129, event.originalTarget.ownerGlobal);
+            let maxWidth = calcWidth(-129, event.originalTarget.documentGlobal || event.originalTarget.ownerGlobal || event.originalTarget.ownerDocument?.defaultView || window);
             if (maxWidth < scrollbox.scrollWidth) {
                 scrollbox.style.setProperty("overflow-x", "auto", "important");
                 scrollbox.style.setProperty("width", maxWidth + "px");
@@ -968,8 +969,9 @@
                     btn.onmouseover = function () {
                         const rect = btn.getBoundingClientRect();
                         // 获取窗口的宽度和高度
-                        const windowWidth = btn.ownerGlobal.innerWidth;
-                        const windowHeight = btn.ownerGlobal.innerHeight;
+                        const targetWin = btn.documentGlobal || btn.ownerGlobal || btn.ownerDocument?.defaultView || window;
+                        const windowWidth = targetWin.innerWidth;
+                        const windowHeight = targetWin.innerHeight;
 
                         const x = rect.left + rect.width / 2;  // 按钮的水平中心点
                         const y = rect.top + rect.height / 2;  // 按钮的垂直中心点

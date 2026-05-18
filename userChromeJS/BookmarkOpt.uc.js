@@ -26,6 +26,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt.destroy();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            1.4.9 简化设置 PlacesChevron 弹出菜单位置的逻辑，简化 $L 函数，优化事件绑定函数，修复一处 remove_events 错误传递参数，修复上一个版本导致右键菜单失效
 // @note            1.4.8 移除 eval，修复 firstUpperCase / ucfirst 命名混乱
 // @note            1.4.7 Fx 136+ 不能使用 inline css
@@ -327,7 +328,8 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         },
         handleEvent (event) {
             const { target, button, type } = event;
-            const { document: doc, setToolbarVisibility } = target.ownerGlobal;
+            const targetWin = target.documentGlobal || target.ownerGlobal || target.ownerDocument?.defaultView || window;
+            const { document: doc, setToolbarVisibility } = targetWin;
             switch (type) {
                 case 'click':
                     if (button == 1 && isMouseDown) {
@@ -450,8 +452,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                     if (target.id === "PlacesChevron") {
                         if (target.getAttribute("open") === "true") return;
                         const menupopup = target.querySelector(":scope > menupopup");
-                        const isRightHalf = event.clientX > (target.ownerGlobal.innerWidth / 2);
-                        const isBottomHalf = event.clientY > (target.ownerGlobal.innerHeight / 2);
+                        const targetWin = target.documentGlobal || target.ownerGlobal || target.ownerDocument?.defaultView || window;
+                        const isRightHalf = event.clientX > (targetWin.innerWidth / 2);
+                        const isBottomHalf = event.clientY > (targetWin.innerHeight / 2);
                         if (isRightHalf && !isBottomHalf) {
                             menupopup.setAttribute("position", "after_end");
                         } else if (!isRightHalf || isBottomHalf) {
