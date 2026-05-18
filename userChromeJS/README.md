@@ -100,6 +100,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 90   | [LinkGopher](LinkGopher.uc.js)                               | 提取链接，代替 LinkGopher 扩展                               |                                                              |
 |      | 107  | [LocationBar](LocationBar.uc.js)                             | 地址栏内新增一个工具栏                                       |                                                              |
 |      | 100  | [MenubarReplaceWithButton](MenubarReplaceWithButton.uc.js)   | 把主菜单替换成按钮                                           | [📃](https://u6.getuploader.com/script/download/2051)         |
+|      | 149  | [ucf_drag_ModR](ucf_drag_ModR/ucf_drag_ModR.uc.js)           | 鼠标拖拽 Drag & Go，默认配置文件与脚本同目录：`_ucf_drag_ModR.config.js` | [📃](https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234) |
 
 下面的不能用了的话，请一定不要找我，因为我不用了，你们可以顺着源链接过去找原作者修复
 
