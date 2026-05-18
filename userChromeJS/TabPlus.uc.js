@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.3
+// @version         1.1.4
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.4 修复新版侧边栏历史第二次打开后 browser.tabs.loadHistoryInTabs 失效的问题
 // @note            1.1.3 修正新版 Firefox 右键图片菜单改走 viewMedia 后，browser.tabs.loadImageInBackground 不生效的问题
 // @note            1.1.2 历史在新标签页中打开兼容新版侧边栏
 // @note            1.1.1 修复右键新标签按钮无法搜索 Services.search is undefined 的 bug
@@ -49,6 +50,7 @@
         _lastMouseX: 0, // 用于记录关闭标签时的鼠标X坐标
         _moveThreshold: 100, // 移动恢复的距离阈值（会动态设为标签宽度）
         _boundSidebarBrowser: null,
+        _sidebarHistoryPatchObserver: null,
         _patchedSidebarHistoryWindows: new WeakSet(),
         lazy: {},
 
@@ -163,10 +165,9 @@
 
         initSidebarHistoryRevampMod: function () {
             const sidebar = document.getElementById("sidebar");
-            if (!sidebar || this._boundSidebarBrowser === sidebar) {
+            if (!sidebar) {
                 return;
             }
-            this._boundSidebarBrowser = sidebar;
             const patchCurrentSidebar = () => {
                 try {
                     const win = sidebar.contentWindow;
@@ -177,47 +178,96 @@
                     this.patchSidebarHistoryWindow(win);
                 } catch { }
             };
-            sidebar.addEventListener("load", patchCurrentSidebar, true);
-            setTimeout(patchCurrentSidebar, 0);
+            if (this._boundSidebarBrowser !== sidebar) {
+                this._boundSidebarBrowser = sidebar;
+                sidebar.addEventListener("load", () => this.scheduleSidebarHistoryPatch(patchCurrentSidebar), true);
+            }
+            if (!this._sidebarHistoryPatchObserver) {
+                const sidebarBox = document.getElementById("sidebar-box");
+                this._sidebarHistoryPatchObserver = new MutationObserver(() => {
+                    this.scheduleSidebarHistoryPatch(patchCurrentSidebar);
+                });
+                sidebarBox && this._sidebarHistoryPatchObserver.observe(sidebarBox, {
+                    attributes: true,
+                    attributeFilter: ["hidden", "sidebarcommand", "src", "style", "class"],
+                });
+                this._sidebarHistoryPatchObserver.observe(sidebar, {
+                    attributes: true,
+                    attributeFilter: ["src"],
+                });
+            }
+            this.scheduleSidebarHistoryPatch(patchCurrentSidebar);
+        },
+
+        scheduleSidebarHistoryPatch: function (patchCurrentSidebar) {
+            for (const delay of [0, 50, 150, 300, 700]) {
+                setTimeout(() => {
+                    try {
+                        patchCurrentSidebar();
+                    } catch { }
+                }, delay);
+            }
         },
 
         patchSidebarHistoryWindow: function (win) {
-            if (!win?.customElements || this._patchedSidebarHistoryWindows.has(win)) {
+            if (!win?.customElements) {
                 return;
             }
             const applyPatch = () => {
                 try {
                     const ctor = win.customElements.get("sidebar-history");
-                    if (!ctor || ctor.prototype._tabPlusPatchedHandleNavigateToLink) {
+                    if (!ctor) {
                         return;
                     }
-                    ctor.prototype._tabPlusPatchedHandleNavigateToLink = true;
-                    ctor.prototype.handleNavigateToLink = function (e) {
+                    const proto = ctor.prototype;
+                    const openSidebarHistoryLink = (sidebarHistory, e, forceNewTab = false) => {
                         const url = e?.originalTarget?.url;
                         const originalEvent = e?.detail?.originalEvent || e;
-                        const treeView = this.treeView;
-                        const currentWindow = this.topWindow
+                        const currentWindow = sidebarHistory?.topWindow
+                            || e?.target?.ownerGlobal?.browsingContext?.embedderWindowGlobal?.browsingContext?.window
                             || win.browsingContext?.embedderWindowGlobal?.browsingContext?.window;
                         if (url && currentWindow?.openTrustedLinkIn) {
-                            const isModifierClick = Services.appinfo.OS == "Darwin"
-                                ? originalEvent.metaKey
-                                : originalEvent.ctrlKey;
                             let where = BrowserUtils.whereToOpenLink(originalEvent, false, true);
-                            if (Services.prefs.getBoolPref("browser.tabs.loadHistoryInTabs", false) && where == "current") {
+                            if ((forceNewTab || Services.prefs.getBoolPref("browser.tabs.loadHistoryInTabs", false)) && where == "current") {
                                 where = "tab";
                             }
-                            currentWindow.openTrustedLinkIn(url, where, {
-                                inBackground: isModifierClick,
-                            });
-                        }
-                        Glean.sidebar.link.history.add(1);
-                        if (typeof treeView?.resetSelection == "function") {
-                            treeView.resetSelection();
-                        }
-                        if (typeof treeView?.selectRowInList == "function") {
-                            treeView.selectRowInList(e.originalTarget, e.currentTarget);
+                            currentWindow.openTrustedLinkIn(url, where);
                         }
                     };
+
+                    if (!proto._tabPlusPatchedHandleNavigateToLink) {
+                        proto._tabPlusPatchedHandleNavigateToLink = true;
+                        proto.handleNavigateToLink = function (e) {
+                            const treeView = this.treeView;
+                            openSidebarHistoryLink(this, e, false);
+                            Glean.sidebar.link.history.add(1);
+                            if (typeof treeView?.resetSelection == "function") {
+                                treeView.resetSelection();
+                            }
+                            if (typeof treeView?.selectRowInList == "function") {
+                                treeView.selectRowInList(e.originalTarget, e.currentTarget);
+                            }
+                        };
+                    }
+
+                    if (!proto._tabPlusPatchedPrimaryActions) {
+                        proto._tabPlusPatchedPrimaryActions = true;
+                        proto.onPrimaryAction = function (e) {
+                            if (this.isMultipleRowsSelected) {
+                                return;
+                            }
+                            openSidebarHistoryLink(this, e, false);
+                            this.treeView?.clearSelection?.();
+                        };
+                        proto.onMiddleClickAction = function (e) {
+                            if (this.isMultipleRowsSelected) {
+                                return;
+                            }
+                            openSidebarHistoryLink(this, e, true);
+                            this.treeView?.clearSelection?.();
+                        };
+                    }
+
                     this._patchedSidebarHistoryWindows.add(win);
                 } catch { }
             };
