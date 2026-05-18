@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.2
+// @version         1.1.3
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.3 修正新版 Firefox 右键图片菜单改走 viewMedia 后，browser.tabs.loadImageInBackground 不生效的问题
 // @note            1.1.2 历史在新标签页中打开兼容新版侧边栏
 // @note            1.1.1 修复右键新标签按钮无法搜索 Services.search is undefined 的 bug
 // @note            1.1.0 修复开启右键关闭标签页的功能后无法打开标签右键菜单的问题
@@ -119,7 +120,19 @@
                 bu.whereToOpenLink = function (e) {
                     let res = w.apply(BrowserUtils, arguments);
                     if (e?.target?.id === "context-viewimage") {
-                        return Services.prefs.getBoolPref("browser.tabs.loadImageInBackground", false) ? "tab" : res;
+                        const rootEvent = bu.getRootEvent?.(e) || e;
+                        const hasModifier =
+                            rootEvent?.button == 1 ||
+                            rootEvent?.ctrlKey ||
+                            rootEvent?.metaKey ||
+                            rootEvent?.shiftKey ||
+                            rootEvent?.altKey;
+                        const imageInBackground = Services.prefs.getBoolPref("browser.tabs.loadImageInBackground", false);
+                        const loadInBackground = Services.prefs.getBoolPref("browser.tabs.loadInBackground", false);
+                        if (!hasModifier && imageInBackground !== loadInBackground) {
+                            return res == "current" || res == "tab" ? "tabshifted" : res;
+                        }
+                        return res;
                     }
                     if (!Services.prefs.getBoolPref("browser.tabs.loadHistoryInTabs", false)) {
                         return res;
