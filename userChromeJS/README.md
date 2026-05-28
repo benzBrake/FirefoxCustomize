@@ -75,7 +75,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 
 | ℹ️    | V    | 脚本                                                         | 说明                                                         | 源                                                           |
 | ---- | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-|      | 136  | [aboutconfig_menu](136/aboutconfig_menu.uc.js)               | 修改 about:config 配置的快捷菜单                             | [📃](https://github.com/garywill/aboutconfig-menu/raw/refs/heads/master/aboutconfig_menu.uc.js) |
+|      | 149  | [aboutconfig_menu](149/aboutconfig_menu.uc.js)               | 修改 about:config 配置的快捷菜单                             | [📃](https://github.com/garywill/aboutconfig-menu/raw/refs/heads/master/aboutconfig_menu.uc.js) |
 |      | 57   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
 |      | 72   | [adjustPanelViewPosition](72/adjustPanelViewPosition.uc.js)  | 自动调整弹出面板的位置                                       |                                                              |
