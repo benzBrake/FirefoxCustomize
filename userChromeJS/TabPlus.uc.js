@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.4
+// @version         1.1.5
 // @license         MIT License
 // @async
-// @compatibility   Firefox 136
+// @compatibility   Firefox 136+
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.5 修复新版 Firefox 右键标签页不触发 click 导致的右键关闭失效，并保留旧版 click 兼容
 // @note            1.1.4 修复新版侧边栏历史第二次打开后 browser.tabs.loadHistoryInTabs 失效的问题
 // @note            1.1.3 修正新版 Firefox 右键图片菜单改走 viewMedia 后，browser.tabs.loadImageInBackground 不生效的问题
 // @note            1.1.2 历史在新标签页中打开兼容新版侧边栏
@@ -86,6 +87,7 @@
             tabContainer.addEventListener('mouseover', this, false);
             tabContainer.addEventListener('mouseleave', this, false);
             tabContainer.addEventListener('dblclick', (event) => this.handleEvent(event, 'closetab'), false);
+            tabContainer.addEventListener('contextmenu', (event) => this.handleEvent(event, 'closetab'), true);
             tabContainer.addEventListener('click', (event) => {
                 this.handleEvent(event, 'clipboard');
                 this.handleEvent(event, 'closetab');
@@ -318,12 +320,59 @@
             this._lastMouseX = 0;
         },
 
+        _getEventTarget: function (event) {
+            return event.composedTarget || event.target || event.originalTarget || null;
+        },
+
+        _getEventWindow: function (event) {
+            const t = this._getEventTarget(event);
+            return t?.documentGlobal || t?.ownerGlobal || t?.ownerDocument?.defaultView || event.view || window;
+        },
+
+        _getTabFromEvent: function (event) {
+            const findTab = (node) => node?.closest?.(".tabbrowser-tab")
+                || (node?.classList?.contains?.("tabbrowser-tab") ? node : null);
+
+            for (const node of [event.composedTarget, event.target, event.originalTarget]) {
+                const tab = findTab(node);
+                if (tab) {
+                    return tab;
+                }
+            }
+
+            const path = event.composedPath?.();
+            if (path) {
+                for (const node of path) {
+                    const tab = findTab(node);
+                    if (tab) {
+                        return tab;
+                    }
+                }
+            }
+
+            return null;
+        },
+
+        _closeTabByEvent: function (event, tab, gBrowser) {
+            if (!tab || tab.closing) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            // 在移除标签之前调用禁用函数，因为移除后 tab 对象可能无效
+            this._disableMouseOverTemporarily(event, tab);
+            gBrowser.removeTab(tab, { animate: true });
+        },
+
         handleEvent: function (event, trigger) {
-            const { target: t, button: b } = event;
-            const targetWin = t.documentGlobal || t.ownerGlobal || t.ownerDocument?.defaultView || window;
-            const { gBrowser, Services } = targetWin;
-            const { prefs } = Services;
-            const tab = t.closest('.tabbrowser-tab');
+            const { button: b } = event;
+            const t = this._getEventTarget(event);
+            const targetWin = this._getEventWindow(event);
+            const targetServices = targetWin.Services || Services;
+            const gBrowser = targetWin.gBrowser || window.gBrowser;
+            const { prefs } = targetServices;
+            const tab = this._getTabFromEvent(event);
             let dblclick = false;
 
             switch (event.type) {
@@ -333,7 +382,7 @@
                     switch (trigger) {
                         case 'clipboard':
                             if (!prefs.getBoolPref("browser.tabs.newTabBtn.rightClickLoadFromClipboard", false)) return;
-                            if (t.matches('#new-tab-button, #newPrivateTab-button, #tabs-newtab-button') && b == 2) {
+                            if (t?.matches?.('#new-tab-button, #newPrivateTab-button, #tabs-newtab-button') && b == 2) {
                                 this._clipboardCommand(event);
                             }
                             break;
@@ -341,13 +390,18 @@
                             if (!tab) return;
                             if ((prefs.getBoolPref("browser.tabs.closeTabByDblclick", false) && b === 0 && dblclick)
                                 || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2)) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                // 在移除标签之前调用禁用函数，因为移除后 tab 对象可能无效
-                                this._disableMouseOverTemporarily(event, tab);
-                                gBrowser.removeTab(tab, { animate: true });
+                                this._closeTabByEvent(event, tab, gBrowser);
                             }
                             break;
+                    }
+                    break;
+
+                case 'contextmenu':
+                    if (trigger === 'closetab'
+                        && tab
+                        && b === 2
+                        && prefs.getBoolPref("browser.tabs.closeTabByRightClick", false)) {
+                        this._closeTabByEvent(event, tab, gBrowser);
                     }
                     break;
 
