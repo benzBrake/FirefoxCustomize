@@ -79,7 +79,7 @@
     },
     gestures: {
         link: [
-            { dir: "U", name: "打开链接（新标签，前台）", action: "searchDefaultForeground" },
+            { dir: "U", name: "打开链接（新标签，前台）", action: "openLinkForeground" },
             { dir: "R", name: "打开链接（新标签，后台）", action: "openLinkBackground" },
             { dir: "RD", name: "另存链接", action: "saveUrl" },
             { dir: "L", name: "复制链接文本", action: "copyLinkText" },
@@ -89,7 +89,7 @@
             { dir: "LD", shift: true, name: "网页历史（新标签，前台）", action: "openWebArchive" }
         ],
         text: [
-            { dir: "U", name: "搜索文本（新标签，前台）", action: "searchDefaultBackground" },
+            { dir: "U", name: "搜索文本（新标签，前台）", action: "searchDefaultForeground" },
             { dir: "U", shift: true, name: "搜索文本（新标签，后台）", action: "searchDefaultBackground" },
             { dir: "R", name: "百度搜索（新标签，前台）", action: "searchBaiduForeground" },
             { dir: "U", shift: true, name: "百度搜索（新标签，后台）", action: "searchBaiduBackground" },
