@@ -10,6 +10,7 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            2025-08-26 增加固定扩展按钮到地址栏内工具栏的功能
 // @note            2026-04-05 升级兼容性至 Firefox 149+，修复 checkbox checked 属性检测
+// @note            2026-06-17 修复 Firefox 152 中按钮图标显示异常
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
 (function (css) {
@@ -32,7 +33,8 @@
             const toolbarElem = window.MozXULElement.parseXULToFragment(
                 `
             <toolbar id="location-bar" customizable="true"
-                class="browser-toolbar customization-target" mode="icons" context="toolbar-context-menu" align="center">
+                     class="browser-toolbar customization-target" mode="icons"
+                     context="toolbar-context-menu" align="center">
             </toolbar>
             `
             );
@@ -109,6 +111,8 @@
                 }
             }
 
+            syncStyles(document.getElementById("urlbar"), document.getElementById("location-bar"));
+
             window.addEventListener("beforecustomization", this, false);
             window.addEventListener("aftercustomization", this, false);
         },
@@ -123,12 +127,22 @@
             document.getElementById("location-bar").classList.add("optional-hidden");
         },
         handleEvent: function (event) {
+            const locationBar = document.getElementById("location-bar");
+            const urlbar = document.getElementById("urlbar");
+            const navBar = document.getElementById("nav-bar");
+            const pageActionButtons = document.getElementById("page-action-buttons");
+
+            if (!locationBar) {
+                return;
+            }
+
             switch (event.type) {
                 case "beforecustomization":
-                    document.getElementById("nav-bar").appendChild(document.getElementById("location-bar"));
+                    navBar?.appendChild(locationBar);
                     break;
                 case "aftercustomization":
-                    document.getElementById("page-action-buttons").after(document.getElementById("location-bar"));
+                    pageActionButtons?.after(locationBar);
+                    syncStyles(urlbar, locationBar);
                     break;
             }
         }
@@ -149,6 +163,19 @@
         return el;
     }
 
+    function syncStyles (source, target, key = {
+        '--urlbar-inner-border-radius': '--location-bar-button-radius'
+    }) {
+        if (!source || !target) return;
+        let styles = getComputedStyle(source);
+        for (const [sourceKey, targetKey] of Object.entries(key)) {
+            const value = styles.getPropertyValue(sourceKey);
+            if (value) {
+                target.style.setProperty(targetKey, value);
+            }
+        }
+    }
+
     if (gBrowserInit.delayedStartupFinished) window.LocationBar.delayedInit();
     else {
         let delayedListener = (subject, topic) => {
@@ -164,6 +191,7 @@
     visibility: collapse;
 }
 :is(#urlbar-input-container,.urlbar-input-container) #location-bar {
+    --toolbarbutton-padding-outer: 0;
     background-color: transparent;
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-icon, :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-text, :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:active) > .toolbarbutton-badge-stack {
@@ -174,15 +202,22 @@
     width: unset;
     margin-inline: 0px;
 }
-:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1 {
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:has(> .toolbarbutton-badge-stack) {
     width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
     height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
-    border-radius: var(--urlbar-icon-border-radius);
+    border-radius: var(--location-bar-button-radius);
     padding: 0 var(--urlbar-icon-padding) !important;
     color: inherit;
 }
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1 > .toolbarbutton-badge-stack {
+    padding: var(--urlbar-icon-padding) !important;
+}
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1 > .toolbarbutton-icon {
+    padding: 0 var(--urlbar-icon-padding) !important;
+}
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar :where(#reload-button, #stop-button) > .toolbarbutton-icon {
-    padding: var(--toolbarbutton-inner-padding) !important;
+    width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
+    height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover {
     background-color: var(--urlbar-box-hover-bgcolor);
@@ -192,13 +227,13 @@
     background-color: var(--urlbar-box-active-bgcolor);
     color: var(--urlbar-box-hover-text-color);
 }
-:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
-    width: 16px !important;
-    height: 16px !important;
-    -moz-context-properties: fill, fill-opacity;
-    fill: currentColor;
-    fill-opacity: var(--urlbar-icon-fill-opacity);
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) {
     padding: 0 !important;
+}
+:is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) > .toolbarbutton-icon {
+    width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
+    height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
+    padding: var(--urlbar-icon-padding) !important;
 }
 :is(#urlbar-input-container,.urlbar-input-container) #location-bar toolbarbutton {
     --toolbarbutton-hover-background: transparent;
