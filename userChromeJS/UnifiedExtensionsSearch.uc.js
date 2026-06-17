@@ -45,6 +45,9 @@
             get val () {
                 return this.el.textContent;
             },
+            getAttribute (k) {
+                return this.el.getAttribute(k);
+            },
             setAttribute (k, v) {
                 this.el.setAttribute(k, v);
             },
@@ -122,7 +125,7 @@
         window.removeEventListener('unload', this, false);
         off.call(this.view, 'ViewHiding', this, false);
         remove(this.style);
-        remove(view.querySelector('#unified-extensions-search-input-container'));
+        remove(this.view.querySelector('#unified-extensions-search-input-container'));
         function off (type, fn, arg) {
             if (!Array.isArray(type)) type = [type];
             type.forEach(t => this.removeEventListener(t, fn, arg));
@@ -156,7 +159,7 @@
     line-height: 20px;
     font-size: 16px;
     max-width: calc(100% - 40px);
-    overflow-x: scorll;
+    overflow-x: scroll;
     scrollbar-width: none;
     outline: none;
     &[empty="true"] {
