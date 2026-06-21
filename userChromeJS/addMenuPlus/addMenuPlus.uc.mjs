@@ -683,7 +683,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                         },
                         'tabContextMenu': () => {
                             triggerFavMsg(TabContextMenu.contextTab);
-                            return "`addMenu-tab-insertpoint`";
+                            return "addMenu-tab-insertpoint";
                         },
                         'identity-box-contextmenu': () => "addMenu-identity-insertpoint",
                         'menu_FilePopup': () => "addMenu-app-insertpoint",
