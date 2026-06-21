@@ -1067,9 +1067,25 @@ import { syncify } from "./000-syncify.sys.mjs";
                 return;
             }
 
-            const sourceMap = []; // 源码地图，格式: [{ file: nsIFile, path: string, startLine: number }]
+            const sourceMap = []; // 源码地图，格式: [{ file: nsIFile, path: string, startLine: number, originalStartLine: number }]
             let finalCode = '';   // 最终拼接好的完整代码
             const processedFiles = new Set(); // 防止循环引用
+
+            function getLineCount (text) {
+                return text.split('\n').length;
+            }
+
+            function appendCodeSegment (file, code, originalStartLine) {
+                if (!code.trim()) return;
+
+                sourceMap.push({
+                    file,
+                    path: file.path,
+                    startLine: getLineCount(finalCode),
+                    originalStartLine
+                });
+                finalCode += code.endsWith('\n') ? code : code + '\n';
+            }
 
             /**
              * 递归函数，用于展开所有 include 并构建源码和地图
@@ -1093,9 +1109,8 @@ import { syncify } from "./000-syncify.sys.mjs";
                 while ((match = includeRegex.exec(content)) !== null) {
                     // a. 添加 include 语句之前的部分代码
                     const codeSegment = content.substring(lastIndex, match.index);
-                    if (codeSegment.trim()) {
-                        finalCode += codeSegment;
-                    }
+                    const originalStartLine = getLineCount(content.substring(0, lastIndex));
+                    appendCodeSegment(file, codeSegment, originalStartLine);
 
                     // b. 递归处理被引用的文件
                     const includedFile = file.parent.clone();
@@ -1113,15 +1128,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                 // c. 添加最后一个 include 语句之后（或整个文件）的代码
                 const remainingCode = content.substring(lastIndex);
-                if (remainingCode.trim()) {
-                    // 记录这个文件片段在最终代码中的起始行
-                    sourceMap.push({
-                        file: file,
-                        path: file.path,
-                        startLine: finalCode.split('\n').length
-                    });
-                    finalCode += remainingCode + '\n'; // 确保文件间有换行
-                }
+                appendCodeSegment(file, remainingCode, getLineCount(content.substring(0, lastIndex)));
             }
 
             const sandbox = new Cu.Sandbox(new XPCNativeWrapper(window), {
@@ -1188,7 +1195,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     if (errorLineInFinalCode >= mapEntry.startLine) {
                         foundFile = mapEntry.file;
                         // 计算在原始文件中的相对行号
-                        finalLineNumber = errorLineInFinalCode - mapEntry.startLine + 1;
+                        finalLineNumber = mapEntry.originalStartLine + errorLineInFinalCode - mapEntry.startLine;
                         break;
                     }
                 }
