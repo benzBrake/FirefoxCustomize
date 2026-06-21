@@ -587,6 +587,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             $("#tabContextMenu").removeAttr("photoncompact");
             if (typeof this.APP_LITENER_REMOVER === "function")
                 this.APP_LITENER_REMOVER();
+            PanelUI.mainView.removeEventListener("ViewShowing", this.moveToAppMenu);
             gBrowser.tabpanels.removeEventListener("mouseup", this);
             gBrowser.tabpanels.removeEventListener("mousedown", this);
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
