@@ -3,6 +3,7 @@
 // @description  jQuery-like DOM selector for single element with Proxy wrapper
 // @author       Ryan
 // @version      1.0.2
+// @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHRyYW5zZm9ybT0ic2NhbGUoMS4zNSkiPjxwYXRoIGZpbGw9IiMwMDAwMDAiIGQ9Ik0xMiAyMC43NWEuNzYuNzYgMCAwIDEtLjc1LS43NVY0YS43NS43NSAwIDAgMSAxLjUgMHYxNmEuNzYuNzYgMCAwIDEtLjc1Ljc1WiIvPjxwYXRoIGZpbGw9IiMwMDAwMDAiIGQ9Ik0xMy41IDE4Ljc1SDdhLjc1Ljc1IDAgMCAxIDAtMS41aDYuNUEyLjU0IDIuNTQgMCAwIDAgMTYuMjUgMTVhMi41NCAyLjU0IDAgMCAwLTIuNzUtMi4yNWgtM0E0IDQgMCAwIDEgNi4yNSA5YTQgNCAwIDAgMSA0LjI1LTMuNzVIMTZhLjc1Ljc1IDAgMCAxIDAgMS41aC01LjVBMi41NCAyLjU0IDAgMCAwIDcuNzUgOWEyLjU0IDIuNTQgMCAwIDAgMi43NSAyLjI1aDNBNCA0IDAgMCAxIDE3Ljc1IDE1YTQgNCAwIDAgMS00LjI1IDMuNzVaIi8+PC9zdmc+
 // @skip         true
 // @note         2026-04-05 fix element input, event listener removal, and contextual fragment insertion
 // @note         2025-06-13 never load in global
@@ -17,17 +18,16 @@ const $ = (sel, doc) => {
         sel = `#${sel}`;
     }
 
-    // Find cached elements in Map
-    if (typeof sel !== 'string' && sel.nodeType) {
-        if ($cache.has(sel)) return $cache.get(sel);
-    }
-
     // Find the DOM element
     const el = (typeof sel === 'string')
         ? (doc || document).querySelector(sel)
         : sel.nodeType ? sel : null;
 
     if (!el) return null;
+
+    // Find cached elements in Map after selector resolution so string lookups
+    // and direct element lookups share the same proxy and listener registry.
+    if ($cache.has(el)) return $cache.get(el);
 
     // Store event listeners with options to support reliable removal.
     const eventListeners = new Map();
@@ -191,9 +191,7 @@ const $ = (sel, doc) => {
     });
 
     // Store proxied object
-    if (typeof sel !== 'string') {
-        $cache.set(el, proxy);
-    }
+    $cache.set(el, proxy);
 
     return proxy;
 };
