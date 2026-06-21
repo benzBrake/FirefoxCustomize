@@ -2601,9 +2601,14 @@ class AddMenuChild extends JSWindowActorChild {
     contextmenu (event) {
         const { contentWindow: win } = this;
         const { target } = event;
-        const svgEl = target.closest("svg");
-        const inputEl = target.closest("input");
-        const textareaEl = target.closest("textarea");
+        const element = target?.nodeType === win.Node.ELEMENT_NODE
+            ? target
+            : target?.parentElement || target?.ownerDocument?.documentElement;
+        if (!element) return;
+
+        const svgEl = element.closest("svg");
+        const inputEl = element.closest("input");
+        const textareaEl = element.closest("textarea");
         const isSvg = !!svgEl;
         const isInput = !!inputEl;
         const isTextarea = !!textareaEl;
@@ -2617,7 +2622,7 @@ class AddMenuChild extends JSWindowActorChild {
             textareaValue: isTextarea ? textareaEl.value : "",
             textareaHTML: isTextarea ? textareaEl.outerHTML : "",
             onElement: true,
-            elementHTML: target.outerHTML
+            elementHTML: element.outerHTML || ""
         };
         this.sendAsyncMessage("AddMenuPlus:SetContextMenu", data);
     }
