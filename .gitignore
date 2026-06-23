@@ -1,5 +1,6 @@
 # Claude Code 配置与记忆
 .claude/
+AGENTS.local.md
 
 # IDE 配置
 .vscode/
