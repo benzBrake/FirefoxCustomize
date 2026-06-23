@@ -4,6 +4,7 @@
 // @version         1.2.8
 // @include         main
 // @charset         UTF-8
+// @note            2026-06-23 Fix window lookup for popup and menu callbacks
 // @note            2025/08/28 Try to fix #57, #54
 // @note            2025/07/21 Fx141
 // @note            2025/01/31 Fx136 fix Remove Cu.import, per Bug Bug 1881888, Bug 1937080 Block inline event handlers in Nightly and collect telemetry
@@ -74,7 +75,7 @@
                 });
 
             } catch (e) {
-                console.error(e);
+                // console.error(e); 
             }
 
             const btn = CustomizableUI.getWidget(CONFIG.BUTTON_ID).forWindow(window)?.node;
@@ -92,14 +93,18 @@
         handleEvent (event) {
             this[`on${event.type}`](event);
         },
+        getNodeWindow (node) {
+            return node?.documentGlobal || node?.relevantGlobal || node?.ownerDocument?.defaultView || window;
+        },
         onclick (event) {
             const { button, originalTarget: target } = event;
+            const win = this.getNodeWindow(event.target);
             switch (button) {
                 case 0:
                     if (target.id === CONFIG.BUTTON_ID) {
                         event.preventDefault();
                         event.stopPropagation();
-                        this.undoTab(void 0, event.target.ownerGlobal);
+                        this.undoTab(void 0, win);
                     }
                     break;
                 case 1:
@@ -110,7 +115,7 @@
                         case "toolbarbutton":
                             event.preventDefault();
                             event.stopPropagation();
-                            this.undoTab(void 0, event.target.ownerGlobal);
+                            this.undoTab(void 0, win);
                             break;
                     }
                     break;
@@ -118,7 +123,7 @@
                     if (target.id === CONFIG.BUTTON_ID) {
                         event.preventDefault();
                         event.stopPropagation();
-                        const pos = (event.target.ownerGlobal.innerWidth / 2) > event.pageX
+                        const pos = (win.innerWidth / 2) > event.pageX
                             ? { position: "after_position", x: 0, y: event.target.clientHeight }
                             : { position: "after_end", x: 0, y: 0 };
                         target.querySelector("menupopup").openPopup(event.target, pos.position, pos.x, pos.y);
@@ -128,7 +133,7 @@
         },
         onpopupshowing (event) {
             const popup = event.originalTarget;
-            const win = popup.ownerGlobal;
+            const win = this.getNodeWindow(popup);
             const doc = popup.ownerDocument;
 
             this.clearPopup(popup);
@@ -142,7 +147,7 @@
             for (let i = 0; i < tabLength; i++) {
                 const item = tabData[i];
                 const m = this.createFaviconMenuitem(doc, item.title, item.image, i, (event) => {
-                    this.undoTab(event.target.value, event.target.ownerGlobal);
+                    this.undoTab(event.target.value, this.getNodeWindow(event.target));
                 });
 
                 const state = item.state;
@@ -182,7 +187,7 @@
                 }
                 const tab = item.tabs[item.selected - 1];
                 menu.appendChild(this.createFaviconMenuitem(doc, title, tab.image, index, (event) => {
-                    this.undoWindow(event.target.value, event.target.ownerGlobal);
+                    this.undoWindow(event.target.value, this.getNodeWindow(event.target));
                 }));
             });
         },
