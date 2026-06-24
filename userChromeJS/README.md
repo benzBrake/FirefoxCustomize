@@ -95,6 +95,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 72   | [downloadPlus_ff98](downloadPlus/downloadPlus_ff98.uc.js)    | 下载功能增强，保存并打开，第三方工具，另存为<br />复制下载连接，永久删除文件，下载完成播放通知，我主要用另存为和保存并打开，别的功能真的很少用，有问题也别找我，不会修 |                                                              |
 |      | 96   | [ExtensionsOptionsMenu](ExtensionsOptionsMenu)               | 汉化版拓展管理器，两个版本，建议使用通用版                   |                                                              |
 |      | 100  | [extensionStylesheetLoader](extensionStylesheetLoader.uc.js) | CSS 无需定义 url 即可应用到 WebExtensions 扩展，原版仅能在MrOtherGuy 的 UC 环境使用 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/extensionStylesheetLoader.uc.js) |
+|      | 136  | [ucf_downloads_clear](ucf_downloads_clear.uc.js)             | 在下载面板添加"清空下载记录"按钮                               | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/ucf_downloads_clear.js) |
 |      | 57   | [HomeEndFixer](HomeEndFixer.uc.js)                           | 让 Home / End 按键全局生效（部分全局鼠标手势软胶通过模拟点击 Home / End 实现回到顶部，前往底部，但是默认情况下焦点在输入框内 Home/ End 按键不生效会导致鼠标手势失效，而这个脚本可以让这两个按键全局生效） |                                                              |
 |      | 70   | [KeyChanger](KeyChanger/KeyChanger.uc.js)                    | 自定义按键，配置参考 [_keychanger.js](KeyChanger/_keychanger.js) | [📃](https://github.com/Griever/userChromeJS/blob/master/KeyChanger/KeyChanger.uc.js) |
 |      | 90   | [LinkGopher](LinkGopher.uc.js)                               | 提取链接，代替 LinkGopher 扩展                               |                                                              |
@@ -131,6 +132,12 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |  ❌   | 78   | [SyncStyles](78/SyncStyles.uc.js)                            | 非浏览器主窗口的窗口自动读取浏览器主窗口 CSS 属性，这个脚本主要是为了 CopyCatTheme.uc.js 服务，已合并，所以不再单独维护 |                                                              |
 |      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)            | 给工具栏书签新增替换书签功能，已经被 BookmarkOpt.uc.js 替代  |      [📃](https://bbs.kafan.cn/thread-2233641-1-1.html)       |
 |      | 90   | [YouGetBtn](90/YouGetBtn.uc.js)                              | 鉴于 Video DownloadHelper 下载高清需要付费<br />就做了这个小脚本调用 you-get.exe 下载视频 |                                                              |
+
+## 脚本预览
+
+### ucf_downloads_clear.uc.js
+
+![ucf_downloads_clear](ucf_downloads_clear.png)
 
 ## 特殊说明
 
