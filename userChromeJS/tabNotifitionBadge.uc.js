@@ -210,10 +210,52 @@
                 if (!Number.isInteger(value) || value <= 0) {
                     continue;
                 }
+                if (this.isLikelyHttpStatusTitle(candidate, value)) {
+                    continue;
+                }
                 return Math.min(value, tabNotificationBadge.MAX_NUM);
             }
 
             return 0;
+        }
+
+        isLikelyHttpStatusTitle(candidate, value) {
+            if (value < 100 || value > 599) {
+                return false;
+            }
+
+            const statusText = candidate
+                .replace(/^\s*[\(\[]\s*\d{3}(?:\+)?\s*[\)\]]\s*/, "")
+                .replace(/\s*[\(\[]\s*\d{3}(?:\+)?\s*[\)\]]\s*$/, "")
+                .trim()
+                .toLowerCase();
+
+            if (!statusText) {
+                return false;
+            }
+
+            return [
+                "bad request",
+                "unauthorized",
+                "payment required",
+                "forbidden",
+                "not found",
+                "method not allowed",
+                "not acceptable",
+                "request timeout",
+                "conflict",
+                "gone",
+                "payload too large",
+                "uri too long",
+                "unsupported media type",
+                "range not satisfiable",
+                "too many requests",
+                "internal server error",
+                "not implemented",
+                "bad gateway",
+                "service unavailable",
+                "gateway timeout",
+            ].some(phrase => statusText.includes(phrase));
         }
 
         ensureBadge(tab) {
