@@ -18,9 +18,9 @@ I'm short of money, so I'm busy making money now. Currently I can only try to fi
 
 Since December 1, 2022, I have been modifying scripts based on [alice0775's](https://github.com/alice0775/userChrome.js) userChrome.js Loader.
 
-你可以安装我打包好的 [UC 环境](Loader)，从2024年5月7日起，我这里打包的 UC环境有限度的兼容[@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts)和[@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js)这两个仓库的脚本，并且也能安装适配过的传统扩展。
+你可以安装我打包好的 [UC 环境](https://github.com/benzBrake/userChrome.js-Loader)，从2024年5月7日起，我这里打包的 UC环境有限度的兼容[@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts)和[@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js)这两个仓库的脚本，并且也能安装适配过的传统扩展。
 
-You can install my packaged [userChrome.js Loader](Loader). Starting from May 7, 2024, the userChrome.js Loader here has limited compatibility with scripts from [@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts) and [@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js) repositories, and can also install adapted legacy extensions.
+You can install my packaged [userChrome.js Loader](https://github.com/benzBrake/userChrome.js-Loader). Starting from May 7, 2024, the userChrome.js Loader here has limited compatibility with scripts from [@xiaoxiaoflood/firefox-scripts](https://github.com/xiaoxiaoflood/firefox-scripts) and [@aminomancer/uc.css.js](https://github.com/aminomancer/uc.css.js) repositories, and can also install adapted legacy extensions.
 
 我的当前 Firefox 版本 Firefox 143.0b6。
 
@@ -63,6 +63,8 @@ Claude Code 会自动：
 
 Ⓜ️ 仅可以在 [MrOtherGuy](https://github.com/MrOtherGuy/fx-autoconfig) 的 userChromeJS 环境中使用。Can only be used in [MrOtherGuy](https://github.com/MrOtherGuy/fx-autoconfig)'s userChromeJS environment.
 
+®️ 仅可以在本仓库打包的 [UC 环境](https://github.com/benzBrake/userChrome.js-Loader) 中使用。Can only be used in this repository's [userChrome.js Loader](https://github.com/benzBrake/userChrome.js-Loader).
+
 ### 脚本列表
 
 PS：源链接不代表真正出处，只是说明原版从哪下载的，没有的就是我写的或者忘记了。
@@ -76,7 +78,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 | ℹ️    | V    | 脚本                                                         | 说明                                                         | 源                                                           |
 | ---- | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 |      | 149  | [aboutconfig_menu](aboutconfig_menu.uc.js)                    | 修改 about:config 配置的快捷菜单                             | [📃](https://github.com/garywill/aboutconfig-menu/raw/refs/heads/master/aboutconfig_menu.uc.js) |
-|      | 57   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
+|  ®️  | 57   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
 |      | 72   | [adjustPanelViewPosition](adjustPanelViewPosition.uc.js)      | 自动调整弹出面板的位置                                       |                                                              |
 |      | 128  | [allow_search_with_empty_text](patchForBug1894910_allow_search_with_empty_text.uc.js) | 恢复搜索栏为空时回车会跳转到搜索页的功能                     | [📃](https://github.com/alice0775/userChrome.js/blob/master/135/patchForBug1894910_allow_search_with_empty_text.uc.js) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
@@ -97,7 +99,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 100  | [extensionStylesheetLoader](extensionStylesheetLoader.uc.js) | CSS 无需定义 url 即可应用到 WebExtensions 扩展，原版仅能在MrOtherGuy 的 UC 环境使用 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/extensionStylesheetLoader.uc.js) |
 |      | 57   | [HomeEndFixer](HomeEndFixer.uc.js)                           | 让 Home / End 按键全局生效（部分全局鼠标手势软胶通过模拟点击 Home / End 实现回到顶部，前往底部，但是默认情况下焦点在输入框内 Home/ End 按键不生效会导致鼠标手势失效，而这个脚本可以让这两个按键全局生效） |                                                              |
 |      | 70   | [KeyChanger](KeyChanger/KeyChanger.uc.js)                    | 自定义按键，配置参考 [_keychanger.js](KeyChanger/_keychanger.js) | [📃](https://github.com/Griever/userChromeJS/blob/master/KeyChanger/KeyChanger.uc.js) |
-|      | 136  | [LinkGopher](LinkGopher.uc.mjs)                              | 提取链接，代替 LinkGopher 扩展                               |                                                              |
+|  ®️  | 136  | [LinkGopher](LinkGopher.uc.mjs)                              | 提取链接，代替 LinkGopher 扩展                               |                                                              |
 |      | 107  | [LocationBar](LocationBar.uc.js)                             | 地址栏内新增一个工具栏                                       |                                                              |
 |      | 100  | [MenubarReplaceWithButton](MenubarReplaceWithButton.uc.js)   | 把主菜单替换成按钮                                           | [📃](https://u6.getuploader.com/script/download/2051)         |
 |      | 136  | [ucf_downloads_clear](ucf_downloads_clear/ucf_downloads_clear.uc.js) | 在下载面板添加”清空下载记录”按钮                               | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/ucf_downloads_clear.js) |
@@ -111,7 +113,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 68   | [AddBookmarkHere](68/AddBookmarkHere.uc.js)                  | 添加 "添加书签到此处" 到书签栏右键菜单（仅在 Firefox 100 中测试过），如果想使用 WebExtension 版[看这里](https://github.com/benzBrake/FirefoxCustomize/tree/master/extensions/addbookmarkhere)，已经被 BookmarkOpt.uc.js 替代 |                                                              |
 |      | 90   | [addToolbarInsideLocationBar](addToolbarInsideLocationBar.uc.js) | 添加一个地址内工具栏                                         | [📃](https://github.com/alice0775/userChrome.js/blob/master/zzz-addToolbarInsideLocationBar.uc.js) |
 |      | 69   | [autoPopup++](autoPopup++.uc.js)                             | 自动弹出菜单增强版                                           |      [📃](https://bbs.kafan.cn/thread-1866855-1-1.html)       |
-|      | 57   | [AutoCopySelectionText](AutoCopySelectionText/AutoCopySelectionText.uc.js) | 自动复制选中文本（ScrLk 亮起时不复制）                       |                                                              |
+|  ®️  | 57   | [AutoCopySelectionText](AutoCopySelectionText/AutoCopySelectionText.uc.js) | 自动复制选中文本（ScrLk 亮起时不复制）                       |                                                              |
 |      | 57   | [AutoPopup](109/AutoPopup.uc.js)                             | 自动弹出菜单，好像是从阳光盒子定制版里拉出来的               |                                                              |
 |      | 127  | [AutoSaveScreenshot](127/AutoSaveScreenshot.uc.js)           | 一键保存截图，左键单击保存可见范围，Shift+左键保存整个页面   | [📃](https://www.camp-firefox.de/forum/thema/138011-automatischer-screenshot/?postID=1250968#post1250968) |
 |      | 117  | [BaiduTranslator](117/BaiduTranslator.uc.js)                 | 从DeeplTranslator修改而来，百度翻译选中文本                  |                                                              |
