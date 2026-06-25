@@ -75,6 +75,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 
 | ℹ️    | V    | 脚本                                                         | 说明                                                         | 源                                                           |
 | ---- | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+|      | 152  | [UrlBarProgress](UrlBarProgress.uc.js)                       | 在地址栏背景显示当前页面加载进度                             | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/LocationBarEnhancer.js) |
 |      | 149  | [aboutconfig_menu](149/aboutconfig_menu.uc.js)               | 修改 about:config 配置的快捷菜单                             | [📃](https://github.com/garywill/aboutconfig-menu/raw/refs/heads/master/aboutconfig_menu.uc.js) |
 |      | 57   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
