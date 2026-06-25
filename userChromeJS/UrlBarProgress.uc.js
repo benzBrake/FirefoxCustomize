@@ -9,6 +9,7 @@
 // @homepageURL     https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/LocationBarEnhancer.js
 // @note            20260625 迁移为当前 userChrome.js loader 可直接加载的普通 .uc.js 脚本
 // @note            20260625 改为每窗口初始化与清理，避免重复监听和样式残留
+// @note            20260625 about/chrome/resource/moz-src 等内置页面不显示进度
 // ==/UserScript==
 (function (css) {
     "use strict";
@@ -18,6 +19,13 @@
     const MIN_FINISH_PROGRESS = 0.95;
     const COMPLETE_DELAY = 1000;
     const HIDE_DELAY = 1000;
+    const INTERNAL_SCHEMES = new Set([
+        "about",
+        "chrome",
+        "moz-icon",
+        "moz-src",
+        "resource"
+    ]);
 
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
@@ -67,6 +75,51 @@
             urlbarBackground.removeAttribute("urlbar-progress-loading");
         }
 
+        function getRequestURI(request) {
+            if (!request) {
+                return null;
+            }
+
+            try {
+                return request.QueryInterface(Ci.nsIChannel).URI;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function isInternalURI(uri) {
+            if (!uri) {
+                return false;
+            }
+
+            let scheme = "";
+            try {
+                scheme = uri.scheme;
+            } catch (e) {
+                return false;
+            }
+
+            if (scheme === "view-source") {
+                try {
+                    return isInternalURI(Services.io.newURI(uri.spec.slice("view-source:".length)));
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            return INTERNAL_SCHEMES.has(scheme);
+        }
+
+        function shouldShowProgress(browser, request) {
+            if (browser !== gBrowser.selectedBrowser) {
+                return false;
+            }
+
+            const requestURI = getRequestURI(request);
+            const browserURI = browser.currentURI;
+            return !isInternalURI(requestURI) && !isInternalURI(browserURI);
+        }
+
         function delay(callback, timeout) {
             const timer = window.setTimeout(() => {
                 timers.delete(timer);
@@ -81,7 +134,7 @@
             },
 
             onProgressChange(browser, webProgress, request, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
-                if (browser !== gBrowser.selectedBrowser || maxTotalProgress <= 0 || curTotalProgress < 0) {
+                if (!shouldShowProgress(browser, request) || maxTotalProgress <= 0 || curTotalProgress < 0) {
                     return;
                 }
 
@@ -104,11 +157,21 @@
 
                 const wpl = Ci.nsIWebProgressListener;
                 if (stateFlags & wpl.STATE_START && stateFlags & wpl.STATE_IS_NETWORK) {
+                    if (!shouldShowProgress(browser, request)) {
+                        resetProgress();
+                        return;
+                    }
+
                     setProgress(0.08);
                     return;
                 }
 
                 if (stateFlags & wpl.STATE_STOP && stateFlags & wpl.STATE_IS_NETWORK) {
+                    if (!shouldShowProgress(browser, request)) {
+                        resetProgress();
+                        return;
+                    }
+
                     setProgress(1);
                     delay(resetProgress, HIDE_DELAY);
                 }
