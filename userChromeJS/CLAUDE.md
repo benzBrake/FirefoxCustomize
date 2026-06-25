@@ -199,6 +199,18 @@
 //                移除 hidden 属性，使用前置检查
 ```
 
+### 目录组织规范
+
+**版本号目录仅用于归档，活跃脚本不应存放在版本号目录中。**
+
+- **根目录**：仅存放单文件活跃脚本 + 系统引导文件（`*.sys.mjs`）
+- **命名子目录**：存放多文件活跃脚本（带配置文件、本地化文件、截图等资源的脚本）
+- **版本号目录**（如 `57/`、`80/`、`149/`）：仅用于归档旧版本脚本和存放版本兼容性文档（`README.md`）
+
+当活跃脚本需要升级 `@compatibility` 时：
+1. 旧版本复制到对应版本号目录作为归档
+2. 新版本在**原位置**修改（根目录或命名子目录），**不要**将活跃脚本放在版本号目录中
+
 ### 目录结构示例
 
 **简单归档目录结构：**
@@ -208,7 +220,11 @@ userChromeJS/
 │   └── browsertoolbox.uc.js     # Firefox 100+ 版本（不再更新）
 ├── 147/
 │   └── OldScript.uc.js          # Firefox 147+ 版本（不再更新）
-├── ScriptName.uc.js              # Firefox 149+ 最新版本（继续维护）
+├── ScriptName.uc.js              # Firefox 149+ 最新单文件脚本（继续维护）
+├── MultiFileScript/              # Firefox 149+ 最新多文件脚本（带配置、本地化等）
+│   ├── MultiFileScript.uc.js
+│   ├── _config.js
+│   └── locales/
 └── NewScript.uc.js               # Firefox 149+ 新脚本
 ```
 
@@ -216,12 +232,15 @@ userChromeJS/
 ```
 userChromeJS/
 ├── 80/
-│   ├── ScriptName.uc.js          # Firefox 80-148 版本
-│   └── AnotherScript.uc.js       # Firefox 80-148 版本
+│   ├── ScriptName.uc.js          # Firefox 80-148 版本（归档）
+│   └── AnotherScript.uc.js       # Firefox 80-148 版本（归档）
 ├── 147/
-│   └── OldScript.uc.js           # Firefox 147-148 版本
-├── ScriptName.uc.js              # Firefox 149+ 最新版本
-├── AnotherScript.uc.js           # Firefox 149+ 最新版本
+│   └── OldScript.uc.js           # Firefox 147-148 版本（归档）
+├── ScriptName.uc.js              # Firefox 149+ 最新版本（根目录）
+├── AnotherScript.uc.js           # Firefox 149+ 最新版本（根目录）
+├── MultiFileScript/              # Firefox 149+ 最新多文件脚本（命名子目录）
+│   ├── MultiFileScript.uc.js
+│   └── _config.js
 └── NewScript.uc.js               # Firefox 149+ 新脚本
 ```
 

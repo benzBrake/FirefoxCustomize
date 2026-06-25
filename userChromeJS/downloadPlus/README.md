@@ -1,1 +1,0 @@
-此目录已迁移至 https://github.com/benzBrake/Firefox-downloadPlus.uc.js

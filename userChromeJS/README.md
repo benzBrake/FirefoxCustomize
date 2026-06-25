@@ -75,9 +75,9 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 
 | ℹ️    | V    | 脚本                                                         | 说明                                                         | 源                                                           |
 | ---- | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-|      | 149  | [aboutconfig_menu](149/aboutconfig_menu.uc.js)               | 修改 about:config 配置的快捷菜单                             | [📃](https://github.com/garywill/aboutconfig-menu/raw/refs/heads/master/aboutconfig_menu.uc.js) |
+|      | 149  | [aboutconfig_menu](aboutconfig_menu.uc.js)                    | 修改 about:config 配置的快捷菜单                             | [📃](https://github.com/garywill/aboutconfig-menu/raw/refs/heads/master/aboutconfig_menu.uc.js) |
 |      | 57   | [addMenuPlus](addMenuPlus)                                   | 自定义火狐菜单，也支持工具按钮移动                           | [📃](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus) |
-|      | 72   | [adjustPanelViewPosition](72/adjustPanelViewPosition.uc.js)  | 自动调整弹出面板的位置                                       |                                                              |
+|      | 72   | [adjustPanelViewPosition](adjustPanelViewPosition.uc.js)      | 自动调整弹出面板的位置                                       |                                                              |
 |      | 128  | [allow_search_with_empty_text](patchForBug1894910_allow_search_with_empty_text.uc.js) | 恢复搜索栏为空时回车会跳转到搜索页的功能                     | [📃](https://github.com/alice0775/userChrome.js/blob/master/135/patchForBug1894910_allow_search_with_empty_text.uc.js) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
 |      | 120  | [AutoCompleteDeleteButton](AutoCompleteDeleteButton.uc.js) | 为网页输入框的表单历史下拉添加删除按钮                       |                                                              |
@@ -87,12 +87,12 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 100  | [browsertoolbox](browsertoolbox.uc.js)                       | 新增一个打开”浏览器内容工具箱”的按钮                         | [📃](https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js) |
 |      | 90   | [ColorfulTabs](ColorfulTabs.uc.js)                           | 多彩标签页                                                   |                                                              |
 |      |      | [contextMenuSlideDown](contextMenuSlideDown.uc.js)           | 给弹出菜单增加载入动画                                       | [📃](https://github.com/Lockframe/Firefox-WinUI/blob/main/optional-js/contextMenuSlideDown.uc.js) |
-|      | 100  | [CopyCat](CopyCat/CopyCat.uc.js)                             | 给 Firefox 增加一个按钮，类似于 AnoBtn                       |                                                              |
+|      | 100  | [CopyCat](80/CopyCat/CopyCat.uc.js)                           | 给 Firefox 增加一个按钮，类似于 AnoBtn（不再维护，已被 addMenuPlus 替代） |                                                              |
 |      | 100  | [CopyCatTheme](CopyCatTheme/CopyCatTheme.uc.js)              | 读取 Firefox CSS 主题                                        |                                                              |
 |      | 57   | [CopyPlainText](CopyPlainText.uc.js)                         | 右键菜单复制和Ctrl+C强制复制纯文本                           |                                                              |
 |      | 108  | [CustomButtons](CustomButtons.uc.js)                         | 替代 [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js) |                                                              |
 |      |      | [dav_LinkifiesLocationBar](dav_LinkifiesLocationBar.uc.js)   | 多级地址栏，源自 *locationbar2* 扩展                         | [📃](https://github.com/sdavidg/firefoxChromeScripts)         |
-|      | 72   | [downloadPlus_ff98](downloadPlus/downloadPlus_ff98.uc.js)    | 下载功能增强，保存并打开，第三方工具，另存为<br />复制下载连接，永久删除文件，下载完成播放通知，我主要用另存为和保存并打开，别的功能真的很少用，有问题也别找我，不会修 |                                                              |
+|      | 72   | [downloadPlus_ff98](https://github.com/benzBrake/Firefox-downloadPlus.uc.js) | 下载功能增强（已迁移至独立仓库）                             |                                                              |
 |      | 96   | [ExtensionsOptionsMenu](ExtensionsOptionsMenu)               | 汉化版拓展管理器，两个版本，建议使用通用版                   |                                                              |
 |      | 100  | [extensionStylesheetLoader](extensionStylesheetLoader.uc.js) | CSS 无需定义 url 即可应用到 WebExtensions 扩展，原版仅能在MrOtherGuy 的 UC 环境使用 | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/extensionStylesheetLoader.uc.js) |
 |      | 57   | [HomeEndFixer](HomeEndFixer.uc.js)                           | 让 Home / End 按键全局生效（部分全局鼠标手势软胶通过模拟点击 Home / End 实现回到顶部，前往底部，但是默认情况下焦点在输入框内 Home/ End 按键不生效会导致鼠标手势失效，而这个脚本可以让这两个按键全局生效） |                                                              |
@@ -100,7 +100,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 90   | [LinkGopher](LinkGopher.uc.js)                               | 提取链接，代替 LinkGopher 扩展                               |                                                              |
 |      | 107  | [LocationBar](LocationBar.uc.js)                             | 地址栏内新增一个工具栏                                       |                                                              |
 |      | 100  | [MenubarReplaceWithButton](MenubarReplaceWithButton.uc.js)   | 把主菜单替换成按钮                                           | [📃](https://u6.getuploader.com/script/download/2051)         |
-|      | 136  | [ucf_downloads_clear](ucf_downloads_clear.uc.js)             | 在下载面板添加”清空下载记录”按钮                               | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/ucf_downloads_clear.js) |
+|      | 136  | [ucf_downloads_clear](ucf_downloads_clear/ucf_downloads_clear.uc.js) | 在下载面板添加”清空下载记录”按钮                               | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/ucf_downloads_clear.js) |
 |      | 149  | [ucf_drag_ModR](ucf_drag_ModR/ucf_drag_ModR.uc.js)           | 鼠标拖拽 Drag & Go，默认配置文件与脚本同目录：`_ucf_drag_ModR.config.js` | [📃](https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234) |
 |      | 152  | [UrlBarProgress](UrlBarProgress.uc.js)                       | 在地址栏背景显示当前页面加载进度                             | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/LocationBarEnhancer.js) |
 
