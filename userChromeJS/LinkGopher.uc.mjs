@@ -1,152 +1,127 @@
 // ==UserScript==
-// @name           LinkGopher.uc.js
+// @name           LinkGopher.uc.mjs
 // @description    提取链接脚本版
 // @namespace      https://github.com/benzBrake/FirefoxCustomize/
 // @author         Ryan
 // @include        main
+// @actor          LinkGopher
+// @actor:allframes true
+// @actor:matches  *://*/*, file:///*, about:*, view-source:*, moz-extension://*/*, resource://*/*
 // @license        MIT License
-// @compatibility  Firefox 70
+// @compatibility  Firefox 136+
 // @charset        UTF-8
-// @version        0.1.6
+// @version        0.2.0
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/
+// @note           20260625 Migrated to loader-managed JSWindowActor ES module
 // ==/UserScript==
-if (typeof window === "undefined" || globalThis !== window) {
-    if (!Services.appinfo.remoteType) {
-        this.EXPORTED_SYMBOLS = ["LinkGopherParent"];
-        try {
-            const actorParams = {
-                parent: {
-                    moduleURI: __URI__,
-                },
-                child: {
-                    moduleURI: __URI__,
-                    events: {},
-                },
-                allFrames: true,
-                messageManagerGroups: ["browsers"],
-                matches: ["*://*/*", "file:///*", "about:*", "view-source:*", "moz-extension://*/*", "resource://*/*"],
-            };
-            ChromeUtils.registerWindowActor("LinkGopher", actorParams);
-        } catch (e) {
-            // console.error(e); 
-        }
+export { LinkGopherChild, LinkGopherParent, LinkGopherChild as ActorChild, LinkGopherParent as ActorParent };
 
-        this.LinkGopherParent = class extends JSWindowActorParent {
-            receiveMessage({ name, data }) {
-                // https://searchfox.org/mozilla-central/rev/43ee5e789b079e94837a21336e9ce2420658fd19/browser/actors/ContextMenuParent.sys.mjs#60-63
-                let windowGlobal = this.manager.browsingContext.currentWindowGlobal;
-                let browser = windowGlobal.rootFrameLoader.ownerElement;
-                let win = browser.ownerGlobal;
-                const { LinkGopher } = win;
-                switch (name) {
-                    case "LG:SendLinks":
-                        LinkGopher.processLinksData(data);
-                        break;
-                }
-            }
-        }
-    } else {
-        this.EXPORTED_SYMBOLS = ["LinkGopherChild"];
+export function onWindowLoad(win) {
+    return initLinkGopher(win);
+}
 
-        this.LinkGopherChild = class extends JSWindowActorChild {
-            actorCreated() {
-            }
-            receiveMessage({ name, data }) {
-                const win = this.contentWindow;
-                const { document: doc } = win;
-                const actor = win.windowGlobalChild.getActor("LinkGopher");
-                switch (name) {
-                    case "LG:ExtractLinks":
-                        const { keyword, text, exclude } = data;
-                        const allLinks = [...doc.querySelectorAll('a')]
-                            .map(link => {
-                                let url;
-                                try {
-                                    url = new URL(link.href);
-                                } catch (e) {
-                                    url = {
-                                        href: "",
-                                        protocol: "",
-                                        host: ""
-                                    };
-                                }
-                                return {
-                                    href: link.href || "",
-                                    host: url.host,
-                                    protocol: url.protocol,
-                                    title: link.getAttribute("title") || "",
-                                    innerText: link.innerText,
-                                    innerHTML: link.innerHTML,
-                                    outerHTML: link.outerHTML
-                                };
-                            });
-
-                        actor.sendAsyncMessage("LG:SendLinks", {
-                            links: allLinks,
-                            keyword,
-                            text,
-                            exclude
-                        });
-                        break;
-                }
+class LinkGopherParent extends JSWindowActorParent {
+    receiveMessage({ name, data }) {
+        switch (name) {
+            case "LG:SendLinks": {
+                const browsingContext = this.manager?.browsingContext;
+                const windowGlobal = browsingContext?.top?.currentWindowGlobal
+                    || browsingContext?.currentWindowGlobal;
+                const browser = windowGlobal?.rootFrameLoader?.ownerElement;
+                const win = getTargetWindow(browser);
+                win?.LinkGopher?.processLinksData(data);
+                break;
             }
         }
     }
-} else {
-    try {
-        if (parseInt(Services.appinfo.version) < 101) {
-            ChromeUtils.import(Components.stack.filename);
-        } else {
-            let fileHandler = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler);
-            let scriptPath = Components.stack.filename;
-            if (scriptPath.startsWith("chrome")) {
-                scriptPath = resolveChromeURL(scriptPath);
-                function resolveChromeURL(str) {
-                    const registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
-                    try {
-                        return registry.convertChromeURL(Services.io.newURI(str.replace(/\\/g, "/"))).spec
-                    } catch (e) {
-                        console.error(e);
-                        return ""
-                    }
-                }
+}
+
+class LinkGopherChild extends JSWindowActorChild {
+    receiveMessage({ name, data }) {
+        switch (name) {
+            case "LG:ExtractLinks": {
+                const win = this.contentWindow;
+                const { document: doc } = win;
+                const { keyword, text, exclude, requestId, expectedCount } = data;
+                const links = [...doc.querySelectorAll("a")]
+                    .map(link => {
+                        let url;
+                        try {
+                            url = new URL(link.href);
+                        } catch (e) {
+                            url = {
+                                href: "",
+                                protocol: "",
+                                host: "",
+                            };
+                        }
+                        return {
+                            href: link.href || "",
+                            host: url.host,
+                            protocol: url.protocol,
+                            title: link.getAttribute("title") || "",
+                            innerText: link.innerText,
+                            innerHTML: link.innerHTML,
+                            outerHTML: link.outerHTML,
+                        };
+                    });
+
+                this.sendAsyncMessage("LG:SendLinks", {
+                    links,
+                    keyword,
+                    text,
+                    exclude,
+                    requestId,
+                    expectedCount,
+                });
+                break;
             }
-            let scriptFile = fileHandler.getFileFromURLSpec(scriptPath);
-            let resourceHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
-            if (!resourceHandler.hasSubstitution("link-gopher")) {
-                resourceHandler.setSubstitution("link-gopher", Services.io.newFileURI(scriptFile.parent));
-            }
-            ChromeUtils.import(`resource://link-gopher/${encodeURIComponent(scriptFile.leafName)}?${scriptFile.lastModifiedTime}`);
         }
-    } catch (e) { /* console.error(e); */ }
-    (async (id, css, i18n) => {
-        if (!location.href.startsWith("chrome://browser/content/browser.x")) return;
+    }
+}
+
+function getTargetWindow(node) {
+    return node?.documentGlobal
+        || node?.relevantGlobal
+        || node?.ownerDocument?.defaultView
+        || null;
+}
+
+async function initLinkGopher(window) {
+    return (async (id, css, i18n) => {
+        if (!window?.location?.href.startsWith("chrome://browser/content/browser.x")) return;
+        const { document } = window;
+        const CustomizableUI = window.CustomizableUI || globalThis.CustomizableUI;
+        const Services = window.Services || globalThis.Services;
+        const Cc = window.Cc || globalThis.Cc;
+        const Ci = window.Ci || globalThis.Ci;
         var lprintf = (f, ...args) => { return sprintf(f in i18n ? i18n[f] : f, ...args); };
+        var onMenuCommand = event => window.LinkGopher.onCommand(event);
         var LinkMenus = () => ([{
             id: "LinkGopher-Extract-All",
             label: lprintf("extract all links"),
-            oncommand: "window.LinkGopher.onCommand(event)",
+            oncommand: onMenuCommand,
             keyword: "",
             exclude: "^javascript:"
         }, {
             id: "LinkGopher-Extract-Magnet",
             label: lprintf("extract all magnet links"),
-            oncommand: "window.LinkGopher.onCommand(event)",
+            oncommand: onMenuCommand,
             keyword: "^magnet",
         }, {
             id: "LinkGopher-Extract-Ed2k",
             label: lprintf("extract all ed2k links"),
-            oncommand: "window.LinkGopher.onCommand(event)",
+            oncommand: onMenuCommand,
             keyword: "^ed2k",
         }, {
             id: 'LinkGopher-Extract-By-Keyword',
             label: lprintf("extract by keyword"),
-            oncommand: "window.LinkGopher.onCommand(event)",
+            oncommand: onMenuCommand,
             prompt: true
         }, {
             id: "LinkGopher-Extract-Domain",
             label: lprintf("extract domain only"),
-            oncommand: "window.LinkGopher.onCommand(event)",
+            oncommand: onMenuCommand,
             exclude: "^javascript:",
             text: "%h"
         }, {
@@ -154,10 +129,12 @@ if (typeof window === "undefined" || globalThis !== window) {
         }, {
             id: "LinkGopher-About",
             label: lprintf("about link gopher"),
-            oncommand: "window.LinkGopher.onCommand(event)",
+            oncommand: onMenuCommand,
             url: "https://github.com/benzBrake/FirefoxCustomize/"
         }]);
         window.LinkGopher = {
+            pendingRequests: new Map(),
+            requestSeq: 0,
             get regexp() {
                 let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
                 let rTITLE = "%TEXT" + he + "%|%t\\b";
@@ -213,7 +190,7 @@ if (typeof window === "undefined" || globalThis !== window) {
             },
             onMouseOver(event) {
                 if (event.target.id !== id) return;
-                let win = event.target.ownerGlobal;
+                let win = getTargetWindow(event.target) || window;
                 let mp = event.target.querySelector(":scope>menupopup");
                 if (event.clientX > (win.innerWidth / 2) && event.clientY < (win.innerHeight / 2)) {
                     mp.setAttribute("position", "after_end");
@@ -233,10 +210,10 @@ if (typeof window === "undefined" || globalThis !== window) {
                 const url = target.getAttribute("url");
                 const where = target.getAttribute("where") || "tab";
                 if (url) {
-                    openTrustedLinkIn(url, where, {
+                    window.openTrustedLinkIn(url, where, {
                         postData: null,
                         triggeringPrincipal: where === 'current' ?
-                            gBrowser.selectedBrowser.contentPrincipal : (
+                            window.gBrowser.selectedBrowser.contentPrincipal : (
                                 /^(f|ht)tps?:/.test(url) ?
                                     Services.scriptSecurityManager.createNullPrincipal({}) :
                                     Services.scriptSecurityManager.getSystemPrincipal()
@@ -255,24 +232,68 @@ if (typeof window === "undefined" || globalThis !== window) {
                     if (this.btn) {
                         const { btn } = this;
                         btn.setAttribute("status", "loading");
-                        this.timeOut = setTimeout(() => {
+                        this.timeOut = window.setTimeout(() => {
                             btn.removeAttribute("status");
                         }, 3000);
                     }
-                    let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("LinkGopher");
-                    actor.sendAsyncMessage("LG:ExtractLinks", {
+                    const browser = window.gBrowser.selectedBrowser;
+                    const requestId = `${Date.now()}-${++this.requestSeq}`;
+                    const windowGlobals = collectWindowGlobals(browser?.browsingContext);
+                    let expectedCount = 0;
+                    this.pendingRequests.set(requestId, {
+                        expectedCount: 1,
+                        receivedCount: 0,
+                        links: [],
                         keyword,
                         text,
-                        exclude
+                        exclude,
                     });
+                    for (const windowGlobal of windowGlobals) {
+                        try {
+                            let actor = windowGlobal.getActor("LinkGopher");
+                            actor?.sendAsyncMessage("LG:ExtractLinks", {
+                                keyword,
+                                text,
+                                exclude,
+                                requestId,
+                                expectedCount: windowGlobals.length,
+                            });
+                            expectedCount++;
+                        } catch (e) { }
+                    }
+                    const pending = this.pendingRequests.get(requestId);
+                    if (pending) {
+                        pending.expectedCount = expectedCount || 1;
+                    }
+                    if (!expectedCount) {
+                        this.processLinksData({ links: [], keyword, exclude, text, requestId, expectedCount: 1 });
+                    }
                 }
             },
-            processLinksData({ links, keyword, exclude, text }) {
+            processLinksData({ links, keyword, exclude, text, requestId, expectedCount }) {
+                if (requestId && this.pendingRequests.has(requestId)) {
+                    const pending = this.pendingRequests.get(requestId);
+                    pending.receivedCount++;
+                    if (Array.isArray(links) && links.length) {
+                        pending.links.push(...links);
+                    }
+                    if (expectedCount && !pending.expectedCount) {
+                        pending.expectedCount = expectedCount;
+                    }
+                    if (pending.receivedCount < pending.expectedCount) {
+                        return;
+                    }
+                    this.pendingRequests.delete(requestId);
+                    links = pending.links;
+                    keyword = pending.keyword;
+                    exclude = pending.exclude;
+                    text = pending.text;
+                }
+
                 if (links && links.length) {
                     const r = keywordToRegex(keyword, exclude);
                     links = links.filter(link => r.test(link.href)).map(link => this.convertText(text, link)).filter(text => text.length);
                     if (/%H/.test(text.toUpperCase())) {
-                        // 转换为主机名的时候需要去重
                         links = [...new Set(links)];
                     }
                     if (links.length) {
@@ -284,9 +305,9 @@ if (typeof window === "undefined" || globalThis !== window) {
                 } else {
                     this.btn?.setAttribute("status", "failed");
                 }
-                clearTimeout(this.timeOut);
-                setTimeout(() => {
-                    LinkGopher.btn.removeAttribute("status");
+                window.clearTimeout(this.timeOut);
+                this.timeOut = window.setTimeout(() => {
+                    window.LinkGopher.btn.removeAttribute("status");
                 }, 2000);
             },
             convertText(text, link) {
@@ -376,7 +397,13 @@ if (typeof window === "undefined" || globalThis !== window) {
          */
         function applyAttr(e, o = {}) {
             for (let [k, v] of Object.entries(o)) {
-                e.setAttribute(k, typeof v === 'function' ? "(" + v.toString() + ").call(this, event);" : v);
+                if (/^on[a-z]+$/i.test(k) && typeof v === "function") {
+                    e.addEventListener(k.slice(2), v);
+                    continue;
+                }
+                if (typeof v !== "function") {
+                    e.setAttribute(k, v);
+                }
             }
             return e;
         }
@@ -411,6 +438,32 @@ if (typeof window === "undefined" || globalThis !== window) {
          */
         function addStyle(css, d) {
             return (d || document).insertBefore((d || document).createProcessingInstruction('xml-stylesheet', 'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'), (d || document).documentElement)
+        }
+
+        function collectWindowGlobals(browsingContext) {
+            const globals = [];
+            const stack = [browsingContext];
+            while (stack.length) {
+                const context = stack.pop();
+                if (!context) continue;
+                if (context.currentWindowGlobal) {
+                    globals.push(context.currentWindowGlobal);
+                }
+                if (context.children?.length) {
+                    stack.push(...context.children);
+                }
+            }
+            return globals;
+        }
+
+        function htmlEscape(str) {
+            return String(str || "").replace(/[&<>"']/g, s => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#39;",
+            })[s]);
         }
 
         /**
