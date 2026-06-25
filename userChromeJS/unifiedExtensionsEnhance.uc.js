@@ -3,10 +3,11 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.3.1
+// @version         0.3.2
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            2026-06-25 兼容 Firefox 151+ 面板菜单样式变量改名，保留旧变量 fallback
 // @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            0.3.1 关闭拖拽调试日志，完善拖拽结束兜底排序
 // @note            0.3.0 为 #unified-extensions-area 增加拖拽排序手柄，移除上移/下移按钮
@@ -103,6 +104,10 @@
             }
             panelview#unified-extensions-view {
                 width: 35em;
+                --uei-menuitem-margin: var(--panel-menuitem-margin, var(--arrowpanel-menuitem-margin));
+                --uei-menuitem-margin-inline: var(--panel-menuitem-margin-inline, var(--arrowpanel-menuitem-margin-inline));
+                --uei-menuitem-padding-inline: var(--panel-menuitem-padding-inline, var(--arrowpanel-menuitem-padding-inline));
+                --uei-menuitem-border-radius: var(--panel-menuitem-border-radius, var(--arrowpanel-menuitem-border-radius));
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons {
                 display: flex;
@@ -112,14 +117,14 @@
                 justify-content: flex-start;
             }
             panelview#unified-extensions-view .toolbaritem-combined-buttons > .subviewbutton.webextension-browser-action {
-                margin: var(--arrowpanel-menuitem-margin);
+                margin: var(--uei-menuitem-margin);
             }
             panelview#unified-extensions-view :is(.unified-extensions-item-name, .unified-extensions-item-message) {
                 padding-inline-start: 0;
             }
             
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action  {
-                margin: var(--arrowpanel-menuitem-margin);
+                margin: var(--uei-menuitem-margin);
                 flex-grow: 1;
             }
             panel .unified-extensions-item[unified-extensions="true"] .webextension-browser-action:hover {
@@ -188,7 +193,7 @@
                 display: none;
             }
             toolbarbutton.ue-btn:not([no-icon=true]) {
-                padding: calc(var(--arrowpanel-menuitem-margin-inline) - 1px) var(--arrowpanel-menuitem-margin-inline);
+                padding: calc(var(--uei-menuitem-margin-inline) - 1px) var(--uei-menuitem-margin-inline);
                 padding-inline-end: 0;
                 box-shadow: none !important;
                 outline: none !important;
@@ -199,9 +204,9 @@
             }
             toolbarbutton.ue-btn:not([no-icon=true]) > .toolbarbutton-icon {
                 box-sizing: content-box;
-                padding: var(--arrowpanel-menuitem-padding-inline);
+                padding: var(--uei-menuitem-padding-inline);
                 border: 1px solid transparent;
-                border-radius: var(--arrowpanel-menuitem-border-radius);
+                border-radius: var(--uei-menuitem-border-radius);
             }
             toolbarbutton.ue-btn:not([no-icon=true]):hover > .toolbarbutton-icon {
                 background-color: var(--uei-button-hover-bgcolor);
@@ -210,7 +215,7 @@
                 background-color: var(--uei-button-active-bgcolor);
             }
             .unified-extensions-list unified-extensions-item > .unified-extensions-item-action-button {
-                margin: var(--arrowpanel-menuitem-margin);
+                margin: var(--uei-menuitem-margin);
             }
             #unified-extensions-area > .unified-extensions-item {
                 transition: opacity 120ms ease, box-shadow 120ms ease;
