@@ -10,12 +10,14 @@
 // @note            20260625 迁移为当前 userChrome.js loader 可直接加载的普通 .uc.js 脚本
 // @note            20260625 改为每窗口初始化与清理，避免重复监听和样式残留
 // @note            20260625 about/chrome/resource/moz-src 等内置页面不显示进度
+// @note            20260625 限定进度样式作用域，避免地址栏下拉面板显示加载动画
 // ==/UserScript==
 (function (css) {
     "use strict";
 
     const SCRIPT_ID = "urlbar-progress";
     const STYLE_ID = `${SCRIPT_ID}-style`;
+    const ROOT_ATTR = "urlbar-progress-root";
     const MIN_FINISH_PROGRESS = 0.95;
     const COMPLETE_DELAY = 1000;
     const HIDE_DELAY = 1000;
@@ -47,7 +49,9 @@
         }
 
         const urlbar = document.getElementById("urlbar");
-        const urlbarBackground = document.getElementById("urlbar-background")
+        const urlbarBackground = urlbar?.querySelector("#urlbar-input-container > #urlbar-background")
+            || urlbar?.querySelector(".urlbar-input-container > .urlbar-background")
+            || document.getElementById("urlbar-background")
             || urlbar?.querySelector(".urlbar-background")
             || document.querySelector(".urlbar-background");
         if (!urlbarBackground || !window.gBrowser) {
@@ -57,6 +61,8 @@
         const style = addStyle(document);
         const timers = new Set();
         let pageProgress = 0;
+
+        urlbarBackground.setAttribute(ROOT_ATTR, "true");
 
         function setProgress(value) {
             const progress = Math.max(0, Math.min(1, Number(value) || 0));
@@ -192,6 +198,7 @@
                 gBrowser.removeTabsProgressListener(listener);
                 urlbarBackground.style.removeProperty("background-size");
                 urlbarBackground.removeAttribute("urlbar-progress-loading");
+                urlbarBackground.removeAttribute(ROOT_ATTR);
                 style.remove();
                 if (window.UrlBarProgress === this) {
                     delete window.UrlBarProgress;
@@ -214,8 +221,7 @@
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 })(`
-#urlbar-background,
-#urlbar .urlbar-background {
+[urlbar-progress-root] {
     background-image:
         repeating-linear-gradient(
             -45deg,
@@ -231,9 +237,13 @@
     transition: background-size 350ms ease;
 }
 
-#urlbar-background[urlbar-progress-loading],
-#urlbar .urlbar-background[urlbar-progress-loading] {
+[urlbar-progress-root][urlbar-progress-loading] {
     animation: urlbar-progress-stripes 2s linear infinite;
+}
+
+#urlbar[open] [urlbar-progress-root] {
+    background-image: none;
+    animation: none;
 }
 
 @keyframes urlbar-progress-stripes {
