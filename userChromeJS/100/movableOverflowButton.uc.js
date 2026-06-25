@@ -8,6 +8,7 @@
 // @shutdown        window.movableOverflowButton.destroy()
 // @note            0.1.2 修正新窗口不能定制
 // @note            0.1.1 修正多窗口报错，无法显示 Overflow Panel
+// @note            2026-06-25 归档：不再更新
 // @onlyonce
 // ==/UserScript==
 (function () {
