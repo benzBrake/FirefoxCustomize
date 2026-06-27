@@ -137,12 +137,6 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |  ⛔   | 134  | [unreadTabMods](134/unreadTabMods.uc.js)                    | 未读标签页样式增强，添加标记已读/未读菜单（不再跟随作者更新） | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js) |
 |      | 90   | [YouGetBtn](90/YouGetBtn.uc.js)                              | 鉴于 Video DownloadHelper 下载高清需要付费<br />就做了这个小脚本调用 you-get.exe 下载视频 |                                                              |
 
-## 脚本预览
-
-### ucf_downloads_clear.uc.js
-
-![ucf_downloads_clear](ucf_downloads_clear.png)
-
 ## 特殊说明
 
 （2022.07.01）91.11ESR 安装 [xiaoxiaoflood userChromeJS 环境 6.23 版](https://github.com/xiaoxiaoflood/firefox-scripts/tree/7f4e96000baf44398e7308b0aed24781ec29ea82) 之后，启动Firefox时提示“读取配置文件失败，请联系您的系统管理员”，并且也不能安装老式扩展，可以点[这里](91.11ESR/xiaoxiaoflood)查看可用的版本
