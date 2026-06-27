@@ -725,76 +725,229 @@ pagesub([
 ]);
 ```
 
-示例：保存所有图片到 zip _// 这个不知道怎么修_
+示例：保存所有图片到 zip
 
 ```js
 page({
   label: "保存所有图片到 zip",
-  oncommand: function () {
-    // 保存ディレクトリのパスがない場合は毎回ダイアログで決める
-    //var path = "C:\\Users\\azu\\Downloads"; // エスケープしたディレクトリのパス
-    var path = "";
-    if (!path) {
-      // ファイル保存ダイアログ
-      var nsIFilePicker = Ci.nsIFilePicker;
-      var FP = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
-      FP.init(window, "保存到", nsIFilePicker.modeGetFolder);
+  oncommand: async function () {
+    const browser = gBrowser.selectedBrowser;
+    const images =
+      (await addMenu.queryContent("AddMenuPlus:GetDocumentImages", {}, browser)) ||
+      [];
+    const imageUrls = images
+      .map((item) => item?.src)
+      .filter((src) => src && /^(https?:|data:|file:)/i.test(src));
 
-      FP.open((res) => {
-        if (res != Ci.nsIFilePicker.returnOK) return;
-        path = FP.file.path;
-      });
+    if (!imageUrls.length) {
+      addMenu.alert("当前页面没有可保存的图片");
+      return;
     }
 
-    // ページに貼り付けられた画像を保存する
-    var links = addMenu.focusedWindow.document.images;
-    var pack = [];
-    for (var i = 0, length = links.length; i < length; i++) {
-      // JPEG と PNG を保存する，加入了 webp 和 bmp 后缀
+    const folder = await new Promise((resolve) => {
+      const fp = Cc["@mozilla.org/filepicker;1"].createInstance(
+        Ci.nsIFilePicker
+      );
+      fp.init(
+        !("inIsolatedMozBrowser" in window.browsingContext.originAttributes)
+          ? window.browsingContext
+          : window,
+        "保存到",
+        Ci.nsIFilePicker.modeGetFolder
+      );
+      fp.open((res) =>
+        resolve(res === Ci.nsIFilePicker.returnOK ? fp.file : null)
+      );
+    });
+    if (!folder) return;
+
+    const zipFile = folder.clone();
+    zipFile.append(`${makeSafeName(browser.currentURI?.spec || "images")}.zip`);
+
+    const zipWriter = Cc["@mozilla.org/zipwriter;1"].createInstance(
+      Ci.nsIZipWriter
+    );
+    const openFlags = 0x04 | 0x08 | 0x20;
+    const usedNames = new Set();
+    let savedCount = 0;
+
+    zipWriter.open(zipFile, openFlags);
+    try {
+      for (let i = 0; i < imageUrls.length; i++) {
+        const url = imageUrls[i];
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const contentType = (response.headers.get("content-type") || "")
+            .split(";")[0]
+            .trim()
+            .toLowerCase();
+          const buffer = await response.arrayBuffer();
+          if (!buffer.byteLength) {
+            throw new Error("empty image data");
+          }
+          const detectedExt = detectImageExt(buffer, contentType);
+          const arrayBufferStream = Cc[
+            "@mozilla.org/io/arraybuffer-input-stream;1"
+          ].createInstance(Ci.nsIArrayBufferInputStream);
+          arrayBufferStream.setData(buffer, 0, buffer.byteLength);
+
+          const entryName = uniqueEntryName(
+            guessFileName(url, i, detectedExt),
+            usedNames
+          );
+          zipWriter.addEntryStream(
+            entryName,
+            Date.now() * 1000,
+            Ci.nsIZipWriter.COMPRESSION_DEFAULT,
+            arrayBufferStream,
+            false
+          );
+          savedCount++;
+        } catch (error) {
+          console.error("保存图片失败:", url, error);
+        }
+      }
+    } finally {
+      zipWriter.close();
+    }
+
+    addMenu.alert(`已保存 ${savedCount} 张图片到 ${zipFile.path}`);
+
+    function makeSafeName(name, fallback = "images") {
+      const safe = (name || fallback)
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 180);
+      return safe || fallback;
+    }
+
+    function guessFileName(url, index, detectedExt) {
+      let fileName = "";
+      try {
+        const parsed = new URL(url);
+        fileName = decodeURIComponent(parsed.pathname.split("/").pop() || "");
+      } catch (e) {}
+
+      if (!fileName && /^data:image\//i.test(url)) {
+        const mime = url.slice(5, url.indexOf(";"));
+        fileName = `image-${index + 1}.${mimeToExt(mime)}`;
+      }
+
+      if (!fileName) {
+        fileName = `image-${index + 1}.${detectedExt}`;
+      }
+
+      fileName = makeSafeName(fileName, `image-${index + 1}`);
+      const extMatch = /\.([a-z0-9]{1,8})$/i.exec(fileName);
+      if (!extMatch) {
+        fileName += `.${detectedExt}`;
+      } else if (extMatch[1].toLowerCase() !== detectedExt) {
+        fileName = fileName.replace(/\.[a-z0-9]{1,8}$/i, `.${detectedExt}`);
+      }
+      return fileName;
+    }
+
+    function mimeToExt(contentType) {
+      return (
+        {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp",
+          "image/gif": "gif",
+          "image/bmp": "bmp",
+          "image/svg+xml": "svg",
+          "image/x-icon": "ico",
+          "image/vnd.microsoft.icon": "ico",
+          "image/avif": "avif",
+          "image/jxl": "jxl",
+        }[contentType] || "img"
+      );
+    }
+
+    function detectImageExt(buffer, contentType) {
+      const bytes = new Uint8Array(buffer);
+
       if (
-        links[i].src.match(
-          /\.jpe?g|\.png|\.webp|\.bmp|img\.blogs\.yahoo(.*)folder[^thumb]/i
-        )
+        bytes[0] === 0x89 &&
+        bytes[1] === 0x50 &&
+        bytes[2] === 0x4e &&
+        bytes[3] === 0x47
       ) {
-        pack.push([links[i].src.split("/").pop(), links[i].src]);
+        return "png";
       }
-    }
-    zipDeKure(pack, path);
+      if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+        return "jpg";
+      }
+      if (
+        bytes[0] === 0x47 &&
+        bytes[1] === 0x49 &&
+        bytes[2] === 0x46 &&
+        bytes[3] === 0x38
+      ) {
+        return "gif";
+      }
+      if (bytes[0] === 0x42 && bytes[1] === 0x4d) {
+        return "bmp";
+      }
+      if (
+        bytes[0] === 0x00 &&
+        bytes[1] === 0x00 &&
+        bytes[2] === 0x01 &&
+        bytes[3] === 0x00
+      ) {
+        return "ico";
+      }
+      if (
+        bytes[0] === 0x52 &&
+        bytes[1] === 0x49 &&
+        bytes[2] === 0x46 &&
+        bytes[3] === 0x46 &&
+        bytes[8] === 0x57 &&
+        bytes[9] === 0x45 &&
+        bytes[10] === 0x42 &&
+        bytes[11] === 0x50
+      ) {
+        return "webp";
+      }
 
-    function zipDeKure(urls, savePath) {
-      const ioService = Cc["@mozilla.org/network/io-service;1"].getService(
-        Ci.nsIIOService
+      const brand = String.fromCharCode(
+        bytes[8] || 0,
+        bytes[9] || 0,
+        bytes[10] || 0,
+        bytes[11] || 0
       );
-      const zipWriter = Components.Constructor(
-        "@mozilla.org/zipwriter;1",
-        "nsIZipWriter"
-      );
-      var uri = addMenu.convertText("%URL%");
-      var fileName = uri.substring(uri.lastIndexOf("://") + 3, uri.length);
-      fileName = fileName.split(".").join("_");
-      fileName = fileName.split("/").join("_");
-      fileName = fileName.split("?").join("_");
-      var path = savePath + "\\" + fileName + ".zip";
-      var file = Cc["@mozilla.org/file/local;1"].createInstance(
-        Ci.nsILocalFile
-      );
-      file.initWithPath(path);
-      var zipW = new zipWriter();
-      var ioFlag = 0x04 | 0x08 | 0x20;
-      zipW.open(file, ioFlag);
-      for (var i = 0, len = urls.length; i < len; i++) {
-        var [name, url] = urls[i];
-        var ch = ioService.newChannel(url, "UTF-8", null);
-        var stream = ch.open();
-        zipW.addEntryStream(
-          name,
-          Date.now() * 1000,
-          Ci.nsIZipWriter.COMPRESS_DEFAULT,
-          stream,
-          false
-        );
+      if (brand === "avif" || brand === "avis") {
+        return "avif";
       }
-      zipW.close();
+      if (brand === "jxl ") {
+        return "jxl";
+      }
+
+      return mimeToExt(contentType);
+    }
+
+    function uniqueEntryName(fileName, usedNames) {
+      if (!usedNames.has(fileName)) {
+        usedNames.add(fileName);
+        return fileName;
+      }
+
+      const match = /^(.*?)(\.[^.]+)?$/.exec(fileName);
+      const base = match?.[1] || "image";
+      const ext = match?.[2] || "";
+      let counter = 2;
+      let nextName = `${base}-${counter}${ext}`;
+      while (usedNames.has(nextName)) {
+        counter++;
+        nextName = `${base}-${counter}${ext}`;
+      }
+      usedNames.add(nextName);
+      return nextName;
     }
   },
   image:

@@ -611,6 +611,14 @@ import { syncify } from "./000-syncify.sys.mjs";
         sendAsyncMessage: function (key, data = {}, browser = gBrowser.selectedBrowser) {
             return this.getActor(browser)?.sendAsyncMessage(key, data);
         },
+        queryContent: function (key, data = {}, browser = gBrowser.selectedBrowser) {
+            try {
+                return this.getActor(browser)?.sendQuery(key, data) ?? Promise.resolve(null);
+            } catch (ex) {
+                console.error("Error in queryContent : ", ex);
+            }
+            return Promise.resolve(null);
+        },
         handleEvent: async function (event) {
             const { type, target, button } = event;
             const $target = $(event.target);
@@ -2662,6 +2670,8 @@ class AddMenuChild extends JSWindowActorChild {
                     textSelected: getSelectedText(win),
                 });
                 break;
+            case "AddMenuPlus:GetDocumentImages":
+                return getDocumentImages(doc);
             case "AddMenuPlus:ExecuteInContent":
                 const { script } = data;
                 new Function(script).apply(win);
@@ -2676,6 +2686,21 @@ class AddMenuChild extends JSWindowActorChild {
                 text = doc.selection.createRange().text;
             }
             return text;
+        }
+
+        function getDocumentImages (doc) {
+            if (!doc) return [];
+
+            const seen = new Set();
+            return Array.from(doc.images || [], img => img?.currentSrc || img?.src || "")
+                .filter(src => {
+                    if (!src || seen.has(src)) {
+                        return false;
+                    }
+                    seen.add(src);
+                    return true;
+                })
+                .map(src => ({ src }));
         }
     }
 }
