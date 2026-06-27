@@ -10,7 +10,6 @@
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
-// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            2026.04.06 Fix multi-window provider handoff and add debug pref
 // @note            2025.04.04 Fx137 fix lazy is undefined
 // @note            2025.03.08 Add English / Japanese String
@@ -66,6 +65,27 @@
     const DETAIL_REFRESH_TIMER_KEY = "__AddonsPageFx72DetailRefreshTimer";
     const DETAIL_REFRESH_TOKEN_KEY = "__AddonsPageFx72DetailRefreshToken";
     const DETAIL_RENDERING_KEY = "__AddonsPageFx72DetailRendering";
+    const L10N_PATCHED_KEY = "__AddonsPageFx72L10nPatched";
+    const TAMPERMONKEY_VIEW_REGISTERED_KEY = "__AddonsPageFx72TampermonkeyViewRegistered";
+    const TAMPERMONKEY_CATEGORY_SYNC_TOKEN_KEY = "__AddonsPageFx72TampermonkeyCategorySyncToken";
+    const TAMPERMONKEY_IDS = [
+        "firefoxbeta@tampermonkey.net",
+        "firefox@tampermonkey.net",
+    ];
+    const TAMPERMONKEY_VIEW_TYPE = "tampermonkey";
+    const TAMPERMONKEY_VIEW_PARAM = "dashboard";
+    const TAMPERMONKEY_VIEW_ID = `addons://${TAMPERMONKEY_VIEW_TYPE}/${TAMPERMONKEY_VIEW_PARAM}`;
+    const TAMPERMONKEY_FALLBACK_VIEW_ID = "addons://list/extension";
+    const TAMPERMONKEY_LAST_CATEGORY_PREF = "extensions.ui.lastCategory";
+    const STYLUS_VIEW_REGISTERED_KEY = "__AddonsPageFx72StylusViewRegistered";
+    const STYLUS_CATEGORY_SYNC_TOKEN_KEY = "__AddonsPageFx72StylusCategorySyncToken";
+    const STYLUS_IDS = [
+        "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}",
+    ];
+    const STYLUS_VIEW_TYPE = "stylus";
+    const STYLUS_VIEW_PARAM = "manage";
+    const STYLUS_VIEW_ID = `addons://${STYLUS_VIEW_TYPE}/${STYLUS_VIEW_PARAM}`;
+    const STYLUS_FALLBACK_VIEW_ID = "addons://list/extension";
     const DEBUG_PREF = "userChromeJS.AddonsPage_fx72.debug";
     const DEBUG = (() => {
         try {
@@ -184,8 +204,7 @@
                 htmlBrowser.addEventListener("load", event => {
                     const cDoc = htmlBrowser.contentDocument;
                     if (cDoc) {
-                        this.replace_l10n_setAttributes(cDoc);
-                        this.injectCategory(cDoc);
+                        this.initializeAddonsDocument(cDoc, "htmlBrowser.load");
                         this.ensureDetailObserver(cDoc);
                         this.scheduleDetailInfoRefresh(cDoc, "htmlBrowser.load");
                     }
@@ -195,20 +214,25 @@
                 doc.addEventListener("ViewChanged", event => {
                     const cDoc = htmlBrowser.contentDocument;
                     if (cDoc) {
+                        this.injectCategory(cDoc);
                         this.ensureDetailObserver(cDoc);
                         this.injectView(cDoc);
+                        this.ensureTampermonkeyRoute(cDoc, "htmlBrowser.ViewChanged");
+                        this.ensureStylusRoute(cDoc, "htmlBrowser.ViewChanged");
                     }
                 });
 
             } else if (doc.querySelector('title[data-l10n-id="addons-page-title"]')) {
                 // Fx87-
-                this.replace_l10n_setAttributes(doc);
-                this.injectCategory(doc);
+                this.initializeAddonsDocument(doc, "DOMContentLoaded");
                 this.ensureDetailObserver(doc);
                 this.scheduleDetailInfoRefresh(doc, "DOMContentLoaded");
 
                 const loadedEvent = event => {
+                    this.injectCategory(doc);
                     this.injectView(doc);
+                    this.ensureTampermonkeyRoute(doc, event.type);
+                    this.ensureStylusRoute(doc, event.type);
                 };
                 doc.addEventListener("ViewChanged", loadedEvent);   // -Fx88
                 doc.addEventListener("view-loaded", loadedEvent);   // Fx89-
@@ -278,7 +302,7 @@
 
         // Fx78: ローカライズ出来ないと動作しない対策
         replace_l10n_setAttributes (doc) {
-            if (!doc.l10n) return;
+            if (!doc.l10n || doc[L10N_PATCHED_KEY]) return;
 
             const tr1 = {
                 "userchromejs-heading": "userChrome JS",
@@ -298,6 +322,458 @@
                         id = tr2[id];
                     }
                     true_l10n_setAttributes.call(doc.l10n, elem, id, ...args);
+                }
+            }
+            doc[L10N_PATCHED_KEY] = true;
+        },
+
+        initializeAddonsDocument (doc, reason = "unknown") {
+            if (!doc) {
+                return;
+            }
+            this.replace_l10n_setAttributes(doc);
+            this.ensureTampermonkeyView(doc, reason);
+            this.ensureStylusView(doc, reason);
+            this.injectCategory(doc);
+            this.ensureTampermonkeyRoute(doc, reason);
+            this.ensureStylusRoute(doc, reason);
+        },
+
+        async getTampermonkeyAddon () {
+            for (const addonId of TAMPERMONKEY_IDS) {
+                try {
+                    const addon = await AddonManager.getAddonByID(addonId);
+                    if (addon && addon.isActive) {
+                        return addon;
+                    }
+                } catch (e) {
+                    debugWarn("getTampermonkeyAddon(): lookup failed", addonId, e);
+                }
+            }
+            return null;
+        },
+
+        async getStylusAddon () {
+            for (const addonId of STYLUS_IDS) {
+                try {
+                    const addon = await AddonManager.getAddonByID(addonId);
+                    if (addon && addon.isActive) {
+                        return addon;
+                    }
+                } catch (e) {
+                    debugWarn("getStylusAddon(): lookup failed", addonId, e);
+                }
+            }
+            return null;
+        },
+
+        getWebExtensionUUID (addonId) {
+            if (!addonId) {
+                return null;
+            }
+            try {
+                const raw = Services.prefs.getStringPref("extensions.webextensions.uuids", "");
+                if (!raw) {
+                    return null;
+                }
+                const uuids = JSON.parse(raw);
+                return typeof uuids[addonId] === "string" ? uuids[addonId] : null;
+            } catch (e) {
+                debugWarn("getTampermonkeyUUID(): failed", addonId, e);
+                return null;
+            }
+        },
+
+        getTampermonkeyDashboardURL (addon) {
+            if (!addon || !addon.id) {
+                return null;
+            }
+
+            const candidates = [];
+            if (addon.optionsURL) {
+                candidates.push(addon.optionsURL);
+            }
+            const uuid = this.getWebExtensionUUID(addon.id);
+            if (uuid) {
+                candidates.push(`moz-extension://${uuid}/options.html`);
+            }
+
+            for (const candidate of candidates) {
+                try {
+                    return new URL("options.html#nav=dashboard", candidate).href;
+                } catch (e) {
+                    debugWarn("getTampermonkeyDashboardURL(): invalid candidate", {
+                        id: addon.id,
+                        candidate,
+                    });
+                }
+            }
+            return null;
+        },
+
+        getStylusManageURL (addon) {
+            if (!addon || !addon.id) {
+                return null;
+            }
+
+            const candidates = [];
+            if (addon.optionsURL) {
+                candidates.push(addon.optionsURL);
+            }
+            const uuid = this.getWebExtensionUUID(addon.id);
+            if (uuid) {
+                candidates.push(`moz-extension://${uuid}/manage.html`);
+            }
+
+            for (const candidate of candidates) {
+                try {
+                    return new URL("manage.html", candidate).href;
+                } catch (e) {
+                    debugWarn("getStylusManageURL(): invalid candidate", {
+                        id: addon.id,
+                        candidate,
+                    });
+                }
+            }
+            return null;
+        },
+
+        async shouldShowTampermonkeyCategory () {
+            return !!(await this.getTampermonkeyAddon());
+        },
+
+        async shouldShowStylusCategory () {
+            return !!(await this.getStylusAddon());
+        },
+
+        loadAddonsView (doc, viewId, replace = false) {
+            const win = doc && doc.defaultView;
+            if (!win) {
+                return null;
+            }
+            if (win.gViewController && typeof win.gViewController.loadView === "function") {
+                return win.gViewController.loadView(viewId, replace);
+            }
+            if (typeof win.loadView === "function") {
+                return win.loadView(viewId);
+            }
+            return null;
+        },
+
+        openTampermonkeyDashboardTab (url) {
+            if (!url) {
+                return;
+            }
+            try {
+                if (typeof window.openTrustedLinkIn === "function") {
+                    window.openTrustedLinkIn(url, "tab");
+                    return;
+                }
+            } catch (e) {
+                debugWarn("openTampermonkeyDashboardTab(): openTrustedLinkIn failed", e);
+            }
+            this.openUrl(url);
+        },
+
+        openStylusManageTab (url) {
+            if (!url) {
+                return;
+            }
+            try {
+                if (typeof window.openTrustedLinkIn === "function") {
+                    window.openTrustedLinkIn(url, "tab");
+                    return;
+                }
+            } catch (e) {
+                debugWarn("openStylusManageTab(): openTrustedLinkIn failed", e);
+            }
+            this.openUrl(url);
+        },
+
+        createTampermonkeyView (doc, addon, dashboardURL) {
+            const fragment = doc.createDocumentFragment();
+            const container = $C(doc, "section", {
+                class: "tampermonkey-dashboard-view",
+            }, fragment);
+            const header = $C(doc, "div", {
+                class: "tampermonkey-dashboard-header",
+            }, container);
+
+            $C(doc, "h1", {
+                class: "tampermonkey-dashboard-title",
+                "#text": "Tampermonkey"
+            }, header);
+            $C(doc, "p", {
+                class: "tampermonkey-dashboard-subtitle",
+                "#text": addon && addon.name ? addon.name : "Tampermonkey"
+            }, header);
+            $C(doc, "p", {
+                class: "tampermonkey-dashboard-message",
+                "#text": "正在新标签页打开 Tampermonkey 控制台..."
+            }, container);
+            const link = $C(doc, "a", {
+                class: "tampermonkey-dashboard-link",
+                href: dashboardURL,
+                action: "AM-open-url",
+                "#text": dashboardURL
+            }, container);
+            link.addEventListener("click", this);
+
+            return fragment;
+        },
+
+        createStylusView (doc, addon, manageURL) {
+            const fragment = doc.createDocumentFragment();
+            const container = $C(doc, "section", {
+                class: "tampermonkey-dashboard-view",
+            }, fragment);
+            const header = $C(doc, "div", {
+                class: "tampermonkey-dashboard-header",
+            }, container);
+
+            $C(doc, "h1", {
+                class: "tampermonkey-dashboard-title",
+                "#text": "Stylus"
+            }, header);
+            $C(doc, "p", {
+                class: "tampermonkey-dashboard-subtitle",
+                "#text": addon && addon.name ? addon.name : "Stylus"
+            }, header);
+            $C(doc, "p", {
+                class: "tampermonkey-dashboard-message",
+                "#text": "正在新标签页打开 Stylus 管理页..."
+            }, container);
+            const link = $C(doc, "a", {
+                class: "tampermonkey-dashboard-link",
+                href: manageURL,
+                action: "AM-open-url",
+                "#text": manageURL
+            }, container);
+            link.addEventListener("click", this);
+
+            return fragment;
+        },
+
+        ensureTampermonkeyView (doc, reason = "unknown", attempt = 0) {
+            const win = doc && doc.defaultView;
+            if (!win) {
+                return;
+            }
+            if (!win.gViewController || typeof win.gViewController.defineView !== "function") {
+                if (attempt < 10) {
+                    win.setTimeout(() => {
+                        this.ensureTampermonkeyView(doc, reason, attempt + 1);
+                    }, attempt < 3 ? 60 : 120);
+                }
+                return;
+            }
+
+            const renderView = async (param) => {
+                const addon = await this.getTampermonkeyAddon();
+                const dashboardURL = addon && this.getTampermonkeyDashboardURL(addon);
+                if (param !== TAMPERMONKEY_VIEW_PARAM || !addon || !dashboardURL) {
+                    this.ensureTampermonkeyRoute(doc, "render");
+                    return doc.createDocumentFragment();
+                }
+                this.openTampermonkeyDashboardTab(dashboardURL);
+                this.ensureTampermonkeyRoute(doc, "render.open", true);
+                return this.createTampermonkeyView(doc, addon, dashboardURL);
+            };
+
+            if (win.gViewController.views && win.gViewController.views[TAMPERMONKEY_VIEW_TYPE]) {
+                win.gViewController.views[TAMPERMONKEY_VIEW_TYPE] = renderView;
+                win[TAMPERMONKEY_VIEW_REGISTERED_KEY] = true;
+                return;
+            }
+
+            if (win[TAMPERMONKEY_VIEW_REGISTERED_KEY]) {
+                return;
+            }
+
+            win.gViewController.defineView(TAMPERMONKEY_VIEW_TYPE, renderView);
+            win[TAMPERMONKEY_VIEW_REGISTERED_KEY] = true;
+            debugLog("ensureTampermonkeyView(): registered", {
+                reason,
+                href: String(doc.URL || ""),
+            });
+        },
+
+        ensureStylusView (doc, reason = "unknown", attempt = 0) {
+            const win = doc && doc.defaultView;
+            if (!win) {
+                return;
+            }
+            if (!win.gViewController || typeof win.gViewController.defineView !== "function") {
+                if (attempt < 10) {
+                    win.setTimeout(() => {
+                        this.ensureStylusView(doc, reason, attempt + 1);
+                    }, attempt < 3 ? 60 : 120);
+                }
+                return;
+            }
+
+            const renderView = async (param) => {
+                const addon = await this.getStylusAddon();
+                const manageURL = addon && this.getStylusManageURL(addon);
+                if (param !== STYLUS_VIEW_PARAM || !addon || !manageURL) {
+                    this.ensureStylusRoute(doc, "render");
+                    return doc.createDocumentFragment();
+                }
+                this.openStylusManageTab(manageURL);
+                this.ensureStylusRoute(doc, "render.open", true);
+                return this.createStylusView(doc, addon, manageURL);
+            };
+
+            if (win.gViewController.views && win.gViewController.views[STYLUS_VIEW_TYPE]) {
+                win.gViewController.views[STYLUS_VIEW_TYPE] = renderView;
+                win[STYLUS_VIEW_REGISTERED_KEY] = true;
+                return;
+            }
+
+            if (win[STYLUS_VIEW_REGISTERED_KEY]) {
+                return;
+            }
+
+            win.gViewController.defineView(STYLUS_VIEW_TYPE, renderView);
+            win[STYLUS_VIEW_REGISTERED_KEY] = true;
+            debugLog("ensureStylusView(): registered", {
+                reason,
+                href: String(doc.URL || ""),
+            });
+        },
+
+        async syncTampermonkeyCategory (doc, reason = "unknown") {
+            const button = doc && doc.querySelector('.category[name="tampermonkey"]');
+            if (!button) {
+                return;
+            }
+
+            const token = `${Date.now()}:${Math.random()}`;
+            button[TAMPERMONKEY_CATEGORY_SYNC_TOKEN_KEY] = token;
+            const visible = await this.shouldShowTampermonkeyCategory();
+            if (button[TAMPERMONKEY_CATEGORY_SYNC_TOKEN_KEY] !== token) {
+                return;
+            }
+
+            button.hidden = !visible;
+            if (visible) {
+                button.removeAttribute("disabled");
+            } else {
+                button.setAttribute("disabled", "true");
+                this.ensureTampermonkeyRoute(doc, `${reason}.hidden`);
+            }
+        },
+
+        async syncStylusCategory (doc, reason = "unknown") {
+            const button = doc && doc.querySelector('.category[name="stylus"]');
+            if (!button) {
+                return;
+            }
+
+            const token = `${Date.now()}:${Math.random()}`;
+            button[STYLUS_CATEGORY_SYNC_TOKEN_KEY] = token;
+            const visible = await this.shouldShowStylusCategory();
+            if (button[STYLUS_CATEGORY_SYNC_TOKEN_KEY] !== token) {
+                return;
+            }
+
+            button.hidden = !visible;
+            if (visible) {
+                button.removeAttribute("disabled");
+            } else {
+                button.setAttribute("disabled", "true");
+                this.ensureStylusRoute(doc, `${reason}.hidden`);
+            }
+        },
+
+        async ensureTampermonkeyRoute (doc, reason = "unknown", force = false) {
+            const win = doc && doc.defaultView;
+            if (!win) {
+                return;
+            }
+
+            const visible = await this.shouldShowTampermonkeyCategory();
+            if (visible && !force) {
+                return;
+            }
+
+            try {
+                if (Services.prefs.getStringPref(TAMPERMONKEY_LAST_CATEGORY_PREF, "") === TAMPERMONKEY_VIEW_ID) {
+                    Services.prefs.setStringPref(TAMPERMONKEY_LAST_CATEGORY_PREF, TAMPERMONKEY_FALLBACK_VIEW_ID);
+                }
+            } catch (e) {
+                debugWarn("ensureTampermonkeyRoute(): pref fallback failed", e);
+            }
+
+            try {
+                const historyState = win.history && win.history.state;
+                if (historyState && historyState.view === TAMPERMONKEY_VIEW_ID) {
+                    win.history.replaceState({
+                        ...historyState,
+                        view: TAMPERMONKEY_FALLBACK_VIEW_ID,
+                        previousView: historyState.previousView === TAMPERMONKEY_VIEW_ID ? null : historyState.previousView,
+                    }, "");
+                }
+            } catch (e) {
+                debugWarn("ensureTampermonkeyRoute(): history fallback failed", e);
+            }
+
+            if (win.gViewController && win.gViewController.currentViewId === TAMPERMONKEY_VIEW_ID) {
+                try {
+                    win.setTimeout(() => {
+                        const result = this.loadAddonsView(doc, TAMPERMONKEY_FALLBACK_VIEW_ID, true);
+                        if (result && typeof result.catch === "function") {
+                            result.catch(ex => console.error(ex));
+                        }
+                    }, 0);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        },
+
+        async ensureStylusRoute (doc, reason = "unknown", force = false) {
+            const win = doc && doc.defaultView;
+            if (!win) {
+                return;
+            }
+
+            const visible = await this.shouldShowStylusCategory();
+            if (visible && !force) {
+                return;
+            }
+
+            try {
+                if (Services.prefs.getStringPref(TAMPERMONKEY_LAST_CATEGORY_PREF, "") === STYLUS_VIEW_ID) {
+                    Services.prefs.setStringPref(TAMPERMONKEY_LAST_CATEGORY_PREF, STYLUS_FALLBACK_VIEW_ID);
+                }
+            } catch (e) {
+                debugWarn("ensureStylusRoute(): pref fallback failed", e);
+            }
+
+            try {
+                const historyState = win.history && win.history.state;
+                if (historyState && historyState.view === STYLUS_VIEW_ID) {
+                    win.history.replaceState({
+                        ...historyState,
+                        view: STYLUS_FALLBACK_VIEW_ID,
+                        previousView: historyState.previousView === STYLUS_VIEW_ID ? null : historyState.previousView,
+                    }, "");
+                }
+            } catch (e) {
+                debugWarn("ensureStylusRoute(): history fallback failed", e);
+            }
+
+            if (win.gViewController && win.gViewController.currentViewId === STYLUS_VIEW_ID) {
+                try {
+                    win.setTimeout(() => {
+                        const result = this.loadAddonsView(doc, STYLUS_FALLBACK_VIEW_ID, true);
+                        if (result && typeof result.catch === "function") {
+                            result.catch(ex => console.error(ex));
+                        }
+                    }, 0);
+                } catch (e) {
+                    console.error(e);
                 }
             }
         },
@@ -470,9 +946,13 @@
         injectCategory (doc) {
             // Fx76 about:addonsのサイドバーhtml化でカテゴリーが自動で挿入されなくなった対策
             const cat = doc.getElementById("categories");
-            if (cat && !doc.querySelector('.category[name="userchromejs"]')) {
+            const extensionBtn = cat && cat.querySelector('.category[name="extension"]');
+            if (!cat || !extensionBtn) {
+                return;
+            }
+            if (!doc.querySelector('.category[name="userchromejs"]')) {
                 // 拡張ボタンを複製して作る
-                const ucjsBtn = cat.querySelector('.category[name="extension"]').cloneNode(false);
+                const ucjsBtn = extensionBtn.cloneNode(false);
                 ucjsBtn.removeAttribute("aria-selected");
                 ucjsBtn.removeAttribute("tabindex");
                 ucjsBtn.removeAttribute("data-l10n-id");
@@ -486,8 +966,51 @@
                 }, ucjsBtn);
 
                 const localeBtn = cat.querySelector('.category[name="locale"]');
-                localeBtn.parentElement.insertBefore(ucjsBtn, localeBtn);
+                (localeBtn ? localeBtn.parentElement : cat).insertBefore(ucjsBtn, localeBtn || null);
             }
+
+            if (!doc.querySelector('.category[name="tampermonkey"]')) {
+                const tmBtn = extensionBtn.cloneNode(false);
+                tmBtn.removeAttribute("aria-selected");
+                tmBtn.removeAttribute("tabindex");
+                tmBtn.removeAttribute("data-l10n-id");
+                tmBtn.setAttribute("viewid", TAMPERMONKEY_VIEW_ID);
+                tmBtn.setAttribute("name", "tampermonkey");
+                tmBtn.setAttribute("title", "Tampermonkey");
+                tmBtn.hidden = true;
+
+                $C(doc, "span", {
+                    class: "category-name",
+                    "#text": "Tampermonkey"
+                }, tmBtn);
+
+                const ucjsBtn = cat.querySelector('.category[name="userchromejs"]');
+                const localeBtn = cat.querySelector('.category[name="locale"]');
+                const referenceNode = (ucjsBtn && ucjsBtn.nextSibling) || localeBtn || null;
+                cat.insertBefore(tmBtn, referenceNode);
+            }
+            if (!doc.querySelector('.category[name="stylus"]')) {
+                const stylusBtn = extensionBtn.cloneNode(false);
+                stylusBtn.removeAttribute("aria-selected");
+                stylusBtn.removeAttribute("tabindex");
+                stylusBtn.removeAttribute("data-l10n-id");
+                stylusBtn.setAttribute("viewid", STYLUS_VIEW_ID);
+                stylusBtn.setAttribute("name", "stylus");
+                stylusBtn.setAttribute("title", "Stylus");
+                stylusBtn.hidden = true;
+
+                $C(doc, "span", {
+                    class: "category-name",
+                    "#text": "Stylus"
+                }, stylusBtn);
+
+                const tmBtn = cat.querySelector('.category[name="tampermonkey"]');
+                const localeBtn = cat.querySelector('.category[name="locale"]');
+                const referenceNode = (tmBtn && tmBtn.nextSibling) || localeBtn || null;
+                cat.insertBefore(stylusBtn, referenceNode);
+            }
+            this.syncTampermonkeyCategory(doc, "injectCategory");
+            this.syncStylusCategory(doc, "injectCategory");
         },
 
         getTargetAddon (target) {
@@ -1440,9 +1963,21 @@
                     #category-userchromejs > .category-icon {
                         list-style-image: url(chrome://mozapps/skin/extensions/experimentGeneric.svg);
                     }
+                    #category-tampermonkey > .category-icon {
+                        list-style-image: url(chrome://mozapps/skin/extensions/extensionGeneric.svg);
+                    }
+                    #category-stylus > .category-icon {
+                        list-style-image: url(chrome://mozapps/skin/extensions/extensionGeneric.svg);
+                    }
                 }
                 @-moz-document url("about:addons"), url("chrome://mozapps/content/extensions/aboutaddons.html") {
                     html|*.category[name="userchromejs"] {
+                        background-image: url(chrome://mozapps/skin/extensions/category-extensions.svg);
+                    }
+                    html|*.category[name="tampermonkey"] {
+                        background-image: url(chrome://mozapps/skin/extensions/category-extensions.svg);
+                    }
+                    html|*.category[name="stylus"] {
                         background-image: url(chrome://mozapps/skin/extensions/category-extensions.svg);
                     }
                     .userchromejs-detail-row {
@@ -1486,6 +2021,32 @@
                         text-align: left !important;
                         overflow-wrap: anywhere !important;
                         word-break: break-word !important;
+                    }
+                    .tampermonkey-dashboard-view {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                        min-height: calc(100vh - 190px);
+                    }
+                    .tampermonkey-dashboard-header {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    }
+                    .tampermonkey-dashboard-title {
+                        margin: 0;
+                    }
+                    .tampermonkey-dashboard-subtitle {
+                        margin: 0;
+                        color: var(--in-content-deemphasized-text);
+                    }
+                    .tampermonkey-dashboard-message {
+                        margin: 0;
+                    }
+                    .tampermonkey-dashboard-link {
+                        display: block;
+                        overflow-wrap: anywhere;
+                        word-break: break-word;
                     }
                 }`;
 
