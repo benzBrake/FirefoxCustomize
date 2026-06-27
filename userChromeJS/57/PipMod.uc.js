@@ -7,6 +7,7 @@
 // @charset         UTF-8
 // @include         chrome://global/content/pictureinpicture/player.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            2026-06-27 归档：不再更新
 // ==/UserScript==
 (function (css) {
     const emp = ["", ""];
