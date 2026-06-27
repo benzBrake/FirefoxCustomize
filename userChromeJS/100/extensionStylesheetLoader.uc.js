@@ -25,6 +25,7 @@
 // @include        main
 // @startup        extensionStylesheetLoader
 // @onlyonce
+// @note 2026-06-27 归档：不再更新
 // ==/UserScript==
 
 class ExtensionStylesheetLoader {
