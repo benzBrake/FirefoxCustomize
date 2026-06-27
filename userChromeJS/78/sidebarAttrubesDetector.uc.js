@@ -2,6 +2,7 @@
 // @name           sidebarAttrubesDetector.uc.js
 // @description    主窗口新增 sidebarCommand 属性
 // @version        1.0
+// @note           2026-06-27 归档：不再更新
 // @author         Ryan
 // @include        main
 // @compatibility  Firefox 78
