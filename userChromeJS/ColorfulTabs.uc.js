@@ -33,14 +33,22 @@
             this.pendingWrites = new Map();
             this.flushScheduled = false;
             this.closed = false;
+            this.destroyPromise = null;
             this.canvas = document.createElement("canvas");
             this.context = this.canvas.getContext("2d", { willReadFrequently: true });
             this.db = null;
             this.dbReady = this.initDatabase();
+            this.handleWindowUnload = () => {
+                this.destroy().catch(Cu.reportError);
+            };
 
             gBrowser.tabContainer.addEventListener("TabAttrModified", this, false);
             gBrowser.tabContainer.addEventListener("TabOpen", this, false);
             gBrowser.tabContainer.addEventListener("TabSelect", this, false);
+            window.addEventListener("unload", this.handleWindowUnload, { once: true });
+            if (typeof setUnloadMap === "function") {
+                setUnloadMap("ColorfulTabs", this.handleWindowUnload);
+            }
 
             if (RENDER_ALL) {
                 document.getElementById("TabsToolbar")?.setAttribute("renderall", "true");
@@ -206,6 +214,9 @@
         }
 
         async getCachedColor(host, imageSrc) {
+            if (this.closed) {
+                return null;
+            }
             const now = Date.now();
             const inMemory = this.colorCache.get(host) || null;
             if (inMemory) {
@@ -220,7 +231,7 @@
             }
 
             const db = await this.dbReady;
-            if (!db) {
+            if (!db || this.closed) {
                 if (inMemory) {
                     return {
                         rgb: inMemory.rgb,
@@ -276,6 +287,9 @@
         }
 
         async upsertColor(host, imageSrc, rgb) {
+            if (this.closed) {
+                return;
+            }
             const now = Date.now();
             const entry = {
                 host,
@@ -287,7 +301,7 @@
             this.colorCache.set(host, entry);
 
             const db = await this.dbReady;
-            if (!db) {
+            if (!db || this.closed) {
                 return;
             }
 
@@ -326,7 +340,7 @@
 
         async touchLastUsed(host) {
             const db = await this.dbReady;
-            if (!db) {
+            if (!db || this.closed) {
                 return;
             }
             const entry = this.colorCache.get(host);
@@ -557,6 +571,10 @@
                 const db = await Sqlite.openConnection({
                     path: this.getDatabasePath(),
                 });
+                if (this.closed) {
+                    await db.close();
+                    return null;
+                }
                 await db.execute(`
                     CREATE TABLE IF NOT EXISTS colors (
                         host TEXT PRIMARY KEY,
@@ -568,8 +586,14 @@
                         last_used_at INTEGER NOT NULL
                     )
                 `);
+                if (this.closed) {
+                    await db.close();
+                    return null;
+                }
                 this.db = db;
-                this.cleanupOldEntries().catch(Cu.reportError);
+                if (!this.closed) {
+                    this.cleanupOldEntries().catch(Cu.reportError);
+                }
                 return db;
             } catch (error) {
                 Cu.reportError(error);
@@ -601,7 +625,7 @@
 
         async cleanupOldEntries() {
             const db = await this.dbReady;
-            if (!db) {
+            if (!db || this.closed) {
                 return;
             }
             await db.executeCached(
@@ -613,25 +637,49 @@
             );
         }
 
-        destroy() {
-            this.closed = true;
-            this.pendingTabs.clear();
-            this.colorCache.clear();
-
-            gBrowser.tabContainer.removeEventListener("TabAttrModified", this, false);
-            gBrowser.tabContainer.removeEventListener("TabOpen", this, false);
-            gBrowser.tabContainer.removeEventListener("TabSelect", this, false);
-
-            document.getElementById("TabsToolbar")?.removeAttribute("renderall");
-
-            if (this.style?.parentNode) {
-                this.style.parentNode.removeChild(this.style);
+        async destroy() {
+            if (this.destroyPromise) {
+                return this.destroyPromise;
             }
 
-            if (this.db) {
-                this.db.close().catch(Cu.reportError);
+            this.destroyPromise = (async () => {
+                this.closed = true;
+                this.pendingTabs.clear();
+                this.colorCache.clear();
+                this.taskTokens = new WeakMap();
+                this.pendingWrites.clear();
+
+                gBrowser.tabContainer.removeEventListener("TabAttrModified", this, false);
+                gBrowser.tabContainer.removeEventListener("TabOpen", this, false);
+                gBrowser.tabContainer.removeEventListener("TabSelect", this, false);
+                window.removeEventListener("unload", this.handleWindowUnload, { once: true });
+
+                document.getElementById("TabsToolbar")?.removeAttribute("renderall");
+
+                if (this.style?.parentNode) {
+                    this.style.parentNode.removeChild(this.style);
+                }
+
+                let db = this.db;
+                if (!db) {
+                    try {
+                        db = await this.dbReady;
+                    } catch (error) {
+                        Cu.reportError(error);
+                    }
+                }
+
                 this.db = null;
-            }
+                if (db) {
+                    try {
+                        await db.close();
+                    } catch (error) {
+                        Cu.reportError(error);
+                    }
+                }
+            })();
+
+            return this.destroyPromise;
         }
     }
 
