@@ -3,11 +3,12 @@
 // @description     添加多个自定义按钮，UndoCloseTab、清除历史记录、高级首选项、受同步的标签页、下载历史、管理书签
 // @author          Ryan
 // @version         0.2.0
-// @compatibility   Firefox 115
+// @compatibility   Firefox 70 +
 // @include         main
 // @shutdown        window.CustomButtons.destroy(win);
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            0.2.0 修复 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
+// @note            2026-06-27 归档：新版本升级至 Firefox 115+
 // @note            0.1.9 分离高级截图为 ScreenshotTools.uc.js
 // @note            0.1.8 画板改为调用系统自带，修改 openCommand 函数，exec 增加第三个参数，移除部分无用代码
 // @note            0.1.7 修改【我的足迹：下载】，【我的足迹：书签】图标
@@ -18,7 +19,6 @@
 (function (css, isDebugMode) {
     const CustomizableUI = globalThis.CustomizableUI || Cu.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
-    const SidebarController = globalThis.SidebarController || globalThis.SidebarUI;
 
     const LANG = {
         'zh-CN': {
@@ -39,11 +39,7 @@
             label: $L("undo close tab"),
             tooltiptext: $L("undo close tab tooltip"),
             defaultArea: CustomizableUI.AREA_TABSTRIP,
-            oncommand: function (event) {
-                if (event.explicitOriginalTarget.tagName === "toolbarbutton") {
-                    CustomButtons.undoClosedTab(undefined, CustomButtons.getEventWindow(event));
-                }
-            },
+            oncommand: function (event) { if (event.explicitOriginalTarget.tagName === "toolbarbutton") undoCloseTab(); },
             type: "contextmenu",
             image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbC1vcGFjaXR5PSJjb250ZXh0LWZpbGwtb3BhY2l0eSIgZmlsbD0iY29udGV4dC1maWxsIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNNS44MjggN2wyLjUzNiAyLjUzNkw2Ljk1IDEwLjk1IDIgNmw0Ljk1LTQuOTUgMS40MTQgMS40MTRMNS44MjggNUgxM2E4IDggMCAxIDEgMCAxNkg0di0yaDlhNiA2IDAgMSAwIDAtMTJINS44Mjh6Ii8+PC9zdmc+",
             onclick: function (event) {
@@ -56,11 +52,14 @@
                     return;
                 }
                 if (event.button !== 2) return;
-                const targetWin = CustomButtons.getEventWindow(event);
                 const doc = (event.view && event.view.document) || event.target.ownerDocument;
                 const menu = event.target.querySelector("menupopup");
                 menu.querySelectorAll('.undo-item').forEach(i => i.remove());
-                let data = CustomButtons.getClosedTabData(targetWin);
+                const getClosedTabData = "getClosedTabDataForWindow" in SessionStore ? SessionStore.getClosedTabDataForWindow : SessionStore.getClosedTabData;
+                let data = getClosedTabData(window);
+                if (typeof (data) === "string") {
+                    data = JSON.parse(data);
+                }
                 const tabLength = data.length;
 
                 for (let i = 0; i < tabLength; i++) {
@@ -69,11 +68,7 @@
                         label: item.title,
                         class: 'undo-item bookmark-item menuitem-with-favicon',
                         value: i,
-                        oncommand: function (event) {
-                            event.stopPropagation();
-                            event.preventDefault();
-                            CustomButtons.undoClosedTab(Number(event.currentTarget.getAttribute("value")), CustomButtons.getEventWindow(event));
-                        },
+                        oncommand: 'event.stopPropagation();event.preventDefault();undoCloseTab(event.originalTarget.getAttribute("value"));',
                     });
 
                     const state = item.state;
@@ -89,7 +84,7 @@
 
                 event.preventDefault();
                 let pos = "after_end", x, y;
-                if ((targetWin.innerWidth / 2) > event.pageX) {
+                if ((event.target.ownerGlobal.innerWidth / 2) > event.pageX) {
                     pos = "after_position";
                     x = 0;
                     y = 0 + event.target.clientHeight;
@@ -115,36 +110,25 @@
             id: 'CB-AboutConfig',
             label: $L("about config"),
             image: "chrome://global/skin/icons/settings.svg",
-            oncommand: function () {
-                openTrustedLinkIn(
-                    'about:config',
-                    gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab"
-                );
-            },
+            oncommand: `openTrustedLinkIn('about:config', gBrowser.currentURI.spec === AboutNewTab.newTabURL || gBrowser.currentURI.spec === HomePage.get(window) ? "current" : "tab")`,
         }, {
             id: 'CB-SyncedTabs',
             label: $L("synced tabs"),
             tooltiptext: $L("synced tabs"),
             image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNMi41IDFBMS41IDEuNSAwIDAgMCAxIDIuNVY0aDFWMi41YS41LjUgMCAwIDEgLjUtLjVoMTFhLjUuNSAwIDAgMSAuNS41djdhLjUuNSAwIDAgMS0uNS41SDh2MWg1LjVBMS41IDEuNSAwIDAgMCAxNSA5LjV2LTdBMS41IDEuNSAwIDAgMCAxMy41IDFoLTExem0tMSA0QTEuNSAxLjUgMCAwIDAgMCA2LjV2OEExLjUgMS41IDAgMCAwIDEuNSAxNmg0QTEuNSAxLjUgMCAwIDAgNyAxNC41di04QTEuNSAxLjUgMCAwIDAgNS41IDVoLTR6bTAgMWg0YS41LjUgMCAwIDEgLjUuNXY4YS41LjUgMCAwIDEtLjUuNWgtNGEuNS41IDAgMCAxLS41LS41di04YS41LjUgMCAwIDEgLjUtLjV6TTggMTJ2MWg3LjVhLjUuNSAwIDAgMCAwLTFIOHptLTUgMWEuNS41IDAgMCAwIDAgMWgxYS41LjUgMCAwIDAgMC0xSDN6Ii8+Cjwvc3ZnPgo=",
-            oncommand: function () {
-                SidebarController?.toggle?.('viewTabsSidebar');
-            },
+            oncommand: "SidebarUI.toggle('viewTabsSidebar');",
         }, {
             id: 'CB-DownloadHistory',
             label: $L("downloads history"),
             tooltiptext: $L("downloads history"),
             image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMykiPg0KICA8cGF0aCBkPSJNNS43NSAzIEEgMS4wMDAxIDEuMDAwMSAwIDAgMCA0Ljg4NjcxODggMy40OTYwOTM4TDMuMTM2NzE4OCA2LjQ5NjA5MzggQSAxLjAwMDEgMS4wMDAxIDAgMCAwIDMgN0wzIDE5QzMgMjAuMDkzMDYzIDMuOTA2OTM3MiAyMSA1IDIxTDE5IDIxQzIwLjA5MzA2MyAyMSAyMSAyMC4wOTMwNjMgMjEgMTlMMjEgNyBBIDEuMDAwMSAxLjAwMDEgMCAwIDAgMjAuODYzMjgxIDYuNDk2MDkzOEwxOS4xMTMyODEgMy40OTYwOTM4IEEgMS4wMDAxIDEuMDAwMSAwIDAgMCAxOC4yNSAzTDUuNzUgMyB6IE0gNi4zMjQyMTg4IDVMMTcuNjc1NzgxIDVMMTguODQxNzk3IDdMNS4xNTgyMDMxIDdMNi4zMjQyMTg4IDUgeiBNIDUgOUwxOSA5TDE5IDE5TDUgMTlMNSA5IHogTSAxMSAxMUwxMSAxNEw4IDE0TDEyIDE4TDE2IDE0TDEzIDE0TDEzIDExTDExIDExIHoiLz4NCjwvc3ZnPg==",
-            oncommand: function () {
-                DownloadsPanel.showDownloadsHistory();
-            }
+            oncommand: "DownloadsPanel.showDownloadsHistory();"
         }, {
             id: 'CB-BookmarksManager',
             label: $L("bookmarks manager"),
             tooltiptext: $L("bookmarks manager"),
             image: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5IiB0cmFuc2Zvcm09InNjYWxlKDEuMikiPg0KICA8cGF0aCBkPSJNMTAuNSA2QzguMDM2NSA2IDUuOTQ1NjI4OSA3LjYyNzY3NiA1LjI0ODA0NjkgOS44NjUyMzQ0QzUuMjQ3ODY0MSA5Ljg2NTgyIDUuMjQ4MjI5NSA5Ljg2NjYwMTggNS4yNDgwNDY5IDkuODY3MTg3NUM1LjE0MTAyNzEgMTAuMjEwODggNS4wNjY4NjQ0IDEwLjU2ODc4OCA1LjAyOTI5NjkgMTAuOTM3NUM1LjAyOTIzMDkgMTAuOTM4MTQ1IDUuMDI5MzYyNiAxMC45Mzg4MDggNS4wMjkyOTY5IDEwLjkzOTQ1M0M1LjAxMDYwOSAxMS4xMjM1MDkgNSAxMS4zMTEwOTQgNSAxMS41TDUgMTMuNUw1IDM2LjVDNSAzOS41MzMgNy40NjggNDIgMTAuNSA0MkwyNC4wNTY2NDEgNDJDMjMuNDYyNjQxIDQxLjA3MyAyMi45Nzk3NjYgNDAuMDY4IDIyLjYzNDc2NiAzOUwxMC41IDM5QzkuMTIxIDM5IDggMzcuODc4IDggMzYuNUw4IDE1TDQwIDE1TDQwIDIzQzQxLjA4NCAyMy40NTIgNDIuMDg4IDI0LjA1MzU3OCA0MyAyNC43Njc1NzhMNDMgMTMuNUw0MyAxMS41QzQzIDExLjMwOTgzOCA0Mi45ODk2NSAxMS4xMjI3NTUgNDIuOTcwNzAzIDEwLjkzNzVDNDIuOTMzMTM2IDEwLjU2ODc4OCA0Mi44NTg5NzMgMTAuMjEwODggNDIuNzUxOTUzIDkuODY3MTg3NUM0Mi43NTE3NzEgOS44NjY2MDE4IDQyLjc1MjEzNiA5Ljg2NTgyIDQyLjc1MTk1MyA5Ljg2NTIzNDRDNDIuMDU0MzcxIDcuNjI3Njc2IDM5Ljk2MzUgNiAzNy41IDZMMTAuNSA2IHogTSAxMC41IDlDMTEuMzI4IDkgMTIgOS42NzIgMTIgMTAuNUMxMiAxMS4zMjggMTEuMzI4IDEyIDEwLjUgMTJDOS42NzIgMTIgOSAxMS4zMjggOSAxMC41QzkgOS43NzU1IDkuNTEzOTQ1MyA5LjE3MTE5NTMgMTAuMTk3MjY2IDkuMDMxMjVDMTAuMjk0ODgzIDkuMDExMjU3OCAxMC4zOTY1IDkgMTAuNSA5IHogTSAxNS41IDlDMTYuMzI4IDkgMTcgOS42NzIgMTcgMTAuNUMxNyAxMS4zMjggMTYuMzI4IDEyIDE1LjUgMTJDMTQuNjcyIDEyIDE0IDExLjMyOCAxNCAxMC41QzE0IDkuNjcyIDE0LjY3MiA5IDE1LjUgOSB6IE0gMzUgMjRDMjguOTI1IDI0IDI0IDI4LjkyNSAyNCAzNUMyNCA0MS4wNzUgMjguOTI1IDQ2IDM1IDQ2QzQxLjA3NSA0NiA0NiA0MS4wNzUgNDYgMzVDNDYgMjguOTI1IDQxLjA3NSAyNCAzNSAyNCB6IE0gMzUgMjhDMzUuNDggMjggMzUuOTA4NDUzIDI4LjMwNTc2NiAzNi4wNjQ0NTMgMjguNzU5NzY2TDM3LjE3NzczNCAzMkw0MC44NzUgMzJDNDEuMzU4IDMyIDQxLjc4NzQwNiAzMi4zMDg2MjUgNDEuOTQxNDA2IDMyLjc2NTYyNUM0Mi4wOTU0MDYgMzMuMjIzNjI1IDQxLjkzOTY4NyAzMy43Mjk0ODQgNDEuNTU0Njg4IDM0LjAyMTQ4NEwzOC41NjA1NDcgMzYuMjkyOTY5TDM5LjU3NDIxOSAzOS41MzkwNjJDMzkuNzIwMjE5IDQwLjAwNTA2MyAzOS41NDgzOTEgNDAuNTEwOTY5IDM5LjE1MDM5MSA0MC43OTI5NjlDMzguOTU1MzkxIDQwLjkzMDk2OSAzOC43MjcgNDEgMzguNSA0MUMzOC4yNjMgNDEgMzguMDI1MTcyIDQwLjkyNTM5MSAzNy44MjYxNzIgNDAuNzc1MzkxTDM1IDM4LjY2MDE1NkwzMi4xNzM4MjggNDAuNzc1MzkxQzMxLjc4MzgyOCA0MS4wNjgzOTEgMzEuMjQ4NjA5IDQxLjA3NjkyMiAzMC44NDk2MDkgNDAuNzk0OTIyQzMwLjQ1MTYwOSA0MC41MTI5MjIgMzAuMjc5NzgxIDQwLjAwNTA2MyAzMC40MjU3ODEgMzkuNTM5MDYyTDMxLjQzOTQ1MyAzNi4yOTQ5MjJMMjguNDQ1MzEyIDM0LjAyMTQ4NEMyOC4wNjAzMTIgMzMuNzI5NDg0IDI3LjkwNDU5NCAzMy4yMjU1NzggMjguMDU4NTk0IDMyLjc2NzU3OEMyOC4yMTM1OTQgMzIuMzA5NTc4IDI4LjY0MiAzMiAyOS4xMjUgMzJMMzIuODIyMjY2IDMyTDMzLjkzNTU0NyAyOC43NTk3NjZDMzQuMDkxNTQ3IDI4LjMwNTc2NiAzNC41MiAyOCAzNSAyOCB6Ii8+DQo8L3N2Zz4=",
-            oncommand: function () {
-                PlacesCommandHook.showPlacesOrganizer('AllBookmarks');
-            }
+            oncommand: "PlacesCommandHook.showPlacesOrganizer('AllBookmarks');"
         }];
 
     window.CustomButtons = {
@@ -162,31 +146,6 @@
         },
         get isDebugMode() {
             return Services.prefs.getBoolPref("userChromeJS.CopyCat.debug", false);
-        },
-        setElementHook(el, name, hook) {
-            if (typeof hook !== "function") {
-                if (typeof hook !== "undefined") {
-                    this.warnUnsupportedInline(name, hook);
-                }
-                return;
-            }
-            if (!el._cbHooks) {
-                el._cbHooks = Object.create(null);
-            }
-            el._cbHooks[name] = hook;
-        },
-        getElementHook(el, name) {
-            return el?._cbHooks?.[name] || null;
-        },
-        runElementHook(el, name, ...args) {
-            const hook = this.getElementHook(el, name);
-            if (hook) {
-                return hook.call(el, ...args);
-            }
-            return undefined;
-        },
-        warnUnsupportedInline(name, value) {
-            this.error(`Inline handler blocked by CSP: ${name}`, value);
         },
         get toolsPath() {
             delete this.toolsPath
@@ -283,16 +242,13 @@
                             if (typeof obj.onBuild == 'function') {
                                 obj.onBuild(btn, doc);
                             } else {
-                                this.warnUnsupportedInline("onBuild", obj.onBuild);
+                                // need to implement
                             }
                         }
-                        if (!obj.oncommand) {
-                            btn.addEventListener("command", event => {
-                                if (event.target !== event.explicitOriginalTarget) return;
-                                if (event.target.localName !== "toolbarbutton") return;
-                                CustomButtons.onCommand(event);
-                            }, false);
-                        }
+                        if (!obj.oncommand)
+                            $A(btn, {
+                                oncommand: `if (event.target !== event.explicitOriginalTarget) return; if (event.target.localName !== "toolbarbutton") return; CustomButtons.onCommand(event);`
+                            });
                     } catch (e) {
                         this.error(e);
                     }
@@ -339,7 +295,7 @@
                     if (typeof obj.onBuild === "function") {
                         obj.onBuild(doc, item);
                     } else {
-                        this.warnUnsupportedInline("onBuild", obj.onBuild);
+                        eval("(" + obj.onBuild + ").call(el, doc, item)")
                     }
                 }
                 item.appendChild(this.newMenuPopup(doc, obj.popup));
@@ -399,9 +355,9 @@
                         if (!obj.defaultValue) item.setAttribute('defaultValue', defaultVal[type]);
                         if (map[type] === 'checkbox') {
                             item.setAttribute('checked', !!cPref.get(obj.pref, obj.defaultValue !== undefined ? obj.default : false));
-                            this.addPrefListener(obj.pref, (value, pref) => {
+                            this.addPrefListener(obj.pref, function (value, pref) {
                                 item.setAttribute('checked', value);
-                                this.runElementHook(item, "postcommand", value, pref);
+                                if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
                             });
                         } else {
                             let value = cPref.get(obj.pref);
@@ -409,18 +365,17 @@
                                 item.setAttribute('value', value);
                                 item.setAttribute('label', $S(obj.label, value));
                             }
-                            this.addPrefListener(obj.pref, (value, pref) => {
+                            this.addPrefListener(obj.pref, function (value, pref) {
                                 item.setAttribute('label', $S(obj.label, value || item.getAttribute('default')));
-                                this.runElementHook(item, "postcommand", value, pref);
+                                if (item.hasAttribute('postcommand')) eval(item.getAttribute('postcommand'));
                             });
                         }
                     }
                 }
 
 
-                if (!obj.pref && !obj.onclick) {
-                    item.addEventListener("click", this.handleMenuClick, false);
-                }
+                if (!obj.pref && !obj.onclick)
+                    item.setAttribute("onclick", "checkForMiddleClick(this, event)");
 
                 if (obj.onBuild) {
                     if (typeof obj.onBuild === "function") {
@@ -435,7 +390,7 @@
                 if (typeof obj.onBuild === "function") {
                     obj.onBuild(doc, item);
                 } else {
-                    this.warnUnsupportedInline("onBuild", obj.onBuild);
+                    eval("(" + obj.onBuild + ").call(item, doc, item)")
                 }
             }
 
@@ -452,13 +407,15 @@
         },
         onCommand: function (event) {
             let item = event.target;
-            let pref = item.getAttribute("pref") || "",
+            let precommand = item.getAttribute('precommand') || "",
+                postcommand = item.getAttribute("postcommand") || "",
+                pref = item.getAttribute("pref") || "",
                 text = item.getAttribute("text") || "",
                 exec = item.getAttribute("exec") || "",
                 edit = item.getAttribute("edit") || "",
                 url = item.getAttribute("url") || "",
                 where = item.getAttribute("where") || "";
-            this.runElementHook(item, "precommand", event);
+            if (precommand) eval(precommand);
             if (pref)
                 this.handlePref(event, pref);
             else if (exec)
@@ -467,34 +424,7 @@
                 this.edit(edit);
             else if (url)
                 this.openCommand(event, url, where);
-            this.runElementHook(item, "postcommand", event);
-        },
-        handleMenuClick(event) {
-            if (typeof checkForMiddleClick === "function") {
-                checkForMiddleClick(event.currentTarget, event);
-            }
-        },
-        getEventWindow(event) {
-            return getNodeWindow(event?.target, event?.view || window);
-        },
-        getClosedTabData(win = window) {
-            const getClosedTabData = "getClosedTabDataForWindow" in SessionStore
-                ? SessionStore.getClosedTabDataForWindow
-                : SessionStore.getClosedTabData;
-            let data = getClosedTabData(win);
-            if (typeof data === "string") {
-                data = JSON.parse(data);
-            }
-            return data;
-        },
-        get undoClosedTab() {
-            return this.undoClosedTab = typeof SessionWindowUI !== "undefined"
-                ? (index, win = window) => {
-                    SessionWindowUI.undoCloseTab(win, index);
-                }
-                : (index, win = window) => {
-                    win.undoCloseTab(index);
-                };
+            if (postcommand) eval(postcommand);
         },
         openCommand: function (event, url, aWhere, aAllowThirdPartyFixup = {}, aPostData, aReferrerInfo) {
             const isJavaScriptURL = url.startsWith("javascript:");
@@ -679,9 +609,9 @@
         if (obj) Object.keys(obj).forEach(function (key) {
             if (!skipAttrs.includes(key)) {
                 if (typeof obj[key] === 'function') {
-                    el.addEventListener(key.startsWith("on") ? key.slice(2).toLowerCase() : key, obj[key], false);
+                    el.addEventListener(key, obj[key], false);
                 } else if (key.startsWith("on")) {
-                    CustomButtons.warnUnsupportedInline(key, obj[key]);
+                    el.addEventListener(key.slice(2).toLowerCase(), new Function(obj[key]), false);
                 } else {
                     el.setAttribute(key, obj[key]);
                 }
@@ -717,13 +647,6 @@
             str = str.replace("%s", replace);
         }
         return str || "";
-    }
-
-    function getNodeWindow(node, fallbackWindow = window) {
-        return node?.documentGlobal
-            || node?.relevantGlobal
-            || node?.ownerDocument?.defaultView
-            || fallbackWindow;
     }
 
     function addStyle(styleSheetService, css, type = 0) {
