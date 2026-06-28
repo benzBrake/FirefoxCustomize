@@ -11,7 +11,6 @@
 // @shutdown       window.UserCSSLoader.unload(true);
 // @version        0.0.6r5
 // @charset        UTF-8
-// @note           Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note           0.0.6r5 兼容 Firefox 149+ checkbox menuitem checked 属性变化
 // @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
 // @note           0.0.6r3 创建样式子菜单增加图标
@@ -52,6 +51,8 @@ about:config
   const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
   const DIRECTORY_SEPARATOR = Services.appinfo.OS === "WINNT" ? "\\" : "/";
+  const STYLE_OPTIONS_FILE_NAME = "UserCSSLoader.json";
+  const FILE_URL_PREFIX = "file://";
 
   const STYLES_NAME_MAP = {
     0: {
@@ -86,6 +87,9 @@ about:config
 
     CSSEntries: [],
     customShowings: [],
+    styleOptions: Object.create(null),
+    styleOptionsLoaded: false,
+    styleOptionsSaving: Promise.resolve(),
 
     get allDisabled () {
       return this.prefs.getBoolPref(this.KEY_ALL_DISABLED, false);
@@ -145,10 +149,15 @@ about:config
       return new DisabledSet(JSON.parse(this.prefs.getStringPref(this.KEY_DISABLED_STYLES, "[]")).sort((a, b) => a[0].localeCompare(b[0])));
     },
 
+    get optionsPath () {
+      delete this.optionsPath;
+      return this.optionsPath = PathUtils.join(this.getScriptDirPath(), STYLE_OPTIONS_FILE_NAME);
+    },
+
     async init () {
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
-        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled"]
+        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled", "ucl-style-options", "ucl-save-style-options", "ucl-reset-style-options", "ucl-close-style-options"]
         messages = await this.l10n.formatValues(keys);
         this.MESSAGES = (() => {
           let obj = {};
@@ -179,7 +188,11 @@ about:config
           "ucl-delete-style": "Delete style",
           "ucl-delete-style-prompt-message": "Are you sure to delete style %s?",
           "ucl-enabled": "Enabled",
-          "ucl-disabled": "Disabled"
+          "ucl-disabled": "Disabled",
+          "ucl-style-options": "Style options",
+          "ucl-save-style-options": "Save",
+          "ucl-reset-style-options": "Reset",
+          "ucl-close-style-options": "Close"
         }
       }
 
@@ -244,6 +257,7 @@ about:config
 
       this.menupopup.addEventListener("popupshowing", this, false);
 
+      await this.loadStyleOptions();
       this.rebuild();
 
       Services.prefs.addObserver(this.KEY_PREFIX, this);
@@ -456,6 +470,20 @@ about:config
           });
           group.appendChild(homePage);
         }
+        if (entry.styleVars?.length) {
+          let options = createElement(doc, 'menuitem', {
+            label: "Style options",
+            tooltiptext: "Style options",
+            class: "menuitem menuitem-iconic options",
+            'data-l10n-id': 'ucl-style-options-btn',
+            fullName: entry.fullName,
+            oncommand: function (event) {
+              let fullName = event.target.getAttribute("fullName");
+              window.UserCSSLoader.openStyleOptionsDialog(event, fullName);
+            }
+          });
+          group.appendChild(options);
+        }
         let type = createElement(doc, 'menuitem', {
           label: "Change style type",
           tooltiptext: "Change style type",
@@ -546,7 +574,7 @@ about:config
       switch (event.type) {
         case "mouseover":
           if (event.target.id !== this.BTN_ID) return;
-          const win = event.target.documentGlobal || event.target.ownerGlobal || event.target.ownerDocument?.defaultView || window;
+          const win = event.target.documentGlobal || event.target.relevantGlobal || event.target.ownerDocument?.defaultView || window;
           const mp = event.target.querySelector(":scope>menupopup");
           const { innerWidth: w, innerHeight: h } = win;
           const position = event.clientX > w / 2
@@ -607,6 +635,200 @@ about:config
       }
       this.initalizing = false;
       this.menupopup?.setAttribute("css-initalized", false);
+    },
+    getScriptDirPath () {
+      const filename = Components.stack.filename || "";
+      if (filename.startsWith(FILE_URL_PREFIX)) {
+        return PathUtils.parent(Services.io.newURI(filename).QueryInterface(Ci.nsIFileURL).file.path);
+      }
+
+      const script = window.userChrome_js?.scripts?.find(item => item.filename === "UserCSSLoader.uc.js");
+      if (script?.file?.path) {
+        return PathUtils.parent(script.file.path);
+      }
+
+      return PathUtils.join(Services.dirsvc.get("UChrm", Ci.nsIFile).path, "UserChromeJS");
+    },
+    async loadStyleOptions () {
+      if (this.styleOptionsLoaded) return this.styleOptions;
+      this.styleOptionsLoaded = true;
+      try {
+        if (await IOUtils.exists(this.optionsPath)) {
+          let data = JSON.parse(await IOUtils.readUTF8(this.optionsPath));
+          if (data && typeof data === "object" && !Array.isArray(data)) {
+            this.styleOptions = data;
+          }
+        }
+      } catch (e) {
+        console.error("UserCSSLoader load style options failed", e);
+        this.styleOptions = Object.create(null);
+      }
+      return this.styleOptions;
+    },
+    async saveStyleOptions () {
+      this.styleOptionsSaving = this.styleOptionsSaving
+        .catch(() => { })
+        .then(() => IOUtils.writeUTF8(this.optionsPath, JSON.stringify(this.styleOptions, null, 2)));
+      return this.styleOptionsSaving;
+    },
+    getStyleOptionValue (entry, styleVar) {
+      let options = this.styleOptions?.[entry.fullName] || {};
+      let stored = options[styleVar.name];
+      return stored === undefined ? styleVar.defaultValue : stored;
+    },
+    setStyleOptionsForEntry (entry, values) {
+      let next = {};
+      for (let styleVar of entry.styleVars) {
+        next[styleVar.name] = styleVar.type === "checkbox"
+          ? (values[styleVar.name] === "1" ? "1" : "0")
+          : this.sanitizeCssVarValue(values[styleVar.name]);
+      }
+      this.styleOptions[entry.fullName] = next;
+      return this.saveStyleOptions();
+    },
+    resetStyleOptionsForEntry (entry) {
+      delete this.styleOptions[entry.fullName];
+      return this.saveStyleOptions();
+    },
+    sanitizeCssVarValue (value) {
+      return String(value ?? "")
+        .replace(/[\r\n{};]/g, " ")
+        .replace(/\/\*/g, "")
+        .replace(/\*\//g, "")
+        .trim();
+    },
+    getStyleVarsCss (entry) {
+      if (!entry.styleVars?.length) return "";
+      let lines = [];
+      for (let styleVar of entry.styleVars) {
+        let value = this.getStyleOptionValue(entry, styleVar);
+        value = styleVar.type === "checkbox"
+          ? (String(value) === "1" ? "1" : "0")
+          : this.sanitizeCssVarValue(value);
+        lines.push(`  --${styleVar.name}: ${value};`);
+      }
+      return `:root {\n${lines.join("\n")}\n}`;
+    },
+    openStyleOptionsDialog (event, fullName) {
+      let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
+      if (!(entry instanceof CSSEntry) || !entry.styleVars?.length) return;
+      let doc = event.target.ownerDocument;
+      closeMenus(event.target);
+
+      doc.getElementById("ucl-style-options-dialog")?.remove();
+
+      let dialog = createElement(doc, "html:dialog", {
+        id: "ucl-style-options-dialog",
+        class: "ucl-style-options-dialog"
+      });
+
+      let panel = createElement(doc, "html:div", {
+        class: "ucl-style-options-panel"
+      });
+      dialog.appendChild(panel);
+
+      let title = createElement(doc, "html:h2", {
+        class: "subview-subheader ucl-style-options-title",
+        content: escapeHTML(entry.name)
+      });
+      panel.appendChild(title);
+
+      let form = createElement(doc, "html:div", {
+        class: "ucl-style-options-form"
+      });
+      panel.appendChild(form);
+
+      for (let styleVar of entry.styleVars) {
+        let row = createElement(doc, "html:label", {
+          class: `ucl-style-options-row ucl-var-${styleVar.type}`
+        });
+        let label = createElement(doc, "html:span", {
+          class: "ucl-style-options-label",
+          content: escapeHTML(styleVar.label)
+        });
+        row.appendChild(label);
+
+        let input = createElement(doc, "html:input", {
+          class: "ucl-style-options-input",
+          "data-var-name": styleVar.name
+        });
+        if (styleVar.type === "checkbox") {
+          input.type = "checkbox";
+          input.checked = String(this.getStyleOptionValue(entry, styleVar)) === "1";
+        } else {
+          input.type = "text";
+          input.value = this.getStyleOptionValue(entry, styleVar);
+        }
+        row.appendChild(input);
+        form.appendChild(row);
+      }
+
+      let actions = createElement(doc, "html:div", {
+        class: "ucl-style-options-actions"
+      });
+      panel.appendChild(actions);
+
+      const closeDialog = () => {
+        if (dialog.open) {
+          dialog.close();
+        }
+        dialog.remove();
+      };
+
+      let save = createElement(doc, "html:button", {
+        class: "ucl-style-options-save",
+        type: "button",
+        content: this.MESSAGES.format("ucl-save-style-options")
+      });
+      save.addEventListener("click", async () => {
+        let values = {};
+        form.querySelectorAll("[data-var-name]").forEach(input => {
+          values[input.dataset.varName] = input.type === "checkbox"
+            ? (input.checked ? "1" : "0")
+            : input.value;
+        });
+        await this.setStyleOptionsForEntry(entry, values);
+        entry.reloadStyle();
+        closeDialog();
+      });
+      actions.appendChild(save);
+
+      let reset = createElement(doc, "html:button", {
+        class: "ucl-style-options-reset",
+        type: "button",
+        content: this.MESSAGES.format("ucl-reset-style-options")
+      });
+      reset.addEventListener("click", async () => {
+        await this.resetStyleOptionsForEntry(entry);
+        entry.reloadStyle();
+        closeDialog();
+      });
+      actions.appendChild(reset);
+
+      let close = createElement(doc, "html:button", {
+        class: "ucl-style-options-close",
+        type: "button",
+        content: this.MESSAGES.format("ucl-close-style-options")
+      });
+      close.addEventListener("click", closeDialog);
+      actions.appendChild(close);
+
+      dialog.addEventListener("cancel", event => {
+        event.preventDefault();
+        closeDialog();
+      });
+      dialog.addEventListener("click", event => {
+        if (event.target !== dialog) return;
+        closeDialog();
+      });
+
+      (doc.body || doc.documentElement).appendChild(dialog);
+      if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute("open", true);
+      }
+      dialog.querySelector("input")?.focus();
     },
     openFolder () {
       this.FOLDER.launch();
@@ -860,6 +1082,7 @@ about:config
     this.url = UserCSSLoader.useResourceProtocol
       ? Services.io.newURI("resource://usercssloader/" + this.fullName, null, null)
       : Services.io.newFileURI(aFile);
+    this.varsUrl = null;
     this.lastModifiedTime = aFile.lastModifiedTime;
     this.readStyleInfo();
   }
@@ -881,7 +1104,7 @@ about:config
       if (this.file.exists()) {
         let css_content = readFile(this.path);
         const def = ['', '', '', ''];
-        let header = (css_content.match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*[\r\n]/m) || def)[0];
+        let header = (css_content.match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*(?:[\r\n]|$)/m) || def)[0];
         if (header) {
           // 获取当前语言环境
           let currentLocale = Services.locale.appLocaleAsBCP47; // 例如 "zh-CN" 或 "en-US"
@@ -903,6 +1126,7 @@ about:config
           this.downloadURL = (header.match(/(\/\/|\*) @downloadURL\s+(.+)\s*$/i) || def)[2];
           this.homepageURL = (header.match(/(\/\/|\*) @homepage(URL)?\s+(.+)\s*$/i) || def)[3];
           this.license = (header.match(/(\/\/|\*) @license\s+(.+)\s*$/i) || def)[2];
+          this.styleVars = parseStyleVars(header);
         }
       }
     },
@@ -939,10 +1163,25 @@ about:config
             sss.loadAndRegisterSheet(this.url, this.type);
             this.isRunning = true;
           }
+          this.registerVars();
         });
       }
     },
+    registerVars () {
+      this.unregisterVars();
+      let css = UserCSSLoader.getStyleVarsCss(this);
+      if (!css) return;
+      this.varsUrl = Services.io.newURI("data:text/css;charset=utf-8," + encodeURIComponent(css), null, null);
+      sss.loadAndRegisterSheet(this.varsUrl, this.type);
+    },
+    unregisterVars () {
+      if (this.varsUrl && sss.sheetRegistered(this.varsUrl, this.type)) {
+        sss.unregisterSheet(this.varsUrl, this.type);
+      }
+      this.varsUrl = null;
+    },
     unregister () {
+      this.unregisterVars();
       if (sss.sheetRegistered(this.url, this.type)) {
         sss.unregisterSheet(this.url, this.type);
       }
@@ -972,7 +1211,9 @@ about:config
    */
   function createElement (d, t, o = {}, s = []) {
     if (!d) return;
-    let e = /^html:/.test(t) ? d.createElement(t) : d.createXULElement(t);
+    let e = /^html:/.test(t)
+      ? d.createElementNS("http://www.w3.org/1999/xhtml", t.replace(/^html:/, ""))
+      : d.createXULElement(t);
     return applyAttr(e, o, s);
   }
 
@@ -1002,6 +1243,36 @@ about:config
       }
     }
     return e;
+  }
+
+  function parseStyleVars (header) {
+    const vars = [];
+    const seen = new Set();
+    const lines = header.split(/\r\n|\r|\n/);
+    for (let line of lines) {
+      let match = line.match(/^\s*(?:\/\/|\*)?\s*@var\s+(text|checkbox)\s+([_a-zA-Z][\w-]*)\s+"([^"]*)"\s+(.+?)\s*$/i);
+      if (!match) continue;
+      let [, type, name, label, defaultValue] = match;
+      type = type.toLowerCase();
+      if (seen.has(name)) continue;
+      seen.add(name);
+      vars.push({
+        type,
+        name,
+        label,
+        defaultValue: type === "checkbox" ? (String(defaultValue).trim() === "1" ? "1" : "0") : defaultValue.trim()
+      });
+    }
+    return vars;
+  }
+
+  function escapeHTML (value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   /**
@@ -1088,6 +1359,9 @@ about:config
 #{BTN_ID}-popup menugroup.ucl-dynamic > menuitem[css] > .menu-iconic-left {
   list-style-image: var(--icon, url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4zKSI+PHBhdGggZD0iTTQuNSAyQzMuNjc3NDY4NiAyIDMgMi42Nzc0Njg2IDMgMy41TDMgOEw0IDhMNCAzLjVDNCAzLjIxODUzMTQgNC4yMTg1MzE0IDMgNC41IDNMOSAzTDkgNkwxMiA2TDEyIDhMMTMgOEwxMyA1LjI5Mjk2ODhMOS43MDcwMzEyIDJMNC41IDIgeiBNIDEwIDMuNzA3MDMxMkwxMS4yOTI5NjkgNUwxMCA1TDEwIDMuNzA3MDMxMiB6IE0gNC41IDlDMy42Nzc0Njg2IDkgMyA5LjY3NzQ2ODYgMyAxMC41TDMgMTEuNUwzIDEyLjVDMyAxMy4zMjI1MzEgMy42Nzc0Njg2IDE0IDQuNSAxNEM1LjMyMjUzMTQgMTQgNiAxMy4zMjI1MzEgNiAxMi41TDUgMTIuNUM1IDEyLjc4MTQ2OSA0Ljc4MTQ2ODYgMTMgNC41IDEzQzQuMjE4NTMxNCAxMyA0IDEyLjc4MTQ2OSA0IDEyLjVMNCAxMS41TDQgMTAuNUM0IDEwLjIxODUzMSA0LjIxODUzMTQgMTAgNC41IDEwQzQuNzgxNDY4NiAxMCA1IDEwLjIxODUzMSA1IDEwLjVMNiAxMC41QzYgOS42Nzc0Njg2IDUuMzIyNTMxNCA5IDQuNSA5IHogTSA4LjUgOUM3LjkxIDkgNy41NjQ5MDYyIDkuMjM4NDUzMSA3LjM3ODkwNjIgOS40Mzk0NTMxQzYuOTY3OTA2MyA5Ljg4MjQ1MzEgNi45OTg5NTMxIDEwLjQ3MiA3LjAwMTk1MzEgMTAuNUM3LjAwMTk1MzEgMTEuMzA4IDcuNzM2NDM3NSAxMS42NzI0NTMgOC4yNzM0Mzc1IDExLjkzOTQ1M0M4LjY5OTQzNzUgMTIuMTUwNDUzIDkgMTIuMzEzODEyIDkgMTIuNTA3ODEyQzkgMTIuNTA5ODEzIDguOTkwMzc1IDEyLjc1MTc2NiA4Ljg1OTM3NSAxMi44ODQ3NjZDOC44MzAzNzUgMTIuOTEzNzY2IDguNzQ3IDEzIDguNSAxM0w3LjA5MTc5NjkgMTNDNy4xNTE3OTY5IDEzLjE5MSA3LjI0NzY4NzUgMTMuNDAyODkxIDcuNDI5Njg3NSAxMy41ODc4OTFDNy42MTQ2ODc1IDEzLjc3NTg5MSA3Ljk1MSAxNCA4LjUgMTRDOS4wNDkgMTQgOS4zODYyNjU2IDEzLjc3NDkzNyA5LjU3MjI2NTYgMTMuNTg1OTM4QzkuOTk4MjY1NiAxMy4xNTI5MzggOS45OTkwNDY5IDEyLjU1OCA5Ljk5ODA0NjkgMTIuNUM5Ljk5ODA0NjkgMTEuNjggOS4yNTc3OTY5IDExLjMxMTk2OSA4LjcxNjc5NjkgMTEuMDQyOTY5QzguMjk3Nzk2OSAxMC44MzQ5NjkgOC4wMDI5NTMxIDEwLjY3Mzc1IDguMDAxOTUzMSAxMC40Njg3NUM4LjAwMTk1MzEgMTAuNDY2NzUgNy45OTMyODEyIDEwLjI0MjE4NyA4LjExMzI4MTIgMTAuMTE3MTg4QzguMTg3MjgxMiAxMC4wNDAxODggOC4zMTggMTAgOC41IDEwTDkuOTE0MDYyNSAxMEM5Ljc0NjA2MjUgOS40OTcgOS4zMTYgOSA4LjUgOSB6IE0gMTIuNSA5QzExLjkxIDkgMTEuNTYyOTUzIDkuMjM4NDUzMSAxMS4zNzY5NTMgOS40Mzk0NTMxQzEwLjk2NTk1MyA5Ljg4MjQ1MzEgMTAuOTk4OTUzIDEwLjQ3MiAxMS4wMDE5NTMgMTAuNUMxMS4wMDE5NTMgMTEuMzA4IDExLjczNDQ4NCAxMS42NzI0NTMgMTIuMjcxNDg0IDExLjkzOTQ1M0MxMi42OTc0ODQgMTIuMTUwNDUzIDEyLjk5ODA0NyAxMi4zMTM4MTIgMTIuOTk4MDQ3IDEyLjUwNzgxMkMxMi45OTgwNDcgMTIuNTA5ODEzIDEyLjk5MDM3NSAxMi43NTE3NjYgMTIuODU5Mzc1IDEyLjg4NDc2NkMxMi44MzEzNzUgMTIuOTEzNzY2IDEyLjc0NyAxMyAxMi41IDEzTDExLjA5MTc5NyAxM0MxMS4xNTE3OTcgMTMuMTkxIDExLjI0NzY4NyAxMy40MDI4OTEgMTEuNDI5Njg4IDEzLjU4Nzg5MUMxMS42MTQ2ODggMTMuNzc1ODkxIDExLjk1MSAxNCAxMi41IDE0QzEzLjA0OSAxNCAxMy4zODYyNjYgMTMuNzc0OTM3IDEzLjU3MjI2NiAxMy41ODU5MzhDMTMuOTk4MjY2IDEzLjE1MjkzOCAxMy45OTkwNDcgMTIuNTU4IDEzLjk5ODA0NyAxMi41QzEzLjk5ODA0NyAxMS42OCAxMy4yNTc3OTcgMTEuMzExOTY5IDEyLjcxNjc5NyAxMS4wNDI5NjlDMTIuMjk3Nzk3IDEwLjgzNDk2OSAxMi4wMDI5NTMgMTAuNjczNzUgMTIuMDAxOTUzIDEwLjQ2ODc1QzEyLjAwMTk1MyAxMC40NjY3NSAxMS45OTMyODEgMTAuMjQyMTg3IDEyLjExMzI4MSAxMC4xMTcxODhDMTIuMTg3MjgxIDEwLjA0MDE4OCAxMi4zMTggMTAgMTIuNSAxMEwxMy45MTQwNjIgMTBDMTMuNzQ2MDYzIDkuNDk4IDEzLjMxNiA5IDEyLjUgOSB6Ii8+PC9zdmc+));
 }
+#{BTN_ID}-popup .options {
+  list-style-image: url(chrome://global/skin/icons/settings.svg);
+}
 #{BTN_ID}-popup .homepage {
   list-style-image: url(chrome://browser/skin/home.svg);
 }
@@ -1113,6 +1387,65 @@ about:config
 #ucl-change-style-popup menuitem[flag="USER_SHEET"] {
   list-style-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjMiIHJ5PSIzIiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iOCIgeT0iMTEiIGZvbnQtZmFtaWx5PSLpu5HkvZMiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9ImN1cnJlbnRDb2xvciI+VVM8L3RleHQ+Cjwvc3ZnPg==");
   fill: #5b89f6;
+}
+.ucl-style-options-dialog {
+  width: min(460px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 0;
+  margin: auto;
+  border: 1px solid var(--panel-border-color, ThreeDShadow);
+  border-radius: 12px;
+  background: var(--arrowpanel-background, -moz-dialog);
+  color: var(--arrowpanel-color, -moz-dialogtext);
+  box-shadow: var(--windows-panel-box-shadow, 0 18px 40px rgba(0, 0, 0, .24));
+}
+.ucl-style-options-dialog[open] {
+  display: block;
+}
+.ucl-style-options-dialog::backdrop {
+  background: rgba(0, 0, 0, .28);
+}
+.ucl-style-options-panel {
+  box-sizing: border-box;
+  padding: 16px;
+  min-width: 0;
+}
+.ucl-style-options-title {
+  margin: 0 0 14px;
+  padding: 0;
+  text-align: start;
+  font-size: 1.15em;
+  font-weight: 600;
+}
+.ucl-style-options-form {
+  display: grid;
+  gap: 10px;
+}
+.ucl-style-options-row {
+  display: grid;
+  grid-template-columns: minmax(8em, 1fr) minmax(10em, 1.4fr);
+  gap: 10px;
+  align-items: center;
+}
+.ucl-style-options-row.ucl-var-checkbox {
+  grid-template-columns: 1fr auto;
+}
+.ucl-style-options-label {
+  font: menu;
+}
+.ucl-style-options-input[type="text"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 28px;
+}
+.ucl-style-options-actions {
+  display: flex;
+  justify-content: end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ucl-style-options-actions > button {
+  min-height: 28px;
 }
 `, v => {
   return Services.vc.compare(Services.appinfo.version, v) >= 0;
