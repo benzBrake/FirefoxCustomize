@@ -3,7 +3,7 @@
 // @description     地址栏内工具栏
 // @license         MIT License
 // @compatibility   Firefox 149
-// @version         0.0.4
+// @version         0.0.5
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
@@ -11,6 +11,7 @@
 // @note            2025-08-26 增加固定扩展按钮到地址栏内工具栏的功能
 // @note            2026-04-05 升级兼容性至 Firefox 149+，修复 checkbox checked 属性检测
 // @note            2026-06-17 修复 Firefox 152 中按钮图标显示异常
+// @note            2026-06-28 修复右键菜单勾选状态持久化错误
 // @note            参考自 Floorp 浏览器的状态栏脚本
 // ==/UserScript==
 (function (css) {
@@ -63,9 +64,10 @@
                 id: "toggle_location-bar",
                 label: MENU_LABEL,
                 type: "checkbox",
-                accesskey: "L",
-                checked: String(Services.prefs.getBoolPref("browser.display.locationbar", false))
+                accesskey: "L"
             });
+
+            this.setMenuItemChecked(toggleItem, Services.prefs.getBoolPref("browser.display.locationbar", false));
 
             toggleItem.addEventListener("command", function () {
                 LocationBar.togglePref();
@@ -88,11 +90,10 @@
                 let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
                 const toggleItem = document.getElementById("toggle_location-bar");
 
+                LocationBar.setMenuItemChecked(toggleItem, checked);
                 if (checked) {
-                    toggleItem.setAttribute("checked", "true");
                     LocationBar.show();
                 } else {
-                    toggleItem.removeAttribute("checked");
                     LocationBar.hide();
                 }
             });
@@ -117,8 +118,21 @@
             window.addEventListener("aftercustomization", this, false);
         },
         togglePref: function () {
-            let checked = document.getElementById("toggle_location-bar").hasAttribute("checked");
-            Services.prefs.setBoolPref("browser.display.locationbar", checked);
+            let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
+            Services.prefs.setBoolPref("browser.display.locationbar", !checked);
+        },
+        isMenuItemChecked: function (menuItem) {
+            return menuItem?.getAttribute("checked") === "true";
+        },
+        setMenuItemChecked: function (menuItem, checked) {
+            if (!menuItem) {
+                return;
+            }
+            if (checked) {
+                menuItem.setAttribute("checked", "true");
+            } else {
+                menuItem.removeAttribute("checked");
+            }
         },
         show: function () {
             document.getElementById("location-bar").classList.remove("optional-hidden");
