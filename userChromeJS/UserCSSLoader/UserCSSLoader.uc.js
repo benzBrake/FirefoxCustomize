@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader.unload(true);
-// @version        0.0.6r5
+// @version        0.0.6r6
 // @charset        UTF-8
+// @note           0.0.6r6 新增样式变量(@var)支持、选项对话框与 GreasyFork 远程安装功能
 // @note           0.0.6r5 兼容 Firefox 149+ checkbox menuitem checked 属性变化
 // @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
 // @note           0.0.6r3 创建样式子菜单增加图标
@@ -47,12 +48,15 @@ about:config
 (async function (css, versionGE) {
   const Services = globalThis.Services || ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
   const CustomizableUI = globalThis.CustomizableUI || ChromeUtils.import("resource:///modules/CustomizableUI.jsm").CustomizableUI;
+  const { hasActorRegistration, markActorRegistered } = ChromeUtils.importESModule("chrome://userchromejs/content/utils/UcActorRegistry.sys.mjs");
 
   const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
 
   const DIRECTORY_SEPARATOR = Services.appinfo.OS === "WINNT" ? "\\" : "/";
   const STYLE_OPTIONS_FILE_NAME = "UserCSSLoader.json";
   const FILE_URL_PREFIX = "file://";
+  const INSTALL_ACTOR_NAME = "UserCSSLoaderActor";
+  const INSTALL_ACTOR_URI = "chrome://userchromejs/content/UserChromeJS/UserCSSLoader.sys.mjs";
 
   const STYLES_NAME_MAP = {
     0: {
@@ -154,7 +158,33 @@ about:config
       return this.optionsPath = PathUtils.join(this.getScriptDirPath(), STYLE_OPTIONS_FILE_NAME);
     },
 
+    ensureInstallActorRegistration () {
+      if (hasActorRegistration(INSTALL_ACTOR_NAME)) {
+        return;
+      }
+
+      ChromeUtils.registerWindowActor(INSTALL_ACTOR_NAME, {
+        parent: {
+          esModuleURI: INSTALL_ACTOR_URI
+        },
+        child: {
+          esModuleURI: INSTALL_ACTOR_URI,
+          events: {
+            DOMContentLoaded: {}
+          }
+        },
+        matches: [
+          "https://greasyfork.org/scripts/*",
+          "https://greasyfork.org/*/scripts/*"
+        ],
+        allFrames: false
+      });
+      markActorRegistered(INSTALL_ACTOR_NAME);
+    },
+
     async init () {
+      this.ensureInstallActorRegistration();
+
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
         let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled", "ucl-style-options", "ucl-save-style-options", "ucl-reset-style-options", "ucl-close-style-options"]
@@ -887,6 +917,67 @@ about:config
           reject(e);
         }
       });
+    },
+    normalizeInstalledFileName (fileName) {
+      let normalized = String(fileName || "")
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, "_")
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+      if (!normalized) {
+        normalized = "greasyfork_style";
+      }
+      if (!normalized.toLowerCase().endsWith(".css")) {
+        normalized += ".css";
+      }
+      return normalized;
+    },
+    async installRemoteStyle ({ codeText = "", fileName = "", overwrite = false } = {}) {
+      if (!String(codeText).trim()) {
+        return {
+          status: "error",
+          error: "Empty style content."
+        };
+      }
+
+      if (!this.FOLDER.exists()) {
+        this.FOLDER.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+      }
+
+      const targetFileName = this.normalizeInstalledFileName(fileName);
+      const path = PathUtils.join(this.FOLDER.path, targetFileName);
+      const exists = await IOUtils.exists(path);
+
+      if (exists && !overwrite) {
+        let currentContent = "";
+        try {
+          currentContent = await IOUtils.readUTF8(path);
+        } catch (ex) { }
+
+        if (currentContent === codeText) {
+          await this.rebuild();
+          return {
+            status: "unchanged",
+            fileName: targetFileName,
+            path
+          };
+        }
+
+        return {
+          status: "exists",
+          fileName: targetFileName,
+          path
+        };
+      }
+
+      await IOUtils.writeUTF8(path, codeText);
+      await this.rebuild();
+      return {
+        status: exists ? "updated" : "installed",
+        fileName: targetFileName,
+        path
+      };
     },
     toggleStyle (event, fullName) {
       let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
