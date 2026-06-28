@@ -3,8 +3,10 @@
 // @description   拡張を操作するメニューボタンを追加
 // @include       main
 // @charset       UTF-8
-// @version       3.1.9 Fix bug Bug 1880914
-// @version       3.1.8 Fix not work in new window
+// @sandbox       true
+// @version       3.3.0 Fx152+
+// @version       3.1.9 CSPエラー修正、他微修正
+// @version       3.1.8 メニューリストが意図した表示になっていなかった問題の修正と意味のないコードを削除
 // @version       3.1.7 メニューリスト表示がおかしくなっていた問題を修正
 // @version       3.1.6 ボタン中クリックの再起動が機能していない問題を修正、ほか微修正
 // @version       3.1.5 ビルトインの拡張や検索プラグインを表示させないように ※Fx67未満、Fx68以降での動作は保証外
@@ -17,20 +19,14 @@
 
 'use strict';
 (function () {
-	var AddonMgr = () => {
-		let args = [...arguments], b = "openAddonsMgr";
-		eval(`${parseInt(Services.appinfo.version) < 126
-			? "Browser" + b[0].toUpperCase() + b.slice(1)
-			: "BrowserAddonUI." + b}(...args)`);
-	}
 
-	var EOM = {
+	let EOM = {
 
 		showVersion: true,    // ヴァージョンを表示するか
-		showAll: false,    // 設定のないアドオンも表示するか
-		showDisabled: true,    // 無効のアドオンを表示するか
-		autoRestart: false,   // アドオンの有効/無効時に自動で再起動するか(再起動不要アドオンは除外される)
-		iconURL: 'chrome://mozapps/skin/extensions/extension.svg',
+		showAll: true,        // 設定のないアドオンも表示するか
+		showDisabled: true,  // 無効のアドオンを表示するか
+		iconURL: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjbQg61aAAACkUlEQVQ4T43T60tTYRwH8HMQ9QQJRSBJ50xU8BL1QpJMsbxNc162edxcYlAoZdkFh6gZurF5WV6nc7M/oBdBb7q9DSPEVBDbZtN0c5tzNymolwXht2eDhVO0Dnx4Hn6/5/me8xx4KOqQR2rcYfjpIC81BpXiqWBnxUSgpWQ0kHrY+gN1xdOdu/XTQfDGIMSGAET6AMpG/TbhiD/uv0LqTYF7cmPgN2/wQzzhh2jMB+Gwz1I65I3/Z8A1o5eRTXqP85M+pVTv260Z86JieNtcMridXNjnZvI1Lia31xV7IIgf99AKg/e1wrAN+YQHtXoPJKNbqBrewlWdG6UDLlzRupCv3sTFns3vFx47SqJCFHoPoyAb5eNb4MlGyYgb1UNuiHQulPW7UKRx4rJqE5d6HMjpdiC7066mRFpHvFTnbCHuSJ84E+rIJumQExKdEzVE5YAT5RoHCnvsyO3aQHb7Os63rSHrwRoy76+qqErNBi/ut4PYrdFsKCWDDoj77CjvXUdu+yqyWleQcsuK5GYrBE0WcE0Wm6DZmsk1W7VEI1XRu6YUqb6gUh22W9BhQ8ZtCwQ3PoEjQuM+psi5SSBNCR/Zusq7bSju+IyMpmWwjUvgrh+hcWks6scVKs0tBQ/NSG5YBKtYNHOKRRxt4WUogKufTwmh8lqXU9MaFlY42UcLJ5tnOfk8yPwov0j/LfGNUIe/huXnYrm6uTiOn2UI7GEjcxMxTrwifu7rq6KOw0o+MAT2SI8sYGtnaVJ/s68fFUCfONd2jK2e+cFWv0dY1bu+mPiTocsTmyR8kU56X//2wmtmuiMvoMkkdEkEp3K0N08XPZsKScwzdNB0zFlSz0pIaxBG6mQ0JBU/1yXmm878AbFQoHrb98HyAAAAAElFTkSuQmCC',
+
 		lang: {
 			'zh-CN': {
 				"Extension Options Menu": "扩展选项菜单",
@@ -70,25 +66,25 @@
 		},
 
 		init: function () {
-			var style = `
-			@namespace url('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul');
-			#eom-button {
-				list-style-image: url('${this.iconURL}');
-			}
-		
-			.addon-disabled > .menu-iconic-left { filter: grayscale(1); }
-			.addon-disabled label { color: Gray !important; }
-			.addon-uninstall label { font-weight: bold !important; }
-			.addon-uninstall label:after { content: '-'; }
+			let style = `
+				@namespace url('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul');
+				#eom-button {
+					list-style-image: url('${this.iconURL}');
+				}
 
-			#eom-button[cui-areatype="menu-panel"],
-			toolbarpaletteitem[place="palette"] > #eom-button {
-				list-style-image: url('${this.iconURL}');
-			}
-		`;
+				.addon-disabled > .menu-iconic-left { filter: grayscale(1); }
+				.addon-disabled label { color: Gray !important; }
+				.addon-uninstall label { font-weight: bold !important; }
+				.addon-uninstall label:after { content: '-'; }
+
+				#eom-button[cui-areatype="menu-panel"],
+				toolbarpaletteitem[place="palette"] > #eom-button {
+					list-style-image: url('${this.iconURL}');
+				}
+			`;
 
 			style = style.replace(/\s+/g, " ");
-			var sspi = document.createProcessingInstruction(
+			let sspi = document.createProcessingInstruction(
 				'xml-stylesheet',
 				'type="text/css" href="data:text/css,' + encodeURIComponent(style) + '"'
 			);
@@ -97,31 +93,28 @@
 				return document.documentElement.getAttribute(name);
 			};
 
-			if (CustomizableUI.getPlacementOfWidget("eom-button", true)) return;
-
 			try {
 				CustomizableUI.createWidget({
 					id: 'eom-button',
 					type: 'custom',
-					defaultArea: 'nav-bar',
-					removable: true,
 					onBuild: function (doc) {
-						var btn = doc.createXULElement('toolbarbutton');
-						var attributes = {
+						let btn = doc.createXULElement('toolbarbutton');
+						let attributes = {
 							id: 'eom-button',
 							class: 'toolbarbutton-1 chromeclass-toolbar-additional',
 							type: 'menu',
 							label: EOM.lang[EOM.locale]["Extension Options Menu"] || "Extension Options Menu",
 							tooltiptext: EOM.lang[EOM.locale]["Extension Options Menu Tooltip"] || "Extension Options Menu",
-							oncontextmenu: 'return false'
 						};
-						for (var a in attributes) {
+						for (let a in attributes) {
 							btn.setAttribute(a, attributes[a]);
 						};
+						btn.addEventListener('contextmenu', event => {
+							event.preventDefault();
+						}, false);
 						btn.addEventListener('click', EOM.iconClick);
-						var mp = btn.appendChild(doc.createXULElement('menupopup'));
+						let mp = btn.appendChild(doc.createXULElement('menupopup'));
 						mp.setAttribute('id', 'eom-button-popup');
-						mp.setAttribute('onclick', 'event.preventDefault(); event.stopPropagation();');
 						mp.addEventListener('popupshowing', (event) => EOM.populateMenu(event));
 						return btn;
 					}
@@ -131,10 +124,9 @@
 		},
 
 		populateMenu: async function (event) {
-			var document = event.target.ownerDocument;
-			var prevState;
+			let prevState;
 
-			var popup = event.target;
+			let popup = event.target;
 			if (popup !== event.currentTarget) {
 				return;
 			}
@@ -143,30 +135,30 @@
 				popup.removeChild(popup.firstChild);
 			}
 
-			var addons = await AddonManager.getAddonsByTypes(['extension']);
+			let addons = await AddonManager.getAddonsByTypes(['extension']);
 
 			addons.sort((a, b) => {
-				var ka = this.key(a);
-				var kb = this.key(b);
+				let ka = this.key(a);
+				let kb = this.key(b);
 				return (ka < kb) ? -1 : 1;
 			}).forEach((addon) => {
 				if (addon.isBuiltin || addon.id.endsWith("@search.mozilla.org")) return;
 				if (!addon.appDisabled && ((addon.isActive && addon.optionsURL)
 					|| ((addon.userDisabled && this.showDisabled)
 						|| (!addon.userDisabled && this.showAll)))) {
-					var state = addon.isActive;
+					let state = addon.isActive;
 					if (this.sort.disabled === 1 && (prevState && state !== prevState)) {
 						popup.appendChild(document.createXULElement('menuseparator'));
 					}
 					prevState = state;
 
-					var mi = document.createXULElement('menuitem');
-					var label = addon.name;
+					let mi = document.createXULElement('menuitem');
+					let label = addon.name;
 					if (this.showVersion) label = label += ' ' + '[' + addon.version + ']';
 					mi.setAttribute('label', label);
 					mi.setAttribute('class', 'menuitem-iconic');
 					mi.setAttribute('tooltiptext', 'id : ' + addon.id + EOM.lang[EOM.locale]["Extension Tooltip"]);
-					var icon = addon.iconURL || addon.iconURL64 || this.iconURL || '';
+					let icon = addon.iconURL || addon.iconURL64 || this.iconURL || '';
 					mi.setAttribute('image', icon);
 					mi._Addon = addon;
 					mi.addEventListener('click', (event) => this.handleClick(event));
@@ -174,13 +166,12 @@
 					if (!addon.optionsURL && addon.isActive) {
 						mi.setAttribute('style', 'color: Gray');
 					}
-					if (!addon.operationsRequiringRestart) {
+					if (addon.optionsURL) {
 						mi.setAttribute('style', 'color: Green');
 					}
 
 					this.updateState(mi, addon.userDisabled);
 					this.setUninstall(mi, this.isPending(addon));
-
 					popup.appendChild(mi);
 				}
 			});
@@ -196,12 +187,12 @@
 				event.preventDefault();
 				event.stopPropagation();
 				setTimeout(() => { document.getElementById('toolbar-context-menu').hidePopup(); }, 0);
-				AddonMgr('addons://list/extension');
+				BrowserAddonUI.openAddonsMgr('addons://list/extension');
 			}
 		},
 
 		handleClick: function (event) {
-			var mi = event.target;
+			let mi = event.target;
 			if (mi !== event.currentTarget) {
 				return;
 			}
@@ -209,18 +200,18 @@
 				return;
 			}
 
-			var addon = mi._Addon;
-			var pending = this.isPending(addon);
-			var hasMdf = event.ctrlKey || event.shiftKey || event.altKey || event.metaKey;
+			let addon = mi._Addon;
+			let pending = this.isPending(addon);
+			let hasMdf = event.ctrlKey || event.shiftKey || event.altKey || event.metaKey;
 
 			switch (event.button) {
 				case 0:
 					if (addon.optionsURL && !hasMdf) {
-						this.openAddonOptions(addon, event.target.ownerGlobal);
+						this.openAddonOptions(addon);
 					} else if (event.ctrlKey) {
 						this.browseDir(addon);
 					} else if (event.altKey) {
-						var clipboard = Cc['@mozilla.org/widget/clipboardhelper;1']
+						let clipboard = Cc['@mozilla.org/widget/clipboardhelper;1']
 							.getService(Ci.nsIClipboardHelper);
 						clipboard.copyString(addon.id);
 					}
@@ -232,14 +223,9 @@
 					break;
 				case 2:
 					if (!hasMdf) {
-						var state = !addon.userDisabled;
+						let state = !addon.userDisabled;
 						state ? addon.disable() : addon.enable();
-
 						this.updateState(mi, state);
-
-						if (addon.operationsRequiringRestart && this.autoRestart) {
-							EOM.restart();
-						}
 					} else if (event.ctrlKey) {
 						pending ? addon.cancelUninstall() : addon.uninstall();
 						this.setUninstall(mi, pending);
@@ -249,12 +235,12 @@
 		},
 
 		updateState: function (mi, dis) {
-			var cls = mi.classList;
+			let cls = mi.classList;
 			dis ? cls.add('addon-disabled') : cls.remove('addon-disabled');
 		},
 
 		setUninstall: function (mi, uninst) {
-			var cls = mi.classList;
+			let cls = mi.classList;
 			uninst ? cls.add('addon-uninstall') : cls.remove('addon-uninstall');
 		},
 
@@ -262,59 +248,36 @@
 			return addon.pendingOperations & AddonManager.PENDING_UNINSTALL;
 		},
 
-		openAddonOptions: function (addon, win) {
-			var optionsURL = addon.optionsURL || '';
+		openAddonOptions: function (addon) {
+			let optionsURL = addon.optionsURL || '';
 			if (!addon.isActive || !optionsURL) {
 				return;
 			}
-			switch (Number(addon.__AddonInternal__.optionsType)) {
-				case 5:
-					AddonMgr('addons://detail/' + encodeURIComponent(addon.id) + '/preferences');
-				case 3:
-					"switchToTabHavingURI" in window ? switchToTabHavingURI(optionsURL, true) : openTab("contentTab", { contentPage: optionsURL });
-					break;
-				case 1:
-					var windows = Services.wm.getEnumerator(null);
-					while (windows.hasMoreElements()) {
-						var win2 = windows.getNext();
-						if (win2.closed) {
-							continue;
-						}
-						if (win2.document.documentURI == addon.optionsURL) {
-							win2.focus();
-							return;
-						}
-					}
-					win.openDialog(addon.optionsURL, addon.id, 'chrome,titlebar,toolbar,centerscreen');
+			if (addon.optionsType === 3) {
+				"switchToTabHavingURI" in window ? switchToTabHavingURI(optionsURL, true) : openTab("contentTab", { contentPage: optionsURL });
+			} else {
+				BrowserAddonUI.openAddonsMgr('addons://detail/' + encodeURIComponent(addon.id) + '/preferences');
 			}
 		},
 
 		browseDir: function (addon) {
-			var dir = Services.dirsvc.get('ProfD', Ci.nsIFile);
-			var nsLocalFile = Components.Constructor('@mozilla.org/file/local;1', 'nsIFile', 'initWithPath');
-			dir.append('extensions');
-			dir.append(addon.id);
-			var fileOrDir = dir.path + (dir.exists() ? '' : '.xpi');
 			try {
-				new nsLocalFile(fileOrDir).reveal();
-			} catch (e) {
-				var addonDir = /.xpi$/.test(fileOrDir) ? dir.parent : dir;
-				try {
-					if (addonDir.exists()) {
-						addonDir.launch();
-					}
-				} catch (e) {
-					var uri = Services.io.newFileURI(addonDir);
-					var protSvc = Cc['@mozilla.org/uriloader/external-protocol-service;1']
-						.getService(Ci.nsIExternalProtocolService);
-					protSvc.loadUrl(uri);
+				let dir = Services.dirsvc.get('ProfD', Ci.nsIFile);
+				dir.append('extensions');
+				dir.append(addon.id + (addon.unpack ? '' : '.xpi'));
+				if (dir.exists()) {
+					dir.reveal();
+				} else {
+					Services.prompt.alert(null, "Error", "Directory or file not found.");
 				}
+			} catch (e) {
+				Cu.reportError("EOM: browseDir failed: " + e);
 			}
 		},
 
 		key: function (addon) {
-			var sort = this.sort;
-			var sortPos = addon.isActive ? sort.enabled : sort.disabled;
+			let sort = this.sort;
+			let sortPos = addon.isActive ? sort.enabled : sort.disabled;
 			return sortPos + '\n' + addon.name.toLowerCase();
 		},
 
