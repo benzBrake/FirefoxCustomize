@@ -126,10 +126,95 @@ function handleContextMenu(event) {
 - ✅ 始终保持最后的 `|| window` 作为终极 fallback，确保代码健壮性
 - 🔍 如遇到节点跨文档转移（`document.adoptNode`）的场景，必须使用 `documentGlobal`
 
+## 2. `nsISound::Play` 被移除（Bug 2033673）
+
+Firefox 152+ 移除了 `nsISound` 接口的 `play(nsIURL)` 方法，无法再通过 XPCOM 组件播放系统声音。
+
+**问题表现：**
+- 脚本中调用 `sound.play(uri)` 时报错 `sound.play is not a function`
+- 下载完成提示音、通知音等声音播放功能失效
+
+**解决方案：**
+
+### 2.1 简单场景：使用 Web Audio API 替代
+
+把
+
+```javascript
+var sound = Components.classes["@mozilla.org/sound;1"]
+  .createInstance(Components.interfaces["nsISound"]);
+sound.play(aUri);
+```
+
+替换为
+
+```javascript
+let audio = new Audio(aUri.spec);
+audio.volume = 1.0;
+let promise = audio.play();
+if (promise && typeof promise.catch == "function") {
+  promise.catch(error => {
+    Cu.reportError(error);
+  });
+}
+```
+
+**说明：** 使用 HTML5 `Audio` 对象替代 `nsISound`，传入 URL 的 `.spec` 字符串即可播放。
+
+### 2.2 完整场景：带资源清理的播放函数
+
+```javascript
+// 在对象中维护活跃的 audio 实例，避免内存泄漏
+_activeAudio: new Set(),
+
+play: function (aUri) {
+  var sound = Components.classes["@mozilla.org/sound;1"]
+    .createInstance(Components.interfaces["nsISound"]);
+
+  // 兼容旧版本：如果 nsISound::Play 仍可用则继续使用
+  if (typeof sound.play == "function") {
+    sound.play(aUri);
+    return;
+  }
+
+  // Firefox 152+：使用 HTML5 Audio 替代
+  let audio = new Audio(aUri.spec);
+  audio.volume = 1.0;
+  let clear = () => {
+    audio.removeEventListener("ended", clear);
+    audio.removeEventListener("error", clear);
+    this._activeAudio.delete(audio);
+    audio = null;
+  };
+  audio.addEventListener("ended", clear, { once: true });
+  audio.addEventListener("error", clear, { once: true });
+  this._activeAudio.add(audio);
+  let promise = audio.play();
+  if (promise && typeof promise.catch == "function") {
+    promise.catch(error => {
+      clear();
+      Cu.reportError(error);
+    });
+  }
+},
+```
+
+**注意事项：**
+- ⚠️ `nsISound::Play` 从 Firefox 152 起不再可用
+- ✅ `Audio` 构造函数接受 URL 字符串，需使用 `aUri.spec` 获取
+- ✅ `audio.play()` 返回 Promise，应处理可能的播放拒绝（如自动播放策略限制）
+- ✅ 建议在播放结束或出错时清理引用，避免内存泄漏
+- ✅ 可通过 `typeof sound.play == "function"` 检测兼容性，同时支持新旧版本
+
+**参考：**
+- [Bug 2033673 - remove nsISound::Play](https://bugzilla.mozilla.org/show_bug.cgi?id=2033673)
+- [Firefox-downloadPlus.uc.js 适配 commit](https://github.com/benzBrake/Firefox-downloadPlus.uc.js/commit/d6e9c361bb5b8b528142e5bbfe6849224d597853)
+
 ## 相关资源
 
 - [Bug 2033243 - Rename ownerGlobal to relevantGlobal](https://bugzilla.mozilla.org/show_bug.cgi?id=2033243)
 - [Bug 2033242 - Rename ownerDocGlobal to documentGlobal](https://bugzilla.mozilla.org/show_bug.cgi?id=2033242)
+- [Bug 2033673 - remove nsISound::Play](https://bugzilla.mozilla.org/show_bug.cgi?id=2033673)
 - [Bug 1470017 - ownerGlobal behavior change with node adoption](https://bugzilla.mozilla.org/show_bug.cgi?id=1470017)
 - [HTML Spec: Relevant global object](https://html.spec.whatwg.org/#relevant)
 - [Mozilla.dev-platform discussion](https://groups.google.com/a/mozilla.org/g/dev-platform/c/LKU2-9Bkfc4/m/GC2LA10wBAAJ)
