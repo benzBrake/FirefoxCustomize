@@ -3,11 +3,10 @@
  * @name:zh-CN      书签工具栏居中
  * @description     使书签工具栏的书签以及文件夹居中显示
  * @author          Ryan
- * @version         0.1.0
- * @compatibility   Firefox 121
+ * @version         0.2.0
+ * @compatibility   Firefox 149
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 ==/UserStyle== */
-#PlacesToolbarItems:has(+ #PlacesChevron[collapsed="true"]) {
-    -moz-box-pack: center;
+#PlacesToolbarItems:has(+#PlacesChevron[collapsed]) {
     justify-content: center;
 }
