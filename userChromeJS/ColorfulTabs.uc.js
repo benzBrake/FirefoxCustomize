@@ -703,10 +703,13 @@
         Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
     }
 })(`
-#TabsToolbar:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[visuallyselected][colorful] .tab-background {
-    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 30%, white), color-mix(in srgb, var(--colorful-tab-background) 50%, white)) !important;
-}
 #TabsToolbar[renderall]:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[colorful] .tab-background {
-    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 30%, white), color-mix(in srgb, var(--colorful-tab-background) 50%, white)) !important;
+    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 16%, white), color-mix(in srgb, var(--colorful-tab-background) 26%, white)) !important;
+}
+#TabsToolbar:not([brighttext]) #tabbrowser-tabs .tabbrowser-tab[visuallyselected][colorful] .tab-background {
+    background: -moz-linear-gradient(left, color-mix(in srgb, var(--colorful-tab-background) 38%, white), color-mix(in srgb, var(--colorful-tab-background) 54%, white)) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--colorful-tab-background) 22%, black),
+        inset 0 1px 0 color-mix(in srgb, white 82%, var(--colorful-tab-background)) !important;
 }
 `);
