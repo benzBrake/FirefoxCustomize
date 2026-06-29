@@ -1,10 +1,12 @@
 // ==UserScript==
-// @name            tabNotifitionBadge.uc.js
+// @name            tabNotificationBadge.uc.js
 // @license         MIT License
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xhtml
 // @compatibility   Firefox 69+
+// @version         0.1.0
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            20260629 修正脚本文件名与元数据中的 Notification 拼写
 // ==/UserScript==
 (function (css) {
     class tabNotificationBadge {
@@ -304,7 +306,6 @@
 
     function init() {
         window.tabNotificationBadge = new tabNotificationBadge();
-        window.tabNotifitionBadge = window.tabNotificationBadge;
     }
 
     if (gBrowserInit.delayedStartupFinished) {
