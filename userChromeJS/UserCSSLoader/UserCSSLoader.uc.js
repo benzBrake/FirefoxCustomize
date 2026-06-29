@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r6
+// @version        0.0.6r7
 // @charset        UTF-8
+// @note           0.0.6r7 修复 @var text 变量在用户输入双引号时的 CSS 序列化异常
 // @note           0.0.6r6 新增样式变量(@var)支持、选项对话框与 GreasyFork 远程安装功能, 修复卸载钩子引用不存在的 unload 方法，并加空值保护避免退出时抛错
 // @note           0.0.6r5 兼容 Firefox 149+ checkbox menuitem checked 属性变化
 // @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
@@ -704,6 +705,9 @@ about:config
     getStyleOptionValue (entry, styleVar) {
       let options = this.styleOptions?.[entry.fullName] || {};
       let stored = options[styleVar.name];
+      if (styleVar.type === "text" && typeof stored === "string") {
+        stored = normalizeStyleTextValue(stored);
+      }
       return stored === undefined ? styleVar.defaultValue : stored;
     },
     setStyleOptionsForEntry (entry, values) {
@@ -734,7 +738,7 @@ about:config
         let value = this.getStyleOptionValue(entry, styleVar);
         value = styleVar.type === "checkbox"
           ? (String(value) === "1" ? "1" : "0")
-          : this.sanitizeCssVarValue(value);
+          : serializeCssStringValue(this.sanitizeCssVarValue(value));
         lines.push(`  --${styleVar.name}: ${value};`);
       }
       return `:root {\n${lines.join("\n")}\n}`;
@@ -1351,10 +1355,89 @@ about:config
         type,
         name,
         label,
-        defaultValue: type === "checkbox" ? (String(defaultValue).trim() === "1" ? "1" : "0") : defaultValue.trim()
+        defaultValue: type === "checkbox"
+          ? (String(defaultValue).trim() === "1" ? "1" : "0")
+          : normalizeStyleTextValue(defaultValue)
       });
     }
     return vars;
+  }
+
+  function normalizeStyleTextValue (value) {
+    let text = String(value ?? "").trim();
+    if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+      return decodeCssStringValue(text.slice(1, -1));
+    }
+    return text;
+  }
+
+  function decodeCssStringValue (value) {
+    let text = String(value ?? "");
+    let result = "";
+    for (let i = 0; i < text.length; i++) {
+      let ch = text[i];
+      if (ch !== "\\") {
+        result += ch;
+        continue;
+      }
+      if (i + 1 >= text.length) {
+        result += "\\";
+        break;
+      }
+      let next = text[++i];
+      switch (next) {
+        case "n":
+          result += "\n";
+          break;
+        case "r":
+          result += "\r";
+          break;
+        case "t":
+          result += "\t";
+          break;
+        case "f":
+          result += "\f";
+          break;
+        case '"':
+          result += '"';
+          break;
+        case "\\":
+          result += "\\";
+          break;
+        default:
+          result += next;
+          break;
+      }
+    }
+    return result;
+  }
+
+  function serializeCssStringValue (value) {
+    let text = String(value ?? "");
+    let result = '"';
+    for (let i = 0; i < text.length; i++) {
+      let ch = text[i];
+      switch (ch) {
+        case "\\":
+          result += "\\\\";
+          break;
+        case '"':
+          result += '\\"';
+          break;
+        case "\r":
+          if (text[i + 1] === "\n") i++;
+          result += "\\A ";
+          break;
+        case "\n":
+          result += "\\A ";
+          break;
+        default:
+          result += ch;
+          break;
+      }
+    }
+    result += '"';
+    return result;
   }
 
   function escapeHTML (value) {
