@@ -168,15 +168,23 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
 
     var isMouseDown = false;
-    if (!("o_openNodeWithEvent" in PlacesUIUtils)) {
-        PlacesUIUtils.o_openNodeWithEvent = PlacesUIUtils.openNodeWithEvent;
+    PlacesUIUtils.bmoptOpenNodeWithEventWindows ||= new Set();
+    PlacesUIUtils.bmoptOpenNodeWithEventWindows.add(window);
+    PlacesUIUtils.bmoptOpenNodeWithEventOriginal ||= PlacesUIUtils.o_openNodeWithEvent || PlacesUIUtils.openNodeWithEvent;
+    PlacesUIUtils.o_openNodeWithEvent = PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
+    if (!PlacesUIUtils.openNodeWithEvent.bmoptPatched) {
         PlacesUIUtils.openNodeWithEvent = function (...args) {
-            if (args[0].button == 1 && BookmarkOpt.isTriggered) {
-                BookmarkOpt.isTriggered = false;
+            const event = args[0];
+            const target = event?.target;
+            const targetWin = target?.documentGlobal || target?.relevantGlobal || target?.ownerDocument?.defaultView || event?.view;
+            const bookmarkOpt = targetWin?.BookmarkOpt;
+            if (event?.button == 1 && bookmarkOpt?.isTriggered) {
+                bookmarkOpt.isTriggered = false;
                 return;
             }
-            PlacesUIUtils.o_openNodeWithEvent.apply(this, args);
+            return PlacesUIUtils.o_openNodeWithEvent.apply(this, args);
         }
+        PlacesUIUtils.openNodeWithEvent.bmoptPatched = true;
     }
 
     window.BookmarkOpt = {
@@ -290,6 +298,13 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                 sss.unregisterSheet(this.style.url, this.style.type);
                 this.style = null;
             }
+            PlacesUIUtils.bmoptOpenNodeWithEventWindows?.delete(window);
+            if (!PlacesUIUtils.bmoptOpenNodeWithEventWindows?.size && PlacesUIUtils.bmoptOpenNodeWithEventOriginal) {
+                PlacesUIUtils.openNodeWithEvent = PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
+                delete PlacesUIUtils.o_openNodeWithEvent;
+                delete PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
+                delete PlacesUIUtils.bmoptOpenNodeWithEventWindows;
+            }
             switch (location.href) {
                 case this.X_MAIN:
                     let urlbar = $('urlbar');
@@ -308,7 +323,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                         } catch (ex) { }
                     }
                     if ($('PlacesToolbarItems')) {
-                        remove_events($('PlacesToolbarItems'), 'mousedown', 'click', this);
+                        remove_events($('PlacesToolbarItems'), ['mousedown', 'click'], this, false);
                         remove_events(document, 'mouseup', this, false);
                     }
                     if (this.PlacesChevronObserver) {
