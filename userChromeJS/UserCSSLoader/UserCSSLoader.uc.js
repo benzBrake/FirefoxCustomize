@@ -8,10 +8,10 @@
 // @compatibility  Firefox 80
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
-// @shutdown       window.UserCSSLoader.unload(true);
+// @shutdown       window.UserCSSLoader?.destroy?.(true);
 // @version        0.0.6r6
 // @charset        UTF-8
-// @note           0.0.6r6 新增样式变量(@var)支持、选项对话框与 GreasyFork 远程安装功能
+// @note           0.0.6r6 新增样式变量(@var)支持、选项对话框与 GreasyFork 远程安装功能, 修复卸载钩子引用不存在的 unload 方法，并加空值保护避免退出时抛错
 // @note           0.0.6r5 兼容 Firefox 149+ checkbox menuitem checked 属性变化
 // @note           0.0.6r4 修复注释匹配问题（名称，描述，主页等信息抓取）
 // @note           0.0.6r3 创建样式子菜单增加图标
@@ -586,7 +586,7 @@ about:config
     },
     destroy (force = false) {
       if (document.getElementById("ucl-change-style-popup")) {
-        document.getElementById("ucl-change-style-popup").parentNode.removeChild(doc.getElementById("ucl-change-style-popup"));
+        document.getElementById("ucl-change-style-popup").parentNode.removeChild(document.getElementById("ucl-change-style-popup"));
       }
 
       if (document.getElementById('ucl-rebuild-key')) {
