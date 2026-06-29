@@ -67,6 +67,7 @@ npm test
 - 记录脚本变更时，添加 `// @note YYYY-MM-DD <description>` 条目。
 - 提升脚本的 `@compatibility` 版本前，必须按照 `userChromeJS/CLAUDE.md` 归档旧版本。
 - 更新 README 脚本链接时，必须跨版本目录查找该脚本的所有副本，并指向最新维护版本，而不是只使用最先找到的归档副本。
+- 重命名脚本文件时，必须同步更新 `userChromeJS/README.md` 中对应条目的文件名和链接。
 - 新增或修改版本兼容性文档时，遵循现有版本 README 的结构，例如 `userChromeJS/149/README.md` 和 `userChromeJS/136/README.md`。
 
 ## 测试与验证
