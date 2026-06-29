@@ -3,16 +3,17 @@
 // @description     调整弹出面板位置
 // @author          Ryan
 // @license         MIT License
-// @version         0.0.1
+// @version         0.0.2
 // @compatibility   Firefox 72
 // @charset         UTF-8
 // @include         main
 // @sandbox         true
-// @shutdown        window.adjustPanelViewPosition.destroy()
+// @shutdown        window.adjustPanelViewPosition?.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/adjustPanelViewPosition.uc.js
+// @note            20260629 修复 @sandbox 下未挂到 window 导致 shutdown 报错，并补充 triggerEvent 窗口获取兜底
 // ==/UserScript==
-(adjustPanelViewPosition = {
+window.adjustPanelViewPosition = {
     ENABLE_BLACKLIST: false, // 是否启用黑名单，不启用则处理所有弹出面板
     BLACKLIST: [ // 从哪个按钮触发
         "#alltabs-button",
@@ -30,10 +31,13 @@
         this.openPopup = PanelMultiView.openPopup;
         const { openPopup } = this;
         PanelMultiView.openPopup = function (panel, anchor, options) {
-            if (adjustPanelViewPosition.isBlacklisted(anchor) && options.triggerEvent) {
+            if (window.adjustPanelViewPosition.isBlacklisted(anchor) && options?.triggerEvent) {
                 const { originalTarget: btn } = options.triggerEvent;
-                const win = btn.ownerDocument.defaultView;
-                const rect = btn.getBoundingClientRect();
+                const win = btn?.documentGlobal || btn?.relevantGlobal || btn?.ownerDocument?.defaultView || window;
+                const rect = btn?.getBoundingClientRect?.();
+                if (!btn || !rect) {
+                    return openPopup.call(this, panel, anchor, options);
+                }
                 const windowWidth = win.innerWidth;
                 const windowHeight = win.innerHeight;
                 const x = rect.left + rect.width / 2;
@@ -54,4 +58,5 @@
     destroy: function () {
         PanelMultiView.openPopup = this.openPopup;
     }
-}).init();
+};
+window.adjustPanelViewPosition.init();
