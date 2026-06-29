@@ -8,7 +8,7 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.3.1
+// @version            0.3.2
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
@@ -22,6 +22,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.3.2 过滤无效 favicon URL，避免 about:blank / opaque origin 触发 nsIFaviconService.setFaviconForPage
 // @note               Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note               20260407 Actor registration moved to userChrome.js loader; keep single-file chrome+actor implementation, fix first-run startup when config file does not exist yet
 // @note               20260407 Fx146 alerts-service compatibility: prefer showAlert and keep showAlertNotification as fallback
@@ -2009,9 +2010,24 @@ import { syncify } from "./000-syncify.sys.mjs";
         setSelectedText (aText) {
             this._selectedText = aText;
         },
+        isValidFaviconHref (href) {
+            if (typeof href !== "string") return false;
+            const scheme = href.trim().match(/^([a-z][a-z0-9+.-]*):/i)?.[1]?.toLowerCase();
+            return !!scheme && [
+                "http",
+                "https",
+                "ftp",
+                "file",
+                "chrome",
+                "resource",
+                "data",
+                "blob",
+                "moz-extension",
+            ].includes(scheme);
+        },
         setFaviconLink ({ hash, href }) {
-            if (hash && href)
-                gBrowser.tabs.filter(t => t.faviconHash === hash).forEach(t => t.faviconUrl = href);
+            if (!hash || !this.isValidFaviconHref(href)) return;
+            gBrowser.tabs.filter(t => t.faviconHash === hash).forEach(t => t.faviconUrl = href);
         },
         edit: async function (aFile, aLineNumber) {
             if (!aFile?.exists() || !aFile.isFile()) {
@@ -2649,20 +2665,31 @@ class AddMenuChild extends JSWindowActorChild {
         switch (name) {
             case "AddMenuPlus:GetFaviconLink":
                 if (!doc.head || !data.hash) return;
-                const getFaviconUrl = () => {
-                    const link = doc.head.querySelector('[rel~="shortcut"],[rel="icon"]');
-                    return link ? processRelLink(link.href)
-                        : `${doc.location.origin}/favicon.ico`;
+                const resolveFaviconHref = href => {
+                    if (typeof href !== "string") return "";
+                    href = href.trim();
+                    if (!href) return "";
+                    try {
+                        const resolved = new URL(href, doc.baseURI).href;
+                        return /^(https?:|ftp:|file:|chrome:|resource:|data:|blob:|moz-extension:)/i.test(resolved)
+                            ? resolved
+                            : "";
+                    } catch {
+                        return "";
+                    }
                 };
 
-                const processRelLink = href => {
-                    if (/^(https?:|chrome:|resource:|data:|\/\/)/.test(href)) {
-                        return href.startsWith('//') ? `${doc.location.protocol}${href}` : href;
-                    }
-                    return `${doc.location.origin}/${href.replace(/^\.?\//, '')}`;
+                const getFaviconUrl = () => {
+                    const link = doc.head.querySelector('[rel~="shortcut"],[rel="icon"]');
+                    const href = resolveFaviconHref(link?.getAttribute("href") || link?.href);
+                    if (href) return href;
+                    const origin = doc.location?.origin;
+                    if (!origin || origin === "null") return "";
+                    return resolveFaviconHref(`${origin}/favicon.ico`);
                 };
 
                 const href = getFaviconUrl();
+                if (!href) return;
                 this.sendAsyncMessage("AddMenuPlus:SetFaviconLink", { hash: data.hash, href });
                 break;
             case "AddMenuPlus:GetSelectedText":
