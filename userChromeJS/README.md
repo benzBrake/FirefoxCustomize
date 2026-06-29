@@ -106,6 +106,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 136  | [ucf_downloads_clear](ucf_downloads_clear/ucf_downloads_clear.uc.js) | 在下载面板添加”清空下载记录”按钮                               | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/ucf_downloads_clear.js) |
 |      | 149  | [ucf_drag_ModR](ucf_drag_ModR/ucf_drag_ModR.uc.js)           | 鼠标拖拽 Drag & Go，默认配置文件与脚本同目录：`_ucf_drag_ModR.config.js` | [📃](https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234) |
 |      | 152  | [UrlBarProgress](UrlBarProgress.uc.js)                       | 在地址栏背景显示当前页面加载进度                             | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/LocationBarEnhancer.js) |
+|      | 69   | [tabNotificationBadge](tabNotificationBadge.uc.js)            | 标签页通知角标，从标题提取数字或检测 attention 状态显示徽章 |                                                              |
 
 下面的不能用了的话，请一定不要找我，因为我不用了，你们可以顺着源链接过去找原作者修复
 
