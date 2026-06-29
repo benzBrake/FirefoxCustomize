@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name            unifiedExtensionsEnhance.uc.js
+// @name            UnifiedExtensionsEnhance.uc.js
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.3.2
+// @version         0.3.3
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
-// @note            2026-06-25 兼容 Firefox 151+ 面板菜单样式变量改名，保留旧变量 fallback
-// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
+// @note            0.3.3 统一脚本文件名与元数据大小写
+// @note            0.3.2 兼容 Firefox 151+ 面板菜单样式变量改名，保留旧变量 fallback， Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            0.3.1 关闭拖拽调试日志，完善拖拽结束兜底排序
 // @note            0.3.0 为 #unified-extensions-area 增加拖拽排序手柄，移除上移/下移按钮
 // @note            0.2.9 去除 onPinToToolbarChange 和 moveWidget 的 monkey patch，改用官方 ExtensionCommon.makeWidgetId，并保留最小化 togglePanel patch
