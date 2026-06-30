@@ -3,6 +3,7 @@
 const USERCSSLOADER_FLAG_RE = /@usercssloader\s+true\b/i;
 const INSTALL_AREA_SELECTOR = '#install-area';
 const SCRIPT_TABS_SELECTOR = '#script-links';
+const SOURCE_DOWNLOAD_SELECTOR = '#install-area a.install-link[data-install-format="css"][href]';
 const INSTALL_LINK_ATTR = 'data-usercssloader-install-link';
 const INSTALL_HELP_ATTR = 'data-usercssloader-install-help';
 const STYLE_NAME_RE = /^\s*\*\s*@name(?::[^\s]+)?\s+(.+?)\s*$/im;
@@ -22,6 +23,19 @@ function isCodePage(win) {
 
 function getInstallArea(doc) {
     return doc?.querySelector(INSTALL_AREA_SELECTOR) || null;
+}
+
+function getSourceDownloadURL(win) {
+    if (!win?.document) {
+        return null;
+    }
+
+    const sourceLink = win.document.querySelector(SOURCE_DOWNLOAD_SELECTOR);
+    if (sourceLink?.href) {
+        return new win.URL(sourceLink.href, win.location.href);
+    }
+
+    return null;
 }
 
 function getCodePageURL(win) {
@@ -49,6 +63,44 @@ function getStyleName(codeText, fallback = '') {
     return codeText.match(STYLE_NAME_RE)?.[1]?.trim() || fallback;
 }
 
+function normalizeInstalledFileName(fileName) {
+    let normalized = String(fileName || '')
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, '_')
+        .replace(/[. ]+$/g, '');
+
+    if (!normalized) {
+        normalized = 'greasyfork_style';
+    }
+
+    if (!normalized.toLowerCase().endsWith('.css')) {
+        normalized += '.css';
+    }
+
+    return normalized;
+}
+
+function buildInstallFileNameFromPageURL(pageURL, fallback = '') {
+    try {
+        const pathname = new URL(pageURL).pathname || '';
+        const match = pathname.match(/\/scripts\/(\d+)-([^/]+)/i);
+        if (match) {
+            const scriptId = match[1];
+            const slug = decodeURIComponent(match[2] || '')
+                .replace(/[^a-zA-Z0-9._-]+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            if (scriptId && slug) {
+                return normalizeInstalledFileName(`${scriptId}-${slug}.css`);
+            }
+        }
+    } catch (ex) {
+        Cu.reportError(ex);
+    }
+
+    return normalizeInstalledFileName(fallback || 'greasyfork_style.css');
+}
+
 function buildInstallFileName(win) {
     const pathname = win?.location?.pathname || '';
     const slug = pathname.match(/\/scripts\/\d+-([^/]+)/i)?.[1] || '';
@@ -57,7 +109,18 @@ function buildInstallFileName(win) {
         .replace(/[^\w.-]+/g, '_')
         .replace(/_+/g, '_')
         .replace(/^_+|_+$/g, '');
-    return `${normalized || 'greasyfork_style'}.css`;
+    return normalizeInstalledFileName(`${normalized || 'greasyfork_style'}.css`);
+}
+
+async function fetchSourceText(win, sourceURL) {
+    const response = await win.fetch(sourceURL.href, {
+        credentials: 'same-origin',
+    });
+    if (!response.ok) {
+        throw new Error(`UserCSSLoader source fetch failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.text();
 }
 
 async function fetchCodeText(win, codeURL) {
@@ -65,7 +128,7 @@ async function fetchCodeText(win, codeURL) {
         credentials: 'same-origin',
     });
     if (!response.ok) {
-        throw new Error(`UserCSSLoader actor fetch failed: ${response.status} ${response.statusText}`);
+        throw new Error(`UserCSSLoader code page fetch failed: ${response.status} ${response.statusText}`);
     }
 
     const html = await response.text();
@@ -203,6 +266,10 @@ function ensureInstallLink(win, installData, actor) {
     installArea.appendChild(createHelpPlaceholder(win));
 }
 
+function hasInstallMarker(codeText) {
+    return USERCSSLOADER_FLAG_RE.test(codeText);
+}
+
 export class UserCSSLoaderActorParent extends JSWindowActorParent {
     receiveMessage({ name, data }) {
         if (name !== 'UserCSSLoader:InstallStyle') {
@@ -239,19 +306,33 @@ export class UserCSSLoaderActorChild extends JSWindowActorChild {
             return;
         }
 
-        const codeText = isCodePage(win)
-            ? extractCodeTextFromDocument(win.document)
-            : await fetchCodeText(win, getCodePageURL(win));
+        const sourceURL = getSourceDownloadURL(win);
+        let codeText = '';
+        if (sourceURL) {
+            try {
+                codeText = await fetchSourceText(win, sourceURL);
+            } catch (ex) {
+                Cu.reportError(ex);
+            }
+        }
 
-        if (!USERCSSLOADER_FLAG_RE.test(codeText)) {
+        if (!hasInstallMarker(codeText)) {
+            codeText = isCodePage(win)
+                ? extractCodeTextFromDocument(win.document)
+                : await fetchCodeText(win, getCodePageURL(win));
+        }
+
+        if (!hasInstallMarker(codeText)) {
             return;
         }
 
+        const sourceHref = sourceURL?.href || '';
+        const fileName = buildInstallFileNameFromPageURL(win.location.href, buildInstallFileName(win));
         ensureInstallLink(win, {
             codeText,
-            fileName: buildInstallFileName(win),
+            fileName,
             sourceURL: win.location.href,
-            codeURL: getCodePageURL(win)?.href || win.location.href,
+            codeURL: sourceHref || getCodePageURL(win)?.href || win.location.href,
             styleName: getStyleName(codeText, win.document.querySelector('h2')?.textContent?.trim() || 'GreasyFork Style'),
         }, this);
     }

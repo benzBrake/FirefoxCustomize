@@ -9,8 +9,10 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r7
+// @version        0.0.6r9
 // @charset        UTF-8
+// @note           0.0.6r9 GreasyFork 远程安装文件名改为使用脚本页 id-slug 段并统一落成 .css
+// @note           0.0.6r8 GreasyFork 远程安装改为优先直连源码下载，文件名默认使用源码文件名并统一落成 .css
 // @note           0.0.6r7 修复 @var text 变量在用户输入双引号时的 CSS 序列化异常
 // @note           0.0.6r6 新增样式变量(@var)支持、选项对话框与 GreasyFork 远程安装功能, 修复卸载钩子引用不存在的 unload 方法，并加空值保护避免退出时抛错
 // @note           0.0.6r5 兼容 Firefox 149+ checkbox menuitem checked 属性变化
