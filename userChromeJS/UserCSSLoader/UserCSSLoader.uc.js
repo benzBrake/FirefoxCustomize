@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r11
+// @version        0.0.6r12
 // @charset        UTF-8
+// @note           0.0.6r12 GreasyFork 远程安装入口接入本地化文案
 // @note           0.0.6r11 GreasyFork 远程安装支持 @usercssloader true/author/user/agent 声明保存后缀
 // @note           0.0.6r10 AGENT_SHEET 注册/注销后强制触发样式重算，避免现有窗口不立即刷新
 // @note           0.0.6r9 GreasyFork 远程安装文件名改为使用脚本页 id-slug 段并统一落成 .css
@@ -255,7 +256,7 @@ about:config
 
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
-        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled", "ucl-style-options", "ucl-save-style-options", "ucl-reset-style-options", "ucl-close-style-options"]
+        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled", "ucl-style-options", "ucl-save-style-options", "ucl-reset-style-options", "ucl-close-style-options", "ucl-install-to-usercssloader", "ucl-install-style-confirm", "ucl-install-style-overwrite-confirm", "ucl-install-style-installed", "ucl-install-style-updated", "ucl-install-style-unchanged", "ucl-install-style-failed", "ucl-install-style-unknown-result", "ucl-install-help-placeholder-title", "ucl-install-default-style-name", "ucl-install-usercssloader-unavailable"]
         messages = await this.l10n.formatValues(keys);
         this.MESSAGES = (() => {
           let obj = {};
@@ -290,7 +291,18 @@ about:config
           "ucl-style-options": "Style options",
           "ucl-save-style-options": "Save",
           "ucl-reset-style-options": "Reset",
-          "ucl-close-style-options": "Close"
+          "ucl-close-style-options": "Close",
+          "ucl-install-to-usercssloader": "Install to UserCSSLoader",
+          "ucl-install-style-confirm": "Install \"%s\" to UserCSSLoader?\n\nTarget file: %s",
+          "ucl-install-style-overwrite-confirm": "A local style with the same name already exists: %s\n\nOverwrite the existing file and reload the style?",
+          "ucl-install-style-installed": "Installed: %s",
+          "ucl-install-style-updated": "Updated: %s",
+          "ucl-install-style-unchanged": "Local file content is unchanged; reloaded: %s",
+          "ucl-install-style-failed": "Install failed: %s",
+          "ucl-install-style-unknown-result": "Unknown install result",
+          "ucl-install-help-placeholder-title": "Will be changed to a help link later",
+          "ucl-install-default-style-name": "GreasyFork Style",
+          "ucl-install-usercssloader-unavailable": "UserCSSLoader is not available in chrome window."
         }
       }
 

@@ -25,6 +25,65 @@ const INSTALL_LINK_ATTR = 'data-usercssloader-install-link';
 const INSTALL_HELP_ATTR = 'data-usercssloader-install-help';
 const STYLE_NAME_RE = /^\s*\*\s*@name(?::[^\s]+)?\s+(.+?)\s*$/im;
 const INSTALL_STYLE_ID = 'usercssloader-install-style';
+const INSTALL_MESSAGE_KEYS = [
+    'ucl-install-to-usercssloader',
+    'ucl-install-style-confirm',
+    'ucl-install-style-overwrite-confirm',
+    'ucl-install-style-installed',
+    'ucl-install-style-updated',
+    'ucl-install-style-unchanged',
+    'ucl-install-style-failed',
+    'ucl-install-style-unknown-result',
+    'ucl-install-help-placeholder-title',
+    'ucl-install-default-style-name',
+    'ucl-install-usercssloader-unavailable',
+];
+const DEFAULT_INSTALL_MESSAGES = {
+    'ucl-install-to-usercssloader': 'Install to UserCSSLoader',
+    'ucl-install-style-confirm': 'Install "%s" to UserCSSLoader?\n\nTarget file: %s',
+    'ucl-install-style-overwrite-confirm': 'A local style with the same name already exists: %s\n\nOverwrite the existing file and reload the style?',
+    'ucl-install-style-installed': 'Installed: %s',
+    'ucl-install-style-updated': 'Updated: %s',
+    'ucl-install-style-unchanged': 'Local file content is unchanged; reloaded: %s',
+    'ucl-install-style-failed': 'Install failed: %s',
+    'ucl-install-style-unknown-result': 'Unknown install result',
+    'ucl-install-help-placeholder-title': 'Will be changed to a help link later',
+    'ucl-install-default-style-name': 'GreasyFork Style',
+    'ucl-install-usercssloader-unavailable': 'UserCSSLoader is not available in chrome window.',
+};
+
+function formatMessage(messages, key, ...args) {
+    let text = messages?.[key] || DEFAULT_INSTALL_MESSAGES[key] || '';
+    for (const arg of args) {
+        if (!text.includes('%s')) {
+            break;
+        }
+        text = text.replace(/%(s|d)/, arg);
+    }
+    return text;
+}
+
+async function getInstallMessages(actor) {
+    const messages = {
+        ...DEFAULT_INSTALL_MESSAGES,
+    };
+
+    try {
+        const localized = await actor.sendQuery('UserCSSLoader:GetInstallMessages', INSTALL_MESSAGE_KEYS);
+        if (!localized || typeof localized !== 'object') {
+            return messages;
+        }
+        for (const key of INSTALL_MESSAGE_KEYS) {
+            if (typeof localized[key] === 'string' && localized[key]) {
+                messages[key] = localized[key];
+            }
+        }
+    } catch (ex) {
+        Cu.reportError(ex);
+    }
+
+    return messages;
+}
 
 function isGreasyForkScriptPage(win) {
     const { location } = win || {};
@@ -226,18 +285,18 @@ function ensureInlineStyle(win) {
     (win.document.head || win.document.documentElement).appendChild(style);
 }
 
-function createInstallLink(win, installData, actor) {
+function createInstallLink(win, installData, actor, messages) {
     const link = win.document.createElement('button');
     link.className = 'install-link';
     link.type = 'button';
-    link.textContent = '安装到 UserCSSLoader';
+    link.textContent = formatMessage(messages, 'ucl-install-to-usercssloader');
     link.setAttribute(INSTALL_LINK_ATTR, 'true');
     link.addEventListener('click', async event => {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         if (!win.confirm(
-            `确定要把“${installData.styleName}”安装到 UserCSSLoader 吗？\n\n目标文件：${installData.fileName}`
+            formatMessage(messages, 'ucl-install-style-confirm', installData.styleName, installData.fileName)
         )) {
             return;
         }
@@ -245,7 +304,7 @@ function createInstallLink(win, installData, actor) {
             let result = await actor.sendQuery('UserCSSLoader:InstallStyle', installData);
             if (result?.status === 'exists') {
                 const overwrite = win.confirm(
-                    `本地已存在同名样式：${result.fileName}\n\n是否覆盖现有文件并重新加载样式？`
+                    formatMessage(messages, 'ucl-install-style-overwrite-confirm', result.fileName)
                 );
                 if (!overwrite) {
                     return;
@@ -257,35 +316,35 @@ function createInstallLink(win, installData, actor) {
             }
 
             if (result?.status === 'installed' || result?.status === 'updated' || result?.status === 'unchanged') {
-                const actionText = result.status === 'installed'
-                    ? '已安装'
+                const messageKey = result.status === 'installed'
+                    ? 'ucl-install-style-installed'
                     : result.status === 'updated'
-                        ? '已覆盖更新'
-                        : '本地文件内容一致，已重新加载';
-                win.alert(`${actionText}：${result.fileName}`);
+                        ? 'ucl-install-style-updated'
+                        : 'ucl-install-style-unchanged';
+                win.alert(formatMessage(messages, messageKey, result.fileName));
                 return;
             }
 
-            throw new Error(result?.error || 'Unknown install result');
+            throw new Error(result?.error || formatMessage(messages, 'ucl-install-style-unknown-result'));
         } catch (ex) {
             Cu.reportError(ex);
-            win.alert(`安装失败：${ex.message || ex}`);
+            win.alert(formatMessage(messages, 'ucl-install-style-failed', ex.message || ex));
         }
     });
     return link;
 }
 
-function createHelpPlaceholder(win) {
+function createHelpPlaceholder(win, messages) {
     const help = win.document.createElement('span');
     help.className = 'install-help-link';
     help.textContent = '?';
-    help.title = '后续将改为帮助链接';
+    help.title = formatMessage(messages, 'ucl-install-help-placeholder-title');
     help.setAttribute(INSTALL_HELP_ATTR, 'true');
     help.setAttribute('aria-disabled', 'true');
     return help;
 }
 
-function ensureInstallLink(win, installData, actor) {
+function ensureInstallLink(win, installData, actor, messages) {
     const installArea = getInstallArea(win.document);
     if (!installArea || installArea.querySelector(`[${INSTALL_LINK_ATTR}]`)) {
         return;
@@ -293,8 +352,8 @@ function ensureInstallLink(win, installData, actor) {
 
     ensureInlineStyle(win);
     installArea.appendChild(win.document.createTextNode(' '));
-    installArea.appendChild(createInstallLink(win, installData, actor));
-    installArea.appendChild(createHelpPlaceholder(win));
+    installArea.appendChild(createInstallLink(win, installData, actor, messages));
+    installArea.appendChild(createHelpPlaceholder(win, messages));
 }
 
 function parseUserCSSLoaderInstall(codeText) {
@@ -314,10 +373,6 @@ function parseUserCSSLoaderInstall(codeText) {
 
 export class UserCSSLoaderActorParent extends JSWindowActorParent {
     receiveMessage({ name, data }) {
-        if (name !== 'UserCSSLoader:InstallStyle') {
-            return null;
-        }
-
         const windowGlobal = this.manager?.browsingContext?.currentWindowGlobal;
         const browser = windowGlobal?.rootFrameLoader?.ownerElement;
         const win =
@@ -325,9 +380,29 @@ export class UserCSSLoaderActorParent extends JSWindowActorParent {
             browser?.relevantGlobal ||
             browser?.ownerDocument?.defaultView ||
             null;
+
+        if (name === 'UserCSSLoader:GetInstallMessages') {
+            const localized = {};
+            const messages = win?.UserCSSLoader?.MESSAGES;
+            for (const key of Array.isArray(data) ? data : []) {
+                const value = messages?.[key];
+                if (typeof value === 'string') {
+                    localized[key] = value;
+                }
+            }
+            return localized;
+        }
+
+        if (name !== 'UserCSSLoader:InstallStyle') {
+            return null;
+        }
+
+        const unavailableError =
+            win?.UserCSSLoader?.MESSAGES?.['ucl-install-usercssloader-unavailable'] ||
+            DEFAULT_INSTALL_MESSAGES['ucl-install-usercssloader-unavailable'];
         return win?.UserCSSLoader?.installRemoteStyle?.(data) || {
             status: 'error',
-            error: 'UserCSSLoader is not available in chrome window.',
+            error: unavailableError,
         };
     }
 }
@@ -370,6 +445,7 @@ export class UserCSSLoaderActorChild extends JSWindowActorChild {
             return;
         }
 
+        const messages = await getInstallMessages(this);
         const sourceHref = sourceURL?.href || '';
         const fileName = buildInstallFileNameFromPageURL(win.location.href, buildInstallFileName(win, installMeta.suffix), installMeta.suffix);
         ensureInstallLink(win, {
@@ -378,7 +454,7 @@ export class UserCSSLoaderActorChild extends JSWindowActorChild {
             installType: installMeta.type,
             sourceURL: win.location.href,
             codeURL: sourceHref || getCodePageURL(win)?.href || win.location.href,
-            styleName: getStyleName(codeText, win.document.querySelector('h2')?.textContent?.trim() || 'GreasyFork Style'),
-        }, this);
+            styleName: getStyleName(codeText, win.document.querySelector('h2')?.textContent?.trim() || formatMessage(messages, 'ucl-install-default-style-name')),
+        }, this, messages);
     }
 }
