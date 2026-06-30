@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r9
+// @version        0.0.6r10
 // @charset        UTF-8
+// @note           0.0.6r10 AGENT_SHEET 注册/注销后强制触发样式重算，避免现有窗口不立即刷新
 // @note           0.0.6r9 GreasyFork 远程安装文件名改为使用脚本页 id-slug 段并统一落成 .css
 // @note           0.0.6r8 GreasyFork 远程安装改为优先直连源码下载，文件名默认使用源码文件名并统一落成 .css
 // @note           0.0.6r7 修复 @var text 变量在用户输入双引号时的 CSS 序列化异常
@@ -97,6 +98,7 @@ about:config
     styleOptions: Object.create(null),
     styleOptionsLoaded: false,
     styleOptionsSaving: Promise.resolve(),
+    hasAgentSheetRefreshListener: false,
 
     get allDisabled () {
       return this.prefs.getBoolPref(this.KEY_ALL_DISABLED, false);
@@ -116,6 +118,65 @@ about:config
 
     get useResourceProtocol () {
       return this.prefs.getBoolPref(this.KEY_USE_RESOURCE_PROTOCOL, false);
+    },
+
+    forceAgentSheetRefresh (type) {
+      if (type !== this.AGENT_SHEET || this.hasAgentSheetRefreshListener) {
+        return;
+      }
+
+      const win = Services.wm.getMostRecentBrowserWindow?.() || Services.wm.getMostRecentWindow(null) || window;
+      const browsingContext = win?.browsingContext;
+      const oppositeColorScheme = Services.appinfo.chromeColorSchemeIsDark ? "light" : "dark";
+      const mql = win?.matchMedia?.(`(prefers-color-scheme: ${oppositeColorScheme})`);
+      if (!browsingContext || !mql) {
+        return;
+      }
+
+      const cacheVal = browsingContext.prefersColorSchemeOverride;
+      let fallbackTimer = 0;
+      let restored = false;
+      const restore = () => {
+        if (restored) {
+          return;
+        }
+        restored = true;
+        this.hasAgentSheetRefreshListener = false;
+        if (fallbackTimer) {
+          win.clearTimeout(fallbackTimer);
+          fallbackTimer = 0;
+        }
+        if (typeof mql.removeEventListener === "function") {
+          mql.removeEventListener("change", restore);
+        } else {
+          mql.removeListener(restore);
+        }
+        browsingContext.prefersColorSchemeOverride = cacheVal;
+      };
+
+      this.hasAgentSheetRefreshListener = true;
+      try {
+        if (typeof mql.addEventListener === "function") {
+          mql.addEventListener("change", restore, { once: true });
+        } else {
+          mql.addListener(restore);
+        }
+        browsingContext.prefersColorSchemeOverride = oppositeColorScheme;
+        fallbackTimer = win.setTimeout(restore, 1000);
+      } catch (error) {
+        this.hasAgentSheetRefreshListener = false;
+        if (fallbackTimer) {
+          win.clearTimeout(fallbackTimer);
+        }
+        try {
+          if (typeof mql.removeEventListener === "function") {
+            mql.removeEventListener("change", restore);
+          } else {
+            mql.removeListener(restore);
+          }
+        } catch (_error) { }
+        console.error("[UserCSSLoader]", error);
+      }
     },
 
     get STYLE () {
@@ -1250,39 +1311,52 @@ about:config
     register () {
       if (!this.disabled) {
         IOUtils.stat(this.path).then((value) => {
+          let changed = false;
           if (sss.sheetRegistered(this.url, this.type)) {
             if (this.lastModifiedTime != value.lastModified) {
               sss.unregisterSheet(this.url, this.type);
               sss.loadAndRegisterSheet(this.url, this.type);
               this.isRunning = true;
+              changed = true;
             }
           } else {
             sss.loadAndRegisterSheet(this.url, this.type);
             this.isRunning = true;
+            changed = true;
           }
-          this.registerVars();
+          if (this.registerVars() || changed) {
+            UserCSSLoader.forceAgentSheetRefresh(this.type);
+          }
         });
       }
     },
     registerVars () {
-      this.unregisterVars();
+      let changed = this.unregisterVars();
       let css = UserCSSLoader.getStyleVarsCss(this);
-      if (!css) return;
+      if (!css) return changed;
       this.varsUrl = Services.io.newURI("data:text/css;charset=utf-8," + encodeURIComponent(css), null, null);
       sss.loadAndRegisterSheet(this.varsUrl, this.type);
+      return true;
     },
     unregisterVars () {
+      let changed = false;
       if (this.varsUrl && sss.sheetRegistered(this.varsUrl, this.type)) {
         sss.unregisterSheet(this.varsUrl, this.type);
+        changed = true;
       }
       this.varsUrl = null;
+      return changed;
     },
     unregister () {
-      this.unregisterVars();
+      let changed = this.unregisterVars();
       if (sss.sheetRegistered(this.url, this.type)) {
         sss.unregisterSheet(this.url, this.type);
+        changed = true;
       }
       this.isRunning = false;
+      if (changed) {
+        UserCSSLoader.forceAgentSheetRefresh(this.type);
+      }
     }
   };
 
