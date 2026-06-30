@@ -131,6 +131,15 @@ function getCodePageURL(win) {
     return new win.URL(`${pathname}/code`, win.location.origin);
 }
 
+function getScriptPageURL(win) {
+    if (!win?.location) {
+        return null;
+    }
+
+    const pathname = (win.location.pathname || '').replace(/\/code(?:[/?#].*)?$/i, '').replace(/\/$/, '');
+    return new win.URL(pathname || win.location.pathname, win.location.origin);
+}
+
 function extractCodeTextFromDocument(doc) {
     return doc?.querySelector('.code-container pre, pre.prettyprint')?.textContent || '';
 }
@@ -452,8 +461,8 @@ export class UserCSSLoaderActorChild extends JSWindowActorChild {
             codeText,
             fileName,
             installType: installMeta.type,
-            sourceURL: win.location.href,
-            codeURL: sourceHref || getCodePageURL(win)?.href || win.location.href,
+            sourceURL: getScriptPageURL(win)?.href || win.location.href,
+            codeURL: sourceHref,
             styleName: getStyleName(codeText, win.document.querySelector('h2')?.textContent?.trim() || formatMessage(messages, 'ucl-install-default-style-name')),
         }, this, messages);
     }

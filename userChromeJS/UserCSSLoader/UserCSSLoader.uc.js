@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r12
+// @version        0.0.6r13
+// @note           0.0.6r13 新增 GreasyFork 样式更新检查，远程安装时补全来源地址元数据
 // @charset        UTF-8
 // @note           0.0.6r12 GreasyFork 远程安装入口接入本地化文案
 // @note           0.0.6r11 GreasyFork 远程安装支持 @usercssloader true/author/user/agent 声明保存后缀
@@ -256,7 +257,7 @@ about:config
 
       if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
         this.l10n = new DOMLocalization(["UserCSSLoader.ftl"], false, userChrome_js.L10nRegistry);
-        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled", "ucl-style-options", "ucl-save-style-options", "ucl-reset-style-options", "ucl-close-style-options", "ucl-install-to-usercssloader", "ucl-install-style-confirm", "ucl-install-style-overwrite-confirm", "ucl-install-style-installed", "ucl-install-style-updated", "ucl-install-style-unchanged", "ucl-install-style-failed", "ucl-install-style-unknown-result", "ucl-install-help-placeholder-title", "ucl-install-default-style-name", "ucl-install-usercssloader-unavailable"]
+        let keys = ["ucl-style-type-not-exists", "ucl-create-style-prompt-title", "ucl-create-style-prompt-text", "ucl-file-not-exists", "ucl-choose-style-editor", "ucl-cannot-edit-style-notice", "user-css-loader", "ucl-delete-style", "ucl-delete-style-prompt-message", "ucl-enabled", "ucl-disabled", "ucl-style-options", "ucl-save-style-options", "ucl-reset-style-options", "ucl-close-style-options", "ucl-install-to-usercssloader", "ucl-install-style-confirm", "ucl-install-style-overwrite-confirm", "ucl-install-style-installed", "ucl-install-style-updated", "ucl-install-style-unchanged", "ucl-install-style-failed", "ucl-install-style-unknown-result", "ucl-install-help-placeholder-title", "ucl-install-default-style-name", "ucl-install-usercssloader-unavailable", "ucl-check-all-style-updates", "ucl-check-style-update-btn", "ucl-style-update-no-url", "ucl-style-update-available", "ucl-style-update-content-changed", "ucl-style-update-installed", "ucl-style-update-no-update", "ucl-style-update-check-failed", "ucl-style-update-all-done"]
         messages = await this.l10n.formatValues(keys);
         this.MESSAGES = (() => {
           let obj = {};
@@ -302,7 +303,16 @@ about:config
           "ucl-install-style-unknown-result": "Unknown install result",
           "ucl-install-help-placeholder-title": "Will be changed to a help link later",
           "ucl-install-default-style-name": "GreasyFork Style",
-          "ucl-install-usercssloader-unavailable": "UserCSSLoader is not available in chrome window."
+          "ucl-install-usercssloader-unavailable": "UserCSSLoader is not available in chrome window.",
+          "ucl-check-all-style-updates": "Check all style updates",
+          "ucl-check-style-update-btn": "Check update",
+          "ucl-style-update-no-url": "No updateURL/downloadURL found: %s",
+          "ucl-style-update-available": "Update found: %s\n\nCurrent version: %s\nRemote version: %s\n\nUpdate now?",
+          "ucl-style-update-content-changed": "Remote content changed: %s\n\nCurrent version: %s\nRemote version: %s\n\nUpdate now?",
+          "ucl-style-update-installed": "Updated: %s",
+          "ucl-style-update-no-update": "Already up to date: %s",
+          "ucl-style-update-check-failed": "Update check failed: %s",
+          "ucl-style-update-all-done": "Update check complete. Updated: %s, unchanged: %s, skipped: %s, failed: %s."
         }
       }
 
@@ -422,6 +432,13 @@ about:config
         class: "menuitem",
         oncommand: function (event) {
           window.UserCSSLoader.rebuild();
+        }
+      }, {
+        label: "Check all style updates",
+        'data-l10n-id': 'ucl-check-all-style-updates',
+        class: "menuitem",
+        oncommand: function (event) {
+          window.UserCSSLoader.checkAllStyleUpdates(event);
         }
       }, {
         label: "Open Style Folder",
@@ -593,6 +610,21 @@ about:config
             }
           });
           group.appendChild(options);
+        }
+        if (entry.updateURL || entry.downloadURL) {
+          let update = createElement(doc, 'menuitem', {
+            label: "Check update",
+            tooltiptext: "Check update",
+            class: "menuitem menuitem-iconic update",
+            'data-l10n-id': 'ucl-check-style-update-btn',
+            fullName: entry.fullName,
+            closemenu: 'none',
+            oncommand: function (event) {
+              let fullName = event.target.getAttribute("fullName");
+              window.UserCSSLoader.checkStyleUpdate(fullName);
+            }
+          });
+          group.appendChild(update);
         }
         let type = createElement(doc, 'menuitem', {
           label: "Change style type",
@@ -1016,7 +1048,36 @@ about:config
       }
       return normalized;
     },
-    async installRemoteStyle ({ codeText = "", fileName = "", overwrite = false } = {}) {
+    normalizeRemoteStyleContent (codeText, { sourceURL = "", codeURL = "" } = {}) {
+      let content = String(codeText || "");
+      const headerMatch = content.match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*(?:[\r\n]|$)/m);
+      if (!headerMatch) {
+        return content;
+      }
+
+      const source = String(sourceURL || "").trim();
+      const download = String(codeURL || "").trim();
+      const linesToInsert = [];
+      if (source && !/^\s*(?:(?:\/\/|\*)\s*)?@homepage(URL)?\s+.+\s*$/im.test(headerMatch[0])) {
+        linesToInsert.push(`@homepageURL  ${source}`);
+      }
+      if (download && !/^\s*(?:(?:\/\/|\*)\s*)?@downloadURL\s+.+\s*$/im.test(headerMatch[0])) {
+        linesToInsert.push(`@downloadURL  ${download}`);
+      }
+      if (download && !/^\s*(?:(?:\/\/|\*)\s*)?@updateURL\s+.+\s*$/im.test(headerMatch[0])) {
+        linesToInsert.push(`@updateURL    ${download}`);
+      }
+      if (!linesToInsert.length) {
+        return content;
+      }
+
+      const header = headerMatch[0];
+      const linePrefix = header.match(/^[ \t]*(?:\/\/|\*)[ \t]*/m)?.[0] || " * ";
+      const insertText = linesToInsert.map(line => `${linePrefix}${line}\n`).join("");
+      const nextHeader = header.replace(/([ \t]*(?:\/\/|\*)?[ \t]*==\/UserStyle==[ \t]*(?:\*\/)?)/m, `${insertText}$1`);
+      return content.slice(0, headerMatch.index) + nextHeader + content.slice(headerMatch.index + header.length);
+    },
+    async installRemoteStyle ({ codeText = "", fileName = "", overwrite = false, sourceURL = "", codeURL = "" } = {}) {
       if (!String(codeText).trim()) {
         return {
           status: "error",
@@ -1031,6 +1092,7 @@ about:config
       const targetFileName = this.normalizeInstalledFileName(fileName);
       const path = PathUtils.join(this.FOLDER.path, targetFileName);
       const exists = await IOUtils.exists(path);
+      const normalizedCodeText = this.normalizeRemoteStyleContent(codeText, { sourceURL, codeURL });
 
       if (exists && !overwrite) {
         let currentContent = "";
@@ -1038,7 +1100,7 @@ about:config
           currentContent = await IOUtils.readUTF8(path);
         } catch (ex) { }
 
-        if (currentContent === codeText) {
+        if (currentContent === normalizedCodeText) {
           await this.rebuild();
           return {
             status: "unchanged",
@@ -1054,13 +1116,140 @@ about:config
         };
       }
 
-      await IOUtils.writeUTF8(path, codeText);
+      await IOUtils.writeUTF8(path, normalizedCodeText);
       await this.rebuild();
       return {
         status: exists ? "updated" : "installed",
         fileName: targetFileName,
         path
       };
+    },
+    parseStyleInfoFromContent (cssContent) {
+      const def = ['', '', '', ''];
+      let header = (String(cssContent || "").match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*(?:[\r\n]|$)/m) || def)[0];
+      if (!header) {
+        return {};
+      }
+      const getMeta = (name) => (header.match(new RegExp(`^\\s*(?:(?:\\/\\/|\\*)\\s*)?@${name}\\s+(.+)\\s*$`, "im")) || def)[1]?.trim() || "";
+
+      return {
+        header,
+        icon: getMeta("icon"),
+        description: getMeta("description"),
+        version: getMeta("version"),
+        updateURL: getMeta("updateURL"),
+        downloadURL: getMeta("downloadURL"),
+        homepageURL: getMeta("homepage(?:URL)?"),
+        license: getMeta("license")
+      };
+    },
+    compareStyleVersion (remoteVersion, localVersion, remoteContent, localContent) {
+      if (remoteVersion && localVersion) {
+        try {
+          return Services.vc.compare(remoteVersion, localVersion);
+        } catch (ex) {
+          return remoteVersion === localVersion ? 0 : 1;
+        }
+      }
+      if (remoteVersion && !localVersion) {
+        return 1;
+      }
+      return remoteContent === localContent ? 0 : 1;
+    },
+    async fetchRemoteStyleContent (url) {
+      const response = await fetch(url, {
+        credentials: "omit",
+        cache: "no-cache"
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      return response.text();
+    },
+    async checkStyleUpdate (fullName, { silent = false, batch = false } = {}) {
+      const { MESSAGES } = this;
+      let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
+      if (!(entry instanceof CSSEntry)) {
+        return { status: "skipped", reason: "not-found", fullName };
+      }
+
+      const updateURL = entry.updateURL || entry.downloadURL;
+      if (!updateURL) {
+        if (!silent && !batch) {
+          this.alert(MESSAGES.format("ucl-style-update-no-url", entry.fullName), MESSAGES.format("user-css-loader"));
+        }
+        return { status: "skipped", reason: "no-url", entry };
+      }
+
+      try {
+        const localContent = await IOUtils.readUTF8(entry.path);
+        const remoteContent = await this.fetchRemoteStyleContent(updateURL);
+        const remoteInfo = this.parseStyleInfoFromContent(remoteContent);
+        const compareResult = this.compareStyleVersion(remoteInfo.version, entry.version, remoteContent, localContent);
+        if (compareResult <= 0) {
+          if (!silent && !batch) {
+            this.alert(MESSAGES.format("ucl-style-update-no-update", entry.fullName), MESSAGES.format("user-css-loader"));
+          }
+          return { status: "unchanged", entry };
+        }
+
+        const localVersion = entry.version || "-";
+        const remoteVersion = remoteInfo.version || "-";
+        const messageKey = remoteInfo.version || entry.version
+          ? "ucl-style-update-available"
+          : "ucl-style-update-content-changed";
+        const shouldUpdate = silent || Services.prompt.confirm(
+          window,
+          MESSAGES.format("user-css-loader"),
+          MESSAGES.format(messageKey, entry.fullName, localVersion, remoteVersion)
+        );
+        if (!shouldUpdate) {
+          return { status: "skipped", reason: "cancelled", entry };
+        }
+
+        entry.unregister();
+        await IOUtils.writeUTF8(entry.path, this.normalizeRemoteStyleContent(remoteContent, {
+          sourceURL: remoteInfo.homepageURL || entry.homepageURL,
+          codeURL: remoteInfo.downloadURL || updateURL
+        }));
+        await this.rebuild();
+        if (!silent && !batch) {
+          this.alert(MESSAGES.format("ucl-style-update-installed", entry.fullName), MESSAGES.format("user-css-loader"));
+        }
+        return { status: "updated", entry };
+      } catch (ex) {
+        console.error(ex);
+        if (!silent && !batch) {
+          this.alert(MESSAGES.format("ucl-style-update-check-failed", ex.message || ex), MESSAGES.format("user-css-loader"));
+        }
+        return { status: "failed", error: ex, entry };
+      }
+    },
+    async checkAllStyleUpdates () {
+      const entries = this.CSSEntries.slice();
+      const summary = {
+        updated: 0,
+        unchanged: 0,
+        skipped: 0,
+        failed: 0
+      };
+      for (let entry of entries) {
+        let result = await this.checkStyleUpdate(entry.fullName, { batch: true });
+        if (result.status === "updated") {
+          summary.updated++;
+        } else if (result.status === "unchanged") {
+          summary.unchanged++;
+        } else if (result.status === "failed") {
+          summary.failed++;
+        } else {
+          summary.skipped++;
+        }
+      }
+      this.alert(
+        this.MESSAGES.format("ucl-style-update-all-done", summary.updated, summary.unchanged, summary.skipped, summary.failed),
+        this.MESSAGES.format("user-css-loader")
+      );
+      return summary;
     },
     toggleStyle (event, fullName) {
       let entry = (this.CSSEntries.filter(e => e.fullName === fullName) || [{}])[0];
@@ -1278,7 +1467,8 @@ about:config
       if (this.file.exists()) {
         let css_content = readFile(this.path);
         const def = ['', '', '', ''];
-        let header = (css_content.match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*(?:[\r\n]|$)/m) || def)[0];
+        const styleInfo = UserCSSLoader.parseStyleInfoFromContent(css_content);
+        let header = styleInfo.header || "";
         if (header) {
           // 获取当前语言环境
           let currentLocale = Services.locale.appLocaleAsBCP47; // 例如 "zh-CN" 或 "en-US"
@@ -1295,11 +1485,13 @@ about:config
           }
 
           // 其他字段保持不变 - 修复所有字段的正则表达式，移除multiline标志
-          this.icon = (header.match(/(\/\/|\*) @icon\s+(.+)\s*$/i) || def)[2];
-          this.description = (header.match(/(\/\/|\*) @description\s+(.+)\s*$/i) || def)[2];
-          this.downloadURL = (header.match(/(\/\/|\*) @downloadURL\s+(.+)\s*$/i) || def)[2];
-          this.homepageURL = (header.match(/(\/\/|\*) @homepage(URL)?\s+(.+)\s*$/i) || def)[3];
-          this.license = (header.match(/(\/\/|\*) @license\s+(.+)\s*$/i) || def)[2];
+          this.icon = styleInfo.icon;
+          this.description = styleInfo.description;
+          this.version = styleInfo.version;
+          this.updateURL = styleInfo.updateURL;
+          this.downloadURL = styleInfo.downloadURL;
+          this.homepageURL = styleInfo.homepageURL;
+          this.license = styleInfo.license;
           this.styleVars = parseStyleVars(header);
         }
       }
@@ -1636,6 +1828,9 @@ about:config
 }
 #{BTN_ID}-popup menuitem.delete {
   list-style-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4KICA8cGF0aCBkPSJNOCAuNUEyLjUgMi41IDAgMCAwIDUuNSAzSDFhLjUuNSAwIDAgMC0uNS41bC4wMDguMDlBLjUuNSAwIDAgMCAxIDRoLjU1M0wyLjg1IDE0LjIyOUEyIDIgMCAwIDAgNC44MzYgMTZoNi4zMjhhMiAyIDAgMCAwIDEuOTg2LTEuNzcxTDE0LjQ0NSA0SDE1YS41LjUgMCAwIDAgMC0xaC00LjVBMi41IDIuNSAwIDAgMCA4IC41em0wIDFBMS41IDEuNSAwIDAgMSA5LjUgM2gtM0ExLjUgMS41IDAgMCAxIDggMS41ek0yLjU2IDRoMTAuODc3bC0xLjI4IDEwLjExNmEuOTk4Ljk5OCAwIDAgMS0uOTkzLjg4NEg0LjgzNmEuOTk4Ljk5OCAwIDAgMS0uOTkyLS44ODR6TTYuNSA2LjVjLS4yNzYgMC0uNS4xOTYtLjUuNDM4djUuMTI0bC4wMDguMDc4Yy4wNDIuMjA0LjI0Ny4zNi40OTIuMzYuMjc2IDAgLjUtLjE5Ni41LS40MzhWNi45MzhsLS4wMDgtLjA3OUM2Ljk1IDYuNjU1IDYuNzQ1IDYuNSA2LjUgNi41em0zIDBjLS4yNzYgMC0uNS4xOTYtLjUuNDM4djUuMTI0bC4wMDguMDc4Yy4wNDIuMjA0LjI0Ny4zNi40OTIuMzYuMjc2IDAgLjUtLjE5Ni41LS40MzhWNi45MzhsLS4wMDgtLjA3OUM5Ljk1IDYuNjU1IDkuNzQ1IDYuNSA5LjUgNi41eiIvPgo8L3N2Zz4K);
+}
+#{BTN_ID}-popup menuitem.update {
+  list-style-image: url(chrome://browser/skin/sync.svg);
 }
 #{BTN_ID}-popup [data-l10n-id="ucl-author-sheet"],
 #{BTN_ID}-popup .style-flag,
