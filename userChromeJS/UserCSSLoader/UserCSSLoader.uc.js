@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r14
+// @version        0.0.6r15
+// @note           0.0.6r15 修复 GreasyFork 远程安装 fetch 复用缓存导致重装仍是旧 CSS
 // @note           0.0.6r14 修复本地化文案里的 \n 在安装与更新确认框中显示为字面量
 // @note           0.0.6r13 新增 GreasyFork 样式更新检查，远程安装时补全来源地址元数据
 // @charset        UTF-8

@@ -218,6 +218,7 @@ function buildInstallFileName(win, suffix = '.css') {
 async function fetchSourceText(win, sourceURL) {
     const response = await win.fetch(sourceURL.href, {
         credentials: 'same-origin',
+        cache: 'no-store',
     });
     if (!response.ok) {
         throw new Error(`UserCSSLoader source fetch failed: ${response.status} ${response.statusText}`);
@@ -229,6 +230,7 @@ async function fetchSourceText(win, sourceURL) {
 async function fetchCodeText(win, codeURL) {
     const response = await win.fetch(codeURL.href, {
         credentials: 'same-origin',
+        cache: 'no-store',
     });
     if (!response.ok) {
         throw new Error(`UserCSSLoader code page fetch failed: ${response.status} ${response.statusText}`);
