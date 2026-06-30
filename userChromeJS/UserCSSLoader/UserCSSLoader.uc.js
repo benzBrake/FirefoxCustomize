@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r15
+// @version        0.0.6r16
+// @note           0.0.6r16 修复 @var text 被字符串化导致长度类 CSS 变量失效
 // @note           0.0.6r15 修复 GreasyFork 远程安装 fetch 复用缓存导致重装仍是旧 CSS
 // @note           0.0.6r14 修复本地化文案里的 \n 在安装与更新确认框中显示为字面量
 // @note           0.0.6r13 新增 GreasyFork 样式更新检查，远程安装时补全来源地址元数据
@@ -818,9 +819,6 @@ about:config
     getStyleOptionValue (entry, styleVar) {
       let options = this.styleOptions?.[entry.fullName] || {};
       let stored = options[styleVar.name];
-      if (styleVar.type === "text" && typeof stored === "string") {
-        stored = normalizeStyleTextValue(stored);
-      }
       return stored === undefined ? styleVar.defaultValue : stored;
     },
     setStyleOptionsForEntry (entry, values) {
@@ -851,7 +849,7 @@ about:config
         let value = this.getStyleOptionValue(entry, styleVar);
         value = styleVar.type === "checkbox"
           ? (String(value) === "1" ? "1" : "0")
-          : serializeCssStringValue(this.sanitizeCssVarValue(value));
+          : this.sanitizeCssVarValue(value);
         lines.push(`  --${styleVar.name}: ${value};`);
       }
       return `:root {\n${lines.join("\n")}\n}`;
