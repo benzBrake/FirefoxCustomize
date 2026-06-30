@@ -1,6 +1,10 @@
 user-css-loader =
     .label = User CSS Loader
-    .tooltiptext = User CSS Loader 复活版 By Ryan\n左键：菜单\n中键：启用/禁用 UserCSSLoader\nshift+中键重载所有样式
+    .tooltiptext =
+        User CSS Loader 复活版 By Ryan
+        左键：菜单
+        中键：启用/禁用 UserCSSLoader
+        shift+中键重载所有样式
 ucl-enabled = 已启用
 ucl-disabled = 已禁用
 ucl-reload-all-styles =

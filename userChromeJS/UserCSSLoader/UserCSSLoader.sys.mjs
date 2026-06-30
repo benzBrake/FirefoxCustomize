@@ -53,7 +53,7 @@ const DEFAULT_INSTALL_MESSAGES = {
 };
 
 function formatMessage(messages, key, ...args) {
-    let text = messages?.[key] || DEFAULT_INSTALL_MESSAGES[key] || '';
+    let text = normalizeLocalizedMessage(messages?.[key] || DEFAULT_INSTALL_MESSAGES[key] || '');
     for (const arg of args) {
         if (!text.includes('%s')) {
             break;
@@ -61,6 +61,10 @@ function formatMessage(messages, key, ...args) {
         text = text.replace(/%(s|d)/, arg);
     }
     return text;
+}
+
+function normalizeLocalizedMessage(value) {
+    return String(value ?? '').replace(/\\n/g, '\n');
 }
 
 async function getInstallMessages(actor) {
@@ -75,7 +79,7 @@ async function getInstallMessages(actor) {
         }
         for (const key of INSTALL_MESSAGE_KEYS) {
             if (typeof localized[key] === 'string' && localized[key]) {
-                messages[key] = localized[key];
+                messages[key] = normalizeLocalizedMessage(localized[key]);
             }
         }
     } catch (ex) {

@@ -50,8 +50,14 @@ ucl-save-style-options = Save
 ucl-reset-style-options = Reset
 ucl-close-style-options = Close
 ucl-install-to-usercssloader = Install to UserCSSLoader
-ucl-install-style-confirm = Install "%s" to UserCSSLoader?\n\nTarget file: %s
-ucl-install-style-overwrite-confirm = A local style with the same name already exists: %s\n\nOverwrite the existing file and reload the style?
+ucl-install-style-confirm =
+    Install "%s" to UserCSSLoader?
+
+    Target file: %s
+ucl-install-style-overwrite-confirm =
+    A local style with the same name already exists: %s
+
+    Overwrite the existing file and reload the style?
 ucl-install-style-installed = Installed: %s
 ucl-install-style-updated = Updated: %s
 ucl-install-style-unchanged = Local file content is unchanged; reloaded: %s
@@ -61,8 +67,20 @@ ucl-install-help-placeholder-title = Will be changed to a help link later
 ucl-install-default-style-name = GreasyFork Style
 ucl-install-usercssloader-unavailable = UserCSSLoader is not available in chrome window.
 ucl-style-update-no-url = No updateURL/downloadURL found: %s
-ucl-style-update-available = Update found: %s\n\nCurrent version: %s\nRemote version: %s\n\nUpdate now?
-ucl-style-update-content-changed = Remote content changed: %s\n\nCurrent version: %s\nRemote version: %s\n\nUpdate now?
+ucl-style-update-available =
+    Update found: %s
+
+    Current version: %s
+    Remote version: %s
+
+    Update now?
+ucl-style-update-content-changed =
+    Remote content changed: %s
+
+    Current version: %s
+    Remote version: %s
+
+    Update now?
 ucl-style-update-installed = Updated: %s
 ucl-style-update-no-update = Already up to date: %s
 ucl-style-update-check-failed = Update check failed: %s

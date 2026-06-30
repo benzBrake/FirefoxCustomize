@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r13
+// @version        0.0.6r14
+// @note           0.0.6r14 修复本地化文案里的 \n 在安装与更新确认框中显示为字面量
 // @note           0.0.6r13 新增 GreasyFork 样式更新检查，远程安装时补全来源地址元数据
 // @charset        UTF-8
 // @note           0.0.6r12 GreasyFork 远程安装入口接入本地化文案
@@ -262,7 +263,7 @@ about:config
         this.MESSAGES = (() => {
           let obj = {};
           for (let index of messages.keys()) {
-            obj[keys[index]] = messages[index];
+            obj[keys[index]] = normalizeLocalizedMessage(messages[index]);
           }
           return obj;
         })();
@@ -319,7 +320,7 @@ about:config
       this.MESSAGES.format = function (str_key, ...args) {
         let str;
         if (str_key in this) {
-          str = this[str_key];
+          str = normalizeLocalizedMessage(this[str_key]);
           for (let i = 0; i < args.length; i++) {
             if (!str.includes('%s')) break;
             str = str.replace(/%(s|d)/, args[i]);
@@ -1722,6 +1723,10 @@ about:config
     }
     result += '"';
     return result;
+  }
+
+  function normalizeLocalizedMessage (value) {
+    return String(value ?? "").replace(/\\n/g, "\n");
   }
 
   function escapeHTML (value) {
