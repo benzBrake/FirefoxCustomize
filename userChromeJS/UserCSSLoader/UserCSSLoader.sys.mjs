@@ -1,6 +1,23 @@
 'use strict';
 
-const USERCSSLOADER_FLAG_RE = /@usercssloader\s+true\b/i;
+const USERCSSLOADER_INSTALL_TYPES = {
+    true: {
+        type: 'author',
+        suffix: '.css',
+    },
+    author: {
+        type: 'author',
+        suffix: '.css',
+    },
+    user: {
+        type: 'user',
+        suffix: '.us.css',
+    },
+    agent: {
+        type: 'agent',
+        suffix: '.ag.css',
+    },
+};
 const INSTALL_AREA_SELECTOR = '#install-area';
 const SCRIPT_TABS_SELECTOR = '#script-links';
 const SOURCE_DOWNLOAD_SELECTOR = '#install-area a.install-link[data-install-format="css"][href]';
@@ -80,7 +97,21 @@ function normalizeInstalledFileName(fileName) {
     return normalized;
 }
 
-function buildInstallFileNameFromPageURL(pageURL, fallback = '') {
+function buildStyleFileName(baseName, suffix = '.css') {
+    const normalizedSuffix = USERCSSLOADER_INSTALL_TYPES[Object.keys(USERCSSLOADER_INSTALL_TYPES)
+        .find(key => USERCSSLOADER_INSTALL_TYPES[key].suffix === suffix)]?.suffix || '.css';
+    let normalizedBase = String(baseName || '')
+        .replace(/(?:\.(?:user|as|ag|us))?\.css$/i, '')
+        .replace(/[. ]+$/g, '');
+
+    if (!normalizedBase) {
+        normalizedBase = 'greasyfork_style';
+    }
+
+    return normalizeInstalledFileName(`${normalizedBase}${normalizedSuffix}`);
+}
+
+function buildInstallFileNameFromPageURL(pageURL, fallback = '', suffix = '.css') {
     try {
         const pathname = new URL(pageURL).pathname || '';
         const match = pathname.match(/\/scripts\/(\d+)-([^/]+)/i);
@@ -91,17 +122,17 @@ function buildInstallFileNameFromPageURL(pageURL, fallback = '') {
                 .replace(/-+/g, '-')
                 .replace(/^-+|-+$/g, '');
             if (scriptId && slug) {
-                return normalizeInstalledFileName(`${scriptId}-${slug}.css`);
+                return buildStyleFileName(`${scriptId}-${slug}`, suffix);
             }
         }
     } catch (ex) {
         Cu.reportError(ex);
     }
 
-    return normalizeInstalledFileName(fallback || 'greasyfork_style.css');
+    return buildStyleFileName(fallback || 'greasyfork_style', suffix);
 }
 
-function buildInstallFileName(win) {
+function buildInstallFileName(win, suffix = '.css') {
     const pathname = win?.location?.pathname || '';
     const slug = pathname.match(/\/scripts\/\d+-([^/]+)/i)?.[1] || '';
     const normalized = slug
@@ -109,7 +140,7 @@ function buildInstallFileName(win) {
         .replace(/[^\w.-]+/g, '_')
         .replace(/_+/g, '_')
         .replace(/^_+|_+$/g, '');
-    return normalizeInstalledFileName(`${normalized || 'greasyfork_style'}.css`);
+    return buildStyleFileName(normalized || 'greasyfork_style', suffix);
 }
 
 async function fetchSourceText(win, sourceURL) {
@@ -266,8 +297,19 @@ function ensureInstallLink(win, installData, actor) {
     installArea.appendChild(createHelpPlaceholder(win));
 }
 
-function hasInstallMarker(codeText) {
-    return USERCSSLOADER_FLAG_RE.test(codeText);
+function parseUserCSSLoaderInstall(codeText) {
+    const lines = String(codeText || '').split(/\r\n|\r|\n/);
+    for (const line of lines) {
+        const match = line.match(/^\s*(?:(?:\/\/|\/\*|\*)\s*)?@usercssloader\s+([^\s*]+)\b/i);
+        if (!match) {
+            continue;
+        }
+
+        const value = match[1].toLowerCase();
+        return USERCSSLOADER_INSTALL_TYPES[value] || null;
+    }
+
+    return null;
 }
 
 export class UserCSSLoaderActorParent extends JSWindowActorParent {
@@ -316,21 +358,24 @@ export class UserCSSLoaderActorChild extends JSWindowActorChild {
             }
         }
 
-        if (!hasInstallMarker(codeText)) {
+        let installMeta = parseUserCSSLoaderInstall(codeText);
+        if (!installMeta) {
             codeText = isCodePage(win)
                 ? extractCodeTextFromDocument(win.document)
                 : await fetchCodeText(win, getCodePageURL(win));
+            installMeta = parseUserCSSLoaderInstall(codeText);
         }
 
-        if (!hasInstallMarker(codeText)) {
+        if (!installMeta) {
             return;
         }
 
         const sourceHref = sourceURL?.href || '';
-        const fileName = buildInstallFileNameFromPageURL(win.location.href, buildInstallFileName(win));
+        const fileName = buildInstallFileNameFromPageURL(win.location.href, buildInstallFileName(win, installMeta.suffix), installMeta.suffix);
         ensureInstallLink(win, {
             codeText,
             fileName,
+            installType: installMeta.type,
             sourceURL: win.location.href,
             codeURL: sourceHref || getCodePageURL(win)?.href || win.location.href,
             styleName: getStyleName(codeText, win.document.querySelector('h2')?.textContent?.trim() || 'GreasyFork Style'),

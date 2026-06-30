@@ -134,8 +134,18 @@ UserCSSLoader 可以直接从 GreasyFork 页面一键安装 Firefox 界面样式
 
 要让样式支持 UserCSSLoader 一键安装，需要满足两个条件：
 
-1. **在 `==UserStyle==` 注释块中添加 `@usercssloader true`**
+1. **在 `==UserStyle==` 注释块中添加 `@usercssloader <类型>`**
 2. **包含 `@name` 元数据字段**
+
+`@usercssloader` 支持以下类型值，决定安装时的保存后缀：
+
+| 类型值 | 保存后缀 | 说明 |
+|--------|----------|------|
+| `true` 或 `author` | `.css` | AUTHOR_SHEET，默认 |
+| `user` | `.us.css` | USER_SHEET，优先级较高 |
+| `agent` | `.ag.css` | AGENT_SHEET，优先级最高 |
+
+不声明或声明为 `true` 时使用默认的 `.css` 后缀。
 
 #### 完整示例
 
@@ -165,7 +175,7 @@ UserCSSLoader 可以直接从 GreasyFork 页面一键安装 Firefox 界面样式
 }
 ```
 
-**注意：** `@usercssloader true` 必须放在 `==UserStyle==` 注释块内，避免被 CSS 解析器当作无效的 at-rule 处理。
+**注意：** `@usercssloader` 声明必须放在 `==UserStyle==` 注释块内，避免被 CSS 解析器当作无效的 at-rule 处理。
 
 ### 上传到 GreasyFork
 
@@ -184,10 +194,10 @@ UserCSSLoader 可以直接从 GreasyFork 页面一键安装 Firefox 界面样式
 
 当安装了 UserCSSLoader 的用户访问 GreasyFork 上的样式页面时：
 
-1. UserCSSLoader 的 JSWindow Actor 自动检测页面代码中是否包含 `@usercssloader true` 标记
+1. UserCSSLoader 的 JSWindow Actor 自动检测页面中的源码下载链接和 `@usercssloader` 标记
 2. 如果检测到，在页面的安装区域注入绿色的 **「安装到 UserCSSLoader」** 按钮
-3. 点击按钮后，确认安装目标文件名
-4. CSS 代码被下载并保存到本地样式文件夹（`profile/chrome/UserStyles/`）
+3. 点击按钮后，确认安装目标文件名（文件名由脚本页面的 `id-slug` 段和声明的类型后缀自动生成）
+4. CSS 代码通过源码下载链接直接获取并保存到本地样式文件夹（`profile/chrome/UserStyles/`）
 5. 通过 `nsIStyleSheetService` 注册，立即生效
 
 安装过程中：

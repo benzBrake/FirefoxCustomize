@@ -9,8 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r10
+// @version        0.0.6r11
 // @charset        UTF-8
+// @note           0.0.6r11 GreasyFork 远程安装支持 @usercssloader true/author/user/agent 声明保存后缀
 // @note           0.0.6r10 AGENT_SHEET 注册/注销后强制触发样式重算，避免现有窗口不立即刷新
 // @note           0.0.6r9 GreasyFork 远程安装文件名改为使用脚本页 id-slug 段并统一落成 .css
 // @note           0.0.6r8 GreasyFork 远程安装改为优先直连源码下载，文件名默认使用源码文件名并统一落成 .css
@@ -38,6 +39,9 @@
 .us.css 结尾的是 USER_SHEET
 其他.css是 AUTHOR_SHEET (默认)
 不忘忘记添加 @namespace 此脚本不会检查 css 内容
+
+GreasyFork 样式可添加 @usercssloader true/author/user/agent 声明安装按钮与保存后缀：
+true/author 保存为 .css，user 保存为 .us.css，agent 保存为 .ag.css
 
 支持关闭编辑器后自动重载 CSS，建议使用非多标签的独立编辑器比如 notepad2.exe 作为默认编辑器
 
