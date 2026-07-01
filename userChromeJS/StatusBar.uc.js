@@ -3,11 +3,12 @@
 // @description     状态栏
 // @license         MIT License
 // @compatibility   Firefox 149
-// @version         0.0.7
+// @version         0.0.8
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.0.8 修复恢复默认设置后状态栏被 collapsed 隐藏
 // @note            0.0.7 修复 togglePref 函数使用 hasAttribute 检测选中状态
 // @note            0.0.6 升级兼容性至 Firefox 149+
 // @note            0.0.5 移除 0.0.2 引入的 TabMixPlus 兼容代码
@@ -40,6 +41,7 @@
 
             CustomizableUI.registerArea("status-bar", {
                 type: CustomizableUI.TYPE_TOOLBAR,
+                defaultCollapsed: false,
                 defaultPlacements: [
                     "status-text",
                     "screenshot-button",
@@ -70,25 +72,19 @@
                 if (!event.currentTarget.querySelector("#toggle_status-bar")) {
                     this.insertBefore(toggleItem, this.querySelector("#viewToolbarsMenuSeparator"));
                 }
-                event.currentTarget.querySelector("#toggle_status-bar").setAttribute("checked", String(Services.prefs.getBoolPref("browser.display.statusbar", false)));
-            }, { once: true });
+                StatusBar.setMenuItemChecked(
+                    event.currentTarget.querySelector("#toggle_status-bar"),
+                    Services.prefs.getBoolPref("browser.display.statusbar", false)
+                );
+            });
 
-            let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
-            if (checked) {
-                this.show();
-            } else {
-                this.hide();
-            }
+            this.syncVisibility();
 
             Services.prefs.addObserver("browser.display.statusbar", function () {
-                let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
-                // document.getElementById("toggle_status-bar").setAttribute("checked", String(checked));
-                if (checked) {
-                    StatusBar.show();
-                } else {
-                    StatusBar.hide();
-                }
+                StatusBar.syncVisibility();
             });
+
+            CustomizableUI.addListener(this);
 
             this.observer = new MutationObserver(this.observe);
             this.observer.observe(document.getElementById("statuspanel"), {
@@ -101,24 +97,69 @@
             });
         },
         togglePref: function () {
-            Services.prefs.setBoolPref("browser.display.statusbar", document.getElementById("toggle_status-bar").hasAttribute("checked"));
+            let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
+            Services.prefs.setBoolPref("browser.display.statusbar", !checked);
+        },
+        setMenuItemChecked: function (menuItem, checked) {
+            if (!menuItem) {
+                return;
+            }
+            if (checked) {
+                menuItem.setAttribute("checked", "true");
+            } else {
+                menuItem.removeAttribute("checked");
+            }
+        },
+        syncVisibility: function () {
+            let checked = Services.prefs.getBoolPref("browser.display.statusbar", false);
+            this.setMenuItemChecked(document.getElementById("toggle_status-bar"), checked);
+            if (checked) {
+                this.show();
+            } else {
+                this.hide();
+            }
         },
         show: function () {
-            //move statustext to statusbar
-            document.getElementById("status-text-inner").appendChild(document.getElementById("statuspanel-label"));
+            const statusBar = document.getElementById("status-bar");
+            const statusText = document.getElementById("status-text-inner");
+            const statusPanelLabel = document.getElementById("statuspanel-label");
 
-            //remove hidden attribute
-            document.getElementById("status-bar").removeAttribute("hidden");
+            //move statustext to statusbar
+            if (statusText && statusPanelLabel && statusPanelLabel.parentNode !== statusText) {
+                statusText.appendChild(statusPanelLabel);
+            }
+
+            //remove hidden attributes
+            statusBar?.removeAttribute("hidden");
+            statusBar?.removeAttribute("collapsed");
         },
         hide: function () {
-            //add hidden attribute
-            document.getElementById("status-bar").setAttribute("hidden", "true");
+            const statusBar = document.getElementById("status-bar");
+            const statusPanel = document.getElementById("statuspanel");
+            const statusPanelLabel = document.getElementById("statuspanel-label");
+
+            //add hidden attributes
+            statusBar?.setAttribute("hidden", "true");
+            statusBar?.setAttribute("collapsed", "true");
 
             //revert statustext to statuspanel
-            document.getElementById("statuspanel").appendChild(document.getElementById("statuspanel-label"));
+            if (statusPanel && statusPanelLabel && statusPanelLabel.parentNode !== statusPanel) {
+                statusPanel.appendChild(statusPanelLabel);
+            }
+        },
+        onAreaReset: function (area) {
+            if (area !== "status-bar") {
+                return;
+            }
+            setTimeout(() => {
+                StatusBar.syncVisibility();
+            }, 0);
         },
         observe: function (mutationList, observer) {
             const statusText = document.getElementById("status-text-inner");
+            if (!statusText) {
+                return;
+            }
             for (const mutation of mutationList) {
                 if (mutation.type === 'attributes') {
                     if (mutation.target.hasAttribute(mutation.attributeName)) {

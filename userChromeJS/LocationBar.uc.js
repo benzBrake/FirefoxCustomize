@@ -3,11 +3,12 @@
 // @description     地址栏内工具栏
 // @license         MIT License
 // @compatibility   Firefox 149
-// @version         0.0.5
+// @version         0.0.6
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            2026-07-01 修复恢复默认设置后地址栏内工具栏被 collapsed 隐藏
 // @note            2025-08-26 增加固定扩展按钮到地址栏内工具栏的功能
 // @note            2026-04-05 升级兼容性至 Firefox 149+，修复 checkbox checked 属性检测
 // @note            2026-06-17 修复 Firefox 152 中按钮图标显示异常
@@ -51,7 +52,8 @@
             document.getElementById("navigator-toolbox").appendChild(toolbarElem);
 
             CustomizableUI.registerArea("location-bar", {
-                type: CustomizableUI.TYPE_TOOLBAR
+                type: CustomizableUI.TYPE_TOOLBAR,
+                defaultCollapsed: false
             });
 
             CustomizableUI.registerToolbarNode(document.getElementById("location-bar"));
@@ -73,29 +75,20 @@
                 LocationBar.togglePref();
             });
 
-            document.getElementById('toolbar-context-menu').addEventListener('popupshowing', function () {
-                if (window.LocationBar) {
+            document.getElementById('toolbar-context-menu').addEventListener('popupshowing', function (event) {
+                if (window.LocationBar && !event.currentTarget.querySelector("#toggle_location-bar")) {
                     this.insertBefore(toggleItem, this.querySelector("#viewToolbarsMenuSeparator"));
                 }
-            }, { once: true });
+                LocationBar.setMenuItemChecked(
+                    event.currentTarget.querySelector("#toggle_location-bar"),
+                    Services.prefs.getBoolPref("browser.display.locationbar", false)
+                );
+            });
 
-            let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
-            if (checked) {
-                this.show();
-            } else {
-                this.hide();
-            }
+            this.syncVisibility();
 
             Services.prefs.addObserver("browser.display.locationbar", function () {
-                let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
-                const toggleItem = document.getElementById("toggle_location-bar");
-
-                LocationBar.setMenuItemChecked(toggleItem, checked);
-                if (checked) {
-                    LocationBar.show();
-                } else {
-                    LocationBar.hide();
-                }
+                LocationBar.syncVisibility();
             });
 
             if (PIN_ADDON_BUTTON_TO_LOCATION_BAR) {
@@ -116,6 +109,7 @@
 
             window.addEventListener("beforecustomization", this, false);
             window.addEventListener("aftercustomization", this, false);
+            CustomizableUI.addListener(this);
         },
         togglePref: function () {
             let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
@@ -134,11 +128,32 @@
                 menuItem.removeAttribute("checked");
             }
         },
+        syncVisibility: function () {
+            let checked = Services.prefs.getBoolPref("browser.display.locationbar", false);
+            this.setMenuItemChecked(document.getElementById("toggle_location-bar"), checked);
+            if (checked) {
+                this.show();
+            } else {
+                this.hide();
+            }
+        },
         show: function () {
-            document.getElementById("location-bar").classList.remove("optional-hidden");
+            const locationBar = document.getElementById("location-bar");
+            locationBar?.classList.remove("optional-hidden");
+            locationBar?.removeAttribute("collapsed");
         },
         hide: function () {
-            document.getElementById("location-bar").classList.add("optional-hidden");
+            const locationBar = document.getElementById("location-bar");
+            locationBar?.classList.add("optional-hidden");
+            locationBar?.setAttribute("collapsed", "true");
+        },
+        onAreaReset: function (area) {
+            if (area !== "location-bar") {
+                return;
+            }
+            setTimeout(() => {
+                LocationBar.syncVisibility();
+            }, 0);
         },
         handleEvent: function (event) {
             const locationBar = document.getElementById("location-bar");
@@ -157,6 +172,7 @@
                 case "aftercustomization":
                     pageActionButtons?.after(locationBar);
                     syncStyles(urlbar, locationBar);
+                    this.syncVisibility();
                     break;
             }
         }
