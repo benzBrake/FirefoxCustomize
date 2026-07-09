@@ -9,7 +9,9 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r16
+// @version        0.0.6r18
+// @note           0.0.6r18 按实际 var() 使用场景推断 @var text 输出语法，兼容 content 字符串与长度等裸值
+// @note           0.0.6r17 修复带引号默认值的 @var text 输出为裸值导致 content 等属性失效
 // @note           0.0.6r16 修复 @var text 被字符串化导致长度类 CSS 变量失效
 // @note           0.0.6r15 修复 GreasyFork 远程安装 fetch 复用缓存导致重装仍是旧 CSS
 // @note           0.0.6r14 修复本地化文案里的 \n 在安装与更新确认框中显示为字面量
@@ -847,9 +849,14 @@ about:config
       let lines = [];
       for (let styleVar of entry.styleVars) {
         let value = this.getStyleOptionValue(entry, styleVar);
-        value = styleVar.type === "checkbox"
-          ? (String(value) === "1" ? "1" : "0")
-          : this.sanitizeCssVarValue(value);
+        if (styleVar.type === "checkbox") {
+          value = String(value) === "1" ? "1" : "0";
+        } else {
+          value = this.sanitizeCssVarValue(value);
+          if (styleVar.valueSyntax === "string") {
+            value = serializeCssStringValue(value);
+          }
+        }
         lines.push(`  --${styleVar.name}: ${value};`);
       }
       return `:root {\n${lines.join("\n")}\n}`;
@@ -1492,7 +1499,7 @@ about:config
           this.downloadURL = styleInfo.downloadURL;
           this.homepageURL = styleInfo.homepageURL;
           this.license = styleInfo.license;
-          this.styleVars = parseStyleVars(header);
+          this.styleVars = parseStyleVars(header, css_content);
         }
       }
     },
@@ -1624,7 +1631,7 @@ about:config
     return e;
   }
 
-  function parseStyleVars (header) {
+  function parseStyleVars (header, cssContent = "") {
     const vars = [];
     const seen = new Set();
     const lines = header.split(/\r\n|\r|\n/);
@@ -1635,21 +1642,95 @@ about:config
       type = type.toLowerCase();
       if (seen.has(name)) continue;
       seen.add(name);
+      let normalizedDefaultValue = type === "checkbox"
+        ? (String(defaultValue).trim() === "1" ? "1" : "0")
+        : normalizeStyleTextValue(defaultValue);
+      let valueSyntax = type === "text"
+        ? inferStyleTextValueSyntax(cssContent, name)
+        : "raw";
       vars.push({
         type,
         name,
         label,
-        defaultValue: type === "checkbox"
-          ? (String(defaultValue).trim() === "1" ? "1" : "0")
-          : normalizeStyleTextValue(defaultValue)
+        defaultValue: normalizedDefaultValue,
+        valueSyntax
       });
     }
     return vars;
   }
 
+  function inferStyleTextValueSyntax (cssContent, name) {
+    const css = stripCssComments(cssContent);
+    const escapedName = escapeRegExp(name);
+    const varPattern = new RegExp(`var\\(\\s*--${escapedName}(?=\\s*[,\\)])`, "gi");
+    let match;
+    while ((match = varPattern.exec(css))) {
+      let varText = readCssFunction(css, match.index);
+      if (varText && new RegExp(`^var\\(\\s*--${escapedName}\\s*,\\s*["']`, "i").test(varText)) {
+        return "string";
+      }
+
+      let propertyName = getDeclarationPropertyName(css, match.index);
+      if (propertyName === "content") {
+        return "string";
+      }
+    }
+    return "raw";
+  }
+
+  function stripCssComments (cssContent) {
+    return String(cssContent ?? "").replace(/\/\*[\s\S]*?\*\//g, "");
+  }
+
+  function readCssFunction (css, startIndex) {
+    let depth = 0;
+    let quote = "";
+    for (let i = startIndex; i < css.length; i++) {
+      let ch = css[i];
+      if (quote) {
+        if (ch === "\\") {
+          i++;
+        } else if (ch === quote) {
+          quote = "";
+        }
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === "(") {
+        depth++;
+      } else if (ch === ")") {
+        depth--;
+        if (depth === 0) {
+          return css.slice(startIndex, i + 1);
+        }
+      }
+    }
+    return "";
+  }
+
+  function getDeclarationPropertyName (css, valueIndex) {
+    let declarationStart = Math.max(css.lastIndexOf(";", valueIndex), css.lastIndexOf("{", valueIndex));
+    let declaration = css.slice(declarationStart + 1, valueIndex);
+    let colonIndex = declaration.lastIndexOf(":");
+    if (colonIndex < 0) {
+      return "";
+    }
+    return declaration.slice(0, colonIndex).trim().toLowerCase();
+  }
+
+  function escapeRegExp (value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function isCssStringToken (value) {
+    let text = String(value ?? "").trim();
+    return text.length >= 2 && text.startsWith('"') && text.endsWith('"');
+  }
+
   function normalizeStyleTextValue (value) {
     let text = String(value ?? "").trim();
-    if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+    if (isCssStringToken(text)) {
       return decodeCssStringValue(text.slice(1, -1));
     }
     return text;
