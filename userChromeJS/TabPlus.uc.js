@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.8
+// @version         1.1.9
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136+
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.9 缓存标签页悬停切换延迟配置，减少 mouseover 高频路径 pref 查询
 // @note            1.1.8 合并侧边栏历史 patch 重试调度，避免 MutationObserver 高频变化时堆积 timeout
 // @note            1.1.7 layout.css.animation.enabled 为 false 时，标签页悬停切换回退到 setTimeout
 // @note            1.1.6 标签页悬停切换改用 CSS animationend 驱动延迟，减少 JS 计时器调度
@@ -48,11 +49,16 @@
 (async function () {
     const Services = globalThis.Services || Cu.import("resource://gre/modules/Services.jsm").Services;
 
+    window.TabPlus?._removeMouseOverDelayPrefObserver?.();
+
     window.TabPlus = {
         _closeTimer: null,
         _diableMouseOver: false,
         _lastMouseX: 0, // 用于记录关闭标签时的鼠标X坐标
         _moveThreshold: 100, // 移动恢复的距离阈值（会动态设为标签宽度）
+        _mouseOverDelayPref: "browser.tabs.mouseOverDelayMS",
+        _mouseOverDelayMS: 150,
+        _mouseOverPrefObserverInstalled: false,
         _boundSidebarBrowser: null,
         _sidebarHistoryPatchObserver: null,
         _sidebarHistoryPatchPending: false,
@@ -92,6 +98,7 @@
             this.initWhereToOpenLinkMod();
             this.initSidebarHistoryRevampMod();
             this.initOpenInContainerMod();
+            this.initMouseOverDelayPrefCache();
             const tabContainer = gBrowser.tabContainer;
             this.installHoverSwitchStyle();
             tabContainer.addEventListener('mouseover', this, false);
@@ -335,6 +342,45 @@
             document.insertBefore(this._hoverSwitchStyle, document.documentElement);
         },
 
+        initMouseOverDelayPrefCache: function () {
+            this._updateMouseOverDelayCache();
+            if (this._mouseOverPrefObserverInstalled) {
+                return;
+            }
+            Services.prefs.addObserver(this._mouseOverDelayPref, this);
+            this._mouseOverPrefObserverInstalled = true;
+            window.addEventListener("unload", () => {
+                this._removeMouseOverDelayPrefObserver();
+            }, { once: true });
+        },
+
+        _updateMouseOverDelayCache: function () {
+            try {
+                this._mouseOverDelayMS = Services.prefs.getIntPref(this._mouseOverDelayPref, 150);
+            } catch {
+                this._mouseOverDelayMS = 150;
+            }
+            if (!this._mouseOverDelayMS) {
+                this._cancelTabHover();
+            }
+        },
+
+        _removeMouseOverDelayPrefObserver: function () {
+            if (!this._mouseOverPrefObserverInstalled) {
+                return;
+            }
+            try {
+                Services.prefs.removeObserver(this._mouseOverDelayPref, this);
+            } catch { }
+            this._mouseOverPrefObserverInstalled = false;
+        },
+
+        observe: function (_subject, topic, data) {
+            if (topic === "nsPref:changed" && data === this._mouseOverDelayPref) {
+                this._updateMouseOverDelayCache();
+            }
+        },
+
         /**
          * 暂时禁用悬停切换功能
          * @param {MouseEvent} event - 触发的事件对象
@@ -411,45 +457,60 @@
 
         handleEvent: function (event, trigger) {
             const { button: b } = event;
-            const t = this._getEventTarget(event);
-            const targetWin = this._getEventWindow(event);
-            const targetServices = targetWin.Services || Services;
-            const gBrowser = targetWin.gBrowser || window.gBrowser;
-            const { prefs } = targetServices;
-            const tab = this._getTabFromEvent(event);
             let dblclick = false;
 
             switch (event.type) {
                 case 'dblclick':
                     dblclick = true;
                 case 'click':
-                    switch (trigger) {
-                        case 'clipboard':
-                            if (!prefs.getBoolPref("browser.tabs.newTabBtn.rightClickLoadFromClipboard", false)) return;
-                            if (t?.matches?.('#new-tab-button, #newPrivateTab-button, #tabs-newtab-button') && b == 2) {
-                                this._clipboardCommand(event);
-                            }
-                            break;
-                        case 'closetab':
-                            if (!tab) return;
-                            if ((prefs.getBoolPref("browser.tabs.closeTabByDblclick", false) && b === 0 && dblclick)
-                                || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2)) {
-                                this._closeTabByEvent(event, tab, gBrowser);
-                            }
-                            break;
+                    {
+                        const targetWin = this._getEventWindow(event);
+                        const targetServices = targetWin.Services || Services;
+                        const { prefs } = targetServices;
+                        switch (trigger) {
+                            case 'clipboard':
+                                if (!prefs.getBoolPref("browser.tabs.newTabBtn.rightClickLoadFromClipboard", false)) return;
+                                const t = this._getEventTarget(event);
+                                if (t?.matches?.('#new-tab-button, #newPrivateTab-button, #tabs-newtab-button') && b == 2) {
+                                    this._clipboardCommand(event);
+                                }
+                                break;
+                            case 'closetab':
+                                const tab = this._getTabFromEvent(event);
+                                if (!tab) return;
+                                if ((prefs.getBoolPref("browser.tabs.closeTabByDblclick", false) && b === 0 && dblclick)
+                                    || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2)) {
+                                    const gBrowser = targetWin.gBrowser || window.gBrowser;
+                                    this._closeTabByEvent(event, tab, gBrowser);
+                                }
+                                break;
+                        }
                     }
                     break;
 
                 case 'contextmenu':
-                    if (trigger === 'closetab'
-                        && tab
-                        && b === 2
-                        && prefs.getBoolPref("browser.tabs.closeTabByRightClick", false)) {
+                    if (trigger !== 'closetab' || b !== 2) {
+                        return;
+                    }
+                    {
+                        const targetWin = this._getEventWindow(event);
+                        const targetServices = targetWin.Services || Services;
+                        const { prefs } = targetServices;
+                        if (!prefs.getBoolPref("browser.tabs.closeTabByRightClick", false)) {
+                            return;
+                        }
+                        const tab = this._getTabFromEvent(event);
+                        if (!tab) {
+                            return;
+                        }
+                        const gBrowser = targetWin.gBrowser || window.gBrowser;
                         this._closeTabByEvent(event, tab, gBrowser);
                     }
                     break;
 
                 case 'mouseover':
+                    const mouseOverDelay = this._mouseOverDelayMS;
+                    if (!mouseOverDelay) return;
                     if (this._diableMouseOver) {
                         const distance = Math.abs(event.screenX - this._lastMouseX);
                         if (distance > this._moveThreshold) {
@@ -459,10 +520,10 @@
                         }
                     }
 
-                    if (!prefs.getIntPref("browser.tabs.mouseOverDelayMS", 150)) return;
+                    const tab = this._getTabFromEvent(event);
                     if (!tab) return;
                     if (!tab.getAttribute("selected") && !event.shiftKey && !event.ctrlKey) {
-                        this._armTabHover(tab, prefs.getIntPref("browser.tabs.mouseOverDelayMS", 150));
+                        this._armTabHover(tab, mouseOverDelay);
                     }
                     break;
                 case 'mouseleave':
