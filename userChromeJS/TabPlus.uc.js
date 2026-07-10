@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.9
+// @version         1.1.10
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136+
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.10 剪贴板 data URL base64 校验改为轻量结构检查，避免大型 payload 同步全量解码
 // @note            1.1.9 缓存标签页悬停切换延迟配置，减少 mouseover 高频路径 pref 查询
 // @note            1.1.8 合并侧边栏历史 patch 重试调度，避免 MutationObserver 高频变化时堆积 timeout
 // @note            1.1.7 layout.css.animation.enabled 为 false 时，标签页悬停切换回退到 setTimeout
@@ -641,27 +642,66 @@
     }
     window.TabPlus.init();
 
+    const BASE64_FULL_CHECK_MAX_LENGTH = 8192;
+    const BASE64_SAMPLE_LENGTH = 1024;
+
     function isDataURLBase64 (url) {
         if (typeof url !== 'string') {
             return false;
         }
-        if (!url.startsWith('data:')) {
+        if (!/^data:/i.test(url)) {
             return false;
         }
-        const dataPart = url.slice(5);
-        if (!dataPart.includes('base64,')) {
+        const commaIndex = url.indexOf(',');
+        if (commaIndex <= 5) {
             return false;
         }
-        const base64Data = dataPart.split('base64,')[1];
-        return isValidBase64(base64Data);
+        const metadata = url.slice(5, commaIndex);
+        if (!/(?:^|;)base64$/i.test(metadata)) {
+            return false;
+        }
+        return isValidBase64(url.slice(commaIndex + 1));
     }
 
     function isValidBase64 (base64String) {
-        try {
-            atob(base64String);
-            return true;
-        } catch (e) {
+        if (typeof base64String !== 'string' || !base64String.length) {
             return false;
         }
+        if (base64String.length % 4 === 1) {
+            return false;
+        }
+        if (base64String.length <= BASE64_FULL_CHECK_MAX_LENGTH) {
+            return hasValidBase64Chars(base64String, 0, base64String.length, true);
+        }
+        if (!hasValidBase64Chars(base64String, 0, BASE64_SAMPLE_LENGTH, false)) {
+            return false;
+        }
+        return hasValidBase64Chars(base64String, base64String.length - BASE64_SAMPLE_LENGTH, base64String.length, true);
+    }
+
+    function hasValidBase64Chars (base64String, start, end, allowPadding) {
+        let paddingStarted = false;
+        for (let i = start; i < end; i++) {
+            const charCode = base64String.charCodeAt(i);
+            if (charCode === 61) {
+                if (!allowPadding || base64String.length % 4 !== 0 || i < base64String.length - 2) {
+                    return false;
+                }
+                paddingStarted = true;
+                continue;
+            }
+            if (paddingStarted || !isBase64CharCode(charCode)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isBase64CharCode (charCode) {
+        return (charCode >= 65 && charCode <= 90) ||
+            (charCode >= 97 && charCode <= 122) ||
+            (charCode >= 48 && charCode <= 57) ||
+            charCode === 43 ||
+            charCode === 47;
     }
 })();
