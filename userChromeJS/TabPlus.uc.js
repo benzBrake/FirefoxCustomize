@@ -21,13 +21,15 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.5
+// @version         1.1.7
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136+
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.7 layout.css.animation.enabled 为 false 时，标签页悬停切换回退到 setTimeout
+// @note            1.1.6 标签页悬停切换改用 CSS animationend 驱动延迟，减少 JS 计时器调度
 // @note            1.1.5 修复新版 Firefox 右键标签页不触发 click 导致的右键关闭失效，并保留旧版 click 兼容
 // @note            1.1.4 修复新版侧边栏历史第二次打开后 browser.tabs.loadHistoryInTabs 失效的问题
 // @note            1.1.3 修正新版 Firefox 右键图片菜单改走 viewMedia 后，browser.tabs.loadImageInBackground 不生效的问题
@@ -53,6 +55,10 @@
         _boundSidebarBrowser: null,
         _sidebarHistoryPatchObserver: null,
         _patchedSidebarHistoryWindows: new WeakSet(),
+        _hoverTab: null,
+        _hoverTimer: null,
+        _hoverSwitchStyle: null,
+        _hoverLeaveListeners: new WeakMap(),
         lazy: {},
 
         init: function () {
@@ -84,8 +90,10 @@
             this.initSidebarHistoryRevampMod();
             this.initOpenInContainerMod();
             const tabContainer = gBrowser.tabContainer;
+            this.installHoverSwitchStyle();
             tabContainer.addEventListener('mouseover', this, false);
             tabContainer.addEventListener('mouseleave', this, false);
+            tabContainer.addEventListener('animationend', this, true);
             tabContainer.addEventListener('dblclick', (event) => this.handleEvent(event, 'closetab'), false);
             tabContainer.addEventListener('contextmenu', (event) => this.handleEvent(event, 'closetab'), true);
             tabContainer.addEventListener('click', (event) => {
@@ -144,17 +152,17 @@
                     if (res != "current" || !Event.isInstance(e)) return res;
                     try {
                         var skip = true, trg = e.composedTarget || e.target;
-                        var win = trg.documentGlobal || trg.ownerGlobal || trg.ownerDocument?.defaultView || window;
+                        var win = trg.documentGlobal || trg.relevantGlobal || trg.ownerGlobal || trg.ownerDocument?.defaultView || window;
                         var name = win.document.documentURIObject
                             .QueryInterface(Ci.nsIURL).fileName.replace(/\.[^.]+$/, "");
                         if (name == "browser") {
                             skip = win.gBrowser.selectedTab.isEmpty || !trg.closest?.(sel);
                         } else if (legacyTrees.includes(name)) {
-                            skip = (win.opener || win.windowRoot.ownerGlobal).gBrowser.selectedTab.isEmpty
+                            skip = (win.opener || win.windowRoot.documentGlobal || win.windowRoot.relevantGlobal || win.windowRoot.ownerGlobal).gBrowser.selectedTab.isEmpty
                                 || trg.closest("tree").selectedNode.itemId != -1;
                         } else if (name == "sidebar-history") {
                             let browserWin = win.documentGlobal?.browsingContext?.embedderWindowGlobal?.browsingContext?.window
-                                || win.windowRoot.ownerGlobal || win.opener;
+                                || win.windowRoot.documentGlobal || win.windowRoot.relevantGlobal || win.windowRoot.ownerGlobal || win.opener;
                             skip = !browserWin?.gBrowser || browserWin.gBrowser.selectedTab.isEmpty
                                 || !trg.closest?.("sidebar-tab-row");
                         }
@@ -292,6 +300,29 @@
             }
         },
 
+        installHoverSwitchStyle: function () {
+            if (this._hoverSwitchStyle) {
+                return;
+            }
+            const styleText = `
+.tabbrowser-tab[tabplus-hover-switch-pending] {
+    animation-name: tabplus-hover-switch;
+    animation-duration: var(--tabplus-hover-switch-delay, 150ms);
+    animation-timing-function: step-end;
+    animation-iteration-count: 1;
+}
+
+@keyframes tabplus-hover-switch {
+    from { outline-offset: 0; }
+    to { outline-offset: 0; }
+}`;
+            this._hoverSwitchStyle = document.createProcessingInstruction(
+                "xml-stylesheet",
+                `type="text/css" href="data:text/css;utf-8,${encodeURIComponent(styleText)}"`
+            );
+            document.insertBefore(this._hoverSwitchStyle, document.documentElement);
+        },
+
         /**
          * 暂时禁用悬停切换功能
          * @param {MouseEvent} event - 触发的事件对象
@@ -316,6 +347,7 @@
                 clearTimeout(this._closeTimer);
                 this._closeTimer = null;
             }
+            this._cancelTabHover();
             this._diableMouseOver = false;
             this._lastMouseX = 0;
         },
@@ -326,7 +358,7 @@
 
         _getEventWindow: function (event) {
             const t = this._getEventTarget(event);
-            return t?.documentGlobal || t?.ownerGlobal || t?.ownerDocument?.defaultView || event.view || window;
+            return t?.documentGlobal || t?.relevantGlobal || t?.ownerGlobal || t?.ownerDocument?.defaultView || event.view || window;
         },
 
         _getTabFromEvent: function (event) {
@@ -418,18 +450,21 @@
                     if (!prefs.getIntPref("browser.tabs.mouseOverDelayMS", 150)) return;
                     if (!tab) return;
                     if (!tab.getAttribute("selected") && !event.shiftKey && !event.ctrlKey) {
-                        this._onTabHover(tab);
+                        this._armTabHover(tab, prefs.getIntPref("browser.tabs.mouseOverDelayMS", 150));
                     }
                     break;
                 case 'mouseleave':
                     this.resumeMouseOver();
+                    break;
+                case 'animationend':
+                    this._onHoverSwitchAnimationEnd(event);
                     break;
             }
         },
 
         _clipboardCommand: async function (e) {
             const { target } = e;
-            const win = target.documentGlobal || target.ownerGlobal || target.ownerDocument?.defaultView || window;
+            const win = target.documentGlobal || target.relevantGlobal || target.ownerGlobal || target.ownerDocument?.defaultView || window;
             let url = (win.readFromClipboard() || "").trim();
             if (!url) {
                 return;
@@ -464,17 +499,71 @@
             }
         },
 
-        _onTabHover (tab, wait) {
-            tab.addEventListener("mouseleave", function () {
-                clearTimeout(wait);
-            }, { once: true });
-            wait = setTimeout(function () {
-                if (tab.id === "firefox-view-button") {
-                    tab.click();
-                } else {
-                    gBrowser.selectedTab = tab;
-                }
-            }, Services.prefs.getIntPref('browser.tabs.mouseOverDelayMS', 150));
+        _armTabHover: function (tab, delay) {
+            if (this._hoverTab === tab) {
+                return;
+            }
+            this._cancelTabHover();
+            if (!tab || delay <= 0) {
+                return;
+            }
+
+            const leaveListener = () => this._cancelTabHover(tab);
+            this._hoverTab = tab;
+            this._hoverLeaveListeners.set(tab, leaveListener);
+            tab.style.setProperty("--tabplus-hover-switch-delay", `${delay}ms`);
+            tab.addEventListener("mouseleave", leaveListener, { once: true });
+
+            if (!Services.prefs.getBoolPref("layout.css.animation.enabled", true)) {
+                this._hoverTimer = setTimeout(() => {
+                    this._selectHoveredTab(tab);
+                }, delay);
+                return;
+            }
+
+            tab.setAttribute("tabplus-hover-switch-pending", "true");
+        },
+
+        _cancelTabHover: function (tab = this._hoverTab) {
+            if (!tab) {
+                return;
+            }
+            if (this._hoverTab === tab && this._hoverTimer) {
+                clearTimeout(this._hoverTimer);
+                this._hoverTimer = null;
+            }
+            const leaveListener = this._hoverLeaveListeners.get(tab);
+            if (leaveListener) {
+                tab.removeEventListener("mouseleave", leaveListener);
+                this._hoverLeaveListeners.delete(tab);
+            }
+            tab.removeAttribute("tabplus-hover-switch-pending");
+            tab.style.removeProperty("--tabplus-hover-switch-delay");
+            if (this._hoverTab === tab) {
+                this._hoverTab = null;
+            }
+        },
+
+        _onHoverSwitchAnimationEnd: function (event) {
+            if (event.animationName !== "tabplus-hover-switch") {
+                return;
+            }
+            const tab = this._getTabFromEvent(event);
+            this._selectHoveredTab(tab);
+        },
+
+        _selectHoveredTab: function (tab) {
+            if (!tab || tab !== this._hoverTab || tab.closing || tab.getAttribute("selected") || !tab.matches(":hover")) {
+                this._cancelTabHover(tab);
+                return;
+            }
+            this._cancelTabHover(tab);
+            if (tab.id === "firefox-view-button") {
+                tab.click();
+            } else {
+                const win = tab.documentGlobal || tab.relevantGlobal || tab.ownerDocument?.defaultView || window;
+                (win.gBrowser || gBrowser).selectedTab = tab;
+            }
         },
     }
     window.TabPlus.init();
