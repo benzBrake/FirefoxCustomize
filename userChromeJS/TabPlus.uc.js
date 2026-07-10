@@ -21,13 +21,14 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.7
+// @version         1.1.8
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136+
 // @charset         UTF-8
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.1.8 合并侧边栏历史 patch 重试调度，避免 MutationObserver 高频变化时堆积 timeout
 // @note            1.1.7 layout.css.animation.enabled 为 false 时，标签页悬停切换回退到 setTimeout
 // @note            1.1.6 标签页悬停切换改用 CSS animationend 驱动延迟，减少 JS 计时器调度
 // @note            1.1.5 修复新版 Firefox 右键标签页不触发 click 导致的右键关闭失效，并保留旧版 click 兼容
@@ -54,6 +55,8 @@
         _moveThreshold: 100, // 移动恢复的距离阈值（会动态设为标签宽度）
         _boundSidebarBrowser: null,
         _sidebarHistoryPatchObserver: null,
+        _sidebarHistoryPatchPending: false,
+        _sidebarHistoryPatchTimers: new Set(),
         _patchedSidebarHistoryWindows: new WeakSet(),
         _hoverTab: null,
         _hoverTimer: null,
@@ -210,12 +213,21 @@
         },
 
         scheduleSidebarHistoryPatch: function (patchCurrentSidebar) {
+            if (this._sidebarHistoryPatchPending) {
+                return;
+            }
+            this._sidebarHistoryPatchPending = true;
             for (const delay of [0, 50, 150, 300, 700]) {
-                setTimeout(() => {
+                const timer = setTimeout(() => {
+                    this._sidebarHistoryPatchTimers.delete(timer);
                     try {
                         patchCurrentSidebar();
                     } catch { }
+                    if (!this._sidebarHistoryPatchTimers.size) {
+                        this._sidebarHistoryPatchPending = false;
+                    }
                 }, delay);
+                this._sidebarHistoryPatchTimers.add(timer);
             }
         },
 
