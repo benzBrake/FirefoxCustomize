@@ -3,9 +3,10 @@
 // @description     右键添加保存 UC 脚本菜单
 // @charset         UTF-8
 // @include         main
-// @version         0.2.0
+// @version         0.2.1
 // @compatibility   Firefox 149
 // @note            去除 FileUtils 依赖
+// @note            2026-07-10 拒绝保存 HTTP 错误正文，避免 400: Invalid request 覆盖脚本
 // @note            2026-06-29 兼容 .uc.mjs 脚本下载
 // @note            2026-06-29 修复下载/写入错误处理与工具菜单版本检查逻辑
 // @note            2026-03-29 修复 Firefox 149+ 兼容性：更新 gBrowser.currentURI 和 gContextMenu.linkURL API，移除 hidden 属性以适配新版 XUL 渲染行为
@@ -86,6 +87,10 @@
                 alert(`UC脚本下载失败：返回内容为空\n${url}`);
                 return;
             }
+            if (isErrorResponse(xhr.responseText)) {
+                alert(`UC脚本下载失败：返回内容像错误页面，已取消保存\n\n${xhr.responseText.slice(0, 200)}\n\n${url}`);
+                return;
+            }
             if (check) {
                 const version = extractVersion(xhr.responseText);
                 if (!version) {
@@ -107,6 +112,12 @@
         xhr.ontimeout = function () {
             alert(`UC脚本下载失败：请求超时\n${url}`);
         }
+    }
+
+    function isErrorResponse(str) {
+        const text = str.trim();
+        return /^(?:\d{3}|HTTP\/\d(?:\.\d)?)\b[^\r\n]*(?:error|invalid|forbidden|not found|bad request|unauthorized|denied|request)/i.test(text)
+            || /^(?:error|invalid request|bad request|not found|forbidden|unauthorized|access denied)\b/i.test(text);
     }
 
     function extractVersion(str) {
