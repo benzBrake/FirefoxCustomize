@@ -3,10 +3,11 @@
 // @description     为网页输入框的表单历史下拉添加删除按钮
 // @license         MIT License
 // @compatibility   Firefox 120
-// @version         0.1.5
+// @version         0.1.6
 // @charset         UTF-8
 // @include         main
 // @note            仅作用于网页 input/textarea 的 PopupAutoComplete 表单历史下拉
+// @note            20260714 删除后清除 FormHistory 增量搜索缓存，并过滤当前页面残留的旧结果
 // ==/UserScript==
 
 (function () {
@@ -23,6 +24,7 @@
 
   const lazy = {};
   ChromeUtils.defineESModuleGetters(lazy, {
+    AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
     FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   });
 
@@ -30,6 +32,7 @@
   let refreshTimer = 0;
   let popupObserver = null;
   let initObserver = null;
+  const suppressedValuesByActor = new WeakMap();
 
   const style = `
     #PopupAutoComplete .autocomplete-richlistitem {
@@ -124,6 +127,100 @@
 
   function getPopup() {
     return document.getElementById(POPUP_ID);
+  }
+
+  function getCurrentFormHistoryActor() {
+    try {
+      const autoCompleteActor = lazy.AutoCompleteParent.getCurrentActor();
+      return (
+        autoCompleteActor?.browsingContext?.currentWindowGlobal?.getActor(
+          "FormHistory"
+        ) || null
+      );
+    } catch (error) {
+      log("Failed to get current FormHistory actor:", error);
+      return null;
+    }
+  }
+
+  function invalidateFormHistoryCache(actor = getCurrentFormHistoryActor()) {
+    if (!actor) {
+      return;
+    }
+
+    // FormHistoryParent 会用上一次结果做增量过滤。数据库删除后若不清掉
+    // 这两个公开缓存字段，同一页面再次搜索时仍可能返回已删除的旧记录。
+    actor.previousSearchString = "";
+    actor.previousSearchResult = null;
+    log("Invalidated FormHistory actor cache");
+  }
+
+  function suppressDeletedValue(value, actor = getCurrentFormHistoryActor()) {
+    if (!actor || !value) {
+      return;
+    }
+
+    let values = suppressedValuesByActor.get(actor);
+    if (!values) {
+      values = new Set();
+      suppressedValuesByActor.set(actor, values);
+    }
+    values.add(value);
+    invalidateFormHistoryCache(actor);
+  }
+
+  function isLikelyFormHistoryResult(result) {
+    if (!result?.value || !isAllowedStyleName(result.style || "")) {
+      return false;
+    }
+
+    const comment = result.comment || "";
+    const parsedComment = safeParseJSON(comment);
+    if (parsedComment && typeof parsedComment == "object") {
+      return false;
+    }
+
+    return (
+      !comment ||
+      !comment.trim() ||
+      comment.trim() === result.value ||
+      comment.trim() === result.label
+    );
+  }
+
+  function filterSuppressedResults(popup = getPopup()) {
+    const actor = getCurrentFormHistoryActor();
+    const values = actor && suppressedValuesByActor.get(actor);
+    const view = popup?.mInput;
+    if (!values?.size || !Array.isArray(view?.results)) {
+      return;
+    }
+
+    const previousCount = view.results.length;
+    const results = view.results.filter(
+      result =>
+        !(
+          values.has(result.value) && isLikelyFormHistoryResult(result)
+        )
+    );
+    if (results.length === view.results.length) {
+      return;
+    }
+
+    view.results = results;
+    invalidateFormHistoryCache(actor);
+    log("Filtered stale FormHistory results", {
+      removedCount: previousCount - results.length,
+    });
+    try {
+      if (results.length) {
+        popup.invalidate();
+      } else {
+        popup.closePopup();
+      }
+    } catch (error) {
+      log("Failed to invalidate filtered popup:", error);
+    }
   }
 
   function getFormFillController() {
@@ -441,6 +538,8 @@
       return;
     }
 
+    const value = item.getAttribute("ac-value") || "";
+    const formHistoryActor = getCurrentFormHistoryActor();
     const controller = getControllerFromPopup(popup);
     let removed = false;
 
@@ -471,6 +570,8 @@
     }
 
     if (removed) {
+      suppressDeletedValue(value, formHistoryActor);
+      filterSuppressedResults(popup);
       log("Delete succeeded");
       scheduleEnhance();
     } else {
@@ -571,6 +672,7 @@
       return;
     }
 
+    filterSuppressedResults(popup);
     const rows = getRows(popup);
     log("Enhancing popup", {
       rowCount: rows.length,
