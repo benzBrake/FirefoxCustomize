@@ -12,6 +12,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 - 新增参数 `%FAVICON_BASE64%`：站点图标的 base64
 - 新增参数 `%IMAGE_BASE64%`：图片的 BASE64
 - 新增参数 `%TITLES%`：简短的标题
+- 0.3.3 起，`label`、`tooltiptext`、`onshowinglabel` 支持按 Firefox UI locale 选择文案
 
 不过 ywzhaiqi 大佬已经不用 Firefox 很久了。我就简单修修脚本，搬运 README 并修正不能用的例子。
 
@@ -129,6 +130,48 @@ oncommand: function() {
   "condition": "normal link" // normal 和 link 都生效
 }
 ```
+
+### 0.3.3 多语言文案
+
+从 0.3.3 起，配置对象的 `label`、`tooltiptext` 和 `onshowinglabel` 除了原有字符串写法，还可以写成以 Firefox UI locale 为键的对象。普通菜单项、二级菜单、横排菜单和 `mod` 修改项均可使用。
+
+```js
+tab([{
+  label: {
+    "zh-CN": "复制标题和地址",
+    "en-US": "Copy title and URL",
+    default: "Copy title and URL",
+  },
+  tooltiptext: {
+    zh: "复制当前标签页的标题和地址",
+    en: "Copy the current tab title and URL",
+  },
+  onshowinglabel: {
+    "zh-CN": "复制：%TITLE%",
+    "en-US": "Copy: %TITLE%",
+  },
+  text: "%TITLE%\n%URL%",
+}]);
+```
+
+语言键不区分大小写，下划线会按连字符处理，例如 `zh_CN` 等同于 `zh-CN`。文案按以下顺序匹配：
+
+1. 完整 locale，例如 `zh-CN`
+2. 语言代码，例如 `zh`
+3. 同语言的其它地区项，例如当前为 `zh-TW` 时回退到 `zh-CN`
+4. `default`
+5. `en-US`
+6. 对象中的第一个字符串值
+
+建议始终提供 `default`。映射中的文案必须是字符串；传统的字符串配置保持兼容。
+
+配置文件还可以使用以下辅助值和方法：
+
+- `locale`：当前 Firefox UI locale
+- `addMenu.locale`：同上
+- `addMenu.localize(value[, locale])`：按相同规则解析多语言对象，也可以传入指定 locale
+
+0.3.3 在载入或手动重新载入配置时选择文案。Firefox 运行期间切换应用语言后，需要手动重新载入配置；自动刷新菜单是 0.3.4 才加入的功能。
 
 参考链接：
 

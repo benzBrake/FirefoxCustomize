@@ -8,7 +8,7 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.3.2
+// @version            0.3.4
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
@@ -22,6 +22,8 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.3.4 移除 UI locale 缓存，并在 Firefox 应用语言变化后自动刷新菜单
+// @note               0.3.3 配置中的 label、tooltiptext、onshowinglabel 支持按 Firefox UI locale 选择文案
 // @note               0.3.2 过滤无效 favicon URL，避免 about:blank / opaque origin 触发 nsIFaviconService.setFaviconForPage
 // @note               Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note               20260407 Actor registration moved to userChrome.js loader; keep single-file chrome+actor implementation, fix first-run startup when config file does not exist yet
@@ -121,18 +123,14 @@ import { syncify } from "./000-syncify.sys.mjs";
         },
     }
 
-    // 读取语言代码
-    let _locale;
-    try {
-        const osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
-        const _locales = typeof osPrefs.getRegionalPrefsLocales === "function"
-            ? osPrefs.getRegionalPrefsLocales()
-            : osPrefs.regionalPrefsLocales;
-
-        _locale = _locales.find(locale => ADDMENU_LANG.hasOwnProperty(locale));
-    } catch (e) { }
-
-    const ADDMENU_LOCALE = _locale || "en-US";
+    function getAppLocale () {
+        try {
+            return Services.locale?.appLocaleAsBCP47 || "en-US";
+        } catch (e) {
+            return "en-US";
+        }
+    }
+    const LOCALIZABLE_ATTRIBUTES = new Set(["label", "tooltiptext", "onshowinglabel"]);
 
     // 增加菜单类型请在这里加入插入点，不能是 IdentGroup
     const MENU_ATTRS = {
@@ -218,8 +216,10 @@ import { syncify } from "./000-syncify.sys.mjs";
             return this.platform = AppConstants.platform;
         },
         get locale () {
-            delete this.locale;
-            return this.locale = ADDMENU_LOCALE || "en-US";
+            return getAppLocale();
+        },
+        localize: function (value, locale = this.locale) {
+            return localizeValue(value, locale);
         },
         get panelId () {
             delete this.panelId;
@@ -269,6 +269,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             await this.ensureConfigFileExists();
             this.initRegex();
             this.initButton();
+            this.initLocaleObserver();
 
             // add menuitem insertpoint
             for (let type in MENU_ATTRS) {
@@ -340,6 +341,39 @@ import { syncify } from "./000-syncify.sys.mjs";
             this.style = addStyle(css);
 
             await this.rebuild();
+        },
+        initLocaleObserver: function () {
+            if (this._localeObserverRegistered) return;
+            Services.obs.addObserver(this, "intl:app-locales-changed");
+            this._localeObserverRegistered = true;
+        },
+        observe: function (_subject, topic) {
+            if (topic !== "intl:app-locales-changed") return;
+
+            clearTimeout(this._localeRefreshTimer);
+            this._localeRefreshTimer = setTimeout(async () => {
+                this._localeRefreshTimer = null;
+                if (window.addMenu !== this) return;
+                try {
+                    await this.rebuild();
+                } catch (e) {
+                    console.error("addMenuPlus: failed to rebuild after locale change", e);
+                }
+            }, 100);
+        },
+        refreshLocalizedUI: function () {
+            const button = this.BTN?.isConnected
+                ? this.BTN
+                : document.getElementById("addMenu-button");
+            if (!button) return;
+
+            this.BTN = button;
+            button.setAttribute("label", lprintf("addmenuplus label"));
+            button.setAttribute("tooltiptext", lprintf("addmenuplus btn tooltip"));
+            button.querySelector("#addMenu-modify-config")?.setAttribute(
+                "label", lprintf("modify menu config"));
+            button.querySelector("#addMenu-reload-config")?.setAttribute(
+                "label", lprintf("reload config"));
         },
         ensureConfigFileExists: async function () {
             const aFile = this.FILE;
@@ -445,7 +479,8 @@ import { syncify } from "./000-syncify.sys.mjs";
                         onBuild: function (doc) {
                             const button = $C('toolbarbutton', {
                                 id: 'addMenu-button',
-                                label: 'addMenuPlus',
+                                label: lprintf('addmenuplus label'),
+                                tooltiptext: lprintf('addmenuplus btn tooltip'),
                                 image: 'chrome://devtools/skin/images/browsers/firefox.svg',
                                 type: 'menu',
                                 class: 'toolbarbutton-1 chromeclass-toolbar-additional'
@@ -575,9 +610,18 @@ import { syncify } from "./000-syncify.sys.mjs";
             if (!this.BTN) {
                 debugWarn("addMenuPlus: toolbar button is still unavailable after initButton");
             }
+            this.refreshLocalizedUI();
             return !!this.BTN;
         },
         destroy: function (forceDestroyWidget = false) {
+            clearTimeout(this._localeRefreshTimer);
+            this._localeRefreshTimer = null;
+            if (this._localeObserverRegistered) {
+                try {
+                    Services.obs.removeObserver(this, "intl:app-locales-changed");
+                } catch (e) { }
+                this._localeObserverRegistered = false;
+            }
             $("#contentAreaContextMenu").off("popupshowing", this, false);
             $("#contentAreaContextMenu").off("popuphiding", this, false);
             $("#tabContextMenu").off("popupshowing", this, false);
@@ -1070,6 +1114,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
         },
         rebuild: async function (isAlert) {
+            this.refreshLocalizedUI();
             const aFile = this.FILE;
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
                 console.log(lprintf("config file not exists", aFile ? aFile.path : "null"));
@@ -1261,6 +1306,7 @@ import { syncify } from "./000-syncify.sys.mjs";
         },
 
         newGroupMenu: function (menuObj, opt = {}, doc = document) {
+            menuObj = localizeMenuObject(menuObj);
             var group = $C('menugroup', {}, doc);
 
             // 增加 onshowing 事件
@@ -1292,6 +1338,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             return group;
         },
         newMenu: function (menuObj, opt = {}, doc = document) {
+            menuObj = localizeMenuObject(menuObj);
             if (menuObj._group) {
                 return this.newGroupMenu(menuObj, opt, doc);
             }
@@ -1379,6 +1426,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             return menu;
         },
         newMenuitem: function (obj, opt = {}, doc = document) {
+            obj = localizeMenuObject(obj);
             var menuitem,
                 isAppMenu = opt.insertPoint && opt.insertPoint.localName === "toolbarseparator" && opt.insertPoint.id === 'addMenu-app-insertpoint',
                 separatorType = isAppMenu ? "toolbarseparator" : "menuseparator",
@@ -1532,6 +1580,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             //Symbol.iterator
             for (let obj of itemArray) {
                 if (!obj) continue;
+                obj = localizeMenuObject(obj);
                 let menuitem;
 
                 // clone menuitem and set attribute
@@ -1565,6 +1614,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
         },
         modMenuitem: function (obj) {
+            obj = localizeMenuObject(obj);
             const sel = obj.id || obj.selector;
             if (sel && $(sel)) {
                 const menuitem = $(sel);
@@ -2328,7 +2378,12 @@ import { syncify } from "./000-syncify.sys.mjs";
         element = unwrap(element);
         Object.keys(obj).forEach(key => {
             if (key === "onshowinglabel" || !exclude.includes(key) && !key.startsWith('on')) {
-                element.setAttribute(key, obj[key]);
+                const value = LOCALIZABLE_ATTRIBUTES.has(key)
+                    ? localizeValue(obj[key])
+                    : obj[key];
+                if (value !== undefined) {
+                    element.setAttribute(key, value);
+                }
             }
         });
     }
@@ -2360,8 +2415,88 @@ import { syncify } from "./000-syncify.sys.mjs";
         return s && s[0].toUpperCase() + s.slice(1);
     }
 
+    function normalizeLocale (locale) {
+        return typeof locale === "string"
+            ? locale.trim().replaceAll("_", "-").toLowerCase()
+            : "";
+    }
+
+    function findLocaleKey (values, locale, requireString = false) {
+        if (!values || typeof values !== "object") return;
+
+        const keys = Object.keys(values);
+        const normalizedLocale = normalizeLocale(locale);
+        const language = normalizedLocale.split("-", 1)[0];
+        const find = predicate => keys.find(key =>
+            (!requireString || typeof values[key] === "string") && predicate(normalizeLocale(key)));
+
+        let key = find(key => key === normalizedLocale && key !== "default");
+        if (key) return key;
+
+        key = find(key => key === language && key !== "default");
+        if (key) return key;
+
+        key = find(key => key !== "default" && key.split("-", 1)[0] === language);
+        if (key) return key;
+
+        key = find(key => key === "default");
+        if (key) return key;
+
+        key = find(key => key === "en-us");
+        if (key) return key;
+
+        return keys.find(key => typeof values[key] === "string");
+    }
+
+    function isLocalizedMap (value) {
+        return value !== null && typeof value === "object" && !Array.isArray(value) &&
+            Object.prototype.toString.call(value) === "[object Object]";
+    }
+
+    function localizeValue (value, locale = getAppLocale()) {
+        // Non-object values are the legacy configuration format.
+        if (!isLocalizedMap(value)) {
+            return value;
+        }
+
+        let key;
+        try {
+            key = findLocaleKey(value, locale, true);
+        } catch (e) {
+            console.warn("addMenuPlus: failed to resolve localized value", e);
+            return;
+        }
+
+        if (key && typeof value[key] === "string") {
+            return value[key];
+        }
+
+        console.warn("addMenuPlus: localized value has no string fallback", value);
+    }
+
+    function localizeMenuObject (obj) {
+        if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+
+        let localized = obj;
+        LOCALIZABLE_ATTRIBUTES.forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(obj, key)) return;
+            const value = obj[key];
+            if (!isLocalizedMap(value)) return;
+
+            const resolved = localizeValue(value);
+            if (localized === obj) localized = { ...obj };
+            if (resolved === undefined) {
+                delete localized[key];
+            } else {
+                localized[key] = resolved;
+            }
+        });
+        return localized;
+    }
+
     function lprintf (key, ...args) {
-        const localeData = ADDMENU_LANG[ADDMENU_LOCALE];
+        const localeKey = findLocaleKey(ADDMENU_LANG, getAppLocale()) || "en-US";
+        const localeData = ADDMENU_LANG[localeKey];
         if (key && localeData?.[key]) {
             return args.reduce((str, arg) => str.replace('%s', arg), localeData[key]);
         }
@@ -2736,7 +2871,8 @@ class AddMenuParent extends JSWindowActorParent {
         try {
             const windowGlobal = this.manager.browsingContext.currentWindowGlobal;
             const browser = windowGlobal.rootFrameLoader.ownerElement;
-            const win = browser.documentGlobal || browser.ownerGlobal;
+            const win = browser.documentGlobal || browser.relevantGlobal ||
+                browser.ownerDocument?.defaultView || window;
             const { addMenu } = win;
             switch (name) {
                 case 'AddMenuPlus:SetSelectedText':
