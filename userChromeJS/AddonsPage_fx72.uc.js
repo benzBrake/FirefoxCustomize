@@ -5,11 +5,12 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 135+
-// @version         2026.07.25
+// @version         2026.07.26
 // @downloadURL     https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            2026.07.26 Fix extension version and update date text rendering, add version and update date to extension list item
 // @note            2026.07.25 Fx153 fix about:addons category navigation component migration
 // @note            2026.04.06 Fix multi-window provider handoff and add debug pref
 // @note            2025.04.04 Fx137 fix lazy is undefined
@@ -1065,6 +1066,14 @@
 
                     const name = card.querySelector(".addon-name-container");
                     name.insertBefore(input, name.querySelector(".more-options-button"));
+                } else if (addon.type === "extension") {
+                    let addonName = card.querySelector(".addon-name");
+                    const { version, updateDate } = addon;
+                    const info = $C(doc, "span", {
+                        style : "font-size: smaller; font-style: italic; margin-inline-end: 8px",
+                        "#text": `${version} (${updateDate ? updateDate.toLocaleDateString() : "unknown"})`
+                    });
+                    addonName.after(info);
                 }
 
                 /* …メニュー追加 */
