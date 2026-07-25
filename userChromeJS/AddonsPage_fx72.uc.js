@@ -4,12 +4,13 @@
 // @author          ywzhaiqi
 // @include         main
 // @charset         utf-8
-// @compatibility   Firefox 72
-// @version         2026.04.06
+// @compatibility   Firefox 135+
+// @version         2026.07.25
 // @downloadURL     https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            2026.07.25 Fx153 fix about:addons category navigation component migration
 // @note            2026.04.06 Fix multi-window provider handoff and add debug pref
 // @note            2025.04.04 Fx137 fix lazy is undefined
 // @note            2025.03.08 Add English / Japanese String
@@ -65,8 +66,18 @@
     const DETAIL_REFRESH_TIMER_KEY = "__AddonsPageFx72DetailRefreshTimer";
     const DETAIL_REFRESH_TOKEN_KEY = "__AddonsPageFx72DetailRefreshToken";
     const DETAIL_RENDERING_KEY = "__AddonsPageFx72DetailRendering";
+    const CATEGORY_OBSERVER_KEY = "__AddonsPageFx72CategoryObserver";
+    const CATEGORY_REFRESH_TIMER_KEY = "__AddonsPageFx72CategoryRefreshTimer";
+    const CATEGORY_VIEW_LISTENER_KEY = "__AddonsPageFx72CategoryViewListener";
+    const CATEGORY_READY_PROMISE_KEY = "__AddonsPageFx72CategoryReadyPromise";
+    const DOCUMENT_UNLOAD_HANDLER_KEY = "__AddonsPageFx72DocumentUnloadHandler";
+    const DOCUMENT_EVENT_CLEANUPS_KEY = "__AddonsPageFx72DocumentEventCleanups";
+    const DOCUMENT_INITIALIZED_KEY = "__AddonsPageFx72DocumentInitialized";
+    const MODERN_CATEGORY_ATTRIBUTE = "data-addons-page-category";
+    const MODERN_CATEGORY_VIEW_ATTRIBUTE = "data-addons-page-viewid";
     const L10N_PATCHED_KEY = "__AddonsPageFx72L10nPatched";
     const TAMPERMONKEY_VIEW_REGISTERED_KEY = "__AddonsPageFx72TampermonkeyViewRegistered";
+    const TAMPERMONKEY_VIEW_RESTORE_KEY = "__AddonsPageFx72TampermonkeyViewRestore";
     const TAMPERMONKEY_CATEGORY_SYNC_TOKEN_KEY = "__AddonsPageFx72TampermonkeyCategorySyncToken";
     const TAMPERMONKEY_IDS = [
         "firefoxbeta@tampermonkey.net",
@@ -78,6 +89,7 @@
     const TAMPERMONKEY_FALLBACK_VIEW_ID = "addons://list/extension";
     const TAMPERMONKEY_LAST_CATEGORY_PREF = "extensions.ui.lastCategory";
     const STYLUS_VIEW_REGISTERED_KEY = "__AddonsPageFx72StylusViewRegistered";
+    const STYLUS_VIEW_RESTORE_KEY = "__AddonsPageFx72StylusViewRestore";
     const STYLUS_CATEGORY_SYNC_TOKEN_KEY = "__AddonsPageFx72StylusCategorySyncToken";
     const STYLUS_IDS = [
         "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}",
@@ -168,14 +180,35 @@
     };
 
     window.AM_Helper = {
+        addonsDocuments: new Set(),
+
         init () {
             document.addEventListener("DOMContentLoaded", this, false);
+            const browsers = window.gBrowser && window.gBrowser.browsers;
+            if (!browsers) {
+                return;
+            }
+            for (const browser of browsers) {
+                try {
+                    const doc = browser.contentDocument;
+                    if (doc && doc.URL === "about:addons") {
+                        this.setupAddonsPage(doc);
+                    }
+                } catch (e) {
+                    debugWarn("init(): existing about:addons lookup failed", e);
+                }
+            }
         },
         uninit () {
             document.removeEventListener("DOMContentLoaded", this, false);
+            Array.from(this.addonsDocuments).forEach(doc => {
+                this.cleanupAddonsDocument(doc);
+            });
+            this.disconnectCategoryObserver(document);
             this.disconnectDetailObserver(document);
             const htmlBrowser = document.getElementById("html-view-browser");
             if (htmlBrowser && htmlBrowser.contentDocument) {
+                this.disconnectCategoryObserver(htmlBrowser.contentDocument);
                 this.disconnectDetailObserver(htmlBrowser.contentDocument);
             }
         },
@@ -199,19 +232,31 @@
             if (!["about:addons"].includes(doc.URL))
                 return;
 
+            this.setupAddonsPage(doc);
+        },
+
+        setupAddonsPage (doc) {
+            if (!doc || doc[DOCUMENT_INITIALIZED_KEY]) {
+                return;
+            }
+            doc[DOCUMENT_INITIALIZED_KEY] = true;
+
+            this.trackAddonsDocument(doc);
+
             const htmlBrowser = doc.getElementById("html-view-browser");
             if (htmlBrowser) {
-                htmlBrowser.addEventListener("load", event => {
+                const loadListener = event => {
                     const cDoc = htmlBrowser.contentDocument;
                     if (cDoc) {
                         this.initializeAddonsDocument(cDoc, "htmlBrowser.load");
                         this.ensureDetailObserver(cDoc);
                         this.scheduleDetailInfoRefresh(cDoc, "htmlBrowser.load");
                     }
-                });
+                };
+                this.addManagedEventListener(doc, htmlBrowser, "load", loadListener);
 
                 // Fx85- #html-view要素が無くなってloading属性で遷移検出できなくなったのでイベント駆動に変更
-                doc.addEventListener("ViewChanged", event => {
+                const viewChangedListener = event => {
                     const cDoc = htmlBrowser.contentDocument;
                     if (cDoc) {
                         this.injectCategory(cDoc);
@@ -220,7 +265,8 @@
                         this.ensureTampermonkeyRoute(cDoc, "htmlBrowser.ViewChanged");
                         this.ensureStylusRoute(cDoc, "htmlBrowser.ViewChanged");
                     }
-                });
+                };
+                this.addManagedEventListener(doc, doc, "ViewChanged", viewChangedListener);
 
             } else if (doc.querySelector('title[data-l10n-id="addons-page-title"]')) {
                 // Fx87-
@@ -234,8 +280,8 @@
                     this.ensureTampermonkeyRoute(doc, event.type);
                     this.ensureStylusRoute(doc, event.type);
                 };
-                doc.addEventListener("ViewChanged", loadedEvent);   // -Fx88
-                doc.addEventListener("view-loaded", loadedEvent);   // Fx89-
+                this.addManagedEventListener(doc, doc, "ViewChanged", loadedEvent);   // -Fx88
+                this.addManagedEventListener(doc, doc, "view-loaded", loadedEvent);   // Fx89-
             }
         },
 
@@ -331,12 +377,92 @@
             if (!doc) {
                 return;
             }
+            this.trackAddonsDocument(doc);
             this.replace_l10n_setAttributes(doc);
             this.ensureTampermonkeyView(doc, reason);
             this.ensureStylusView(doc, reason);
             this.injectCategory(doc);
             this.ensureTampermonkeyRoute(doc, reason);
             this.ensureStylusRoute(doc, reason);
+        },
+
+        trackAddonsDocument (doc) {
+            if (!doc || this.addonsDocuments.has(doc)) {
+                return;
+            }
+
+            this.addonsDocuments.add(doc);
+            const win = doc.defaultView;
+            if (!win) {
+                return;
+            }
+            const unloadHandler = () => {
+                this.cleanupAddonsDocument(doc);
+            };
+            doc[DOCUMENT_UNLOAD_HANDLER_KEY] = unloadHandler;
+            win.addEventListener("unload", unloadHandler, { once: true });
+        },
+
+        addManagedEventListener (doc, target, type, listener, options) {
+            if (!doc || !target || typeof target.addEventListener !== "function") {
+                return;
+            }
+
+            target.addEventListener(type, listener, options);
+            if (!doc[DOCUMENT_EVENT_CLEANUPS_KEY]) {
+                doc[DOCUMENT_EVENT_CLEANUPS_KEY] = [];
+            }
+            doc[DOCUMENT_EVENT_CLEANUPS_KEY].push(() => {
+                target.removeEventListener(type, listener, options);
+            });
+        },
+
+        cleanupAddonsDocument (doc) {
+            if (!doc) {
+                return;
+            }
+
+            this.disconnectCategoryObserver(doc);
+            this.disconnectDetailObserver(doc);
+            this.restoreCustomView(doc, TAMPERMONKEY_VIEW_TYPE, TAMPERMONKEY_VIEW_RESTORE_KEY,
+                TAMPERMONKEY_VIEW_REGISTERED_KEY);
+            this.restoreCustomView(doc, STYLUS_VIEW_TYPE, STYLUS_VIEW_RESTORE_KEY,
+                STYLUS_VIEW_REGISTERED_KEY);
+            const eventCleanups = doc[DOCUMENT_EVENT_CLEANUPS_KEY];
+            if (eventCleanups) {
+                eventCleanups.splice(0).forEach(cleanup => {
+                    try {
+                        cleanup();
+                    } catch (e) { }
+                });
+                delete doc[DOCUMENT_EVENT_CLEANUPS_KEY];
+            }
+            const unloadHandler = doc[DOCUMENT_UNLOAD_HANDLER_KEY];
+            const win = doc.defaultView;
+            if (unloadHandler && win) {
+                win.removeEventListener("unload", unloadHandler);
+            }
+            delete doc[DOCUMENT_UNLOAD_HANDLER_KEY];
+            delete doc[DOCUMENT_INITIALIZED_KEY];
+            this.addonsDocuments.delete(doc);
+        },
+
+        restoreCustomView (doc, viewType, restoreKey, registeredKey) {
+            const win = doc && doc.defaultView;
+            if (!win) {
+                return;
+            }
+
+            const restore = win[restoreKey];
+            if (restore && win.gViewController && win.gViewController.views) {
+                if (restore.hadView) {
+                    win.gViewController.views[viewType] = restore.view;
+                } else {
+                    delete win.gViewController.views[viewType];
+                }
+            }
+            delete win[restoreKey];
+            delete win[registeredKey];
         },
 
         async getTampermonkeyAddon () {
@@ -580,6 +706,16 @@
                 return this.createTampermonkeyView(doc, addon, dashboardURL);
             };
 
+            if (!win[TAMPERMONKEY_VIEW_RESTORE_KEY]) {
+                const hadRegisteredView = !!win[TAMPERMONKEY_VIEW_REGISTERED_KEY];
+                win[TAMPERMONKEY_VIEW_RESTORE_KEY] = {
+                    hadView: !hadRegisteredView && !!(win.gViewController.views &&
+                        Object.prototype.hasOwnProperty.call(win.gViewController.views, TAMPERMONKEY_VIEW_TYPE)),
+                    view: hadRegisteredView ? undefined :
+                        win.gViewController.views && win.gViewController.views[TAMPERMONKEY_VIEW_TYPE],
+                };
+            }
+
             if (win.gViewController.views && win.gViewController.views[TAMPERMONKEY_VIEW_TYPE]) {
                 win.gViewController.views[TAMPERMONKEY_VIEW_TYPE] = renderView;
                 win[TAMPERMONKEY_VIEW_REGISTERED_KEY] = true;
@@ -624,6 +760,16 @@
                 return this.createStylusView(doc, addon, manageURL);
             };
 
+            if (!win[STYLUS_VIEW_RESTORE_KEY]) {
+                const hadRegisteredView = !!win[STYLUS_VIEW_REGISTERED_KEY];
+                win[STYLUS_VIEW_RESTORE_KEY] = {
+                    hadView: !hadRegisteredView && !!(win.gViewController.views &&
+                        Object.prototype.hasOwnProperty.call(win.gViewController.views, STYLUS_VIEW_TYPE)),
+                    view: hadRegisteredView ? undefined :
+                        win.gViewController.views && win.gViewController.views[STYLUS_VIEW_TYPE],
+                };
+            }
+
             if (win.gViewController.views && win.gViewController.views[STYLUS_VIEW_TYPE]) {
                 win.gViewController.views[STYLUS_VIEW_TYPE] = renderView;
                 win[STYLUS_VIEW_REGISTERED_KEY] = true;
@@ -643,7 +789,7 @@
         },
 
         async syncTampermonkeyCategory (doc, reason = "unknown") {
-            const button = doc && doc.querySelector('.category[name="tampermonkey"]');
+            const button = this.getCategoryButton(doc, "tampermonkey");
             if (!button) {
                 return;
             }
@@ -657,15 +803,19 @@
 
             button.hidden = !visible;
             if (visible) {
-                button.removeAttribute("disabled");
+                if (!button.hasAttribute(MODERN_CATEGORY_ATTRIBUTE)) {
+                    button.removeAttribute("disabled");
+                }
             } else {
-                button.setAttribute("disabled", "true");
+                if (!button.hasAttribute(MODERN_CATEGORY_ATTRIBUTE)) {
+                    button.setAttribute("disabled", "true");
+                }
                 this.ensureTampermonkeyRoute(doc, `${reason}.hidden`);
             }
         },
 
         async syncStylusCategory (doc, reason = "unknown") {
-            const button = doc && doc.querySelector('.category[name="stylus"]');
+            const button = this.getCategoryButton(doc, "stylus");
             if (!button) {
                 return;
             }
@@ -679,11 +829,24 @@
 
             button.hidden = !visible;
             if (visible) {
-                button.removeAttribute("disabled");
+                if (!button.hasAttribute(MODERN_CATEGORY_ATTRIBUTE)) {
+                    button.removeAttribute("disabled");
+                }
             } else {
-                button.setAttribute("disabled", "true");
+                if (!button.hasAttribute(MODERN_CATEGORY_ATTRIBUTE)) {
+                    button.setAttribute("disabled", "true");
+                }
                 this.ensureStylusRoute(doc, `${reason}.hidden`);
             }
+        },
+
+        getCategoryButton (doc, name) {
+            if (!doc || !name) {
+                return null;
+            }
+            return doc.querySelector(
+                `.category[name="${name}"], [${MODERN_CATEGORY_ATTRIBUTE}="${name}"]`
+            );
         },
 
         async ensureTampermonkeyRoute (doc, reason = "unknown", force = false) {
@@ -943,13 +1106,69 @@
             this.scheduleDetailInfoRefresh(doc, "injectView");
         },
 
-        injectCategory (doc) {
-            // Fx76 about:addonsのサイドバーhtml化でカテゴリーが自動で挿入されなくなった対策
-            const cat = doc.getElementById("categories");
-            const extensionBtn = cat && cat.querySelector('.category[name="extension"]');
-            if (!cat || !extensionBtn) {
+        injectCategory (doc, attempt = 0) {
+            if (!doc) {
                 return;
             }
+
+            const legacyCategories = doc.getElementById("categories");
+            const legacyExtensionButton = legacyCategories &&
+                legacyCategories.querySelector('.category[name="extension"]');
+            if (legacyCategories && legacyExtensionButton) {
+                this.injectLegacyCategory(doc, legacyCategories, legacyExtensionButton);
+                return;
+            }
+
+            const categoriesBox = doc.querySelector("categories-box");
+            if (!categoriesBox) {
+                if (attempt < 10) {
+                    this.scheduleCategoryRefresh(
+                        doc,
+                        "categories-box.pending",
+                        attempt < 3 ? 60 : 120,
+                        attempt + 1
+                    );
+                    return;
+                }
+                debugLog("injectCategory(): unsupported category structure", {
+                    href: String(doc.URL || ""),
+                });
+                return;
+            }
+
+            this.ensureCategoryObserver(doc, categoriesBox);
+            const pageNav = categoriesBox.querySelector("moz-page-nav");
+            const win = doc.defaultView;
+            const registry = win && win.customElements;
+            if (!pageNav) {
+                if (attempt < 10) {
+                    this.scheduleCategoryRefresh(
+                        doc,
+                        "moz-page-nav.pending",
+                        attempt < 3 ? 60 : 120,
+                        attempt + 1
+                    );
+                } else {
+                    debugLog("injectCategory(): moz-page-nav unavailable", {
+                        href: String(doc.URL || ""),
+                    });
+                }
+                return;
+            }
+            if (!registry || !registry.get("moz-page-nav-button")) {
+                this.ensureModernCategoryReady(doc, registry);
+                return;
+            }
+
+            this.ensureCategoryViewListener(doc);
+            this.injectModernCategory(doc, pageNav);
+            this.syncModernCategorySelection(doc);
+            this.syncTampermonkeyCategory(doc, "injectCategory.modern");
+            this.syncStylusCategory(doc, "injectCategory.modern");
+        },
+
+        injectLegacyCategory (doc, cat, extensionBtn) {
+            // Fx76 about:addonsのサイドバーhtml化でカテゴリーが自動で挿入されなくなった対策
             if (!doc.querySelector('.category[name="userchromejs"]')) {
                 // 拡張ボタンを複製して作る
                 const ucjsBtn = extensionBtn.cloneNode(false);
@@ -1011,6 +1230,183 @@
             }
             this.syncTampermonkeyCategory(doc, "injectCategory");
             this.syncStylusCategory(doc, "injectCategory");
+        },
+
+        injectModernCategory (doc, pageNav) {
+            const categories = [
+                {
+                    name: "userchromejs",
+                    viewId: "addons://list/userchromejs",
+                    title: "userChrome JS",
+                    hidden: false,
+                },
+                {
+                    name: "tampermonkey",
+                    viewId: TAMPERMONKEY_VIEW_ID,
+                    title: "Tampermonkey",
+                    hidden: true,
+                },
+                {
+                    name: "stylus",
+                    viewId: STYLUS_VIEW_ID,
+                    title: "Stylus",
+                    hidden: true,
+                },
+            ];
+
+            for (const category of categories) {
+                if (this.getCategoryButton(doc, category.name)) {
+                    continue;
+                }
+
+                const button = doc.createElement("moz-page-nav-button");
+                button.setAttribute(MODERN_CATEGORY_ATTRIBUTE, category.name);
+                button.setAttribute(MODERN_CATEGORY_VIEW_ATTRIBUTE, category.viewId);
+                button.setAttribute("view", category.name);
+                button.setAttribute("iconsrc", "chrome://mozapps/skin/extensions/category-extensions.svg");
+                button.setAttribute("title", category.title);
+                button.hidden = category.hidden;
+                button.appendChild(doc.createTextNode(category.title));
+                button.addEventListener("change-view", event => {
+                    event.stopPropagation();
+                    pageNav.currentView = category.name;
+                    const result = this.loadAddonsView(doc, category.viewId);
+                    if (result && typeof result.catch === "function") {
+                        result.catch(error => {
+                            debugWarn("injectModernCategory(): loadView failed", {
+                                viewId: category.viewId,
+                                error,
+                            });
+                        });
+                    }
+                });
+
+                const referenceNode = pageNav.querySelector("#category-locale") ||
+                    pageNav.querySelector('[slot="secondary-nav"]');
+                pageNav.insertBefore(button, referenceNode || null);
+            }
+        },
+
+        ensureModernCategoryReady (doc, registry) {
+            if (!doc || !registry || typeof registry.whenDefined !== "function" ||
+                doc[CATEGORY_READY_PROMISE_KEY]) {
+                return;
+            }
+
+            doc[CATEGORY_READY_PROMISE_KEY] = registry.whenDefined("moz-page-nav-button").then(() => {
+                delete doc[CATEGORY_READY_PROMISE_KEY];
+                if (this.addonsDocuments.has(doc)) {
+                    this.scheduleCategoryRefresh(doc, "moz-page-nav-button.defined");
+                }
+            }).catch(error => {
+                delete doc[CATEGORY_READY_PROMISE_KEY];
+                debugWarn("ensureModernCategoryReady(): whenDefined failed", error);
+            });
+        },
+
+        ensureCategoryObserver (doc, categoriesBox) {
+            if (!doc || !categoriesBox || typeof MutationObserver !== "function") {
+                return;
+            }
+
+            const current = doc[CATEGORY_OBSERVER_KEY];
+            if (current && current.root === categoriesBox) {
+                return;
+            }
+            if (current) {
+                current.observer.disconnect();
+            }
+
+            const observer = new MutationObserver(() => {
+                this.scheduleCategoryRefresh(doc, "categories-box.mutation");
+            });
+            observer.observe(categoriesBox, {
+                subtree: true,
+                childList: true,
+            });
+            doc[CATEGORY_OBSERVER_KEY] = {
+                observer,
+                root: categoriesBox,
+            };
+        },
+
+        scheduleCategoryRefresh (doc, reason = "unknown", delay = 0, attempt = 0) {
+            if (!doc || !doc.defaultView || doc[CATEGORY_REFRESH_TIMER_KEY]) {
+                return;
+            }
+
+            doc[CATEGORY_REFRESH_TIMER_KEY] = doc.defaultView.setTimeout(() => {
+                doc[CATEGORY_REFRESH_TIMER_KEY] = 0;
+                this.injectCategory(doc, attempt);
+                debugLog("scheduleCategoryRefresh(): completed", {
+                    reason,
+                    href: String(doc.URL || ""),
+                });
+            }, delay);
+        },
+
+        ensureCategoryViewListener (doc) {
+            if (!doc || doc[CATEGORY_VIEW_LISTENER_KEY]) {
+                return;
+            }
+
+            const listener = () => {
+                this.syncModernCategorySelection(doc);
+            };
+            doc.addEventListener("view-selected", listener);
+            doc[CATEGORY_VIEW_LISTENER_KEY] = listener;
+        },
+
+        syncModernCategorySelection (doc) {
+            if (!doc || !doc.defaultView) {
+                return;
+            }
+
+            const pageNav = doc.querySelector("categories-box moz-page-nav");
+            const viewController = doc.defaultView.gViewController;
+            if (!pageNav || !viewController) {
+                return;
+            }
+
+            const currentViewId = viewController.currentViewId;
+            const button = Array.from(
+                pageNav.querySelectorAll(`[${MODERN_CATEGORY_VIEW_ATTRIBUTE}]`)
+            ).find(candidate =>
+                candidate.getAttribute(MODERN_CATEGORY_VIEW_ATTRIBUTE) === currentViewId
+            );
+            if (button) {
+                pageNav.currentView = button.getAttribute("view");
+            }
+        },
+
+        disconnectCategoryObserver (doc) {
+            if (!doc) {
+                return;
+            }
+
+            if (doc[CATEGORY_REFRESH_TIMER_KEY] && doc.defaultView) {
+                doc.defaultView.clearTimeout(doc[CATEGORY_REFRESH_TIMER_KEY]);
+            }
+            delete doc[CATEGORY_REFRESH_TIMER_KEY];
+
+            const current = doc[CATEGORY_OBSERVER_KEY];
+            if (current) {
+                try {
+                    current.observer.disconnect();
+                } catch (e) { }
+                delete doc[CATEGORY_OBSERVER_KEY];
+            }
+
+            const listener = doc[CATEGORY_VIEW_LISTENER_KEY];
+            if (listener) {
+                doc.removeEventListener("view-selected", listener);
+                delete doc[CATEGORY_VIEW_LISTENER_KEY];
+            }
+            delete doc[CATEGORY_READY_PROMISE_KEY];
+
+            doc.querySelectorAll(`[${MODERN_CATEGORY_ATTRIBUTE}]`).forEach(node => {
+                node.remove();
+            });
         },
 
         getTargetAddon (target) {
@@ -2203,7 +2599,7 @@
             node = doc.createTextNode(attrs);
             attrs = null;
         } else if (tag === "panel-item" && parseInt(APP_VERSION) === 110) {
-            const docWin = doc.documentGlobal || doc.ownerGlobal || doc.defaultView;
+            const docWin = doc.documentGlobal || doc.relevantGlobal || doc.defaultView || window;
             node = new (docWin.customElements.get("panel-item"));
         } else {
             node = doc.createElement(tag);
