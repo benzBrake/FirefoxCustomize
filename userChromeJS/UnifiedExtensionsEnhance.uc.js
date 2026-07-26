@@ -3,10 +3,12 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.3.3
+// @version         0.3.5
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            2026-07-26 0.3.5 支持 install.rdf 的 optionsWidth、optionsHeight 属性和 Loader 命名空间选项元数据
+// @note            2026-07-26 0.3.4 支持 install.rdf 的 optionsResizable 属性，按扩展启用选项窗口缩放
 // @note            0.3.3 统一脚本文件名与元数据大小写
 // @note            0.3.2 兼容 Firefox 151+ 面板菜单样式变量改名，保留旧变量 fallback， Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            0.3.1 关闭拖拽调试日志，完善拖拽结束兜底排序
@@ -879,7 +881,19 @@
                             return;
                         }
                     }
-                    win.openDialog(addon.optionsURL, addon.id, 'chrome,titlebar,toolbar,centerscreen');
+                    var features = 'chrome,titlebar,toolbar,centerscreen';
+                    var startupData = addon.__AddonInternal__.startupData;
+                    var optionsDialog = startupData?.userChromeJSLoader?.optionsDialog;
+                    for (var dimension of ['width', 'height']) {
+                        var value = optionsDialog?.[dimension];
+                        if (Number.isInteger(value) && value >= 100 && value <= 10000) {
+                            features += `,${dimension}=${value}`;
+                        }
+                    }
+                    if (optionsDialog?.resizable === true) {
+                        features += ',resizable';
+                    }
+                    win.openDialog(addon.optionsURL, addon.id, features);
             }
         },
         destroy: function () {
