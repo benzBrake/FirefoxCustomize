@@ -9,6 +9,7 @@
 // @startup         UC.privateTab.exec(win);
 // @shutdown        UC.privateTab.destroy();
 // @onlyonce
+// @note           2026-07-31 归档：不再更新
 // ==/UserScript==
 
 const {

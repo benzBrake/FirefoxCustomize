@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Private Tabs
-// @version        1.5.0
+// @version        1.3.0
 // @author         aminomancer
 // @homepage       https://github.com/aminomancer
 // @description    An fx-autoconfig port of [Private Tab](https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js) by xiaoxiaoflood. Adds buttons and menu items allowing you to open a "private tab" in nearly any circumstance in which you'd be able to open a normal tab. Instead of opening a link in a private window, you can open it in a private tab instead. This will use a special container and prevent history storage, depending on user configuration. You can also toggle tabs back and forth between private and normal mode. This script adds two hotkeys: Ctrl+Alt+P to open a new private tab, and Ctrl+Alt+T to toggle private mode for the active tab. These hotkeys can be configured along with several other options at the top of the script file.
@@ -11,10 +11,7 @@
 // @include        chrome://browser/content/places/bookmarksSidebar.xhtml
 // @include        chrome://browser/content/places/historySidebar.xhtml
 // @include        chrome://browser/content/places/places.xhtml
-// @note           2026-07-31 1.4.2 Use the public SessionStore.sys.mjs API for Firefox 153 and Firefox 152+ window-global fallbacks
-// @note           2026-07-31 1.4.3 Replace the CSP-blocked PlacesUIUtils eval patch with a scoped loadTabs wrapper
-// @note           2026-07-31 1.4.4 Anchor the toolbar context menu to the clicked button instead of the event-listener object
-// @note           2026-07-31 1.5.0 Add embedded Chinese and English UI text and locale-specific default container names
+// @note           2026-07-31 归档：新版本升级至 v1.5.0（内嵌中英文、UC_API、SessionStore.duplicateTab）
 // ==/UserScript==
 
 class PrivateTabManager {
@@ -59,54 +56,49 @@ class PrivateTabManager {
   openTabs = new Set();
   BTN_ID = "privateTab-button";
   BTN2_ID = "newPrivateTab-button";
-  messages = {
-    "en-US": {
-      containerName: "Private",
-      newPrivateTab: "New Private Tab",
-      newPrivateTabTooltip: "Open a new private tab ({shortcut})",
-      openAllInPrivateTabs: "Open All in Private Tabs",
-      openInNewPrivateTab: "Open in New Private Tab",
-      openLinkInNewPrivateTab: "Open Link in New Private Tab",
-      privateTab: "Private Tab",
-      accessKey: "v",
-    },
-    "zh-CN": {
-      containerName: "隐私",
-      newPrivateTab: "新建隐私标签页",
-      newPrivateTabTooltip: "打开新的隐私标签页（{shortcut}）",
-      openAllInPrivateTabs: "全部在隐私标签页中打开",
-      openInNewPrivateTab: "在新隐私标签页中打开",
-      openLinkInNewPrivateTab: "在新隐私标签页中打开链接",
-      privateTab: "隐私标签页",
-      accessKey: "隐",
-    },
-  };
-  locale = (Services.locale.appLocaleAsBCP47 || "en-US")
-    .toLowerCase()
-    .startsWith("zh")
-    ? "zh-CN"
-    : "en-US";
-  l10n = this.messages[this.locale];
-
-  formatMessage(key, replacements = {}) {
-    return this.l10n[key].replace(/\{(\w+)\}/g, (placeholder, name) =>
-      Object.hasOwn(replacements, name) ? replacements[name] : placeholder
-    );
-  }
-
   constructor() {
+    // 多语言处理
+    if (typeof userChrome_js === "object" && "L10nRegistry" in userChrome_js) {
+      this.l10nIds = ["open-all-private", "open-all-links-in-private", "open-private", "new-private-tab", "open-in-private-tab", "open-link-in-new-private-tab", "private-tab", "private-container-name"];
+      let l10n = (new DOMLocalization(["privateTab.ftl"], false, userChrome_js.L10nRegistry, Services.locale.appLocalesAsBCP47)).formatValues(this.l10nIds), isCompleted = false, lang = [];
+      l10n.then(l => {
+        lang = l;
+        isCompleted = true;
+      });
+      var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+      while (!isCompleted) {
+        thread.processNextEvent(true);
+      }
+      this.l10n = lang;
+    } else {
+      this.l10n = ["Private"];
+    }
+    this.PRIVATE_PROFILE_NAME = this.l10n.pop();
     this.setupPrefs();
+    if (!_ucUtils.sharedGlobal.privateTabGlobal) {
+      _ucUtils.sharedGlobal.privateTabGlobal = {};
+    }
+    // the internal duplicateTab method doesn't pass the skipAnimation parameter
+    // to addTrustedTab. so we need to make our own function, which requires us
+    // to access some private objects.
+    // eslint-disable-next-line mozilla/use-chromeutils-import
+    let { SessionStoreInternal, TAB_CUSTOM_VALUES } = Cu.import(
+      "resource:///modules/sessionstore/SessionStore.jsm"
+    );
+    this.SSI = SessionStoreInternal;
+    this.TAB_CUSTOM_VALUES = TAB_CUSTOM_VALUES;
     ChromeUtils.defineESModuleGetters(this, {
-      SessionStore:
-        "resource:///modules/sessionstore/SessionStore.sys.mjs",
       Management: "resource://gre/modules/Extension.sys.mjs",
+      TabState: "resource:///modules/sessionstore/TabState.sys.mjs",
+      TabStateFlusher:
+        "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
       ContextualIdentityService:
         "resource://gre/modules/ContextualIdentityService.sys.mjs",
     });
     this.sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(
       Ci.nsIStyleSheetService
     );
-    let iconsSheet = UC_API.FileSystem.chromeDir().entry();
+    let iconsSheet = _ucUtils.fs.chromeDir().entry();
     iconsSheet.append("uc-context-menu-icons.css");
     this.menuClass = iconsSheet.exists()
       ? `menuitem-iconic privatetab-icon`
@@ -132,61 +124,49 @@ class PrivateTabManager {
     }
   }
 
-  async exec() {
+  exec() {
+    let { privateTabGlobal } = _ucUtils.sharedGlobal;
     if (PrivateBrowsingUtils.isWindowPrivate(window)) return;
     let openAll = document.getElementById(
       "placesContext_openBookmarkContainer:tabs"
     );
-    let openAllPrivate = UC_API.Utils.createElement(document, "menuitem", {
+    let openAllPrivate = _ucUtils.createElement(document, "menuitem", {
       id: "openAllPrivate",
-      label: this.l10n.openAllInPrivateTabs,
-      accesskey: this.l10n.accessKey,
-      "selection-type": "single|none",
-      "node-type": "folder|query_tag",
+      label: "Open All in Private Tabs",
+      'data-l10n-id': 'open-all-private',
+      accesskey: "v",
       class: this.menuClass,
+      oncommand: `event.userContextId = ${this.container.userContextId
+        }; ${openAll.getAttribute("oncommand")}`,
+      onclick: `event.userContextId = ${this.container.userContextId
+        }; ${openAll.getAttribute("onclick")}`,
     });
     openAll.after(openAllPrivate);
-    openAllPrivate.addEventListener("command", e => {
-      e.userContextId = this.container.userContextId;
-      PlacesUIUtils.openSelectionInTabs(e);
-    });
 
     let openAllLinks = document.getElementById("placesContext_openLinks:tabs");
-    let openAllLinksPrivate = UC_API.Utils.createElement(document, "menuitem", {
+    let openAllLinksPrivate = _ucUtils.createElement(document, "menuitem", {
       id: "openAllLinksPrivate",
-      label: this.l10n.openAllInPrivateTabs,
-      accesskey: this.l10n.accessKey,
+      label: "Open All in Private Tabs",
+      'data-l10n-id': 'open-all-link',
+      accesskey: "v",
       class: this.menuClass,
-      "selection-type": "multiple",
-      "node-type": "link",
-      "hide-if-node-type": "link_bookmark",
+      oncommand: `event.userContextId = ${this.container.userContextId
+        }; ${openAllLinks.getAttribute("oncommand")}`,
+      onclick: `event.userContextId = ${this.container.userContextId
+        }; ${openAllLinks.getAttribute("onclick")}`,
     });
     openAllLinks.after(openAllLinksPrivate);
-    openAllLinksPrivate.addEventListener("command", e => {
-      e.userContextId = this.container.userContextId;
-      PlacesUIUtils.openSelectionInTabs(e);
-    });
 
     let openTab = document.getElementById("placesContext_open:newtab");
-    let openPrivate = UC_API.Utils.createElement(document, "menuitem", {
+    let openPrivate = _ucUtils.createElement(document, "menuitem", {
       id: "openPrivate",
-      label: this.l10n.openInNewPrivateTab,
-      accesskey: this.l10n.accessKey,
+      label: "Open in a New Private Tab",
+      'data-l10n-id': 'open-private',
+      accesskey: "v",
       class: this.menuClass,
-      "selection-type": "single",
-      "node-type": "link",
+      oncommand: `let view = event.target.parentElement._view; PlacesUIUtils._openNodeIn(view.selectedNode, "tab", view.ownerWindow, false, ${this.container.userContextId})`,
     });
     openTab.after(openPrivate);
-    openPrivate.addEventListener("command", e => {
-      let view = e.target.parentElement._view;
-      PlacesUIUtils._openNodeIn(
-        view.selectedNode,
-        "tab",
-        view.ownerWindow,
-        false,
-        this.container.userContextId
-      );
-    });
 
     document
       .getElementById("placesContext")
@@ -194,60 +174,46 @@ class PrivateTabManager {
 
     if (location.href !== "chrome://browser/content/browser.xhtml") return;
 
-    await UC_API.Hotkeys.define({
+    let keyset = _ucUtils.createElement(document, "keyset", {
+      id: "privateTab-keyset",
+    });
+    document.getElementById("mainKeyset").after(keyset);
+
+    let toggleKey = _ucUtils.createElement(document, "key", {
+      id: "togglePrivateTab-key",
       modifiers: this.config.toggleModifiers,
       key: this.config.toggleHotkey,
-      id: "togglePrivateTab-key",
-      command: win => {
-        if (win === window) {
-          win.privateTab.togglePrivate();
-        }
-      },
-    }).attachToWindow(window, { suppressOriginalKey: true });
+      oncommand: "privateTab.togglePrivate()",
+    });
+    keyset.appendChild(toggleKey);
 
-    await UC_API.Hotkeys.define({
+    let newPrivateTabKey = _ucUtils.createElement(document, "key", {
+      id: "newPrivateTab-key",
       modifiers: this.config.newTabModifiers,
       key: this.config.newTabHotkey,
-      id: "newPrivateTab-key",
-      command: win => {
-        if (win === window) {
-          win.privateTab.BrowserOpenTabPrivate();
-        }
-      },
-    }).attachToWindow(window, { suppressOriginalKey: true });
+      oncommand: "privateTab.BrowserOpenTabPrivate()",
+    });
+    keyset.appendChild(newPrivateTabKey);
 
-    let toggleKey = document.getElementById("togglePrivateTab-key");
-    let newPrivateTabKey = document.getElementById("newPrivateTab-key");
-
-    let menuOpenLink = UC_API.Utils.createElement(document, "menuitem", {
+    let menuOpenLink = _ucUtils.createElement(document, "menuitem", {
       id: "menu_newPrivateTab",
-      label: this.l10n.newPrivateTab,
-      accesskey: this.l10n.accessKey,
+      label: "New Private Tab",
+      'data-l10n-id': 'new-private-tab',
+      accesskey: "v",
       acceltext: ShortcutUtils.prettifyShortcut(newPrivateTabKey),
       class: this.menuClass,
+      oncommand: "privateTab.BrowserOpenTabPrivate()",
     });
     document.getElementById("menu_newNavigatorTab").after(menuOpenLink);
-    menuOpenLink.addEventListener("command", e =>
-      this.getWindowForNode(e.target).privateTab.BrowserOpenTabPrivate()
-    );
 
-    let openLink = UC_API.Utils.createElement(document, "menuitem", {
+    let openLink = _ucUtils.createElement(document, "menuitem", {
       id: "openLinkInPrivateTab",
-      label: this.l10n.openLinkInNewPrivateTab,
-      accesskey: this.l10n.accessKey,
+      label: "Open Link in New Private Tab",
+      'data-l10n-id': 'open-link-in-new-private-tab',
+      accesskey: "v",
       class: this.menuClass,
       hidden: true,
-    });
-    openLink.addEventListener("command", e => {
-      let win = this.getWindowForNode(e.target);
-      win.openLinkIn(
-        win.gContextMenu.linkURL,
-        "tab",
-        win.gContextMenu._openLinkInParameters({
-          userContextId: win.privateTab.container.userContextId,
-          triggeringPrincipal: e.target.ownerDocument.nodePrincipal,
-        })
-      );
+      oncommand: `openLinkIn(gContextMenu.linkURL, "tab", gContextMenu._openLinkInParameters({ userContextId: privateTab.container.userContextId, triggeringPrincipal: document.nodePrincipal, }));`,
     });
 
     document
@@ -258,34 +224,32 @@ class PrivateTabManager {
       .addEventListener("popuphidden", this);
     document.getElementById("context-openlinkintab").after(openLink);
 
-    let toggleTab = UC_API.Utils.createElement(document, "menuitem", {
+    let toggleTab = _ucUtils.createElement(document, "menuitem", {
       id: "toggleTabPrivateState",
-      label: this.l10n.privateTab,
+      label: "Private Tab",
+      'data-l10n-id': 'private-tab',
       type: "checkbox",
-      accesskey: this.l10n.accessKey,
+      accesskey: "v",
       acceltext: ShortcutUtils.prettifyShortcut(toggleKey),
+      oncommand: "privateTab.togglePrivate(TabContextMenu.contextTab)",
     });
     document.getElementById("context_pinTab").after(toggleTab);
-    toggleTab.addEventListener("command", e => {
-      let win = this.getWindowForNode(e.target);
-      win.privateTab.togglePrivate(win.TabContextMenu.contextTab);
-    });
-
     document
       .getElementById("tabContextMenu")
       .addEventListener("popupshowing", this);
 
-    let privateMask = document.querySelector(
-      ".private-browsing-indicator-with-label"
+    let privateMask = document.getElementById(
+      "private-browsing-indicator-with-label"
     );
     privateMask.classList.add("private-mask");
 
-    let btn2 = UC_API.Utils.createElement(document, "toolbarbutton", {
+    let btn2 = _ucUtils.createElement(document, "toolbarbutton", {
       id: this.BTN2_ID,
-      label: this.l10n.newPrivateTab,
-      tooltiptext: this.formatMessage("newPrivateTabTooltip", {
-        shortcut: ShortcutUtils.prettifyShortcut(newPrivateTabKey),
-      }),
+      label: "New Private Tab",
+      'data-l10n-id': 'new-private-tab',
+      tooltiptext: `Open a new private tab (${ShortcutUtils.prettifyShortcut(
+        newPrivateTabKey
+      )})`,
       class: "toolbarbutton-1 chromeclass-toolbar-additional",
     });
 
@@ -368,45 +332,53 @@ class PrivateTabManager {
         }
       };
     gBrowser.tabContainer._updateNewTabVisibility();
-    if (!Services.ppmm.sharedData.get("uc_privateTabs")) {
+    if (!privateTabGlobal.privateTabsInited) {
       CustomizableUI.createWidget({
         id: this.BTN_ID,
         type: "custom",
         defaultArea: CustomizableUI.AREA_NAVBAR,
         showInPrivateBrowsing: false,
         onBuild: doc => {
-          let btn = UC_API.Utils.createElement(doc, "toolbarbutton", {
+          let btn = _ucUtils.createElement(doc, "toolbarbutton", {
             id: this.BTN_ID,
-            label: this.l10n.newPrivateTab,
-            tooltiptext: this.formatMessage("newPrivateTabTooltip", {
-              shortcut: ShortcutUtils.prettifyShortcut(newPrivateTabKey),
-            }),
+            label: "New Private Tab",
+            tooltiptext: `Open a new private tab (${ShortcutUtils.prettifyShortcut(
+              newPrivateTabKey
+            )})`,
             class: "toolbarbutton-1 chromeclass-toolbar-additional",
+            oncommand: "privateTab.BrowserOpenTabPrivate()",
           });
-          btn.addEventListener("command", e =>
-            this.getWindowForNode(e.target).privateTab.BrowserOpenTabPrivate()
-          );
 
           return btn;
         },
       });
-      Services.ppmm.sharedData.set("uc_privateTabs", true);
     }
+
+    if (this.l10nIds && this.l10n) {
+      this.l10nIds.forEach((id, i) => {
+        let el = document.querySelector(`[data-l10n-id="${id}"]`);
+        if (el) {
+          let text = this.l10n[i];
+          if (text) {
+            el.setAttribute('label', text);
+          }
+        }
+      })
+    }
+
+    privateTabGlobal.privateTabsInited = true;
   }
 
   init() {
+    let { privateTabGlobal } = _ucUtils.sharedGlobal;
     this.ContextualIdentityService.ensureDataReady();
     this.container = this.ContextualIdentityService._identities.find(
-      container => container.name == this.l10n.containerName
+      container => container.name == this.PRIVATE_PROFILE_NAME
     );
     if (!this.container) {
-      this.ContextualIdentityService.create(
-        this.l10n.containerName,
-        "fingerprint",
-        "purple"
-      );
+      this.ContextualIdentityService.create(this.PRIVATE_PROFILE_NAME, "fingerprint", "purple");
       this.container = this.ContextualIdentityService._identities.find(
-        container => container.name == this.l10n.containerName
+        container => container.name == this.PRIVATE_PROFILE_NAME
       );
     } else if (!this.config.neverClearData) {
       this.clearData();
@@ -415,7 +387,7 @@ class PrivateTabManager {
     let style = {
       url: Services.io.newURI(
         `data:text/css;charset=UTF-8,${encodeURIComponent(
-          `.privatetab-icon, #${this.BTN_ID}, #${this.BTN2_ID} { list-style-image: url(chrome://browser/skin/privateBrowsing.svg) !important; fill: currentColor; -moz-context-properties: fill; } @-moz-document url('chrome://browser/content/browser.xhtml') { .private-mask[enabled="true"] { display: flex !important; } .private-mask:not([enabled="true"]) { display: none !important; } #tabbrowser-tabs[hasadjacentnewprivatetabbutton]:not([overflow]) ~ #${this.BTN_ID}, #tabbrowser-tabs[overflow] > #tabbrowser-arrowscrollbox > #tabbrowser-arrowscrollbox-periphery > #${this.BTN2_ID}, #tabbrowser-tabs:not([hasadjacentnewprivatetabbutton]) > #tabbrowser-arrowscrollbox > #tabbrowser-arrowscrollbox-periphery > #${this.BTN2_ID}, #TabsToolbar[customizing="true"] #${this.BTN2_ID} { display: none; } .tabbrowser-tab[usercontextid="${this.container.userContextId}"] .tab-label { text-decoration: underline !important; text-decoration-color: -moz-nativehyperlinktext !important; text-decoration-style: dashed !important; } .tabbrowser-tab[usercontextid="${this.container.userContextId}"][pinned] .tab-icon-image, .tabbrowser-tab[usercontextid="${this.container.userContextId}"][pinned] .tab-throbber { border-bottom: 1px dashed -moz-nativehyperlinktext !important; }}`
+          `.privatetab-icon, #${this.BTN_ID}, #${this.BTN2_ID} { list-style-image: url(chrome://browser/skin/privateBrowsing.svg) !important; fill: currentColor; -moz-context-properties: fill; } @-moz-document url('chrome://browser/content/browser.xhtml') { .private-mask[enabled="true"] { display: flex !important; } .private-mask:not([enabled="true"]) { display: none !important; } #tabbrowser-tabs[hasadjacentnewprivatetabbutton]:not([overflow="true"]) ~ #${this.BTN_ID}, #tabbrowser-tabs[overflow="true"] > #tabbrowser-arrowscrollbox > #tabbrowser-arrowscrollbox-periphery > #${this.BTN2_ID}, #tabbrowser-tabs:not([hasadjacentnewprivatetabbutton]) > #tabbrowser-arrowscrollbox > #tabbrowser-arrowscrollbox-periphery > #${this.BTN2_ID}, #TabsToolbar[customizing="true"] #${this.BTN2_ID} { display: none; } .tabbrowser-tab[usercontextid="${this.container.userContextId}"] .tab-label { text-decoration: underline !important; text-decoration-color: -moz-nativehyperlinktext !important; text-decoration-style: dashed !important; } .tabbrowser-tab[usercontextid="${this.container.userContextId}"][pinned] .tab-icon-image, .tabbrowser-tab[usercontextid="${this.container.userContextId}"][pinned] .tab-throbber { border-bottom: 1px dashed -moz-nativehyperlinktext !important; }}`
         )}`
       ),
       type: this.sss.USER_SHEET,
@@ -426,56 +398,32 @@ class PrivateTabManager {
 
     CustomizableUI.addListener(this);
 
-    if (!Services.ppmm.sharedData.get("uc_privateTabs")) {
+    if (!privateTabGlobal.privateTabsInited) {
       const lazy = {};
       ChromeUtils.defineESModuleGetters(lazy, {
         BrowserWindowTracker:
           "resource:///modules/BrowserWindowTracker.sys.mjs",
+        PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+        PrivateBrowsingUtils:
+          "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
       });
       function getBrowserWindow(aWindow) {
         // Prefer the caller window if it's a browser window, otherwise use
         // the top browser window.
         return aWindow &&
           aWindow.document.documentElement.getAttribute("windowtype") ==
-            "navigator:browser"
+          "navigator:browser"
           ? aWindow
           : lazy.BrowserWindowTracker.getTopWindow();
       }
-      const originalOpenTabset = PlacesUIUtils.openTabset;
-      PlacesUIUtils.openTabset = function (items, event, sourceWindow) {
-        const userContextId = event?.userContextId;
-        const browserWindow = getBrowserWindow(sourceWindow);
-        const tabBrowser = browserWindow?.gBrowser;
-        if (!userContextId || !tabBrowser) {
-          return originalOpenTabset.call(this, items, event, sourceWindow);
-        }
-
-        const originalLoadTabs = tabBrowser.loadTabs;
-        const loadTabsDescriptor = Object.getOwnPropertyDescriptor(
-          tabBrowser,
-          "loadTabs"
-        );
-        Object.defineProperty(tabBrowser, "loadTabs", {
-          configurable: true,
-          writable: true,
-          value(urls, options = {}) {
-            return originalLoadTabs.call(this, urls, {
-              ...options,
-              userContextId,
-            });
-          },
-        });
-
-        try {
-          return originalOpenTabset.call(this, items, event, sourceWindow);
-        } finally {
-          if (loadTabsDescriptor) {
-            Object.defineProperty(tabBrowser, "loadTabs", loadTabsDescriptor);
-          } else {
-            delete tabBrowser.loadTabs;
-          }
-        }
-      };
+      let openTabsetString = PlacesUIUtils.openTabset.toString();
+      eval(
+        `PlacesUIUtils.openTabset = ${openTabsetString.startsWith("function") ? "" : "function "
+        }${openTabsetString.replace(
+          /(\s+)(inBackground: loadInBackground,)/,
+          "$1$2$1userContextId: aEvent.userContextId || 0,"
+        )}`
+      );
     }
 
     const { WebExtensionPolicy } = Cu.getGlobalForObject(Services);
@@ -517,23 +465,70 @@ class PrivateTabManager {
   }
 
   duplicateTab(tab, { index, inBackground }) {
-    // SessionStore owns the custom-value map and current restore pipeline.
-    return this.SessionStore.duplicateTab(
-      this.getWindowForNode(tab),
-      tab,
-      0,
-      true,
-      { inBackground, tabIndex: index }
-    );
-  }
+    // Create a new tab.
+    let userContextId = tab.getAttribute("usercontextid");
 
-  getWindowForNode(node) {
-    return (
-      node?.documentGlobal ||
-      node?.relevantGlobal ||
-      node?.ownerDocument?.defaultView ||
-      window
-    );
+    let tabOptions = {
+      userContextId,
+      index,
+      skipAnimation: true,
+      ...(tab == gBrowser.selectedTab
+        ? { relatedToCurrent: true, ownerTab: tab }
+        : {}),
+      skipLoad: true,
+      preferredRemoteType: tab.linkedBrowser.remoteType,
+    };
+    let newTab = gBrowser.addTrustedTab(null, tabOptions);
+
+    // Start the throbber to pretend we're doing something while actually
+    // waiting for data from the frame script. This throbber is disabled
+    // if the URI is a local about: URI.
+    let uriObj = tab.linkedBrowser.currentURI;
+    if (!uriObj || (uriObj && !uriObj.schemeIs("about"))) {
+      newTab.setAttribute("busy", "true");
+    }
+
+    // Hack to ensure that the about:home, about:newtab, and about:welcome
+    // favicon is loaded instantaneously, to avoid flickering and improve
+    // perceived performance.
+    gBrowser.setDefaultIcon(newTab, uriObj);
+
+    // Collect state before flushing.
+    let tabState = this.TabState.collect(tab, this.TAB_CUSTOM_VALUES.get(tab));
+
+    // Flush to get the latest tab state to duplicate.
+    let browser = tab.linkedBrowser;
+    this.TabStateFlusher.flush(browser).then(() => {
+      // The new tab might have been closed in the meantime.
+      if (newTab.closing || !newTab.linkedBrowser) return;
+
+      let window = newTab.ownerGlobal;
+
+      // The tab or its window might be gone.
+      if (!window || !window.__SSi) return;
+
+      // Update state with flushed data. We can't use TabState.clone() here as
+      // the tab to duplicate may have already been closed. In that case we only
+      // have access to the <xul:browser>.
+      let options = { includePrivateData: true };
+      this.TabState.copyFromCache(browser.permanentKey, tabState, options);
+
+      tabState.index += 0;
+      tabState.index = Math.max(
+        1,
+        Math.min(tabState.index, tabState.entries.length)
+      );
+      tabState.pinned = false;
+
+      if (!inBackground) gBrowser.selectedTab = newTab;
+
+      // Restore the state into the new tab.
+      this.SSI.restoreTab(newTab, tabState, {
+        restoreImmediately: true,
+      });
+    });
+
+    return newTab;
   }
 
   togglePrivate(tab = gBrowser.selectedTab) {
@@ -548,8 +543,8 @@ class PrivateTabManager {
   }
 
   toggleMask() {
-    let privateMask = document.querySelector(
-      ".private-browsing-indicator-with-label"
+    let privateMask = document.getElementById(
+      "private-browsing-indicator-with-label"
     );
     if (gBrowser.selectedTab.isToggling) {
       privateMask.setAttribute(
@@ -656,7 +651,7 @@ class PrivateTabManager {
           document.popupNode = document.getElementById(this.BTN_ID);
           document
             .getElementById("toolbar-context-menu")
-            .openPopup(e.currentTarget, "after_start", 14, -10, false, false);
+            .openPopup(this, "after_start", 14, -10, false, false);
           document.getElementsByClassName(
             "customize-context-removeFromToolbar"
           )[0].disabled = false;
