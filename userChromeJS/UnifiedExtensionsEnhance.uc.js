@@ -8,6 +8,7 @@
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 // @note            2026-07-26 0.3.5 支持 install.rdf 的 optionsWidth、optionsHeight 属性和 Loader 命名空间选项元数据
+// @note            2026-08-01 修复旧式选项窗口触发扩展桥接函数克隆错误
 // @note            2026-07-26 0.3.4 支持 install.rdf 的 optionsResizable 属性，按扩展启用选项窗口缩放
 // @note            0.3.3 统一脚本文件名与元数据大小写
 // @note            0.3.2 兼容 Firefox 151+ 面板菜单样式变量改名，保留旧变量 fallback， Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
@@ -893,7 +894,13 @@
                     if (optionsDialog?.resizable === true) {
                         features += ',resizable';
                     }
-                    win.openDialog(addon.optionsURL, addon.id, features);
+                    Services.ww.openWindow(
+                        win,
+                        String(addon.optionsURL),
+                        String(addon.id),
+                        features,
+                        null
+                    );
             }
         },
         destroy: function () {
@@ -926,7 +933,7 @@
     }
 
     function $ (id, aDoc) {
-        return (aDoc || document).getElementById(id);
+        return id ? (aDoc || document).getElementById(id) : null;
     }
 
     function $Q (sel, aDoc) {
