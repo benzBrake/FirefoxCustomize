@@ -4,6 +4,29 @@
 
 Firefox 下超强自定义快捷键脚本。
 
+## AI 问配置
+
+不会写代码也能轻松配置快捷键！直接向 AI 描述你的需求，AI 会帮你生成对应的配置代码。
+
+### 使用步骤
+
+1. **打开任意 AI 对话工具**（如 ChatGPT、Claude、Kimi、通义千问等）
+2. **将脚本源码路径([https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/KeyChanger](https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/KeyChanger))以及 `_keychanger.js` 配置文件的内容发给 AI**，让它先了解当前配置
+3. **用自然语言描述你想要的快捷键**，例如：
+   - "我想按 F4 复制当前标签页"
+   - "我想按 Ctrl+Shift+A 关闭右侧所有标签页"
+   - "我想按 Alt+T 打开一个新的标签页并跳转到 Google"
+4. **AI 会生成对应的配置代码**，复制代码粘贴到 `_keychanger.js` 中即可
+5. **重新载入配置**
+
+### 对话示例
+
+以下是一个真实的 AI 对话截图，演示了如何通过自然语言描述来生成快捷键配置：
+
+![AI 问配置示例](ai_chat_demo.png)
+
+> **提示：** 如果生成的快捷键与已有配置冲突，AI 会提醒你更换组合键。
+
 默认配置文件为 `profiledir\chrome\_keychanger.js`，可以通过修改`keyChanger.FILE_PATH`来指定配置文件路径。
 
 ## 下载安装

@@ -2,6 +2,29 @@
 
 A powerful custom keyboard shortcut script for Firefox.
 
+## AI-Powered Configuration
+
+No coding skills needed! Simply describe your needs to an AI, and it will generate the corresponding configuration code for you.
+
+### How to Use
+
+1. **Open any AI chat tool** (e.g., ChatGPT, Claude, Kimi, Qwen, etc.)
+2. **Send the script's source code URL ([https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/KeyChanger](https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/KeyChanger)) and the contents of `_keychanger.js` to the AI**, so it can understand the current configuration
+3. **Describe your desired shortcuts in natural language**, for example:
+   - "I want to press F4 to duplicate the current tab"
+   - "I want to press Ctrl+Shift+A to close all tabs to the right"
+   - "I want to press Alt+T to open a new tab and go to Google"
+4. **The AI will generate the corresponding configuration code** — just copy and paste it into `_keychanger.js`
+5. **Reload the configuration**
+
+### Demo Screenshot
+
+Below is a real AI conversation screenshot demonstrating how to generate shortcut configurations through natural language:
+
+![AI configuration demo](ai_chat_demo.png)
+
+> **Tip:** If the generated shortcut conflicts with an existing one, the AI will remind you to choose a different key combination.
+
 The default configuration file is `profiledir\chrome\_keychanger.js`, and you can specify the configuration file path by modifying `keyChanger.FILE_PATH`.
 
 ## Download and Installation
