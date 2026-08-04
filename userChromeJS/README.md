@@ -145,4 +145,4 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 
 ## Views Counter
 
-<div align='center'><a href='https://www.websitecounterfree.com'><img src='https://www.websitecounterfree.com/c.php?d=9&id=56124&s=1' border='0' alt='Free Website Counter'></a><br / ><small><a href='https://www.websitecounterfree.com' title="Free Website Counter">Free Website Counter Since:2024.06.30</a></small></div>
+<div align=center><a href='https://www.counter12.com'><img src='https://www.counter12.com/img-Dx4y4YwWc3bWB66y-9.gif' border='0' alt='free counter'></a><script type='text/javascript' src='https://www.counter12.com/ad.js?id=Dx4y4YwWc3bWB66y'></script></div>
