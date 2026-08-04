@@ -8,15 +8,16 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r2
+// @version        0.1.6r3
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @reviewURL      https://blog.iplayloli.com/addmenuplus-of-userchrome-js-script-uc-js.html
-// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
+// @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           2026-08-04 0.1.6r3 修复新版菜单图标、布尔属性同步和通知接口兼容性，增强 frame-script 生命周期、右键目标、Favicon 及图片变量处理
 // @note           0.1.6r2 使用 @async 注解
 // @note           0.1.6r1 增强在SVG上右键检测的能力，Bug 1937080 Block inline event handlers in Nightly and collect telemetry，Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init, 修正标签页右键 URL 获取错误，修复 Favicon 获取，标签右键菜单支持 photoncompact，修复 Favicon 获取， 实现 executeInChrome，支持 onshowinglabel 属性，支持修改菜单属性
 // @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行），修复获取 Favicon 链接无效，Favicon 协议改用 page-icon
@@ -173,6 +174,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         delete window.addMenu;
     }
 
+    const messageManager = window.messageManager;
+    if (!messageManager || typeof messageManager.loadFrameScript !== "function") {
+        console.error("addMenuPlus.uc.js: messageManager/loadFrameScript is unavailable");
+        return;
+    }
+
     const ADDMENU_LANG = {
         'zh-CN': {
             'config example': '// 这是一个 addMenuPlus 配置文件\n' +
@@ -325,6 +332,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         init: function () {
             this.win = window;
+            this.messageManager = messageManager;
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -408,6 +416,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             PanelUI.mainView.addEventListener("ViewShowing", this);
 
             this.APP_LITENER_REMOVER = function () {
+                PanelUI.mainView.removeEventListener("ViewShowing", this.moveToAppMenu);
                 PanelUI.mainView.removeEventListener("ViewShowing", this);
             }
 
@@ -450,21 +459,24 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
 
             // 响应鼠标键释放事件（eg：获取选中文本）
-            (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
+            this.panelContainer = gBrowser.mPanelContainer || gBrowser.tabpanels;
+            this.panelContainer.addEventListener("mouseup", this, false);
 
             // 响应右键菜单显示事件
+            this.frameScriptId = "addMenuPlus-" + Date.now() + "-" +
+                Math.random().toString(36).slice(2);
             const addMenu_framescript = `
     ({
+        id: ${JSON.stringify(this.frameScriptId)},
+        destroyed: false,
         init() {
-            ChromeUtils.defineESModuleGetters(this, {
-                E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
-            });
             this.console = Cc["@mozilla.org/consoleservice;1"]
                 .getService(Ci.nsIConsoleService);
             addEventListener("mousedown", this, true);
             addEventListener("unload", this, false);
             addMessageListener("addMenu_getFavicon", this);
             addMessageListener("addMenu_executeInContent", this);
+            addMessageListener("addMenu_destroy", this);
         },
         executeInChrome(func, args) {
             let json = {
@@ -474,12 +486,21 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             sendAsyncMessage("addMenu_executeInChrome", json);
         },
         handleEvent(event) {
+            if (event.type == "unload") {
+                this.uninit();
+                return;
+            }
             if (event.type == "mousedown") {
                 if (event.button !== 2) return;
-                const target = event.target;
-                const svg = target.tagName.toLowerCase() !== "svg" ? target.closest("svg") : target;
-                const input = target.tagName.toLowerCase() === "input" ? target : null;
-                const textarea = target.tagName.toLowerCase() === "textarea" ? target : null;
+                const rawTarget = event.target;
+                const target = rawTarget && rawTarget.nodeType === 1
+                    ? rawTarget
+                    : rawTarget && (rawTarget.parentElement ||
+                        rawTarget.ownerDocument && rawTarget.ownerDocument.documentElement);
+                if (!target) return;
+                const svg = typeof target.closest === "function" ? target.closest("svg") : null;
+                const input = typeof target.closest === "function" ? target.closest("input") : null;
+                const textarea = typeof target.closest === "function" ? target.closest("textarea") : null;
                 const data = {
                     onSvg: !!svg,
                     svgHTML: svg ? svg.outerHTML : "",
@@ -498,27 +519,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             const document = window.document;
             switch (message.name) {
                 case "addMenu_getFavicon":
-                    if (!"head" in document) return;
+                    if (!document.head || !message.data || !message.data.hash) return;
                     let link = document.head.querySelector('[rel~="shortcut"],[rel="icon"]');
-                    let href = "";
-                    if (link) {
-                        href = processRelLink(link.getAttribute("href"));
-                    } else {
-                        href = document.location.protocol + "//" + document.location.host + "/" + "favicon.ico";
+                    let href = resolveFaviconHref(link &&
+                        (link.getAttribute("href") || link.href));
+                    const origin = document.location && document.location.origin;
+                    if (!href && origin && origin !== "null") {
+                        href = resolveFaviconHref(origin + "/favicon.ico");
                     }
-                    sendAsyncMessage("addMenu_faviconLink", { href: href, hash: message.data.hash });
-                    function processRelLink(href) {
-                        if (((href.startsWith("http") || href.startsWith("chrome") || href.startsWith("resource")) && href.indexOf("://")) || href.startsWith("data:")) {
-                            return href;
-                        } else if (href.startsWith("//")) {
-                            href = document.location.protocol + href;
-                        } else if (href.startsWith("./") || href.startsWith("/")) {
-                            href = document.location.protocol + "//" + document.location.host + "/" + href.replace(/^\\.?\\//g, "");
-                        } else {
-                            href = document.location.protocol + "//" + document.location.host + "/" + href;
-                        }
-                        return href;
-                    }
+                    if (href)
+                        sendAsyncMessage("addMenu_faviconLink", { href: href, hash: message.data.hash });
                     break;
                 case "addMenu_executeInContent":
                     try {
@@ -529,28 +539,50 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         this.console.log(e);
                     }
                     break;
+                case "addMenu_destroy":
+                    if (message.data && message.data.id === this.id)
+                        this.uninit();
+                    break;
+            }
+
+            function resolveFaviconHref(href) {
+                if (typeof href !== "string" || !href.trim()) return "";
+                try {
+                    const resolved = new URL(href.trim(), document.baseURI);
+                    const allowedSchemes = [
+                        "http:", "https:", "ftp:", "file:", "chrome:",
+                        "resource:", "data:", "blob:", "moz-extension:"
+                    ];
+                    return allowedSchemes.indexOf(resolved.protocol) >= 0
+                        ? resolved.href : "";
+                } catch (e) {
+                    return "";
+                }
             }
         },
         uninit() {
+            if (this.destroyed) return;
+            this.destroyed = true;
             removeEventListener("mousedown", this, true);
+            removeEventListener("unload", this, false);
             removeMessageListener("addMenu_getFavicon", this);
-            removeMessageListener("addMenu_executeInChrome", this);
+            removeMessageListener("addMenu_executeInContent", this);
+            removeMessageListener("addMenu_destroy", this);
         }
     }).init();
 `;
             // 使用 data URI 加载 frame script
-            window.messageManager.loadFrameScript(
-                "data:application/javascript;charset=UTF-8," + encodeURIComponent(addMenu_framescript),
-                true // 在所有后续窗口中加载
-            );
-            window.messageManager.addMessageListener("addMenu_focusedStatus", this);
-            window.messageManager.addMessageListener("addMenu_faviconLink", this);
-            window.messageManager.addMessageListener("addMenu_executeInChrome", this);
+            this.frameScriptURL = "data:application/javascript;charset=UTF-8," +
+                encodeURIComponent(addMenu_framescript);
+            this.messageManager.loadFrameScript(this.frameScriptURL, true);
+            this.messageManager.addMessageListener("addMenu_focusedStatus", this);
+            this.messageManager.addMessageListener("addMenu_faviconLink", this);
+            this.messageManager.addMessageListener("addMenu_executeInChrome", this);
 
             // 响应标签修改事件
             gBrowser.tabContainer.addEventListener('TabAttrModified', this);
 
-            this.style = addStyle(css);
+            this.style = addStyle(adaptMenuIconCSS(css));
             this.rebuild();
         },
         destroy: function () {
@@ -563,10 +595,33 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             $("contentAreaContextMenu").removeAttribute("photoncompact");
             if (typeof this.APP_LITENER_REMOVER === "function")
                 this.APP_LITENER_REMOVER();
-            window.messageManager.removeMessageListener("addMenu_focusedStatus", this);
-            window.messageManager.removeMessageListener("addMenu_faviconLink", this);
-            window.messageManager.removeMessageListener("addMenu_executeInChrome", this);
+            if (this.panelContainer)
+                this.panelContainer.removeEventListener("mouseup", this, false);
+            if (this.messageManager) {
+                try {
+                    var destroyData = { id: this.frameScriptId };
+                    if (typeof this.messageManager.broadcastAsyncMessage === "function")
+                        this.messageManager.broadcastAsyncMessage("addMenu_destroy", destroyData);
+                    else if (typeof this.messageManager.sendAsyncMessage === "function")
+                        this.messageManager.sendAsyncMessage("addMenu_destroy", destroyData);
+                } catch (e) { }
+                if (this.frameScriptURL &&
+                    typeof this.messageManager.removeDelayedFrameScript === "function") {
+                    try {
+                        this.messageManager.removeDelayedFrameScript(this.frameScriptURL);
+                    } catch (e) { }
+                }
+                this.messageManager.removeMessageListener("addMenu_focusedStatus", this);
+                this.messageManager.removeMessageListener("addMenu_faviconLink", this);
+                this.messageManager.removeMessageListener("addMenu_executeInChrome", this);
+            }
             gBrowser.tabContainer.removeEventListener('TabAttrModified', this);
+            if (this.rebuildTimers) {
+                this.rebuildTimers.forEach(function (timer) {
+                    clearTimeout(timer);
+                });
+                this.rebuildTimers = [];
+            }
             this.removeMenuitem();
             $$('#addMenu-rebuild, .addMenu-insert-point').forEach(function (e) {
                 e.parentNode.removeChild(e)
@@ -593,28 +648,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         this.updateModifiedFile();
                     }
 
-                    event.target.querySelectorAll(`.addMenu`).forEach(m => {
-                        // 强制去除隐藏属性
-                        m.removeAttribute("hidden");
-                        // 显示时自动更新标签
-                        if (m.hasAttribute('onshowinglabel')) {
-                            onshowinglabelMaxLength = onshowinglabelMaxLength || 15;
-                            var sel = addMenu.convertText(m.getAttribute('onshowinglabel'))
-                            if (sel && sel.length > 15)
-                                sel = sel.substr(0, 15) + "...";
-                            m.setAttribute('label', sel);
-                        }
-                    });
-
                     let insertPoint = "";
 
                     if (event.target.id == 'contentAreaContextMenu') {
                         var state = [];
-                        if (gContextMenu.onTextInput)
+                        if (gContextMenu.onTextInput || gContextMenu.onEditable)
                             state.push("input");
                         if (gContextMenu.isContentSelected || gContextMenu.isTextSelected)
                             state.push("select");
-                        if (gContextMenu.onLink || event.target.querySelector("#context-openlinkincurrent").getAttribute("hidden") !== "true")
+                        if (gContextMenu.onLink || gContextMenu.onTextLink || gContextMenu.onPlainTextLink)
                             state.push(gContextMenu.onMailtoLink ? "mailto" : "link");
                         if (gContextMenu.onCanvas)
                             state.push("canvas image");
@@ -684,18 +726,20 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                             if (/^menugroup$/i.test(elem.parentNode.nodeName)) return;
                             let original = document.getElementById(elem.getAttribute('command'));
                             if (original) {
-                                elem.hidden = original.hidden;
-                                elem.collapsed = original.collapsed;
-                                elem.disabled = original.disabled;
+                                syncBooleanAttribute(elem, original, "hidden");
+                                syncBooleanAttribute(elem, original, "collapsed");
+                                syncBooleanAttribute(elem, original, "disabled");
                             }
                         });
                         event.target.querySelectorAll('menugroup.addMenu').forEach(group => {
                             [...group.children].forEach(elem => {
                                 if ((/menu$/i.test(elem.nodeName) || /menuitem$/i.test(elem.nodeName)) && elem.hasAttribute('command')) {
                                     elem.removeAttribute('hidden');
-                                    const oringal = document.getElementById(elem.getAttribute('command'));
-                                    if (oringal) {
-                                        elem.disabled = oringal.hidden;
+                                    const original = document.getElementById(elem.getAttribute('command'));
+                                    if (original) {
+                                        setBooleanAttribute(elem, "disabled",
+                                            getBooleanAttribute(original, "hidden") ||
+                                            getBooleanAttribute(original, "disabled"));
                                     }
                                 }
                             });
@@ -784,7 +828,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
                     break;
                 case 'addMenu_faviconLink':
-                    if (typeof message.data.href !== "undefined" && typeof message.data.hash !== "undefined") {
+                    if (message.data && isValidFaviconHref(message.data.href) &&
+                        typeof message.data.hash !== "undefined") {
                         gBrowser.tabs.filter(t => t.faviconHash === message.data.hash).forEach(t => t.faviconUrl = message.data.href);
                     }
                     break;
@@ -1046,7 +1091,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (this.style2 && this.style2.parentNode)
                 this.style2.parentNode.removeChild(this.style2);
             if (sandbox._css.length)
-                this.style2 = addStyle(sandbox._css.join("\n"));
+                this.style2 = addStyle(adaptMenuIconCSS(sandbox._css.join("\n")));
 
             this.removeMenuitem();
 
@@ -1391,7 +1436,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     } else {
                         dupMenuitem = menuitem;
                         dupMenuitem.originAttributes = {}
-                        dupMenuitem.getAttributeNames().forEach(function (attr) {
+                        getAttributeNames(dupMenuitem).forEach(function (attr) {
                             dupMenuitem.originAttributes[attr] = dupMenuitem.getAttribute(attr);
                         });
                         dupMenuitem.classList.add("addMenuNot");
@@ -1472,7 +1517,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             var remove = function (e) {
                 if (e.classList.contains('addMenuNot')) {
                     if (typeof e.originAttributes === "object") {
-                        e.getAttributeNames().forEach(function (attr) {
+                        getAttributeNames(e).forEach(function (attr) {
                             e.removeAttribute(attr);
                         });
                         for (let key in e.originAttributes) {
@@ -1543,7 +1588,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     if ("getIconURL" in engine) {
                         return await engine.getIconURL(16);
                     }
-                    return engine.iconURI?.spec || "chrome://browser/skin/search-engine-placeholder.png";
+                    return engine.iconURI && engine.iconURI.spec || "chrome://browser/skin/search-engine-placeholder.png";
                 }
             }
             var setIconCallback = function (url) {
@@ -1663,25 +1708,30 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     case "%RLINK_TEXT%":
                         return context.linkText() || "";
                     case "%RLINK_OR_URL%":
-                        return context?.linkURL || getUrl() || "";
+                        return context && context.linkURL || getUrl() || "";
                     case "%RLT_OR_UT%":
                         return context.onLink && context.linkText() || bw.contentTitle; // 链接文本或网页标题
                     case "%IMAGE_ALT%":
-                        return context.target.alt || "";
+                        return context.target && context.target.alt || "";
                     case "%IMAGE_TITLE%":
-                        return context.target.title || "";
+                        return context.target && context.target.title || "";
                     case "%I":
-                        return context.imageURL || context.imageInfo.currentSrc || "";
                     case "%IMAGE_URL%":
-                        return context.imageURL || context.imageInfo.currentSrc || "";
+                        return getImageSource();
                     case "%IMAGE_BASE64%":
-                        return typeof context.imageURL === "undefined" ? img2base64(context.mediaURL) : img2base64(context.imageURL);
+                        var imageSource = getUsableImageSource(context.mediaURL) ||
+                            getUsableImageSource(context.imageURL) || getImageInfoSource();
+                        if (imageSource)
+                            return img2base64(imageSource);
+                        if (addMenu.ContextMenu.onSvg)
+                            return svg2base64(addMenu.ContextMenu.svgHTML);
+                        imageSource = context.linkURL || getUrl() || "";
+                        return isImageURL(imageSource) ? img2base64(imageSource) : "";
                     case "%SVG_BASE64%":
-                        if (addMenu.ContextMenu.onSvg) {
-                            return "data:image/svg+xml;base64," + btoa(addMenu.ContextMenu.svgHTML);
-                        }
-                        let url = context.linkURL || bw.documentURI.spec || "";
-                        return url.endsWith("svg") ? svg2base64(url) : "";
+                        if (addMenu.ContextMenu.onSvg)
+                            return svg2base64(addMenu.ContextMenu.svgHTML);
+                        var svgURL = context.linkURL || bw.documentURI.spec || "";
+                        return isSVGSource(svgURL) ? svg2base64(svgURL) : "";
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
@@ -1745,48 +1795,115 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return addresses;
             }
 
+            function getImageInfoSource () {
+                return getUsableImageSource(context.imageInfo && context.imageInfo.currentSrc);
+            }
+
+            function getImageSource () {
+                var source = getUsableImageSource(context.imageURL) || getImageInfoSource();
+                if (source) return source;
+                source = context.linkURL || getUrl() || "";
+                return isImageURL(source) ? source : "";
+            }
+
+            function getUsableImageSource (source) {
+                if (typeof source !== "string" || !source) return "";
+                if (source === "chrome://global/skin/media/imagedoc-darknoise.png" ||
+                    source === "chrome://global/skin/icons/image-missing.png")
+                    return "";
+                return source;
+            }
+
+            function isImageURL (source) {
+                if (typeof source !== "string" || !source) return false;
+                return /^data:image\//i.test(source) || /^\s*<svg\b/i.test(source) ||
+                    /\.(?:jpe?g|png|gif|bmp|webp|svg|ico|jxl)(?:[?#].*)?$/i.test(source);
+            }
+
+            function isSVGSource (source) {
+                return typeof source === "string" &&
+                    (/^data:image\/svg\+xml[;,]/i.test(source) ||
+                        /^\s*<svg\b/i.test(source) ||
+                        /\.svg(?:[?#].*)?$/i.test(source));
+            }
+
             function img2base64 (imgSrc, imgType) {
-                if (typeof imgSrc == 'undefined') return "";
+                if (typeof imgSrc !== "string" || !imgSrc) return "";
+                if (/^data:image\//i.test(imgSrc)) return imgSrc;
+                if (isSVGSource(imgSrc)) return svg2base64(imgSrc);
                 imgType = imgType || "image/png";
                 const NSURI = "http://www.w3.org/1999/xhtml";
                 var img = new Image();
                 var canvas,
                     isCompleted = false;
                 img.onload = function () {
-                    var width = this.naturalWidth,
-                        height = this.naturalHeight;
-                    canvas = versionGE("72a1") ? document.createElementNS(NSURI, "canvas") : document.createXULElementNS(NSURI, "canvas");
-                    canvas.width = width;
-                    canvas.height = height;
-                    var ctx = canvas.getContext("2d");
-                    ctx.drawImage(this, 0, 0);
-                    isCompleted = true;
+                    try {
+                        canvas = document.createElementNS(NSURI, "canvas");
+                        canvas.width = this.naturalWidth;
+                        canvas.height = this.naturalHeight;
+                        canvas.getContext("2d").drawImage(this, 0, 0);
+                    } catch (e) {
+                        canvas = null;
+                    } finally {
+                        isCompleted = true;
+                    }
                 };
-                img.onerror = () => {
+                img.onerror = function () {
                     console.error($L('could not load', imgSrc));
                     isCompleted = true;
                 };
-                img.src = imgSrc;
+                var timeout = setTimeout(function () {
+                    isCompleted = true;
+                }, 5000);
+                try {
+                    img.src = imgSrc;
+                } catch (e) {
+                    isCompleted = true;
+                }
 
                 var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
                 while (!isCompleted) {
                     thread.processNextEvent(true);
                 }
+                clearTimeout(timeout);
+                img.onload = null;
+                img.onerror = null;
 
-                var data = canvas ? canvas.toDataURL(imgType) : "";
+                var data = "";
+                try {
+                    data = canvas ? canvas.toDataURL(imgType) : "";
+                } catch (e) { }
                 canvas = null;
                 return data;
             }
 
             function svg2base64 (svgSrc) {
-                if (typeof svgSrc == 'undefined') return "";
-                var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("GET", svgSrc, false);
-                xmlhttp.send();
-                var svg = xmlhttp.responseText;
-                // svg string to data url
-                var svg64 = "data:image/svg+xml;base64," + btoa(svg);
-                return svg64;
+                if (typeof svgSrc !== "string" || !svgSrc) return "";
+                if (/^data:image\/svg\+xml[;,]/i.test(svgSrc)) return svgSrc;
+
+                var svg = svgSrc;
+                if (!/^\s*<svg\b/i.test(svgSrc)) {
+                    try {
+                        var uri = Services.io.newURI(svgSrc);
+                        if (["http", "https", "ftp", "file", "chrome", "resource"]
+                            .indexOf(uri.scheme) < 0)
+                            return "";
+                        var xmlhttp = new XMLHttpRequest();
+                        xmlhttp.open("GET", svgSrc, false);
+                        xmlhttp.send();
+                        svg = xmlhttp.responseText;
+                    } catch (e) {
+                        return "";
+                    }
+                }
+
+                if (!/<svg\b/i.test(svg)) return "";
+                try {
+                    return "data:image/svg+xml;base64," +
+                        btoa(unescape(encodeURIComponent(svg)));
+                } catch (e) {
+                    return "";
+                }
             }
         },
         getSelectedText () {
@@ -1918,9 +2035,41 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             } : null;
             var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
-            alertsService.showAlertNotification(
-                "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=", aTitle || "addMenuPlus",
-                aMsg + "", !!callback, "", callback);
+            var alertImage = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMlM2LjQ3NyAyIDEyIDJzMTAgNC40NzcgMTAgMTAtNC40NzcgMTAtMTAgMTB6bTAtMmE4IDggMCAxIDAgMC0xNiA4IDggMCAwIDAgMCAxNnpNMTEgN2gydjJoLTJWN3ptMCA0aDJ2NmgtMnYtNnoiLz48L3N2Zz4=";
+            var title = aTitle || "addMenuPlus";
+            var text = aMsg + "";
+
+            if (typeof alertsService.showAlert === "function") {
+                try {
+                    var AlertNotification = Components.Constructor(
+                        "@mozilla.org/alert-notification;1",
+                        "nsIAlertNotification",
+                        "initWithObject"
+                    );
+                    var alert = new AlertNotification({
+                        imageURL: alertImage,
+                        title: title,
+                        text: text,
+                        textClickable: !!callback
+                    });
+                    alertsService.showAlert(alert, callback ? callback.observe : null);
+                    return;
+                } catch (e) {
+                    console.warn("addMenuPlus: showAlert failed, falling back", e);
+                }
+            }
+
+            if (typeof alertsService.showAlertNotification === "function") {
+                try {
+                    alertsService.showAlertNotification(
+                        alertImage, title, text, !!callback, "", callback);
+                    return;
+                } catch (e) {
+                    console.warn("addMenuPlus: showAlertNotification failed", e);
+                }
+            }
+
+            console.warn("addMenuPlus: alerts service is unavailable", title, text);
         },
         $$: function (exp, context, aPartly) {
             context || (context = this.focusedWindow.document);
@@ -2022,6 +2171,46 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return v !== undefined && v !== null
     }
 
+    function getAttributeNames (element) {
+        if (typeof element.getAttributeNames === "function")
+            return element.getAttributeNames();
+        return Array.prototype.map.call(element.attributes, function (attribute) {
+            return attribute.name;
+        });
+    }
+
+    function getBooleanAttribute (element, name) {
+        try {
+            if (element[name] === true) return true;
+        } catch (e) { }
+        if (!element.hasAttribute(name)) return false;
+        var value = element.getAttribute(name);
+        return value === "" || value === name || value === "true";
+    }
+
+    function setBooleanAttribute (element, name, value) {
+        if (value)
+            element.setAttribute(name, "true");
+        else
+            element.removeAttribute(name);
+    }
+
+    function syncBooleanAttribute (target, source, name) {
+        setBooleanAttribute(target, name, getBooleanAttribute(source, name));
+    }
+
+    function isValidFaviconHref (href) {
+        return typeof href === "string" &&
+            /^(?:https?|ftp|file|chrome|resource|data|blob|moz-extension):/i.test(href.trim());
+    }
+
+    function adaptMenuIconCSS (styleText) {
+        if (!versionGE("143a1")) return styleText;
+        return ".addMenu-icon > .menu-icon { visibility: visible !important; " +
+            "content: var(--menuitem-icon); }\n" +
+            styleText.replace(/list-style-image/g, "--menuitem-icon");
+    }
+
     function isPromise (val) {
         return (
             val !== null &&
@@ -2059,7 +2248,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     function setImage (menu, imageUrl) {
         if (imageUrl) {
-            if (enableConvertImageAttrToListStyleImage) {
+            if (enableConvertImageAttrToListStyleImage && !versionGE("143a1")) {
                 menu.style.listStyleImage = `url(${imageUrl})`;
                 menu.removeAttribute("image");
             } else {
@@ -2071,17 +2260,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
     window.addMenu.init();
 
     /** 防止 data-l10n 无法读取 , 用不到可以注释下面这几行 */
-    setTimeout(function () {
-        window.addMenu.rebuild()
-    }, 1000);
-
-    setTimeout(function () {
-        window.addMenu.rebuild()
-    }, 2000);
-
-    setTimeout(function () {
-        window.addMenu.rebuild()
-    }, 5000);
+    window.addMenu.rebuildTimers = [1000, 2000, 5000].map(function (delay) {
+        return setTimeout(function () {
+            if (window.addMenu)
+                window.addMenu.rebuild();
+        }, delay);
+    });
 })(`
 .addMenuHide {
     display: none !important;
@@ -2129,29 +2313,39 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 toolbarseparator:not(.addMenu-insert-point)+toolbarseparator {
     display: none !important;
 }
+.addMenu,
+.addMenu-icon {
+    list-style-image: url(data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7);
+}
 .addMenu.exec,
-.addMenu[exec] {
+.addMenu[exec],
+.addMenu-icon.exec,
+.addMenu-icon[exec] {
     list-style-image: url("data:image/svg+xml;base64,PCEtLSBUaGlzIFNvdXJjZSBDb2RlIEZvcm0gaXMgc3ViamVjdCB0byB0aGUgdGVybXMgb2YgdGhlIE1vemlsbGEgUHVibGljCiAgIC0gTGljZW5zZSwgdi4gMi4wLiBJZiBhIGNvcHkgb2YgdGhlIE1QTCB3YXMgbm90IGRpc3RyaWJ1dGVkIHdpdGggdGhpcwogICAtIGZpbGUsIFlvdSBjYW4gb2J0YWluIG9uZSBhdCBodHRwOi8vbW96aWxsYS5vcmcvTVBMLzIuMC8uIC0tPgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiB2aWV3Qm94PSIwIDAgMTYgMTYiIGZpbGw9ImNvbnRleHQtZmlsbCI+CiAgPHBhdGggZD0iTTEgM2ExIDEgMCAwMTEtMWgxMmExIDEgMCAwMTEgMXYxMGExIDEgMCAwMS0xIDFIMmExIDEgMCAwMS0xLTFWM3ptMTMgMEgydjJoMTJWM3ptMCAzSDJ2N2gxMlY2eiIvPgo8L3N2Zz4K");
 }
 .addMenu.copy,
-menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]) {
+menuitem.addMenu[text]:not([url]):not([keyword]):not([exec]),
+.addMenu-icon.copy {
     list-style-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTYgMTYiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE2IDE2OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgZmlsbD0iY29udGV4dC1maWxsIiBmaWxsLW9wYWNpdHk9ImNvbnRleHQtZmlsbC1vcGFjaXR5Ij4NCjxwYXRoIGQ9Ik0yLjUsMUMxLjcsMSwxLDEuNywxLDIuNXY4QzEsMTEuMywxLjcsMTIsMi41LDEySDR2MC41QzQsMTMuMyw0LjcsMTQsNS41LDE0aDhjMC44LDAsMS41LTAuNywxLjUtMS41di04DQoJQzE1LDMuNywxNC4zLDMsMTMuNSwzSDEyVjIuNUMxMiwxLjcsMTEuMywxLDEwLjUsMUgyLjV6IE0yLjUsMmg4QzEwLjgsMiwxMSwyLjIsMTEsMi41djhjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC04DQoJQzIuMiwxMSwyLDEwLjgsMiwxMC41di04QzIsMi4yLDIuMiwyLDIuNSwyeiBNMTIsNGgxLjVDMTMuOCw0LDE0LDQuMiwxNCw0LjV2OGMwLDAuMy0wLjIsMC41LTAuNSwwLjVoLThDNS4yLDEzLDUsMTIuOCw1LDEyLjVWMTINCgloNS41YzAuOCwwLDEuNS0wLjcsMS41LTEuNVY0eiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjUuMiIgeDI9IjkuMiIgeTI9IjUuMiIvPg0KPGxpbmUgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6Y3VycmVudENvbG9yO3N0cm9rZS1taXRlcmxpbWl0OjEwOyIgeDE9IjMuOCIgeTE9IjgiIHgyPSI5LjIiIHkyPSI4Ii8+DQo8L3N2Zz4NCg==);
   -moz-image-region: rect(0pt, 16px, 16px, 0px);
 }
-.addMenu.checkbox .menu-iconic-icon {
+.addMenu.checkbox .menu-iconic-icon,
+.addMenu.checkbox .menu-icon {
     -moz-appearance: checkbox;
 }
-.addMenu > .menu-iconic-left {
+.addMenu > .menu-iconic-left,
+.addMenu > .menu-icon {
     -moz-appearance: menuimage;
 }
-.addMenu > .menu-iconic-left > .menu-iconic-icon {
+.addMenu > .menu-iconic-left > .menu-iconic-icon,
+.addMenu > .menu-icon {
     -moz-context-properties: fill, fill-opacity !important;
     fill: currentColor !important;
 }
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > .menu-iconic-left,
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > .menu-iconic-left,
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > .menu-iconic-left,
-:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > .menu-iconic-left {
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > .addMenu:is(menu, menuitem) > :is(.menu-iconic-left, .menu-icon),
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu >.addMenu.showText > :is(.menu-iconic-left, .menu-icon),
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showText >.addMenu > :is(.menu-iconic-left, .menu-icon),
+:is(#contentAreaContextMenu, #tabContextMenu)[photoncompact="true"]:not([needsgutter]) > menugroup.addMenu.showFirstText > .menuitem-iconic:first-child > :is(.menu-iconic-left, .menu-icon) {
     visibility: collapse;
 }
 menugroup.addMenu > .menuitem-iconic.fixedSize {
@@ -2170,16 +2364,20 @@ menugroup.addMenu > .menuitem-iconic {
     padding-block: 6px;
     padding-inline-start: 1em;
 }
-menugroup.addMenu > .menuitem-iconic > .menu-iconic-left {
+menugroup.addMenu > .menuitem-iconic > .menu-iconic-left,
+menugroup.addMenu > .menuitem-iconic > .menu-icon {
     -moz-appearance: none;
     padding-top: 0;
 }
-menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon {
+menugroup.addMenu > .menuitem-iconic > .menu-iconic-left > .menu-iconic-icon,
+menugroup.addMenu > .menuitem-iconic > .menu-icon {
     width: 16px;
     height: 16px;
 }
 menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-text,
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-text,
 menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-iconic-text,
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child) > .menu-text,
 menugroup.addMenu > .menuitem-iconic > .menu-accel-container {
     display: none;
 }
@@ -2195,7 +2393,9 @@ menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.sho
     padding-inline-end: 0;
 }
 menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-iconic-left,
-menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-left {
+menugroup.addMenu.showFirstText > .menuitem-iconic:not(:first-child):not(.showText) > .menu-icon,
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-iconic-left,
+menugroup.addMenu:not(.showText):not(.showFirstText) > .menuitem-iconic:not(.showText) > .menu-icon {
     margin-inline-start: 8px;
     margin-inline-end: 8px;
 }
