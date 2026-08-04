@@ -2,7 +2,7 @@
 // @name            AutoCopySelectionText.uc.mjs
 // @description     自动复制选中文本（ScrLk 亮起时不复制）
 // @author          Ryan
-// @version         2026.04.07
+// @version         2026.08.04
 // @compatibility   Firefox 136
 // @charset         UTF-8
 // @system          windows
@@ -13,6 +13,7 @@
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @thanks          Dumby
 // @note            20260407 Move actor registration to loader, add alice0775 legacy loader adapter support, and switch success notice to a selection-near animation
+// @note            20260804 Fix Firefox 152 global lookup and guard actor teardown during navigation
 // ==/UserScript==
 // Configurations, implement read from about:config preferences in future
 const ACST_COPY_SUCCESS_NOTICE = "Auto Copied!";
@@ -63,12 +64,12 @@ class ACSTChild extends JSWindowActorChild {
 class ACSTParent extends JSWindowActorParent {
     receiveMessage ({ name, data }) {
         // https://searchfox.org/mozilla-central/rev/43ee5e789b079e94837a21336e9ce2420658fd19/browser/actors/ContextMenuParent.sys.mjs#60-63
-        let windowGlobal = this.manager.browsingContext.currentWindowGlobal;
-        let browser = windowGlobal.rootFrameLoader.ownerElement;
-        let win = browser.ownerGlobal;
+        const browser = this.manager?.rootFrameLoader?.ownerElement;
+        const win = browser?.documentGlobal || browser?.relevantGlobal ||
+            browser?.ownerDocument?.defaultView;
         switch (name) {
             case "ACST:setSelectedText":
-                win.AutoCopySelectionText?.setSelectedText(data.text, data.tag || "");
+                win?.AutoCopySelectionText?.setSelectedText(data.text, data.tag || "");
                 break;
         }
     }
@@ -174,7 +175,9 @@ export { ACSTChild, ACSTParent, ACSTChild as ActorChild, ACSTParent as ActorPare
             }
 
             let that = this;
-            const { clearTimeout, setTimeout } = event.target.ownerGlobal;
+            const eventWindow = event.target?.documentGlobal || event.target?.relevantGlobal ||
+                event.target?.ownerDocument?.defaultView || event.view || window;
+            const { clearTimeout, setTimeout } = eventWindow;
 
             switch (event.type) {
                 case "mousedown":
@@ -242,8 +245,8 @@ export { ACSTChild, ACSTParent, ACSTChild as ActorChild, ACSTParent as ActorPare
                     }
                 } else {
                     // 网页
-                    let actor = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor("ACST");
-                    actor.sendAsyncMessage("ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE });
+                    const actor = gBrowser.selectedBrowser.browsingContext?.currentWindowGlobal?.getActor("ACST");
+                    actor?.sendAsyncMessage("ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE });
                 }
             }
         },
