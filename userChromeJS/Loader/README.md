@@ -10,6 +10,8 @@
 
 ## 如何选择版本
 
+优先选择：https://github.com/benzBrake/userChrome.js-Loader/releases/tag/nightly
+
 如果你的火狐版本大于 142 请选择`fx142.zip`
 
 如果你的火狐版本大于 102 请选择`fx100.zip`
