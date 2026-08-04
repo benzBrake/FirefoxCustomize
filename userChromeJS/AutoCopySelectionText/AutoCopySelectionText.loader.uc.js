@@ -4,8 +4,9 @@
 // @author         Ryan
 // @include        main
 // @skip           true
-// @version        2026.04.07
+// @version        2026.08.04
 // @note           Register ACST actor for original .uc.js-only loaders and import AutoCopySelectionText.uc.mjs in window scope
+// @note           Allow the actor in web and file processes after Firefox Bug 2047680 enabled actor safety checks
 // ==/UserScript==
 (function () {
     "use strict";
@@ -169,6 +170,7 @@
             allFrames: true,
             matches: ["*://*/*", "file:///*", "about:*", "view-source:*"],
             messageManagerGroups: ["browsers"],
+            safeForUntrustedWebProcess: true,
         });
         globalState[ACTOR_FLAG] = true;
         log(`registered actor "${ACTOR_NAME}"`);
