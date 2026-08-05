@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r19
+// @version        0.0.6r20
+// @note           0.0.6r20 Firefox 154 Bug 2047680 actor opt-in; move remote-install confirmation to chrome
 // @note           0.0.6r19 修复 Firefox 152 执行 @shutdown 时调用已不存在的 CustomizableUI.removeWidget 导致清理失败
 // @note           0.0.6r18 按实际 var() 使用场景推断 @var text 输出语法，兼容 content 字符串与长度等裸值
 // @note           0.0.6r17 修复带引号默认值的 @var text 输出为裸值导致 content 等属性失效
@@ -253,7 +254,8 @@ about:config
           "https://greasyfork.org/scripts/*",
           "https://greasyfork.org/*/scripts/*"
         ],
-        allFrames: false
+        allFrames: false,
+        safeForUntrustedWebProcess: true
       });
       markActorRegistered(INSTALL_ACTOR_NAME);
     },

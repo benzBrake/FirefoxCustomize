@@ -1,4 +1,14 @@
+// ==UserScript==
+// @name         UserCSSLoader.sys.mjs
+// @description  UserCSSLoader GreasyFork installation JSWindowActor
+// @version      0.1.0
+// @skip         true
+// @note         20260804 Firefox 154 Bug 2047680 actor hardening
+// ==/UserScript==
+
 'use strict';
+
+const { Services } = globalThis;
 
 const USERCSSLOADER_INSTALL_TYPES = {
     true: {
@@ -26,6 +36,7 @@ const INSTALL_HELP_ATTR = 'data-usercssloader-install-help';
 const STYLE_NAME_RE = /^\s*\*\s*@name(?::[^\s]+)?\s+(.+?)\s*$/im;
 const INSTALL_STYLE_ID = 'usercssloader-install-style';
 const INSTALL_MESSAGE_KEYS = [
+    'user-css-loader',
     'ucl-install-to-usercssloader',
     'ucl-install-style-confirm',
     'ucl-install-style-overwrite-confirm',
@@ -39,6 +50,7 @@ const INSTALL_MESSAGE_KEYS = [
     'ucl-install-usercssloader-unavailable',
 ];
 const DEFAULT_INSTALL_MESSAGES = {
+    'user-css-loader': 'User CSS Loader',
     'ucl-install-to-usercssloader': 'Install to UserCSSLoader',
     'ucl-install-style-confirm': 'Install "%s" to UserCSSLoader?\n\nTarget file: %s',
     'ucl-install-style-overwrite-confirm': 'A local style with the same name already exists: %s\n\nOverwrite the existing file and reload the style?',
@@ -310,24 +322,16 @@ function createInstallLink(win, installData, actor, messages) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        if (!win.confirm(
-            formatMessage(messages, 'ucl-install-style-confirm', installData.styleName, installData.fileName)
-        )) {
-            return;
-        }
         try {
             let result = await actor.sendQuery('UserCSSLoader:InstallStyle', installData);
             if (result?.status === 'exists') {
-                const overwrite = win.confirm(
-                    formatMessage(messages, 'ucl-install-style-overwrite-confirm', result.fileName)
-                );
-                if (!overwrite) {
-                    return;
-                }
                 result = await actor.sendQuery('UserCSSLoader:InstallStyle', {
                     ...installData,
                     overwrite: true,
                 });
+            }
+            if (result?.status === 'cancelled') {
+                return;
             }
 
             if (result?.status === 'installed' || result?.status === 'updated' || result?.status === 'unchanged') {
@@ -412,13 +416,52 @@ export class UserCSSLoaderActorParent extends JSWindowActorParent {
             return null;
         }
 
+        const userCSSLoader = win?.UserCSSLoader;
         const unavailableError =
-            win?.UserCSSLoader?.MESSAGES?.['ucl-install-usercssloader-unavailable'] ||
+            userCSSLoader?.MESSAGES?.['ucl-install-usercssloader-unavailable'] ||
             DEFAULT_INSTALL_MESSAGES['ucl-install-usercssloader-unavailable'];
-        return win?.UserCSSLoader?.installRemoteStyle?.(data) || {
-            status: 'error',
-            error: unavailableError,
-        };
+        if (!userCSSLoader?.installRemoteStyle) {
+            return {
+                status: 'error',
+                error: unavailableError,
+            };
+        }
+
+        const installData = data && typeof data === 'object' ? data : {};
+        const fileName = userCSSLoader.normalizeInstalledFileName(installData.fileName);
+        const messages = userCSSLoader.MESSAGES || DEFAULT_INSTALL_MESSAGES;
+        const messageKey = installData.overwrite
+            ? 'ucl-install-style-overwrite-confirm'
+            : 'ucl-install-style-confirm';
+        const styleName = String(installData.styleName || fileName)
+            .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+            .trim()
+            .slice(0, 200) || fileName;
+        const messageArgs = installData.overwrite
+            ? [fileName]
+            : [styleName, fileName];
+        if (this._installPromptOpen) {
+            return { status: 'cancelled' };
+        }
+        this._installPromptOpen = true;
+        let confirmed = false;
+        try {
+            confirmed = Services.prompt.confirm(
+                win,
+                formatMessage(messages, 'user-css-loader'),
+                formatMessage(messages, messageKey, ...messageArgs)
+            );
+        } finally {
+            this._installPromptOpen = false;
+        }
+        if (!confirmed) {
+            return { status: 'cancelled' };
+        }
+
+        return userCSSLoader.installRemoteStyle({
+            ...installData,
+            fileName,
+        });
     }
 }
 
