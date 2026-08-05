@@ -7,11 +7,13 @@
 // @actor          LinkGopher
 // @actor:allframes true
 // @actor:matches  *://*/*, file:///*, about:*, view-source:*, moz-extension://*/*, resource://*/*
+// @actor:safeForUntrustedWebProcess true
 // @license        MIT License
 // @compatibility  Firefox 136+
 // @charset        UTF-8
-// @version        0.2.0
+// @version        0.2.1
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/
+// @note           0.2.1 Firefox 154 Bug 2047680 actor opt-in; ignore unsolicited content responses
 // @note           20260625 Migrated to loader-managed JSWindowActor ES module
 // ==/UserScript==
 export { LinkGopherChild, LinkGopherParent, LinkGopherChild as ActorChild, LinkGopherParent as ActorParent };
@@ -270,25 +272,26 @@ async function initLinkGopher(window) {
                     }
                 }
             },
-            processLinksData({ links, keyword, exclude, text, requestId, expectedCount }) {
-                if (requestId && this.pendingRequests.has(requestId)) {
-                    const pending = this.pendingRequests.get(requestId);
-                    pending.receivedCount++;
-                    if (Array.isArray(links) && links.length) {
-                        pending.links.push(...links);
-                    }
-                    if (expectedCount && !pending.expectedCount) {
-                        pending.expectedCount = expectedCount;
-                    }
-                    if (pending.receivedCount < pending.expectedCount) {
-                        return;
-                    }
-                    this.pendingRequests.delete(requestId);
-                    links = pending.links;
-                    keyword = pending.keyword;
-                    exclude = pending.exclude;
-                    text = pending.text;
+            processLinksData({ links, keyword, exclude, text, requestId, expectedCount } = {}) {
+                if (!requestId || !this.pendingRequests.has(requestId)) {
+                    return;
                 }
+                const pending = this.pendingRequests.get(requestId);
+                pending.receivedCount++;
+                if (Array.isArray(links) && links.length) {
+                    pending.links.push(...links);
+                }
+                if (expectedCount && !pending.expectedCount) {
+                    pending.expectedCount = expectedCount;
+                }
+                if (pending.receivedCount < pending.expectedCount) {
+                    return;
+                }
+                this.pendingRequests.delete(requestId);
+                links = pending.links;
+                keyword = pending.keyword;
+                exclude = pending.exclude;
+                text = pending.text;
 
                 if (links && links.length) {
                     const r = keywordToRegex(keyword, exclude);
