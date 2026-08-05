@@ -8,12 +8,13 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.3.4
+// @version            0.4.2
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
 // @actor:events       contextmenu
 // @actor:allframes    true
+// @actor:safeForUntrustedWebProcess true
 // @license            MIT License
 // @compatibility      Firefox 136
 // @charset            UTF-8
@@ -22,8 +23,9 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note               0.3.4 移除 UI locale 缓存，并在 Firefox 应用语言变化后自动刷新菜单
-// @note               0.3.3 配置中的 label、tooltiptext、onshowinglabel 支持按 Firefox UI locale 选择文案
+// @note               0.4.2 Firefox 154 Bug 2047680 actor opt-in; remove unused content-to-chrome arbitrary execution message
+// @note               0.4.1 移除 UI locale 缓存，并在 Firefox 应用语言变化后自动刷新菜单
+// @note               0.4.0 配置中的 label、tooltiptext、onshowinglabel 支持按 Firefox UI locale 选择文案
 // @note               0.3.2 过滤无效 favicon URL，避免 about:blank / opaque origin 触发 nsIFaviconService.setFaviconForPage
 // @note               Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note               20260407 Actor registration moved to userChrome.js loader; keep single-file chrome+actor implementation, fix first-run startup when config file does not exist yet
@@ -2785,15 +2787,6 @@ class AddMenuChild extends JSWindowActorChild {
         };
         this.sendAsyncMessage("AddMenuPlus:SetContextMenu", data);
     }
-    executeInChrome (func, args) {
-        let json = {
-            func: func.toString(),
-            args: JSON.stringify(args)
-        }
-        this.sendAsyncMessage("AddMenuPlus:executeInChrome",
-            json
-        );
-    }
     receiveMessage ({ name, data }) {
         const { contentWindow: win } = this;
         const { document: doc } = win;
@@ -2883,9 +2876,6 @@ class AddMenuParent extends JSWindowActorParent {
                     break;
                 case 'AddMenuPlus:SetContextMenu':
                     Object.assign(addMenu.ContextMenu, data);
-                    break;
-                case 'AddMenuPlus:executeInChrome':
-                    addMenu.executeInChrome(data.func, data.args);
                     break;
             }
         } catch (e) { }

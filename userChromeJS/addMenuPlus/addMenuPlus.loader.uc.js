@@ -4,7 +4,8 @@
 // @author         Ryan
 // @include        main
 // @skip           true
-// @version        2026.04.07
+// @version        2026.08.05
+// @note           2026.08.05 Firefox 154 Bug 2047680 actor opt-in: 添加 safeForUntrustedWebProcess
 // @note           Register AddMenu actor for original .uc.js-only loaders and import addMenuPlus.uc.mjs in window scope
 // ==/UserScript==
 (function () {
@@ -219,6 +220,7 @@
                 },
             },
             allFrames: true,
+            safeForUntrustedWebProcess: true,
         });
         globalState[ACTOR_FLAG] = true;
         log(`registered actor "${ACTOR_NAME}"`);
