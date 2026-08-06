@@ -11,6 +11,7 @@
 // @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/136/aboutconfig_menu.uc.js
 // @compatibility   Firefox 136
 // @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
+// @note            2026-08-06 归档：新版本升级至 Firefox 152+
 // @onlyonce
 // ==/UserScript==
 

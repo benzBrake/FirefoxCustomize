@@ -8,9 +8,11 @@
 默认包含的选项有的是 TabPlus.uc.js 提供的功能：
 */
 // @homepageURL     https://garywill.github.io/
-// @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/149/aboutconfig_menu.uc.js
-// @compatibility   Firefox 136
-// @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
+// @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/aboutconfig_menu.uc.js
+// @compatibility   Firefox 152
+// @version         0.1.1
+// @note            2026-08-06 升级兼容性至 Firefox 152+，sidebars.svg 改用 sidebar-collapsed.svg
+// @note            Firefox 151 移除 sidebars.svg，改用 sidebar-collapsed.svg
 // @onlyonce
 // ==/UserScript==
 
@@ -231,7 +233,7 @@
         "seperator",
         {
             name: "使用新版侧边栏",
-            image: "resource:///chrome/browser/skin/classic/browser/sidebars.svg",
+            image: "chrome://browser/skin/sidebar-collapsed.svg",
             type: prefs.PREF_BOOL,
             pref: "sidebar.revamp",
             possibleVals: [
@@ -243,7 +245,7 @@
             name: "网页区域圆角(新版侧边栏有效)",
             pref: "sidebar.revamp.round-content-area",
             type: prefs.PREF_BOOL,
-            image: "resource:///chrome/browser/skin/classic/browser/sidebars.svg",
+            image: "chrome://browser/skin/sidebar-collapsed.svg",
             possibleVals: [
                 { val: false },
                 { val: true },
@@ -902,7 +904,7 @@
             arrowscrollBox.style.maxHeight = "calc(100vh - 129px)";
             let slot = scrollbox.querySelector('slot');
             slot.style.display = "contents";
-            let maxWidth = calcWidth(-129, event.originalTarget.documentGlobal || event.originalTarget.ownerGlobal || event.originalTarget.ownerDocument?.defaultView || window);
+            let maxWidth = calcWidth(-129, menupopup.documentGlobal);
             if (maxWidth < scrollbox.scrollWidth) {
                 scrollbox.style.setProperty("overflow-x", "auto", "important");
                 scrollbox.style.setProperty("width", maxWidth + "px");
@@ -981,7 +983,7 @@
                     btn.onmouseover = function () {
                         const rect = btn.getBoundingClientRect();
                         // 获取窗口的宽度和高度
-                        const targetWin = btn.documentGlobal || btn.ownerGlobal || btn.ownerDocument?.defaultView || window;
+                        const targetWin = btn.documentGlobal;
                         const windowWidth = targetWin.innerWidth;
                         const windowHeight = targetWin.innerHeight;
 
