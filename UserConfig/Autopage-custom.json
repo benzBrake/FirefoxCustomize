@@ -1,13 +1,34 @@
 {
-    "Ru.Board - 主题帖": {
-        "host": "forum.ru-board.com",
-        "url": "/^\\/topic\\.cgi.*/",
-        "history": true,
-        "thread": true,
-        "pager": {
-            "nextL": "//td[contains(@class,'small') and contains(.,'Страницы:')]/b/following-sibling::a[1]",
-            "pageE": ".tb",
-            "replaceE": "//td[contains(@class,'small') and contains(.,'Страницы:')]/ancestor::table[1]"
-        }
+  "Ru.Board - 主题帖": {
+    "host": "forum.ru-board.com",
+    "url": "/^\\/topic\\.cgi.*/",
+    "history": true,
+    "thread": true,
+    "pager": {
+      "nextL": "//td[contains(@class,'small') and contains(.,'Страницы:')]/b/following-sibling::a[1]",
+      "pageE": ".tb",
+      "replaceE": "//td[contains(@class,'small') and contains(.,'Страницы:')]/ancestor::table[1]"
     }
+  },
+  "camp-firefox.de - 论坛版块": {
+    "host": "www.camp-firefox.de",
+    "url": "/^\\/forum\\/forum\\//",
+    "history": true,
+    "pager": {
+      "nextL": "nav.pagination a[rel='next']",
+      "pageE": ".wbbThreadList > .tabularList > li.tabularListRow:not(.tabularListRowHead)",
+      "replaceE": "nav.pagination"
+    }
+  },
+  "camp-firefox.de - 主题帖": {
+    "host": "www.camp-firefox.de",
+    "url": "/^\\/forum\\/thema\\//",
+    "history": true,
+    "thread": true,
+    "pager": {
+      "nextL": "nav.pagination a[rel='next']",
+      "pageE": "ul.wbbThreadPostList > li.anchorFixedHeader",
+      "replaceE": "nav.pagination"
+    }
+  }
 }
