@@ -1,0 +1,13 @@
+{
+    "Ru.Board - 主题帖": {
+        "host": "forum.ru-board.com",
+        "url": "/^\\/topic\\.cgi.*/",
+        "history": true,
+        "thread": true,
+        "pager": {
+            "nextL": "//td[contains(@class,'small') and contains(.,'Страницы:')]/b/following-sibling::a[1]",
+            "pageE": ".tb",
+            "replaceE": "//td[contains(@class,'small') and contains(.,'Страницы:')]/ancestor::table[1]"
+        }
+    }
+}

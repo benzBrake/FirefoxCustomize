@@ -6,6 +6,7 @@
 * SSS settings backup.json Swift Selection Search 配置备份
 * kiss-translator.json 简约翻译规则
 * searchJumper.json 搜索酱的搜索配置备份
+* Autopage-custom.json Autopager 自定义翻页规则
 
 
 
