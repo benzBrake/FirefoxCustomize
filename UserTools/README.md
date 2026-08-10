@@ -1,5 +1,7 @@
 # 工具存档
 
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 如有侵犯版权，请联系删除
 
 因为 Github 限制 LFS 流量，请从下面的链接下载

@@ -1,5 +1,7 @@
 # 拓展
 
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 
 | 插件            | 说明                                                         | 来源 |
 | --------------- | ------------------------------------------------------------ | ---- |

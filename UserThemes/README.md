@@ -1,5 +1,7 @@
 # 自定义 CSS 主题
 
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 Ver 代表最后测试版本
 
 | Ver  | File            | Description                                                  |

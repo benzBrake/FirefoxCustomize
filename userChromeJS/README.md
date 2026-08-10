@@ -1,5 +1,7 @@
 # userChromeJS
 
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 收集并涂改大佬的userChromeJS脚本。
 
 ## Why stopped updating the script?
@@ -142,7 +144,3 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 ## 特殊说明
 
 （2022.07.01）91.11ESR 安装 [xiaoxiaoflood userChromeJS 环境 6.23 版](https://github.com/xiaoxiaoflood/firefox-scripts/tree/7f4e96000baf44398e7308b0aed24781ec29ea82) 之后，启动Firefox时提示“读取配置文件失败，请联系您的系统管理员”，并且也不能安装老式扩展，可以点[这里](91.11ESR/xiaoxiaoflood)查看可用的版本
-
-## Views Counter
-
-<div align=center><a href='https://www.counter12.com'><img src='https://www.counter12.com/img-Dx4y4YwWc3bWB66y-9.gif' border='0' alt='free counter'></a><script type='text/javascript' src='https://www.counter12.com/ad.js?id=Dx4y4YwWc3bWB66y'></script></div>

@@ -1,5 +1,7 @@
 # 用户样式
 
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 这里的样式都是 Firefox 界面修改样式，可以直接复制到到 userChrome.css 里使用。
 
 如果你有使用 UC 脚本，建议使用 [UserCSSLoader.uc.js]() 来载入，方便调试。

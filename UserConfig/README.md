@@ -1,5 +1,7 @@
 # 插件的配置备份
 
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 * Selection Context Search.json Selection Context Search 配置备份
 * TMPpref.txt TabMixPlus 配置备份
 * headereditor.json  HeaderEditor 规则

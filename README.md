@@ -1,4 +1,7 @@
 # FirefoxCustomize
+
+![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+
 <p style="font-size: 32px; color: red; font-weight: bold;">如果你在 github.com 以外的网站看到此页面，证明是盗版页面，请访问正版页面：<a href="https://github.com/benzBrake/FirefoxCustomize">https://github.com/benzBrake/FirefoxCustomize/</a></p>
 
 
