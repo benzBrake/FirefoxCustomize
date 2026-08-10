@@ -1,6 +1,13 @@
 # FirefoxCustomize
 
-![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC)
+<p>
+<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FbenzBrake%2FFirefoxCustomize&label=hits&icon=github&color=%2379C83D&style=flat&tz=UTC" alt="Hits">
+<img src="https://img.shields.io/github/stars/benzBrake/FirefoxCustomize?style=flat-square&color=FF6036" alt="Stars">
+<img src="https://img.shields.io/github/forks/benzBrake/FirefoxCustomize?style=flat-square&color=79C83D" alt="Forks">
+<img src="https://img.shields.io/github/last-commit/benzBrake/FirefoxCustomize?style=flat-square&color=8B5CF6" alt="Last Commit">
+<img src="https://img.shields.io/badge/Firefox-FF7139?style=flat-square&logo=firefox-browser&logoColor=white" alt="Firefox">
+<img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
+</p>
 
 <p style="font-size: 32px; color: red; font-weight: bold;">如果你在 github.com 以外的网站看到此页面，证明是盗版页面，请访问正版页面：<a href="https://github.com/benzBrake/FirefoxCustomize">https://github.com/benzBrake/FirefoxCustomize/</a></p>
 
