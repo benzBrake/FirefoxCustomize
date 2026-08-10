@@ -4,11 +4,12 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2026.04.09
+// @version         2026.04.10
 // @compatibility   Firefox 133
 // @async
-// @shutdown        window.BMMultiColumn.destroy();
+// @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.08.10 修复 Loader 热重载时重复 destroy，并避免多窗口提前注销共享样式和延迟清理污染新实例
 // @note            2026.04.09 兼容新版 Firefox 书签菜单宽度规则，修复多列书签标题被撑宽后显示不全
 // @note            2025.07.03 修复书签工具栏溢出菜单显示不全 #50
 // @note            2025.05.13 优化横向滚动，感谢 ylcs006
@@ -27,12 +28,50 @@
 // @ignorecache
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
-    if (window.BMMultiColumn) {
-        window.BMMultiColumn.destroy();
-        delete window.BMMultiColumn;
+    function uninitBMMultiColumn (instance) {
+        for (let i = 0; i < instance.menupopup.length; i++) {
+            clearInterval(instance.timer[i]);
+            instance.timer[i] = null;
+            const menupopup = document.getElementById(instance.menupopup[i]);
+            if (!menupopup) continue;
+            instance.resetPopup(menupopup);
+            menupopup.removeEventListener('popupshowing', instance, false);
+            menupopup.removeEventListener('DOMMenuItemActive', instance, false);
+        }
     }
 
+    function hasOtherBMMultiColumnWindow () {
+        const windows = Services.wm.getEnumerator("navigator:browser");
+        while (windows.hasMoreElements()) {
+            const win = windows.getNext();
+            if (win !== window && win.BMMultiColumn && !win.BMMultiColumn._destroyed) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function destroyBMMultiColumn (instance) {
+        if (!instance || instance._destroyed) return;
+        instance._destroyed = true;
+        window.removeEventListener('unload', instance, false);
+        window.removeEventListener("aftercustomization", instance, false);
+        if (window.BMMultiColumn === instance) {
+            delete window.BMMultiColumn;
+        }
+        uninitBMMultiColumn(instance);
+        if (!hasOtherBMMultiColumnWindow()
+            && instance.style
+            && instance.sss.sheetRegistered(instance.style, instance.sss.AUTHOR_SHEET)) {
+            instance.sss.unregisterSheet(instance.style, instance.sss.AUTHOR_SHEET);
+        }
+        instance.style = null;
+    }
+
+    destroyBMMultiColumn(window.BMMultiColumn);
+
     window.BMMultiColumn = {
+        _destroyed: false,
         menupopup: ["historyMenuPopup",
             "bookmarksMenuPopup",
             'PlacesToolbar',
@@ -42,53 +81,43 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
         sss: Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService),
         init: function () {
             this.style = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css));
-            this.sss.loadAndRegisterSheet(this.style, 2);
+            if (!this.sss.sheetRegistered(this.style, this.sss.AUTHOR_SHEET)) {
+                this.sss.loadAndRegisterSheet(this.style, this.sss.AUTHOR_SHEET);
+            }
             window.removeEventListener("load", this, false);
             window.addEventListener('unload', this, false);
             window.addEventListener("aftercustomization", this, false);
             this.delayedStartup();
         },
-        delayedStartup: function (elm) {
+        delayedStartup: function () {
+            if (this._destroyed) return;
             //wait till construction of bookmarksBarContent is completed.
-            if (typeof elm == "undefined") {
-                for (var i = 0; i < this.menupopup.length; i++) {
-                    this.count[i] = 0;
-                    this.timer[i] = setInterval(function (self, i) {
-                        if (++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
-                            clearInterval(self.timer[i]);
-                            var menupopup = document.getElementById(self.menupopup[i]);
-                            if (menupopup) {
-                                menupopup.addEventListener('popupshowing', self, false);
-                                menupopup.addEventListener('DOMMenuItemActive', self, false);
-                            }
-                        }
-                    }, 250, this, i);
-                }
-            }
-        },
-        uninit: function () {
             for (var i = 0; i < this.menupopup.length; i++) {
+                clearInterval(this.timer[i]);
                 this.count[i] = 0;
                 this.timer[i] = setInterval(function (self, i) {
-                    if (++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
+                    if (self._destroyed || ++self.count[i] > 50 || document.getElementById(self.menupopup[i])) {
                         clearInterval(self.timer[i]);
                         var menupopup = document.getElementById(self.menupopup[i]);
-                        self.resetPopup(menupopup);
-                        if (menupopup) {
-                            menupopup.removeEventListener('popupshowing', self, false);
-                            menupopup.removeEventListener('DOMMenuItemActive', self, false);
+                        if (!self._destroyed && menupopup) {
+                            menupopup.addEventListener('popupshowing', self, false);
+                            menupopup.addEventListener('DOMMenuItemActive', self, false);
                         }
                     }
                 }, 250, this, i);
             }
         },
+        uninit: function () {
+            uninitBMMultiColumn(this);
+        },
         destroy () {
-            window.removeEventListener('unload', this, false);
-            window.removeEventListener("aftercustomization", this, false);
-            this.uninit();
-            this.sss.unregisterSheet(this.style, 2);
+            destroyBMMultiColumn(this);
+        },
+        hasOtherActiveWindow () {
+            return hasOtherBMMultiColumnWindow();
         },
         handleEvent (event) {
+            if (this._destroyed) return;
             switch (event.type) {
                 case 'popupshowing':
                     let menupopup;
@@ -100,14 +129,16 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     this.initHorizontalScroll(event);
                     if (menupopup.id === "PlacesChevronPopup") {
                         setTimeout(_ => {
-                            this.initMultiColumn(menupopup, event);
+                            if (!this._destroyed) {
+                                this.initMultiColumn(menupopup, event);
+                            }
                         }, 10);
                     } else {
                         this.initMultiColumn(menupopup, event);
                     }
                     break;
                 case 'aftercustomization':
-                    setTimeout(function (self) { self.delayedStartup(self); }, 0, this);
+                    setTimeout(() => this.delayedStartup(), 0);
                     break;
                 case 'unload':
                     this.destroy();
@@ -201,7 +232,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             }
         },
         resetPopup (menupopup) {
-            let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
+            let arrowscrollbox = menupopup?.shadowRoot?.querySelector("::part(arrowscrollbox)");
             if (!arrowscrollbox) return;
             menupopup.style.maxWidth = "";
             arrowscrollbox.style.width = "";

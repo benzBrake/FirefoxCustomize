@@ -22,10 +22,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.9
+// @version         1.4.10
 // @compatibility   Firefox 74
-// @shutdown        window.BookmarkOpt.destroy();
+// @shutdown        window.BookmarkOpt?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.10 修复 Loader 热重载时重复 destroy，并按活动窗口数量管理共享样式、组件和 PlacesUIUtils 补丁
 // @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            1.4.9 简化设置 PlacesChevron 弹出菜单位置的逻辑，简化 $L 函数，优化事件绑定函数，修复一处 remove_events 错误传递参数，修复上一个版本导致右键菜单失效
 // @note            1.4.8 移除 eval，修复 firstUpperCase / ucfirst 命名混乱
@@ -162,10 +163,81 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 
     }];
 
-    if (window.BookmarkOpt) {
-        window.BookmarkOpt.destroy();
-        delete window.BookmarkOpt;
+    function destroyBookmarkOpt (instance) {
+        if (!instance || instance._destroyed) return;
+        instance._destroyed = true;
+        window.removeEventListener("unload", instance);
+        if (window.BookmarkOpt === instance) {
+            delete window.BookmarkOpt;
+        }
+
+        const activeWindows = PlacesUIUtils.bmoptOpenNodeWithEventWindows;
+        activeWindows?.delete(window);
+        const isLastInstance = !activeWindows?.size;
+        if (instance.style?.url && instance.style?.type) {
+            const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
+            if (isLastInstance && sss.sheetRegistered(instance.style.url, instance.style.type)) {
+                sss.unregisterSheet(instance.style.url, instance.style.type);
+            }
+            instance.style = null;
+        }
+        if (isLastInstance && PlacesUIUtils.bmoptOpenNodeWithEventOriginal) {
+            PlacesUIUtils.openNodeWithEvent = PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
+            delete PlacesUIUtils.o_openNodeWithEvent;
+            delete PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
+            delete PlacesUIUtils.bmoptOpenNodeWithEventWindows;
+        }
+        switch (location.href) {
+            case instance.X_MAIN:
+                const urlbar = $('urlbar');
+                if (urlbar) {
+                    remove_events(urlbar, 'dblclick', instance, false);
+                    urlbar.removeAttribute('bmopt-inited');
+                }
+                instance.items?.forEach(item => item.remove());
+                if (instance.items) {
+                    instance.items.length = 0;
+                }
+                const placesToolbar = $('PlacesToolbar');
+                if (placesToolbar) {
+                    remove_events(placesToolbar, ['popupshowing', 'popuphidden'], instance, false);
+                    placesToolbar.removeAttribute('bmopt-inited');
+                    const placesChevronPopup = $('PlacesChevronPopup');
+                    if (placesChevronPopup) {
+                        remove_events(placesChevronPopup, 'popuphidden', instance, false);
+                    }
+                }
+                if ($('PlacesToolbarItems')) {
+                    remove_events($('PlacesToolbarItems'), ['mousedown', 'click'], instance, false);
+                    remove_events(document, 'mouseup', instance, false);
+                }
+                if (instance.PlacesChevronObserver) {
+                    instance.PlacesChevronObserver.disconnect();
+                    instance.PlacesChevronObserver = null;
+                }
+            case instance.X_PLACES:
+            case instance.XUL_PLACES:
+            case instance.X_BOOKMARK_SB:
+            case instance.XUL_BOOKMARK_SB:
+            case instance.X_HISTORY_SB:
+            case instance.XUL_HISTORY_SB:
+                const placesContext = $("placesContext");
+                if (placesContext) {
+                    remove_events(placesContext, ['popupshowing', 'popuphidden'], instance, false);
+                    placesContext.removeAttribute('bmopt-inited');
+                }
+                instance.clearPanelItems?.(document);
+                break;
+        }
+        if (isLastInstance) {
+            try {
+                const customizableUI = globalThis.CustomizableUI || instance.topWin?.CustomizableUI;
+                customizableUI?.destroyWidget("BookmarkOpt-Toggle-PersonalToolbar");
+            } catch (ex) { }
+        }
     }
+
+    destroyBookmarkOpt(window.BookmarkOpt);
 
     var isMouseDown = false;
     PlacesUIUtils.bmoptOpenNodeWithEventWindows ||= new Set();
@@ -188,6 +260,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
     }
 
     window.BookmarkOpt = {
+        _destroyed: false,
         items: [],
         get topWin () {
             return Services.wm.getMostRecentWindow("navigator:browser");
@@ -200,6 +273,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         X_HISTORY_SB: 'chrome://browser/content/places/historySidebar.xhtml',
         XUL_HISTORY_SB: 'chrome://browser/content/history/history-panel.xul',
         init () {
+            window.addEventListener("unload", this, { once: true });
             if (!this.style) {
                 this.style = add_style(css);
             }
@@ -293,59 +367,16 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
             this.regexp = new RegExp([rTITLE, rURL, rHOST].join("|"), "ig");
         },
         destroy () {
-            if (this.style && this.style.url && this.style.type) {
-                let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
-                sss.unregisterSheet(this.style.url, this.style.type);
-                this.style = null;
-            }
-            PlacesUIUtils.bmoptOpenNodeWithEventWindows?.delete(window);
-            if (!PlacesUIUtils.bmoptOpenNodeWithEventWindows?.size && PlacesUIUtils.bmoptOpenNodeWithEventOriginal) {
-                PlacesUIUtils.openNodeWithEvent = PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
-                delete PlacesUIUtils.o_openNodeWithEvent;
-                delete PlacesUIUtils.bmoptOpenNodeWithEventOriginal;
-                delete PlacesUIUtils.bmoptOpenNodeWithEventWindows;
-            }
-            switch (location.href) {
-                case this.X_MAIN:
-                    let urlbar = $('urlbar');
-                    remove_events(urlbar, 'dblclick', this, false);
-                    urlbar.removeAttribute('bmopt-inited');
-                    this.items.forEach(item => {
-                        item.parentNode.removeChild(item);
-                    });
-                    let placesToolbar = $('PlacesToolbar');
-                    if (placesToolbar) {
-                        remove_events(placesToolbar, ['popupshowing', 'popuphidden'], this, false);
-                        placesToolbar.removeAttribute('bmopt-inited');
-                        remove_events($('PlacesChevronPopup'), 'popuphidden', this, false);
-                        try {
-                            CustomizableUI.destroyWidget("BookmarkOpt-Toggle-PersonalToolbar");
-                        } catch (ex) { }
-                    }
-                    if ($('PlacesToolbarItems')) {
-                        remove_events($('PlacesToolbarItems'), ['mousedown', 'click'], this, false);
-                        remove_events(document, 'mouseup', this, false);
-                    }
-                    if (this.PlacesChevronObserver) {
-                        this.PlacesChevronObserver.disconnect();
-                    }
-                case this.X_PLACES:
-                case this.XUL_PLACES:
-                case this.X_BOOKMARK_SB:
-                case this.XUL_BOOKMARK_SB:
-                case this.X_HISTORY_SB:
-                case this.XUL_HISTORY_SB:
-                    remove_events($("placesContext"), ['popupshowing', 'popuphidden'], this, false);
-                    $('placesContext').removeAttribute('bmopt-inited');
-                    this.clearPanelItems(document);
-                    break;
-            }
+            destroyBookmarkOpt(this);
         },
         handleEvent (event) {
             const { target, button, type } = event;
             const targetWin = target.documentGlobal || target.ownerGlobal || target.ownerDocument?.defaultView || window;
             const { document: doc, setToolbarVisibility } = targetWin;
             switch (type) {
+                case 'unload':
+                    this.destroy();
+                    break;
                 case 'click':
                     if (button == 1 && isMouseDown) {
                         if (!Services.prefs.getBoolPref("userChromeJS.BookmarkOpt.insertBookmarkByMiddleClick", false)) return;
@@ -662,7 +693,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
         url: Services.io.newURI('data:text/css;charset=UTF-8,' + encodeURIComponent(css)),
         type: sss.AGENT_SHEET
     }
-    sss.loadAndRegisterSheet(s.url, s.type);
+    if (!sss.sheetRegistered(s.url, s.type)) {
+        sss.loadAndRegisterSheet(s.url, s.type);
+    }
     return s;
 
 }, (aText) => {
