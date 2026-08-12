@@ -217,7 +217,7 @@
 ```
 userChromeJS/
 ├── 100/
-│   └── browsertoolbox.uc.js     # Firefox 100+ 版本（不再更新）
+│   └── MenubarReplaceWithButton.uc.js # Firefox 100+ 版本（不再更新）
 ├── 147/
 │   └── OldScript.uc.js          # Firefox 147+ 版本（不再更新）
 ├── ScriptName.uc.js              # Firefox 149+ 最新单文件脚本（继续维护）

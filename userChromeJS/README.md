@@ -88,7 +88,6 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 90   | [AutoHideTabsToolbar](AutoHideTabsToolbar.uc.js)             | 只有一个标签时隐藏标签栏                                     | [📃](https://forum.mozilla-russia.org/viewtopic.php?id=76642) |
 |      | 108  | [BMMultiColumn](BMMultiColumn.uc.js)                         | 多列书签，修复与我的`BookmarkOpt.uc.js`共同使用会报错        | [📃](https://bbs.kafan.cn/thread-2114879-1-1.html)            |
 |      | 74   | [BookmarkOpt](BookmarkOpt.uc.js)                             | 书签操作增强，添加”添加书签到此处”和”更新书签为当前网址”<br />侧边栏添加”复制标题”和”复制链接”<br />增加了一个【显示/隐藏书签工具栏】的按钮<br />低版本Firefox有的功能不能用，建议升级 Firefox |                                                              |
-|      | 100  | [browsertoolbox](100/browsertoolbox.uc.js)                       | 新增一个打开”浏览器内容工具箱”的按钮                         | [📃](https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js) |
 |      | 90   | [ColorfulTabs](ColorfulTabs.uc.js)                           | 多彩标签页                                                   |                                                              |
 |      |      | [contextMenuSlideDown](contextMenuSlideDown.uc.js)           | 给弹出菜单增加载入动画                                       | [📃](https://github.com/Lockframe/Firefox-WinUI/blob/main/optional-js/contextMenuSlideDown.uc.js) |
 |      | 100  | [CopyCat](80/CopyCat/CopyCat.uc.js)                           | 给 Firefox 增加一个按钮，类似于 AnoBtn（不再维护，已被 addMenuPlus 替代） |                                                              |
@@ -104,7 +103,6 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |  ❌   | 135  | [StyloaiX](styloaix/styloaix.uc.js)                          | CSS 样式管理器，类似旧版 Stylish，支持样式编写与管理         | [📃](https://github.com/xiaoxiaoflood/firefox-scripts/tree/master/STYLOAIX) |
 |  ®️  | 136  | [LinkGopher](LinkGopher.uc.mjs)                              | 提取链接，代替 LinkGopher 扩展                               |                                                              |
 |      | 107  | [LocationBar](LocationBar.uc.js)                             | 地址栏内新增一个工具栏                                       |                                                              |
-|      | 100  | [MenubarReplaceWithButton](MenubarReplaceWithButton.uc.js)   | 把主菜单替换成按钮                                           | [📃](https://u6.getuploader.com/script/download/2051)         |
 |      | 152  | [MobileBrowser](MobileBrowser.uc.js)                         | 在独立窗口中以 iPhone 14 竖屏尺寸打开当前页面，利用响应式设计模式模拟移动端浏览 |                                                              |
 |      | 136  | [ucf_downloads_clear](ucf_downloads_clear/ucf_downloads_clear.uc.js) | 在下载面板添加”清空下载记录”按钮                               | [📃](https://github.com/VicDobrov/UserChromeFiles/blob/main/profile_ucf_dobrov/chrome/user_chrome_files/custom_scripts/ucf_downloads_clear.js) |
 |      | 149  | [ucf_drag_ModR](ucf_drag_ModR/ucf_drag_ModR.uc.js)           | 鼠标拖拽 Drag & Go，默认配置文件与脚本同目录：`_ucf_drag_ModR.config.js` | [📃](https://forum.mozilla-russia.org/viewtopic.php?pid=797234#p797234) |

@@ -6,6 +6,7 @@
 // @include     main
 // @note        20260705 一级菜单不再创建 menu-iconic-left 占位节点
 // @note        20260705 一级菜单改用无图标菜单结构，并移除 menu-icon 节点
+// @note        2026-08-12 归档：不再更新
 // ==/UserScript==
 
 (function () {
