@@ -87,14 +87,14 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 120  | [AutoCompleteDeleteButton](AutoCompleteDeleteButton.uc.js) | 为网页输入框的表单历史下拉添加删除按钮                       |                                                              |
 |      | 90   | [AutoHideTabsToolbar](AutoHideTabsToolbar.uc.js)             | 只有一个标签时隐藏标签栏                                     | [📃](https://forum.mozilla-russia.org/viewtopic.php?id=76642) |
 |      | 108  | [BMMultiColumn](BMMultiColumn.uc.js)                         | 多列书签，修复与我的`BookmarkOpt.uc.js`共同使用会报错        | [📃](https://bbs.kafan.cn/thread-2114879-1-1.html)            |
-|      | 74   | [BookmarkOpt](BookmarkOpt.uc.js)                             | 书签操作增强，添加”添加书签到此处”和”更新书签为当前网址”<br />融合了`AddBMHere.uc.js`、`AddBookmarkHere.uc.js`、`UpdateBookmarkLite.uc.js`侧边栏添加”复制标题”和”复制链接”<br />增加了一个【显示/隐藏书签工具栏】的按钮<br />低版本Firefox有的功能不能用，建议升级 Firefox |                                                              |
+|      | 74   | [BookmarkOpt](BookmarkOpt.uc.js)                             | 书签操作增强，添加”添加书签到此处”和”更新书签为当前网址”<br />侧边栏添加”复制标题”和”复制链接”<br />增加了一个【显示/隐藏书签工具栏】的按钮<br />低版本Firefox有的功能不能用，建议升级 Firefox |                                                              |
 |      | 100  | [browsertoolbox](100/browsertoolbox.uc.js)                       | 新增一个打开”浏览器内容工具箱”的按钮                         | [📃](https://github.com/Endor8/userChrome.js/blob/master/Firefox-96/browsertoolbox.uc.js) |
 |      | 90   | [ColorfulTabs](ColorfulTabs.uc.js)                           | 多彩标签页                                                   |                                                              |
 |      |      | [contextMenuSlideDown](contextMenuSlideDown.uc.js)           | 给弹出菜单增加载入动画                                       | [📃](https://github.com/Lockframe/Firefox-WinUI/blob/main/optional-js/contextMenuSlideDown.uc.js) |
 |      | 100  | [CopyCat](80/CopyCat/CopyCat.uc.js)                           | 给 Firefox 增加一个按钮，类似于 AnoBtn（不再维护，已被 addMenuPlus 替代） |                                                              |
 |      | 100  | [CopyCatTheme](CopyCatTheme/CopyCatTheme.uc.js)              | 读取 Firefox CSS 主题                                        |                                                              |
 |      | 57   | [CopyPlainText](CopyPlainText.uc.js)                         | 右键菜单复制和Ctrl+C强制复制纯文本                           |                                                              |
-|      | 108  | [CustomButtons](CustomButtons.uc.js)                         | 替代 [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js) |                                                              |
+|      | 108  | [CustomButtons](CustomButtons.uc.js)                         | 提供可自定义的工具栏按钮                                     |                                                              |
 |      |      | [dav_LinkifiesLocationBar](dav_LinkifiesLocationBar.uc.js)   | 多级地址栏，源自 *locationbar2* 扩展                         | [📃](https://github.com/sdavidg/firefoxChromeScripts)         |
 |      | 72   | [downloadPlus_ff98](https://github.com/benzBrake/Firefox-downloadPlus.uc.js) | 下载功能增强（已迁移至独立仓库）                             |                                                              |
 |      | 96   | [ExtensionsOptionsMenu](ExtensionsOptionsMenu)               | 汉化版拓展管理器，两个版本，建议使用通用版                   |                                                              |
@@ -115,8 +115,6 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 
 |  ℹ️   | V    | 脚本                                                         | 说明                                                         |                              源                              |
 | :--: | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | :----------------------------------------------------------: |
-|      | 68   | [AddBookmarkHere](68/AddBookmarkHere.uc.js)                  | 添加 "添加书签到此处" 到书签栏右键菜单（仅在 Firefox 100 中测试过），如果想使用 WebExtension 版[看这里](https://github.com/benzBrake/FirefoxCustomize/tree/master/extensions/addbookmarkhere)，已经被 BookmarkOpt.uc.js 替代 |                                                              |
-|      | 90   | [addToolbarInsideLocationBar](90/addToolbarInsideLocationBar.uc.js) | 添加一个地址内工具栏                                         | [📃](https://github.com/alice0775/userChrome.js/blob/master/zzz-addToolbarInsideLocationBar.uc.js) |
 |      | 69   | [autoPopup++](autoPopup++.uc.js)                             | 自动弹出菜单增强版                                           |      [📃](https://bbs.kafan.cn/thread-1866855-1-1.html)       |
 |  ®️  | 57   | [AutoCopySelectionText](AutoCopySelectionText/AutoCopySelectionText.uc.js) | 自动复制选中文本（ScrLk 亮起时不复制）                       |                                                              |
 |      | 57   | [AutoPopup](109/AutoPopup.uc.js)                             | 自动弹出菜单，好像是从阳光盒子定制版里拉出来的               |                                                              |
@@ -125,21 +123,11 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 95   | [bookmarksmenu_scrollbar](95/bookmarksmenu_scrollbar.uc.js)     | 书签弹出菜单显示滚动条，修改兼容BMMultiColumn.uc.js          | [📃](https://github.com/alice0775/userChrome.js/blob/master/95/bookmarksmenu_scrollbar.uc.js) |
 |  ⛔   | 68   | [downloadPlus](68/downloadPlus.uc.js)                        | 下载功能增强，第三方工具，另存为，复制下载连接（没记错最多支持到73）。 |                                                              |
 |      | 90   | [downloadsBtnMod](90/downloadsBtnMod.uc.js)                  | 下载按钮功能增强，中键调用 lux.exe/you-get.exe，右键打开下载管理 |                                                              |
-|  ⛔   | 70   | [Firefox_ToolBarButtons](70/Firefox_ToolBarButtons.uc.js)    | 给Firefox添加20多个按钮，有重启，打开配置文件夹，窗口置顶等  |                                                              |
 |      | 100  | [moveReloadIntoUrl](moveReloadIntoUrl.uc.js)                 | 移动刷新按钮到地址栏                                         |                                                              |
-|  ❌   | 78   | [OpenWith](78/OpenWith.uc.js)                                | 使用其他浏览器打开网页                                       |                                                              |
 |      | 100  | [PersonalToolbarAutoHide](90/PersonalToolbarAutoHide.uc.js)  | 自动隐藏书签栏                                               |                                                              |
-|      | 90   | [QuickSnapshot](90/QuickSnapshot_Mod.uc.js)                  | 可移动多功能截图按钮，改成可热插拔了，被[CustomButtons](CustomButtons.uc.js)替代了 | [📃](https://github.com/runningcheese/RunningCheese-Firefox/blob/master/userChrome.js/QuickSnapshot.uc.js) |
 |      | 57   | [ReloadAllTabs](57/ReloadAllTabs.uc.js)                      | 标签页右键菜单添加"刷新所有标签页"（已归档）                  |                                                              |
 |      | 136  | [revivalOldHistorySidebar](136/revivalOldHistorySidebar.uc.js) | 新版历史侧边栏改回旧版布局                                   | [📃](https://github.com/alice0775/userChrome.js/blob/master/136/revivalOldHistorySidebar.uc.js) |
-|  ❌   | 96   | [rightClickOpenClipboard](90/rightClickOpenClipboard.uc.js)  | 右键新增标签页按钮打开剪贴板链接（非链接自动搜索）<br />新窗口不生效，已经被 TabPlus.uc.js 替代 |                                                              |
 |      | 90   | [showPersonalToolbarOnDemand](90/showPersonalToolbarOnDemand.uc.js) | 按需显示书签工具栏（主要是为了解决在新标签页在显示书签工具栏的功能不能用于`about:blank`），这个 BUG 已经在 Firefox 108 修复了 |                                                              |
-|  ❌   | 78   | [SyncStyles](78/SyncStyles.uc.js)                            | 非浏览器主窗口的窗口自动读取浏览器主窗口 CSS 属性，这个脚本主要是为了 CopyCatTheme.uc.js 服务，已合并，所以不再单独维护 |                                                              |
-|      | 100  | [UpdateBookmarkLite](90/UpdateBookmarkLite.uc.js)            | 给工具栏书签新增替换书签功能，已经被 BookmarkOpt.uc.js 替代  |      [📃](https://bbs.kafan.cn/thread-2233641-1-1.html)       |
-|  ⛔   | 70   | [verticalAddOnBar](70/verticalAddOnBar.uc.js)               | 增加一个类似 vivaldi 的侧边工具栏（已不再使用）             |                                                              |
-|  ⛔   | 134  | [verticalTabsPane](134/verticalTabsPane.uc.js)              | 垂直标签栏面板，类似 Edge 的垂直标签页（不再跟随作者更新）     | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/verticalTabsPane.uc.js) |
-|  ⛔   | 134  | [unreadTabMods](134/unreadTabMods.uc.js)                    | 未读标签页样式增强，添加标记已读/未读菜单（不再跟随作者更新） | [📃](https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js) |
-|      | 90   | [YouGetBtn](90/YouGetBtn.uc.js)                              | 鉴于 Video DownloadHelper 下载高清需要付费<br />就做了这个小脚本调用 you-get.exe 下载视频 |                                                              |
 
 ## 特殊说明
 
