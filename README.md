@@ -29,7 +29,7 @@ Ryan 的 Firefox 自定义资源收藏夹
 
 ### RunFirefox 与 libportable的区别
 
-RunFirefox 是引导器，原理是利用 Firefox 的 -profile 参数，不是真的便携，但是支持 Firefox 自动更新，无需操心，libportabe是补丁，完美便携，但是 Firefox 自动更新后又要重新打补丁。
+RunFirefox 是引导器，原理是利用 Firefox 的 -profile 参数，不是真的便携，但是支持 Firefox 自动更新，无需操心，libportabe是补丁，完美便携，但是 Firefox 自动更新后可能要重新打补丁。
 
 ## 分类说明
 
