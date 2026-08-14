@@ -9,6 +9,7 @@
 // @include         chrome://browser/content/browser.xhtml
 // @include         chrome://browser/content/browser.xul
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            2026-08-15 归档：不再维护，功能已无用途
 // ==/UserScript==
 (function () {
     if (window.toggleExtensions) {

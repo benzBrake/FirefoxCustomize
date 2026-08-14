@@ -7,6 +7,7 @@
 // @description    给应用主菜单添加文本缩放工具条
 // @note           改自 Kaslanka Querp https://lottafox.bliemhax.com 的 textZoomTool.uc.js
 // @needtodo       把缩放倍数按域名存起来，快捷键
+// @note           2026-08-15 归档：不再维护
 // ==/UserScript==
 (this.textZoomTool = {
     init(win) {
