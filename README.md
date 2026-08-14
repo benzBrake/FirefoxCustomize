@@ -8,10 +8,8 @@
 <img src="https://img.shields.io/badge/Firefox-FF7139?style=flat-square&logo=firefox-browser&logoColor=white" alt="Firefox">
 <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
 </p>
-
-<p style="font-size: 32px; color: red; font-weight: bold;">如果你在 github.com 以外的网站看到此页面，证明是盗版页面，请访问正版页面：<a href="https://github.com/benzBrake/FirefoxCustomize">https://github.com/benzBrake/FirefoxCustomize/</a></p>
-
-
+<p style="font-size: 24px; color: red; font-weight: bold;">如果你在 github.com 以外的网站看到此页面，证明是盗版页面，请访问正版页面：<a href="https://github.com/benzBrake/FirefoxCustomize">https://github.com/benzBrake/FirefoxCustomize/</a></p>
+<p style="font-size: 24px; color: blue; font-weight: bold;">另外，本仓库允许 gitcode.com 镜像加速</p>
 
 Ryan 的 Firefox 自定义资源收藏夹
 
