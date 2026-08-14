@@ -9,7 +9,7 @@
  * @homepageURL     https://github.com/benzBrake/FirefoxCustomize
 ==/UserStyle== */
 @media -moz-pref("sidebar.revamp") {
-    #sidebar-main {
+    :is(#sidebar-container, #sidebar-main) {
         &:not([sidebar-positionend]) {
             &~#sidebar-box {
                 order: 10 !important;

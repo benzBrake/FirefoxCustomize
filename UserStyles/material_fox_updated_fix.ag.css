@@ -158,7 +158,7 @@
       }
     }
 
-    #sidebar-main {
+    :is(#sidebar-container, #sidebar-main) {
       &:not([sidebar-launcher-expanded]) {
         #vertical-tabs .tab-close-button {
           display: none !important;
