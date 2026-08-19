@@ -3,12 +3,13 @@
 // @description     状态栏
 // @license         MIT License
 // @compatibility   Firefox 149
-// @version         0.0.8
+// @version         0.0.9
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            0.0.8 修复恢复默认设置后状态栏被 collapsed 隐藏
+// @note            2026-08-19 修复过长状态文本挤占状态栏按钮
 // @note            0.0.7 修复 togglePref 函数使用 hasAttribute 检测选中状态
 // @note            0.0.6 升级兼容性至 Firefox 149+
 // @note            0.0.5 移除 0.0.2 引入的 TabMixPlus 兼容代码
@@ -202,10 +203,22 @@
 
     window.StatusBar.init();
 })(`
+#status-text {
+    min-width: 0;
+    overflow: hidden;
+}
+#status-text-inner {
+    min-width: 0;
+    overflow: hidden;
+}
 #status-text-inner[inactive="true"] {
     display: none;
 }
 #status-text-inner #statuspanel-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     background: var(--toolbar-bgcolor);
     border: none !important;
 }
