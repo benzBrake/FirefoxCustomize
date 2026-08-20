@@ -20,3 +20,21 @@ desktop.ini
 
 # MCP
 .playwright-mcp
+
+# 工具缓存与快照
+.codegraph/
+.codeartsdoer/
+.codex-tmp/
+.merkle-snapshot.json
+
+# Node.js（UserThemes/Sidra）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+.nyc_output/
+
+# SCSS / Sass
+.sass-cache/
