@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r20
+// @version        0.0.6r21
+// @note           0.0.6r21 修复 fetchRemoteStyleContent 任意 URL fetch 的 SSRF 风险：强制 http/https 协议并限制返回内容长度
 // @note           0.0.6r20 Firefox 154 Bug 2047680 actor opt-in; move remote-install confirmation to chrome
 // @note           0.0.6r19 修复 Firefox 152 执行 @shutdown 时调用已不存在的 CustomizableUI.removeWidget 导致清理失败
 // @note           0.0.6r18 按实际 var() 使用场景推断 @var text 输出语法，兼容 content 字符串与长度等裸值
@@ -74,6 +75,8 @@ about:config
   const FILE_URL_PREFIX = "file://";
   const INSTALL_ACTOR_NAME = "UserCSSLoaderActor";
   const INSTALL_ACTOR_URI = "chrome://userchromejs/content/UserChromeJS/UserCSSLoader.sys.mjs";
+  const REMOTE_STYLE_MAX_BYTES = 5 * 1024 * 1024;
+  const SAFE_REMOTE_URL_PROTOCOLS = new Set(["http:", "https:"]);
 
   const STYLES_NAME_MAP = {
     0: {
@@ -1167,6 +1170,15 @@ about:config
       return remoteContent === localContent ? 0 : 1;
     },
     async fetchRemoteStyleContent (url) {
+      let parsedURL;
+      try {
+        parsedURL = new URL(url);
+      } catch (ex) {
+        throw new Error(`Invalid update URL: ${url}`);
+      }
+      if (!SAFE_REMOTE_URL_PROTOCOLS.has(parsedURL.protocol)) {
+        throw new Error(`Refused to fetch style from unsafe protocol: ${parsedURL.protocol}`);
+      }
       const response = await fetch(url, {
         credentials: "omit",
         cache: "no-cache"
@@ -1174,7 +1186,11 @@ about:config
       if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`);
       }
-      return response.text();
+      const content = await response.text();
+      if (content.length > REMOTE_STYLE_MAX_BYTES) {
+        throw new Error(`Remote style content too large: ${content.length} chars (limit ${REMOTE_STYLE_MAX_BYTES})`);
+      }
+      return content;
     },
     async checkStyleUpdate (fullName, { silent = false, batch = false } = {}) {
       const { MESSAGES } = this;
