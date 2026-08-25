@@ -9,7 +9,8 @@
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/userChromeJS/UserCSSLoader/UserCSSLoader.uc.js
 // @shutdown       window.UserCSSLoader?.destroy?.(true);
-// @version        0.0.6r21
+// @version        0.0.6r22
+// @note           0.0.6r22 installRemoteStyle 落盘前校验 ==UserStyle== 头部与 @usercssloader 声明；normalizeRemoteStyleContent 写回 URL 前校验 http/https 协议并过滤换行
 // @note           0.0.6r21 修复 fetchRemoteStyleContent 任意 URL fetch 的 SSRF 风险：强制 http/https 协议并限制返回内容长度
 // @note           0.0.6r20 Firefox 154 Bug 2047680 actor opt-in; move remote-install confirmation to chrome
 // @note           0.0.6r19 修复 Firefox 152 执行 @shutdown 时调用已不存在的 CustomizableUI.removeWidget 导致清理失败
@@ -1061,6 +1062,31 @@ about:config
       }
       return normalized;
     },
+    sanitizeRemoteStyleURL (url) {
+      const trimmed = String(url || "").trim().replace(/[\r\n\t]+/g, "");
+      if (!trimmed) {
+        return "";
+      }
+      try {
+        const parsed = new URL(trimmed);
+        if (!SAFE_REMOTE_URL_PROTOCOLS.has(parsed.protocol)) {
+          return "";
+        }
+      } catch (ex) {
+        return "";
+      }
+      return trimmed;
+    },
+    validateRemoteStyleForInstall (codeText) {
+      const info = this.parseStyleInfoFromContent(codeText);
+      if (!info.header) {
+        return { ok: false, reason: "missing ==UserStyle== header" };
+      }
+      if (!/^\s*(?:(?:\/\/|\*)\s*)?@usercssloader\s+[^\s*]+/im.test(info.header)) {
+        return { ok: false, reason: "missing @usercssloader declaration" };
+      }
+      return { ok: true, info };
+    },
     normalizeRemoteStyleContent (codeText, { sourceURL = "", codeURL = "" } = {}) {
       let content = String(codeText || "");
       const headerMatch = content.match(/^\/\*\s*==UserStyle==\s*[\r\n](?:.*[\r\n])*?==\/UserStyle==\s*\*\/\s*(?:[\r\n]|$)/m);
@@ -1068,8 +1094,8 @@ about:config
         return content;
       }
 
-      const source = String(sourceURL || "").trim();
-      const download = String(codeURL || "").trim();
+      const source = this.sanitizeRemoteStyleURL(sourceURL);
+      const download = this.sanitizeRemoteStyleURL(codeURL);
       const linesToInsert = [];
       if (source && !/^\s*(?:(?:\/\/|\*)\s*)?@homepage(URL)?\s+.+\s*$/im.test(headerMatch[0])) {
         linesToInsert.push(`@homepageURL  ${source}`);
@@ -1095,6 +1121,14 @@ about:config
         return {
           status: "error",
           error: "Empty style content."
+        };
+      }
+
+      const validation = this.validateRemoteStyleForInstall(codeText);
+      if (!validation.ok) {
+        return {
+          status: "error",
+          error: `Refused to install remote style: ${validation.reason}`
         };
       }
 
