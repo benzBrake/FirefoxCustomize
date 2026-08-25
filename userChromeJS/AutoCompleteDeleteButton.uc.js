@@ -3,11 +3,12 @@
 // @description     为网页输入框的表单历史下拉添加删除按钮
 // @license         MIT License
 // @compatibility   Firefox 120
-// @version         0.1.6
+// @version         0.1.7
 // @charset         UTF-8
 // @include         main
 // @note            仅作用于网页 input/textarea 的 PopupAutoComplete 表单历史下拉
 // @note            20260714 删除后清除 FormHistory 增量搜索缓存，并过滤当前页面残留的旧结果
+// @note            2026-08-25 兼容 Firefox 154 新版 autocomplete-row-item 结果结构
 // ==/UserScript==
 
 (function () {
@@ -16,7 +17,10 @@
   const { classes: Cc, interfaces: Ci } = Components;
 
   const POPUP_ID = "PopupAutoComplete";
-  const ITEM_SELECTOR = ".autocomplete-richlistitem";
+  const LEGACY_ITEM_CLASS = "autocomplete-richlistitem";
+  const MODERN_ITEM_CLASS = "autocomplete-row-item";
+  const ITEM_SELECTOR =
+    `.${LEGACY_ITEM_CLASS}, .${MODERN_ITEM_CLASS}`;
   const BUTTON_CONTAINER_CLASS = "ac-delete-button-container";
   const BUTTON_CLASS = "ac-delete-button";
   const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -35,7 +39,7 @@
   const suppressedValuesByActor = new WeakMap();
 
   const style = `
-    #PopupAutoComplete .autocomplete-richlistitem {
+    #PopupAutoComplete :is(.${LEGACY_ITEM_CLASS}, .${MODERN_ITEM_CLASS}) {
       position: relative;
       padding-inline-end: 34px !important;
     }
@@ -72,8 +76,8 @@
       fill: currentColor;
     }
 
-    #PopupAutoComplete .autocomplete-richlistitem:hover .${BUTTON_CLASS},
-    #PopupAutoComplete .autocomplete-richlistitem[selected="true"] .${BUTTON_CLASS} {
+    #PopupAutoComplete :is(.${LEGACY_ITEM_CLASS}, .${MODERN_ITEM_CLASS}):hover .${BUTTON_CLASS},
+    #PopupAutoComplete :is(.${LEGACY_ITEM_CLASS}, .${MODERN_ITEM_CLASS})[selected="true"] .${BUTTON_CLASS} {
       opacity: 0.72;
     }
 
@@ -327,13 +331,27 @@
     }
   }
 
-  function getRowMeta(item, index) {
-    const comment = item.getAttribute("ac-comment") || "";
+  function getRowMeta(item, fallbackIndex = -1) {
+    const row = item?.querySelector("autocomplete-row-item") || null;
+    const richlistbox = getRichlistbox(getPopup());
+    const itemIndex = richlistbox?.getIndexOfItem(item) ?? -1;
+    const index = itemIndex >= 0 ? itemIndex : fallbackIndex;
+    const controller = row ? getControllerFromPopup(getPopup()) : null;
+
+    let comment = item?.getAttribute("ac-comment") || "";
+    if (!comment && row && index >= 0 && controller?.getCommentAt) {
+      try {
+        comment = controller.getCommentAt(index) || "";
+      } catch (error) {
+        log("Failed to read row comment from controller:", error);
+      }
+    }
+
     const styleName = item.getAttribute("originaltype") || "";
     return {
       index,
-      value: item.getAttribute("ac-value") || "",
-      label: item.getAttribute("ac-label") || "",
+      value: row?.value || item.getAttribute("ac-value") || "",
+      label: row?.label || item.getAttribute("ac-label") || "",
       comment,
       styleName,
       parsedComment: safeParseJSON(comment),
@@ -433,7 +451,7 @@
     }
 
     richlistbox.selectedIndex = index;
-    log("Selected row", { index, value: item.getAttribute("ac-value") || "" });
+    log("Selected row", { index, value: getRowMeta(item, index).value });
     return true;
   }
 
@@ -469,8 +487,9 @@
     }
 
     const popup = getPopup();
+    const value = getRowMeta(item).value;
     item.remove();
-    log("Removed row from DOM", { value: item.getAttribute("ac-value") || "" });
+    log("Removed row from DOM", { value });
 
     if (popup?.popupOpen) {
       const rows = getRows(popup);
@@ -493,7 +512,7 @@
       return false;
     }
 
-    const value = item.getAttribute("ac-value") || "";
+    const value = getRowMeta(item).value;
     const fieldname = getFieldName(element, popup);
     if (!value) {
       log("Fallback delete skipped: missing value", {
@@ -532,13 +551,19 @@
       return;
     }
 
-    log("Delete requested", explainRowDecision(item, -1));
+    const decision = explainRowDecision(item, -1);
+    log("Delete requested", decision);
+    if (!decision.allowed) {
+      log("Delete skipped: row is no longer a FormHistory result", decision);
+      scheduleEnhance();
+      return;
+    }
 
     if (!setSelectedItem(popup, item)) {
       return;
     }
 
-    const value = item.getAttribute("ac-value") || "";
+    const value = getRowMeta(item).value;
     const formHistoryActor = getCurrentFormHistoryActor();
     const controller = getControllerFromPopup(popup);
     let removed = false;
@@ -747,6 +772,8 @@
     });
 
     popupObserver.observe(popup, {
+      attributes: true,
+      attributeFilter: ["collapsed", "originaltype"],
       childList: true,
       subtree: true,
     });

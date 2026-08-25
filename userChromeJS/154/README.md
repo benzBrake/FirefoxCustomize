@@ -47,9 +47,65 @@ ChromeUtils.registerWindowActor("ExampleActor", {
 - 导航和进程销毁期间可能收到延迟消息；父进程应确认请求仍存在、目标窗口仍有效，再处理返回数据。
 - 本仓库的 `addMenuPlus`、`LinkGopher`、`UserCSSLoader` 和 Loader 版 `AutoCopySelectionText` 已完成此项适配。旧式 `AutoCopySelectionText.uc.js` 与 `KeyChanger_fx70.uc.js` 若仍单独安装，需要按上面的注册方式补充声明。
 
+## 2. PopupAutoComplete 使用新的 autocomplete-row-item 结果结构（Bug 2023223）
+
+Firefox 154 调整了 `PopupAutoComplete` 的结果行结构。只查找 `.autocomplete-richlistitem`，或只从外层 `richlistitem` 的 `ac-value`、`ac-label` 属性读取数据，会遗漏新版结果或得到空值。
+
+**问题表现：**
+
+- 表单历史下拉仍能显示，但脚本找不到结果行
+- 附加到结果行的按钮或样式不再出现
+- 从 `ac-value`、`ac-label` 读取到空字符串，导致删除、选择等操作失效
+
+**解决方案：**
+
+同时匹配旧、新结果行类名，并优先从内部的 `autocomplete-row-item` 读取 `value` 和 `label`：
+
+```javascript
+const ITEM_SELECTOR =
+  ".autocomplete-richlistitem, .autocomplete-row-item";
+
+function getRows(popup) {
+  return Array.from(popup?.querySelectorAll(ITEM_SELECTOR) || []).filter(
+    item => !item.collapsed
+  );
+}
+
+function getRowMeta(item) {
+  const row = item?.querySelector("autocomplete-row-item") || null;
+
+  return {
+    value: row?.value || item?.getAttribute("ac-value") || "",
+    label: row?.label || item?.getAttribute("ac-label") || "",
+    comment: item?.getAttribute("ac-comment") || "",
+  };
+}
+```
+
+需要根据 `comment` 区分结果类型时，新结构可能不再在外层元素提供 `ac-comment`。可以先取得结果行在 `richlistbox` 中的索引，再通过 autocomplete 控制器的 `getCommentAt(index)` 读取：
+
+```javascript
+const richlistbox = popup.querySelector(".autocomplete-richlistbox");
+const index = richlistbox?.getIndexOfItem(item) ?? -1;
+const row = item.querySelector("autocomplete-row-item");
+
+let comment = item.getAttribute("ac-comment") || "";
+if (!comment && row && index >= 0 && controller?.getCommentAt) {
+  comment = controller.getCommentAt(index) || "";
+}
+```
+
+**注意事项：**
+
+- 保留 `.autocomplete-richlistitem` 和 `ac-value`、`ac-label` 回退，可以继续兼容 Firefox 120-153 的旧结构。
+- 不要只依据 DOM 文本判断结果类型；表单历史、登录项和其他 autocomplete 结果可能共用同一个弹出面板。
+- 本仓库的 [`AutoCompleteDeleteButton.uc.js`](../AutoCompleteDeleteButton.uc.js) 已使用上述兼容方式。
+
 ## 相关资源
 
 - [Bug 2041784 - Add support for safeForUntrustedWebProcess JS actor property](https://bugzilla.mozilla.org/show_bug.cgi?id=2041784)
 - [Bug 2047680 - Enable dom.jsipc.check_safeForUntrustedWebProcess](https://bugzilla.mozilla.org/show_bug.cgi?id=2047680)
+- [Bug 2023223 - Replace loginOrigin, addresses, payments, and form history richlist items with autocomplete-row-item](https://bugzilla.mozilla.org/show_bug.cgi?id=2023223)
+- [Firefox 154 source commit - replace richlist autocomplete items with autocomplete-row-item](https://github.com/mozilla-firefox/firefox/commit/49d18d0d12f5)
 - [Firefox 154 source commit - add JS actor safety property](https://github.com/mozilla-firefox/firefox/commit/84fc31638ea66be2df092c9125629908eba6c5cd)
 - [Firefox 154 source commit - enable JS actor safety check](https://github.com/mozilla-firefox/firefox/commit/cfcedb5eb52390d2c8e4a89c953e8a41955179bd)
