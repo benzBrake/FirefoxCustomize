@@ -21,7 +21,7 @@
     - toolkit.tabbox.switchByScrolling (布尔值): 使用鼠标滚轮切换标签页
     - browser.tabs.selectLeftTabOnClose (布尔值): 关闭当前标签后选中左侧标签
     - nglayout.enable_drag_images (布尔值): 拖拽标签时显示缩略图 */
-// @version         1.1.10
+// @version         1.1.11
 // @license         MIT License
 // @async
 // @compatibility   Firefox 136+
@@ -29,6 +29,7 @@
 // @include         main
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            1.1.10 剪贴板 data URL base64 校验改为轻量结构检查，避免大型 payload 同步全量解码
+// @note            1.1.11 保留 Shift+右键标签页菜单，不让右键关闭功能拦截带 Shift 的上下文菜单
 // @note            1.1.9 缓存标签页悬停切换延迟配置，减少 mouseover 高频路径 pref 查询
 // @note            1.1.8 合并侧边栏历史 patch 重试调度，避免 MutationObserver 高频变化时堆积 timeout
 // @note            1.1.7 layout.css.animation.enabled 为 false 时，标签页悬停切换回退到 setTimeout
@@ -480,7 +481,7 @@
                                 const tab = this._getTabFromEvent(event);
                                 if (!tab) return;
                                 if ((prefs.getBoolPref("browser.tabs.closeTabByDblclick", false) && b === 0 && dblclick)
-                                    || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2)) {
+                                    || (prefs.getBoolPref("browser.tabs.closeTabByRightClick", false) && b === 2 && !event.shiftKey)) {
                                     const gBrowser = targetWin.gBrowser || window.gBrowser;
                                     this._closeTabByEvent(event, tab, gBrowser);
                                 }
@@ -490,7 +491,7 @@
                     break;
 
                 case 'contextmenu':
-                    if (trigger !== 'closetab' || b !== 2) {
+                    if (trigger !== 'closetab' || b !== 2 || event.shiftKey) {
                         return;
                     }
                     {
