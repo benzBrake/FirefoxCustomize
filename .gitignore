@@ -1,41 +1,39 @@
-# Claude Code 配置与记忆
-.claude/
-AGENTS.local.md
-
-# IDE 配置
+# ===== 编辑器 / IDE =====
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# 操作系统文件
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# 临时文件
-*.tmp
-*.log
-
-# MCP
-.playwright-mcp
-
-# 工具缓存与快照
-.codegraph/
+# ===== AI 工具配置与缓存 =====
+.claude/
 .zcode/plans/
+.codegraph/
 .codeartsdoer/
 .codex-tmp/
 .merkle-snapshot.json
+AGENTS.local.md
 
-# Node.js（UserThemes/Sidra）
-node_modules/
+# ===== 日志与临时文件 =====
+*.log
+*.tmp
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# ===== Node.js（UserThemes/Sidra） =====
+node_modules/
 coverage/
 .nyc_output/
 
-# SCSS / Sass
+# ===== SCSS / Sass（UserThemes/Sidra） =====
 .sass-cache/
+
+# ===== 操作系统文件 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 其他工具 =====
+.playwright-mcp
