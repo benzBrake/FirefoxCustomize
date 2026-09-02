@@ -23,6 +23,7 @@ desktop.ini
 
 # 工具缓存与快照
 .codegraph/
+.zcode/plans/
 .codeartsdoer/
 .codex-tmp/
 .merkle-snapshot.json
