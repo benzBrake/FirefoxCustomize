@@ -31,7 +31,6 @@ npm test
 - 没有明确兼容性原因时，不要重组版本归档目录。
 - 文档中优先使用仓库相对路径。
 - 运行 Python 命令时，使用 `uv` 管理和执行 Python。
-- 如需使用 GitHub CLI，使用 `ghp` 而不是 `gh`；不要设置全局 `HTTP_PROXY` 或 `HTTPS_PROXY`。
 - 修改 userChromeJS 后如果无法在 Firefox 中运行验证，需要明确说明。
 
 ## CLAUDE.md 兼容
