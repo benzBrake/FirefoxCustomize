@@ -23,6 +23,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               2026-09-02 修复 img2base64/svg2base64 中 async executor 导致 IOUtils 失败时 syncify 死循环的问题
 // @note               0.4.2 Firefox 154 Bug 2047680 actor opt-in; remove unused content-to-chrome arbitrary execution message
 // @note               0.4.1 移除 UI locale 缓存，并在 Firefox 应用语言变化后自动刷新菜单
 // @note               0.4.0 配置中的 label、tooltiptext、onshowinglabel 支持按 Firefox UI locale 选择文案
@@ -1996,46 +1997,56 @@ import { syncify } from "./000-syncify.sys.mjs";
                     return svg2base64(imgSrc);
                 }
 
+                // 注意：不能使用 new Promise(async resolve => ...) 的写法，
+                // 内部 await 抛错时外层 Promise 永不 settle，会导致 syncify 死循环
                 return syncify(() => {
-                    return new Promise(async (resolve) => {
+                    return (async () => {
                         if (isLocalFile(imgSrc)) {
-                            let data = await IOUtils.read(toLocalUri(imgSrc));
+                            const data = await IOUtils.read(toLocalUri(imgSrc));
                             imgSrc = "data:image/png;base64," + btoa(String.fromCharCode(...data));
                         }
                         const NSURI = "http://www.w3.org/1999/xhtml";
-                        const img = new Image();
+                        return await new Promise(resolve => {
+                            const img = new Image();
 
-                        img.onload = function () {
-                            try {
-                                const canvas = document.createElementNS(NSURI, "canvas");
-                                canvas.width = this.naturalWidth;
-                                canvas.height = this.naturalHeight;
-                                canvas.getContext("2d").drawImage(this, 0, 0);
-                                resolve(canvas.toDataURL(imgType));
-                            } catch (e) {
-                                console.error('Canvas error:', e);
+                            img.onload = function () {
+                                try {
+                                    const canvas = document.createElementNS(NSURI, "canvas");
+                                    canvas.width = this.naturalWidth;
+                                    canvas.height = this.naturalHeight;
+                                    canvas.getContext("2d").drawImage(this, 0, 0);
+                                    resolve(canvas.toDataURL(imgType));
+                                } catch (e) {
+                                    console.error('Canvas error:', e);
+                                    resolve("");
+                                }
+                            };
+
+                            img.onerror = () => {
+                                console.error('Image load failed:', imgSrc);
                                 resolve("");
-                            }
-                        };
+                            };
 
-                        img.onerror = () => {
-                            console.error('Image load failed:', imgSrc);
-                            resolve("");
-                        };
-
-                        img.src = imgSrc;
+                            img.src = imgSrc;
+                        });
+                    })().catch(e => {
+                        console.error('img2base64 failed:', e);
+                        return "";
                     });
                 });
             }
 
             function svg2base64 (svgSrc) {
                 if (isLocalFile(svgSrc)) {
+                    // 不能使用 new Promise(async resolve => ...)，否则 IOUtils 失败时 syncify 会死循环
                     svgSrc = syncify(() => {
-                        return new Promise(async (resolve) => {
-                            let data = await IOUtils.readUTF8(toLocalUri(svgSrc));
+                        return IOUtils.readUTF8(toLocalUri(svgSrc)).then(data => {
                             let encoder = new TextEncoder();
                             let dataArray = encoder.encode(data);
-                            resolve("data:image/svg+xml;base64," + btoa(String.fromCharCode(...dataArray)));
+                            return "data:image/svg+xml;base64," + btoa(String.fromCharCode(...dataArray));
+                        }).catch(e => {
+                            console.error('svg2base64 failed to read local file:', e);
+                            return "";
                         });
                     });
                 } else if (/^(https?:\/\/|ftp:\/\/|chrome:\/\/|resource:\/\/|\/\/)/.test(svgSrc)) {
