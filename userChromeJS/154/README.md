@@ -101,6 +101,43 @@ if (!comment && row && index >= 0 && controller?.getCommentAt) {
 - 不要只依据 DOM 文本判断结果类型；表单历史、登录项和其他 autocomplete 结果可能共用同一个弹出面板。
 - 本仓库的 [`AutoCompleteDeleteButton.uc.js`](../AutoCompleteDeleteButton.uc.js) 已使用上述兼容方式。
 
+## 3. ContextualIdentityService 模块迁移至 moz-src（模块路径变化）
+
+Firefox 154 起，`ContextualIdentityService.sys.mjs` 不再通过 `resource://gre/modules/` 暴露，需要改从源码路径 `moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs` 导入。继续使用旧的 resource URI 会导致模块加载失败。
+
+**问题表现：**
+
+- `ChromeUtils.importESModule("resource://gre/modules/ContextualIdentityService.sys.mjs")` 抛出模块加载错误
+- 依赖容器（Container）功能的脚本初始化失败或容器相关操作全部失效
+
+**解决方案：**
+
+使用 `ChromeUtils.defineLazyGetter` 封装延迟加载，优先尝试 moz-src 路径，失败时回退到旧 resource URI：
+
+```javascript
+ChromeUtils.defineLazyGetter(this, "ContextualIdentityService", () => {
+  let lastError;
+  for (let uri of [
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
+    "resource://gre/modules/ContextualIdentityService.sys.mjs",
+  ]) {
+    try {
+      return ChromeUtils.importESModule(uri).ContextualIdentityService;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+});
+```
+
+**注意事项：**
+
+- 保留 `resource://` 回退可以让同一份脚本继续兼容 Firefox 153 及更早版本。
+- 不要在脚本顶层直接 `importESModule`；延迟加载可以让 URI 解析失败只影响实际用到该服务的功能路径。
+- 如果脚本只支持 Firefox 154+，可以只保留 moz-src 路径。
+- 本仓库的 [`privateTab/privateTabs.uc.js`](../privateTab/privateTabs.uc.js) 已使用上述兼容方式。
+
 ## 相关资源
 
 - [Bug 2041784 - Add support for safeForUntrustedWebProcess JS actor property](https://bugzilla.mozilla.org/show_bug.cgi?id=2041784)
@@ -109,3 +146,4 @@ if (!comment && row && index >= 0 && controller?.getCommentAt) {
 - [Firefox 154 source commit - replace richlist autocomplete items with autocomplete-row-item](https://github.com/mozilla-firefox/firefox/commit/49d18d0d12f5)
 - [Firefox 154 source commit - add JS actor safety property](https://github.com/mozilla-firefox/firefox/commit/84fc31638ea66be2df092c9125629908eba6c5cd)
 - [Firefox 154 source commit - enable JS actor safety check](https://github.com/mozilla-firefox/firefox/commit/cfcedb5eb52390d2c8e4a89c953e8a41955179bd)
+- [ContextualIdentityService.sys.mjs - Firefox source](https://github.com/mozilla-firefox/firefox/blob/master/toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs)
