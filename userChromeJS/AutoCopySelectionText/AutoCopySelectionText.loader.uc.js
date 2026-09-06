@@ -169,6 +169,9 @@
             },
             allFrames: true,
             matches: ["*://*/*", "file:///*", "about:*", "view-source:*"],
+            // Firefox may place matching sites in origin-keyed webIsolated processes.
+            // Include both remote types so WindowGlobalParent.getActor() can resolve ACST.
+            remoteTypes: ["web", "webIsolated"],
             messageManagerGroups: ["browsers"],
             safeForUntrustedWebProcess: true,
         });

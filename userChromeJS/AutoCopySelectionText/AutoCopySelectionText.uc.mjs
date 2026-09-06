@@ -2,7 +2,7 @@
 // @name            AutoCopySelectionText.uc.mjs
 // @description     自动复制选中文本（ScrLk 亮起时不复制）
 // @author          Ryan
-// @version         2026.08.04
+// @version         2026.09.06
 // @compatibility   Firefox 136
 // @charset         UTF-8
 // @system          windows
@@ -10,10 +10,12 @@
 // @include         main
 // @actor           ACST
 // @actor:allframes true
+// @actor:safeForUntrustedWebProcess true
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @thanks          Dumby
 // @note            20260407 Move actor registration to loader, add alice0775 legacy loader adapter support, and switch success notice to a selection-near animation
 // @note            20260804 Fix Firefox 152 global lookup and guard actor teardown during navigation
+// @note            20260906 Allow ACST in untrusted webIsolated processes; rely on loader default remote type matching
 // ==/UserScript==
 // Configurations, implement read from about:config preferences in future
 const ACST_COPY_SUCCESS_NOTICE = "Auto Copied!";
@@ -245,8 +247,22 @@ export { ACSTChild, ACSTParent, ACSTChild as ActorChild, ACSTParent as ActorPare
                     }
                 } else {
                     // 网页
-                    const actor = gBrowser.selectedBrowser.browsingContext?.currentWindowGlobal?.getActor("ACST");
-                    actor?.sendAsyncMessage("ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE });
+                    const browser = event.target?.closest?.("browser") ||
+                        event.target?.ownerDocument?.defaultView?.gBrowser?.selectedBrowser ||
+                        gBrowser.selectedBrowser;
+                    const windowGlobal = browser?.browsingContext?.currentWindowGlobal;
+                    try {
+                        windowGlobal?.getActor("ACST")?.sendAsyncMessage(
+                            "ACST:getSelectedText", { ACST_SHOW_SUCCESS_NOTICE }
+                        );
+                    } catch (ex) {
+                        // Window globals can be replaced during navigation or process switches.
+                        if (!(ex instanceof DOMException)
+                            && ex?.name !== "NotSupportedError"
+                            && ex?.name !== "NS_ERROR_NOT_AVAILABLE") {
+                            throw ex;
+                        }
+                    }
                 }
             }
         },
