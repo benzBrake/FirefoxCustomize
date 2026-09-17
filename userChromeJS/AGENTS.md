@@ -1,4 +1,4 @@
-# UserScript 脚本规范
+# userChromeJS 脚本规范
 
 ## @compatibility 规则
 - **格式**：`// @compatibility Firefox <版本号>`
