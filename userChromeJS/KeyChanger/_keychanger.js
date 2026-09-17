@@ -327,6 +327,11 @@ keys['Ctrl+Shift+Q'] = (event) => {
     }
 }
 keys['Ctrl+Shift+Q'] = (event) => {
-    BrowserOpenTab();
-    gBrowser.removeAllTabsBut(gBrowser.selectedTab);
+    const win = event.currentTarget?.ownerGlobal || event.target?.ownerGlobal || window;
+    if (win.BrowserCommands?.openTab) {
+        win.BrowserCommands.openTab();
+    } else {
+        win.BrowserOpenTab();
+    }
+    win.gBrowser.removeAllTabsBut(win.gBrowser.selectedTab);
 }
