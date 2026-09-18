@@ -322,11 +322,6 @@ keys['Ctrl+Alt+P'] = (event) => {
     }
 } // 固定标签页
 keys['Ctrl+Shift+Q'] = (event) => {
-    if (event.target.ownerGlobal === window) {
-        console.log(KeyChanger.getSelectedText());
-    }
-}
-keys['Ctrl+Shift+Q'] = (event) => {
     const win = event.currentTarget?.ownerGlobal || event.target?.ownerGlobal || window;
     if (win.BrowserCommands?.openTab) {
         win.BrowserCommands.openTab();
