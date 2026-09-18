@@ -9,6 +9,7 @@
 // @license        MIT License
 // @charset        UTF-8
 // @compatibility  Firefox 70
+// @note           2026-09-18 新增 eventKeys 键盘事件绑定，避免 Alt 快捷键被主菜单抢占
 // @note           2026.04.05 统一命令调用契约(event / this=window)，新增通用 modal
 // @note           2026.03.04 整理代码
 // @note           2026.01.13 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
@@ -44,6 +45,23 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
     const versionGE = (v) => {
         return Services.vc.compare(Services.appinfo.version, v) >= 0;
     }
+
+    const EVENT_KEY_ALIASES = Object.freeze({
+        "BACK": "BACKSPACE", "BACKSPACE": "BACKSPACE", "BKSP": "BACKSPACE", "BS": "BACKSPACE",
+        "RETURN": "ENTER", "RET": "ENTER", "ENTER": "ENTER",
+        "ESC": "ESCAPE", "ESCAPE": "ESCAPE",
+        "PAGEUP": "PAGEUP", "PAGE UP": "PAGEUP", "PGUP": "PAGEUP", "PUP": "PAGEUP",
+        "PAGEDOWN": "PAGEDOWN", "PAGE DOWN": "PAGEDOWN", "PGDN": "PAGEDOWN", "PDN": "PAGEDOWN",
+        "TOP": "ARROWUP", "UP": "ARROWUP", "ARROWUP": "ARROWUP",
+        "BOTTOM": "ARROWDOWN", "DOWN": "ARROWDOWN", "ARROWDOWN": "ARROWDOWN",
+        "LEFT": "ARROWLEFT", "ARROWLEFT": "ARROWLEFT",
+        "RIGHT": "ARROWRIGHT", "ARROWRIGHT": "ARROWRIGHT",
+        "INS": "INSERT", "INSERT": "INSERT",
+        "DEL": "DELETE", "DELETE": "DELETE",
+        "SPACE": "SPACE", "SPACEBAR": "SPACE",
+        "PLUS": "+"
+    });
+    const EVENT_MODIFIER_KEYS = new Set(["ALT", "ALTGRAPH", "CONTROL", "META", "OS", "SHIFT"]);
 
     /**
      * @class KeyChanger
@@ -96,6 +114,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         _selectedText: "", // 用于存储当前页面选中的文本
         KEYSETID: "keychanger-keyset", // 动态创建的 <keyset> 元素的 ID
         commandSandbox: null, // 保存当前配置文件的执行上下文，供快捷键命令复用
+        eventKeyBindings: new Map(), // 捕获阶段键盘事件快捷键
         activeModal: null, // 当前打开的通用弹窗
 
         /**
@@ -103,6 +122,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          */
         addEventListener: function () {
             (gBrowser.mPanelContainer || gBrowser.tabpanels).addEventListener("mouseup", this, false);
+            window.addEventListener("keydown", this, true);
         },
 
         /**
@@ -123,7 +143,44 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                         } catch (e) { /* 忽略错误 */ }
                     }
                     break;
+                case 'keydown':
+                    this.handleKeydown(event);
+                    break;
             }
+        },
+
+        /**
+         * 处理捕获阶段的键盘事件快捷键。
+         * @param {KeyboardEvent} event
+         */
+        handleKeydown: function (event) {
+            if (!this.eventKeyBindings.size || !event.isTrusted || event.isComposing || event.keyCode === 229 || this.activeModal) return;
+            if (event.getModifierState && event.getModifierState("AltGraph")) return;
+
+            const shortcutId = this.getKeyboardEventShortcutId(event);
+            const binding = shortcutId && this.eventKeyBindings.get(shortcutId);
+            if (!binding) return;
+
+            // 先阻止 Firefox 的菜单 access key 和后续快捷键处理，再执行用户命令。
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            if (binding.commandType === "internal") {
+                const command = this.internalParamsParse(binding.params);
+                if (typeof command === "function") {
+                    command.call(this, event);
+                } else {
+                    this.log("内置命令未找到或不完整:", binding.params);
+                }
+                return;
+            }
+
+            this.executeCommand(
+                binding.commandName,
+                event,
+                binding.commandType,
+                "__keyChangerEventKeys"
+            );
         },
 
         /**
@@ -189,6 +246,112 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
         },
 
         /**
+         * 将配置中的按键名称转换为 KeyboardEvent.key 的统一形式。
+         * @param {string} keyName
+         * @returns {string}
+         */
+        normalizeEventKeyName: function (keyName) {
+            const key = String(keyName).trim().toUpperCase();
+            const withoutPrefix = key.startsWith("VK_") ? key.slice(3) : key;
+            return EVENT_KEY_ALIASES[withoutPrefix] || withoutPrefix.replace(/_/g, "");
+        },
+
+        /**
+         * 解析 eventKeys 快捷键，并按当前平台将 accel 转换为实际修饰键。
+         * @param {string} shortcut
+         * @returns {object|null}
+         */
+        parseEventShortcut: function (shortcut) {
+            if (typeof shortcut !== "string" || !shortcut.trim()) return null;
+
+            const modifiers = { accel: false, shift: false, alt: false, meta: false, os: false };
+            let key = null;
+            for (const rawToken of shortcut.toUpperCase().split("+")) {
+                const token = rawToken.trim();
+                switch (token) {
+                    case "CTRL": case "CONTROL": case "ACCEL": modifiers.accel = true; break;
+                    case "SHIFT": modifiers.shift = true; break;
+                    case "ALT": case "OPTION": modifiers.alt = true; break;
+                    case "META": case "COMMAND": modifiers.meta = true; break;
+                    case "OS": case "WIN": case "WINDOWS": case "HYPER": case "SUPER": modifiers.os = true; break;
+                    default: {
+                        const parsedKey = token === "" ? "+" : this.normalizeEventKeyName(token);
+                        if (key && key !== parsedKey) return null;
+                        key = parsedKey;
+                    }
+                }
+            }
+            if (!key) return null;
+
+            const isMac = Services.appinfo.OS === "Darwin";
+            const physicalModifiers = {
+                ctrl: modifiers.accel && !isMac,
+                shift: modifiers.shift,
+                alt: modifiers.alt,
+                meta: modifiers.meta || modifiers.os || (modifiers.accel && isMac)
+            };
+            return {
+                key,
+                id: this.createEventShortcutId(physicalModifiers, key)
+            };
+        },
+
+        createEventShortcutId: function (modifiers, key) {
+            return [
+                modifiers.ctrl ? "1" : "0",
+                modifiers.shift ? "1" : "0",
+                modifiers.alt ? "1" : "0",
+                modifiers.meta ? "1" : "0",
+                key
+            ].join(":");
+        },
+
+        getKeyboardEventShortcutId: function (event) {
+            const key = event.key === " " ? "SPACE" : this.normalizeEventKeyName(event.key || "");
+            if (!key || key === "UNIDENTIFIED" || EVENT_MODIFIER_KEYS.has(key)) return null;
+            return this.createEventShortcutId({
+                ctrl: event.ctrlKey,
+                shift: event.shiftKey,
+                alt: event.altKey,
+                meta: event.metaKey
+            }, key);
+        },
+
+        makeEventKeyBindings: function (eventKeys) {
+            const bindings = new Map();
+            Object.keys(eventKeys).forEach(shortcut => {
+                const parsedShortcut = this.parseEventShortcut(shortcut);
+                if (!parsedShortcut) {
+                    this.log("eventKeys 快捷键格式无效:", shortcut);
+                    return;
+                }
+
+                const command = eventKeys[shortcut];
+                let binding;
+                if (typeof command === "function" || typeof command === "string") {
+                    binding = {
+                        commandName: shortcut,
+                        commandType: typeof command === "function" ? "function" : "script"
+                    };
+                } else if (command && typeof command === "object" && command.oncommand === "internal") {
+                    binding = {
+                        commandType: "internal",
+                        params: Array.isArray(command.params) ? command.params.join(",") : String(command.params || "")
+                    };
+                } else {
+                    this.log("eventKeys 命令格式无效:", shortcut);
+                    return;
+                }
+
+                if (bindings.has(parsedShortcut.id)) {
+                    this.log("eventKeys 快捷键冲突，后者覆盖前者:", shortcut);
+                }
+                bindings.set(parsedShortcut.id, binding);
+            });
+            return bindings;
+        },
+
+        /**
          * 创建并应用快捷键集合
          * @param {boolean} isAlert - 是否在完成后弹窗提示
          */
@@ -196,8 +359,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             this.isBuilding = true;
             const s = new Date();
 
-            const keys = this.makeKeys();
-            if (!keys) {
+            const keyConfig = this.makeKeys();
+            if (!keyConfig) {
                 this.isBuilding = false;
                 return this.alert('KeyChanger', '配置文件加载错误。');
             }
@@ -207,7 +370,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
 
             // 创建新的 keyset 并插入快捷键
             const keyset = $C(document, "keyset", { id: this.KEYSETID });
-            keyset.appendChild(keys);
+            keyset.appendChild(keyConfig.keyFragment);
 
             // 为确保快捷键优先级，将所有 keyset 重新插入到 DOM 中
             const df = document.createDocumentFragment();
@@ -216,6 +379,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             const insPos = document.getElementById('mainPopupSet');
             insPos.parentNode.insertBefore(keyset, insPos);
             insPos.parentNode.insertBefore(df, insPos); // 将原有的 keyset 插回
+
+            this.eventKeyBindings = keyConfig.eventBindings;
+            this.replaceCommandSandbox(keyConfig.sandbox);
 
             const e = new Date() - s;
             if (isAlert) {
@@ -226,7 +392,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
 
         /**
          * 解析配置文件，生成 XUL <key> 元素
-         * @returns {DocumentFragment|null}
+         * @returns {{keyFragment: DocumentFragment, eventBindings: Map, sandbox: object}|null}
          */
         makeKeys: function () {
             const str = loadText(this.FILE);
@@ -235,18 +401,28 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             // 在专用沙箱中执行配置文件，保留配置里的辅助函数与共享变量
             const sandbox = this.createSandbox();
             try {
-                const keys = Cu.evalInSandbox(
-                    'var keys = this.__keyChangerKeys = {};\n' + str + ';\nthis.__keyChangerKeys;',
+                const keyConfig = Cu.evalInSandbox(
+                    'var keys = this.__keyChangerKeys = {};\n' +
+                    'var eventKeys = this.__keyChangerEventKeys = {};\n' +
+                    str +
+                    ';\n({ keys: this.__keyChangerKeys, eventKeys: this.__keyChangerEventKeys });',
                     sandbox
                 );
-                if (!keys) {
+                if (!keyConfig || !keyConfig.keys || !keyConfig.eventKeys) {
                     this.destroySandbox(sandbox);
                     return null;
                 }
 
+                const keys = keyConfig.keys;
+                const eventBindings = this.makeEventKeyBindings(keyConfig.eventKeys);
                 const dFrag = document.createDocumentFragment();
 
                 Object.keys(keys).forEach(n => {
+                    const parsedShortcut = this.parseEventShortcut(n);
+                    if (parsedShortcut && eventBindings.has(parsedShortcut.id)) {
+                        this.log("eventKeys 优先于 keys，已忽略 Keyset 绑定:", n);
+                        return;
+                    }
                     const keyString = n.toUpperCase().split("+");
                     let modifiers = "", key, keycode;
 
@@ -309,8 +485,11 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
                     }
                     dFrag.appendChild(elem);
                 });
-                this.replaceCommandSandbox(sandbox);
-                return dFrag;
+                return {
+                    keyFragment: dFrag,
+                    eventBindings,
+                    sandbox
+                };
             } catch (e) {
                 this.destroySandbox(sandbox);
                 this.log("快捷键配置解析失败:", e);
@@ -400,8 +579,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
          * @param {string} commandName
          * @param {Event} event
          * @param {string} commandType
+         * @param {string} commandCollection
          */
-        executeCommand: function (commandName, event, commandType = "script") {
+        executeCommand: function (commandName, event, commandType = "script", commandCollection = "__keyChangerKeys") {
             if (!commandName) {
                 this.log("快捷键命令为空");
                 return;
@@ -414,12 +594,15 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             }
 
             const commandKey = JSON.stringify(commandName);
+            const commands = commandCollection === "__keyChangerEventKeys"
+                ? "__keyChangerEventKeys"
+                : "__keyChangerKeys";
             sandbox.event = event;
             try {
                 if (commandType === "function") {
-                    Cu.evalInSandbox(`this.__keyChangerKeys[${commandKey}].call(window, event);`, sandbox);
+                    Cu.evalInSandbox(`this.${commands}[${commandKey}].call(window, event);`, sandbox);
                 } else {
-                    Cu.evalInSandbox(`eval(this.__keyChangerKeys[${commandKey}]);`, sandbox);
+                    Cu.evalInSandbox(`eval(this.${commands}[${commandKey}]);`, sandbox);
                 }
             } catch (e) {
                 this.log("快捷键命令执行失败:", e);
@@ -964,6 +1147,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (INT
             this.sb = sb;
             window.addEventListener("unload", () => {
                 this.closeModal();
+                window.removeEventListener("keydown", this, true);
+                this.eventKeyBindings.clear();
                 const sandbox = this.commandSandbox;
                 this.commandSandbox = null;
                 this.destroySandbox(sandbox);

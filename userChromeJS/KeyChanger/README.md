@@ -47,6 +47,18 @@ keys['CTRL+ALT+P'] = function() {
 
 `CTRL+ALT+P`是你要用到的组合键，`//你的函数`处填写函数代码
 
+### 键盘事件绑定
+
+如果 `Alt+字母` 被 Firefox 主菜单的 access key 抢占，可以使用 `eventKeys` 在捕获阶段处理键盘事件：
+
+```js
+eventKeys['ALT+B'] = function (event) {
+    // 你的函数
+};
+```
+
+`eventKeys` 与 `keys` 使用相同的快捷键写法，支持函数、脚本字符串和 `internal` 内置命令。命中后会阻止默认行为和后续事件传播，函数的首个参数是原始 `KeyboardEvent`。同一组合键同时存在于 `eventKeys` 和 `keys` 时，`eventKeys` 优先。
+
 ### 新版配置格式
 
 `KeyChanger_fx70.uc.js`除了可以使用原来配置格式，还可以使用内置命令方式。

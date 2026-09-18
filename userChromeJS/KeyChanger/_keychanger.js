@@ -237,21 +237,21 @@ keys["Alt+F3"] = function () {
     gBrowser.removeAllTabsBut(gBrowser.selectedTab);
 }; //关闭其他标签页
 
-keys['Alt+F'] = function () {
+eventKeys['Alt+F'] = function () {
     var bar = document.getElementById("PersonalToolbar");
     setToolbarVisibility(bar, bar.collapsed);
 }; //显示或隐藏书签栏， 自带按键 Ctrl+Shift+B
-keys['Alt+G'] = function (event) {
+eventKeys['Alt+G'] = function (event) {
     promptSearch(event, "google");
 }; //搜索（网页默认 Google 站内）
-// 注意：Alt+B 可能被 Firefox / 系统菜单 access key 抢占，若要稳定触发请改键位或调整 ui.key.menuAccessKey。
-keys['Alt+B'] = function (event) {
+// eventKeys 使用捕获阶段键盘事件，避免 Alt+B 被 Firefox 主菜单抢占。
+eventKeys['Alt+B'] = function (event) {
     promptSearch(event, "baidu");
 }; //搜索（网页默认 Baidu 站内）
-keys['Alt+I'] = function (event) {
+eventKeys['Alt+I'] = function (event) {
     event.target.ownerGlobal.BrowserPageInfo();
 }; //查看页面信息
-keys['Alt+Z'] = function () {
+eventKeys['Alt+Z'] = function () {
     try {
         document.getElementById('History:UndoCloseTab').doCommand();
     } catch (ex) {
@@ -259,7 +259,7 @@ keys['Alt+Z'] = function () {
         else throw "Session Restore feature is disabled."
     }
 }; //恢复关闭标签页
-keys['Alt+V'] = function (event) {
+eventKeys['Alt+V'] = function (event) {
     let url = readFromClipboard();
     try {
         switchToTabHavingURI(url, true);
@@ -279,7 +279,7 @@ keys['Alt+V'] = function (event) {
     event.preventDefault();
     event.stopPropagation();
 }; //打开剪切板地址
-keys['Alt+C'] = function () {
+eventKeys['Alt+C'] = function () {
     (function () {
         var gClipboardHelper = Components.classes['@mozilla.org/widget/clipboardhelper;1'].getService(Components.interfaces.nsIClipboardHelper);
         var txt = "";

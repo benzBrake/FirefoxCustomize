@@ -45,6 +45,18 @@ keys['CTRL+ALT+P'] = function() {
 
 `CTRL+ALT+P` represents the key combination you want to use, and you should fill in your function code at the `// Your function` section.
 
+### Keyboard Event Bindings
+
+If an `Alt+letter` shortcut is intercepted by a Firefox main-menu access key, use `eventKeys` to handle it during the event capture phase:
+
+```js
+eventKeys['ALT+B'] = function (event) {
+    // Your function
+};
+```
+
+`eventKeys` uses the same shortcut syntax as `keys` and supports functions, script strings, and `internal` commands. A matched binding prevents the default action and further event propagation, and its first function argument is the original `KeyboardEvent`. When the same shortcut exists in both `eventKeys` and `keys`, `eventKeys` takes precedence.
+
 ### New Configuration Format
 
 In `KeyChanger_fx70.uc.js`, in addition to the original configuration format, you can also use the built-in command format.
