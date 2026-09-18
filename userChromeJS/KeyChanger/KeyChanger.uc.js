@@ -8,6 +8,7 @@
 // @description:en Additional shortcuts for Firefox
 // @license        MIT License
 // @charset        UTF-8
+// @compatibility  Firefox 70
 // @note           2026.04.05 统一命令调用契约(event / this=window)，新增通用 modal
 // @note           2026.03.04 整理代码
 // @note           2026.01.13 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
