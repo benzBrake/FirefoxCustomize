@@ -1385,7 +1385,6 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     "condition-legacy-exclude-note": "包含旧版排除条件；未修改条件前会原样保留，修改后将按新条件模型保存。",
                     "param-quick-insert": "快捷插入",
                     "param-editor-tip": "点击下方按钮可在当前光标位置插入占位符。",
-                    "call-params-description-label": "调用应用时传递的参数",
                     "param-eol-description": "换行符 (\\r\\n)",
                     "param-title-description": "当前页面标题",
                     "param-titles-description": "简化的当前页面标题",
@@ -2238,30 +2237,9 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                 cond2.textContent = this.strings["condition-help-context"];
                 cond2.style.cssText = 'margin-bottom: 12px;';
 
-                const paramTitle = this.doc.createElement('div');
-                paramTitle.textContent = this.strings["application-params"];
-                paramTitle.style.cssText = 'font-weight: 600; margin-bottom: 8px;';
-
-                const paramList = this.doc.createElement('div');
-                paramList.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px 12px;';
-
-                for (const paramItem of this.getParamTokenItems()) {
-                    const item = this.doc.createElement('div');
-                    item.textContent = `${paramItem.token} - ${paramItem.description}`;
-                    item.style.cssText = 'line-height: 1.5; overflow-wrap: anywhere;';
-                    paramList.appendChild(item);
-                }
-
-                const paramModifierNote = this.doc.createElement('div');
-                paramModifierNote.textContent = this.strings["param-modifier-description"];
-                paramModifierNote.style.cssText = 'margin-top: 10px; color: #5f6368; line-height: 1.5; overflow-wrap: anywhere;';
-
                 box.appendChild(condTitle);
                 box.appendChild(cond1);
                 box.appendChild(cond2);
-                box.appendChild(paramTitle);
-                box.appendChild(paramList);
-                box.appendChild(paramModifierNote);
 
                 return box;
             }
