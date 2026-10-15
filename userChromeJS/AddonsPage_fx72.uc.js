@@ -5,11 +5,12 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 135+
-// @version         2026.07.26
+// @version         2026.08.10
 // @downloadURL     https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            2026.08.10 Use userChrome.js lifecycle API for restartless script enable/disable
 // @note            2026.07.26 Fix extension version and update date text rendering, add version and update date to extension list item
 // @note            2026.07.25 Fx153 fix about:addons category navigation component migration
 // @note            2026.04.06 Fix multi-window provider handoff and add debug pref
@@ -2053,7 +2054,7 @@
             return !!this.getScriptFromBackend(backend, scriptName);
         },
         splitPrefList (value) {
-            return (value || "").split(",").filter(Boolean);
+            return unescape(value || "").split(",").map(unescape).filter(Boolean);
         },
         joinPrefList (list) {
             return list.filter((name, index, arr) => !!name && arr.indexOf(name) === index).join(",");
@@ -2089,12 +2090,14 @@
             return true;
         },
         setUserChromeDisabled (scriptName, disabled) {
-            const next = this.splitPrefList(Services.prefs.getStringPref("userChrome.disable.script", "")).filter(name => name !== scriptName);
+            const prefName = "userChrome.disable.script";
+            const next = this.splitPrefList(Services.prefs.getStringPref(prefName, ""))
+                .filter(name => name !== scriptName);
             if (disabled) {
                 next.push(scriptName);
             }
 
-            Services.prefs.setStringPref("userChrome.disable.script", this.joinPrefList(next));
+            Services.prefs.setStringPref(prefName, escape(this.joinPrefList(next)));
 
             const state = this.restoreDisabledState(next);
             this.getLiveBrowserWindows().forEach(win => {
@@ -2112,7 +2115,7 @@
             if (disabled) {
                 next.unshift(scriptName);
             }
-            xPref.set(uc.PREF_SCRIPTSDISABLED, this.joinPrefList(next));
+            xPref.set(uc.PREF_SCRIPTSDISABLED, escape(this.joinPrefList(next)));
         },
         applyUserDisabled (addon, disabled) {
             const backend = addon.resolveBackend();
@@ -2121,8 +2124,14 @@
             }
 
             switch (backend.kind) {
-                case "userChrome_js":
+                case "userChrome_js": {
+                    const script = this.getScriptFromBackend(backend, addon.name) || addon._script;
+                    const loader = backend.ownerWindow.userChrome_js;
+                    if (script && typeof loader?.setScriptEnabled === "function") {
+                        return loader.setScriptEnabled(script, !disabled);
+                    }
                     return this.setUserChromeDisabled(addon.name, disabled);
+                }
                 case "_ucUtils": {
                     const currentScript = this.getScriptFromBackend(backend, addon.name) || addon._script;
                     const currentEnabled = this.getScriptEnabled(backend, currentScript);
