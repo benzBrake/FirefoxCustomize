@@ -5,11 +5,12 @@
 // @include         main
 // @charset         utf-8
 // @compatibility   Firefox 135+
-// @version         2026.08.10
+// @version         2026.10.15
 // @downloadURL     https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL       http://bbs.kafan.cn/thread-1617407-1-1.html
 // @optionsURL      about:config?filter=view_source.editor.path
+// @note            2026-10-15 Hide enable/disable controls and permissions for @skip scripts
 // @note            2026.08.10 Use userChrome.js lifecycle API for restartless script enable/disable
 // @note            2026.07.26 Fix extension version and update date text rendering, add version and update date to extension list item
 // @note            2026.07.25 Fx153 fix about:addons category navigation component migration
@@ -1051,7 +1052,8 @@
             if (!header) return;
             doc.querySelectorAll("addon-card").forEach(card => {
                 const addon = card.addon;
-                if (addon.type === "userchromejs") {
+                if (addon.type === "userchromejs" &&
+                    (addon.permissions & (AddonManager.PERM_CAN_ENABLE | AddonManager.PERM_CAN_DISABLE))) {
                     // 有効・無効スイッチを追加
 
                     const input = $C(doc, "input", {
@@ -2572,6 +2574,9 @@
             AddonManagerPrivate.callAddonListeners(val ? 'onEnabled' : 'onDisabled', this);
         },
         get permissions () {
+            if (this._script.skip) {
+                return 0;
+            }
             // var perms = AddonManager.PERM_CAN_UNINSTALL;
             // perms |= this.userDisabled ? AddonManager.PERM_CAN_ENABLE : AddonManager.PERM_CAN_DISABLE;
             var perms = this.userDisabled ? AddonManager.PERM_CAN_ENABLE : AddonManager.PERM_CAN_DISABLE;
