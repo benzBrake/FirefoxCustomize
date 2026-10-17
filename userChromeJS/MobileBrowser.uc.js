@@ -9,6 +9,7 @@
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            2026-07-14 初始版本，使用 Firefox 响应式设计模式模拟 iPhone 14 竖屏窗口
+// @note            2026-10-17 修复工具栏图标不跟随主题颜色变化
 // ==/UserScript==
 
 (function () {
@@ -416,6 +417,8 @@
                 tooltiptext: "以 iPhone 14 竖屏尺寸打开当前页面",
                 onCreated: node => {
                     node.classList.add("chromeclass-toolbar-additional");
+                    node.style.setProperty("-moz-context-properties", "fill");
+                    node.style.fill = "currentColor";
                     node.style.listStyleImage = `url("${MOBILE_ICON}")`;
                 },
                 onCommand: handleCommand,
