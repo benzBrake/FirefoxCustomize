@@ -3,10 +3,12 @@
 // @description     Once Firefox has implemented the functionality, the script can be removed.
 // @author          Ryan
 // @include         main
-// @version         0.3.5
+// @version         0.3.6
 // @compatibility   Firefox 135
 // @shutdown        window.unifiedExtensionsEnhance.destroy()
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize
+// @note            2026-10-17 0.3.6 缩小紧凑列表中扩展操作按钮的边距
+// @note            2026-10-17 补齐紧凑列表中 action 按钮图标的边距，左侧跟随面板内边距并缩小图文间距
 // @note            2026-07-26 0.3.5 支持 install.rdf 的 optionsWidth、optionsHeight 属性和 Loader 命名空间选项元数据
 // @note            2026-08-01 修复旧式选项窗口触发扩展桥接函数克隆错误
 // @note            2026-07-26 0.3.4 支持 install.rdf 的 optionsResizable 属性，按扩展启用选项窗口缩放
@@ -252,6 +254,20 @@
             }
             .unified-extensions-item-message-deck {
                 display: none !important;
+            }
+            #unified-extensions-view .unified-extensions-item .unified-extensions-item-action-button > :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+                box-sizing: content-box;
+                padding: 4px;
+                padding-inline-start: var(--panel-menuitem-padding-inline, var(--arrowpanel-menuitem-padding-inline));
+                padding-inline-end: 0;
+            }
+            #unified-extensions-view .unified-extensions-item :is(toolbarbutton.ue-btn:not([no-icon="true"]), .unified-extensions-item-menu-button) {
+                margin: 0;
+                padding: 0;
+            }
+            #unified-extensions-view .unified-extensions-item :is(toolbarbutton.ue-btn:not([no-icon="true"]), .unified-extensions-item-menu-button) > .toolbarbutton-icon {
+                padding: 4px;
+                border: none;
             }
             toolbaritem:is([overflowedItem="true"], [cui-areatype="panel"]) > .webextension-browser-action {
                 list-style-image: var(
