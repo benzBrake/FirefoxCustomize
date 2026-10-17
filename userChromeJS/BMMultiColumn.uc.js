@@ -9,6 +9,7 @@
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.10.17 限制内部滚动容器不超过弹窗可用宽度，修复最大化时其他书签菜单右侧被裁切
 // @note            2026.10.17 隐藏外层容器的垂直滚动条，保留内部横向滚动条，兼容主题强制纵向滚动样式；按菜单实际高度限制内部容器，修复最大化时横向滚动条被裁切
 // @note            2026.10.17 书签工具栏固定入口菜单不分列，仅对其文件夹子菜单应用多列布局
 // @note            2026-10-15 修复首次打开菜单宽度为零及 APZ 导致的多列绘制空白，保留横向滚动条
@@ -210,6 +211,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     width: "unset",
                 });
                 scrollbox.style.setProperty("overflow", "visible", "important");
+                // 原生弹窗会按屏幕剩余空间收窄，内部固定宽度也必须受其限制。
+                scrollbox.style.setProperty("max-width", "100%", "important");
                 // 主题可能强制外层纵向滚动；仅隐藏外层滚动条，内部保留横向滚动条。
                 scrollbox.style.setProperty("scrollbar-width", "none", "important");
                 arrowscrollbox.style.width = "auto";
@@ -304,6 +307,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 overflowX: "",
                 overflowY: "",
                 maxHeight: "",
+                maxWidth: "",
                 width: "",
                 scrollSnapType: "",
                 scrollbarWidth: "",
