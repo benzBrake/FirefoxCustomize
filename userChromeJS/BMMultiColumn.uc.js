@@ -10,6 +10,7 @@
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
 // @note            2026.10.17 隐藏外层容器的垂直滚动条，保留内部横向滚动条，兼容主题强制纵向滚动样式；按菜单实际高度限制内部容器，修复最大化时横向滚动条被裁切
+// @note            2026.10.17 书签工具栏固定入口菜单不分列，仅对其文件夹子菜单应用多列布局
 // @note            2026-10-15 修复首次打开菜单宽度为零及 APZ 导致的多列绘制空白，保留横向滚动条
 // @note            2026.08.10 修复 Loader 热重载时重复 destroy，并避免多窗口提前注销共享样式和延迟清理污染新实例
 // @note            2026.04.09 兼容新版 Firefox 书签菜单宽度规则，修复多列书签标题被撑宽后显示不全
@@ -196,6 +197,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             scrollBox._scrollButtonDown.style.display = "none";
         },
         initMultiColumn (menupopup) {
+            if (menupopup.id === "BMB_bookmarksPopup") return;
             menupopup.style.maxWidth = "calc(100vw - 20px)";
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part~=scrollbox]');
