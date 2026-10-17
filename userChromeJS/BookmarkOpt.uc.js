@@ -22,10 +22,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.10
+// @version         1.4.11
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            1.4.11 在书签按钮菜单的“管理书签”后添加“添加书签到此处”
 // @note            1.4.10 修复 Loader 热重载时重复 destroy，并按活动窗口数量管理共享样式、组件和 PlacesUIUtils 补丁
 // @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
 // @note            1.4.9 简化设置 PlacesChevron 弹出菜单位置的逻辑，简化 $L 函数，优化事件绑定函数，修复一处 remove_events 错误传递参数，修复上一个版本导致右键菜单失效
@@ -207,6 +208,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                         remove_events(placesChevronPopup, 'popuphidden', instance, false);
                     }
                 }
+                const bookmarksPopup = $('BMB_bookmarksPopup');
+                if (bookmarksPopup) {
+                    remove_events(bookmarksPopup, ['popupshowing', 'popuphidden'], instance, false);
+                    bookmarksPopup.removeAttribute('bmopt-inited');
+                }
                 if ($('PlacesToolbarItems')) {
                     remove_events($('PlacesToolbarItems'), ['mousedown', 'click'], instance, false);
                     remove_events(document, 'mouseup', instance, false);
@@ -306,6 +312,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                         });
                         this.PlacesChevronObserver.observe($("PlacesChevron"), { attributes: true });
                         add_events($('PlacesChevronPopup'), 'popuphidden', this, false);
+                    }
+                    let bookmarksPopup = $('BMB_bookmarksPopup');
+                    if (bookmarksPopup && !bookmarksPopup.getAttribute("bmopt-inited")) {
+                        add_events(bookmarksPopup, ['popupshowing', 'popuphidden'], this, false);
+                        bookmarksPopup.setAttribute('bmopt-inited', true);
                     }
                     if ($('PlacesToolbarItems')) {
                         add_events($('PlacesToolbarItems'), ['mousedown', 'click'], this, false);
@@ -449,9 +460,9 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                         if (event.shiftKey) state.push('shift');
                         target.setAttribute('bmopt', state.join(" "));
                     } else {
+                        if (target.querySelector(':scope > [class*="bmopt"]')) return;
                         let firstItem = target.firstChild;
-                        if (firstItem && firstItem.classList.contains('bmopt')) return;
-                        let last;
+                        let last = target.id === 'BMB_bookmarksPopup' ? target.querySelector(':scope > #BMB_bookmarksShowAllTop') : null;
                         PLACES_POPUP_ITEMS.forEach(c => {
                             let item;
                             if (c.label) {
