@@ -9,6 +9,7 @@
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026-10-17 同步初始化书签工具栏溢出菜单的多列布局，修复首次打开或窗口尺寸变化后打开时闪烁
 // @note            2026.10.17 限制内部滚动容器不超过弹窗可用宽度，修复最大化时其他书签菜单右侧被裁切
 // @note            2026.10.17 隐藏外层容器的垂直滚动条，保留内部横向滚动条，兼容主题强制纵向滚动样式；按菜单实际高度限制内部容器，修复最大化时横向滚动条被裁切
 // @note            2026.10.17 书签工具栏固定入口菜单不分列，仅对其文件夹子菜单应用多列布局
@@ -138,15 +139,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         menupopup = event.target;
                     } else return;
                     this.initHorizontalScroll(event);
-                    if (menupopup.id === "PlacesChevronPopup") {
-                        setTimeout(_ => {
-                            if (!this._destroyed) {
-                                this.initMultiColumn(menupopup, event);
-                            }
-                        }, 10);
-                    } else {
-                        this.initMultiColumn(menupopup, event);
-                    }
+                    this.initMultiColumn(menupopup, event);
                     break;
                 case 'popupshown':
                     this.fitPopupHeight(event.target);
