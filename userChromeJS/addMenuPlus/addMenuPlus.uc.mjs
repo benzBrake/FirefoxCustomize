@@ -871,7 +871,10 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                 case 'click':
                     if (button === 2 && $target.closest('#trust-icon-container, #identity-icon, #identity-box')) {
-                        $("#identity-box-contextmenu").openPopup(target, "after_pointer", 0, 0, true, false);
+                        $("#identity-box-contextmenu").openPopup(
+                            $target.closest('#trust-icon-container, #identity-icon, #identity-box'),
+                            "after_start", 0, 0, true, false
+                        );
                     }
                     break;
                 case 'mousedown': {

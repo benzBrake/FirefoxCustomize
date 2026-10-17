@@ -775,7 +775,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     break;
                 case 'click':
                     if (event.button == 2 && event.target.closest('#trust-icon-container, #identity-icon, #identity-box'))
-                        $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
+                        $("identity-box-contextmenu").openPopup(
+                            event.target.closest('#trust-icon-container, #identity-icon, #identity-box'),
+                            "after_start", 0, 0, true, false
+                        );
                     break;
                 case 'TabAttrModified':
                     let tab = event.target;
