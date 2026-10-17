@@ -347,7 +347,13 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
     max-width: calc(100vw - 20px);
     max-height: calc(100vh - 129px);
 }
-#PlacesToolbarItems menupopup > * {
+#PlacesToolbarItems menupopup > *,
+#BMB_bookmarksToolbar menupopup > *,
+#BMB_unsortedBookmarks menupopup > *,
+#BMB_mobileBookmarks menupopup > *,
+#PlacesChevronPopup > *,
+#OtherBookmarksPopup > *
+{
     scroll-snap-align: start;
 }
 `)
