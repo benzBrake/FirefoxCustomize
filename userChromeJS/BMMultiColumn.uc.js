@@ -4,11 +4,12 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2026.10.15
+// @version         2026.10.17
 // @compatibility   Firefox 133
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.10.17 隐藏外层容器的垂直滚动条，保留内部横向滚动条，兼容主题强制纵向滚动样式；按菜单实际高度限制内部容器，修复最大化时横向滚动条被裁切
 // @note            2026-10-15 修复首次打开菜单宽度为零及 APZ 导致的多列绘制空白，保留横向滚动条
 // @note            2026.08.10 修复 Loader 热重载时重复 destroy，并避免多窗口提前注销共享样式和延迟清理污染新实例
 // @note            2026.04.09 兼容新版 Firefox 书签菜单宽度规则，修复多列书签标题被撑宽后显示不全
@@ -36,6 +37,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             const menupopup = document.getElementById(instance.menupopup[i]);
             if (!menupopup) continue;
             menupopup.removeEventListener('popupshowing', instance, { mozSystemGroup: true });
+            menupopup.removeEventListener('popupshown', instance, { mozSystemGroup: true });
             menupopup.removeEventListener('DOMMenuItemActive', instance, false);
         }
         for (const menupopup of instance.popups) {
@@ -107,6 +109,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         if (!self._destroyed && menupopup) {
                             // Places 在普通事件组中填充菜单，之后才能测量首次打开的宽度。
                             menupopup.addEventListener('popupshowing', self, { mozSystemGroup: true });
+                            menupopup.addEventListener('popupshown', self, { mozSystemGroup: true });
                             menupopup.addEventListener('DOMMenuItemActive', self, false);
                         }
                     }
@@ -142,6 +145,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     } else {
                         this.initMultiColumn(menupopup, event);
                     }
+                    break;
+                case 'popupshown':
+                    this.fitPopupHeight(event.target);
                     break;
                 case 'aftercustomization':
                     setTimeout(() => this.delayedStartup(), 0);
@@ -202,6 +208,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     width: "unset",
                 });
                 scrollbox.style.setProperty("overflow", "visible", "important");
+                // 主题可能强制外层纵向滚动；仅隐藏外层滚动条，内部保留横向滚动条。
+                scrollbox.style.setProperty("scrollbar-width", "none", "important");
                 arrowscrollbox.style.width = "auto";
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
                 let slot = scrollbox.querySelector('slot');
@@ -238,6 +246,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 }
                 scrollbox.style.setProperty("width", Math.min(maxWidth, scroller.scrollWidth) + "px", "important");
                 bindWheelEvent(scroller);
+                if (menupopup.state === "open") {
+                    this.fitPopupHeight(menupopup);
+                }
             }
             function bindWheelEvent (item) {
                 if (item._bmMultiColumnWheelHandler) return;
@@ -250,6 +261,17 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 item.addEventListener('wheel', wheelHandler, { passive: false });
                 item._bmMultiColumnWheelHandler = wheelHandler;
             }
+        },
+        fitPopupHeight (menupopup) {
+            if (!this.popups.has(menupopup)) return;
+            const scrollbox = menupopup.scrollBox.scrollbox;
+            const scroller = scrollbox._bmMultiColumnScroller;
+            if (!scroller) return;
+            // 弹出后才能取得扣除菜单边框、内边距及原生高度限制的可用高度。
+            scroller.style.maxHeight = Math.min(
+                parseFloat(getComputedStyle(scroller).maxHeight), scrollbox.clientHeight
+            ) + "px";
+            scrollbox.style.setProperty("width", Math.min(calcWidth(-129), scroller.scrollWidth) + "px", "important");
         },
         resetPopup (menupopup) {
             let arrowscrollbox = menupopup?.shadowRoot?.querySelector("::part(arrowscrollbox)");
@@ -282,6 +304,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 maxHeight: "",
                 width: "",
                 scrollSnapType: "",
+                scrollbarWidth: "",
             });
 
             let menuitem = menupopup.lastElementChild;
