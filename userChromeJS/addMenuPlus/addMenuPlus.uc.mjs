@@ -24,6 +24,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
 // @note               2026-09-02 修复 img2base64/svg2base64 中 async executor 导致 IOUtils 失败时 syncify 死循环的问题
+// @note               2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
 // @note               0.4.2 Firefox 154 Bug 2047680 actor opt-in; remove unused content-to-chrome arbitrary execution message
 // @note               0.4.1 移除 UI locale 缓存，并在 Firefox 应用语言变化后自动刷新菜单
 // @note               0.4.0 配置中的 label、tooltiptext、onshowinglabel 支持按 Firefox UI locale 选择文案
@@ -292,7 +293,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 }
             }
 
-            this.identityBox = $('#identity-icon, #identity-box')
+            this.identityBox = $('#trust-icon-container') || $('#identity-icon') || $('#identity-box')
             if (enableidentityBoxContextMenu && this.identityBox) {
                 // SSL 小锁右键菜单
                 this.identityBox.on("click", this, false);
@@ -869,7 +870,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     break;
 
                 case 'click':
-                    if (button === 2 && $target.closest('#identity-box')) {
+                    if (button === 2 && $target.closest('#trust-icon-container, #identity-icon, #identity-box')) {
                         $("#identity-box-contextmenu").openPopup(target, "after_pointer", 0, 0, true, false);
                     }
                     break;

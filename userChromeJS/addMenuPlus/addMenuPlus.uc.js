@@ -19,6 +19,7 @@
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @note           2026-08-04 0.1.6r3 修复新版菜单图标、布尔属性同步和通知接口兼容性，增强 frame-script 生命周期、右键目标、Favicon 及图片变量处理
 // @note           2026-10-17 支持配置文件递归 include，并将语法错误定位到实际来源文件和行号
+// @note           2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
 // @note           0.1.6r2 使用 @async 注解
 // @note           0.1.6r1 增强在SVG上右键检测的能力，Bug 1937080 Block inline event handlers in Nightly and collect telemetry，Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init, 修正标签页右键 URL 获取错误，修复 Favicon 获取，标签右键菜单支持 photoncompact，修复 Favicon 获取， 实现 executeInChrome，支持 onshowinglabel 属性，支持修改菜单属性
 // @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行），修复获取 Favicon 链接无效，Favicon 协议改用 page-icon
@@ -421,7 +422,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 PanelUI.mainView.removeEventListener("ViewShowing", this);
             }
 
-            this.identityBox = $('identity-icon') || $('identity-box')
+            this.identityBox = $('trust-icon-container') || $('identity-icon') || $('identity-box')
             if (enableidentityBoxContextMenu && this.identityBox) {
                 // SSL 小锁右键菜单
                 this.identityBox.addEventListener("click", this, false);
@@ -773,7 +774,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     }
                     break;
                 case 'click':
-                    if (event.button == 2 && event.target.id === this.identityBox.id)
+                    if (event.button == 2 && event.target.closest('#trust-icon-container, #identity-icon, #identity-box'))
                         $("identity-box-contextmenu").openPopup(event.target, "after_pointer", 0, 0, true, false);
                     break;
                 case 'TabAttrModified':
