@@ -18,6 +18,7 @@
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @note           2026-08-04 0.1.6r3 修复新版菜单图标、布尔属性同步和通知接口兼容性，增强 frame-script 生命周期、右键目标、Favicon 及图片变量处理
+// @note           2026-10-17 支持配置文件递归 include，并将语法错误定位到实际来源文件和行号
 // @note           0.1.6r2 使用 @async 注解
 // @note           0.1.6r1 增强在SVG上右键检测的能力，Bug 1937080 Block inline event handlers in Nightly and collect telemetry，Bug 1878401 Always pass BrowsingContext to nsIFilePicker::Init, 修正标签页右键 URL 获取错误，修复 Favicon 获取，标签右键菜单支持 photoncompact，修复 Favicon 获取， 实现 executeInChrome，支持 onshowinglabel 属性，支持修改菜单属性
 // @note           0.1.5 fix openUILinkIn was removed, Bug 1820534 - Move front-end to modern flexbox，修复 about:error 页面获取的地址不对, Bug 1815439 - Remove useless loadURI wrapper from browser.js, 扩展 %FAVICON% %FAVICON_BASE64% 的应用范围, condition 支持多个条件，支持 %sl 选中文本或者链接文本，openCommand 函数增加额外参数，Bug 1870644 - Provide a single function for obtaining icon URLs from search engines，dom 属性 image 转换为css 属性 list-style-image，强制 enableContentAreaContextMenuCompact 在 Firefox 版本号小于 90 时无效，修复大部分小书签兼容性问题（因为 CSP 有效部分还是不能运行），修复获取 Favicon 链接无效，Favicon 协议改用 page-icon
@@ -1013,7 +1014,56 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 return;
             }
 
-            var data = loadText(aFile.path);
+            var sourceMap = [];
+            var finalCode = "";
+            var processedFiles = new Set();
+
+            function getLineCount (text) {
+                return text.split("\n").length;
+            }
+
+            function appendCodeSegment (file, code, originalStartLine) {
+                if (!code.trim())
+                    return;
+
+                sourceMap.push({
+                    file: file,
+                    startLine: getLineCount(finalCode),
+                    originalStartLine: originalStartLine
+                });
+                finalCode += code.endsWith("\n") ? code : code + "\n";
+            }
+
+            function expandIncludes (file) {
+                if (processedFiles.has(file.path))
+                    return;
+                processedFiles.add(file.path);
+
+                var content = loadText(file.path) || "";
+                var includeRegex = /^[ \t]*include\s*\(\s*['"]([^'"]+)['"]\s*\)\s*;?[ \t]*(?:\r?\n|$)/gm;
+                var lastIndex = 0;
+                var match;
+
+                while ((match = includeRegex.exec(content)) !== null) {
+                    var codeSegment = content.substring(lastIndex, match.index);
+                    appendCodeSegment(file, codeSegment, getLineCount(content.substring(0, lastIndex)));
+
+                    var includedFile = file.parent.clone();
+                    includedFile.appendRelativePath(match[1]);
+                    if (!includedFile.exists() || !includedFile.isFile()) {
+                        var includeError = new Error("Include file not found: " + includedFile.path + " (in " + file.path + ")");
+                        includeError.includeFile = file;
+                        includeError.includeLine = getLineCount(content.substring(0, match.index));
+                        throw includeError;
+                    }
+
+                    expandIncludes(includedFile);
+                    lastIndex = includeRegex.lastIndex;
+                }
+
+                var remainingCode = content.substring(lastIndex);
+                appendCodeSegment(file, remainingCode, getLineCount(content.substring(0, lastIndex)));
+            }
 
             var sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
 
@@ -1027,13 +1077,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             sandbox.addMenu = this;
             sandbox.$L = $L;
 
-            var includeSrc = "";
-            sandbox.include = function (aLeafName) {
-                var file = addMenu.FILE.parent.clone();
-                file.appendRelativePath(aLeafName);
-                var data = loadText(file.path);
-                if (data)
-                    includeSrc += data + "\n";
+            sandbox.include = function () {
+                throw new Error("include() must be a standalone line with a string path");
             };
             sandbox._css = [];
 
@@ -1078,14 +1123,34 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
 
             try {
-                var lineFinder = new Error();
-                Cu.evalInSandbox("function css(code){ this._css.push(code+'') };\n" + data, sandbox, "1.8");
-                Cu.evalInSandbox(includeSrc, sandbox, "1.8");
+                expandIncludes(aFile);
+                var codeToRun = "function css(code){ this._css.push(code+'') };\n" + finalCode;
+                Cu.evalInSandbox(codeToRun, sandbox, "1.8", "addMenuPlus_config", 1);
             } catch (e) {
-                let line = e.lineNumber - lineFinder.lineNumber - 1;
-                this.alert(e + $L("check config file with line", line), null, function () {
-                    addMenu.edit(addMenu.FILE, line);
-                });
+                var foundFile = e.includeFile || aFile;
+                var line = e.includeLine || e.lineNumber || 1;
+
+                if (!e.includeFile && typeof e.lineNumber === "number") {
+                    var errorLineInFinalCode = e.lineNumber - 1;
+                    for (var i = sourceMap.length - 1; i >= 0; i--) {
+                        var mapEntry = sourceMap[i];
+                        if (errorLineInFinalCode >= mapEntry.startLine) {
+                            foundFile = mapEntry.file;
+                            line = mapEntry.originalStartLine + errorLineInFinalCode - mapEntry.startLine;
+                            break;
+                        }
+                    }
+                }
+
+                if (e.includeFile) {
+                    this.alert(e.message, null, function () {
+                        addMenu.edit(foundFile, line);
+                    });
+                } else {
+                    this.alert(e + "\n" + foundFile.path + $L("check config file with line", line), null, function () {
+                        addMenu.edit(foundFile, line);
+                    });
+                }
                 return console.log(e);
             }
             if (this.style2 && this.style2.parentNode)
