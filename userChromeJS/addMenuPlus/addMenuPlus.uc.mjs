@@ -8,7 +8,7 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.4.2
+// @version            0.4.3
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
@@ -23,6 +23,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.3 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
 // @note               2026-09-02 修复 img2base64/svg2base64 中 async executor 导致 IOUtils 失败时 syncify 死循环的问题
 // @note               2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
 // @note               0.4.2 Firefox 154 Bug 2047680 actor opt-in; remove unused content-to-chrome arbitrary execution message
@@ -316,6 +317,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
 
             // 绑定事件
+            document.addEventListener("popuphidden", this);
             $("#contentAreaContextMenu").on("popupshowing", this, false);
             $("#contentAreaContextMenu").on("popuphiding", this, false);
             $("#tabContextMenu").on("popupshowing", this, false);
@@ -618,6 +620,8 @@ import { syncify } from "./000-syncify.sys.mjs";
             return !!this.BTN;
         },
         destroy: function (forceDestroyWidget = false) {
+            document.removeEventListener("popuphidden", this);
+            this.restoreMenuVisibility();
             clearTimeout(this._localeRefreshTimer);
             this._localeRefreshTimer = null;
             if (this._localeObserverRegistered) {
@@ -668,15 +672,50 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
             return Promise.resolve(null);
         },
+        restoreMenuVisibility: function (popup) {
+            if (!this._hiddenMenuItems) return;
+            for (const [menu, items] of this._hiddenMenuItems) {
+                if (popup && menu !== popup) continue;
+                for (const [node, hidden] of items) {
+                    if (hidden === null) node.removeAttribute("hidden");
+                    else node.setAttribute("hidden", hidden);
+                }
+                this._hiddenMenuItems.delete(menu);
+            }
+        },
+        syncMenuVisibility: function (popup) {
+            if (popup.localName !== "menupopup") return;
+            this.restoreMenuVisibility(popup);
+            this._hiddenMenuItems ||= new Map();
+            const items = new Map();
+            // 原生菜单按 hidden 统计可见项，也需要识别配置 CSS 隐藏的原生菜单项。
+            for (const node of popup.querySelectorAll("menu, menuitem, menugroup")) {
+                if (node.hidden) continue;
+                const style = getComputedStyle(node);
+                if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse") {
+                    items.set(node, node.getAttribute("hidden"));
+                    node.hidden = true;
+                }
+            }
+            this._hiddenMenuItems.set(popup, items);
+            if (popup.id === "contentAreaContextMenu" || popup.id === "tabContextMenu") {
+                // 标签菜单没有统一清理入口，复用网页菜单的原生实现。
+                window.nsContextMenu.prototype.showHideSeparators(popup);
+            }
+        },
         handleEvent: async function (event) {
             const { type, target, button } = event;
             const $target = $(event.target);
             const $currentTarget = $(event.currentTarget);
 
             switch (type) {
+                case "popuphidden":
+                    this.restoreMenuVisibility(target);
+                    break;
                 case "ViewShowing":
                 case "popupshowing":
                     if (target !== event.currentTarget) return;
+                    this.restoreMenuVisibility(target);
 
                     // File refreshing logic
                     if (enableFileRefreshing) {
@@ -767,8 +806,11 @@ import { syncify } from "./000-syncify.sys.mjs";
                         .filter(obj => obj.insertPoint === "addMenu-all-insertpoint")
                         .forEach(obj => ev(obj));
 
+                    this.syncMenuVisibility($target.get());
+
                     // Delayed DOM updates
                     setTimeout(() => {
+                        this.restoreMenuVisibility($target.get());
                         $$('menuitem.addMenu[command]:not([sync-hidden="false"]), menu.addMenu[command]:not([sync-hidden="false"])', $target.get()).forEach($elem => {
                             if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
 
@@ -854,6 +896,9 @@ import { syncify } from "./000-syncify.sys.mjs";
                                 let style = getComputedStyle($elem.get());
                                 return style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse";
                             }
+                        }
+                        if ($target.get().state === "open" || $target.get().state === "showing") {
+                            this.syncMenuVisibility($target.get());
                         }
                     }, 10);
                     break;

@@ -8,7 +8,7 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r3
+// @version        0.1.6r4
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -17,6 +17,7 @@
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           2026-10-18 0.1.6r4 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
 // @note           2026-08-04 0.1.6r3 修复新版菜单图标、布尔属性同步和通知接口兼容性，增强 frame-script 生命周期、右键目标、Favicon 及图片变量处理
 // @note           2026-10-17 支持配置文件递归 include，并将语法错误定位到实际来源文件和行号
 // @note           2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
@@ -402,6 +403,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 insertId: "addMenu-page-insertpoint"
             }
 
+            document.addEventListener("popuphidden", this);
             $("contentAreaContextMenu").addEventListener("popupshowing", this, false);
             $("contentAreaContextMenu").addEventListener("popuphiding", this, false);
             $("tabContextMenu").addEventListener("popupshowing", this, false);
@@ -588,6 +590,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.rebuild();
         },
         destroy: function () {
+            document.removeEventListener("popuphidden", this);
+            this.restoreMenuVisibility();
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             $("contentAreaContextMenu").removeEventListener("popuphiding", this, false);
             $("tabContextMenu").removeEventListener("popupshowing", this, false);
@@ -640,11 +644,44 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (this.style2 && this.style2.parentNode) this.style2.parentNode.removeChild(this.style2);
             delete window.addMenu;
         },
+        restoreMenuVisibility: function (popup) {
+            if (!this._hiddenMenuItems) return;
+            for (const [menu, items] of this._hiddenMenuItems) {
+                if (popup && menu !== popup) continue;
+                for (const [node, hidden] of items) {
+                    if (hidden === null) node.removeAttribute("hidden");
+                    else node.setAttribute("hidden", hidden);
+                }
+                this._hiddenMenuItems.delete(menu);
+            }
+        },
+        syncMenuVisibility: function (popup) {
+            if (popup.localName !== "menupopup") return;
+            this.restoreMenuVisibility(popup);
+            if (!this._hiddenMenuItems) this._hiddenMenuItems = new Map();
+            const items = new Map();
+            for (const node of popup.querySelectorAll("menu, menuitem, menugroup")) {
+                if (node.hidden) continue;
+                const style = getComputedStyle(node);
+                if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse") {
+                    items.set(node, node.getAttribute("hidden"));
+                    node.hidden = true;
+                }
+            }
+            this._hiddenMenuItems.set(popup, items);
+            if (popup.id === "contentAreaContextMenu" || popup.id === "tabContextMenu") {
+                window.nsContextMenu.prototype.showHideSeparators(popup);
+            }
+        },
         handleEvent: function (event) {
             switch (event.type) {
+                case "popuphidden":
+                    this.restoreMenuVisibility(event.target);
+                    break;
                 case "ViewShowing":
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
+                    this.restoreMenuVisibility(event.target);
 
                     if (enableFileRefreshing) {
                         this.updateModifiedFile();
@@ -719,11 +756,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         }
                     });
 
+                    this.syncMenuVisibility(event.target);
+
                     const delay = new Promise(resolve => {
                         setTimeout(resolve, 10);
                     });
 
                     delay.then(() => {
+                        this.restoreMenuVisibility(event.target);
                         event.target.querySelectorAll('menuitem.addMenu[command],menu.addMenu[command]').forEach(elem => {
                             if (/^menugroup$/i.test(elem.parentNode.nodeName)) return;
                             let original = document.getElementById(elem.getAttribute('command'));
@@ -746,6 +786,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                                 }
                             });
                         });
+                        if (event.target.state === "open" || event.target.state === "showing") {
+                            this.syncMenuVisibility(event.target);
+                        }
                     });
                     break;
                 case 'popuphiding':
