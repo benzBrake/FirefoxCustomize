@@ -9,6 +9,7 @@
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.10.18 按每列最长条目自适应书签菜单宽度，保留列宽上限及整列高亮
 // @note            2026.10.18 显式处理单列菜单纵向滚轮，避免事件被外层多列菜单拦截
 // @note            2026.10.18 在脚本开头提供自动分列的高度倍数配置
 // @note            2026.10.17 同步初始化书签工具栏溢出菜单的多列布局，修复首次打开或窗口尺寸变化后打开时闪烁
@@ -38,6 +39,8 @@
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
     // 内容高度超过菜单可用高度的此倍数时分列；值越大越晚分列，建议设为不小于 1 的数值。
     const WRAP_HEIGHT_RATIO = 1.5;
+    // 单个书签或文件夹条目的最大宽度，以当前菜单字号的倍数计算。
+    const BOOKMARK_MAX_WIDTH = 20;
 
     function uninitBMMultiColumn (instance) {
         for (let i = 0; i < instance.menupopup.length; i++) {
@@ -231,6 +234,8 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     minHeight: "21px",
                     maxHeight: "calc(100vh - 129px)",
                     display: "flex",
+                    width: "max-content",
+                    alignContent: "start",
                     flexFlow: "column nowrap",
                     overflowX: "hidden",
                     overflowY: "auto",
@@ -245,10 +250,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     }
                     item.style.setProperty("min-width", "0", "important");
                     item.style.setProperty("max-width", columnWidth + "px", "important");
-                    item.style.setProperty("width", columnWidth + "px", "important");
+                    item.style.setProperty("width", "auto", "important");
                     item.style.setProperty("flex-shrink", "0", "important");
                 }
-                scrollbox.style.setProperty("width", Math.min(maxWidth, scroller.scrollWidth) + "px", "important");
+                this.fitPopupWidth(scrollbox, scroller);
                 bindWheelEvent(scroller);
                 if (menupopup.state === "open") {
                     this.fitPopupHeight(menupopup);
@@ -296,7 +301,14 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 overflowY: shouldWrap ? "hidden" : "auto",
                 scrollSnapType: shouldWrap ? "x mandatory" : "none",
             });
-            scrollbox.style.setProperty("width", Math.min(calcWidth(-129), scroller.scrollWidth) + "px", "important");
+            this.fitPopupWidth(scrollbox, scroller);
+        },
+        fitPopupWidth (scrollbox, scroller) {
+            // 先按内容测量，避免旧视口宽度阻止菜单收窄；随后让滚动视口铺满弹窗。
+            scroller.style.minWidth = "0";
+            const width = Math.min(calcWidth(-129), scroller.scrollWidth);
+            scrollbox.style.setProperty("width", width + "px", "important");
+            scroller.style.minWidth = "100%";
         },
         resetPopup (menupopup) {
             let arrowscrollbox = menupopup?.shadowRoot?.querySelector("::part(arrowscrollbox)");
@@ -346,7 +358,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
 
     function getColumnWidth (menupopup, maxWidth) {
         let fontSize = parseFloat(getComputedStyle(menupopup).fontSize) || 16;
-        let preferredWidth = Math.round(fontSize * 26);
+        let preferredWidth = Math.round(fontSize * BOOKMARK_MAX_WIDTH);
         let minWidth = Math.round(fontSize * 18);
         return Math.max(Math.min(preferredWidth, maxWidth), Math.min(minWidth, maxWidth));
     }
