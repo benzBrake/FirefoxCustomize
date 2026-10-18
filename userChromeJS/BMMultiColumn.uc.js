@@ -369,6 +369,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
     max-height: calc(100vh - 129px);
 }
 #PlacesToolbarItems menupopup > *,
+#BMB_bookmarksPopup > *,
 #BMB_bookmarksToolbar menupopup > *,
 #BMB_unsortedBookmarks menupopup > *,
 #BMB_mobileBookmarks menupopup > *,
