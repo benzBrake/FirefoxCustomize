@@ -4,11 +4,12 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2026.10.17
+// @version         2026.10.18
 // @compatibility   Firefox 133
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.10.18 在脚本开头提供自动分列的高度倍数配置
 // @note            2026.10.17 同步初始化书签工具栏溢出菜单的多列布局，修复首次打开或窗口尺寸变化后打开时闪烁
 // @note            2026.10.17 限制内部滚动容器不超过弹窗可用宽度，修复最大化时其他书签菜单右侧被裁切
 // @note            2026.10.17 隐藏外层容器的垂直滚动条，保留内部横向滚动条，兼容主题强制纵向滚动样式；按菜单实际高度限制内部容器，修复最大化时横向滚动条被裁切
@@ -34,6 +35,9 @@
 // @ignorecache
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
+    // 内容高度超过菜单可用高度的此倍数时分列；值越大越晚分列，建议设为不小于 1 的数值。
+    const WRAP_HEIGHT_RATIO = 1.01;
+
     function uninitBMMultiColumn (instance) {
         for (let i = 0; i < instance.menupopup.length; i++) {
             clearInterval(instance.timer[i]);
@@ -277,7 +281,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     ? item.getBoundingClientRect().height
                     : 0);
             }, 0);
-            const shouldWrap = contentHeight > maxHeight * 1.5;
+            const shouldWrap = contentHeight > maxHeight * WRAP_HEIGHT_RATIO;
             scroller._bmMultiColumnWrap = shouldWrap;
             Object.assign(scroller.style, {
                 flexFlow: shouldWrap ? "column wrap" : "column nowrap",
