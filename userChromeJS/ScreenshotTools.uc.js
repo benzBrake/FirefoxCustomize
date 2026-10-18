@@ -13,20 +13,20 @@
 // @compatibility  Firefox 127
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/master/ScreenshotTools.uc.js.
-// @version        0.0.3
+// @version        0.0.4
+// @note           2026-10-18 使用原生截图按钮，支持自定义工具栏后的点击和右键菜单
 // @note           0.0.3 修复 Bug 1937080 Block inline event handlers in Nightly and collect telemetry
 // @note           0.0.2 修复无法打开系统画板
 // @note           0.0.1
 // ==/UserScript==
 (async function (versionGE) {
-    const CustomizableUI = imp('CustomizableUI');
     const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
     window.ScreenshotTools = {
         ID_PREFIX: 'ScreenshotTools',
         MENUS: [
             {
                 label: "隐藏火狐截图",
-                exec: "\\UserTools\\SGScreencapture\\screencapture.exe",
+                exec: "\\UserTools\\SnapShot.exe",
                 precommand: function () {
                     window.minimize();
                     setTimeout(() => {
@@ -93,56 +93,41 @@
         },
         init () {
             document.addEventListener('DOMContentLoaded', this);
-            const BTN_ID = this.getId('button');
-            try {
-                CustomizableUI.createWidget({
-                    id: BTN_ID,
-                    removable: true,
-                    defaultArea: CustomizableUI.AREA_NAVBAR,
-                    type: "custom",
-                    onBuild: doc => this.createButton(doc, BTN_ID, this.getId('popup'))
-                });
-            } catch (ex) { }
-        },
-        createButton (doc, BTN_ID, POPUP_ID) {
-            let btn = cEl(doc, 'toolbarbutton', {
-                id: BTN_ID,
-                label: "截图工具",
-                tooltiptext: "左键：框选截图\n中键：截取网页可见区域\n右键：截图菜单",
-                class: 'toolbarbutton-1 chromeclass-toolbar-additional',
-                type: "contextmenu",
-                contextmenu: POPUP_ID,
-                style: "list-style-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSJjb250ZXh0LWZpbGwiIGZpbGwtb3BhY2l0eT0iY29udGV4dC1maWxsLW9wYWNpdHkiIHRyYW5zZm9ybT0ic2NhbGUoMS4zKSI+PHBhdGggZD0iTTUgM0MzLjg5NSAzIDMgMy44OTUgMyA1TDUgNUw1IDMgeiBNIDcgM0w3IDVMOSA1TDkgM0w3IDMgeiBNIDExIDNMMTEgNUwxMyA1TDEzIDNMMTEgMyB6IE0gMTUgM0wxNSA1TDE3IDVMMTcgM0wxNSAzIHogTSAxOSAzTDE5IDVMMjEgNUMyMSAzLjg5NSAyMC4xMDUgMyAxOSAzIHogTSAzIDdMMyA5TDUgOUw1IDdMMyA3IHogTSAxOSA3TDE5IDlMMjEgOUwyMSA3TDE5IDcgeiBNIDEyIDlMMTAuNjY3OTY5IDExTDguNSAxMUM3LjY3MiAxMSA3IDExLjY3MiA3IDEyLjVMNyAxOS41QzcgMjAuMzI4IDcuNjcyIDIxIDguNSAyMUwxOS41IDIxQzIwLjMyOCAyMSAyMSAyMC4zMjggMjEgMTkuNUwyMSAxMi41QzIxIDExLjY3MiAyMC4zMjggMTEgMTkuNSAxMUwxNy4zMzIwMzEgMTFMMTYgOUwxMiA5IHogTSAzIDExTDMgMTNMNSAxM0w1IDExTDMgMTEgeiBNIDEzLjA3MDMxMiAxMUwxNC45Mjk2ODggMTFMMTUuNjY5OTIyIDEyLjEwOTM3NUwxNi4yNjM2NzIgMTNMMTcuMzMyMDMxIDEzTDE5IDEzTDE5IDE5TDkgMTlMOSAxM0wxMC42Njc5NjkgMTNMMTEuNzM2MzI4IDEzTDEyLjMzMDA3OCAxMi4xMDkzNzVMMTMuMDcwMzEyIDExIHogTSAxNCAxNCBBIDIgMiAwIDAgMCAxMiAxNiBBIDIgMiAwIDAgMCAxNCAxOCBBIDIgMiAwIDAgMCAxNiAxNiBBIDIgMiAwIDAgMCAxNCAxNCB6IE0gMyAxNUwzIDE3TDUgMTdMNSAxNUwzIDE1IHogTSAzIDE5QzMgMjAuMTA1IDMuODk1IDIxIDUgMjFMNSAxOUwzIDE5IHoiLz48L3N2Zz4=); fill: #3AADE2" // 修改为你喜欢的颜色
-            });
-            let menupopup = cEl(doc, 'menupopup', {
-                id: POPUP_ID
-            });
-            menupopup.addEventListener('popupshowing', this, { once: true });
-            btn.appendChild(menupopup);
-            btn.addEventListener('click', this, false);
-            return btn;
+            // 委托到窗口，按钮移入面板、移除或重新创建时无需重新绑定。
+            for (const type of ['command', 'click', 'contextmenu']) {
+                window.addEventListener(type, this, true);
+            }
+            window.addEventListener('unload', this, { once: true });
+            this.popup = cEl(document, 'menupopup', { id: this.getId('popup') });
+            this.popup.addEventListener('popupshowing', this, { once: true });
+            document.getElementById('mainPopupSet').appendChild(this.popup);
         },
         handleEvent (event) {
             switch (event.type) {
                 case 'DOMContentLoaded':
                     this.initScreenPopupUIHanler(event.target);
-                    break;
+                    return;
                 case 'popupshowing':
                     this.initPopupMenu(event.target);
-                    break;
-                case 'click':
-                    if (event.explicitOriginalTarget.localName !== "toolbarbutton") return;
-                    switch (event.button) {
-                        case 0:
-                            // 搜狗截图工具
-                            this.exec(this.handleRelativePath("\\UserTools\\Snapshot.exe"));
-                            break;
-                        case 1:
-                            // 截图网页可视区域
-                            this.takeWebpageScreenShot(event.target.ownerDocument);
-                            break;
-                    }
-                    break;
+                    return;
+                case 'unload':
+                    this.destroy();
+                    return;
+            }
+            const button = event.target.closest?.('#screenshot-button');
+            if (!button || document.documentElement.hasAttribute('customizing')) return;
+            if (event.type === 'command') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                this.exec(this.handleRelativePath("\\UserTools\\SnapShot.exe"), [""]);
+            } else if (event.type === 'click' && event.button === 1) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                this.takeWebpageScreenShot(document);
+            } else if (event.type === 'contextmenu') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                this.popup.openPopupAtScreen(event.screenX, event.screenY, true);
             }
         },
         async initScreenPopupUIHanler (win) {
@@ -368,19 +353,15 @@
         },
         destroy () {
             document.removeEventListener('DOMContentLoaded', this);
-            CustomizableUI.destroyWidget(this.getId('button'));
+            for (const type of ['command', 'click', 'contextmenu']) {
+                window.removeEventListener(type, this, true);
+            }
+            window.removeEventListener('unload', this);
+            this.popup?.remove();
         }
     }
 
     window.ScreenshotTools.init();
-
-    function imp (name) {
-        if (name in globalThis) return globalThis[name];
-        var url = `resource:///modules/${name}.`;
-        try { var exp = ChromeUtils.importESModule(url + "sys.mjs"); }
-        catch { exp = ChromeUtils.import(url + "jsm"); }
-        return exp[name];
-    }
 
     /**
      * 创建 DOM 元素
