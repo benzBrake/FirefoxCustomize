@@ -9,6 +9,7 @@
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.10.18 显式处理单列菜单纵向滚轮，避免事件被外层多列菜单拦截
 // @note            2026.10.18 在脚本开头提供自动分列的高度倍数配置
 // @note            2026.10.17 同步初始化书签工具栏溢出菜单的多列布局，修复首次打开或窗口尺寸变化后打开时闪烁
 // @note            2026.10.17 限制内部滚动容器不超过弹窗可用宽度，修复最大化时其他书签菜单右侧被裁切
@@ -36,7 +37,7 @@
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
     // 内容高度超过菜单可用高度的此倍数时分列；值越大越晚分列，建议设为不小于 1 的数值。
-    const WRAP_HEIGHT_RATIO = 1.01;
+    const WRAP_HEIGHT_RATIO = 1.5;
 
     function uninitBMMultiColumn (instance) {
         for (let i = 0; i < instance.menupopup.length; i++) {
@@ -256,11 +257,17 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             function bindWheelEvent (item) {
                 if (item._bmMultiColumnWheelHandler) return;
                 const wheelHandler = (e) => {
-                    if (!item._bmMultiColumnWrap) return;
                     e.preventDefault();
                     e.stopPropagation();
-                    const delta = e.deltaX || (e.deltaY || e.detail || e.wheelDelta) * 50;
-                    item.scrollLeft += delta;
+                    if (item._bmMultiColumnWrap) {
+                        const delta = e.deltaX || (e.deltaY || e.detail || e.wheelDelta) * 50;
+                        item.scrollLeft += delta;
+                    } else {
+                        // 单列菜单也需消费事件，避免冒泡到外层多列菜单后被取消。
+                        const unit = e.deltaMode === e.DOM_DELTA_LINE ? 50
+                            : e.deltaMode === e.DOM_DELTA_PAGE ? item.clientHeight : 1;
+                        item.scrollTop += e.deltaY * unit;
+                    }
                 };
                 item.addEventListener('wheel', wheelHandler, { passive: false });
                 item._bmMultiColumnWheelHandler = wheelHandler;
