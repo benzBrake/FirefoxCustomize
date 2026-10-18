@@ -4,11 +4,20 @@
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
-// @version         2026.04.10
+// @version         2026.10.18
 // @compatibility   Firefox 133
 // @async
 // @shutdown        window.BMMultiColumn?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/blob/master/userChromeJS
+// @note            2026.10.18 按每列最长条目自适应书签菜单宽度，保留列宽上限及整列高亮
+// @note            2026.10.18 显式处理单列菜单纵向滚轮，避免事件被外层多列菜单拦截
+// @note            2026.10.18 在脚本开头提供自动分列的高度倍数配置
+// @note            2026.10.17 同步初始化书签工具栏溢出菜单的多列布局，修复首次打开或窗口尺寸变化后打开时闪烁
+// @note            2026.10.17 限制内部滚动容器不超过弹窗可用宽度，修复最大化时其他书签菜单右侧被裁切
+// @note            2026.10.17 隐藏外层容器的垂直滚动条，保留内部横向滚动条，兼容主题强制纵向滚动样式；按菜单实际高度限制内部容器，修复最大化时横向滚动条被裁切
+// @note            2026.10.17 书签菜单轻微超高时保持单列纵向滚动，内容较多时再自动分列
+// @note            2026.10.17 书签工具栏固定入口菜单不分列，仅对其文件夹子菜单应用多列布局
+// @note            2026-10-15 修复首次打开菜单宽度为零及 APZ 导致的多列绘制空白，保留横向滚动条
 // @note            2026.08.10 修复 Loader 热重载时重复 destroy，并避免多窗口提前注销共享样式和延迟清理污染新实例
 // @note            2026.04.09 兼容新版 Firefox 书签菜单宽度规则，修复多列书签标题被撑宽后显示不全
 // @note            2025.07.03 修复书签工具栏溢出菜单显示不全 #50
@@ -28,16 +37,25 @@
 // @ignorecache
 // ==/UserScript==
 location.href.startsWith("chrome://browser/content/browser.x") && (function (css) {
+    // 内容高度超过菜单可用高度的此倍数时分列；值越大越晚分列，建议设为不小于 1 的数值。
+    const WRAP_HEIGHT_RATIO = 1.5;
+    // 单个书签或文件夹条目的最大宽度，以当前菜单字号的倍数计算。
+    const BOOKMARK_MAX_WIDTH = 20;
+
     function uninitBMMultiColumn (instance) {
         for (let i = 0; i < instance.menupopup.length; i++) {
             clearInterval(instance.timer[i]);
             instance.timer[i] = null;
             const menupopup = document.getElementById(instance.menupopup[i]);
             if (!menupopup) continue;
-            instance.resetPopup(menupopup);
-            menupopup.removeEventListener('popupshowing', instance, false);
+            menupopup.removeEventListener('popupshowing', instance, { mozSystemGroup: true });
+            menupopup.removeEventListener('popupshown', instance, { mozSystemGroup: true });
             menupopup.removeEventListener('DOMMenuItemActive', instance, false);
         }
+        for (const menupopup of instance.popups) {
+            instance.resetPopup(menupopup);
+        }
+        instance.popups.clear();
     }
 
     function hasOtherBMMultiColumnWindow () {
@@ -78,6 +96,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             'BMB_bookmarksPopup'],
         timer: [],
         count: [],
+        popups: new Set(),
         sss: Cc['@mozilla.org/content/style-sheet-service;1'].getService(Ci.nsIStyleSheetService),
         init: function () {
             this.style = makeURI('data:text/css;charset=UTF=8,' + encodeURIComponent(css));
@@ -100,7 +119,9 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         clearInterval(self.timer[i]);
                         var menupopup = document.getElementById(self.menupopup[i]);
                         if (!self._destroyed && menupopup) {
-                            menupopup.addEventListener('popupshowing', self, false);
+                            // Places 在普通事件组中填充菜单，之后才能测量首次打开的宽度。
+                            menupopup.addEventListener('popupshowing', self, { mozSystemGroup: true });
+                            menupopup.addEventListener('popupshown', self, { mozSystemGroup: true });
                             menupopup.addEventListener('DOMMenuItemActive', self, false);
                         }
                     }
@@ -127,15 +148,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                         menupopup = event.target;
                     } else return;
                     this.initHorizontalScroll(event);
-                    if (menupopup.id === "PlacesChevronPopup") {
-                        setTimeout(_ => {
-                            if (!this._destroyed) {
-                                this.initMultiColumn(menupopup, event);
-                            }
-                        }, 10);
-                    } else {
-                        this.initMultiColumn(menupopup, event);
-                    }
+                    this.initMultiColumn(menupopup, event);
+                    break;
+                case 'popupshown':
+                    this.fitPopupHeight(event.target);
                     break;
                 case 'aftercustomization':
                     setTimeout(() => this.delayedStartup(), 0);
@@ -188,19 +204,44 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             let arrowscrollbox = menupopup.shadowRoot.querySelector("::part(arrowscrollbox)");
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part~=scrollbox]');
             if (scrollbox) {
+                this.popups.add(menupopup);
                 Object.assign(scrollbox.style, {
                     minHeight: "21px",
                     height: "auto",
-                    display: "flex",
-                    flexFlow: "column wrap",
-                    // overflow: "-moz-hidden-unscrollable",
+                    display: "block",
                     width: "unset",
-                    scrollSnapType: "x mandatory",
                 });
+                scrollbox.style.setProperty("overflow", "visible", "important");
+                // 原生弹窗会按屏幕剩余空间收窄，内部固定宽度也必须受其限制。
+                scrollbox.style.setProperty("max-width", "100%", "important");
+                // 主题可能强制外层纵向滚动；仅隐藏外层滚动条，内部保留横向滚动条。
+                scrollbox.style.setProperty("scrollbar-width", "none", "important");
                 arrowscrollbox.style.width = "auto";
                 arrowscrollbox.style.maxHeight = "calc(100vh - 129px)";
                 let slot = scrollbox.querySelector('slot');
                 slot.style.display = "contents";
+                let scroller = scrollbox._bmMultiColumnScroller;
+                if (!scroller) {
+                    scroller = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+                    // APZ 会裁掉多列菜单的部分绘制区域。该 API 没有恢复接口，
+                    // 因此只对脚本创建、销毁时移除的滚动容器禁用 APZ。
+                    window.windowUtils.disableApzForElement(scroller);
+                    scrollbox.appendChild(scroller);
+                    scroller.appendChild(slot);
+                    scrollbox._bmMultiColumnScroller = scroller;
+                }
+                Object.assign(scroller.style, {
+                    minHeight: "21px",
+                    maxHeight: "calc(100vh - 129px)",
+                    display: "flex",
+                    width: "max-content",
+                    alignContent: "start",
+                    flexFlow: "column nowrap",
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    scrollbarWidth: "auto",
+                    scrollSnapType: "none",
+                });
                 let maxWidth = calcWidth(-129);
                 let columnWidth = getColumnWidth(menupopup, maxWidth);
                 for (let item = menupopup.firstElementChild; item; item = item.nextElementSibling) {
@@ -209,27 +250,65 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                     }
                     item.style.setProperty("min-width", "0", "important");
                     item.style.setProperty("max-width", columnWidth + "px", "important");
-                    item.style.setProperty("width", columnWidth + "px", "important");
+                    item.style.setProperty("width", "auto", "important");
+                    item.style.setProperty("flex-shrink", "0", "important");
                 }
-                if (maxWidth < scrollbox.scrollWidth) {
-                    scrollbox.style.setProperty("overflow-x", "auto", "important");
-                    scrollbox.style.setProperty("width", maxWidth + "px");
-                } else {
-                    scrollbox.style.setProperty("width", scrollbox.scrollWidth + "px", "important");
-                    scrollbox.clientWidth = scrollbox.scrollWidth;
+                this.fitPopupWidth(scrollbox, scroller);
+                bindWheelEvent(scroller);
+                if (menupopup.state === "open") {
+                    this.fitPopupHeight(menupopup);
                 }
-                bindWheelEvent(scrollbox);
             }
             function bindWheelEvent (item) {
                 if (item._bmMultiColumnWheelHandler) return;
                 const wheelHandler = (e) => {
                     e.preventDefault();
-                    const delta = e.deltaY || e.detail || e.wheelDelta;
-                    item.scrollLeft += delta * 50;
+                    e.stopPropagation();
+                    if (item._bmMultiColumnWrap) {
+                        const delta = e.deltaX || (e.deltaY || e.detail || e.wheelDelta) * 50;
+                        item.scrollLeft += delta;
+                    } else {
+                        // 单列菜单也需消费事件，避免冒泡到外层多列菜单后被取消。
+                        const unit = e.deltaMode === e.DOM_DELTA_LINE ? 50
+                            : e.deltaMode === e.DOM_DELTA_PAGE ? item.clientHeight : 1;
+                        item.scrollTop += e.deltaY * unit;
+                    }
                 };
                 item.addEventListener('wheel', wheelHandler, { passive: false });
                 item._bmMultiColumnWheelHandler = wheelHandler;
             }
+        },
+        fitPopupHeight (menupopup) {
+            if (!this.popups.has(menupopup)) return;
+            const scrollbox = menupopup.scrollBox.scrollbox;
+            const scroller = scrollbox._bmMultiColumnScroller;
+            if (!scroller) return;
+            const maxHeight = Math.min(
+                parseFloat(getComputedStyle(scroller).maxHeight), scrollbox.clientHeight
+            );
+            // 弹出后才能取得扣除菜单边框、内边距及原生高度限制的可用高度。
+            scroller.style.maxHeight = maxHeight + "px";
+            const contentHeight = [...menupopup.children].reduce((height, item) => {
+                return height + (item.matches?.("menu, menuitem, menuseparator")
+                    ? item.getBoundingClientRect().height
+                    : 0);
+            }, 0);
+            const shouldWrap = contentHeight > maxHeight * WRAP_HEIGHT_RATIO;
+            scroller._bmMultiColumnWrap = shouldWrap;
+            Object.assign(scroller.style, {
+                flexFlow: shouldWrap ? "column wrap" : "column nowrap",
+                overflowX: shouldWrap ? "auto" : "hidden",
+                overflowY: shouldWrap ? "hidden" : "auto",
+                scrollSnapType: shouldWrap ? "x mandatory" : "none",
+            });
+            this.fitPopupWidth(scrollbox, scroller);
+        },
+        fitPopupWidth (scrollbox, scroller) {
+            // 先按内容测量，避免旧视口宽度阻止菜单收窄；随后让滚动视口铺满弹窗。
+            scroller.style.minWidth = "0";
+            const width = Math.min(calcWidth(-129), scroller.scrollWidth);
+            scrollbox.style.setProperty("width", width + "px", "important");
+            scroller.style.minWidth = "100%";
         },
         resetPopup (menupopup) {
             let arrowscrollbox = menupopup?.shadowRoot?.querySelector("::part(arrowscrollbox)");
@@ -240,9 +319,12 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
             let scrollbox = arrowscrollbox.shadowRoot.querySelector('[part~=scrollbox]');
 
             if (!scrollbox) return;
-            if (scrollbox._bmMultiColumnWheelHandler) {
-                scrollbox.removeEventListener('wheel', scrollbox._bmMultiColumnWheelHandler);
-                delete scrollbox._bmMultiColumnWheelHandler;
+            let scroller = scrollbox._bmMultiColumnScroller;
+            if (scroller) {
+                scroller.removeEventListener('wheel', scroller._bmMultiColumnWheelHandler);
+                scrollbox.appendChild(scroller.querySelector('slot'));
+                scroller.remove();
+                delete scrollbox._bmMultiColumnScroller;
             }
             let slot = scrollbox.querySelector('slot');
             if (slot) {
@@ -257,8 +339,10 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 overflowX: "",
                 overflowY: "",
                 maxHeight: "",
+                maxWidth: "",
                 width: "",
                 scrollSnapType: "",
+                scrollbarWidth: "",
             });
 
             let menuitem = menupopup.lastElementChild;
@@ -266,6 +350,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
                 menuitem.style.minWidth = "";
                 menuitem.style.maxWidth = "";
                 menuitem.style.width = "";
+                menuitem.style.flexShrink = "";
                 menuitem = menuitem.previousElementSibling;
             }
         }
@@ -273,7 +358,7 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
 
     function getColumnWidth (menupopup, maxWidth) {
         let fontSize = parseFloat(getComputedStyle(menupopup).fontSize) || 16;
-        let preferredWidth = Math.round(fontSize * 26);
+        let preferredWidth = Math.round(fontSize * BOOKMARK_MAX_WIDTH);
         let minWidth = Math.round(fontSize * 18);
         return Math.max(Math.min(preferredWidth, maxWidth), Math.min(minWidth, maxWidth));
     }
@@ -295,7 +380,14 @@ location.href.startsWith("chrome://browser/content/browser.x") && (function (css
     max-width: calc(100vw - 20px);
     max-height: calc(100vh - 129px);
 }
-#PlacesToolbarItems menupopup > * {
+#PlacesToolbarItems menupopup > *,
+#BMB_bookmarksPopup > *,
+#BMB_bookmarksToolbar menupopup > *,
+#BMB_unsortedBookmarks menupopup > *,
+#BMB_mobileBookmarks menupopup > *,
+#PlacesChevronPopup > *,
+#OtherBookmarksPopup > *
+{
     scroll-snap-align: start;
 }
 `)
