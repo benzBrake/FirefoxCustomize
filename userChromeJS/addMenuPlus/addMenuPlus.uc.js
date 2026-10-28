@@ -8,7 +8,7 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r4
+// @version        0.1.6r5
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -17,6 +17,7 @@
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           2026-10-29 0.1.6r5 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
 // @note           2026-10-18 0.1.6r4 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
 // @note           2026-08-04 0.1.6r3 修复新版菜单图标、布尔属性同步和通知接口兼容性，增强 frame-script 生命周期、右键目标、Favicon 及图片变量处理
 // @note           2026-10-17 支持配置文件递归 include，并将语法错误定位到实际来源文件和行号
@@ -1254,7 +1255,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.setCondition(group, menuObj, opt);
             // Sync condition attribute to child menus
             menuObj._items.forEach(function (obj) {
-                if (!Object.keys(obj).includes("condition")) {
+                if (!Object.keys(obj).includes("condition") && group.hasAttribute("condition")) {
                     obj.condition = group.getAttribute("condition");
                 }
             });

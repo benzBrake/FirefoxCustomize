@@ -8,7 +8,7 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.4.3
+// @version            0.4.4
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
@@ -23,6 +23,8 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.4 保留共用网页插入点的 group 菜单类型，修复配置调用 GroupMenu 时提示未定义的问题（issue #85）
+// @note               0.4.4 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
 // @note               0.4.3 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
 // @note               2026-09-02 修复 img2base64/svg2base64 中 async executor 导致 IOUtils 失败时 syncify 死循环的问题
 // @note               2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
@@ -289,7 +291,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     MENU_ATTRS[type].insertId = insertPoint.id;
                     ins.before(insertPoint);
                     delete MENU_ATTRS[type].insRef;
-                } else if (!["btn", "mod", "ident"].includes(type)) {
+                } else if (!["btn", "mod", "ident", "group"].includes(type)) {
                     delete MENU_ATTRS[type];
                 }
             }
@@ -1377,7 +1379,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             this.setCondition(group, menuObj, opt);
             // Sync condition attribute to child menus
             menuObj._items.forEach(function (obj) {
-                if (!Object.keys(obj).includes("condition")) {
+                if (!Object.keys(obj).includes("condition") && group.hasAttribute("condition")) {
                     obj.condition = group.getAttribute("condition");
                 }
             });
