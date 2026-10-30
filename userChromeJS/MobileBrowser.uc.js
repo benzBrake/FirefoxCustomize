@@ -3,13 +3,14 @@
 // @description     在独立窗口中以 iPhone 14 竖屏尺寸打开当前页面
 // @license         MIT License
 // @compatibility   Firefox 152
-// @version         0.1.10
+// @version         0.2.0
 // @charset         UTF-8
 // @include         main
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
 // @note            2026-07-14 初始版本，使用 Firefox 响应式设计模式模拟 iPhone 14 竖屏窗口
 // @note            2026-10-17 修复工具栏图标不跟随主题颜色变化
+// @note            2026-10-30 移动窗口关闭普通侧边栏并精简垂直标签至 48px，仅保留居中网站图标；关闭按钮浮在标签右上角并于悬停时显示
 // ==/UserScript==
 
 (function () {
@@ -28,6 +29,8 @@
     const BUTTON_ID = "MobileBrowser-button";
     const WINDOW_MARKER = "mobilebrowser-window";
     const RESPONSIVE_TRIGGER = "mobile-browser-button";
+    const MOBILE_LAYOUT_STYLE_ID = "MobileBrowser-layout-style";
+    const MOBILE_TAB_WIDTH = 48;
     const INITIAL_PLACEMENT_PREF = "userChromeJS.MobileBrowser.initialPlacement";
     const INITIAL_PLACEMENT_POSITION = 2;
     const MOBILE = Object.freeze({
@@ -299,7 +302,12 @@
         const screen = win.screen;
         const availableWidth = Math.max(320, (screen.availWidth || MOBILE.width) - 16);
         const availableHeight = Math.max(480, (screen.availHeight || MOBILE.height) - 16);
-        const width = Math.min(MOBILE.width + WINDOW_EXTRA.width, availableWidth);
+        const sidebarWidth = win.document.getElementById("sidebar-container")
+            ?.getBoundingClientRect().width || 0;
+        const width = Math.min(
+            MOBILE.width + WINDOW_EXTRA.width + sidebarWidth,
+            availableWidth
+        );
         const height = Math.min(MOBILE.height + WINDOW_EXTRA.height, availableHeight);
 
         try {
@@ -313,6 +321,145 @@
             );
         } catch (ex) {
             console.warn("MobileBrowser: 调整移动窗口尺寸失败", ex);
+        }
+    }
+
+    function configureMobileWindowLayout (win) {
+        const doc = win.document;
+        if (!doc?.documentElement) {
+            return;
+        }
+
+        // 垂直模式下标签节点已移入侧栏，不能靠显示 TabsToolbar 恢复横向标签。
+        // 保留原生标签结构，只精简移动窗口中的外观。
+        const style = doc.getElementById(MOBILE_LAYOUT_STYLE_ID) ||
+            doc.createElement("style");
+        style.id = MOBILE_LAYOUT_STYLE_ID;
+        style.textContent = `
+            #main-window[${WINDOW_MARKER}="true"] {
+                min-width: 0 !important;
+                #nav-bar, #nav-bar-customization-target, #urlbar-container,
+                #urlbar, #urlbar-input-container, #vertical-spacer {
+                    min-width: 0 !important;
+                }
+                #urlbar-container {
+                    flex: 1 1 64px !important;
+                    width: 64px !important;
+                }
+                #vertical-spacer {
+                    flex: 0 1 0px !important;
+                }
+            }
+            #main-window[${WINDOW_MARKER}="true"] #sidebar-box,
+            #main-window[${WINDOW_MARKER}="true"] #sidebar-splitter,
+            #main-window[${WINDOW_MARKER}="true"] #sidebar-launcher-splitter,
+            #main-window[${WINDOW_MARKER}="true"] #sidebar-button {
+                display: none !important;
+            }
+            #main-window[${WINDOW_MARKER}="true"] #sidebar-container {
+                &:not(:has(#tabbrowser-tabs[orient="vertical"])) {
+                    display: none !important;
+                }
+                &:has(#tabbrowser-tabs[orient="vertical"]) {
+                    flex: 0 0 ${MOBILE_TAB_WIDTH}px !important;
+                    width: ${MOBILE_TAB_WIDTH}px !important;
+                    min-width: 0 !important;
+                    max-width: ${MOBILE_TAB_WIDTH}px !important;
+                }
+                sidebar-main, #vertical-tabs {
+                    width: 100% !important;
+                    min-width: 0 !important;
+                    max-width: 100% !important;
+                }
+            }
+            #main-window[${WINDOW_MARKER}="true"] #tabbrowser-tabs[orient="vertical"] {
+                width: ${MOBILE_TAB_WIDTH}px !important;
+                --tab-min-height: 28px !important;
+                --tab-min-width-pref: 0px !important;
+                min-width: 0 !important;
+                max-width: ${MOBILE_TAB_WIDTH}px !important;
+                flex: 1 1 auto !important;
+                padding-inline: 0 !important;
+                #tabbrowser-arrowscrollbox {
+                    width: ${MOBILE_TAB_WIDTH}px !important;
+                    min-width: 0 !important;
+                    max-width: ${MOBILE_TAB_WIDTH}px !important;
+                }
+                .tab-note-icon, .tab-audio-button, .tab-label-container,
+                .tab-secondary-label, .tab-badge, .tab-context-line,
+                .tab-group-line, #tabs-newtab-button,
+                #vertical-tabs-newtab-button, #alltabs-button {
+                    display: none !important;
+                }
+                .tabbrowser-tab {
+                    min-width: 0 !important;
+                    max-width: ${MOBILE_TAB_WIDTH}px !important;
+                    width: ${MOBILE_TAB_WIDTH}px !important;
+                }
+                .tab-content {
+                    min-width: 0 !important;
+                    max-width: none !important;
+                    flex: 1 1 auto !important;
+                    position: relative !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    padding-inline: 0 !important;
+                }
+                .tab-icon-stack {
+                    min-width: 0 !important;
+                    flex: 0 0 auto !important;
+                    margin-inline: auto !important;
+                    .tab-icon-image {
+                        margin-inline-end: 0 !important;
+                    }
+                }
+                .tab-close-button {
+                    display: block !important;
+                    position: absolute !important;
+                    right: 2px !important;
+                    --tab-inner-inline-margin: calc(100% - 16px) !important;
+                    transform: translateY(4px) !important;
+                    inset-inline-end: 2px !important;
+                    z-index: 1 !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    margin: 0 !important;
+                    background-color: transparent !important;
+                    transition: background-color 120ms ease, opacity 120ms ease !important;
+                }
+                .tabbrowser-tab:hover .tab-close-button {
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+                .tab-close-button:hover {
+                    background-color: color-mix(in srgb, currentColor 17%, transparent) !important;
+                }
+                .tab-close-button:hover:active {
+                    background-color: color-mix(in srgb, currentColor 28%, transparent) !important;
+                }
+            }
+        `;
+        if (!style.isConnected) {
+            doc.documentElement.append(style);
+        }
+
+        // 侧栏工具区位于 Shadow DOM，文档选择器不能进入；仅修改此窗口的实例。
+        const sidebarRoot = doc.querySelector("sidebar-main")?.shadowRoot;
+        if (sidebarRoot) {
+            const sidebarStyle = sidebarRoot.getElementById(MOBILE_LAYOUT_STYLE_ID) ||
+                doc.createElement("style");
+            sidebarStyle.id = MOBILE_LAYOUT_STYLE_ID;
+            sidebarStyle.textContent = `
+                .buttons-wrapper, #sidebar-tools-and-extensions-splitter {
+                    display: none !important;
+                }
+                .wrapper {
+                    grid-template-rows: minmax(0, 1fr) !important;
+                }
+            `;
+            if (!sidebarStyle.isConnected) {
+                sidebarRoot.append(sidebarStyle);
+            }
         }
     }
 
@@ -334,6 +481,7 @@
     }
 
     async function configureWindow (win, url, triggeringPrincipal) {
+        configureMobileWindowLayout(win);
         const ResponsiveUIManager = getResponsiveUIManager();
         const tab = win.gBrowser.selectedTab;
         const ui = await openResponsiveUI(ResponsiveUIManager, win, tab);
