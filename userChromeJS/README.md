@@ -84,6 +84,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 |      | 72   | [adjustPanelViewPosition](adjustPanelViewPosition.uc.js)      | 自动调整弹出面板的位置                                       |                                                              |
 |      | 128  | [allow_search_with_empty_text](patchForBug1894910_allow_search_with_empty_text.uc.js) | 恢复搜索栏为空时回车会跳转到搜索页的功能                     | [📃](https://github.com/alice0775/userChrome.js/blob/master/135/patchForBug1894910_allow_search_with_empty_text.uc.js) |
 |      | 72   | [AddonsPage](AddonsPage_fx72.uc.js)                          | 附加组件页面管理 userChromeJS 脚本<br />~~xiaoxiaoflod 的 userChromeJS 环境仅可展示，不可管理~~**已经解决**<br />仅在 Firefox 100 中测试过 | [📃](https://u6.getuploader.com/script/download/2051)         |
+|  ®️  | 153  | [AIChatProviders](AIChatProviders/AIChatProviders.uc.js) | 扩展 Firefox 原生 AI 侧栏和提问菜单，支持 Kimi 提供商        |                                                              |
 |      | 120  | [AutoCompleteDeleteButton](AutoCompleteDeleteButton.uc.js) | 为网页输入框的表单历史下拉添加删除按钮                       |                                                              |
 |      | 90   | [AutoHideTabsToolbar](AutoHideTabsToolbar.uc.js)             | 只有一个标签时隐藏标签栏                                     | [📃](https://forum.mozilla-russia.org/viewtopic.php?id=76642) |
 |      | 108  | [BMMultiColumn](BMMultiColumn.uc.js)                         | 多列书签，修复与我的`BookmarkOpt.uc.js`共同使用会报错        | [📃](https://bbs.kafan.cn/thread-2114879-1-1.html)            |
