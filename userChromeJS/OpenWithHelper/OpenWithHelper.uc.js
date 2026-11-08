@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name           OpenWithHelper.uc.js
-// @version        1.0.7
+// @version        1.0.8
 // @author         Ryan
 // @include        main
 // @sandbox        true
 // @compatibility  Firefox 72   
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize
 // @description    使用第三方应用打开网页
+// @note           2026-11-08 修复工具栏按钮悬停时 ownerGlobal 未定义导致的错误
 // @note           1.0.7 减少管理面板 inline css，集中样式定义
 // @note           1.0.6 改用 ModalDialog 来配置应用, 优化拖拽体验
 // @note           1.0.5 Bug 1369833 Remove `alertsService.showAlertNotification` call once Firefox 147
@@ -161,7 +162,7 @@ if (location.href.startsWith("chrome://browser/content/browser.x")) {
                     // 调整弹出菜单位置，按钮放在浏览器4个角都不一样
                     const menupopup = event.target.querySelector("#OpenWithHelper-Btn-Popup");
                     if (!menupopup) return;
-                    const { innerWidth: w, innerHeight: h } = event.target.ownerGlobal;
+                    const { innerWidth: w, innerHeight: h } = event.target.ownerDocument.defaultView;
                     const position = event.clientX > w / 2
                         ? (event.clientY < h / 2 ? 'after_end' : 'topright bottomright')
                         : (event.clientY < h / 2 ? '' : 'topleft bottomleft');
