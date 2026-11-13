@@ -22,10 +22,11 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
 // @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
 // @include         chrome://browser/content/places/historySidebar.xhtml
 // @include         chrome://browser/content/history/history-panel.xul
-// @version         1.4.11
+// @version         1.4.12
 // @compatibility   Firefox 74
 // @shutdown        window.BookmarkOpt?.destroy?.();
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note 2026-11-13 修复身份标签页等右键子菜单冒泡时误插入“添加书签到此处”
 // @note            1.4.11 在书签按钮菜单的“管理书签”后添加“添加书签到此处”
 // @note            1.4.10 修复 Loader 热重载时重复 destroy，并按活动窗口数量管理共享样式、组件和 PlacesUIUtils 补丁
 // @note            Bug 2033243 ownerGlobal 改为 documentGlobal/relevantGlobal，兼容 Firefox 152+
@@ -443,6 +444,8 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                     }
                     break;
                 case 'popupshowing':
+                    // 右键子菜单的弹出事件也会冒泡到 placesContext，不属于书签文件夹菜单。
+                    if (event.currentTarget.id === 'placesContext' && target !== event.currentTarget) return;
                     if (target.id === 'placesContext') {
                         let state = [],
                             triggerNode = event.currentTarget.triggerNode,
@@ -485,6 +488,7 @@ userChromeJS.BookmarkOpt.insertBookmarkByMiddleClickIconOnly: 中键点击书签
                     }
                     break;
                 case 'popuphidden':
+                    if (event.currentTarget.id === 'placesContext' && target !== event.currentTarget) return;
                     if (target.id === "placesContext") {
                         target.setAttribute('bmopt', '');
                     } else {
