@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Private Tabs
-// @version        1.5.1
+// @version        1.5.2
 // @author         aminomancer
 // @homepage       https://github.com/aminomancer
 // @description    An fx-autoconfig port of [Private Tab](https://github.com/xiaoxiaoflood/firefox-scripts/blob/master/chrome/privateTab.uc.js) by xiaoxiaoflood. Adds buttons and menu items allowing you to open a "private tab" in nearly any circumstance in which you'd be able to open a normal tab. Instead of opening a link in a private window, you can open it in a private tab instead. This will use a special container and prevent history storage, depending on user configuration. You can also toggle tabs back and forth between private and normal mode. This script adds two hotkeys: Ctrl+Alt+P to open a new private tab, and Ctrl+Alt+T to toggle private mode for the active tab. These hotkeys can be configured along with several other options at the top of the script file.
@@ -16,6 +16,7 @@
 // @note           2026-07-31 1.4.4 Anchor the toolbar context menu to the clicked button instead of the event-listener object
 // @note           2026-07-31 1.5.0 Add embedded Chinese and English UI text and locale-specific default container names
 // @note           2026-09-02 1.5.1 Load ContextualIdentityService via moz-src on Firefox 154+ with a resource URI fallback for older versions
+// @note           2026-11-13 1.5.2 Remove the checked attribute when the private tab menu item is unchecked
 // ==/UserScript==
 
 class PrivateTabManager {
@@ -609,7 +610,7 @@ class PrivateTabManager {
   tabContext(_e) {
     document
       .getElementById("toggleTabPrivateState")
-      .setAttribute(
+      .toggleAttribute(
         "checked",
         TabContextMenu.contextTab.userContextId == this.container.userContextId
       );
