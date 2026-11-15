@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            MobileBrowser.uc.js
 // @description     在独立窗口中以 iPhone 14 竖屏尺寸打开当前页面
+// @icon           data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTcgMWgxMGEyIDIgMCAwIDEgMiAydjE4YTIgMiAwIDAgMS0yIDJIN2EyIDIgMCAwIDEtMi0yVjNhMiAyIDAgMCAxIDItMnptMCAydjE2aDEwVjNIN3ptNCAxOGgydjFoLTJ6Ii8+PC9zdmc+
 // @license         MIT License
 // @compatibility   Firefox 152
 // @version         0.2.0

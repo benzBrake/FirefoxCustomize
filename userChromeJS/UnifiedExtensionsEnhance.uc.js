@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            UnifiedExtensionsEnhance.uc.js
 // @description     Once Firefox has implemented the functionality, the script can be removed.
+// @icon           data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTkgMmEzIDMgMCAwIDEgNiAwdjJoNWEyIDIgMCAwIDEgMiAydjVoLTJhMyAzIDAgMCAwIDAgNmgydjNhMiAyIDAgMCAxLTIgMmgtNXYtMmEzIDMgMCAwIDAtNiAwdjJINGEyIDIgMCAwIDEtMi0ydi01aDJhMyAzIDAgMCAwIDAtNkgyVjZhMiAyIDAgMCAxIDItMmg1VjJ6bTMgMGExIDEgMCAwIDAtMSAxdjNINHYyYTUgNSAwIDAgMSAwIDEwdjJoNXYtMWE1IDUgMCAwIDEgMTAgMHYxaDF2LTFoLTFhNSA1IDAgMCAxIDAtMTBoMVY2aC03VjNhMSAxIDAgMCAwLTEtMXoiLz48L3N2Zz4=
 // @author          Ryan
 // @include         main
 // @version         0.3.7

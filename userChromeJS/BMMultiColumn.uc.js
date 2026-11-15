@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name            BMMultiColumn.uc.js
 // @description     书签菜单自动分列显示（先上下后左右）
+// @icon           data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTUgMmgxMGEyIDIgMCAwIDEgMiAydjE2bC03LTMtNyAzVjRhMiAyIDAgMCAxIDItMnptMCAydjEwLjlsNS0yLjE1IDUgMi4xNVY0SDV6Ii8+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTE4IDVoMnYxNGgtMnoiLz48L3N2Zz4=
 // @author          Ryan, ding
 // @include         main
 // @charset         UTF-8
