@@ -23,11 +23,13 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.4 2026-11-16 分组继承 condition 时复制子项配置，修复复用同一 items 数组导致选中文字后站内搜索菜单不可见的问题
+// @note               0.4.4 2026-11-16 兼容 Firefox 149+ SearchService 单例获取方式，优先使用 Services.search，不存在时导入单例（Bug 2000685）
 // @note               0.4.4 保留共用网页插入点的 group 菜单类型，修复配置调用 GroupMenu 时提示未定义的问题（issue #85）
 // @note               0.4.4 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
 // @note               0.4.3 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
-// @note               2026-09-02 修复 img2base64/svg2base64 中 async executor 导致 IOUtils 失败时 syncify 死循环的问题
-// @note               2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
+// @note               0.4.3 2026-09-02 修复 img2base64/svg2base64 中 async executor 导致 IOUtils 失败时 syncify 死循环的问题
+// @note               0.4.3 2026-10-17 兼容 browser.urlbar.trustPanel.featureGate，身份菜单绑定到 trust-icon-container
 // @note               0.4.2 Firefox 154 Bug 2047680 actor opt-in; remove unused content-to-chrome arbitrary execution message
 // @note               0.4.1 移除 UI locale 缓存，并在 Firefox 应用语言变化后自动刷新菜单
 // @note               0.4.0 配置中的 label、tooltiptext、onshowinglabel 支持按 Firefox UI locale 选择文案
@@ -224,6 +226,14 @@ import { syncify } from "./000-syncify.sys.mjs";
         },
         get locale () {
             return getAppLocale();
+        },
+        get searchService () {
+            // Firefox 149+ exports a singleton instead of Services.search (Bug 2000685).
+            const searchService = Services.search ?? ChromeUtils.importESModule(
+                "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+            ).SearchService;
+            Object.defineProperty(this, "searchService", { value: searchService, configurable: true });
+            return searchService;
         },
         localize: function (value, locale = this.locale) {
             return localizeValue(value, locale);
@@ -1002,10 +1012,9 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                 if (keyword) {
                     const param = text ? this.convertText(text) : "";
-                    const engine = keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(keyword);
+                    const engine = await (keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(keyword));
                     if (engine) {
-                        const resolvedEngine = await engine;
-                        const submission = resolvedEngine.getSubmission(param);
+                        const submission = engine.getSubmission(param);
                         addMenu.openCommand(event, submission.uri.spec, where);
                     } else {
                         const entry = await PlacesUtils.keywords.fetch(keyword || '');
@@ -1377,14 +1386,12 @@ import { syncify } from "./000-syncify.sys.mjs";
 
             // 表示 / 非表示の設定
             this.setCondition(group, menuObj, opt);
-            // Sync condition attribute to child menus
-            menuObj._items.forEach(function (obj) {
+            menuObj._items.forEach(function (item) {
+                // 同一配置项可被多个分组复用，继承条件时不要修改原对象。
+                const obj = { ...item };
                 if (!Object.keys(obj).includes("condition") && group.hasAttribute("condition")) {
                     obj.condition = group.getAttribute("condition");
                 }
-            });
-
-            menuObj._items.forEach(function (obj) {
                 group.appendChild(this.newMenuitem(obj, {
                     isMenuGroup: true
                 }, doc));
@@ -1575,7 +1582,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                         }
                     } else if (obj.keyword) {
                         // 调用搜索引擎 Label hack
-                        let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
+                        let engine = obj.keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword);
                         engine = await engine;
                         if (engine && engine._name) menuitem.setAttribute('label', engine._name);
                     }
@@ -1784,8 +1791,8 @@ import { syncify } from "./000-syncify.sys.mjs";
         _setEngineIcon: async function (menu, keyword) {
             try {
                 const engine = keyword === "@default"
-                    ? await Services.search.getDefault()
-                    : await Services.search.getEngineByAlias(keyword);
+                    ? await this.searchService.getDefault()
+                    : await this.searchService.getEngineByAlias(keyword);
                 if (!engine) return;
 
                 // Bug 1870644 - Provide a single function for obtaining icon URLs from search engines

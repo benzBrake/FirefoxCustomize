@@ -2,9 +2,14 @@
 
 如果你的脚本在 Firefox 149 版本失效，下面可能帮到你
 
-## 1. Services.search 模块化
+## 1. Services.search 改为模块单例（Bug 2000685）
 
-Firefox 149 将搜索服务移至 ESM 模块，需要使用新的导入方式。
+Firefox 149 在 [Bug 2000685](https://bugzilla.mozilla.org/show_bug.cgi?id=2000685) 中将搜索服务从 XPCOM 服务实例改为 ESM 导出的单例，移除 `Services.search` 入口，同时改变模块的打包路径。此前搜索服务已是 ESM，并非从 Firefox 149 才开始模块化。
+
+- Firefox 148：模块路径为 `resource://gre/modules/SearchService.sys.mjs`，导出 `SearchService` 类；调用方应通过 `Services.search` 获取已有服务实例。
+- Firefox 149：模块路径改为 `moz-src:///toolkit/components/search/SearchService.sys.mjs`，导出的 `SearchService` 已是单例，可直接使用，无需 `new`。
+
+因此，下方 Firefox 149+ 的两个示例均使用 `moz-src:///` 路径；`resource:///modules/SearchService.sys.mjs` 并不是 Firefox 148 的旧路径。
 
 **问题表现：**
 - `Services.search is undefined` 错误
@@ -36,6 +41,7 @@ const engine = await searchService.getDefault();
 **完整示例：**
 
 ```javascript
+lazy: {},
 initSearchService: async function () {
     if (this._searchServiceInitPromise) {
         return this._searchServiceInitPromise;
@@ -47,7 +53,7 @@ initSearchService: async function () {
         } else {
             // Firefox 149+
             ChromeUtils.defineESModuleGetters(this.lazy, {
-                SearchService: "resource:///modules/SearchService.sys.mjs",
+                SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
             });
             this.searchService = this.lazy.SearchService;
         }
@@ -61,10 +67,18 @@ initSearchService: async function () {
 ```
 
 **注意事项：**
-- ESM 模块需要手动调用 `init()` 方法初始化
+- 通过 ESM 获取单例后，如尚未初始化，应等待 `init()` 完成再使用搜索功能
 - 使用前检查 `isInitialized` 属性
 - 建议使用 Promise 缓存避免重复初始化
 - 保持对旧版本的兼容性（通过 `typeof Services.search !== 'undefined'` 判断）
+
+**参考依据：**
+
+- [Bug 2000685 - Replace the search service instance with a singleton](https://bugzilla.mozilla.org/show_bug.cgi?id=2000685)（Firefox 149 修复）
+- [Firefox 148 服务注册：旧模块路径及类实例化](https://github.com/mozilla-firefox/firefox/blob/FIREFOX_148_0_RELEASE/toolkit/components/search/components.conf)
+- [Firefox 148 模块导出](https://github.com/mozilla-firefox/firefox/blob/FIREFOX_148_0_RELEASE/toolkit/components/search/SearchService.sys.mjs)
+- [Firefox 149 模块打包配置](https://github.com/mozilla-firefox/firefox/blob/FIREFOX_149_0_RELEASE/toolkit/components/search/moz.build)
+- [Firefox 149 单例导出](https://github.com/mozilla-firefox/firefox/blob/FIREFOX_149_0_RELEASE/toolkit/components/search/SearchService.sys.mjs)
 
 ## 2. 菜单项 hidden 属性行为变化
 
