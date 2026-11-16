@@ -272,11 +272,55 @@ color: var(--color-gray-0, var(--color-gray-05));
 - 本仓库当前未发现 `--color-gray-05` 的引用
 - Firefox 内部设计变量可能继续变化，关键颜色可以考虑提供最终的静态颜色 fallback
 
+## 7. 地址栏尺寸变量与内边距模型调整（Bug 2039721）
+
+Firefox 153 移除了 `--urlbar-container-padding` 和 `--urlbar-container-inset`，引入 `--urlbar-input-container-padding` 和 `--urlbar-basic-component-size`。原生地址栏组件的宽高改用 `--urlbar-basic-component-size`。
+
+**问题表现：**
+
+- 依赖已移除变量的 `calc(...)` 宽高声明失效
+- 本仓库 [LocationBar.uc.js](../LocationBar.uc.js) 的按钮、停止 / 刷新图标等多处使用旧公式，可能出现尺寸或对齐异常
+
+**解决方案：**
+
+把
+
+```css
+width: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
+height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
+```
+
+替换为
+
+```css
+width: var(--urlbar-basic-component-size);
+height: var(--urlbar-basic-component-size);
+```
+
+如需兼容旧版，可保留原公式作为 fallback：
+
+```css
+width: var(--urlbar-basic-component-size, calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding)));
+height: var(--urlbar-basic-component-size, calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding)));
+```
+
+**注意事项：**
+
+- 这是布局模型调整，不应仅将旧公式中的 `--urlbar-container-padding` 机械替换为 `--urlbar-input-container-padding`
+- 同时检查按钮本体、`.toolbarbutton-icon` 和 `.toolbarbutton-badge-stack` 的尺寸、padding 与盒模型，并验证不同密度下的对齐
+- 以上为适配示例，当前脚本仍使用旧公式；影响依据上游差异和静态代码核对，未在 Firefox 中运行验证
+- 相关颜色变量变更见 [Firefox 151 文档](../151/README.md) 和 [Firefox 152 文档](../152/README.md)，三项变化需要分别处理
+
+**参考：**
+
+- [Bug 2039721 - Update the input-container insets to add proper margins between the container and inside buttons](https://bugzilla.mozilla.org/show_bug.cgi?id=2039721)
+- [上游地址栏尺寸与内边距调整提交](https://github.com/mozilla-firefox/firefox/commit/81d8ac9dfa78)
+
 ## Firefox 153.2.0 ESR 后续安全变化
 
 以下变化是后续回移到 Firefox ESR 153.2.0 分支的安全加固，不应视为 Firefox 153.0 首发时就存在的行为。
 
-## 7. `loadSubScript` 可加载的 URL 被限制（Bug 1974213）
+## 8. `loadSubScript` 可加载的 URL 被限制（Bug 1974213）
 
 Firefox ESR 153.2.0 收紧了 `Services.scriptloader.loadSubScript()` 和 `loadSubScriptWithOptions()` 接受的 URL。默认只允许 `chrome:`、`resource:` 和 `moz-src:`。
 
@@ -315,7 +359,7 @@ Cu.evalInSandbox(sourceCode, sandbox, "latest");
 - 本仓库 `userChromeJS/139/README.md` 中的 `data:application/javascript` 示例在 153.2.0 ESR 后会失效
 - 只应加载可信文件或执行可信字符串，并尽量缩小沙箱可访问的对象范围
 
-## 8. system-principal 文档强制应用基线 CSP（Bug 2040297）
+## 9. system-principal 文档强制应用基线 CSP（Bug 2040297）
 
 Firefox ESR 153.2.0 为所有使用 system principal 的文档强制应用基线内容安全策略：
 

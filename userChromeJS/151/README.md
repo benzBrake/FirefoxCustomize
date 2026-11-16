@@ -60,3 +60,43 @@ image: "chrome://browser/skin/sidebar-collapsed.svg"
 **注意事项：**
 - `resource:///` 协议路径不可用于新图标，需使用 `chrome://` 协议
 - 脚本中所有引用 `sidebars.svg` 的位置都需替换
+
+## 2. 地址栏 hover / active 颜色变量改名（Bug 2008598）
+
+Firefox 151 将地址栏颜色变量转换为设计令牌，并调整了变量名称。
+
+| 旧变量 | 新变量 |
+|---|---|
+| `--urlbar-box-hover-bgcolor` | `--urlbar-box-background-color-hover` |
+| `--urlbar-box-active-bgcolor` | `--urlbar-box-background-color-active` |
+| `--urlbar-box-hover-text-color` | `--urlbar-box-text-color-hover` |
+
+**问题表现：**
+
+- 引用旧变量且没有 fallback 的颜色声明失效
+- 本仓库 [LocationBar.uc.js](../LocationBar.uc.js) 使用旧变量设置按钮外框的 hover / active 背景、文字和停止 / 刷新图标颜色，相关样式受影响
+
+**解决方案：**
+
+将旧变量替换为新变量；如需兼容旧版，可保留 fallback，例如：
+
+```css
+#location-bar .toolbarbutton-1:hover {
+  background-color: var(--urlbar-box-background-color-hover, var(--urlbar-box-hover-bgcolor));
+  color: var(--urlbar-box-text-color-hover, var(--urlbar-box-hover-text-color));
+}
+
+#location-bar .toolbarbutton-1:hover:active {
+  background-color: var(--urlbar-box-background-color-active, var(--urlbar-box-active-bgcolor));
+}
+```
+
+**注意事项：**
+
+- 同时检查 `color` 和 `fill` 中的旧文字颜色变量，不要只替换背景色
+- 以上为适配示例，当前脚本仍引用旧变量；影响依据上游差异和静态代码核对，未在 Firefox 中运行验证
+
+**参考：**
+
+- [Bug 2008598 - Convert urlbar variables to design tokens](https://bugzilla.mozilla.org/show_bug.cgi?id=2008598)
+- [上游变量迁移提交](https://github.com/mozilla-firefox/firefox/commit/28f0d28d26ee)

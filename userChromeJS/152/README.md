@@ -210,6 +210,48 @@ play: function (aUri) {
 - [Bug 2033673 - remove nsISound::Play](https://bugzilla.mozilla.org/show_bug.cgi?id=2033673)
 - [Firefox-downloadPlus.uc.js 适配 commit](https://github.com/benzBrake/Firefox-downloadPlus.uc.js/commit/d6e9c361bb5b8b528142e5bbfe6849224d597853)
 
+## 3. 工具栏 hover 和 padding 变量改名（Bug 2034495）
+
+Firefox 152 调整了工具栏设计令牌的名称，其中包括：
+
+| 旧变量 | 新变量 |
+|---|---|
+| `--toolbarbutton-hover-background` | `--toolbarbutton-background-color-hover` |
+| `--toolbarbutton-inner-padding` | `--toolbarbutton-padding-inner` |
+| `--toolbar-start-end-padding` | `--toolbar-padding-inline` |
+
+**问题表现：**
+
+- 使用旧变量的 hover 背景和 padding 样式失效
+- 本仓库 [LocationBar.uc.js](../LocationBar.uc.js) 仍将旧 hover 变量设为透明，无法再通过该变量抑制工具栏按钮内部的悬停背景，可能与脚本绘制的外框背景叠加
+
+**解决方案：**
+
+更新变量的读取和定义。对于 LocationBar 的内部背景抑制规则，可同时定义新旧变量以兼容旧版：
+
+```css
+:is(#urlbar-input-container, .urlbar-input-container) #location-bar toolbarbutton {
+  --toolbarbutton-hover-background: transparent;
+  --toolbarbutton-background-color-hover: transparent;
+}
+```
+
+读取 padding 时也应使用新名称，按需保留 fallback：
+
+```css
+padding: var(--toolbarbutton-padding-inner, var(--toolbarbutton-inner-padding));
+```
+
+**注意事项：**
+
+- 只修改 `var(...)` 的读取不足以修复旧变量覆盖规则，设置变量的声明也需要更新
+- 以上为适配示例，当前脚本仍定义旧 hover 变量；影响依据上游差异和静态代码核对，未在 Firefox 中运行验证
+
+**参考：**
+
+- [Bug 2034495 - Audit/rename toolbar tokens](https://bugzilla.mozilla.org/show_bug.cgi?id=2034495)
+- [上游工具栏变量改名提交](https://github.com/mozilla-firefox/firefox/commit/f7f61baab555)
+
 ## 相关资源
 
 - [Bug 2033243 - Rename ownerGlobal to relevantGlobal](https://bugzilla.mozilla.org/show_bug.cgi?id=2033243)
