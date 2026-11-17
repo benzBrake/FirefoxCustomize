@@ -2,12 +2,13 @@
 // @name            LocationBar.uc.js
 // @description     地址栏内工具栏
 // @license         MIT License
-// @compatibility   Firefox 149
-// @version         0.0.6
+// @compatibility   Firefox 151
+// @version         0.0.7
 // @charset         UTF-8
 // @include         chrome://browser/content/browser.xul
 // @include         chrome://browser/content/browser.xhtml
 // @homepageURL     https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS
+// @note            0.0.7 2026-11-17 升级兼容性至 Firefox 151+，修复地址栏按钮状态颜色（Bug 2008598）及停止 / 刷新图标颜色，并清除工具栏按钮内层 hover / active 背景，避免背景叠加
 // @note            2026-07-01 修复恢复默认设置后地址栏内工具栏被 collapsed 隐藏
 // @note            2025-08-26 增加固定扩展按钮到地址栏内工具栏的功能
 // @note            2026-04-05 升级兼容性至 Firefox 149+，修复 checkbox checked 属性检测
@@ -250,12 +251,12 @@
     height: calc(var(--urlbar-min-height) - 2px - 2 * var(--urlbar-container-padding));
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover {
-    background-color: var(--urlbar-box-hover-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-hover);
+    color: var(--urlbar-box-text-color-hover);
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:hover:active {
-    background-color: var(--urlbar-box-active-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-active);
+    color: var(--urlbar-box-text-color-hover);
 }
 :is(#urlbar-input-container,.urlbar-input-container) > #location-bar .toolbarbutton-1:not(#reload-button):not(#stop-button) {
     padding: 0 !important;
@@ -266,6 +267,9 @@
     padding: var(--urlbar-icon-padding) !important;
 }
 :is(#urlbar-input-container,.urlbar-input-container) #location-bar toolbarbutton {
+    /* Paint state backgrounds on the button only, not its icon or badge stack. */
+    --toolbarbutton-background-color-hover: transparent;
+    --toolbarbutton-background-color-active: transparent;
     --toolbarbutton-hover-background: transparent;
 }
 :root[uidensity="compact"] :is(#urlbar-input-container,.urlbar-input-container) #location-bar toolbarbutton > .toolbarbutton-badge-stack > .toolbarbutton-badge {
@@ -273,6 +277,6 @@
 }
 
 :is(#urlbar-input-container,.urlbar-input-container) #location-bar #stop-reload-button[animate] > #reload-button > .toolbarbutton-icon, :is(#urlbar-input-container,.urlbar-input-container) #location-bar #stop-reload-button[animate] > #reload-button[displaystop] + #stop-button > .toolbarbutton-icon {
-    fill: var(--urlbar-box-hover-text-color);
+    fill: var(--urlbar-box-text-color-hover);
 }
 `)
