@@ -8,7 +8,7 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r6
+// @version        0.1.6r7
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -17,6 +17,7 @@
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           0.1.6r7 2026-11-17 兼容 Firefox 149+ 搜索服务单例入口，修复异步搜索引擎查询为空时无法回退书签关键字的问题
 // @note           0.1.6r6 2026-11-17 分组继承 condition 时复制子项配置，修复复用子项导致分组条件污染的问题
 // @note           2026-10-29 0.1.6r5 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
 // @note           2026-10-18 0.1.6r4 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
@@ -324,6 +325,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         get panelId () {
             delete this.panelId;
             return this.panelId = Math.floor(Math.random() * 900000 + 99999);
+        },
+        get searchService () {
+            // Firefox 149+ exports a singleton instead of Services.search (Bug 2000685).
+            const searchService = Services.search || ChromeUtils.importESModule(
+                "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+            ).SearchService;
+            Object.defineProperty(this, "searchService", { value: searchService, configurable: true });
+            return searchService;
         },
         ContextMenu: {
             onSvg: false,
@@ -906,7 +915,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }, 10);
             }
         },
-        onCommand: function (event) {
+        onCommand: async function (event) {
             var menuitem = event.target;
             var text = menuitem.getAttribute("text") || "";
             var keyword = menuitem.getAttribute("keyword") || "";
@@ -917,24 +926,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             if (keyword) {
                 let param = (text ? (text = this.convertText(text)) : "");
-                let engine = keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(keyword);
+                let engine = await (keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(keyword));
                 if (engine) {
-                    if (isPromise(engine)) {
-                        engine.then(function (engine) {
-                            let submission = engine.getSubmission(param);
-                            addMenu.openCommand(event, submission.uri.spec, where);
-                        });
-                    } else {
-                        let submission = engine.getSubmission(param);
-                        this.openCommand(event, submission.uri.spec, where);
-                    }
+                    let submission = engine.getSubmission(param);
+                    this.openCommand(event, submission.uri.spec, where);
                 } else {
-                    PlacesUtils.keywords.fetch(keyword || '').then(entry => {
-                        if (!entry) return;
-                        // 文字化けの心配が…
-                        let newurl = entry.url.href.replace('%s', encodeURIComponent(param));
-                        this.openCommand(event, newurl, where);
-                    });
+                    const entry = await PlacesUtils.keywords.fetch(keyword || '');
+                    if (!entry) return;
+                    // 文字化けの心配が…
+                    let newurl = entry.url.href.replace('%s', encodeURIComponent(param));
+                    this.openCommand(event, newurl, where);
                 }
             } else if (url)
                 this.openCommand(event, this.convertText(url), where);
@@ -1472,14 +1473,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         }
                     } else if (obj.keyword) {
                         // 调用搜索引擎 Label hack
-                        let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
-                        if (isPromise(engine)) {
-                            engine.then(s => {
-                                if (s && s._name) menuitem.setAttribute('label', s._name);
-                            });
-                        } else {
-                            if (engine && engine._name) menuitem.setAttribute('label', engine._name);
-                        }
+                        let engine = await (obj.keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword));
+                        if (engine && engine._name) menuitem.setAttribute('label', engine._name);
                     }
                 }
             })()
@@ -1656,7 +1651,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 e.classList.remove('addMenuHide');
             });
         },
-        setIcon: function (menu, obj) {
+        setIcon: async function (menu, obj) {
             if (menu.hasAttribute("src") || menu.hasAttribute("icon"))
                 return;
 
@@ -1684,15 +1679,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
 
             if (obj.keyword) {
-                let engine = obj.keyword === "@default" ? Services.search.getDefault() : Services.search.getEngineByAlias(obj.keyword);
+                let engine = await (obj.keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword));
                 if (engine) {
-                    (async function () {
-                        if (isPromise(engine))
-                            engine = await engine;
-
-                        const image = await getIconURL(engine);
-                        setImage(menu, image);
-                    })();
+                    const image = await getIconURL(engine);
+                    setImage(menu, image);
                     return;
                 }
                 async function getIconURL (engine) {
