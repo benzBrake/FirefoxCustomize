@@ -844,8 +844,10 @@ import { syncify } from "./000-syncify.sys.mjs";
                                     $elem.removeAttr('collapsed');
                                 }
 
-                                // 处理 disabled 属性
-                                if ($original.attr('disabled') === "true") {
+                                // 副本移出原生子菜单后，仍需遵守祖先菜单的禁用限制。
+                                // 只检查 disabled，避免配置用于替代菜单的隐藏样式影响副本。
+                                if (original.getAttribute('disabled') === "true" ||
+                                    original.parentElement?.closest('menu[disabled="true"]')) {
                                     $elem.attr('disabled', true);
                                 } else {
                                     $elem.removeAttr('disabled');
@@ -853,7 +855,6 @@ import { syncify } from "./000-syncify.sys.mjs";
                                 // 获取原始属性值，如果没有则使用 "false"
                                 const hiddenAttr = $original.attr('hidden');
                                 const collapsedAttr = $original.attr('collapsed');
-                                const disabledAttr = $original.attr('disabled');
                                 
                                 // 只有当属性值为 "false" 时才删除属性，非 "false" 值则设置
                                 if (hiddenAttr) {
@@ -872,13 +873,6 @@ import { syncify } from "./000-syncify.sys.mjs";
                                     }
                                 }
                                 
-                                if (disabledAttr) {
-                                    if (disabledAttr === "false") {
-                                        $elem.removeAttr('disabled');
-                                    } else {
-                                        $elem.attr('disabled', disabledAttr);
-                                    }
-                                }
                             }
                         });
 
