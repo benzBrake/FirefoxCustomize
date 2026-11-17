@@ -824,10 +824,10 @@ import { syncify } from "./000-syncify.sys.mjs";
                     // Delayed DOM updates
                     setTimeout(() => {
                         this.restoreMenuVisibility($target.get());
-                        $$('menuitem.addMenu[command]:not([sync-hidden="false"]), menu.addMenu[command]:not([sync-hidden="false"])', $target.get()).forEach($elem => {
+                        $$(':is(menuitem, menu).addMenu:is([command], [data-addmenu-command]):not([sync-hidden="false"])', $target.get()).forEach($elem => {
                             if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
 
-                            const original = document.getElementById($elem.attr('command'));
+                            const original = document.getElementById($elem.attr('data-addmenu-command') || $elem.attr('command'));
                             if (original) {
                                 const $original = $(original);
                                 // 处理 hidden 属性
@@ -879,8 +879,8 @@ import { syncify } from "./000-syncify.sys.mjs";
                         $$('menugroup.addMenu', $target.get()).forEach($group => {
                             $group.children().forEach($elem => {
                                 if ((/menu$/i.test($elem.get().nodeName) || /menuitem$/i.test($elem.get().nodeName)) &&
-                                    $elem.hasAttr('command') && $elem.attr('sync-hidden') !== 'false') {
-                                    const original = document.getElementById($elem.attr('command'));
+                                    ($elem.hasAttr('command') || $elem.hasAttr('data-addmenu-command')) && $elem.attr('sync-hidden') !== 'false') {
+                                    const original = document.getElementById($elem.attr('data-addmenu-command') || $elem.attr('command'));
                                     let disabled = !original || original.disabled || original.hidden || original.collapsed;
                                     // 此前已恢复 CSS 转换的 hidden；这里只检查原生状态，不检查隐藏样式。
                                     for (let parent = original?.parentElement; parent && !disabled; parent = parent.parentElement) {
@@ -1462,7 +1462,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     if (firstItem.classList.contains('copy')) {
                         menu.classList.add('copy');
                     }
-                    let command = firstItem.getAttribute('command');
+                    let command = firstItem.getAttribute('data-addmenu-command') || firstItem.getAttribute('command');
                     if (command)
                         firstItem = doc.getElementById(command) || firstItem;
                     ['label', 'data-l10n-href', 'data-l10n-id', 'accesskey', 'icon', 'tooltiptext'].forEach(function (n) {
@@ -1504,8 +1504,13 @@ import { syncify } from "./000-syncify.sys.mjs";
                     menuitem = $C(separatorType);
                 } else {
                     menuitem = $C(menuitemType);
-                    if (obj.command)
-                        menuitem.setAttribute("command", obj.command);
+                    if (obj.command) {
+                        // 显式处理器优先：command 会在 XUL 层转发事件，导致本项监听器无法执行。
+                        // 单独保留原项 ID，供状态同步和菜单标签查询使用。
+                        const commandAttribute = typeof obj.oncommand === 'function'
+                            ? 'data-addmenu-command' : 'command';
+                        menuitem.setAttribute(commandAttribute, obj.command);
+                    }
 
                     noDefaultLabel = !obj.label;
                     if (noDefaultLabel)
