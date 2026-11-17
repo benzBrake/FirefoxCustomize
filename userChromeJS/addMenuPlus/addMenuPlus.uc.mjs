@@ -23,6 +23,8 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.4 2026-11-17 修复本地 SVG 重复 Base64 编码，构建菜单时复制配置以保留复用项的 onshowing 回调
+// @note               0.4.4 2026-11-17 文本替换先捕获占位符值和图片源，避免同步等待图片时混入变化后的页面上下文
 // @note               0.4.4 2026-11-17 为图片 Base64 转换添加 5 秒超时兜底，完成后清理定时器和图片回调
 // @note               修复 condition 显示样式覆盖 onshowing 设置的 hidden 状态
 // @note               0.4.4 分组继承 condition 时复制子项配置，修复复用同一 items 数组导致选中文字后站内搜索菜单不可见的问题
@@ -1867,15 +1869,32 @@ import { syncify } from "./000-syncify.sys.mjs";
             let tab = TabContextMenu.contextTab || gBrowser.selectedTab || document.popupNode;
             var bw = gContextMenu ? context.browser : tab.linkedBrowser;
 
-            return text.replace(this.regexp, function (str) {
+            // 先捕获本次模板需要的值和图片源；此阶段不执行会让出事件循环的图片转换。
+            // 不能只保存 browser/context 引用：syncify 等待时，它们的属性仍可能变化。
+            const regexp = new RegExp(this.regexp);
+            const replacements = Array.from(text.matchAll(regexp), ([str]) => {
                 str = str.toUpperCase().replace("%LINK", "%RLINK");
-                if (str.indexOf("_HTMLIFIED") >= 0)
-                    return htmlEscape(convert(str.replace("_HTMLIFIED", "")));
-                if (str.indexOf("_HTML") >= 0)
-                    return htmlEscape(convert(str.replace("_HTML", "")));
-                if (str.indexOf("_ENCODE") >= 0)
-                    return encodeURIComponent(convert(str.replace("_ENCODE", "")));
-                return convert(str);
+                let transform;
+                if (str.indexOf("_HTMLIFIED") >= 0) {
+                    str = str.replace("_HTMLIFIED", "");
+                    transform = htmlEscape;
+                } else if (str.indexOf("_HTML") >= 0) {
+                    str = str.replace("_HTML", "");
+                    transform = htmlEscape;
+                } else if (str.indexOf("_ENCODE") >= 0) {
+                    str = str.replace("_ENCODE", "");
+                    transform = encodeURIComponent;
+                }
+                return { value: convert(str), transform };
+            });
+
+            // 所有页面数据已捕获，再执行图片 I/O 和转义；保持旧配置的同步字符串接口。
+            let index = 0;
+            return text.replace(regexp, () => {
+                const replacement = replacements[index++];
+                const value = typeof replacement.value === "function"
+                    ? replacement.value() : replacement.value;
+                return replacement.transform ? replacement.transform(value) : value;
             });
 
             function convert (str) {
@@ -1925,29 +1944,29 @@ import { syncify } from "./000-syncify.sys.mjs";
                         if (imgUrl && imgUrl !== "chrome://global/skin/media/imagedoc-darknoise.png") {
                             return imgUrl;
                         }
-                        imgUrl = addMenu.convertText("%LINK_OR_URL%");
+                        imgUrl = convert("%RLINK_OR_URL%");
                         if (isImageUrl(imgUrl)) return imgUrl;
                         return "";
                     case "%IMAGE_BASE64%":
                         if (isDef(context.mediaURL) && context.mediaURL !== "" && context.mediaURL !== "chrome://global/skin/media/imagedoc-darknoise.png") {
-                            return img2base64(context.mediaURL);
+                            return deferImage(context.mediaURL);
                         } else if (context.imageInfo?.currentSrc && context.imageInfo.currentSrc !== "chrome://global/skin/icons/image-missing.png") {
-                            return img2base64(context.imageInfo.currentSrc);
+                            return deferImage(context.imageInfo.currentSrc);
                         } else if (addMenu.ContextMenu.onSvg) {
-                            return svg2base64(addMenu.ContextMenu.svgHTML);
+                            return deferSvg(addMenu.ContextMenu.svgHTML);
                         } else {
-                            let imageUrl = addMenu.convertText("%LINK_OR_URL%");
+                            let imageUrl = convert("%RLINK_OR_URL%");
                             if (isImageUrl(imageUrl)) {
-                                return img2base64(imageUrl);
+                                return deferImage(imageUrl);
                             }
                             return "";
                         }
                     case "%SVG_BASE64%":
                         if (addMenu.ContextMenu.onSvg) {
-                            return svg2base64(addMenu.ContextMenu.svgHTML);
+                            return deferSvg(addMenu.ContextMenu.svgHTML);
                         }
                         let url = context.linkURL || bw.documentURI.spec || "";
-                        return svg2base64(url);
+                        return deferSvg(url);
                     case "%M":
                         return context.mediaURL || "";
                     case "%MEDIA_URL%":
@@ -1961,13 +1980,21 @@ import { syncify } from "./000-syncify.sys.mjs";
                     case "%FAVICON_BASE64%":
                         let image = tab.faviconUrl || gBrowser.getIcon(tab ? tab : null);
                         if (image && image.startsWith("data:image")) return image;
-                        return img2base64(image);
+                        return deferImage(image);
                     case "%EMAIL%":
                         return getEmailAddress() || "";
                     case "%EOL%":
                         return "\r\n";
                 }
                 return str;
+            }
+
+            function deferImage (source) {
+                return () => img2base64(source);
+            }
+
+            function deferSvg (source) {
+                return () => svg2base64(source);
             }
 
             function htmlEscape (s) {
@@ -2120,15 +2147,12 @@ import { syncify } from "./000-syncify.sys.mjs";
                 if (isLocalFile(svgSrc)) {
                     // 不能使用 new Promise(async resolve => ...)，否则 IOUtils 失败时 syncify 会死循环
                     svgSrc = syncify(() => {
-                        return IOUtils.readUTF8(toLocalUri(svgSrc)).then(data => {
-                            let encoder = new TextEncoder();
-                            let dataArray = encoder.encode(data);
-                            return "data:image/svg+xml;base64," + btoa(String.fromCharCode(...dataArray));
-                        }).catch(e => {
+                        return IOUtils.readUTF8(toLocalUri(svgSrc)).catch(e => {
                             console.error('svg2base64 failed to read local file:', e);
                             return "";
                         });
                     });
+                    if (!svgSrc) return "";
                 } else if (/^(https?:\/\/|ftp:\/\/|chrome:\/\/|resource:\/\/|\/\/)/.test(svgSrc)) {
                     // 使用 NetUtil 读取 SVG 文件内容
                     const channel = NetUtil.newChannel({
@@ -2570,14 +2594,14 @@ import { syncify } from "./000-syncify.sys.mjs";
     function localizeMenuObject (obj) {
         if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
 
-        let localized = obj;
+        // 构建过程会补写属性、消费 onshowing；只修改副本，允许同一配置在多个菜单复用。
+        const localized = { ...obj };
         LOCALIZABLE_ATTRIBUTES.forEach(key => {
             if (!Object.prototype.hasOwnProperty.call(obj, key)) return;
             const value = obj[key];
             if (!isLocalizedMap(value)) return;
 
             const resolved = localizeValue(value);
-            if (localized === obj) localized = { ...obj };
             if (resolved === undefined) {
                 delete localized[key];
             } else {
