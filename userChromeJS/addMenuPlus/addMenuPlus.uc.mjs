@@ -23,8 +23,9 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
-// @note               0.4.4 2026-11-16 分组继承 condition 时复制子项配置，修复复用同一 items 数组导致选中文字后站内搜索菜单不可见的问题
-// @note               0.4.4 2026-11-16 兼容 Firefox 149+ SearchService 单例获取方式，优先使用 Services.search，不存在时导入单例（Bug 2000685）
+// @note               修复 condition 显示样式覆盖 onshowing 设置的 hidden 状态
+// @note               0.4.4 分组继承 condition 时复制子项配置，修复复用同一 items 数组导致选中文字后站内搜索菜单不可见的问题
+// @note               0.4.4 兼容 Firefox 149+ SearchService 单例获取方式，保留 Services.search 回退支持（Bug 2000685）
 // @note               0.4.4 保留共用网页插入点的 group 菜单类型，修复配置调用 GroupMenu 时提示未定义的问题（issue #85）
 // @note               0.4.4 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
 // @note               0.4.3 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
@@ -826,8 +827,9 @@ import { syncify } from "./000-syncify.sys.mjs";
                         $$('menuitem.addMenu[command]:not([sync-hidden="false"]), menu.addMenu[command]:not([sync-hidden="false"])', $target.get()).forEach($elem => {
                             if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
 
-                            const $original = $('#' + $elem.attr('command'));
-                            if ($original.get()) {
+                            const original = document.getElementById($elem.attr('command'));
+                            if (original) {
+                                const $original = $(original);
                                 // 处理 hidden 属性
                                 if ($original.attr('hidden') === "true") {
                                     $elem.attr('hidden', true);
@@ -883,12 +885,16 @@ import { syncify } from "./000-syncify.sys.mjs";
                         $$('menugroup.addMenu', $target.get()).forEach($group => {
                             $group.children().forEach($elem => {
                                 if ((/menu$/i.test($elem.get().nodeName) || /menuitem$/i.test($elem.get().nodeName)) &&
-                                    $elem.hasAttr('command')) {
-                                    $elem.removeAttr('hidden');
-                                    const $original = $('#' + $elem.attr('command'));
-                                    if ($original.get()) {
-                                        $elem.attr('disabled', $original.attr('hidden'));
+                                    $elem.hasAttr('command') && $elem.attr('sync-hidden') !== 'false') {
+                                    const original = document.getElementById($elem.attr('command'));
+                                    let disabled = !original || original.disabled || original.hidden || original.collapsed;
+                                    // 此前已恢复 CSS 转换的 hidden；这里只检查原生状态，不检查隐藏样式。
+                                    for (let parent = original?.parentElement; parent && !disabled; parent = parent.parentElement) {
+                                        if (parent.localName === 'menu' || parent.localName === 'menugroup') {
+                                            disabled = parent.disabled || parent.hidden || parent.collapsed;
+                                        }
                                     }
+                                    $elem.get().disabled = !!disabled;
                                 }
                             });
                         });
@@ -2640,6 +2646,9 @@ import { syncify } from "./000-syncify.sys.mjs";
 #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
 #contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"] {
     display: flex !important; display: -moz-box !important;
+}
+#contentAreaContextMenu .addMenu[hidden]:not([hidden="false"]) {
+    display: none !important;
 }
 #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
 #toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
