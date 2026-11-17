@@ -5,6 +5,7 @@
 // @version      1.0.2
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHRyYW5zZm9ybT0ic2NhbGUoMS4zNSkiPjxwYXRoIGZpbGw9IiMwMDAwMDAiIGQ9Ik0xMiAyMC43NWEuNzYuNzYgMCAwIDEtLjc1LS43NVY0YS43NS43NSAwIDAgMSAxLjUgMHYxNmEuNzYuNzYgMCAwIDEtLjc1Ljc1WiIvPjxwYXRoIGZpbGw9IiMwMDAwMDAiIGQ9Ik0xMy41IDE4Ljc1SDdhLjc1Ljc1IDAgMCAxIDAtMS41aDYuNUEyLjU0IDIuNTQgMCAwIDAgMTYuMjUgMTVhMi41NCAyLjU0IDAgMCAwLTIuNzUtMi4yNWgtM0E0IDQgMCAwIDEgNi4yNSA5YTQgNCAwIDAgMSA0LjI1LTMuNzVIMTZhLjc1Ljc1IDAgMCAxIDAgMS41aC01LjVBMi41NCAyLjU0IDAgMCAwIDcuNzUgOWEyLjU0IDIuNTQgMCAwIDAgMi43NSAyLjI1aDNBNCA0IDAgMCAxIDE3Ljc1IDE1YTQgNCAwIDAgMS00LjI1IDMuNzVaIi8+PC9zdmc+
 // @skip         true
+// @note         2026-11-17 prefer literal ID lookup for # selectors to support IDs containing colons, then fall back to CSS selectors
 // @note         2026-04-05 fix element input, event listener removal, and contextual fragment insertion
 // @note         2025-06-13 never load in global
 // @note         2025-06-10 fix bug of hasClass
@@ -18,10 +19,20 @@ const $ = (sel, doc) => {
         sel = `#${sel}`;
     }
 
-    // Find the DOM element
-    const el = (typeof sel === 'string')
-        ? (doc || document).querySelector(sel)
-        : sel.nodeType ? sel : null;
+    // Prefer a literal ID for #... (e.g. #Browser:SavePage), then try CSS.
+    let el;
+    if (typeof sel === 'string') {
+        const root = doc || document;
+        if (sel.startsWith('#')) {
+            const id = sel.slice(1);
+            el = typeof root.getElementById === 'function'
+                ? root.getElementById(id)
+                : root.querySelector(`#${CSS.escape(id)}`);
+        }
+        el ??= root.querySelector(sel);
+    } else {
+        el = sel.nodeType ? sel : null;
+    }
 
     if (!el) return null;
 
