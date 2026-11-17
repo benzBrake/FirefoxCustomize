@@ -8,7 +8,7 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r7
+// @version        0.1.6r8
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -17,6 +17,7 @@
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           0.1.6r8 2026-11-17 直接绑定事件与 onshowing 函数以保留闭包和菜单 this，重载时清理原生菜单监听器，仅 Firefox 139 以前保留字符串回调兼容
 // @note           0.1.6r7 2026-11-17 兼容 Firefox 149+ 搜索服务单例入口，修复异步搜索引擎查询为空时无法回退书签关键字的问题
 // @note           0.1.6r6 2026-11-17 分组继承 condition 时复制子项配置，修复复用子项导致分组条件污染的问题
 // @note           2026-10-29 0.1.6r5 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
@@ -191,7 +192,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             'config example': '// 这是一个 addMenuPlus 配置文件\n' +
                 '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
                 '\n\n' +
-                'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+                'tab({\n    label: "addMenuPlus 配置",\n    oncommand: function(){ addMenu.edit(addMenu.FILE); }\n});',
             'example is empty': '目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。',
             'addmenuplus label': 'addMenuPlus',
             'addmenuplus tooltip': '左键：重载配置\n右键：编辑配置',
@@ -210,7 +211,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             'config example': '// This is an addMenuPlus configuration file.\n' +
                 '// Please visit http://ywzhaiqi.github.io/addMenu_creator/ to generate configuration.' +
                 '\n\n' +
-                'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});',
+                'tab({\n    label: "Edit addMenuPlus Configuration",\n    oncommand: function(){ addMenu.edit(addMenu.FILE); }\n});',
             'example is empty': 'The configuration file for addMenuPlus is currently empty, please generate the configuration and put it in the configuration file in the open link. \nOpen the configuration file by right-clicking the tab.',
             'addmenuplus label': 'addMenuPlus',
             'addmenuplus tooltip': 'Left Click：Reload configuration\nRight Click：Edit configuration',
@@ -463,8 +464,15 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 id: "addMenu-rebuild",
                 label: $L('addmenuplus label'),
                 tooltiptext: $L('addmenuplus tooltip'),
-                oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
-                onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
+                oncommand: function () {
+                    setTimeout(function () { addMenu.rebuild(true); }, 10);
+                },
+                onclick: function (event) {
+                    if (event.button == 2) {
+                        event.preventDefault();
+                        addMenu.edit(addMenu.FILE);
+                    }
+                },
             }), ins);
 
             // Photon Compact
@@ -758,12 +766,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         insertPoint = "addMenu-tool-insertpoint";
                     }
 
-                    this.customShowings.filter(obj => obj.insertPoint === insertPoint).forEach(function (obj) {
+                    this.customShowings.filter(obj => !obj.insertPoint || obj.insertPoint === insertPoint).forEach(function (obj) {
                         var curItem = obj.item;
                         try {
-                            eval('(' + obj.fnSource + ').call(curItem, curItem)');
+                            obj.fn.call(curItem, curItem);
                         } catch (ex) {
-                            console.error($L('custom showing method error'), obj.fnSource, ex);
+                            console.error($L('custom showing method error'), obj.fn, ex);
                         }
                     });
 
@@ -1237,15 +1245,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 if (key === "_items") return;
                 if (key === "_group") return;
                 if (key.startsWith('on') && key !== "onshowinglabel") {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    group.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn);
-                    }, false);
+                    addMenuEventListener(group, key, val);
                 } else {
                     group.setAttribute(key, val);
                 }
@@ -1303,15 +1303,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = menuObj[key];
                 if (key === "_items") continue;
                 if (key.startsWith('on') && key !== "onshowinglabel") {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    menu.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn);
-                    }, false);
+                    addMenuEventListener(menu, key, val);
                     continue;
                 }
                 menu.setAttribute(key, val);
@@ -1446,15 +1438,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 let val = obj[key];
                 if (key === "command") continue;
                 if (key.startsWith('on') && key !== "onshowinglabel") {
-                    const fn = typeof val === "string" ? (() => {
-                        if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                            return "(" + val + ").call(this, event)";
-                        }
-                        return val;
-                    })() : "(" + val.toString() + ").call(this, event)";
-                    menuitem.addEventListener(key.slice(2).toLocaleLowerCase(), (event) => {
-                        eval(fn);
-                    }, false);
+                    addMenuEventListener(menuitem, key, val);
                 } else {
                     menuitem.setAttribute(key, val);
                 }
@@ -1551,14 +1535,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                     for (let key in obj) {
                         let val = obj[key];
                         if (key.startsWith('on') && key !== "onshowinglabel") {
-                            const fn = typeof val === "string" ? function (event) {
-                                if (val.trim().startsWith("function") || val.trim().startsWith("async function")) {
-                                    eval("(" + val + ").call(this, event)");
-                                } else {
-                                    eval(val);
-                                }
-                            } : val;
-                            dupMenuitem.addEventListener(key.slice(2).toLocaleLowerCase(), fn, false);
+                            addMenuEventListener(dupMenuitem, key, val);
                             continue;
                         }
                         dupMenuitem.setAttribute(key, val);
@@ -1622,6 +1599,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
         removeMenuitem: function () {
             var remove = function (e) {
+                removeMenuEventListeners(e);
                 if (e.classList.contains('addMenuNot')) {
                     if (typeof e.originAttributes === "object") {
                         getAttributeNames(e).forEach(function (attr) {
@@ -2202,6 +2180,45 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return 1 < 'あ'.length ? decodeURIComponent(escape(text)) : text
     };
 
+    const menuEventListeners = new WeakMap();
+
+    function getMenuEventListener (key, value) {
+        if (typeof value === "function") return value;
+        // 139 起浏览器窗口使用更严格的 script-src。Sandbox 能力还取决于
+        // loader 和特权执行策略，此处仅为旧版保留字符串配置，不尝试绕过 CSP。
+        if (typeof value === "string" && !versionGE("139a1")) {
+            return function (event) {
+                if (value.trim().startsWith("function") || value.trim().startsWith("async function")) {
+                    return eval("(" + value + ").call(this, event)");
+                }
+                return eval(value);
+            };
+        }
+        console.warn("addMenuPlus: event handler requires a function in this Firefox version, ignored", key, value);
+    }
+
+    function addMenuEventListener (element, key, value) {
+        const listener = getMenuEventListener(key, value);
+        if (!listener) return;
+        const type = key.slice(2).toLowerCase();
+        element.addEventListener(type, listener, false);
+        let listeners = menuEventListeners.get(element);
+        if (!listeners) {
+            listeners = [];
+            menuEventListeners.set(element, listeners);
+        }
+        listeners.push({ type, listener });
+    }
+
+    function removeMenuEventListeners (element) {
+        const listeners = menuEventListeners.get(element);
+        if (!listeners) return;
+        listeners.forEach(({ type, listener }) => {
+            element.removeEventListener(type, listener, false);
+        });
+        menuEventListeners.delete(element);
+    }
+
     function $C (name, attr) {
         attr || (attr = {});
         var el;
@@ -2212,12 +2229,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }
         if (attr) Object.keys(attr).forEach(function (n) {
             if (n.startsWith('on')) {
-                const en = n.slice(2).toLocaleLowerCase();
-                if (typeof attr[n] === "string") {
-                    el.addEventListener(en, new Function('event', attr[n]));
-                } else {
-                    el.addEventListener(en, attr[n]);
-                }
+                addMenuEventListener(el, n, attr[n]);
             } else {
                 el.setAttribute(n, attr[n]);
             }
@@ -2324,11 +2336,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
     function processOnShowing (menu, menuObj, insertPoint) {
         if (menuObj.onshowing) {
-            this.customShowings.push({
-                item: menu,
-                insertPoint: insertPoint.id,
-                fnSource: menuObj.onshowing.toString()
-            });
+            const listener = getMenuEventListener("onshowing", menuObj.onshowing);
+            if (listener) {
+                this.customShowings.push({
+                    item: menu,
+                    insertPoint: insertPoint && insertPoint.id,
+                    fn: listener
+                });
+            }
             delete menuObj.onshowing;
         }
 
@@ -2336,13 +2351,13 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             menu.dataset.onshowinglabel = menuObj.onshowinglabel;
             this.customShowings.push({
                 item: menu,
-                insertPoint: insertPoint.id,
-                fnSource: function () {
+                insertPoint: insertPoint && insertPoint.id,
+                fn: function () {
                     let t = addMenu.convertText(this.dataset.onshowinglabel);
                     if (t && t.length > onshowinglabelMaxLength)
                         t = t.substr(0, onshowinglabelMaxLength) + "...";
                     this.setAttribute('label', t);
-                }.toString()
+                }
             });
             delete menuObj.onshowinglabel;
         }
