@@ -8,7 +8,7 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.4.4
+// @version            0.4.5
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
@@ -23,6 +23,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.5 2026-11-17 调整菜单状态与动态标签的同步顺序，独立转发命令并保留修饰键，避免延时写入及原生命令同步覆盖 onshowing；约束启动重建和菜单刷新生命周期，防止旧实例或已关闭菜单继续更新；保护异步默认标签，避免覆盖后续修改或已移除菜单
 // @note               0.4.4 2026-11-17 修复本地 SVG 重复 Base64 编码，构建菜单时复制配置以保留复用项的 onshowing 回调
 // @note               0.4.4 2026-11-17 文本替换先捕获占位符值和图片源，避免同步等待图片时混入变化后的页面上下文
 // @note               0.4.4 2026-11-17 为图片 Base64 转换添加 5 秒超时兜底，完成后清理定时器和图片回调
@@ -288,6 +289,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
             this.sandbox = sb;
             await this.ensureConfigFileExists();
+            if (this._destroyed || window.addMenu !== this) return;
             this.initRegex();
             this.initButton();
             this.initLocaleObserver();
@@ -351,8 +353,10 @@ import { syncify } from "./000-syncify.sys.mjs";
             });
             // PanelUI 增加 CustomShowing 支持
             PanelUI.mainView.addEventListener("ViewShowing", this);
+            PanelUI.mainView.addEventListener("ViewHiding", this);
             this.APP_LITENER_REMOVER = function () {
                 PanelUI.mainView.removeEventListener("ViewShowing", this);
+                PanelUI.mainView.removeEventListener("ViewHiding", this);
             }
 
             // 增加样式
@@ -636,6 +640,9 @@ import { syncify } from "./000-syncify.sys.mjs";
             return !!this.BTN;
         },
         destroy: function (forceDestroyWidget = false) {
+            this._destroyed = true;
+            for (const timer of this.rebuildTimers || []) clearTimeout(timer);
+            this.rebuildTimers = [];
             document.removeEventListener("popuphidden", this);
             this.restoreMenuVisibility();
             clearTimeout(this._localeRefreshTimer);
@@ -700,7 +707,7 @@ import { syncify } from "./000-syncify.sys.mjs";
             }
         },
         syncMenuVisibility: function (popup) {
-            if (popup.localName !== "menupopup") return;
+            if (popup.localName !== "menupopup" && !enableConvertHiddenStyleToAttribue) return;
             this.restoreMenuVisibility(popup);
             this._hiddenMenuItems ||= new Map();
             const items = new Map();
@@ -719,36 +726,107 @@ import { syncify } from "./000-syncify.sys.mjs";
                 window.nsContextMenu.prototype.showHideSeparators(popup);
             }
         },
+        syncCommandState: function (popup) {
+            // 原生 UpdateMenuItems 会在 popupshowing 之后覆盖 disabled/label/accesskey。
+            // 命令副本改用独立转发，并在 onshowing 之前同步原生文案。
+            for (const item of popup.querySelectorAll('[data-addmenu-command]')) {
+                if (!item._addMenuForwardsCommand) continue;
+                const original = document.getElementById(item.getAttribute('data-addmenu-command'));
+                for (const name of ['label', 'accesskey']) {
+                    if (original?.hasAttribute(name)) item.setAttribute(name, original.getAttribute(name));
+                }
+            }
+            $$(':is(menuitem, menu).addMenu:is([command], [data-addmenu-command]):not([sync-hidden="false"])', popup).forEach($elem => {
+                if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
+
+                const original = document.getElementById($elem.attr('data-addmenu-command') || $elem.attr('command'));
+                if (original) {
+                    const $original = $(original);
+                    for (const name of ['hidden', 'collapsed']) {
+                        const value = $original.attr(name);
+                        if (value && value !== "false") $elem.attr(name, value);
+                        else $elem.removeAttr(name);
+                    }
+
+                    // 副本移出原生子菜单后，仍需遵守祖先菜单的禁用限制。
+                    // 只检查 disabled，避免配置用于替代菜单的隐藏样式影响副本。
+                    if ((original.hasAttribute('disabled') && original.getAttribute('disabled') !== "false") ||
+                        original.parentElement?.closest('menu[disabled]:not([disabled="false"])')) {
+                        $elem.attr('disabled', true);
+                    } else {
+                        $elem.removeAttr('disabled');
+                    }
+                }
+            });
+
+            $$('menugroup.addMenu', popup).forEach($group => {
+                $group.children().forEach($elem => {
+                    if ((/menu$/i.test($elem.get().nodeName) || /menuitem$/i.test($elem.get().nodeName)) &&
+                        ($elem.hasAttr('command') || $elem.hasAttr('data-addmenu-command')) && $elem.attr('sync-hidden') !== 'false') {
+                        const original = document.getElementById($elem.attr('data-addmenu-command') || $elem.attr('command'));
+                        let disabled = !original || original.disabled || original.hidden || original.collapsed;
+                        // 此前已恢复 CSS 转换的 hidden；这里只检查原生状态，不检查隐藏样式。
+                        for (let parent = original?.parentElement; parent && !disabled; parent = parent.parentElement) {
+                            if (parent.localName === 'menu' || parent.localName === 'menugroup') {
+                                disabled = parent.disabled || parent.hidden || parent.collapsed;
+                            }
+                        }
+                        $elem.get().disabled = !!disabled;
+                    }
+                });
+            });
+        },
         handleEvent: async function (event) {
             const { type, target, button } = event;
             const $target = $(event.target);
             const $currentTarget = $(event.currentTarget);
 
             switch (type) {
+                case "ViewHiding":
                 case "popuphidden":
+                    this._popupUpdates?.delete(target);
                     this.restoreMenuVisibility(target);
                     break;
                 case "ViewShowing":
                 case "popupshowing":
                     if (target !== event.currentTarget) return;
+                    this._popupUpdates ||= new WeakMap();
+                    const update = {};
+                    this._popupUpdates.set(target, update);
+                    let generation = this._menuGeneration;
+                    const isCurrent = () => !this._destroyed && window.addMenu === this &&
+                        this._popupUpdates.get(target) === update && this._menuGeneration === generation;
                     this.restoreMenuVisibility(target);
 
                     // File refreshing logic
                     if (enableFileRefreshing) {
-                        await this.updateModifiedFile();
+                        const refreshing = this.updateModifiedFile();
+                        // rebuild 的 DOM 构建同步完成，记录本次刷新后的版本。
+                        generation = this._menuGeneration;
+                        await refreshing;
+                        if (!isCurrent()) return;
                     }
+
+                    if (!isCurrent()) return;
+
+                    // 原菜单提供基础状态；动态标签和 onshowing 均可覆盖它。
+                    this.syncCommandState(target);
 
                     // Process all .addMenu elements
                     $$('.addMenu[onshowinglabel]', $target.get()).forEach($menu => {
+                        if (!isCurrent()) return;
                         $menu.removeAttr("hidden");
                         const showingLabel = $menu.attr('onshowinglabel');
                         if (showingLabel) {
                             let maxLength = onshowinglabelMaxLength || 15;
-                            let sel = addMenu.convertText(showingLabel);
+                            let sel = this.convertText(showingLabel);
+                            if (!isCurrent()) return;
                             if (sel.length > maxLength) sel = sel.substr(0, maxLength) + "...";
                             $menu.attr('label', sel);
                         }
                     });
+
+                    if (!isCurrent()) return;
 
                     // Determine insert point based on menu type
                     let insertPoint = "";
@@ -807,6 +885,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                     insertPoint = menuHandlers[$target.attr('id')]?.() || "";
 
                     const ev = obj => {
+                        if (!isCurrent()) return;
                         try {
                             typeof obj.fn === "function" && obj.fn.call(obj.item, obj.item)
                         } catch (ex) {
@@ -822,106 +901,11 @@ import { syncify } from "./000-syncify.sys.mjs";
                         .filter(obj => obj.insertPoint === "addMenu-all-insertpoint")
                         .forEach(obj => ev(obj));
 
-                    this.syncMenuVisibility($target.get());
+                    if (isCurrent()) this.syncMenuVisibility(target);
 
-                    // Delayed DOM updates
-                    setTimeout(() => {
-                        this.restoreMenuVisibility($target.get());
-                        $$(':is(menuitem, menu).addMenu:is([command], [data-addmenu-command]):not([sync-hidden="false"])', $target.get()).forEach($elem => {
-                            if (/^menugroup$/i.test($elem.parent().get().nodeName)) return;
-
-                            const original = document.getElementById($elem.attr('data-addmenu-command') || $elem.attr('command'));
-                            if (original) {
-                                const $original = $(original);
-                                // 处理 hidden 属性
-                                if ($original.attr('hidden') === "true") {
-                                    $elem.attr('hidden', true);
-                                } else {
-                                    $elem.removeAttr('hidden');
-                                }
-
-                                // 处理 collapsed 属性
-                                if ($original.attr('collapsed') === "true") {
-                                    $elem.attr('collapsed', true);
-                                } else {
-                                    $elem.removeAttr('collapsed');
-                                }
-
-                                // 副本移出原生子菜单后，仍需遵守祖先菜单的禁用限制。
-                                // 只检查 disabled，避免配置用于替代菜单的隐藏样式影响副本。
-                                if (original.getAttribute('disabled') === "true" ||
-                                    original.parentElement?.closest('menu[disabled="true"]')) {
-                                    $elem.attr('disabled', true);
-                                } else {
-                                    $elem.removeAttr('disabled');
-                                }
-                                // 获取原始属性值，如果没有则使用 "false"
-                                const hiddenAttr = $original.attr('hidden');
-                                const collapsedAttr = $original.attr('collapsed');
-                                
-                                // 只有当属性值为 "false" 时才删除属性，非 "false" 值则设置
-                                if (hiddenAttr) {
-                                    if (hiddenAttr === "false") {
-                                        $elem.removeAttr('hidden');
-                                    } else {
-                                        $elem.attr('hidden', hiddenAttr);
-                                    }
-                                }
-                                
-                                if (collapsedAttr) {
-                                    if (collapsedAttr === "false") {
-                                        $elem.removeAttr('collapsed');
-                                    } else {
-                                        $elem.attr('collapsed', collapsedAttr);
-                                    }
-                                }
-                                
-                            }
-                        });
-
-                        $$('menugroup.addMenu', $target.get()).forEach($group => {
-                            $group.children().forEach($elem => {
-                                if ((/menu$/i.test($elem.get().nodeName) || /menuitem$/i.test($elem.get().nodeName)) &&
-                                    ($elem.hasAttr('command') || $elem.hasAttr('data-addmenu-command')) && $elem.attr('sync-hidden') !== 'false') {
-                                    const original = document.getElementById($elem.attr('data-addmenu-command') || $elem.attr('command'));
-                                    let disabled = !original || original.disabled || original.hidden || original.collapsed;
-                                    // 此前已恢复 CSS 转换的 hidden；这里只检查原生状态，不检查隐藏样式。
-                                    for (let parent = original?.parentElement; parent && !disabled; parent = parent.parentElement) {
-                                        if (parent.localName === 'menu' || parent.localName === 'menugroup') {
-                                            disabled = parent.disabled || parent.hidden || parent.collapsed;
-                                        }
-                                    }
-                                    $elem.get().disabled = !!disabled;
-                                }
-                            });
-                        });
-
-                        if (enableConvertHiddenStyleToAttribue) {
-                            $$('menuitem.addMenu, menu.addMenu, menugroup.addMenu').forEach($elem => {
-                                if (isVisible($elem)) {
-                                    $elem.removeAttr('hidden')
-                                        .removeAttr('collapsed')
-                                        .removeAttr('disabled');
-                                } else {
-                                    $elem.attr('hidden', true);
-                                }
-                            });
-
-                            function isVisible ($elem) {
-                                let style = getComputedStyle($elem.get());
-                                return style.display !== "none" && style.visibility !== "hidden" && style.visibility !== "collapse";
-                            }
-                        }
-                        if ($target.get().state === "open" || $target.get().state === "showing") {
-                            this.syncMenuVisibility($target.get());
-                        }
-                    }, 10);
                     break;
                 case 'popuphiding':
                     if ($target.attr('id') === "contentAreaContextMenu") {
-                        $$('.addMenu[hidden]', $target.get()).forEach($elem => {
-                            $elem.removeAttr('hidden');
-                        });
                         Object.keys(this.ContextMenu).forEach(key => {
                             this.ContextMenu[key] = key.startsWith("on") ? false : "";
                         });
@@ -1000,7 +984,7 @@ import { syncify } from "./000-syncify.sys.mjs";
 
             if (this._modifiedTime != this.FILE.lastModifiedTime) {
                 this._modifiedTime = this.FILE.lastModifiedTime;
-                await addMenu.rebuild(true);
+                await this.rebuild(true);
             }
         },
         onCommand: async function (event) {
@@ -1489,6 +1473,62 @@ import { syncify } from "./000-syncify.sys.mjs";
 
             return menu;
         },
+        bindMenuCommand: function (menuitem, obj, doc = document) {
+            menuitem.setAttribute('data-addmenu-command', obj.command);
+            if (typeof obj.oncommand === 'function') return;
+            menuitem._addMenuForwardsCommand = true;
+            menuitem.addEventListener('command', event => {
+                if (event.target !== menuitem) return;
+                // 原生 command 重定向不让原事件继续向祖先冒泡。
+                event.stopPropagation();
+                if (event.defaultPrevented || menuitem.disabled) return;
+                const original = doc.getElementById(menuitem.getAttribute('data-addmenu-command'));
+                if (!original || original === menuitem) return;
+                // 阻止配置中互相引用的命令副本递归转发。
+                for (let source = event; source; source = source.sourceEvent) {
+                    if (source.target === original) return;
+                }
+                const forwarded = doc.createEvent('XULCommandEvent');
+                const args = ['command', true, true, doc.defaultView, event.detail,
+                    event.ctrlKey, event.altKey, event.shiftKey, event.metaKey];
+                // 旧版 XULCommandEvent 尚未在 sourceEvent 前增加 button 参数。
+                if ('button' in forwarded) args.push(event.button ?? 0);
+                args.push(event, event.inputSource ?? 0);
+                forwarded.initCommandEvent(...args);
+                if (!original.dispatchEvent(forwarded)) event.preventDefault();
+            });
+        },
+        setDefaultLabel: async function (menuitem, obj) {
+            const generation = this._menuGeneration;
+            let labelChanged = false;
+            const observer = new MutationObserver(() => { labelChanged = true; });
+            observer.observe(menuitem, { attributes: true, attributeFilter: ["label"] });
+            this._labelObservers ||= new Set();
+            this._labelObservers.add(observer);
+            try {
+                let label;
+                if (obj['data-l10n-href'] && obj['data-l10n-href'].endsWith('.ftl') && obj['data-l10n-id']) {
+                    const strings = new Localization([obj['data-l10n-href']]);
+                    label = await ("formatValue" in strings
+                        ? strings.formatValue(obj['data-l10n-id'])
+                        : strings.formatValueSync(obj['data-l10n-id']));
+                } else if (obj.keyword) {
+                    const engine = await (obj.keyword === "@default"
+                        ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword));
+                    label = engine && engine._name;
+                }
+                if (label && !this._destroyed && window.addMenu === this &&
+                    this._menuGeneration === generation && menuitem.isConnected &&
+                    !labelChanged && observer.takeRecords().length === 0) {
+                    menuitem.setAttribute("label", label);
+                }
+            } catch (e) {
+                console.error("addMenuPlus: failed to resolve default label", e);
+            } finally {
+                observer.disconnect();
+                this._labelObservers.delete(observer);
+            }
+        },
         newMenuitem: function (obj, opt = {}, doc = document) {
             obj = localizeMenuObject(obj);
             var menuitem,
@@ -1508,11 +1548,7 @@ import { syncify } from "./000-syncify.sys.mjs";
                 } else {
                     menuitem = $C(menuitemType);
                     if (obj.command) {
-                        // 显式处理器优先：command 会在 XUL 层转发事件，导致本项监听器无法执行。
-                        // 单独保留原项 ID，供状态同步和菜单标签查询使用。
-                        const commandAttribute = typeof obj.oncommand === 'function'
-                            ? 'data-addmenu-command' : 'command';
-                        menuitem.setAttribute(commandAttribute, obj.command);
+                        this.bindMenuCommand(menuitem, obj, doc);
                     }
 
                     noDefaultLabel = !obj.label;
@@ -1577,25 +1613,9 @@ import { syncify } from "./000-syncify.sys.mjs";
             // 设置属性
             setAttributes(menuitem, obj, ["command"]);
 
-            (async () => {
-                if (noDefaultLabel && menuitem.localName !== separatorType) {
-                    if (obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
-                        // Localization 支持
-                        let strings = new Localization([obj["data-l10n-href"]]);
-                        if ("formatValue" in strings) {
-                            const label = await strings.formatValue([obj['data-l10n-id']]);
-                            if (label) menuitem.setAttribute('label', label);
-                        } else {
-                            menuitem.setAttribute('label', strings.formatValueSync([obj['data-l10n-id']]) || menuitem.getAttribute("label"));
-                        }
-                    } else if (obj.keyword) {
-                        // 调用搜索引擎 Label hack
-                        let engine = obj.keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword);
-                        engine = await engine;
-                        if (engine && engine._name) menuitem.setAttribute('label', engine._name);
-                    }
-                }
-            })()
+            if (noDefaultLabel && menuitem.localName !== separatorType) {
+                this.setDefaultLabel(menuitem, obj);
+            }
 
             /** obj を属性にする
              for (let [key, val] in Iterator(obj)) {
@@ -1742,6 +1762,10 @@ import { syncify } from "./000-syncify.sys.mjs";
             this.undoFunctions = [];
         },
         removeMenuitem: function () {
+            this._menuGeneration = (this._menuGeneration || 0) + 1;
+            for (const observer of this._labelObservers || []) observer.disconnect();
+            this._labelObservers?.clear();
+            this.restoreMenuVisibility();
             $$('.addMenuOriginal').forEach((e) => {
                 let id = e.attr('original-id');
                 if (id && $(id))
@@ -2647,15 +2671,18 @@ import { syncify } from "./000-syncify.sys.mjs";
         }
     }
 
-    window.addMenu.init();
-
-    setTimeout(() => {
-        window.addMenu.rebuild();
-    }, 1000);
-
-    setTimeout(() => {
-        window.addMenu.rebuild();
-    }, 3000);
+    const instance = window.addMenu;
+    const initialized = instance.init();
+    initialized.catch(e => console.error("addMenuPlus: initialization failed", e));
+    // 保留不同 uc 环境的延时兜底，等待本实例初始化并拒绝已销毁/替换的实例。
+    instance.rebuildTimers = [1000, 3000].map(delay => setTimeout(async () => {
+        try {
+            await initialized;
+            if (!instance._destroyed && window.addMenu === instance) await instance.rebuild();
+        } catch (e) {
+            console.error("addMenuPlus: delayed rebuild failed", e);
+        }
+    }, delay));
 })(`
 .addMenuHide {
     display: none !important;

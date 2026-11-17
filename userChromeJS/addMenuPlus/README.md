@@ -1300,6 +1300,12 @@ page([{
 
 示例：2014-9-8 版本之后新增的 `onshowing` 函数，在右键菜单出现时会执行该函数。例如下面这个例子只在卡饭论坛显示 **插入 code 代码** 右键菜单。
 
+从 `.uc.mjs` 0.4.5 / `.uc.js` 0.1.6r10 起，每次显示菜单时先同步 `command` 对应原菜单的状态，再执行 `onshowing`，最后按 CSS 可见性计算隐藏项和分隔线。回调设置的 `hidden`、`collapsed`、`disabled` 不会再被 10ms 后的状态同步覆盖；`condition` 和配置 CSS 仍可继续隐藏菜单项。`onshowing` 应同步设置本次显示需要的状态，返回的 Promise 不会阻塞菜单弹出。
+
+`.uc.mjs` 的 `sync-hidden: false` 保留原有含义：关闭该项的整组原菜单状态同步，包括禁用状态。仅需动态控制隐藏时，直接在 `onshowing` 中设置即可。异步取得的搜索引擎名称或本地化默认标签，只会写入当前构建中仍连接、且标签未被修改的菜单项。
+
+`.uc.mjs` 0.4.5 新建的 `command` 菜单项使用 `data-addmenu-command` 保存原项 ID，并独立转发命令事件（保留修饰键和事件来源），避免 Firefox 在 `popupshowing` 之后再次同步 `disabled`、`label` 和 `accesskey`。原项的标题和快捷键在动态标签及 `onshowing` 之前同步；显式 `oncommand` 仍优先执行。配置仍写 `command`，但自定义 CSS 或 DOM 查询若依赖生成节点的 `[command]`，需兼顾 `[data-addmenu-command]`。这项原生命令绑定修复仅适用于 `.uc.mjs`，不包含克隆或 `mod` 修改的原生节点。
+
 ```js
 page({
   label: "插入 code 代码",

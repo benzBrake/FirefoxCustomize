@@ -8,13 +8,14 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r9
+// @version        0.1.6r10
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
 // @homepageURL    https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @reviewURL      https://blog.iplayloli.com/addmenuplus-of-userchrome-js-script-uc-js.html
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
+// @note           0.1.6r10 2026-11-17 在 onshowing 前同步原菜单状态，移除覆盖回调结果的延时写入；绑定并清理启动重建定时器，防止旧实例继续重建；保护异步默认标签，避免覆盖后续修改或已移除菜单
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @note           0.1.6r9 2026-11-17 按 Firefox UI 语言解析 label、tooltiptext、onshowinglabel 多语言配置，移除语言缓存并在应用语言变化后自动刷新菜单
@@ -632,6 +633,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             menuitem.setAttribute("tooltiptext", $L("addmenuplus tooltip"));
         },
         destroy: function () {
+            this._destroyed = true;
             document.removeEventListener("popuphidden", this);
             this.restoreMenuVisibility();
             clearTimeout(this._localeRefreshTimer);
@@ -723,6 +725,30 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 window.nsContextMenu.prototype.showHideSeparators(popup);
             }
         },
+        syncCommandState: function (popup) {
+            popup.querySelectorAll('menuitem.addMenu[command],menu.addMenu[command]').forEach(elem => {
+                if (/^menugroup$/i.test(elem.parentNode.nodeName)) return;
+                let original = document.getElementById(elem.getAttribute('command'));
+                if (original) {
+                    syncBooleanAttribute(elem, original, "hidden");
+                    syncBooleanAttribute(elem, original, "collapsed");
+                    syncBooleanAttribute(elem, original, "disabled");
+                }
+            });
+            popup.querySelectorAll('menugroup.addMenu').forEach(group => {
+                [...group.children].forEach(elem => {
+                    if ((/menu$/i.test(elem.nodeName) || /menuitem$/i.test(elem.nodeName)) && elem.hasAttribute('command')) {
+                        elem.removeAttribute('hidden');
+                        const original = document.getElementById(elem.getAttribute('command'));
+                        if (original) {
+                            setBooleanAttribute(elem, "disabled",
+                                getBooleanAttribute(original, "hidden") ||
+                                getBooleanAttribute(original, "disabled"));
+                        }
+                    }
+                });
+            });
+        },
         handleEvent: function (event) {
             switch (event.type) {
                 case "popuphidden":
@@ -797,7 +823,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         insertPoint = "addMenu-tool-insertpoint";
                     }
 
+                    // 原菜单提供基础状态；onshowing 可覆盖属性，最后才计算 CSS 隐藏和分隔线。
+                    this.syncCommandState(event.target);
+
+                    const generation = this._menuGeneration;
+                    const isCurrent = () => !this._destroyed && window.addMenu === this &&
+                        this._menuGeneration === generation;
                     this.customShowings.filter(obj => !obj.insertPoint || obj.insertPoint === insertPoint).forEach(function (obj) {
+                        if (!isCurrent()) return;
                         var curItem = obj.item;
                         try {
                             obj.fn.call(curItem, curItem);
@@ -806,40 +839,8 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                         }
                     });
 
-                    this.syncMenuVisibility(event.target);
+                    if (isCurrent()) this.syncMenuVisibility(event.target);
 
-                    const delay = new Promise(resolve => {
-                        setTimeout(resolve, 10);
-                    });
-
-                    delay.then(() => {
-                        this.restoreMenuVisibility(event.target);
-                        event.target.querySelectorAll('menuitem.addMenu[command],menu.addMenu[command]').forEach(elem => {
-                            if (/^menugroup$/i.test(elem.parentNode.nodeName)) return;
-                            let original = document.getElementById(elem.getAttribute('command'));
-                            if (original) {
-                                syncBooleanAttribute(elem, original, "hidden");
-                                syncBooleanAttribute(elem, original, "collapsed");
-                                syncBooleanAttribute(elem, original, "disabled");
-                            }
-                        });
-                        event.target.querySelectorAll('menugroup.addMenu').forEach(group => {
-                            [...group.children].forEach(elem => {
-                                if ((/menu$/i.test(elem.nodeName) || /menuitem$/i.test(elem.nodeName)) && elem.hasAttribute('command')) {
-                                    elem.removeAttribute('hidden');
-                                    const original = document.getElementById(elem.getAttribute('command'));
-                                    if (original) {
-                                        setBooleanAttribute(elem, "disabled",
-                                            getBooleanAttribute(original, "hidden") ||
-                                            getBooleanAttribute(original, "disabled"));
-                                    }
-                                }
-                            });
-                        });
-                        if (event.target.state === "open" || event.target.state === "showing") {
-                            this.syncMenuVisibility(event.target);
-                        }
-                    });
                     break;
                 case 'popuphiding':
                     if (event.target.id === "contentAreaContextMenu") {
@@ -949,9 +950,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (this._modifiedTime != this.FILE.lastModifiedTime) {
                 this._modifiedTime = this.FILE.lastModifiedTime;
 
-                setTimeout(function () {
-                    addMenu.rebuild(true);
-                }, 10);
+                this.rebuild(true);
             }
         },
         onCommand: async function (event) {
@@ -1394,6 +1393,37 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             return menu;
         },
+        setDefaultLabel: async function (menuitem, obj) {
+            const generation = this._menuGeneration;
+            let labelChanged = false;
+            const observer = new MutationObserver(() => { labelChanged = true; });
+            observer.observe(menuitem, { attributes: true, attributeFilter: ["label"] });
+            if (!this._labelObservers) this._labelObservers = new Set();
+            this._labelObservers.add(observer);
+            try {
+                let label;
+                if (this.supportLocalization && obj['data-l10n-href'] && obj['data-l10n-href'].endsWith('.ftl') && obj['data-l10n-id']) {
+                    const strings = new Localization([obj['data-l10n-href']]);
+                    label = await ("formatValue" in strings
+                        ? strings.formatValue(obj['data-l10n-id'])
+                        : strings.formatValueSync(obj['data-l10n-id']));
+                } else if (obj.keyword) {
+                    const engine = await (obj.keyword === "@default"
+                        ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword));
+                    label = engine && engine._name;
+                }
+                if (label && !this._destroyed && window.addMenu === this &&
+                    this._menuGeneration === generation && menuitem.isConnected &&
+                    !labelChanged && observer.takeRecords().length === 0) {
+                    menuitem.setAttribute("label", label);
+                }
+            } catch (e) {
+                console.error("addMenuPlus: failed to resolve default label", e);
+            } finally {
+                observer.disconnect();
+                this._labelObservers.delete(observer);
+            }
+        },
         newMenuitem: function (obj, opt) {
             obj = localizeMenuObject(obj);
             opt || (opt = {});
@@ -1479,24 +1509,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
                 }
             }
 
-            (async () => {
-                if (noDefaultLabel && menuitem.localName !== separatorType) {
-                    if (this.supportLocalization && obj['data-l10n-href'] && obj["data-l10n-href"].endsWith(".ftl") && obj['data-l10n-id']) {
-                        // Localization 支持
-                        let strings = new Localization([obj["data-l10n-href"]]);
-                        if ("formatValue" in strings) {
-                            const label = await strings.formatValue([obj['data-l10n-id']]);
-                            if (label) menuitem.setAttribute('label', label);
-                        } else {
-                            menuitem.setAttribute('label', strings.formatValueSync([obj['data-l10n-id']]) || menuitem.getAttribute("label"));
-                        }
-                    } else if (obj.keyword) {
-                        // 调用搜索引擎 Label hack
-                        let engine = await (obj.keyword === "@default" ? this.searchService.getDefault() : this.searchService.getEngineByAlias(obj.keyword));
-                        if (engine && engine._name) menuitem.setAttribute('label', engine._name);
-                    }
-                }
-            })()
+            if (noDefaultLabel && menuitem.localName !== separatorType) {
+                this.setDefaultLabel(menuitem, obj);
+            }
 
             /** obj を属性にする
              for (let [key, val] in Iterator(obj)) {
@@ -1634,6 +1649,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
         },
         removeMenuitem: function () {
+            this._menuGeneration = (this._menuGeneration || 0) + 1;
+            for (const observer of this._labelObservers || []) observer.disconnect();
+            if (this._labelObservers) this._labelObservers.clear();
+            this.restoreMenuVisibility();
             var remove = function (e) {
                 removeMenuEventListeners(e);
                 if (e.classList.contains('addMenuNot')) {
@@ -2486,13 +2505,14 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         }
     }
 
-    window.addMenu.init();
+    const instance = window.addMenu;
+    instance.init();
 
-    /** 防止 data-l10n 无法读取 , 用不到可以注释下面这几行 */
-    window.addMenu.rebuildTimers = [1000, 2000, 5000].map(function (delay) {
+    /** 保留 data-l10n 和不同 uc 环境的延时兜底，只重建创建定时器的实例。 */
+    instance.rebuildTimers = [1000, 2000, 5000].map(function (delay) {
         return setTimeout(function () {
-            if (window.addMenu)
-                window.addMenu.rebuild();
+            if (!instance._destroyed && window.addMenu === instance)
+                instance.rebuild();
         }, delay);
     });
 })(`
@@ -2503,7 +2523,6 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu > menugroup > .addMenu[condition],
 #contentAreaContextMenu menugroup.addMenu[condition] {
     display: none;
-    visibility: collsapse;
 }
 #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="link"],
 #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="mailto"],
@@ -2524,6 +2543,9 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="noinput"],
 #contentAreaContextMenu:not([addMenu~="select"])  .addMenu[condition~="noselect"] {
     display: flex !important; display: -moz-box !important;
+}
+#contentAreaContextMenu .addMenu[hidden]:not([hidden="false"]) {
+    display: none !important;
 }
 #toolbar-context-menu:not([addMenu~="menubar"]) .addMenu[condition~="menubar"],
 #toolbar-context-menu:not([addMenu~="tabs"]) .addMenu[condition~="tabs"],
