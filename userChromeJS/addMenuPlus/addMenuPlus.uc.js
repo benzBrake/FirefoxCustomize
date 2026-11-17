@@ -8,7 +8,7 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r5
+// @version        0.1.6r6
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -17,6 +17,7 @@
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           0.1.6r6 2026-11-17 分组继承 condition 时复制子项配置，修复复用子项导致分组条件污染的问题
 // @note           2026-10-29 0.1.6r5 分组未设置 condition 时不向子项写入 null，修复无条件分组菜单不可见的问题
 // @note           2026-10-18 0.1.6r4 同步各右键菜单中 CSS 隐藏项的 hidden 状态，修复工具栏分隔线显示异常，并复用 Firefox 原生逻辑重算网页及标签菜单分隔线
 // @note           2026-08-04 0.1.6r3 修复新版菜单图标、布尔属性同步和通知接口兼容性，增强 frame-script 生命周期、右键目标、Favicon 及图片变量处理
@@ -1253,14 +1254,12 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
 
             // 表示 / 非表示の設定
             this.setCondition(group, menuObj, opt);
-            // Sync condition attribute to child menus
-            menuObj._items.forEach(function (obj) {
+            menuObj._items.forEach(function (item) {
+                // 同一配置项可被多个分组复用，继承条件时不要修改原对象。
+                const obj = Object.assign({}, item);
                 if (!Object.keys(obj).includes("condition") && group.hasAttribute("condition")) {
                     obj.condition = group.getAttribute("condition");
                 }
-            });
-
-            menuObj._items.forEach(function (obj) {
                 group.appendChild(this.newMenuitem(obj, {
                     isMenuGroup: true
                 }));
