@@ -8,7 +8,7 @@
 // @sandbox        true
 // @compatibility  Firefox 57
 // @charset        UTF-8
-// @version        0.1.6r8
+// @version        0.1.6r9
 // @async
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -17,6 +17,7 @@
 // @downloadURL    https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/addMenuPlus/addMenuPlus.uc.js
 // @note           ywzhaiqi版本地址 https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @note           Griever 原版地址 https://github.com/Griever/userChromeJS/tree/master/addMenu
+// @note           0.1.6r9 2026-11-17 按 Firefox UI 语言解析 label、tooltiptext、onshowinglabel 多语言配置，移除语言缓存并在应用语言变化后自动刷新菜单
 // @note           0.1.6r8 2026-11-17 直接绑定事件与 onshowing 函数以保留闭包和菜单 this，重载时清理原生菜单监听器，仅 Firefox 139 以前保留字符串回调兼容
 // @note           0.1.6r7 2026-11-17 兼容 Firefox 149+ 搜索服务单例入口，修复异步搜索引擎查询为空时无法回退书签关键字的问题
 // @note           0.1.6r6 2026-11-17 分组继承 condition 时复制子项配置，修复复用子项导致分组条件污染的问题
@@ -228,22 +229,16 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         },
     }
 
-    // 读取语言代码
-    let _locale;
-    try {
-        let _locales, osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
-        if (osPrefs.hasOwnProperty("getRegionalPrefsLocales").hasOwnProperty("getRegionalPrefsLocales"))
-            _locales = osPrefs.getRegionalPrefsLocales();
-        else
-            _locales = osPrefs.regionalPrefsLocales;
-        for (let i = 0; i < _locales.length; i++) {
-            if (ADDMENU_LANG.hasOwnProperty(_locales[i])) {
-                _locale = _locales[i];
-                break;
-            }
+    function getAppLocale () {
+        try {
+            return Services.locale.appLocaleAsBCP47 ||
+                (typeof Services.locale.getAppLocaleAsBCP47 === "function"
+                    ? Services.locale.getAppLocaleAsBCP47() : "en-US") || "en-US";
+        } catch (e) {
+            return "en-US";
         }
-    } catch (e) { }
-    const ADDMENU_LOCALE = _locale || "en-US";
+    }
+    const LOCALIZABLE_ATTRIBUTES = new Set(["label", "tooltiptext", "onshowinglabel"]);
 
     // 增加菜单类型请在这里加入插入点，不能是 IdentGroup
     var MENU_ATTRS = {
@@ -320,8 +315,10 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return this.supportLocalization = typeof Localization === "function";
         },
         get locale () {
-            delete this.locale;
-            return this.locale = ADDMENU_LOCALE || "en-US";
+            return getAppLocale();
+        },
+        localize: function (value, locale = this.locale) {
+            return localizeValue(value, locale);
         },
         get panelId () {
             delete this.panelId;
@@ -348,6 +345,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         init: function () {
             this.win = window;
             this.messageManager = messageManager;
+            this.initLocaleObserver();
             let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
             let rTITLE = "%TITLE" + he + "%|%t\\b";
             let rTITLES = "%TITLES" + he + "%|%t\\b";
@@ -608,9 +606,42 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             this.style = addStyle(adaptMenuIconCSS(css));
             this.rebuild();
         },
+        initLocaleObserver: function () {
+            if (this._localeObserverRegistered) return;
+            Services.obs.addObserver(this, "intl:app-locales-changed");
+            this._localeObserverRegistered = true;
+        },
+        observe: function (_subject, topic) {
+            if (topic !== "intl:app-locales-changed") return;
+
+            clearTimeout(this._localeRefreshTimer);
+            this._localeRefreshTimer = setTimeout(() => {
+                this._localeRefreshTimer = null;
+                if (window.addMenu !== this) return;
+                try {
+                    this.rebuild();
+                } catch (e) {
+                    console.error("addMenuPlus: failed to rebuild after locale change", e);
+                }
+            }, 100);
+        },
+        refreshLocalizedUI: function () {
+            const menuitem = $("addMenu-rebuild");
+            if (!menuitem) return;
+            menuitem.setAttribute("label", $L("addmenuplus label"));
+            menuitem.setAttribute("tooltiptext", $L("addmenuplus tooltip"));
+        },
         destroy: function () {
             document.removeEventListener("popuphidden", this);
             this.restoreMenuVisibility();
+            clearTimeout(this._localeRefreshTimer);
+            this._localeRefreshTimer = null;
+            if (this._localeObserverRegistered) {
+                try {
+                    Services.obs.removeObserver(this, "intl:app-locales-changed");
+                } catch (e) { }
+                this._localeObserverRegistered = false;
+            }
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
             $("contentAreaContextMenu").removeEventListener("popuphiding", this, false);
             $("tabContextMenu").removeEventListener("popupshowing", this, false);
@@ -1065,6 +1096,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             }
         },
         rebuild: function (isAlert) {
+            this.refreshLocalizedUI();
             var aFile = this.FILE;
 
             if (!aFile || !aFile.exists() || !aFile.isFile()) {
@@ -1235,6 +1267,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             if (isAlert) this.alert(U($L('config has reload')));
         },
         newGroupMenu: function (menuObj, opt) {
+            menuObj = localizeMenuObject(menuObj);
             var group = $C('menugroup');
 
             // 增加 onshowing 事件
@@ -1268,6 +1301,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return group;
         },
         newMenu: function (menuObj, opt) {
+            menuObj = localizeMenuObject(menuObj);
             opt || (opt = {});
             if (menuObj._group) {
                 return this.newGroupMenu(menuObj, opt);
@@ -1361,6 +1395,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             return menu;
         },
         newMenuitem: function (obj, opt) {
+            obj = localizeMenuObject(obj);
             opt || (opt = {});
 
             var menuitem,
@@ -1516,6 +1551,7 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
             //Symbol.iterator
             for (let obj of itemArray) {
                 if (!obj) continue;
+                obj = localizeMenuObject(obj);
                 let menuitem;
 
                 // clone menuitem and set attribute
@@ -2268,10 +2304,86 @@ location.href.startsWith('chrome://browser/content/browser.x') && (function (css
         return s && s[0].toUpperCase() + s.slice(1);
     }
 
+    function normalizeLocale (locale) {
+        return typeof locale === "string"
+            ? locale.trim().replace(/_/g, "-").toLowerCase()
+            : "";
+    }
+
+    function findLocaleKey (values, locale, requireString = false) {
+        if (!values || typeof values !== "object") return;
+
+        const keys = Object.keys(values);
+        const normalizedLocale = normalizeLocale(locale);
+        const language = normalizedLocale.split("-", 1)[0];
+        const find = predicate => keys.find(key =>
+            (!requireString || typeof values[key] === "string") && predicate(normalizeLocale(key)));
+
+        let key = find(key => key === normalizedLocale && key !== "default");
+        if (key) return key;
+
+        key = find(key => key === language && key !== "default");
+        if (key) return key;
+
+        key = find(key => key !== "default" && key.split("-", 1)[0] === language);
+        if (key) return key;
+
+        key = find(key => key === "default");
+        if (key) return key;
+
+        key = find(key => key === "en-us");
+        if (key) return key;
+
+        return keys.find(key => typeof values[key] === "string");
+    }
+
+    function isLocalizedMap (value) {
+        return value !== null && typeof value === "object" && !Array.isArray(value) &&
+            Object.prototype.toString.call(value) === "[object Object]";
+    }
+
+    function localizeValue (value, locale = getAppLocale()) {
+        // 非对象值保留原有配置行为。
+        if (!isLocalizedMap(value)) return value;
+
+        let key;
+        try {
+            key = findLocaleKey(value, locale, true);
+        } catch (e) {
+            console.warn("addMenuPlus: failed to resolve localized value", e);
+            return;
+        }
+
+        if (key && typeof value[key] === "string") return value[key];
+        console.warn("addMenuPlus: localized value has no string fallback", value);
+    }
+
+    function localizeMenuObject (obj) {
+        if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+
+        let localized = obj;
+        LOCALIZABLE_ATTRIBUTES.forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(obj, key)) return;
+            const value = obj[key];
+            if (!isLocalizedMap(value)) return;
+
+            const resolved = localizeValue(value);
+            if (localized === obj) localized = Object.assign({}, obj);
+            if (resolved === undefined) {
+                delete localized[key];
+            } else {
+                localized[key] = resolved;
+            }
+        });
+        return localized;
+    }
+
     function $L () {
         let key = arguments[0];
-        if (key && ADDMENU_LANG[ADDMENU_LOCALE] && ADDMENU_LANG[ADDMENU_LOCALE].hasOwnProperty(key)) {
-            let str = ADDMENU_LANG[ADDMENU_LOCALE][key];
+        const localeKey = findLocaleKey(ADDMENU_LANG, getAppLocale()) || "en-US";
+        const localeData = ADDMENU_LANG[localeKey];
+        if (key && localeData && Object.prototype.hasOwnProperty.call(localeData, key)) {
+            let str = localeData[key];
             for (let i = 1; i < arguments.length; i++) {
                 str = str.replace("%s", arguments[i]);
             }
