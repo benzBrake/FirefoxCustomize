@@ -23,6 +23,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.4 2026-11-17 为图片 Base64 转换添加 5 秒超时兜底，完成后清理定时器和图片回调
 // @note               修复 condition 显示样式覆盖 onshowing 设置的 hidden 状态
 // @note               0.4.4 分组继承 condition 时复制子项配置，修复复用同一 items 数组导致选中文字后站内搜索菜单不可见的问题
 // @note               0.4.4 兼容 Firefox 149+ SearchService 单例获取方式，保留 Services.search 回退支持（Bug 2000685）
@@ -2062,41 +2063,57 @@ import { syncify } from "./000-syncify.sys.mjs";
 
                 // 注意：不能使用 new Promise(async resolve => ...) 的写法，
                 // 内部 await 抛错时外层 Promise 永不 settle，会导致 syncify 死循环
-                return syncify(() => {
-                    return (async () => {
+                return syncify(() => new Promise(resolve => {
+                    let img = null;
+                    let completed = false;
+                    const finish = value => {
+                        if (completed) return;
+                        completed = true;
+                        clearTimeout(timeout);
+                        if (img) {
+                            img.onload = null;
+                            img.onerror = null;
+                        }
+                        resolve(value);
+                    };
+                    // 覆盖本地读取和图片加载，避免 syncify 无限等待。
+                    const timeout = setTimeout(() => finish(""), 5000);
+
+                    (async () => {
                         if (isLocalFile(imgSrc)) {
                             const data = await IOUtils.read(toLocalUri(imgSrc));
+                            if (completed) return;
                             imgSrc = "data:image/png;base64," + btoa(String.fromCharCode(...data));
                         }
                         const NSURI = "http://www.w3.org/1999/xhtml";
-                        return await new Promise(resolve => {
-                            const img = new Image();
+                        img = new Image();
 
-                            img.onload = function () {
-                                try {
-                                    const canvas = document.createElementNS(NSURI, "canvas");
-                                    canvas.width = this.naturalWidth;
-                                    canvas.height = this.naturalHeight;
-                                    canvas.getContext("2d").drawImage(this, 0, 0);
-                                    resolve(canvas.toDataURL(imgType));
-                                } catch (e) {
-                                    console.error('Canvas error:', e);
-                                    resolve("");
-                                }
-                            };
+                        img.onload = function () {
+                            if (completed) return;
+                            try {
+                                const canvas = document.createElementNS(NSURI, "canvas");
+                                canvas.width = this.naturalWidth;
+                                canvas.height = this.naturalHeight;
+                                canvas.getContext("2d").drawImage(this, 0, 0);
+                                finish(canvas.toDataURL(imgType));
+                            } catch (e) {
+                                console.error('Canvas error:', e);
+                                finish("");
+                            }
+                        };
 
-                            img.onerror = () => {
-                                console.error('Image load failed:', imgSrc);
-                                resolve("");
-                            };
+                        img.onerror = () => {
+                            if (completed) return;
+                            console.error('Image load failed:', imgSrc);
+                            finish("");
+                        };
 
-                            img.src = imgSrc;
-                        });
+                        img.src = imgSrc;
                     })().catch(e => {
                         console.error('img2base64 failed:', e);
-                        return "";
+                        finish("");
                     });
-                });
+                }));
             }
 
             function svg2base64 (svgSrc) {
