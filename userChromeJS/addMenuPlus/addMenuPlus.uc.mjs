@@ -8,7 +8,7 @@
 此版本面向改造后的 userChrome.js loader；actor 由 loader 注册，脚本继续保持单文件实现
 Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 */
-// @version            0.4.5
+// @version            0.4.6
 // @author             Ryan, ywzhaiqi, Griever
 // @include            main
 // @actor              AddMenu
@@ -23,6 +23,7 @@ Loader 下载地址：https://github.com/benzBrake/userChrome.js-Loader
 // @homepageURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus
 // @downloadURL        https://github.com/benzBrake/FirefoxCustomize/tree/master/userChromeJS/addMenuPlus/addMenuPlus.uc.mjs
 // @reviewURL          https://bbs.kafan.cn/thread-2246475-1-1.html
+// @note               0.4.6 2026-11-18 修复初始化较慢时启动兜底重建同时触发，打断异步默认标签解析的问题
 // @note               0.4.5 2026-11-17 调整菜单状态与动态标签的同步顺序，独立转发命令并保留修饰键，避免延时写入及原生命令同步覆盖 onshowing；约束启动重建和菜单刷新生命周期，防止旧实例或已关闭菜单继续更新；保护异步默认标签，避免覆盖后续修改或已移除菜单
 // @note               0.4.4 2026-11-17 修复本地 SVG 重复 Base64 编码，构建菜单时复制配置以保留复用项的 onshowing 回调
 // @note               0.4.4 2026-11-17 文本替换先捕获占位符值和图片源，避免同步等待图片时混入变化后的页面上下文
@@ -2674,15 +2675,18 @@ import { syncify } from "./000-syncify.sys.mjs";
     const instance = window.addMenu;
     const initialized = instance.init();
     initialized.catch(e => console.error("addMenuPlus: initialization failed", e));
-    // 保留不同 uc 环境的延时兜底，等待本实例初始化并拒绝已销毁/替换的实例。
-    instance.rebuildTimers = [1000, 3000].map(delay => setTimeout(async () => {
-        try {
-            await initialized;
-            if (!instance._destroyed && window.addMenu === instance) await instance.rebuild();
-        } catch (e) {
-            console.error("addMenuPlus: delayed rebuild failed", e);
-        }
-    }, delay));
+    // 初始化可能因配置读取或服务启动而延迟；成功后再分别计时，避免多个兜底在初始化结束时同时重建。
+    instance.rebuildTimers = [];
+    initialized.then(() => {
+        if (instance._destroyed || window.addMenu !== instance) return;
+        instance.rebuildTimers = [1000, 3000].map(delay => setTimeout(async () => {
+            try {
+                if (!instance._destroyed && window.addMenu === instance) await instance.rebuild();
+            } catch (e) {
+                console.error("addMenuPlus: delayed rebuild failed", e);
+            }
+        }, delay));
+    }, () => {});
 })(`
 .addMenuHide {
     display: none !important;

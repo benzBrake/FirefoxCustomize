@@ -290,6 +290,7 @@ for (const file of ["addMenuPlus.uc.mjs", "addMenuPlus.uc.js"]) {
         h.owner.init = async () => {};
         h.owner.rebuild = () => { rebuilds++; };
         h.startup();
+        await Promise.resolve();
         assert.deepEqual([...h.timers.values()].map(t => t.delay), h.module ? [1000, 3000] : [1000, 2000, 5000]);
         h.context.window.addMenu = { rebuild() { throw Error("touched replacement"); } };
         await h.flushTimers();
@@ -300,6 +301,7 @@ for (const file of ["addMenuPlus.uc.mjs", "addMenuPlus.uc.js"]) {
         live.owner.init = async () => {};
         live.owner.rebuild = () => { rebuilds++; };
         live.startup();
+        await Promise.resolve();
         const queued = [...live.timers.values()];
         live.owner.destroy();
         assert.equal(live.timers.size, 0);
@@ -338,16 +340,20 @@ for (const file of ["addMenuPlus.uc.mjs", "addMenuPlus.uc.js"]) {
     }
 }
 
-test("模块：等待初始化完成后才执行延时重建", async () => {
+test("模块：初始化完成后才开始计算延时重建", async () => {
     const h = harness("addMenuPlus.uc.mjs");
     const initialized = deferred();
     let rebuilds = 0;
     h.owner.init = () => initialized.promise;
     h.owner.rebuild = () => { rebuilds++; };
     h.startup();
+    assert.equal(h.timers.size, 0);
     const flushing = h.flushTimers();
     assert.equal(rebuilds, 0);
     initialized.resolve();
+    await Promise.resolve();
+    assert.deepEqual([...h.timers.values()].map(t => t.delay), [1000, 3000]);
+    await h.flushTimers();
     await flushing;
     assert.equal(rebuilds, 2);
 });
