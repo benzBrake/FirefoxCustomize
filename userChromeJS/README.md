@@ -32,28 +32,9 @@ My current Firefox version is Firefox 143.0b6.
 
 Scripts that support Firefox 101 at minimum will be placed in the 101 directory, although the version may not be accurate.
 
-## 使用 Claude Code 修改脚本
+## 使用 AI 工具修改脚本
 
-本项目包含详细的 [AGENTS.md](AGENTS.md) 开发规范文档，定义了：
-
-- **@compatibility 规则**：脚本的最低兼容 Firefox 版本规范
-- **@note 规则**：脚本修改历史记录格式
-- **@compatibility 变更工作流**：版本升级时的归档和修改流程
-- **版本兼容性文档清单**：Firefox 126/127/129/135/136/139/147/149 等版本的 API 变化参考
-
-**使用方法：**
-
-在与 Claude Code 对话时，可以直接这样说：
-
-> 请遵循项目根目录和本目录的 AGENTS.md 规范文档修改代码
-
-Claude Code 会自动：
-- 遵循 `@compatibility` 和 `@note` 格式规范
-- 在升级兼容性版本时自动归档旧版本
-- 参考对应版本的兼容性文档进行 API 修改
-- 使用符合项目规范的提交信息格式
-
-这样可以确保脚本修改始终遵循项目的统一规范。
+项目根目录和本目录的 [AGENTS.md](AGENTS.md) 是协作规范入口；详细规则已按主题整理到 [`docs/agent-guides/`](../docs/agent-guides/README.md)，包括脚本元数据、兼容性升级归档、README 路径维护及 Firefox 调试流程。修改脚本时，请遵循仓库根目录和本目录的规范入口，并查阅与任务相关的详细指南。
 
 ### 标志
 
@@ -114,7 +95,7 @@ V: Represents the minimum Firefox version I used when collecting, modifying, or 
 
 |  ℹ️   | V    | 脚本                                                         | 说明                                                         |                              源                              |
 | :--: | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | :----------------------------------------------------------: |
-|      | 69   | [autoPopup++](autoPopup++.uc.js)                             | 自动弹出菜单增强版                                           |      [📃](https://bbs.kafan.cn/thread-1866855-1-1.html)       |
+|      | 69   | [autoPopup++](69/autoPopup++.uc.js)                          | 自动弹出菜单增强版                                           |      [📃](https://bbs.kafan.cn/thread-1866855-1-1.html)       |
 |  ®️  | 57   | [AutoCopySelectionText](AutoCopySelectionText/AutoCopySelectionText.uc.js) | 自动复制选中文本（ScrLk 亮起时不复制）                       |                                                              |
 |      | 57   | [AutoPopup](109/AutoPopup.uc.js)                             | 自动弹出菜单，好像是从阳光盒子定制版里拉出来的               |                                                              |
 |      | 127  | [AutoSaveScreenshot](127/AutoSaveScreenshot.uc.js)           | 一键保存截图，左键单击保存可见范围，Shift+左键保存整个页面   | [📃](https://www.camp-firefox.de/forum/thema/138011-automatischer-screenshot/?postID=1250968#post1250968) |
