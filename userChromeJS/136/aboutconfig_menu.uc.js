@@ -5,7 +5,6 @@
 // @long-description
 // @description
 /* 修改 about:config 配置的快捷菜单
-默认包含的选项有的是 TabPlus.uc.js 提供的功能：
 */
 // @homepageURL     https://garywill.github.io/
 // @downloadURL     https://github.com/benzBrake/FirefoxCustomize/raw/refs/heads/master/userChromeJS/136/aboutconfig_menu.uc.js
@@ -31,7 +30,6 @@
 
     /**
      * 在此数组中添加或修改 about:config 项目。
-     * 自带的部分参数需要 TabPlus.uc.js 才能正常工作。
      * 结构说明:
      * {
      *   name: "菜单中显示的名称",
@@ -49,187 +47,6 @@
      * "seperator" // 用于在菜单中添加分割线
      */
     const prefItems = [
-        {
-            name: "关闭最后一个标签页后关闭窗口",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.closeWindowWithLastTab",
-            possibleVals: [
-                { val: false },
-                { val: true }
-            ]
-        },
-        {
-            name: "地址栏输入的 URL 在新标签页打开",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.urlbar.openintab",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        },
-        {
-            name: "搜索栏查询在新标签页打开",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.search.openintab",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        },
-        {
-            name: "书签在新标签页打开",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.loadBookmarksInTabs",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        },
-        {
-            name: "历史记录在新标签页打开",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.loadHistoryInTabs",
-            defaultVal: true,
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ],
-        },
-        {
-            name: "双击左键关闭标签页",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.closeTabByDblclick",
-            defaultVal: false,
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ],
-        },
-        {
-            name: "右键单击关闭标签页",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.closeTabByRightClick",
-            defaultVal: false,
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ],
-        }, {
-            name: "中键点击链接在后台加载",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.loadInBackground",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ],
-        }, {
-            name: "图片链接在后台加载",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.loadImageInBackground",
-            defaultVal: false,
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ],
-        }, {
-            name: "标签页悬停切换",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_INT,
-            pref: "browser.tabs.mouseOverDelayMS",
-            defaultVal: 150,
-            possibleVals: [
-                { val: 0, name: "0 - 关闭" },
-                { val: 50, name: "50 - 很快" },
-                { val: 150, name: "150 - 稍快(默认)" },
-                { val: 200, name: "200 - 正常" },
-                { val: 500, name: "500 - 稍慢" }
-            ]
-        }, {
-            name: "新建标签页跟随当前标签页容器",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.openNewTabInContainer",
-            defaultVal: false,
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        }, {
-            name: "新标签页在当前标签右侧打开",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.insertAfterCurrent",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        }, {
-            name: "关闭最后一个标签页时关闭窗口",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.closeWindowWithLastTab",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        }, {
-            name: "中键点击书签后保持书签菜单打开",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.bookmarks.openInTabClosesMenu",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        }, {
-            name: "右键新标签按钮打开剪贴板 URL",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.newTabBtn.rightClickLoadFromClipboard",
-            defaultVal: false,
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        }, {
-            name: "使用鼠标滚轮切换标签页",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "toolkit.tabbox.switchByScrolling",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        }, {
-            name: "关闭当前标签后选中左侧标签",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "browser.tabs.selectLeftTabOnClose",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        },
-        {
-            name: "拖拽标签时显示缩略图",
-            image: "resource:///chrome/browser/skin/classic/browser/tab.svg",
-            type: prefs.PREF_BOOL,
-            pref: "nglayout.enable_drag_images",
-            possibleVals: [
-                { val: false },
-                { val: true },
-            ]
-        },
-        "seperator",
         {
             name: "使用新版侧边栏",
             image: "resource:///chrome/browser/skin/classic/browser/sidebars.svg",
